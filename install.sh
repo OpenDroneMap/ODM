@@ -150,12 +150,12 @@ sed -i $BUNDLER_PATH/bin/extract_focal.pl -e '18c\    $JHEAD_EXE = "jhead";'
 sed -i $BUNDLER_PATH/bin/ToSift.sh -e '36c\    echo "SIFT -o $key_file -x $d; gzip -f $key_file"'
 
 
-cho
-cho ---- building ----
-cho
+echo
+echo ---- building ----
+echo
 
-udo chown -R $USER:$USER *
-udo chmod -R 755 *
+sudo chown -R $USER:$USER *
+sudo chmod -R 755 *
 
 cd $OPENCV_PATH
 cmake .
