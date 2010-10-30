@@ -11,6 +11,7 @@ CMVS=$BASE_PATH/cmvs
 PMVS=$BASE_PATH/pmvs2
 GENOPTION=$BASE_PATH/genOption
 SIFT=$BASE_PATH/sift
+VLSIFT=$BASE_PATH/bin/vlsift
 SIFTFEAT=$BASE_PATH/siftfeat
 
 if [ $# -eq 1 ]
@@ -40,8 +41,8 @@ do
     pgm_file=`echo $d | sed 's/jpg$/pgm/'`
     jpg_file=`echo $d`
 
-#	SIFT_CMD="$SIFTFEAT -o $IMAGE_DIR/$key_file -x $IMAGE_DIR/$jpg_file; gzip -f $IMAGE_DIR/$key_file"
-	SIFT_CMD="mogrify -format pgm $IMAGE_DIR/$jpg_file; $SIFT < $IMAGE_DIR/$pgm_file > $IMAGE_DIR/$key_file; rm $IMAGE_DIR/$pgm_file; gzip -f $IMAGE_DIR/$key_file"
+	SIFT_CMD="$VLSIFT -o $IMAGE_DIR/$key_file -x $IMAGE_DIR/$jpg_file; gzip -f $IMAGE_DIR/$key_file"
+#	SIFT_CMD="mogrify -format pgm $IMAGE_DIR/$jpg_file; $SIFT < $IMAGE_DIR/$pgm_file > $IMAGE_DIR/$key_file; rm $IMAGE_DIR/$pgm_file; gzip -f $IMAGE_DIR/$key_file"
 	eval $SIFT_CMD
 done
 

@@ -213,6 +213,7 @@ cp $BUNDLER_PATH/bin/Bundle2PMVS $BUNDLER_PATH/bin/Bundle2Vis $BUNDLER_PATH/bin/
 
 cp $CMVS_PATH/program/main/cmvs $CMVS_PATH/program/main/pmvs2 $CMVS_PATH/program/main/genOption $TOOLS_BIN_PATH/
 
+sudo cp $VLFEAT_PATH/bin/glx/libvl.so $LIB_PATH/
 sudo cp $BUNDLER_PATH/lib/libANN_char.so $LIB_PATH/
 
 exit
