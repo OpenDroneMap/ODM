@@ -16,7 +16,6 @@ BUNDLER_PATH="$TOOLS_PATH/bundler"
 CMVS_PATH="$TOOLS_PATH/cmvs"
 PMVS_PATH="$TOOLS_PATH/pmvs"
 SIFT_PATH="$TOOLS_PATH/lib/sift"
-SIFTFEAT_PATH="$TOOLS_PATH/lib/siftfeat"
 GRACLUS_PATH="$TOOLS_PATH/lib/graclus"
 CLAPACK_PATH="$TOOLS_PATH/lib/clapack"
 OPENCV_PATH="$TOOLS_PATH/lib/openCv"
@@ -48,23 +47,13 @@ echo ---- getting the tools ----
 echo
 
 
-wget -bO clapack.tgz	 http://www.netlib.org/clapack/clapack-3.2.1-CMAKE.tgz& PID_CLAPACK_DL=$!
-wget -bO bundler.zip	 http://phototour.cs.washington.edu/bundler/distr/bundler-v0.4-source.zip& PID_BUNDLER_DL=$!
-wget -bO sift.zip	 http://www.cs.ubc.ca/~lowe/keypoints/siftDemoV4.zip
-wget -bO graclus.tar.gz	 --no-check-certificate https://www.topoi.hu-berlin.de/graclus1.2.tar.gz& PID_GRACLUS=$!
-wget -bO opencv.tar.bz2	 http://sourceforge.net/projects/opencvlibrary/files/opencv-unix/2.1/OpenCV-2.1.0.tar.bz2/download& PID_OPENCV=$!
-wget -bO pmvs.tar.gz	 http://grail.cs.washington.edu/software/pmvs/pmvs-2-fix0.tar.gz& PID_PMVS=$!
-#wget -O siftfeat.tar.gz	 http://web.engr.oregonstate.edu/~hess/downloads/sift/sift-latest.tar.gz
-#wget -bO siftgpu.tgz	 http://wwwx.cs.unc.edu/~ccwu/cgi-bin/siftgpu.cgi& PID_SIFTGPU_DL=$!
+wget -O clapack.tgz	 http://www.netlib.org/clapack/clapack-3.2.1-CMAKE.tgz
+wget -O bundler.zip	 http://phototour.cs.washington.edu/bundler/distr/bundler-v0.4-source.zip
+wget -O sift.zip	 http://www.cs.ubc.ca/~lowe/keypoints/siftDemoV4.zip
+wget -O graclus.tar.gz	 --no-check-certificate https://www.topoi.hu-berlin.de/graclus1.2.tar.gz
+wget -O opencv.tar.bz2	 http://sourceforge.net/projects/opencvlibrary/files/opencv-unix/2.1/OpenCV-2.1.0.tar.bz2/download
+wget -O pmvs.tar.gz	 http://grail.cs.washington.edu/software/pmvs/pmvs-2-fix0.tar.gz
 wget -O cmvs.tar.gz	 http://grail.cs.washington.edu/software/cmvs/cmvs-fix1.tar.gz
-
-wait $PID_CLAPACK
-wait $PID_BUNDLER
-wait $PID_SIFT
-wait $PID_GRACLUS
-wait $PID_OPENCV
-wait $PID_VLFEAT
-wait $PID_PMVS
 
 echo
 echo ---- unzipping ----
@@ -76,7 +65,6 @@ tar -xzf cmvs.tar.gz& PID_CMVS=$!
 tar -xzf graclus.tar.gz& PID_GRACLUS=$!
 unzip -q sift.zip& PID_SIFT=$!
 tar -xf opencv.tar.bz2& PID_OPENCV=$!
-#tar -xzf siftfeat.tar.gz& PID_SIFTFEAT=$!
 tar -xzf pmvs.tar.gz& PID_PMVS=$!
 
 git clone git://github.com/vlfeat/vlfeat.git& PID_VLFEAT=$!
@@ -88,17 +76,16 @@ wait $PID_CMVS
 wait $PID_GRACLUS
 wait $PID_SIFT
 wait $PID_OPENCV
-#wait $PID_SIFTFEAT
+wait $PID_VLFEAT
 
-rm wget*
-rm clapack.tgz
-rm bundler.zip
-rm pmvs.tar.gz
-rm graclus.tar.gz
-rm cmvs.tar.gz
-rm sift.zip
-rm opencv.tar.bz2
-#rm siftfeat.tar.
+rm -f wget*
+rm -f clapack.tgz
+rm -f bundler.zip
+rm -f pmvs.tar.gz
+rm -f graclus.tar.gz
+rm -f cmvs.tar.gz
+rm -f sift.zip
+rm -f opencv.tar.bz2
 
 echo
 echo ---- renaming ----
@@ -113,7 +100,6 @@ mv -f siftDemoV4 $SIFT_PATH
 mv -f cmvs $CMVS_PATH
 mv -f OpenCV-2.1.0 $OPENCV_PATH
 mv -f pmvs $PMVS_PATH
-#mv -f siftfeat $SIFTFEAT_PATH
 mv -f vlfeat $VLFEAT_PATH
 
 sudo cp -R $CLAPACK_PATH/INCLUDE $INC_PATH/clapack
@@ -149,7 +135,6 @@ fi
 
 sed -i $BUNDLER_PATH/bin/extract_focal.pl -e '18c\    $JHEAD_EXE = "jhead";'
 sed -i $BUNDLER_PATH/bin/ToSift.sh -e '36c\    echo "SIFT -o $key_file -x $d; gzip -f $key_file"'
-exit
 
 echo
 echo ---- building ----

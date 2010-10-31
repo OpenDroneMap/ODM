@@ -25,6 +25,6 @@ echo
 echo '[- Running cmvs -]'
 echo
 
-$CMVS pmvs/ 20
-
+$CMVS pmvs/ 100 2
+ 
 exit
