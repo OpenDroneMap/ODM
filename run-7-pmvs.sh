@@ -25,7 +25,7 @@ echo
 echo '[- Running pmvs -]'
 echo
 
-$PMVS pmvs/ option-0000
+$PMVS pmvs/ pmvs/option-0000
 #sh pmvs/pmvs.sh
 
 exit
