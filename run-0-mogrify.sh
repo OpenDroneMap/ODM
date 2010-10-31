@@ -29,6 +29,6 @@ echo
 echo '[- Scaling images -]'
 echo
 
-mogrify -resize 1600x1200 -quality 100 *
+mogrify -resize 400x300 -quality 100 *
 
 exit

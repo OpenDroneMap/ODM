@@ -28,6 +28,6 @@ echo
 $BUNDLE2PVMS list.txt bundle/bundle.out
 
 sed -i $IMAGE_DIR/pmvs/prep_pmvs.sh -e "4c\BUNDLER_BIN_PATH=\"$BASE_PATH\""
-sh pmvs/prep_pmvs.sh#!/bin/bash
+sh ../pmvs/prep_pmvs.sh
 
 exit

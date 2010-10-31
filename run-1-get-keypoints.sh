@@ -4,6 +4,7 @@ BASE_PATH=$(dirname $(which $0));
 IMAGE_DIR="."
 
 EXTRACT_FOCAL=$BASE_PATH/bin/extract_focal.pl
+VLSIFT_TO_LOWESIFT=$BASE_PATH/bin/convert_vlsift_to_lowesift.pl
 MATCHKEYS=$BASE_PATH/bin/KeyMatchFull
 BUNDLER=$BASE_PATH/bin/bundler
 BUNDLE2PVMS=$BASE_PATH/bin/Bundle2PMVS
@@ -39,12 +40,14 @@ for d in `ls -1 $IMAGE_DIR | egrep "jpg$"`
 do 
     key_file=`echo $d | sed 's/jpg$/key/'`
     pgm_file=`echo $d | sed 's/jpg$/pgm/'`
+    base_file=`echo $d | sed 's/\.jpg$//'`
     jpg_file=`echo $d`
 
-#	SIFT_CMD="$VLSIFT -o $IMAGE_DIR/$key_file -x $IMAGE_DIR/$jpg_file; gzip -f $IMAGE_DIR/$key_file"
-	SIFT_CMD="mogrify -format pgm $IMAGE_DIR/$jpg_file; $VLSIFT -v -o $IMAGE_DIR/$key_file $IMAGE_DIR/$pgm_file; rm $IMAGE_DIR/$pgm_file; gzip -f $IMAGE_DIR/$key_file"
+	VLSIFT_CMD="mogrify -format pgm $IMAGE_DIR/$jpg_file; $VLSIFT -o $IMAGE_DIR/$key_file.tmp $IMAGE_DIR/$pgm_file; rm $IMAGE_DIR/$pgm_file; perl $VLSIFT_TO_LOWESIFT $base_file; rm $IMAGE_DIR/$key_file.tmp; gzip -f $IMAGE_DIR/$key_file"	
 #	SIFT_CMD="mogrify -format pgm $IMAGE_DIR/$jpg_file; $SIFT < $IMAGE_DIR/$pgm_file > $IMAGE_DIR/$key_file; rm $IMAGE_DIR/$pgm_file; gzip -f $IMAGE_DIR/$key_file"
-	eval $SIFT_CMD
+
+	eval $VLSIFT_CMD
+
 done
 
 exit
