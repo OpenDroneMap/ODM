@@ -50,13 +50,13 @@ echo ---- getting the tools ----
 echo
 
 
-#wget -O clapack.tgz	 http://www.netlib.org/clapack/clapack-3.2.1-CMAKE.tgz
-#wget -O bundler.zip	 http://phototour.cs.washington.edu/bundler/distr/bundler-v0.4-source.zip
-#wget -O sift.zip	 http://www.cs.ubc.ca/~lowe/keypoints/siftDemoV4.zip
-#wget -O graclus.tar.gz	 --no-check-certificate https://www.topoi.hu-berlin.de/graclus1.2.tar.gz
-#wget -O opencv.tar.bz2	 http://sourceforge.net/projects/opencvlibrary/files/opencv-unix/2.1/OpenCV-2.1.0.tar.bz2/download
-##wget -O pmvs.tar.gz	 http://grail.cs.washington.edu/software/pmvs/pmvs-2-fix0.tar.gz
-#wget -O cmvs.tar.gz	 http://grail.cs.washington.edu/software/cmvs/cmvs-fix1.tar.gz
+wget -O clapack.tgz	 http://www.netlib.org/clapack/clapack-3.2.1-CMAKE.tgz
+wget -O bundler.zip	 http://phototour.cs.washington.edu/bundler/distr/bundler-v0.4-source.zip
+wget -O sift.zip	 http://www.cs.ubc.ca/~lowe/keypoints/siftDemoV4.zip
+wget -O graclus.tar.gz	 --no-check-certificate https://www.topoi.hu-berlin.de/graclus1.2.tar.gz
+wget -O opencv.tar.bz2	 http://sourceforge.net/projects/opencvlibrary/files/opencv-unix/2.1/OpenCV-2.1.0.tar.bz2/download
+#wget -O pmvs.tar.gz	 http://grail.cs.washington.edu/software/pmvs/pmvs-2-fix0.tar.gz
+wget -O cmvs.tar.gz	 http://grail.cs.washington.edu/software/cmvs/cmvs-fix1.tar.gz
 
 echo
 echo ---- unzipping ----
