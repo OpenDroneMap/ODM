@@ -68,13 +68,13 @@ tar -xzf cmvs.tar.gz& PID_CMVS=$!
 tar -xzf graclus.tar.gz& PID_GRACLUS=$!
 unzip -qo sift.zip& PID_SIFT=$!
 tar -xf opencv.tar.bz2& PID_OPENCV=$!
-tar -xzf pmvs.tar.gz& PID_PMVS=$!
+#tar -xzf pmvs.tar.gz& PID_PMVS=$!
 
 git clone git://github.com/vlfeat/vlfeat.git& PID_VLFEAT=$!
 
 wait $PID_CLAPACK
 wait $PID_BUNDLER
-wait $PID_PMVS
+#wait $PID_PMVS
 wait $PID_CMVS
 wait $PID_GRACLUS
 wait $PID_SIFT
