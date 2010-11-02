@@ -1,5 +1,8 @@
 #!/bin/bash
 
+set -o nounset
+set -o errexit
+
 echo "created by Daniel Schwarz/daniel.schwarz@topoi.org"
 echo "released under Creative Commons/CC-BY-NC"
 echo "Attribution Non-Commercial"
@@ -47,23 +50,23 @@ echo ---- getting the tools ----
 echo
 
 
-wget -O clapack.tgz	 http://www.netlib.org/clapack/clapack-3.2.1-CMAKE.tgz
-wget -O bundler.zip	 http://phototour.cs.washington.edu/bundler/distr/bundler-v0.4-source.zip
-wget -O sift.zip	 http://www.cs.ubc.ca/~lowe/keypoints/siftDemoV4.zip
-wget -O graclus.tar.gz	 --no-check-certificate https://www.topoi.hu-berlin.de/graclus1.2.tar.gz
-wget -O opencv.tar.bz2	 http://sourceforge.net/projects/opencvlibrary/files/opencv-unix/2.1/OpenCV-2.1.0.tar.bz2/download
-wget -O pmvs.tar.gz	 http://grail.cs.washington.edu/software/pmvs/pmvs-2-fix0.tar.gz
-wget -O cmvs.tar.gz	 http://grail.cs.washington.edu/software/cmvs/cmvs-fix1.tar.gz
+#wget -O clapack.tgz	 http://www.netlib.org/clapack/clapack-3.2.1-CMAKE.tgz
+#wget -O bundler.zip	 http://phototour.cs.washington.edu/bundler/distr/bundler-v0.4-source.zip
+#wget -O sift.zip	 http://www.cs.ubc.ca/~lowe/keypoints/siftDemoV4.zip
+#wget -O graclus.tar.gz	 --no-check-certificate https://www.topoi.hu-berlin.de/graclus1.2.tar.gz
+#wget -O opencv.tar.bz2	 http://sourceforge.net/projects/opencvlibrary/files/opencv-unix/2.1/OpenCV-2.1.0.tar.bz2/download
+##wget -O pmvs.tar.gz	 http://grail.cs.washington.edu/software/pmvs/pmvs-2-fix0.tar.gz
+#wget -O cmvs.tar.gz	 http://grail.cs.washington.edu/software/cmvs/cmvs-fix1.tar.gz
 
 echo
 echo ---- unzipping ----
 echo
 
 tar -xzf clapack.tgz& PID_CLAPACK=$!
-unzip -q bundler.zip& PID_BUNDLER=$!
+unzip -qo bundler.zip& PID_BUNDLER=$!
 tar -xzf cmvs.tar.gz& PID_CMVS=$!
 tar -xzf graclus.tar.gz& PID_GRACLUS=$!
-unzip -q sift.zip& PID_SIFT=$!
+unzip -qo sift.zip& PID_SIFT=$!
 tar -xf opencv.tar.bz2& PID_OPENCV=$!
 tar -xzf pmvs.tar.gz& PID_PMVS=$!
 
@@ -79,13 +82,13 @@ wait $PID_OPENCV
 wait $PID_VLFEAT
 
 rm -f wget*
-rm -f clapack.tgz
-rm -f bundler.zip
-rm -f pmvs.tar.gz
-rm -f graclus.tar.gz
-rm -f cmvs.tar.gz
-rm -f sift.zip
-rm -f opencv.tar.bz2
+#rm -f clapack.tgz
+#rm -f bundler.zip
+#rm -f pmvs.tar.gz
+#rm -f graclus.tar.gz
+#rm -f cmvs.tar.gz
+#rm -f sift.zip
+#rm -f opencv.tar.bz2
 
 echo
 echo ---- renaming ----
@@ -97,9 +100,9 @@ mv -f clapack-3.2.1-CMAKE $CLAPACK_PATH
 mv -f bundler-v0.4-source $BUNDLER_PATH
 mv -f graclus1.2 $GRACLUS_PATH
 mv -f siftDemoV4 $SIFT_PATH
-mv -f cmvs $CMVS_PATH
+#mv -f cmvs $CMVS_PATH
 mv -f OpenCV-2.1.0 $OPENCV_PATH
-mv -f pmvs $PMVS_PATH
+#mv -f pmvs $PMVS_PATH
 mv -f vlfeat $VLFEAT_PATH
 
 sudo cp -R $CLAPACK_PATH/INCLUDE $INC_PATH/clapack
@@ -160,9 +163,10 @@ cd $SIFTFEAT_PATH
 sudo make
 
 cd $CLAPACK_PATH
-cp make.inc.example make.inc
+sudo cp make.inc.example make.inc
 sudo make
-sudo make lapack_install
+sudo make preinstall
+sudo make lapack
 
 cd $BUNDLER_PATH
 rm -f bin/bundler bin/Bundle2PMVS bin/Bundle2Vis bin/bundler bin/jhead bin/jhead.exe bin/KeyMatchFull bin/libANN_char.so bin/RadialUndistort bin/zlib1.dll
