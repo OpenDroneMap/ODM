@@ -136,6 +136,14 @@ fi
 sed -i $BUNDLER_PATH/bin/extract_focal.pl -e '18c\    $JHEAD_EXE = "jhead";'
 sed -i $BUNDLER_PATH/bin/ToSift.sh -e '36c\    echo "SIFT -o $key_file -x $d; gzip -f $key_file"'
 
+if [ "$ARCH" = "i686" ]; then
+	sed -i $GRACLUS_PATH/Makefile.in -e "11c\COPTIONS = -DNUMBITS=32"
+fi
+
+if [ "$ARCH" = "x86_64" ]; then
+	sed -i $GRACLUS_PATH/Makefile.in -e "11c\COPTIONS = -DNUMBITS=64"
+fi
+
 echo
 echo ---- building ----
 echo
@@ -201,5 +209,15 @@ cp $CMVS_PATH/program/main/cmvs $CMVS_PATH/program/main/pmvs2 $CMVS_PATH/program
 
 sudo cp $VLFEAT_PATH/bin/glx/libvl.so $LIB_PATH/
 sudo cp $BUNDLER_PATH/lib/libANN_char.so $LIB_PATH/
+
+if [ "$ARCH" = "i686" ]; then
+	cp $VLFEAT_PATH/bin/glx/sift $TOOLS_BIN_PATH/vlsift
+	sudo cp $VLFEAT_PATH/bin/glx/libvl.so $LIB_PATH/
+fi
+
+if [ "$ARCH" = "x86_64" ]; then
+	cp $VLFEAT_PATH/bin/a64/sift $TOOLS_BIN_PATH/vlsift
+	sudo cp $VLFEAT_PATH/bin/a64/libvl.so $LIB_PATH/
+fi
 
 exit
