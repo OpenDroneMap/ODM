@@ -31,8 +31,8 @@ OPENCV_PATH="$TOOLS_PATH/lib/openCv"
 VLFEAT_PATH="$TOOLS_PATH/lib/vlfeat"
 
 ## removing old stuff
-rm -iRf `ls -1 | egrep -v '\.zip$|\.tgz$|\.bz2$|\.gz$|\.sh$|^bin$' | xargs`
-rm -if `find bin | egrep -v '\.pl$|^bin$' | xargs`
+#rm -iRf `ls -1 | egrep -v '\.zip$|\.tgz$|\.bz2$|\.gz$|\.sh$|^bin$' | xargs`
+#rm -if `find bin | egrep -v '\.pl$|^bin$' | xargs`
 
 ## create needed directories
 mkdir -p $TOOLS_LOG_PATH
@@ -63,55 +63,47 @@ sudo apt-get install --assume-yes --quiet --install-recommends \
 	gtk2-engines doxygen \
 	libpthread-stubs0 libpthread-stubs0-dev \
 	libxext-dev libxext6 \
+	curl \
 	libboost-dev > /dev/null
 
 echo "    done"
 
 ## downloading sources
 echo
-echo "  - getting the tools"
+echo "  - getting the sources"
 
 if [ ! -f "clapack.tgz" ]
 then
-	echo "downloading clapack in background ..."
-	wget -O clapack.tgz	 http://www.netlib.org/clapack/clapack-3.2.1-CMAKE.tgz > /dev/null & PID_CLAPACK_DL=$!
+	curl --location -o clapack.tgz	 http://www.netlib.org/clapack/clapack-3.2.1-CMAKE.tgz > /dev/null 2>&1  & PID_CLAPACK_DL=$!
 fi
 
 if [ ! -f "bundler.zip" ]
 then
-	echo "downloading bundler in background ..."
-	wget -O bundler.zip	 http://phototour.cs.washington.edu/bundler/distr/bundler-v0.4-source.zip > /dev/null & PID_BUNDLER_DL=$!
-fi
-
-if [ ! -f "sift.zip" ]
-then
-	echo "downloading sift in background ..."
-	wget -O sift.zip	 http://www.cs.ubc.ca/~lowe/keypoints/siftDemoV4.zip > /dev/null & PID_SIFT_DL=$!
+	curl --location -o bundler.zip	 http://phototour.cs.washington.edu/bundler/distr/bundler-v0.4-source.zip > /dev/null 2>&1 & PID_BUNDLER_DL=$!
 fi
 
 if [ ! -f "graclus.tar.gz" ]
 then
-	echo "downloading graclus in background ..."
-	wget -O graclus.tar.gz	 --no-check-certificate https://www.topoi.hu-berlin.de/graclus1.2.tar.gz > /dev/null & PID_GRACLUS_DL=$!
+	curl --location -o graclus.tar.gz https://www.topoi.hu-berlin.de/graclus1.2.tar.gz > /dev/null 2>&1 & PID_GRACLUS_DL=$!
 fi
 
 if [ ! -f "opencv.tar.bz2" ]
 then
-	echo "downloading opencv in background ..."
-	wget -O opencv.tar.bz2	 http://sourceforge.net/projects/opencvlibrary/files/opencv-unix/2.1/OpenCV-2.1.0.tar.bz2/download > /dev/null & PID_OPENCV_DL=$!
+	curl --location -o opencv.tar.bz2	 http://sourceforge.net/projects/opencvlibrary/files/opencv-unix/2.1/OpenCV-2.1.0.tar.bz2/download > /dev/null 2>&1 & PID_OPENCV_DL=$!
 fi
 
 if [ ! -f "cmvs.tar.gz" ]
 then
-	echo "downloading cmvs"
-	wget -O cmvs.tar.gz	 http://grail.cs.washington.edu/software/cmvs/cmvs-fix1.tar.gz
+	curl --location -o cmvs.tar.gz	 http://grail.cs.washington.edu/software/cmvs/cmvs-fix1.tar.gz > /dev/null 2>&1 & PID_CMVS_DL=$!
 fi
+
+git clone git://github.com/vlfeat/vlfeat.git --quiet > $TOOLS_LOG_PATH/vlfeat_0_get.log 2>&1 & PID_VLFEAT_DL=$!
 
 wait
  
 echo "    done"
 
-## unzipping sources and getting git projects
+## unzipping sources
 echo
 echo "  - unzipping sources"
 
@@ -120,8 +112,6 @@ tar -xzf clapack.tgz& PID_CLAPACK=$!
 tar -xzf graclus.tar.gz& PID_GRACLUS=$!
 unzip -qo bundler.zip& PID_BUNDLER=$!
 tar -xzf cmvs.tar.gz& PID_CMVS=$!
-unzip -qo sift.zip& PID_SIFT=$! 
-git clone git://github.com/vlfeat/vlfeat.git --quiet > vlfeat_0_get.log 2>&1
 
 wait
 
@@ -130,7 +120,6 @@ mv -f clapack-3.2.1-CMAKE $CLAPACK_PATH
 mv -f vlfeat $VLFEAT_PATH
 mv -f graclus1.2 $GRACLUS_PATH
 mv -f bundler-v0.4-source $BUNDLER_PATH
-mv -f siftDemoV4 $SIFT_PATH
 #mv -f cmvs $CMVS_PATH
 
 echo "    done"
@@ -151,7 +140,7 @@ echo "    - generating makefiles for opencv"
 (sudo cmake -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=$TOOLS_PATH ..) > $TOOLS_LOG_PATH/opencv_1_cmake.log 2>&1
 
 echo "    - cleaning opencv"
-sudo make clean > opencv_2_clean.log 2>&1
+sudo make clean > $TOOLS_LOG_PATH/opencv_2_clean.log 2>&1
 
 echo "    - building opencv"
 sudo make > $TOOLS_LOG_PATH/opencv_3_build.log 2>&1
@@ -161,19 +150,18 @@ sudo make install > $TOOLS_LOG_PATH/opencv_4_install.log 2>&1
 
 cp -Rf ../include/* $TOOLS_INC_PATH
 
-mkdir -p $TOOLS_LIB_PATH/opencv
-cp -Rf ../release/lib/* $TOOLS_LIB_PATH/opencv/*
+mkdir -p $TOOLS_BIN_PATH/opencv
+cp -Rf ../release/lib/* $TOOLS_BIN_PATH/opencv/*
 
 echo "  < done"
 echo 
+
+exit
 
 echo "  > clapack"
 
 cd $CLAPACK_PATH
 cp make.inc.example make.inc
-
-exit
-
 
 mkdir -p $CLAPACK_PATH/release
 cd $CLAPACK_PATH/release
@@ -188,6 +176,8 @@ echo "    - building clapack"
 sudo make > $TOOLS_LOG_PATH/clapack_3_build.log 2>&1
 
 echo "    - installing clapack"
+
+exit
 sudo make install > $TOOLS_LOG_PATH/clapack_4_install.log 2>&1
 
 cp -Rf ../INCLUDE $TOOLS_INC_PATH/clapack
