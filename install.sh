@@ -1,7 +1,6 @@
 #!/bin/bash
 
-set -o nounset
-set -o errexit
+. ./defs.sh
 
 echo 
 echo "     created by Daniel Schwarz/daniel.schwarz@topoi.org"
@@ -16,25 +15,6 @@ echo "  - script started - `date`"
 
 ARCH=`uname -m`
 CORES=`ls -d /sys/devices/system/cpu/cpu[[:digit:]]* | wc -w`
-
-TOOLS_PATH=$PWD
-
-TOOLS_BIN_PATH=$TOOLS_PATH/bin
-TOOLS_INC_PATH=$TOOLS_PATH/include
-TOOLS_LIB_PATH=$TOOLS_PATH/lib
-TOOLS_SRC_PATH=$TOOLS_PATH/src
-TOOLS_LOG_PATH=$TOOLS_PATH/logs
-
-LIB_PATH="/usr/lib"
-INC_PATH="/usr/include"
-
-BUNDLER_PATH="$TOOLS_SRC_PATH/bundler"
-CMVS_PATH="$TOOLS_SRC_PATH/cmvs"
-PMVS_PATH="$TOOLS_SRC_PATH/pmvs"
-GRACLUS_PATH="$TOOLS_SRC_PATH/graclus"
-CLAPACK_PATH="$TOOLS_SRC_PATH/clapack"
-OPENCV_PATH="$TOOLS_SRC_PATH/openCv"
-VLFEAT_PATH="$TOOLS_SRC_PATH/vlfeat"
 
 ## removing old stuff
 rm -irf `ls -1 | egrep -v '\.zip$|\.tgz$|\.bz2$|\.gz$|\.sh$|^bin$' | xargs`
