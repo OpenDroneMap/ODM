@@ -35,8 +35,8 @@ uname -a > $TOOLS_LOG_PATH/sysinfo.txt
 echo
 echo "  - installing required packages"
 
-sudo apt-get update --assume-yes --quiet > /dev/null
-sudo apt-get install --assume-yes --quiet --install-recommends \
+sudo apt-get update --assume-yes > $TOOLS_LOG_PATH/apt-get_get.log 2>&1
+sudo apt-get install --assume-yes --install-recommends \
 	gcc g++	 gFortran cmake build-essential \
 	imagemagick unzip wget \
 	libzip-dev libjpeg-dev libtiff-dev libpng-dev libjasper-dev libann-dev \
@@ -51,7 +51,7 @@ sudo apt-get install --assume-yes --quiet --install-recommends \
 	libpthread-stubs0 libpthread-stubs0-dev \
 	libxext-dev libxext6 \
 	curl \
-	libboost-dev > /dev/null 2>&1
+	libboost-dev > $TOOLS_LOG_PATH/apt-get_install.log 2>&1
 
 echo "    done - `date`"
 
@@ -192,7 +192,7 @@ echo "  > bundler"
 
 	cp -f $BUNDLER_PATH/bin/Bundle2PMVS $BUNDLER_PATH/bin/Bundle2Vis $BUNDLER_PATH/bin/KeyMatchFull $BUNDLER_PATH/bin/bundler $BUNDLER_PATH/bin/extract_focal.pl $BUNDLER_PATH/bin/RadialUndistort $TOOLS_BIN_PATH/
 
-	sudo cp -f $BUNDLER_PATH/lib/libANN_char.so $LIB_PATH/
+	sudo cp -f $BUNDLER_PATH/lib/libANN_char.so $TOOLS_LIB_PATH/
 
 	sed -i $BUNDLER_PATH/bin/extract_focal.pl -e '18c\    $JHEAD_EXE = "jhead";'
 echo "  < done - `date`"
@@ -213,9 +213,6 @@ echo "  > clapack"
 
 	echo "    - building clapack"
 	sudo make -j $CORES > $TOOLS_LOG_PATH/clapack_3_build.log 2>&1
-
-####echo "    - installing clapack"
-#####	sudo make install > $TOOLS_LOG_PATH/clapack_4_install.log 2>&1
 
 	cp -Rf ../INCLUDE $TOOLS_INC_PATH/clapack
 echo "  < done - `date`"
@@ -259,6 +256,9 @@ echo "  < done - `date`"
 echo
 
 cd $TOOLS_PATH
+
+cp -f $TOOLS_LIB_PATH/* $LIB_PATH/
+ldconfig -v > $TOOLS_LOG_PATH/ldconfig.log 2>&1
 
 echo "  - script finished - `date`"
 
