@@ -1,6 +1,3 @@
-
-echo sdg
-
 set -o nounset
 set -o errexit
 
