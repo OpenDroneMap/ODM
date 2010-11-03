@@ -163,7 +163,7 @@ echo "  > vlfeat"
 	sudo make clean > $TOOLS_LOG_PATH/vlfeat_1_clean.log 2>&1
 
 	echo "    - building vlfeat"
-	sudo make -j$CORES > $TOOLS_LOG_PATH/vlfeat_2_build.log 2>&1
+	sudo make > $TOOLS_LOG_PATH/vlfeat_2_build.log 2>&1
 
 	if [ "$ARCH" = "i686" ]; then
 		cp -f $VLFEAT_PATH/bin/glx/sift $TOOLS_BIN_PATH/vlsift
