@@ -67,43 +67,48 @@ echo "  - getting the sources"
 
 if [ ! -f "parallel.tar.bz2" ]
 then
-	curl --location -o parallel.tar.bz2	 http://ftp.gnu.org/gnu/parallel/parallel-20100922.tar.bz2 > /dev/null 2>&1  & PID_PARALLEL=$!
+	curl --location -o parallel.tar.bz2	 http://ftp.gnu.org/gnu/parallel/parallel-20100922.tar.bz2 > /dev/null 2>&1  & 
 fi
 
 if [ ! -f "clapack.tgz" ]
 then
-	curl --location -o clapack.tgz	 http://www.netlib.org/clapack/clapack-3.2.1-CMAKE.tgz > /dev/null 2>&1  & PID_CLAPACK_DL=$!
+	curl --location -o clapack.tgz	 http://www.netlib.org/clapack/clapack-3.2.1-CMAKE.tgz > /dev/null 2>&1  & 
 fi
 
 if [ ! -f "bundler.zip" ]
 then
-	curl --location -o bundler.zip	 http://phototour.cs.washington.edu/bundler/distr/bundler-v0.4-source.zip > /dev/null 2>&1 & PID_BUNDLER_DL=$!
+	curl --location -o bundler.zip	 http://phototour.cs.washington.edu/bundler/distr/bundler-v0.4-source.zip > /dev/null 2>&1 & 
 fi
 
 if [ ! -f "graclus.tar.gz" ]
 then
-	curl --location -o graclus.tar.gz https://www.topoi.hu-berlin.de/graclus1.2.tar.gz > /dev/null 2>&1 & PID_GRACLUS_DL=$!
+	curl --location -o graclus.tar.gz https://www.topoi.hu-berlin.de/graclus1.2.tar.gz > /dev/null 2>&1 & 
 fi
 
 if [ ! -f "opencv.tar.bz2" ]
 then
-	curl --location -o opencv.tar.bz2	 http://sourceforge.net/projects/opencvlibrary/files/opencv-unix/2.1/OpenCV-2.1.0.tar.bz2/download > /dev/null 2>&1 & PID_OPENCV_DL=$!
+	curl --location -o opencv.tar.bz2	 http://sourceforge.net/projects/opencvlibrary/files/opencv-unix/2.1/OpenCV-2.1.0.tar.bz2/download > /dev/null 2>&1 &
 fi
 
 if [ ! -f "cmvs.tar.gz" ]
 then
-	curl --location -o cmvs.tar.gz	 http://grail.cs.washington.edu/software/cmvs/cmvs-fix1.tar.gz > /dev/null 2>&1 & PID_CMVS_DL=$!
+	curl --location -o cmvs.tar.gz	 http://grail.cs.washington.edu/software/cmvs/cmvs-fix1.tar.gz > /dev/null 2>&1 & 
 fi
 
 if [ ! -f "siftDemoV4.zip" ]
 then
-	curl --location -o siftDemoV4.zip	 http://www.cs.ubc.ca/~lowe/keypoints/siftDemoV4.zip > /dev/null 2>&1 & PID_CMVS_DL=$!
+	curl --location -o siftDemoV4.zip	 http://www.cs.ubc.ca/~lowe/keypoints/siftDemoV4.zip > /dev/null 2>&1 & 
 fi
 
-git clone git://github.com/vlfeat/vlfeat.git --quiet > /dev/null 2>&1 & PID_VLFEAT_DL=$!
+if [ ! -f "PoissonRecon.zip" ]
+then
+	curl --location -o PoissonRecon.zip	 http://www.cs.jhu.edu/~misha/Code/PoissonRecon/Version2/PoissonRecon.zip > /dev/null 2>&1 & 
+fi
+
+git clone git://github.com/vlfeat/vlfeat.git --quiet > /dev/null 2>&1 & 
 
 wait
- 
+
 echo "    done - `date`"
 
 ## unzipping sources
@@ -115,6 +120,7 @@ tar -xzf clapack.tgz &
 tar -xzf graclus.tar.gz &
 unzip -q bundler.zip &
 unzip -q siftDemoV4.zip &
+unzip -q PoissonRecon.zip &
 tar -xzf cmvs.tar.gz &
 tar -xf parallel.tar.bz2 &
 
@@ -126,6 +132,7 @@ mv -f graclus1.2 $GRACLUS_PATH
 mv -f bundler-v0.4-source $BUNDLER_PATH
 mv -f cmvs $CMVS_PATH
 mv -f parallel-20100922 $PARALLEL_PATH
+mv -f PoissonRecon $PSR_PATH
 mv -f siftDemoV4 $SIFT_PATH
 
 echo "    done - `date`"
@@ -136,6 +143,19 @@ echo "  - building (will take some time ...)"
 
 sudo chown -R `id -u`:`id -g` *
 sudo chmod -R 777 *
+
+echo "  > poisson surface reconstruction "
+	cd $PSR_PATH
+	
+	sed -i $PSR_PATH/Makefile -e "21c\BIN = ./"
+		
+	echo "    - building poisson surface reconstruction"
+	sudo make -j$CORES > $TOOLS_LOG_PATH/poisson_1_build.log 2>&1
+	
+	cp -f $PSR_PATH/PoissonRecon $TOOLS_BIN_PATH/PoissonRecon
+	
+echo "  < done - `date`"
+echo
 
 echo "  > parallel"
 	cd $PARALLEL_PATH
