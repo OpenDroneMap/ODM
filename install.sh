@@ -1,13 +1,14 @@
 #!/bin/bash
 
-. ./defs.sh
+script_dir=$(dirname $0)
+. $script_dir/defs.sh
 
 echo 
 echo "     created by Daniel Schwarz/daniel.schwarz@topoi.org"
 echo "     released under Creative Commons/CC-BY-NC"
 echo "     Attribution Non-Commercial"
 echo
-echo "     if the script doesn't finish properly (i.e. printing \"script finished\" at the end)"
+echo "     if the script doesn't finish properly (i.e. it doesn't print \"script finished\" at the end)"
 echo "     please email me the content of the logs folder"
 echo
 echo
@@ -16,9 +17,14 @@ echo "  - script started - `date`"
 ARCH=`uname -m`
 CORES=`ls -d /sys/devices/system/cpu/cpu[[:digit:]]* | wc -w`
 
+# prevents different (localized) output
+LC_ALL=C
+
 ## removing old stuff
 rm -irf `ls -1 | egrep -v '\.zip$|\.tgz$|\.bz2$|\.gz$|\.sh$|^bin$' | xargs`
 rm -irf `find bin | egrep -v '\.pl$|^bin$' | xargs`
+#find . -maxdepth 0 \! -name \*.tgz \! -name \*.bz2 \! -name \*.gz \! -name \*.sh \! -name bin -delete
+#find bin \! -name \*.pl \! -name bin -delete
 
 ## create needed directories
 mkdir -p $TOOLS_BIN_PATH
@@ -50,7 +56,7 @@ sudo apt-get install --assume-yes --install-recommends \
 	gtk2-engines doxygen \
 	libpthread-stubs0 libpthread-stubs0-dev \
 	libxext-dev libxext6 \
-	curl \
+	curl pax \
 	libboost-dev > $TOOLS_LOG_PATH/apt-get_install.log 2>&1
 
 echo "    done - `date`"
@@ -58,6 +64,11 @@ echo "    done - `date`"
 ## downloading sources
 echo
 echo "  - getting the sources"
+
+if [ ! -f "parallel.tar.bz2" ]
+then
+	curl --location -o parallel.tar.bz2	 http://ftp.gnu.org/gnu/parallel/parallel-20100922.tar.bz2 > /dev/null 2>&1  & PID_PARALLEL=$!
+fi
 
 if [ ! -f "clapack.tgz" ]
 then
@@ -84,6 +95,11 @@ then
 	curl --location -o cmvs.tar.gz	 http://grail.cs.washington.edu/software/cmvs/cmvs-fix1.tar.gz > /dev/null 2>&1 & PID_CMVS_DL=$!
 fi
 
+if [ ! -f "siftDemoV4.zip" ]
+then
+	curl --location -o siftDemoV4.zip	 http://www.cs.ubc.ca/~lowe/keypoints/siftDemoV4.zip > /dev/null 2>&1 & PID_CMVS_DL=$!
+fi
+
 git clone git://github.com/vlfeat/vlfeat.git --quiet > /dev/null 2>&1 & PID_VLFEAT_DL=$!
 
 wait
@@ -94,20 +110,23 @@ echo "    done - `date`"
 echo
 echo "  - unzipping sources"
 
-tar -xf opencv.tar.bz2& PID_OPENCV=$!
-tar -xzf clapack.tgz& PID_CLAPACK=$!
-tar -xzf graclus.tar.gz& PID_GRACLUS=$!
-unzip -qo bundler.zip& PID_BUNDLER=$!
-tar -xzf cmvs.tar.gz& PID_CMVS=$!
+tar -xf opencv.tar.bz2 &
+tar -xzf clapack.tgz &
+tar -xzf graclus.tar.gz &
+unzip -q bundler.zip &
+unzip -q siftDemoV4.zip &
+tar -xzf cmvs.tar.gz &
+tar -xf parallel.tar.bz2 &
 
 wait
-
 mv -f OpenCV-2.1.0 $OPENCV_PATH
 mv -f clapack-3.2.1-CMAKE $CLAPACK_PATH
 mv -f vlfeat $VLFEAT_PATH
 mv -f graclus1.2 $GRACLUS_PATH
 mv -f bundler-v0.4-source $BUNDLER_PATH
 mv -f cmvs $CMVS_PATH
+mv -f parallel-20100922 $PARALLEL_PATH
+mv -f siftDemoV4 $SIFT_PATH
 
 echo "    done - `date`"
 
@@ -115,8 +134,46 @@ echo "    done - `date`"
 echo
 echo "  - building (will take some time ...)"
 
-sudo chown -R $USER:$USER *
+sudo chown -R `id -u`:`id -g` *
 sudo chmod -R 777 *
+
+echo "  > parallel"
+	cd $PARALLEL_PATH
+	
+	echo "    - configuring parallel"
+	./configure > $TOOLS_LOG_PATH/parallel_1_build.log 2>&1
+	
+	echo "    - building paralel"
+	make -j$CORES > $TOOLS_LOG_PATH/parallel_2_build.log 2>&1
+	
+
+	cp -f src/parallel $TOOLS_BIN_PATH/
+	
+echo "  < done - `date`"
+echo
+
+echo "  > sift"
+	cp $SIFT_PATH/sift $TOOLS_BIN_PATH/
+	
+echo "  < done - `date`"
+echo
+
+echo "  > clapack"
+	cd $CLAPACK_PATH
+	cp make.inc.example make.inc
+	
+	set +e
+	echo "    - building clapack"
+	sudo make all -j$CORES > $TOOLS_LOG_PATH/clapack_1_build.log 2>&1
+	set -e
+	
+	echo "    - installing clapack"
+	sudo make lapack_install > $TOOLS_LOG_PATH/clapack_2_install.log 2>&1
+
+	cp -Rf INCLUDE $INC_PATH/clapack
+	
+echo "  < done - `date`"
+echo
 
 echo "  > opencv"
 	mkdir -p $OPENCV_PATH/release
@@ -124,9 +181,6 @@ echo "  > opencv"
 	
 	echo "    - generating makefiles for opencv"
 	(sudo cmake -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=$TOOLS_PATH ..) > $TOOLS_LOG_PATH/opencv_1_cmake.log 2>&1
-	
-	echo "    - cleaning opencv"
-	sudo make clean > $TOOLS_LOG_PATH/opencv_2_clean.log 2>&1
 	
 	echo "    - building opencv"
 	sudo make -j$CORES > $TOOLS_LOG_PATH/opencv_3_build.log 2>&1
@@ -194,36 +248,16 @@ echo "  > bundler"
 
 	sudo cp -f $BUNDLER_PATH/lib/libANN_char.so $TOOLS_LIB_PATH/
 
-	sed -i $BUNDLER_PATH/bin/extract_focal.pl -e '18c\    $JHEAD_EXE = "jhead";'
-echo "  < done - `date`"
-echo
-
-echo "  > clapack"
-	cd $CLAPACK_PATH
-	cp make.inc.example make.inc
-
-	mkdir -p $CLAPACK_PATH/release
-	cd $CLAPACK_PATH/release
-
-	echo "    - generating makefiles for clapack"
-	(sudo cmake -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=$TOOLS_PATH ..) > $TOOLS_LOG_PATH/clapack_1_cmake.log 2>&1
-
-	echo "    - cleaning clapack"
-	sudo make clean > clapack_2_clean.log 2>&1
-
-	echo "    - building clapack"
-	sudo make -j $CORES > $TOOLS_LOG_PATH/clapack_3_build.log 2>&1
-
-	cp -Rf ../INCLUDE $TOOLS_INC_PATH/clapack
+	sed -i $TOOLS_BIN_PATH/extract_focal.pl -e '18c\    $JHEAD_EXE = "jhead";'
 echo "  < done - `date`"
 echo
 
 echo "  > cmvs"
 	cd $CMVS_PATH/program/main
- 
+
 	sed -i $CMVS_PATH/program/main/genOption.cc -e "5c\#include <stdlib.h>\n" 
 	sed -i $CMVS_PATH/program/base/cmvs/bundle.cc -e "3c\#include <numeric>\n"
-
+	
 	sed -i $CMVS_PATH/program/main/Makefile -e "10c\#Your INCLUDE path (e.g., -I\/usr\/include)" 
 	sed -i $CMVS_PATH/program/main/Makefile -e "11c\YOUR_INCLUDE_PATH =-I$INC_PATH -I$TOOLS_INC_PATH" 
 	sed -i $CMVS_PATH/program/main/Makefile -e "13c\#Your metis directory (contains header files under graclus1.2/metisLib/)" 
@@ -231,9 +265,6 @@ echo "  > cmvs"
 	sed -i $CMVS_PATH/program/main/Makefile -e "16c\#Your LDLIBRARY path (e.g., -L/usr/lib)" 
 	sed -i $CMVS_PATH/program/main/Makefile -e "17c\YOUR_LDLIB_PATH = -L$LIB_PATH -L$TOOLS_LIB_PATH"
 	
-	sed -i $CMVS_PATH/program/base/numeric/mylapack.cc -e "6c\#include \"clapack/f2c.h\""
-	sed -i $CMVS_PATH/program/base/numeric/mylapack.cc -e "7c\#include \"clapack/clapack.h\""
-
 	if [ "$ARCH" = "i686" ]; then
 		sed -i $CMVS_PATH/program/main/Makefile -e "22c\CXXFLAGS_CMVS = -O2 -Wall -Wno-deprecated -DNUMBITS=32 \\\\"
 		sed -i $CMVS_PATH/program/main/Makefile -e '24c\		-fopenmp -DNUMBITS=32 ${OPENMP_FLAG}'
@@ -248,7 +279,10 @@ echo "  > cmvs"
 	sudo make clean > $TOOLS_LOG_PATH/cmvs_1_clean.log 2>&1
 
 	echo "    - building cmvs"
-	sudo make -j$CORES  > $TOOLS_LOG_PATH/cmvs_2_build.log 2>&1
+	sudo make -j$CORES > $TOOLS_LOG_PATH/cmvs_2_build.log 2>&1
+
+	echo "    - make depend cmvs"
+	sudo make depend > $TOOLS_LOG_PATH/cmvs_3_depend.log 2>&1
 
 	cp -f $CMVS_PATH/program/main/cmvs $CMVS_PATH/program/main/pmvs2 $CMVS_PATH/program/main/genOption $TOOLS_BIN_PATH/
 	cp -f $CMVS_PATH/program/main/*so* $TOOLS_LIB_PATH/
@@ -257,7 +291,7 @@ echo
 
 cd $TOOLS_PATH
 
-cp -f $TOOLS_LIB_PATH/* $LIB_PATH/
+cp -f $TOOLS_LIB_PATH/*.so* $LIB_PATH/
 ldconfig -v > $TOOLS_LOG_PATH/ldconfig.log 2>&1
 
 echo "  - script finished - `date`"

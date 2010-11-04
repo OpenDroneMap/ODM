@@ -1,22 +1,26 @@
 set -o nounset
 set -o errexit
 
-if [ ! -n "$0" ]; then
-	TOOLS_PATH=$(dirname $(which $0));
-	IMAGE_DIR="."
-else
-	TOOLS_PATH=$PWD
-fi
+#if [ ! -n "$0" ]; then
+	TOOLS_PATH=$PWD/$(dirname $0)
+#else
+#	TOOLS_PATH=$PWD
+#fi
 
+IMAGE_DIR="."
+
+## paths for the tools
 TOOLS_BIN_PATH=$TOOLS_PATH/bin
 TOOLS_INC_PATH=$TOOLS_PATH/include
 TOOLS_LIB_PATH=$TOOLS_PATH/lib
 TOOLS_SRC_PATH=$TOOLS_PATH/src
 TOOLS_LOG_PATH=$TOOLS_PATH/logs
 
+## loacal dest paths
 LIB_PATH="/usr/local/lib"
 INC_PATH="/usr/local/include"
 
+## source paths
 BUNDLER_PATH="$TOOLS_SRC_PATH/bundler"
 CMVS_PATH="$TOOLS_SRC_PATH/cmvs"
 PMVS_PATH="$TOOLS_SRC_PATH/pmvs"
@@ -24,3 +28,18 @@ GRACLUS_PATH="$TOOLS_SRC_PATH/graclus"
 CLAPACK_PATH="$TOOLS_SRC_PATH/clapack"
 OPENCV_PATH="$TOOLS_SRC_PATH/openCv"
 VLFEAT_PATH="$TOOLS_SRC_PATH/vlfeat"
+SIFT_PATH="$TOOLS_SRC_PATH/sift"
+PARALLEL_PATH="$TOOLS_SRC_PATH/parallel"
+
+## executables
+EXTRACT_FOCAL=$TOOLS_BIN_PATH/extract_focal.pl
+MATCHKEYS=$TOOLS_BIN_PATH/KeyMatchFull
+BUNDLER=$TOOLS_BIN_PATH/bundler
+BUNDLE2PVMS=$TOOLS_BIN_PATH/Bundle2PMVS
+CMVS=$TOOLS_BIN_PATH/cmvs
+PMVS=$TOOLS_BIN_PATH/pmvs2
+GENOPTION=$TOOLS_BIN_PATH/genOption
+SIFT=$TOOLS_BIN_PATH/sift
+VLSIFT=$TOOLS_BIN_PATH/vlsift
+PARALLEL=$TOOLS_BIN_PATH/parallel
+VLSIFT_TO_LOWESIFT=$TOOLS_BIN_PATH/convert_vlsift_to_lowesift.pl
