@@ -1,7 +1,7 @@
 #!/bin/bash
 
-script_dir=$(dirname $0)
-. $script_dir/defs.sh
+set -o nounset
+set -o errexit
 
 echo 
 echo "     created by Daniel Schwarz/daniel.schwarz@topoi.org"
@@ -14,6 +14,47 @@ echo
 echo
 echo "  - script started - `date`"
 
+TOOLS_PATH=$PWD/$(dirname $0)
+
+IMAGE_DIR="."
+
+## paths for the tools
+TOOLS_BIN_PATH=$TOOLS_PATH/bin
+TOOLS_INC_PATH=$TOOLS_PATH/include
+TOOLS_LIB_PATH=$TOOLS_PATH/lib
+TOOLS_SRC_PATH=$TOOLS_PATH/src
+TOOLS_LOG_PATH=$TOOLS_PATH/logs
+
+## loacal dest paths
+LIB_PATH="/usr/local/lib"
+INC_PATH="/usr/local/include"
+
+## source paths
+BUNDLER_PATH="$TOOLS_SRC_PATH/bundler"
+CMVS_PATH="$TOOLS_SRC_PATH/cmvs"
+PMVS_PATH="$TOOLS_SRC_PATH/pmvs"
+GRACLUS_PATH="$TOOLS_SRC_PATH/graclus"
+CLAPACK_PATH="$TOOLS_SRC_PATH/clapack"
+OPENCV_PATH="$TOOLS_SRC_PATH/openCv"
+VLFEAT_PATH="$TOOLS_SRC_PATH/vlfeat"
+SIFT_PATH="$TOOLS_SRC_PATH/sift"
+PARALLEL_PATH="$TOOLS_SRC_PATH/parallel"
+PSR_PATH="$TOOLS_SRC_PATH/PoissonRecon"
+
+## executables
+EXTRACT_FOCAL=$TOOLS_BIN_PATH/extract_focal.pl
+MATCHKEYS=$TOOLS_BIN_PATH/KeyMatchFull
+BUNDLER=$TOOLS_BIN_PATH/bundler
+BUNDLE2PVMS=$TOOLS_BIN_PATH/Bundle2PMVS
+CMVS=$TOOLS_BIN_PATH/cmvs
+PMVS=$TOOLS_BIN_PATH/pmvs2
+GENOPTION=$TOOLS_BIN_PATH/genOption
+SIFT=$TOOLS_BIN_PATH/sift
+VLSIFT=$TOOLS_BIN_PATH/vlsift
+PARALLEL=$TOOLS_BIN_PATH/parallel
+PSR=$TOOLS_BIN_PATH/PoissonRecon
+VLSIFT_TO_LOWESIFT=$TOOLS_BIN_PATH/convert_vlsift_to_lowesift.pl
+
 ARCH=`uname -m`
 CORES=`ls -d /sys/devices/system/cpu/cpu[[:digit:]]* | wc -w`
 
@@ -21,8 +62,7 @@ CORES=`ls -d /sys/devices/system/cpu/cpu[[:digit:]]* | wc -w`
 LC_ALL=C
 
 ## removing old stuff
-rm -irf `ls -1 | egrep -v '\.zip$|\.tgz$|\.bz2$|\.gz$|\.sh$|^bin$' | xargs`
-rm -irf `find bin | egrep -v '\.pl$|^bin$' | xargs`
+rm -irf `ls -1 | egrep -v '\.zip$|\.tgz$|\.bz2$|\.gz$|\.sh$|\.pl$' | xargs`
 #find . -maxdepth 0 \! -name \*.tgz \! -name \*.bz2 \! -name \*.gz \! -name \*.sh \! -name bin -delete
 #find bin \! -name \*.pl \! -name bin -delete
 
