@@ -70,8 +70,6 @@ sub parseArgs {
 			}
 		}
 	}
-	
-	print Dumper(\%args);
 }
 
 sub prepareObjects {
