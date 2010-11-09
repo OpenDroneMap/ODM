@@ -1,9 +1,10 @@
 #!/usr/local/bin/perl
 
-$filename = $ARGV[0];
+$filename_src = $ARGV[0];
+$filename_dest = $ARGV[1];
 
-open (DEST, ">$filename.key");
-open (SRC, "$filename.key.tmp");
+open (DEST, ">$filename_src");
+open (SRC, "$filename_dest");
 
 $resolution_line = `jhead $filename.jpg | grep "Resolution"`;
 ($res_x, $res_y) = $resolution_line =~ /: ([0-9]*) x ([0-9]*)/;
