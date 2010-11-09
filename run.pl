@@ -39,7 +39,6 @@ my @resizeSizes = (orig, 2800, 2400, 2000, 1600, 1200, 1000, 800, 600);
 
 $jobOptions{srcDir} = "$CURRENT_DIR";
 
-
 sub parseArgs {
 
  ## defaults
@@ -48,24 +47,61 @@ sub parseArgs {
 	
 	for($i = 0; $i < $#ARGV; $i++) {
 		if($ARGV[$i] =~ /^--[^a-z\-]*/){
+				if($ARGV[$i] eq "--help"){
+					print "\nusgae run.pl [options] [path_to_images]";
+					print "\n";
+					print "\noptions:";
+					print "\n        --help: ";
+					print "\n                prints this screen";
+					print "\n";
+					print "\n   --resize-to: <integer>|\"orig\"";
+					print "\n                will resize the images so that the maximum width/height of the images are smaller or equal to the specified number";
+					print "\n                if \"--resize-to orig\" is used it will use the images without resizing";
+					print "\n";
+					print "\n  --start-with: \"resize\"|\"getKeypoints\"|\"match\"|\"bundler\"|\"cmvs\"|\"pmvs\"|\"poission\"";
+					print "\n                will start the sript at the specified step";
+					print "\n";
+					print "\n    --end-with: \"resize\"|\"getKeypoints\"|\"match\"|\"bundler\"|\"cmvs\"|\"pmvs\"|\"poission\"";
+					print "\n                will stop the sript after the specified step";
+					print "\n";
+					print "\n    --run-only: \"resize\"|\"getKeypoints\"|\"match\"|\"bundler\"|\"cmvs\"|\"pmvs\"|\"poission\"";
+					print "\n                will only execute the specified step";
+					print "\n                equal to --start-with <step> --end-with <step>";
+					print "\n";
+					die;
+				}
 			if($ARGV[$i+1] =~ /^--[^a-z\-]*/){
 				$args{"$ARGV[$i]"} = true;
-			} else {				
-				if(($ARGV[$i] eq "--resize-to") && ($ARGV[$i+1] eq "orig" || $ARGV[$i+1] =~ /^[0-9]*$/)){
-					$args{"--resize-to"} = $ARGV[$i+1];
+			} else {
+				if($ARGV[$i] eq "--resize-to"){
+					if($ARGV[$i+1] eq "orig" || $ARGV[$i+1] =~ /^[0-9]*$/){
+						$args{"--resize-to"} = $ARGV[$i+1];
+					} else {	die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1];	}
 				}
 				
-				if(($ARGV[$i] eq "--start-with") && ($ARGV[$i+1] eq "resize" || $ARGV[$i+1] eq "getKeypoints" || $ARGV[$i+1] eq "match" || $ARGV[$i+1] eq "bundler" || $ARGV[$i+1] eq "cmvs" || $ARGV[$i+1] eq "pmvs" || $ARGV[$i+1] eq "poission")){
-					$args{"--start-with"} = $ARGV[$i+1];
+				if($ARGV[$i] eq "--start-with"){
+					if($ARGV[$i+1] eq "resize" || $ARGV[$i+1] eq "getKeypoints" || $ARGV[$i+1] eq "match" || $ARGV[$i+1] eq "bundler" || $ARGV[$i+1] eq "cmvs" || $ARGV[$i+1] eq "pmvs" || $ARGV[$i+1] eq "poission"){
+						$args{"--start-with"} = $ARGV[$i+1];
+					} else {	
+						die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1]."\n\t valid values are \"resize\", \"getKeypoints\", \"match\", \"bundler\", \"cmvs\", \"pmvs\", \"poission\"";	
+					}
 				}
 				
-				if(($ARGV[$i] eq "--end-with") && ($ARGV[$i+1] eq "resize" || $ARGV[$i+1] eq "getKeypoints" || $ARGV[$i+1] eq "match" || $ARGV[$i+1] eq "bundler" || $ARGV[$i+1] eq "cmvs" || $ARGV[$i+1] eq "pmvs" || $ARGV[$i+1] eq "poission")){
-					$args{"--end-with"} = $ARGV[$i+1];
+				if($ARGV[$i] eq "--end-with"){
+					if($ARGV[$i+1] eq "resize" || $ARGV[$i+1] eq "getKeypoints" || $ARGV[$i+1] eq "match" || $ARGV[$i+1] eq "bundler" || $ARGV[$i+1] eq "cmvs" || $ARGV[$i+1] eq "pmvs" || $ARGV[$i+1] eq "poission"){
+						$args{"--end-with"} = $ARGV[$i+1];
+					} else {	
+						die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1]."\n\t valid values are \"resize\", \"getKeypoints\", \"match\", \"bundler\", \"cmvs\", \"pmvs\", \"poission\"";
+					}
 				}
 								
-				if(($ARGV[$i] eq "--run-only") && ($ARGV[$i+1] eq "resize" || $ARGV[$i+1] eq "getKeypoints" || $ARGV[$i+1] eq "match" || $ARGV[$i+1] eq "bundler" || $ARGV[$i+1] eq "cmvs" || $ARGV[$i+1] eq "pmvs" || $ARGV[$i+1] eq "poission")){
-					$args{"--start-with"} = $ARGV[$i+1];
-					$args{"--end-with"} = $ARGV[$i+1];
+				if($ARGV[$i] eq "--run-only"){
+					if($ARGV[$i+1] eq "resize" || $ARGV[$i+1] eq "getKeypoints" || $ARGV[$i+1] eq "match" || $ARGV[$i+1] eq "bundler" || $ARGV[$i+1] eq "cmvs" || $ARGV[$i+1] eq "pmvs" || $ARGV[$i+1] eq "poission"){
+						$args{"--start-with"} = $ARGV[$i+1];
+						$args{"--end-with"} = $ARGV[$i+1];
+					} else {	
+						die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1]."\n\t valid values are \"resize\", \"getKeypoints\", \"match\", \"bundler\", \"cmvs\", \"pmvs\", \"poission\"";
+					}
 				}
 			}
 		}
@@ -235,19 +271,22 @@ sub getKeypoints {
 	
 	$pgmJobs	= "";
 	$siftJobs	= "";
+	$vlsiftJobs	= "";
 	$gzJobs		= "";
 	
 	foreach $fileObject (@objects) {
 		if($fileObject->{isOk}){			
 			$pgmJobs	.= "convert -format pgm \"$fileObject->{step_0_resizedImage}\" \"$fileObject->{step_1_pgmFile}\"\n";
 			$siftJobs	.= "$BIN_PATH/sift < \"$fileObject->{step_1_pgmFile}\" > \"$fileObject->{step_1_keyFile}\"\n";
+			$vlsiftJobs	.= "$BIN_PATH/vlsift -v \"$fileObject->{step_1_pgmFile}\" -o \"$fileObject->{step_1_keyFile}.sift\" && perl $BIN_PATH/../convert_vlsift_to_lowesift.pl \"$fileObject->{step_1_keyFile}.sift\" \"$fileObject->{step_1_keyFile}\"\n";
 			$gzJobs		.= "gzip -f \"$fileObject->{step_1_keyFile}\"\n";
 		}
 	}
 	
-	system("echo \"$pgmJobs\"	> $jobOptions{step_1_convert}");
-	system("echo \"$siftJobs\"	> $jobOptions{step_1_sift}	 ");
-	system("echo \"$gzJobs\" 	> $jobOptions{step_1_gzip}	 ");
+	system("echo \"$pgmJobs\"		> $jobOptions{step_1_convert}");
+	#system("echo \"$siftJobs\"		> $jobOptions{step_1_sift}	 ");
+	system("echo \"$vlsiftJobs\"	> $jobOptions{step_1_sift}	 ");
+	system("echo \"$gzJobs\" 		> $jobOptions{step_1_gzip}	 ");
 	
 	system("\"$BIN_PATH/parallel\" -j+0 < \"$jobOptions{step_1_convert}\"	");
 	system("\"$BIN_PATH/parallel\" -j+0 < \"$jobOptions{step_1_sift}\"		");
