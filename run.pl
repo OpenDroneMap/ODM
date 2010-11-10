@@ -45,38 +45,17 @@ sub parseArgs {
 	$args{"--start-with"}	= "resize";
 	$args{"--end-with"}		= "poission";
 	
-	for($i = 0; $i < $#ARGV; $i++) {
+	for($i = 0; $i <= $#ARGV; $i++) {
 		if($ARGV[$i] =~ /^--[^a-z\-]*/){
-				if($ARGV[$i] eq "--help"){
-					print "\nusgae run.pl [options] [path_to_images]";
-					print "\n";
-					print "\noptions:";
-					print "\n        --help: ";
-					print "\n                prints this screen";
-					print "\n";
-					print "\n   --resize-to: <integer>|\"orig\"";
-					print "\n                will resize the images so that the maximum width/height of the images are smaller or equal to the specified number";
-					print "\n                if \"--resize-to orig\" is used it will use the images without resizing";
-					print "\n";
-					print "\n  --start-with: \"resize\"|\"getKeypoints\"|\"match\"|\"bundler\"|\"cmvs\"|\"pmvs\"|\"poission\"";
-					print "\n                will start the sript at the specified step";
-					print "\n";
-					print "\n    --end-with: \"resize\"|\"getKeypoints\"|\"match\"|\"bundler\"|\"cmvs\"|\"pmvs\"|\"poission\"";
-					print "\n                will stop the sript after the specified step";
-					print "\n";
-					print "\n    --run-only: \"resize\"|\"getKeypoints\"|\"match\"|\"bundler\"|\"cmvs\"|\"pmvs\"|\"poission\"";
-					print "\n                will only execute the specified step";
-					print "\n                equal to --start-with <step> --end-with <step>";
-					print "\n";
-					die;
-				}
-			if($ARGV[$i+1] =~ /^--[^a-z\-]*/){
-				$args{"$ARGV[$i]"} = true;
-			} else {
+			$args{"$ARGV[$i]"} = true;
+			
+			if(!($ARGV[$i+1] =~ /^--[^a-z\-]*/)) {
 				if($ARGV[$i] eq "--resize-to"){
 					if($ARGV[$i+1] eq "orig" || $ARGV[$i+1] =~ /^[0-9]*$/){
 						$args{"--resize-to"} = $ARGV[$i+1];
-					} else {	die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1];	}
+					} else {
+						die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1];
+					}
 				}
 				
 				if($ARGV[$i] eq "--start-with"){
@@ -104,7 +83,33 @@ sub parseArgs {
 					}
 				}
 			}
+			
+#			print "\n$ARGV[$i]: ".$args{"$ARGV[$i]"};
 		}
+	}
+	
+	if($args{"--help"}){		
+		print "\nusgae run.pl [options] [path_to_images]";
+		print "\n";
+		print "\noptions:";
+		print "\n        --help: ";
+		print "\n                prints this screen";
+		print "\n";
+		print "\n   --resize-to: <integer>|\"orig\"";
+		print "\n                will resize the images so that the maximum width/height of the images are smaller or equal to the specified number";
+		print "\n                if \"--resize-to orig\" is used it will use the images without resizing";
+		print "\n";
+		print "\n  --start-with: \"resize\"|\"getKeypoints\"|\"match\"|\"bundler\"|\"cmvs\"|\"pmvs\"|\"poission\"";
+		print "\n                will start the sript at the specified step";
+		print "\n";
+		print "\n    --end-with: \"resize\"|\"getKeypoints\"|\"match\"|\"bundler\"|\"cmvs\"|\"pmvs\"|\"poission\"";
+		print "\n                will stop the sript after the specified step";
+		print "\n";
+		print "\n    --run-only: \"resize\"|\"getKeypoints\"|\"match\"|\"bundler\"|\"cmvs\"|\"pmvs\"|\"poission\"";
+		print "\n                will only execute the specified step";
+		print "\n                equal to --start-with <step> --end-with <step>";
+		print "\n";
+		exit;
 	}
 }
 
@@ -209,6 +214,7 @@ sub prepareObjects {
 	
 	$jobOptions{step_1_convert}			= "$jobOptions{jobDir}/_convert.templist.txt";
 	$jobOptions{step_1_sift}			= "$jobOptions{jobDir}/_sift.templist.txt";
+	$jobOptions{step_1_vlsift}			= "$jobOptions{jobDir}/_vlsift.templist.txt";
 	$jobOptions{step_1_gzip}			= "$jobOptions{jobDir}/_gzip.templist.txt";
 	
 	$jobOptions{step_2_filelist}		= "$jobOptions{jobDir}/_filelist.templist.txt";
@@ -270,29 +276,32 @@ sub getKeypoints {
 	chdir($jobOptions{jobDir});
 	
 	$pgmJobs	= "";
-	$siftJobs	= "";
+#	$siftJobs	= "";
 	$vlsiftJobs	= "";
 	$gzJobs		= "";
 	
 	foreach $fileObject (@objects) {
 		if($fileObject->{isOk}){			
 			$pgmJobs	.= "convert -format pgm \"$fileObject->{step_0_resizedImage}\" \"$fileObject->{step_1_pgmFile}\"\n";
-			$siftJobs	.= "$BIN_PATH/sift < \"$fileObject->{step_1_pgmFile}\" > \"$fileObject->{step_1_keyFile}\"\n";
-			$vlsiftJobs	.= "$BIN_PATH/vlsift -v \"$fileObject->{step_1_pgmFile}\" -o \"$fileObject->{step_1_keyFile}.sift\" && perl $BIN_PATH/../convert_vlsift_to_lowesift.pl \"$fileObject->{step_1_keyFile}.sift\" \"$fileObject->{step_1_keyFile}\"\n";
+#			$siftJobs	.= "$BIN_PATH/sift < \"$fileObject->{step_1_pgmFile}\" > \"$fileObject->{step_1_keyFile}.lowe\"\n";
+			$vlsiftJobs	.= "$BIN_PATH/vlsift \"$fileObject->{step_1_pgmFile}\" -o \"$fileObject->{step_1_keyFile}.sift\" > /dev/null && perl $BIN_PATH/../convert_vlsift_to_lowesift.pl \"$fileObject->{base}\"\n";
 			$gzJobs		.= "gzip -f \"$fileObject->{step_1_keyFile}\"\n";
 		}
 	}
 	
 	system("echo \"$pgmJobs\"		> $jobOptions{step_1_convert}");
-	#system("echo \"$siftJobs\"		> $jobOptions{step_1_sift}	 ");
-	system("echo \"$vlsiftJobs\"	> $jobOptions{step_1_sift}	 ");
-	system("echo \"$gzJobs\" 		> $jobOptions{step_1_gzip}	 ");
+#	system("echo \"$siftJobs\"		> $jobOptions{step_1_sift}");
+	system("echo \"$vlsiftJobs\"	> $jobOptions{step_1_vlsift}");
+	system("echo \"$gzJobs\" 		> $jobOptions{step_1_gzip}");
 	
-	system("\"$BIN_PATH/parallel\" -j+0 < \"$jobOptions{step_1_convert}\"	");
-	system("\"$BIN_PATH/parallel\" -j+0 < \"$jobOptions{step_1_sift}\"		");
-	system("\"$BIN_PATH/parallel\" -j+0 < \"$jobOptions{step_1_gzip}\"		");
+	system("\"$BIN_PATH/parallel\" -j+0 < \"$jobOptions{step_1_convert}\"");
+#	system("\"$BIN_PATH/parallel\" -j+0 < \"$jobOptions{step_1_sift}\"");
+	system("\"$BIN_PATH/parallel\" -j+0 < \"$jobOptions{step_1_vlsift}\"");
+	system("\"$BIN_PATH/parallel\" -j+0 < \"$jobOptions{step_1_gzip}\"");
 	
-	system("rm -f \"$jobOptions{jobDir}/\"*.pgm");
+#	system("rm -f \"$jobOptions{jobDir}/\"*.pgm");
+#	system("rm -f \"$jobOptions{jobDir}/\"*.key");
+#	system("rm -f \"$jobOptions{jobDir}/\"*.key.sift");
 	
 	if($args{"--end-with"} ne "getKeypoints"){
 		match();
