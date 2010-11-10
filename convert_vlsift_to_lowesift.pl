@@ -20,15 +20,25 @@ seek(SRC, 0, 0);
 print DEST $linecount;
 print DEST " 128\n";
 
-printf ("found %d features in %s\n", $linecount, $filename_image);
+printf ("found %d features in %s (%d x %d)\n", $linecount, $filename_image, $res_x, $res_y);
 
 while ($record = <SRC>) {
 	@parts = split(/ /, $record);
 	
 	$counter = 0;
 	
-	$parts[1] = $res_y-$parts[1];
-	print DEST shift(@parts)." ".shift(@parts)." ".shift(@parts)." ".shift(@parts);
+	if(@parts[3] > 3.141){
+		@parts[3] -= 6.282;
+	}
+	
+	@parts[3] *= -1;
+	
+	printf (DEST "%.3f %.3f %.3f %.3f", @parts[1], @parts[0], @parts[2], @parts[3]);
+	
+	shift(@parts);
+	shift(@parts);
+	shift(@parts);
+	shift(@parts);
 	
 	for ($count = 0; $count < 128; $count += 8) {
 		@tmp			 = @parts[$count+7];
