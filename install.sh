@@ -151,7 +151,7 @@ echo "    done - `date`"
 
 # building
 echo
-echo "  - building (will take some time ...)"
+echo "  - building"
 
 sudo chown -R `id -u`:`id -g` *
 sudo chmod -R 777 *
