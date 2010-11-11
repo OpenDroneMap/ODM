@@ -34,7 +34,6 @@ echo "  - script started - `date`"
 		  CLAPACK_PATH="$TOOLS_SRC_PATH/clapack"
 		   OPENCV_PATH="$TOOLS_SRC_PATH/openCv"
 		   VLFEAT_PATH="$TOOLS_SRC_PATH/vlfeat"
-			 SIFT_PATH="$TOOLS_SRC_PATH/sift"
 		 PARALLEL_PATH="$TOOLS_SRC_PATH/parallel"
 			  PSR_PATH="$TOOLS_SRC_PATH/PoissonRecon"
 						## executables
@@ -45,16 +44,16 @@ echo "  - script started - `date`"
 				  CMVS="$TOOLS_BIN_PATH/cmvs"
 				  PMVS="$TOOLS_BIN_PATH/pmvs2"
 			 GENOPTION="$TOOLS_BIN_PATH/genOption"
-				  SIFT="$TOOLS_BIN_PATH/sift"
 			    VLSIFT="$TOOLS_BIN_PATH/vlsift"
 			  PARALLEL="$TOOLS_BIN_PATH/parallel"
 				   PSR="$TOOLS_BIN_PATH/PoissonRecon"
 	VLSIFT_TO_LOWESIFT="$TOOLS_BIN_PATH/convert_vlsift_to_lowesift.pl"
 
+## get sys vars
 ARCH=`uname -m`
 CORES=`grep -c processor /proc/cpuinfo`
 
-# prevents different (localized) output
+## prevents different (localized) output
 LC_ALL=C
 
 ## removing old stuff
@@ -78,47 +77,19 @@ echo "  > installing required packages"
 echo "    - updating"
 sudo apt-get update --assume-yes > "$TOOLS_LOG_PATH/apt-get_get.log" 2>&1
 
+##   for cmvs: libjpeg-dev libboost-dev libgsl0-dev libx11-dev libxext-dev liblapack-dev
+##for bundler: libzip-dev
+
 echo "    - installing"
 sudo apt-get install --assume-yes --install-recommends \
-	build-essential \
-	cmake \
-	curl \
-	doxygen \
-	ffmpeg \
-	g++ \
-	gcc \
-	gFortran \
-	gtk2-engines \
-	imagemagick \
-	jhead \
-	libann-dev \
-	libavformat-dev \
-	libblas-dev \
-	libblas3gf \
-	libboost-dev \
-	libcv-dev \
-	libcvaux-dev \
-	libgsl0-dev \
-	libgsl0ldbl \
-	libhighgui-dev \
-	libjasper-dev \
-	libjpeg-dev \
-	liblapack-dev \
-	liblapack3gf \
-	libpng-dev \
-	libpthread-stubs0 \
-	libpthread-stubs0-dev \
-	libtiff-dev \
-	libx11-6 \
-	libx11-data \
-	libx11-dev \
-	libxext-dev \
-	libxext6 \
-	libzip-dev \
-	opencv-doc \
-	python-opencv \
+	build-essential cmake g++ gcc gFortran perl \
+	curl wget \
 	unzip \
-	wget > "$TOOLS_LOG_PATH/apt-get_install.log" 2>&1
+	imagemagick jhead \
+	libjpeg-dev libboost-dev libgsl0-dev libx11-dev libxext-dev liblapack-dev \
+	libzip-dev \
+	libcv-dev libcvaux-dev \
+	> "$TOOLS_LOG_PATH/apt-get_install.log" 2>&1
 
 echo "  < done - `date`"
 
@@ -147,8 +118,6 @@ clapack.tgz	 http://www.netlib.org/clapack/clapack-3.2.1-CMAKE.tgz
 bundler.zip	 http://phototour.cs.washington.edu/bundler/distr/bundler-v0.4-source.zip
 graclus.tar.gz https://www.topoi.hu-berlin.de/graclus1.2.tar.gz
 PoissonRecon.zip http://www.cs.jhu.edu/~misha/Code/PoissonRecon/Version2/PoissonRecon.zip
-opencv.tar.bz2 http://sourceforge.net/projects/opencvlibrary/files/opencv-unix/2.1/OpenCV-2.1.0.tar.bz2/download
-siftDemoV4.zip  http://www.cs.ubc.ca/~lowe/keypoints/siftDemoV4.zip
 cmvs.tar.gz http://grail.cs.washington.edu/software/cmvs/cmvs-fix1.tar.gz
 EOF
 
@@ -170,7 +139,6 @@ done
 
 wait
 
-mv -f OpenCV-2.1.0			"$OPENCV_PATH"
 mv -f clapack-3.2.1-CMAKE	"$CLAPACK_PATH"
 mv -f vlfeat				"$VLFEAT_PATH"
 mv -f graclus1.2			"$GRACLUS_PATH"
@@ -178,7 +146,6 @@ mv -f bundler-v0.4-source	"$BUNDLER_PATH"
 mv -f cmvs					"$CMVS_PATH"
 mv -f parallel-20100922		"$PARALLEL_PATH"
 mv -f PoissonRecon			"$PSR_PATH"
-mv -f siftDemoV4			"$SIFT_PATH"
 
 echo "    done - `date`"
 
@@ -241,12 +208,6 @@ echo "  > parallel"
 echo "  < done - `date`"
 echo
 
-echo "  > sift"
-	cp "$SIFT_PATH/sift" "$TOOLS_BIN_PATH/"
-	
-echo "  < done - `date`"
-echo
-
 echo "  > clapack"
 	cd "$CLAPACK_PATH"
 	cp make.inc.example make.inc
@@ -263,21 +224,6 @@ echo "  > clapack"
 	
 echo "  < done - `date`"
 echo
-
-echo "  > opencv"
-	mkdir -p "$OPENCV_PATH/release"
-	cd "$OPENCV_PATH/release"
-	
-	echo "    - generating makefiles for opencv"
-	(cmake -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX="$TOOLS_PATH" ..) > "$TOOLS_LOG_PATH/opencv_1_cmake.log" 2>&1
-	
-	echo "    - building opencv"
-	make -j$CORES > "$TOOLS_LOG_PATH/opencv_3_build.log" 2>&1
-	
-	echo "    - installing opencv"
-	make install > "$TOOLS_LOG_PATH/opencv_4_install.log" 2>&1
-echo "  < done - `date`"
-echo 
 
 echo "  > vlfeat"
 	cd "$VLFEAT_PATH"
@@ -297,21 +243,6 @@ echo "  > vlfeat"
 		cp -f "$VLFEAT_PATH/bin/a64/sift" "$TOOLS_BIN_PATH/vlsift"
 		cp -f "$VLFEAT_PATH/bin/a64/libvl.so" "$TOOLS_LIB_PATH/"
 	fi
-echo "  < done - `date`"
-echo
-
-echo "  > bundler"
-	cd "$BUNDLER_PATH"
-
-	echo "    - cleaning bundler"
-	make clean > "$TOOLS_LOG_PATH/bundler_1_clean.log" 2>&1
-
-	echo "    - building bundler"
-	make -j $CORES > "$TOOLS_LOG_PATH/bundler_2_build.log" 2>&1
-
-	cp -f "$BUNDLER_PATH/bin/Bundle2PMVS" "$BUNDLER_PATH/bin/Bundle2Vis" "$BUNDLER_PATH/bin/KeyMatchFull" "$BUNDLER_PATH/bin/bundler" "$BUNDLER_PATH/bin/RadialUndistort" "$TOOLS_BIN_PATH/"
-
-	cp -f "$BUNDLER_PATH/lib/libANN_char.so" "$TOOLS_LIB_PATH/"
 echo "  < done - `date`"
 echo
 
@@ -351,6 +282,22 @@ echo "  > cmvs"
 	cp -f "$CMVS_PATH/program/main/"*so* "$TOOLS_LIB_PATH/"
 echo "  < done - `date`"
 echo
+
+echo "  > bundler"
+	cd "$BUNDLER_PATH"
+
+	echo "    - cleaning bundler"
+	make clean > "$TOOLS_LOG_PATH/bundler_1_clean.log" 2>&1
+
+	echo "    - building bundler"
+	make -j $CORES > "$TOOLS_LOG_PATH/bundler_2_build.log" 2>&1
+
+	cp -f "$BUNDLER_PATH/bin/Bundle2PMVS" "$BUNDLER_PATH/bin/Bundle2Vis" "$BUNDLER_PATH/bin/KeyMatchFull" "$BUNDLER_PATH/bin/bundler" "$BUNDLER_PATH/bin/RadialUndistort" "$TOOLS_BIN_PATH/"
+
+	cp -f "$BUNDLER_PATH/lib/libANN_char.so" "$TOOLS_LIB_PATH/"
+echo "  < done - `date`"
+echo
+
 
 cd "$TOOLS_PATH"
 
