@@ -125,7 +125,7 @@ sub parseArgs {
 					}
 				}
 				if($ARGV[$i] eq "--pmvs-threshold"){
-					if($ARGV[$i+1] =~ /^[0-9]*\.[0-9]*$/){
+					if($ARGV[$i+1] =~ /^-?[0-9]*\.?[0-9]*$/){
 						$args{$ARGV[$i]} = $ARGV[$i+1];
 					} else {
 						die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1];
@@ -170,49 +170,58 @@ sub parseArgs {
 		print "\n";
 		print "\noptions:";
 		print "\n            --help: ";
-		print "\n                prints this screen";
+		print "\n                    prints this screen";
 		print "\n";
 		
 		print "\n       --resize-to: <positive integer|\"orig\">";
-		print "\n                will resize the images so that the maximum width/height of the images are smaller or equal to the specified number";
-		print "\n                if \"--resize-to orig\" is used it will use the images without resizing";
+		print "\n           default: 1200";
+		print "\n                    will resize the images so that the maximum width/height of the images are smaller or equal to the specified number";
+		print "\n                    if \"--resize-to orig\" is used it will use the images without resizing";
 		print "\n";
 		
 		print "\n      --start-with: <\"resize\"|\"getKeypoints\"|\"match\"|\"bundler\"|\"cmvs\"|\"pmvs\">";
-		print "\n                will start the sript at the specified step";
+		print "\n           default: resize";
+		print "\n                    will start the sript at the specified step";
 		print "\n";
 		
 		print "\n        --end-with: <\"resize\"|\"getKeypoints\"|\"match\"|\"bundler\"|\"cmvs\"|\"pmvs\">";
-		print "\n                will stop the sript after the specified step";
+		print "\n           default: pmvs";
+		print "\n                    will stop the sript after the specified step";
 		print "\n";
 		
 		print "\n        --run-only: <\"resize\"|\"getKeypoints\"|\"match\"|\"bundler\"|\"cmvs\"|\"pmvs\">";
-		print "\n                will only execute the specified step";
-		print "\n                equal to --start-with <step> --end-with <step>";
+		print "\n                    will only execute the specified step";
+		print "\n                    equal to --start-with <step> --end-with <step>";
 		print "\n";
 		
 		print "\n     --force-focal: <positive float>";
-		print "\n                override the focal length information for the images";
+		print "\n                    override the focal length information for the images";
 		print "\n";
 		
 		print "\n       --force-ccd: <positive float>";
-		print "\n                override the ccd width information for the images";
+		print "\n                    override the ccd width information for the images";
 		print "\n";
 		
 		print "\n  --cmvs-maxImages: <positive integer>";
-		print "\n                override the ccd width information for the images";
-		print "\n";
-		
-		print "\n  --cmvs-maxImages: <positive integer>";
-		print "\n                the maximum number of images per cluster";
+		print "\n           default: 100";
+		print "\n                    the maximum number of images per cluster";
 		print "\n";
 		
 		print "\n      --pmvs-level: <positive integer>";
+		print "\n           default: 1";
+		
 		print "\n      --pmvs-csize: <positive integer>";
-		print "\n  --pmvs-threshold: <positive float>";
+		print "\n           default: 2";
+		
+		print "\n  --pmvs-threshold: <float: -1 <= x <= 1>";
+		print "\n           default: 0.7";
+		
 		print "\n      --pmvs-wsize: <positive integer>";
+		print "\n           default: 7";
+		
 		print "\n--pmvs-minImageNum: <positive integer>";
-		print "\n                see http://grail.cs.washington.edu/software/pmvs/documentation.html for an explanation of these parameters";
+		print "\n           default: 3";
+		print "\n                    see http://grail.cs.washington.edu/software/pmvs/documentation.html for an explanation of these parameters";
 		print "\n";
 		
 		
