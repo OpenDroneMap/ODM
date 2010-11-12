@@ -5,6 +5,7 @@ use File::Copy;
 use Data::Dumper;
 use Time::localtime;
 use Switch;
+use POSIX qw(strftime);
 
 ## the defs
 
@@ -35,8 +36,6 @@ my %jobOptions	= {
 
 my %args = {};
 
-my @resizeSizes = (orig, 2800, 2400, 2000, 1600, 1200, 1000, 800, 600);
-
 $jobOptions{srcDir} = "$CURRENT_DIR";
 
 sub run {
@@ -46,20 +45,29 @@ sub run {
 		die "\n\nquitting cause: \n\t$_[0]\nreturned with code ".$?."\n";
 	}
 }
+sub now {	
+	(@date) = localtime;
+	$date[5] += 1900;
+	$date[4]++;
+	
+	print sprintf("%0.2d-%0.2d-%0.4d %0.2d:%0.2d:%0.2d",$date[3],$date[4]++, $date[5], $date[2],$date[1],$date[0]);;
+}
 
 sub parseArgs {
 
  ## defaults
-	$args{"--start-with"}				= "resize";
-	$args{"--end-with"}					= "pmvs";
+	$args{"--resize-to"}			= "1200";
 	
-	$args{"--cmvs-maxImages"}			= 100;
+	$args{"--start-with"}			= "resize";
+	$args{"--end-with"}				= "pmvs";
 	
-	$args{"--genOption-level"}			= 1;
-	$args{"--genOption-csize"}			= 2;
-	$args{"--genOption-threshold"}		= 0.7;
-	$args{"--genOption-wsize"}			= 7;
-	$args{"--genOption-minImageNum"}	= 3;
+	$args{"--cmvs-maxImages"}		= 100;
+	
+	$args{"--pmvs-level"}			= 1;
+	$args{"--pmvs-csize"}			= 2;
+	$args{"--pmvs-threshold"}		= 0.7;
+	$args{"--pmvs-wsize"}			= 7;
+	$args{"--pmvs-minImageNum"}		= 3;
 	
 	for($i = 0; $i <= $#ARGV; $i++) {
 		if($ARGV[$i] =~ /^--[^a-z\-]*/){
@@ -102,36 +110,51 @@ sub parseArgs {
 						die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1];
 					}
 				}
-				if($ARGV[$i] eq "--genOption-level"){
+				if($ARGV[$i] eq "--pmvs-level"){
 					if($ARGV[$i+1] =~ /^[0-9]*$/){
 						$args{$ARGV[$i]} = $ARGV[$i+1];
 					} else {
 						die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1];
 					}
 				}
-				if($ARGV[$i] eq "--genOption-csize"){
+				if($ARGV[$i] eq "--pmvs-csize"){
 					if($ARGV[$i+1] =~ /^[0-9]*$/){
 						$args{$ARGV[$i]} = $ARGV[$i+1];
 					} else {
 						die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1];
 					}
 				}
-				if($ARGV[$i] eq "--genOption-threshold"){
+				if($ARGV[$i] eq "--pmvs-threshold"){
+					if($ARGV[$i+1] =~ /^[0-9]*\.[0-9]*$/){
+						$args{$ARGV[$i]} = $ARGV[$i+1];
+					} else {
+						die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1];
+					}
+				}
+				if($ARGV[$i] eq "--pmvs-wsize"){
 					if($ARGV[$i+1] =~ /^[0-9]*$/){
 						$args{$ARGV[$i]} = $ARGV[$i+1];
 					} else {
 						die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1];
 					}
 				}
-				if($ARGV[$i] eq "--genOption-wsize"){
+				if($ARGV[$i] eq "--pmvs-minImageNum"){
 					if($ARGV[$i+1] =~ /^[0-9]*$/){
 						$args{$ARGV[$i]} = $ARGV[$i+1];
 					} else {
 						die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1];
 					}
 				}
-				if($ARGV[$i] eq "--genOption-minImageNum"){
-					if($ARGV[$i+1] =~ /^[0-9]*$/){
+				
+				if($ARGV[$i] eq "--force-focal"){
+					if($ARGV[$i+1] =~ /^[0-9]*\.?[0-9]*$/){
+						$args{$ARGV[$i]} = $ARGV[$i+1];
+					} else {
+						die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1];
+					}
+				}
+				if($ARGV[$i] eq "--force-ccd"){
+					if($ARGV[$i+1] =~ /^[0-9]*\.?[0-9]*$/){
 						$args{$ARGV[$i]} = $ARGV[$i+1];
 					} else {
 						die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1];
@@ -142,33 +165,77 @@ sub parseArgs {
 	}
 	
 	if($args{"--help"}){		
-		print "\nusgae run.pl [options] [path_to_images]";
+		print "\nusgae: run.pl [options]";
+		print "\nit should be run from the folder contining the images to which should reconstructed";
 		print "\n";
 		print "\noptions:";
-		print "\n        --help: ";
+		print "\n            --help: ";
 		print "\n                prints this screen";
 		print "\n";
-		print "\n   --resize-to: <integer>|\"orig\"";
+		
+		print "\n       --resize-to: <positive integer|\"orig\">";
 		print "\n                will resize the images so that the maximum width/height of the images are smaller or equal to the specified number";
 		print "\n                if \"--resize-to orig\" is used it will use the images without resizing";
 		print "\n";
-		print "\n  --start-with: \"resize\"|\"getKeypoints\"|\"match\"|\"bundler\"|\"cmvs\"|\"pmvs\"";
+		
+		print "\n      --start-with: <\"resize\"|\"getKeypoints\"|\"match\"|\"bundler\"|\"cmvs\"|\"pmvs\">";
 		print "\n                will start the sript at the specified step";
 		print "\n";
-		print "\n    --end-with: \"resize\"|\"getKeypoints\"|\"match\"|\"bundler\"|\"cmvs\"|\"pmvs\"";
+		
+		print "\n        --end-with: <\"resize\"|\"getKeypoints\"|\"match\"|\"bundler\"|\"cmvs\"|\"pmvs\">";
 		print "\n                will stop the sript after the specified step";
 		print "\n";
-		print "\n    --run-only: \"resize\"|\"getKeypoints\"|\"match\"|\"bundler\"|\"cmvs\"|\"pmvs\"";
+		
+		print "\n        --run-only: <\"resize\"|\"getKeypoints\"|\"match\"|\"bundler\"|\"cmvs\"|\"pmvs\">";
 		print "\n                will only execute the specified step";
 		print "\n                equal to --start-with <step> --end-with <step>";
 		print "\n";
+		
+		print "\n     --force-focal: <positive float>";
+		print "\n                override the focal length information for the images";
+		print "\n";
+		
+		print "\n       --force-ccd: <positive float>";
+		print "\n                override the ccd width information for the images";
+		print "\n";
+		
+		print "\n  --cmvs-maxImages: <positive integer>";
+		print "\n                override the ccd width information for the images";
+		print "\n";
+		
+		print "\n  --cmvs-maxImages: <positive integer>";
+		print "\n                the maximum number of images per cluster";
+		print "\n";
+		
+		print "\n      --pmvs-level: <positive integer>";
+		print "\n      --pmvs-csize: <positive integer>";
+		print "\n  --pmvs-threshold: <positive float>";
+		print "\n      --pmvs-wsize: <positive integer>";
+		print "\n--pmvs-minImageNum: <positive integer>";
+		print "\n                see http://grail.cs.washington.edu/software/pmvs/documentation.html for an explanation of these parameters";
+		print "\n";
+		
+		
 		exit;
 	}
+	
+	print "\n  - configuration:";
+	
+	foreach $args_key (sort keys %args) {
+		if($args{$args_key} ne ""){
+			print "\n    $args_key: $args{$args_key}";
+		}
+	}
+	
+	print "\n";
+	print "\n";
 }
 
 sub prepareObjects {
  ## get the source list	
 	@source_files = `ls -1 | egrep "\.[jJ]{1}[pP]{1}[eE]{0,1}[gG]{1}"`;
+	
+	print "\n  - source files - "; now(); print "\n";
 
 	foreach $file (@source_files) {
 		chomp($file);
@@ -182,7 +249,7 @@ sub prepareObjects {
 		my %fileObject = {};
 	
 		chomp(($fileObject{src})		= $file);
-		chomp(($fileObject{base})		= $file);		
+		chomp(($fileObject{base})		= $file);
 		$fileObject{base}				=~ s/\.[^\.]*$//;
 	
 		chomp(($fileObject{make})		= $file_make =~ /: ([^\n\r]*)/);
@@ -191,12 +258,21 @@ sub prepareObjects {
 		$fileObject{id}					= $fileObject{make}." ".$fileObject{model};
 	
 		($fileObject{width}, $fileObject{height})	= $file_resolution =~ /: ([0-9]*) x ([0-9]*)/;
-	
-		($fileObject{focal})			= $file_focal =~ /:[\ ]*([0-9\.]*)mm/;
-		($fileObject{ccd})				= $file_ccd =~ /:[\ ]*([0-9\.]*)mm/;
-	
-		if(!$fileObject{ccd}){
-			$fileObject{ccd} = $ccdWidths{$fileObject{id}};
+			
+		if(!$args{"--force-focal"}){
+			($fileObject{focal})	= $file_focal =~ /:[\ ]*([0-9\.]*)mm/;
+		} else {
+			$fileObject{focal}		= $args{"--force-focal"};
+		}
+		
+		if(!$args{"--force-ccd"}){
+			($fileObject{ccd})		= $file_ccd =~ /:[\ ]*([0-9\.]*)mm/;
+			
+			if(!$fileObject{ccd}){;
+				$fileObject{ccd}	= $ccdWidths{$fileObject{id}};
+			}
+		} else {
+			$fileObject{ccd}		= $args{"--force-ccd"};
 		}
 	
 		if($fileObject{ccd} && $fileObject{focal} && $fileObject{width} && $fileObject{height}){
@@ -208,11 +284,13 @@ sub prepareObjects {
 			
 			$fileObject{isOk} = true;
 			$objectStats{good}++;
+			
+			print "\n     using $fileObject{src} 	dimensions: $fileObject{width}x$fileObject{height} / focal: $fileObject{focal}mm / ccd: $fileObject{ccd}mm";
 		} else {
 			$fileObject{isOk} = false;
 			$objectStats{bad}++;
 			
-			print "  no CCD width or focal length found for $fileObject{src} - ($fileObject{id})\n";
+			print "\n    no CCD width or focal length found for $fileObject{src}";
 		}
 	
 		$objectStats{count}++;
@@ -226,37 +304,20 @@ sub prepareObjects {
 		$objectStats{maxHeight} = $objectStats{maxHeight} > $fileObject{height} ? $objectStats{maxHeight} : $fileObject{height};
 			
 		push(@objects, \%fileObject);
-	}	
-	
-	print "\n  found $objectStats{good} usable images";
-	
-	if(!$args{"--resize-to"}){
-		print "\n> please choose a max resolution to shrink the files to";
-		print "\n  current images width ".($objectStats{minWidth} == $objectStats{maxWidth} ? "$objectStats{maxWidth}px" : " $objectStats{minWidth}px - $objectStats{maxWidth}px");
-		print "\n  current images height ".($objectStats{minHeight} == $objectStats{maxHeight} ? "$objectStats{maxHeight}px" : "$objectStats{minHeight}px - $objectStats{maxHeight}px");
-		print "\n";
-		print "\n    [0] original resolution << default";
-		print "\n    [1] $resizeSizes[1] x $resizeSizes[1]px";
-		print "\n    [2] $resizeSizes[2] x $resizeSizes[2]px";
-		print "\n    [3] $resizeSizes[3] x $resizeSizes[3]px";
-		print "\n    [4] $resizeSizes[4] x $resizeSizes[4]px";
-		print "\n    [5] $resizeSizes[5] x $resizeSizes[5]px";
-		print "\n    [6] $resizeSizes[6] x $resizeSizes[6]px";
-		print "\n    [7]  $resizeSizes[7] x $resizeSizes[7]px";
-		print "\n    [8]  $resizeSizes[8] x $resizeSizes[8]px";
-		print "\n";
-		print "\n   [0-9] > ";
-	
-		chomp($resizeInput = <>);
-	
-		if($resizeInput >= 0 && $resizeInput < 10){
-			$jobOptions{resizeTo} = $resizeSizes[$resizeInput];
-		} else {
-			$jobOptions{resizeTo} = $resizeSizes[4];
-		}
-	} else {
-		$jobOptions{resizeTo} = $args{"--resize-to"};
 	}
+	
+	
+	
+	if(!$objectStats{good}){
+		print "\n\n    found no usable images - quitting\n";
+		die;
+	} else {
+		print "\n\n    found $objectStats{good} usable images";
+	}
+	
+	print "\n";
+	
+	$jobOptions{resizeTo} = $args{"--resize-to"};
 
 	print "\n  using max image size of $jobOptions{resizeTo} x $jobOptions{resizeTo}";	
 	
@@ -289,7 +350,7 @@ sub prepareObjects {
 
 sub resize {
 	print "\n";
-	print "\n  - preparing images - ";
+	print "\n  - preparing images - "; now(); print "\n";
 	print "\n";
 
 	chdir($jobOptions{jobDir});
@@ -320,7 +381,7 @@ sub resize {
 
 sub getKeypoints {
 	print "\n";
-	print "\n  - finding keypoints - ";
+	print "\n  - finding keypoints - "; now(); print "\n";
 	print "\n\n";
 	
 	chdir($jobOptions{jobDir});
@@ -348,7 +409,7 @@ sub getKeypoints {
 
 sub match {
 	print "\n";
-	print "\n  - matching keypoints - ";
+	print "\n  - matching keypoints - "; now(); print "\n";
 	print "\n";
 
 	chdir($jobOptions{jobDir});
@@ -373,7 +434,7 @@ sub match {
 
 sub bundler {
 	print "\n";
-	print "\n  - running bundler - ";
+	print "\n  - running bundler - "; now(); print "\n";
 	print "\n";
 
 	chdir($jobOptions{jobDir});
@@ -438,13 +499,13 @@ sub bundler {
 
 sub cmvs {
 	print "\n";
-	print "\n  - running cmvs - ";
+	print "\n  - running cmvs - "; now(); print "\n";
 	print "\n";
 
 	chdir($jobOptions{jobDir});
 	
 	run("\"$BIN_PATH/cmvs\" pmvs/ $args{'--cmvs-maxImages'} $CORES");
-	run("\"$BIN_PATH/genOption\" pmvs/ $args{'--genOption-level'} $args{'--genOption-csize'} $args{'--genOption-threshold'} $args{'--genOption-wsize'} $args{'--genOption-minImageNum'} $CORES");
+	run("\"$BIN_PATH/genOption\" pmvs/ $args{'--pmvs-level'} $args{'--pmvs-csize'} $args{'--pmvs-threshold'} $args{'--pmvs-wsize'} $args{'--pmvs-minImageNum'} $CORES");
 	
 	if($args{"--end-with"} ne "cmvs"){
 		pmvs();
@@ -478,5 +539,5 @@ switch ($args{"--start-with"}) {
 }
 
 print "\n";
-print "\n  - done - ";
+print "\n  - done - "; now(); print "\n";
 print "\n";
