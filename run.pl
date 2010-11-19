@@ -10,8 +10,7 @@ use POSIX qw(strftime);
 ## the defs
 
 chomp($CURRENT_DIR  = `pwd`);
-chomp($BIN_PATH_REL = $CURRENT_DIR."/".`dirname $0`);
-chomp($BIN_PATH     = `readlink -f $BIN_PATH_REL`);
+chomp($BIN_PATH     = `dirname $0`);
 chomp($OS           = `uname -o`);
 chomp($CORES        = `ls -d /sys/devices/system/cpu/cpu[[:digit:]]* | wc -w`);
 
