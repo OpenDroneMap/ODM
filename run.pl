@@ -2,6 +2,7 @@
 
 use File::Basename;
 use File::Copy;
+use File::Spec;
 use Data::Dumper;
 use Time::localtime;
 use Switch;
@@ -10,13 +11,19 @@ use POSIX qw(strftime);
 ## the defs
 
 chomp($CURRENT_DIR  = `pwd`);
-chomp($BIN_PATH     = `dirname $0`);
+chomp($BIN_PATH_REL = `dirname $0`);
 chomp($OS           = `uname -o`);
 chomp($CORES        = `ls -d /sys/devices/system/cpu/cpu[[:digit:]]* | wc -w`);
 
-require "$BIN_PATH/ccd_defs.pl";
+if(!File::Spec->file_name_is_absolute($BIN_PATH_REL)){
+	$BIN_PATH_ABS = File::Spec->rel2abs($BIN_PATH_REL);
+} else {
+	$BIN_PATH_ABS = File::Spec->rel2abs($BIN_PATH_REL);
+}
 
-$BIN_PATH = $BIN_PATH."/bin";
+require "$BIN_PATH_ABS/ccd_defs.pl";
+
+$BIN_PATH = $BIN_PATH_ABS."/bin";
 
 my %objectStats    = {
     count           => 0,
@@ -400,7 +407,7 @@ sub getKeypoints {
     foreach $fileObject (@objects) {
         if($fileObject->{isOk}){
             $vlsiftJobs    .= "convert -format pgm \"$fileObject->{step_0_resizedImage}\" \"$fileObject->{step_1_pgmFile}\"";
-            $vlsiftJobs    .= " && $BIN_PATH/vlsift \"$fileObject->{step_1_pgmFile}\" -o \"$fileObject->{step_1_keyFile}.sift\" > /dev/null && perl $BIN_PATH/../convert_vlsift_to_lowesift.pl \"$fileObject->{base}\"";
+            $vlsiftJobs    .= " && $BIN_PATH/vlsift \"$fileObject->{step_1_pgmFile}\" -o \"$fileObject->{step_1_keyFile}.sift\" > /dev/null && perl $BIN_PATH/../convert_vlsift_to_lowesift.pl \"$jobOptions{jobDir}/$fileObject->{base}\"";
             $vlsiftJobs    .= " && gzip -f \"$fileObject->{step_1_keyFile}\"";
             $vlsiftJobs    .= " && rm -f \"$fileObject->{step_1_pgmFile}\"";
             $vlsiftJobs    .= " && rm -f \"$fileObject->{step_1_keyFile}.sift\"\n";
