@@ -74,7 +74,7 @@ sub parseArgs {
     $args{"--pmvs-csize"}            = 2;
     $args{"--pmvs-threshold"}        = 0.7;
     $args{"--pmvs-wsize"}            = 7;
-    $args{"--pmvs-minImageNum"}       = 3;
+    $args{"--pmvs-minImageNum"}      = 3;
     
     for($i = 0; $i <= $#ARGV; $i++) {
         if($ARGV[$i] =~ /^--[^a-z\-]*/){
@@ -231,7 +231,6 @@ sub parseArgs {
         print "\n                    see http://grail.cs.washington.edu/software/pmvs/documentation.html for an explanation of these parameters";
         print "\n";
         
-        
         exit;
     }
     
@@ -256,13 +255,13 @@ sub prepareObjects {
     foreach $file (@source_files) {
         chomp($file);
         
-        chomp($file_make        = `jhead $file | grep "Camera make"`);
-        chomp($file_model       = `jhead $file | grep "Camera model"`);
-        chomp($file_focal       = `jhead $file | grep "Focal length"`);
-        chomp($file_ccd         = `jhead $file | grep "CCD width"`);
-        chomp($file_resolution  = `jhead $file | grep "Resolution"`);
+        chomp($file_make        = `jhead \"$file\" | grep "Camera make"`);
+        chomp($file_model       = `jhead \"$file\" | grep "Camera model"`);
+        chomp($file_focal       = `jhead \"$file\" | grep "Focal length"`);
+        chomp($file_ccd         = `jhead \"$file\" | grep "CCD width"`);
+        chomp($file_resolution  = `jhead \"$file\" | grep "Resolution"`);
     
-        my %fileObject = {};			
+        my %fileObject = {};
     
         chomp(($fileObject{src})        = $file);
         chomp(($fileObject{base})       = $file);
@@ -270,6 +269,9 @@ sub prepareObjects {
     
         chomp(($fileObject{make})       = $file_make =~ /: ([^\n\r]*)/);
         chomp(($fileObject{model})      = $file_model =~ /: ([^\n\r]*)/);
+        
+        $fileObject{make} =~ s/^\s+//;		$fileObject{make} =~  s/\s+$//;
+        $fileObject{model} =~ s/^\s+//;		$fileObject{model} =~  s/\s+$//;
     
         $fileObject{id}                 = $fileObject{make}." ".$fileObject{model};
     
@@ -306,7 +308,7 @@ sub prepareObjects {
             $fileObject{isOk} = false;
             $objectStats{bad}++;
             
-            print "\n    no CCD width or focal length found for $fileObject{src}";
+            print "\n    no CCD width or focal length found for $fileObject{src} - camera: \"$fileObject{id}\"";
         }
     
         $objectStats{count}++;
@@ -384,7 +386,7 @@ sub resize {
                 copy("$CURRENT_DIR/$fileObject->{src}", "$fileObject->{step_0_resizedImage}");
             }
             
-            chomp($file_resolution    = `jhead $fileObject->{step_0_resizedImage} | grep "Resolution"`);
+            chomp($file_resolution    = `jhead \"$fileObject->{step_0_resizedImage}\" | grep "Resolution"`);
             ($fileObject->{width}, $fileObject->{height})    = $file_resolution =~ /: ([0-9]*) x ([0-9]*)/;
             print "\t ($fileObject->{width} x $fileObject->{height})";
         }
@@ -406,15 +408,25 @@ sub getKeypoints {
     
     foreach $fileObject (@objects) {
         if($fileObject->{isOk}){
-            $vlsiftJobs    .= "convert -format pgm \"$fileObject->{step_0_resizedImage}\" \"$fileObject->{step_1_pgmFile}\"";
-            $vlsiftJobs    .= " && $BIN_PATH/vlsift \"$fileObject->{step_1_pgmFile}\" -o \"$fileObject->{step_1_keyFile}.sift\" > /dev/null && perl $BIN_PATH/../convert_vlsift_to_lowesift.pl \"$jobOptions{jobDir}/$fileObject->{base}\"";
-            $vlsiftJobs    .= " && gzip -f \"$fileObject->{step_1_keyFile}\"";
-            $vlsiftJobs    .= " && rm -f \"$fileObject->{step_1_pgmFile}\"";
-            $vlsiftJobs    .= " && rm -f \"$fileObject->{step_1_keyFile}.sift\"\n";
+            if($args{"--lowe-sift"}){
+                $vlsiftJobs    .= "convert -format pgm \"$fileObject->{step_0_resizedImage}\" \"$fileObject->{step_1_pgmFile}\"";
+                $vlsiftJobs    .= " && \"$BIN_PATH/sift\" < \"$fileObject->{step_1_pgmFile}\" > \"$fileObject->{step_1_keyFile}\"";
+                $vlsiftJobs    .= " && gzip -f \"$fileObject->{step_1_keyFile}\"";
+                $vlsiftJobs    .= " && rm -f \"$fileObject->{step_1_pgmFile}\"";
+                $vlsiftJobs    .= " && rm -f \"$fileObject->{step_1_keyFile}.sift\"\n";
+            } else {
+                $vlsiftJobs    .= "convert -format pgm \"$fileObject->{step_0_resizedImage}\" \"$fileObject->{step_1_pgmFile}\"";
+                $vlsiftJobs    .= " && \"$BIN_PATH/vlsift\" \"$fileObject->{step_1_pgmFile}\" -o \"$fileObject->{step_1_keyFile}.sift\" > /dev/null && perl \"$BIN_PATH/../convert_vlsift_to_lowesift.pl\" \"$jobOptions{jobDir}/$fileObject->{base}\"";
+                $vlsiftJobs    .= " && gzip -f \"$fileObject->{step_1_keyFile}\"";
+                $vlsiftJobs    .= " && rm -f \"$fileObject->{step_1_pgmFile}\"";
+                $vlsiftJobs    .= " && rm -f \"$fileObject->{step_1_keyFile}.sift\"\n";
+            }
         }
     }
     
-    system("echo \"$vlsiftJobs\"    > $jobOptions{step_1_vlsift}");
+    open (SIFT_DEST, ">$jobOptions{step_1_vlsift}");
+    print SIFT_DEST $vlsiftJobs;
+    close(SIFT_DEST);
     
     run("\"$BIN_PATH/parallel\" --halt-on-error 1 -j+0 < \"$jobOptions{step_1_vlsift}\"");
     
@@ -435,12 +447,15 @@ sub match {
     foreach $fileObject (@objects) {
         if($fileObject->{isOk}){
             if($fileObject->{isOk}){
-                $filesList        .= "\"$fileObject->{step_1_keyFile}\"\n";
+                $filesList        .= "$fileObject->{step_1_keyFile}\n";
             }
         }
     }
     
-    system("echo \"$filesList\"     > $jobOptions{step_2_filelist}     ");
+    open (MATCH_DEST, ">$jobOptions{step_2_filelist}");
+    print MATCH_DEST $filesList;
+    close(MATCH_DEST);
+    
     run("\"$BIN_PATH/KeyMatchFull\" \"$jobOptions{step_2_filelist}\" \"$jobOptions{step_2_matches}\"    ");
     
     if($args{"--end-with"} ne "match"){
@@ -485,7 +500,10 @@ sub bundler {
     $bundlerOptions .= "--run_bundle";
         
     system("echo \"$bundlerOptions\" > \"$jobOptions{step_3_bundlerOptions}\"");
-    system("echo \"$filesList\" > \"$jobOptions{step_3_filelist}\"");
+
+    open (BUNDLER_DEST, ">$jobOptions{step_3_filelist}");
+    print BUNDLER_DEST $filesList;
+    close(BUNDLER_DEST);
     
     run("\"$BIN_PATH/bundler\" \"$jobOptions{step_3_filelist}\" --options_file \"$jobOptions{step_3_bundlerOptions}\" > bundle/out");
     run("\"$BIN_PATH/Bundle2PMVS\" \"$jobOptions{step_3_filelist}\" bundle/bundle.out");
