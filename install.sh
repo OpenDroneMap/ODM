@@ -5,7 +5,7 @@ set -o errexit
 
 echo 
 echo "     created by Daniel Schwarz/daniel.schwarz@topoi.org"
-echo "     released under Creative Commons/CC-BY-NC"
+echo "     released under Creative Commons/CC-BY"
 echo "     Attribution Non-Commercial"
 echo
 echo "     if the script doesn't finish properly"
