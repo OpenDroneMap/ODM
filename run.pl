@@ -1,5 +1,11 @@
 #!/usr/bin/perl
 
+##
+##  created by Daniel Schwarz/daniel.schwarz@topoi.org
+##  released under Creative Commons/CC-BY
+##  Attribution
+##
+
 use File::Basename;
 use File::Copy;
 use File::Spec;
