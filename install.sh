@@ -240,8 +240,8 @@ echo "  > vlfeat"
 	fi
 
 	if [ "$ARCH" = "x86_64" ]; then
-		cp -f "$VLFEAT_PATH/bin/a64/sift" "$TOOLS_BIN_PATH/vlsift"
-		cp -f "$VLFEAT_PATH/bin/a64/libvl.so" "$TOOLS_LIB_PATH/"
+		cp -f "$VLFEAT_PATH/bin/glnxa64/sift" "$TOOLS_BIN_PATH/vlsift"
+		cp -f "$VLFEAT_PATH/bin/glnxa64/libvl.so" "$TOOLS_LIB_PATH/"
 	fi
 echo "  < done - `date`"
 echo
