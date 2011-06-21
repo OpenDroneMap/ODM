@@ -82,14 +82,9 @@ echo "  > installing required packages"
 echo "    - updating"
 sudo yum update -y > "$TOOLS_LOG_PATH/apt-get_get.log" 2>&1
 
-##   for cmvs: libjpeg-dev libboost-dev libgsl0-dev libx11-dev libxext-dev liblapack-dev
-##for bundler: libzip-dev
-
-## yum install -y gcc-c++ compat-gcc-32 compat-gcc-32-c++
-
 echo "    - installing"
 yum install -y \
-	cmake gcc gcc-c++ compat-gcc-32 compat-gcc-32-c++gcc-gfortran perl \
+	cmake gcc gcc-c++ compat-gcc-32 compat-gcc-32-c++ gcc-gfortran perl \
 	curl wget \
 	unzip \
 	ImageMagick jhead \
