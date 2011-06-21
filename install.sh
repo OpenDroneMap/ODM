@@ -235,8 +235,8 @@ echo "  > vlfeat"
 	make > "$TOOLS_LOG_PATH/vlfeat_2_build.log" 2>&1
 
 	if [ "$ARCH" = "i686" ]; then
-		cp -f "$VLFEAT_PATH/bin/glx/sift" "$TOOLS_BIN_PATH/vlsift"
-		cp -f "$VLFEAT_PATH/bin/glx/libvl.so" "$TOOLS_LIB_PATH/"
+		cp -f "$VLFEAT_PATH/bin/glnx32/sift" "$TOOLS_BIN_PATH/vlsift"
+		cp -f "$VLFEAT_PATH/bin/glnx32/libvl.so" "$TOOLS_LIB_PATH/"
 	fi
 
 	if [ "$ARCH" = "x86_64" ]; then
