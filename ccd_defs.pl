@@ -14,6 +14,7 @@
      "Canon Canon DIGITAL IXUS 750"     => 7.176,  # 1/1.8"
      "Canon Canon DIGITAL IXUS 800 IS"  => 5.76,   # 1/2.5"
      "Canon Canon DIGITAL IXUS II"      => 5.27,   # 1/2.7"
+     "Canon Canon DIGITAL IXUS 430"     => 6.18,  # 1/2.3"
      "Canon Canon EOS 10D"              => 22.7,
      "Canon Canon EOS-1D Mark II"       => 28.7,
      "Canon Canon EOS-1Ds Mark II"      => 35.95,   
@@ -160,6 +161,7 @@
      "NIKON CORPORATION NIKON D70"      => 23.7,
      "NIKON CORPORATION NIKON D70s"     => 23.7,
      "NIKON CORPORATION NIKON D80"      => 23.6,
+     "NIKON CORPORATION NIKON D700"     => 36.0,
      "NIKON E2500"                      => 5.27,   # 1/2.7"
      "NIKON E2500"                      => 5.27,   # 1/2.7"
      "NIKON E3100"                      => 5.27,   # 1/2.7"
@@ -195,7 +197,8 @@
      "OLYMPUS CORPORATION X250,D560Z,C350Z" => 5.76, # 1/2.5" 
      "OLYMPUS CORPORATION     X-3,C-60Z" => 7.176, # 1.8"
      "OLYMPUS CORPORATION X400,D580Z,C460Z" => 5.27,  # 1/2.7"
-     "OLYMPUS IMAGING CORP.   E-500" => 17.3,  # 4/3?
+     "OLYMPUS IMAGING CORP. E-500" => 17.3,  # 4/3?
+     "OLYMPUS IMAGING CORP. E-510" => 17.3,
      "OLYMPUS IMAGING CORP.   FE115,X715" => 5.76, # 1/2.5"
      "OLYMPUS IMAGING CORP. SP310"      => 7.176, # 1/1.8"
      "OLYMPUS IMAGING CORP.   SP510UZ"  => 5.75,   # 1/2.5"
@@ -228,6 +231,7 @@
      "Panasonic DMC-LZ2"                => 5.76,   # 1/2.5"
      "Panasonic DMC-TZ1"                => 5.75,   # 1/2.5"
      "Panasonic DMC-TZ3"                => 5.68,   # 1/2.35"
+     "Panasonic DMC-TZ5"		=> 6.12,   # 1/2.33"
      "PENTAX Corporation  PENTAX *ist DL"   => 23.5,
      "PENTAX Corporation  PENTAX *ist DS2"   => 23.5,
      "PENTAX Corporation  PENTAX *ist DS"   => 23.5,
