@@ -120,7 +120,7 @@ clapack.tgz	 http://www.netlib.org/clapack/clapack-3.2.1-CMAKE.tgz
 bundler.zip	 http://phototour.cs.washington.edu/bundler/distr/bundler-v0.4-source.zip
 graclus.tar.gz https://www.topoi.hu-berlin.de/graclus1.2.tar.gz
 PoissonRecon.zip http://www.cs.jhu.edu/~misha/Code/PoissonRecon/Version2/PoissonRecon.zip
-cmvs.tar.gz http://grail.cs.washington.edu/software/cmvs/cmvs-fix1.tar.gz
+cmvs.tar.gz http://grail.cs.washington.edu/software/cmvs/cmvs-fix2.tar.gz
 EOF
 
 echo "  < done - `date`"

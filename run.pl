@@ -39,7 +39,7 @@ my %objectStats    = {
     minHeight       => 0,
     maxWidth        => 0,
     maxHeight       => 0
-					
+
 };
 
 my %jobOptions    = {
@@ -352,6 +352,8 @@ sub prepareObjects {
     $jobOptions{step_1_gzip}            = "$jobOptions{jobDir}/_gzip.templist.txt";
     
     $jobOptions{step_2_filelist}        = "$jobOptions{jobDir}/_filelist.templist.txt";
+    $jobOptions{step_2_macthes_jobs}    = "$jobOptions{jobDir}/_matches_jobs.templist.txt";
+    $jobOptions{step_2_matches_dir}  	= "$jobOptions{jobDir}/matches";
     $jobOptions{step_2_matches}         = "$jobOptions{jobDir}/matches.init.txt";
     
     $jobOptions{step_3_filelist}        = "$jobOptions{jobDir}/list.txt";
@@ -381,16 +383,20 @@ sub resize {
     
     foreach $fileObject (@objects) {
         if($fileObject->{isOk}){
-            if($jobOptions{resizeTo} != "orig" && (($fileObject->{width} > $jobOptions{resizeTo}) || ($fileObject->{height} > $jobOptions{resizeTo}))){
-                print "\n    resising $fileObject->{src} \tto $fileObject->{step_0_resizedImage}";
+			unless (-e "$fileObject->{step_0_resizedImage}"){
+          	  if($jobOptions{resizeTo} != "orig" && (($fileObject->{width} > $jobOptions{resizeTo}) || ($fileObject->{height} > $jobOptions{resizeTo}))){
+	                print "\n    resising $fileObject->{src} \tto $fileObject->{step_0_resizedImage}";
                 
-                run("convert -resize $jobOptions{resizeTo}x$jobOptions{resizeTo} -quality 100 \"$jobOptions{srcDir}/$fileObject->{src}\" \"$fileObject->{step_0_resizedImage}\"");
+	                run("convert -resize $jobOptions{resizeTo}x$jobOptions{resizeTo} -quality 100 \"$jobOptions{srcDir}/$fileObject->{src}\" \"$fileObject->{step_0_resizedImage}\"");
 
-            } else {
-                print "\n     copying $fileObject->{src} \tto $fileObject->{step_0_resizedImage}";
+	            } else {
+	                print "\n     copying $fileObject->{src} \tto $fileObject->{step_0_resizedImage}";
                 
-                copy("$CURRENT_DIR/$fileObject->{src}", "$fileObject->{step_0_resizedImage}");
-            }
+	                copy("$CURRENT_DIR/$fileObject->{src}", "$fileObject->{step_0_resizedImage}");
+	            }
+			} else {	
+	          	print "\n     using existing $fileObject->{src} \tto $fileObject->{step_0_resizedImage}";
+			}
             
             chomp($file_resolution    = `jhead \"$fileObject->{step_0_resizedImage}\" | grep "Resolution"`);
             ($fileObject->{width}, $fileObject->{height})    = $file_resolution =~ /: ([0-9]*) x ([0-9]*)/;
@@ -421,11 +427,15 @@ sub getKeypoints {
                 $vlsiftJobs    .= " && rm -f \"$fileObject->{step_1_pgmFile}\"";
                 $vlsiftJobs    .= " && rm -f \"$fileObject->{step_1_keyFile}.sift\"\n";
             } else {
-                $vlsiftJobs    .= "convert -format pgm \"$fileObject->{step_0_resizedImage}\" \"$fileObject->{step_1_pgmFile}\"";
-                $vlsiftJobs    .= " && \"$BIN_PATH/vlsift\" \"$fileObject->{step_1_pgmFile}\" -o \"$fileObject->{step_1_keyFile}.sift\" > /dev/null && perl \"$BIN_PATH/../convert_vlsift_to_lowesift.pl\" \"$jobOptions{jobDir}/$fileObject->{base}\"";
-                $vlsiftJobs    .= " && gzip -f \"$fileObject->{step_1_keyFile}\"";
-                $vlsiftJobs    .= " && rm -f \"$fileObject->{step_1_pgmFile}\"";
-                $vlsiftJobs    .= " && rm -f \"$fileObject->{step_1_keyFile}.sift\"\n";
+				unless (-e "$jobOptions{jobDir}/$fileObject->{base}.key.bin") {
+	                $vlsiftJobs    .= "convert -format pgm \"$fileObject->{step_0_resizedImage}\" \"$fileObject->{step_1_pgmFile}\"";
+	                $vlsiftJobs    .= " && \"$BIN_PATH/vlsift\" \"$fileObject->{step_1_pgmFile}\" -o \"$fileObject->{step_1_keyFile}.sift\" > /dev/null && perl \"$BIN_PATH/../convert_vlsift_to_lowesift.pl\" \"$jobOptions{jobDir}/$fileObject->{base}\"";
+	             #   $vlsiftJobs    .= " && gzip -f \"$fileObject->{step_1_keyFile}\"";
+	                $vlsiftJobs    .= " && rm -f \"$fileObject->{step_1_pgmFile}\"";
+	                $vlsiftJobs    .= " && rm -f \"$fileObject->{step_1_keyFile}.sift\"\n";
+				} else {
+					print "using existing $jobOptions{jobDir}/$fileObject->{base}.key.bin\n";
+				}
             }
         }
     }
@@ -447,9 +457,30 @@ sub match {
     print "\n";
 
     chdir($jobOptions{jobDir});
+    mkdir($jobOptions{step_2_matches_dir});
     
-    $filesList = "";
-    
+    $matchesJobs = "";
+
+	my $c = 0;
+	my $t = ($objectStats{good}-1) * (($objectStats{good}-1) - ($objectStats{good}-1)%1)/2;
+	
+	for (my $i = 0; $i < $objectStats{good}; $i++) {
+		for (my $j = $i+1; $j < $objectStats{good}; $j++) {
+			$c++;
+			unless (-e "$jobOptions{step_2_matches_dir}/$i-$j.txt"){ 
+				$matchesJobs        .=  "echo -n \" $c / $t\" && touch \"$jobOptions{step_2_matches_dir}/$i-$j.txt\" && \"$BIN_PATH/KeyMatch\" \"@objects[$i]->{step_1_keyFile}\" \"@objects[$j]->{step_1_keyFile}\" \"$jobOptions{step_2_matches_dir}/$i-$j.txt\"\n";
+			}
+		}
+	}
+	
+    open (MATCH_DEST, ">$jobOptions{step_2_macthes_jobs}");
+    print MATCH_DEST $matchesJobs;
+    close(MATCH_DEST);
+	
+    run("\"$BIN_PATH/parallel\" --halt-on-error 1 -j+0 < \"$jobOptions{step_2_macthes_jobs}\"");
+	
+	return ;
+	
     foreach $fileObject (@objects) {
         if($fileObject->{isOk}){
             if($fileObject->{isOk}){

@@ -23,6 +23,7 @@ echo "  - script started - `date`"
 	    TOOLS_LIB_PATH="$TOOLS_PATH/lib"
 	    TOOLS_SRC_PATH="$TOOLS_PATH/src"
 	    TOOLS_LOG_PATH="$TOOLS_PATH/logs"
+	TOOLS_PATCHED_PATH="$TOOLS_PATH/patched_files"
 						## loacal dest paths
 			  LIB_PATH="/usr/local/lib"
 			  INC_PATH="/usr/local/include"
@@ -38,7 +39,8 @@ echo "  - script started - `date`"
 			  PSR_PATH="$TOOLS_SRC_PATH/PoissonRecon"
 						## executables
 		 EXTRACT_FOCAL="$TOOLS_BIN_PATH/extract_focal.pl"
-			 MATCHKEYS="$TOOLS_BIN_PATH/KeyMatchFull"
+	         MATCHKEYS="$TOOLS_BIN_PATH/KeyMatch"
+		 MATCHKEYSFULL="$TOOLS_BIN_PATH/KeyMatchFull"
 			   BUNDLER="$TOOLS_BIN_PATH/bundler"
 		   BUNDLE2PVMS="$TOOLS_BIN_PATH/Bundle2PMVS"
 				  CMVS="$TOOLS_BIN_PATH/cmvs"
@@ -57,7 +59,11 @@ CORES=`grep -c processor /proc/cpuinfo`
 LC_ALL=C
 
 ## removing old stuff
-rm -rf `ls -1 | egrep -v '\.zip$|\.tgz$|\.bz2$|\.gz$|\.sh$|\.pl$' | xargs`
+sudo rm -Rf "$TOOLS_BIN_PATH"
+sudo rm -Rf "$TOOLS_INC_PATH"
+sudo rm -Rf "$TOOLS_LIB_PATH"
+sudo rm -Rf "$TOOLS_SRC_PATH"
+sudo rm -Rf "$TOOLS_LOG_PATH"
 
 ## create needed directories
 mkdir -p "$TOOLS_BIN_PATH"
@@ -118,7 +124,7 @@ clapack.tgz	 http://www.netlib.org/clapack/clapack-3.2.1-CMAKE.tgz
 bundler.zip	 http://phototour.cs.washington.edu/bundler/distr/bundler-v0.4-source.zip
 graclus.tar.gz https://www.topoi.hu-berlin.de/graclus1.2.tar.gz
 PoissonRecon.zip http://www.cs.jhu.edu/~misha/Code/PoissonRecon/Version2/PoissonRecon.zip
-cmvs.tar.gz http://grail.cs.washington.edu/software/cmvs/cmvs-fix1.tar.gz
+cmvs.tar.gz http://grail.cs.washington.edu/software/cmvs/cmvs-fix2.tar.gz
 EOF
 
 echo "  < done - `date`"
@@ -147,7 +153,18 @@ mv -f cmvs					"$CMVS_PATH"
 mv -f parallel-20100922		"$PARALLEL_PATH"
 mv -f PoissonRecon			"$PSR_PATH"
 
-echo "    done - `date`"
+echo "  < done - `date`"
+
+
+## copying patches
+echo
+echo "  - copying patches"
+
+for file in `find $TOOLS_PATCHED_PATH -type f -print` ; do
+	cp $file $TOOLS_PATH/${file/$TOOLS_PATCHED_PATH/.}
+done
+
+echo "  < done - `date`"
 
 # building
 echo
@@ -220,7 +237,7 @@ echo "  > clapack"
 	echo "    - installing clapack"
 	make lapack_install > "$TOOLS_LOG_PATH/clapack_2_install.log" 2>&1
 
-	cp -Rf INCLUDE "$INC_PATH/clapack"
+	sudo cp -Rf INCLUDE "$INC_PATH/clapack"
 	
 echo "  < done - `date`"
 echo
@@ -292,7 +309,7 @@ echo "  > bundler"
 	echo "    - building bundler"
 	make -j $CORES > "$TOOLS_LOG_PATH/bundler_2_build.log" 2>&1
 
-	cp -f "$BUNDLER_PATH/bin/Bundle2PMVS" "$BUNDLER_PATH/bin/Bundle2Vis" "$BUNDLER_PATH/bin/KeyMatchFull" "$BUNDLER_PATH/bin/bundler" "$BUNDLER_PATH/bin/RadialUndistort" "$TOOLS_BIN_PATH/"
+	cp -f "$BUNDLER_PATH/bin/Bundle2PMVS" "$BUNDLER_PATH/bin/Bundle2Vis" "$BUNDLER_PATH/bin/KeyMatchFull" "$BUNDLER_PATH/bin/KeyMatch" "$BUNDLER_PATH/bin/bundler" "$BUNDLER_PATH/bin/RadialUndistort" "$TOOLS_BIN_PATH/"
 
 	cp -f "$BUNDLER_PATH/lib/libANN_char.so" "$TOOLS_LIB_PATH/"
 echo "  < done - `date`"
