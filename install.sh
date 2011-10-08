@@ -303,6 +303,8 @@ echo
 echo "  > bundler"
 	cd "$BUNDLER_PATH"
 
+	sed -i "$BUNDLER_PATH/src/BundlerApp.h" -e "620c\        BundlerApp();"
+
 	echo "    - cleaning bundler"
 	make clean > "$TOOLS_LOG_PATH/bundler_1_clean.log" 2>&1
 
