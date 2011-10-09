@@ -18,6 +18,8 @@
 /* Read in keys, match, write results to a file */
 
 #include <time.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #include "keys2a.h"
 
@@ -25,17 +27,19 @@ int main(int argc, char **argv) {
     char *keys1_in;
     char *keys2_in;
     char *file_out;
-    double ratio;
+    double ratio, threshold;
     
-    if (argc != 4) {
-	printf("Usage: %s <keys1.in> <keys2.in> <out.txt>\n", argv[0]);
-	return -1;
+    if (argc != 6) {
+		printf("Usage: %s <keys1.in> <keys2.in> <out.txt> <ratio> <threshold>\n", argv[0]);
+		return -1;
     }
     
     keys1_in = argv[1];
     keys2_in = argv[2];
-    ratio = 0.6; // atof(argv[3]);
     file_out = argv[3];
+
+    ratio 		= atof(argv[4]);
+    threshold 	= atof(argv[5]);
 
     clock_t start = clock();
 
@@ -83,10 +87,13 @@ int main(int argc, char **argv) {
     clock_t end = clock();    
 
 	int m = (num1 < num2 ? num1 : num2);
-	float r = (num_matches * 100 / m);
+	float r = ((float)num_matches * 100 / m);
 
-		
-    if (num_matches >= 16 && r > 5.0) {
+	bool used = false;
+	
+    if (num_matches >= 16 && r > threshold) {
+		used = true;
+	
 		FILE *f = fopen(file_out, "w");
 		
 		/* Write the number of matches */
@@ -99,10 +106,10 @@ int main(int argc, char **argv) {
 		fclose(f);
     }
 
-  printf("%8d matches ~ %5.2f%% of %d in %6.3fs for %s\n", 
+	
+  if(used) printf("\n%8d matches (%4.1f%%) took %5.2fs for %s\t", 
 		num_matches,
 		r,
-		m,
 	   (end - start) / ((double) CLOCKS_PER_SEC),
 		file_out);
 

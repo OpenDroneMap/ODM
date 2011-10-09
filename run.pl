@@ -58,12 +58,8 @@ sub run {
         die "\n\nquitting cause: \n\t$_[0]\nreturned with code ".$?."\n";
     }
 }
-sub now {    
-    (@date) = localtime;
-    $date[5] += 1900;
-    $date[4]++;
-    
-    print sprintf("%0.2d-%0.2d-%0.4d %0.2d:%0.2d:%0.2d",$date[3],$date[4]++, $date[5], $date[2],$date[1],$date[0]);;
+sub now {
+	system("echo `date`");
 }
 
 sub parseArgs {
@@ -75,6 +71,9 @@ sub parseArgs {
     $args{"--end-with"}              = "pmvs";
     
     $args{"--cmvs-maxImages"}        = 100;
+	
+    $args{"--matcher-ratio"}     	 = 0.6;
+    $args{"--matcher-threshold"}     = 2.0;
     
     $args{"--pmvs-level"}            = 1;
     $args{"--pmvs-csize"}            = 2;
@@ -114,6 +113,20 @@ sub parseArgs {
                         $args{"--end-with"} = $ARGV[$i+1];
                     } else {    
                         die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1]."\n\t valid values are \"resize\", \"getKeypoints\", \"match\", \"bundler\", \"cmvs\", \"pmvs\"";
+                    }
+                }
+	            if($ARGV[$i] eq "--matcher-threshold"){
+                    if($ARGV[$i+1] =~ /^-?[0-9]*\.?[0-9]*$/){
+                        $args{$ARGV[$i]} = $ARGV[$i+1];
+                    } else {
+                        die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1];
+                    }
+                }
+	            if($ARGV[$i] eq "--matcher-ratio"){
+                    if($ARGV[$i+1] =~ /^-?[0-9]*\.?[0-9]*$/){
+                        $args{$ARGV[$i]} = $ARGV[$i+1];
+                    } else {
+                        die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1];
                     }
                 }
                 if($ARGV[$i] eq "--cmvs-maxImages"){
@@ -182,59 +195,71 @@ sub parseArgs {
         print "\nit should be run from the folder contining the images to which should reconstructed";
         print "\n";
         print "\noptions:";
-        print "\n            --help: ";
-        print "\n                    prints this screen";
-        print "\n";
-        
-        print "\n       --resize-to: <positive integer|\"orig\">";
-        print "\n           default: 1200";
-        print "\n                    will resize the images so that the maximum width/height of the images are smaller or equal to the specified number";
-        print "\n                    if \"--resize-to orig\" is used it will use the images without resizing";
-        print "\n";
-        
-        print "\n      --start-with: <\"resize\"|\"getKeypoints\"|\"match\"|\"bundler\"|\"cmvs\"|\"pmvs\">";
-        print "\n           default: resize";
-        print "\n                    will start the sript at the specified step";
-        print "\n";
-        
-        print "\n        --end-with: <\"resize\"|\"getKeypoints\"|\"match\"|\"bundler\"|\"cmvs\"|\"pmvs\">";
-        print "\n           default: pmvs";
-        print "\n                    will stop the sript after the specified step";
-        print "\n";
-        
-        print "\n        --run-only: <\"resize\"|\"getKeypoints\"|\"match\"|\"bundler\"|\"cmvs\"|\"pmvs\">";
-        print "\n                    will only execute the specified step";
-        print "\n                    equal to --start-with <step> --end-with <step>";
-        print "\n";
-        
-        print "\n     --force-focal: <positive float>";
-        print "\n                    override the focal length information for the images";
-        print "\n";
-        
-        print "\n       --force-ccd: <positive float>";
-        print "\n                    override the ccd width information for the images";
-        print "\n";
-        
-        print "\n  --cmvs-maxImages: <positive integer>";
-        print "\n           default: 100";
-        print "\n                    the maximum number of images per cluster";
-        print "\n";
-        
-        print "\n      --pmvs-level: <positive integer>";
-        print "\n           default: 1";
-        
-        print "\n      --pmvs-csize: <positive integer>";
-        print "\n           default: 2";
-        
-        print "\n  --pmvs-threshold: <float: -1 <= x <= 1>";
-        print "\n           default: 0.7";
-        
-        print "\n      --pmvs-wsize: <positive integer>";
-        print "\n           default: 7";
-        
-        print "\n--pmvs-minImageNum: <positive integer>";
-        print "\n           default: 3";
-        print "\n                    see http://grail.cs.washington.edu/software/pmvs/documentation.html for an explanation of these parameters";
+        print "\n              --help: ";
+        print "\n                      prints this screen";
+        print "\n  ";
+                   
+        print "\n         --resize-to: <positive integer|\"orig\">";
+        print "\n             default: 1200";
+        print "\n                      will resize the images so that the maximum width/height of the images are smaller or equal to the specified number";
+        print "\n                      if \"--resize-to orig\" is used it will use the images without resizing";
+        print "\n  ";
+                   
+        print "\n        --start-with: <\"resize\"|\"getKeypoints\"|\"match\"|\"bundler\"|\"cmvs\"|\"pmvs\">";
+        print "\n             default: resize";
+        print "\n                      will start the sript at the specified step";
+        print "\n  ";
+                   
+        print "\n          --end-with: <\"resize\"|\"getKeypoints\"|\"match\"|\"bundler\"|\"cmvs\"|\"pmvs\">";
+        print "\n             default: pmvs";
+        print "\n                      will stop the sript after the specified step";
+        print "\n  ";
+                   
+        print "\n          --run-only: <\"resize\"|\"getKeypoints\"|\"match\"|\"bundler\"|\"cmvs\"|\"pmvs\">";
+        print "\n                      will only execute the specified step";
+        print "\n                      equal to --start-with <step> --end-with <step>";
+        print "\n  ";
+                   
+        print "\n       --force-focal: <positive float>";
+        print "\n                      override the focal length information for the images";
+        print "\n  ";
+                   
+        print "\n         --force-ccd: <positive float>";
+        print "\n                      override the ccd width information for the images";
+        print "\n  ";
+                   
+        print "\n --matcher-threshold: <float> (percent)";
+        print "\n             default: 2.0";
+        print "\n                      ignore matched keypoints if the two images share less then <float> percent of keypoints";
+        print "\n  ";
+                   
+        print "\n     --matcher-ratio: <float";
+        print "\n             default: 0.6";
+        print "\n                      ratio of the distance to the next best matched keypoint";
+        print "\n  ";
+		
+		
+                   
+        print "\n    --cmvs-maxImages: <positive integer>";
+        print "\n             default: 100";
+        print "\n                      the maximum number of images per cluster";
+        print "\n  ";
+                   
+        print "\n        --pmvs-level: <positive integer>";
+        print "\n             default: 1";
+                   
+        print "\n        --pmvs-csize: <positive integer>";
+        print "\n             default: 2";
+                   
+        print "\n    --pmvs-threshold: <float: -1.0 <= x <= 1.0>";
+        print "\n             default: 0.7";
+                   
+        print "\n        --pmvs-wsize: <positive integer>";
+        print "\n             default: 7";
+                   
+        print "\n  --pmvs-minImageNum: <positive integer>";
+        print "\n             default: 3";
+        print "\n                      see http://grail.cs.washington.edu/software/pmvs/documentation.html for an explanation of these parameters";
         print "\n";
         
         exit;
@@ -418,19 +443,23 @@ sub getKeypoints {
     
     $vlsiftJobs    = "";
     
+	$c = 0;
+
     foreach $fileObject (@objects) {
+		$c = $c+1;
+	
         if($fileObject->{isOk}){
             if($args{"--lowe-sift"}){
-                $vlsiftJobs    .= "convert -format pgm \"$fileObject->{step_0_resizedImage}\" \"$fileObject->{step_1_pgmFile}\"";
+                $vlsiftJobs    .= "echo -n \"$c/$objectStats{good} - \" && convert -format pgm \"$fileObject->{step_0_resizedImage}\" \"$fileObject->{step_1_pgmFile}\"";
                 $vlsiftJobs    .= " && \"$BIN_PATH/sift\" < \"$fileObject->{step_1_pgmFile}\" > \"$fileObject->{step_1_keyFile}\"";
                 $vlsiftJobs    .= " && gzip -f \"$fileObject->{step_1_keyFile}\"";
                 $vlsiftJobs    .= " && rm -f \"$fileObject->{step_1_pgmFile}\"";
                 $vlsiftJobs    .= " && rm -f \"$fileObject->{step_1_keyFile}.sift\"\n";
             } else {
 				unless (-e "$jobOptions{jobDir}/$fileObject->{base}.key.bin") {
-	                $vlsiftJobs    .= "convert -format pgm \"$fileObject->{step_0_resizedImage}\" \"$fileObject->{step_1_pgmFile}\"";
+	                $vlsiftJobs    .= "echo -n \"$c/$objectStats{good} - \" && convert -format pgm \"$fileObject->{step_0_resizedImage}\" \"$fileObject->{step_1_pgmFile}\"";
 	                $vlsiftJobs    .= " && \"$BIN_PATH/vlsift\" \"$fileObject->{step_1_pgmFile}\" -o \"$fileObject->{step_1_keyFile}.sift\" > /dev/null && perl \"$BIN_PATH/../convert_vlsift_to_lowesift.pl\" \"$jobOptions{jobDir}/$fileObject->{base}\"";
-	             #   $vlsiftJobs    .= " && gzip -f \"$fileObject->{step_1_keyFile}\"";
+	                $vlsiftJobs    .= " && gzip -f \"$fileObject->{step_1_keyFile}\"";
 	                $vlsiftJobs    .= " && rm -f \"$fileObject->{step_1_pgmFile}\"";
 	                $vlsiftJobs    .= " && rm -f \"$fileObject->{step_1_keyFile}.sift\"\n";
 				} else {
@@ -462,13 +491,15 @@ sub match {
     $matchesJobs = "";
 
 	my $c = 0;
-	my $t = ($objectStats{good}-1) * (($objectStats{good}-1) - ($objectStats{good}-1)%1)/2;
+	my $t = ($objectStats{good}-1) * ($objectStats{good}/2);
 	
 	for (my $i = 0; $i < $objectStats{good}; $i++) {
 		for (my $j = $i+1; $j < $objectStats{good}; $j++) {
 			$c++;
 			unless (-e "$jobOptions{step_2_matches_dir}/$i-$j.txt"){ 
-				$matchesJobs        .=  "echo -n \" $c / $t\" && touch \"$jobOptions{step_2_matches_dir}/$i-$j.txt\" && \"$BIN_PATH/KeyMatch\" \"@objects[$i]->{step_1_keyFile}\" \"@objects[$j]->{step_1_keyFile}\" \"$jobOptions{step_2_matches_dir}/$i-$j.txt\"\n";
+				
+			   
+				$matchesJobs        .=  "echo -n \".\" && touch \"$jobOptions{step_2_matches_dir}/$i-$j.txt\" && \"$BIN_PATH/KeyMatch\" \"@objects[$i]->{step_1_keyFile}\" \"@objects[$j]->{step_1_keyFile}\" \"$jobOptions{step_2_matches_dir}/$i-$j.txt\" $args{'--matcher-ratio'} $args{'--matcher-threshold'}\n";
 			}
 		}
 	}
@@ -479,7 +510,17 @@ sub match {
 	
     run("\"$BIN_PATH/parallel\" --halt-on-error 1 -j+0 < \"$jobOptions{step_2_macthes_jobs}\"");
 	
-	return ;
+	run("rm -f \"$jobOptions{step_2_matches}\"");
+	
+	for (my $i = 0; $i < $objectStats{good}; $i++) {
+		for (my $j = $i+1; $j < $objectStats{good}; $j++) {
+			$c++;
+			
+			if (-e "$jobOptions{step_2_matches_dir}/$i-$j.txt" && (-s "$jobOptions{step_2_matches_dir}/$i-$j.txt") > 0) {
+				run("echo \"$i $j\" >> \"$jobOptions{step_2_matches}\" && cat \"$jobOptions{step_2_matches_dir}/$i-$j.txt\" >> \"$jobOptions{step_2_matches}\"");
+			}
+		}
+	}
 	
     foreach $fileObject (@objects) {
         if($fileObject->{isOk}){
@@ -488,12 +529,12 @@ sub match {
             }
         }
     }
-    
+	
     open (MATCH_DEST, ">$jobOptions{step_2_filelist}");
     print MATCH_DEST $filesList;
     close(MATCH_DEST);
     
-    run("\"$BIN_PATH/KeyMatchFull\" \"$jobOptions{step_2_filelist}\" \"$jobOptions{step_2_matches}\"    ");
+ #   run("\"$BIN_PATH/KeyMatchFull\" \"$jobOptions{step_2_filelist}\" \"$jobOptions{step_2_matches}\"    ");
     
     if($args{"--end-with"} ne "match"){
         bundler();
@@ -532,7 +573,7 @@ sub bundler {
     $bundlerOptions .= "--variable_focal_length\n";
     $bundlerOptions .= "--use_focal_estimate\n";
     $bundlerOptions .= "--constrain_focal\n";
-    $bundlerOptions .= "--constrain_focal_weight 0.0001\n";
+    $bundlerOptions .= "--constrain_focal_weight 0.01\n";
     $bundlerOptions .= "--estimate_distortion\n";
     $bundlerOptions .= "--run_bundle";
         

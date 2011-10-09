@@ -4,11 +4,14 @@ $filename_base	= $ARGV[0];
                            
 $write_binary	= 1;    
          
-$filename_src	= $filename_base.".key.sift";
-$filename_dest	= $filename_base.($write_binary ? ".key.bin" : ".key");
-$filename_image	= $filename_base.".jpg";   
+$filename_src		= $filename_base.".key.sift";
+$filename_dest_bin	= $filename_base.".key.bin";
+$filename_dest_key	= $filename_base.".key";
+$filename_image		= $filename_base.".jpg";   
 
-open (DEST, ">$filename_dest");
+open (DEST_BIN, ">$filename_dest_bin");
+open (DEST_KEY, ">$filename_dest_key");
+
 open (SRC, "$filename_src");
 
 $resolution_line = `jhead $filename_image | grep "Resolution"`;
@@ -17,11 +20,12 @@ $resolution_line = `jhead $filename_image | grep "Resolution"`;
 $linecount = 0;
 $linecount += tr/\n/\n/ while sysread(SRC, $_, 2 ** 16);
 
-seek(SRC, 0, 0);
                                 
 printf ("found %d features in %s (%d x %d)\n", $linecount, $filename_image, $res_x, $res_y);
 if($write_binary){              
-	print DEST pack("L", $linecount);
+	seek(SRC, 0, 0);
+	
+	print DEST_BIN pack("L", $linecount);
 
 	while ($record = <SRC>) {  
 		@parts = split(/ /, $record);             
@@ -50,10 +54,13 @@ if($write_binary){
 			@parts[$count+5] = @tmp;
 		}            
 		
-		print DEST pack("f4 C128", @parts);
+		print DEST_BIN pack("f4 C128", @parts);
 	}
-} else {    
-	print DEST $linecount, " 128\n";  
+} 
+
+	seek(SRC, 0, 0);
+
+	print DEST_KEY $linecount, " 128\n";  
 
 	while ($record = <SRC>) {
 		@parts = split(/ /, $record);
@@ -66,7 +73,7 @@ if($write_binary){
 	         	
 		@parts[3] *= -1;              
 	
-		printf (DEST "%.3f %.3f %.3f %.3f", @parts[1], @parts[0], @parts[2], @parts[3]);
+		printf (DEST_KEY "%.3f %.3f %.3f %.3f", @parts[1], @parts[0], @parts[2], @parts[3]);
 	
 		shift(@parts);
 		shift(@parts);
@@ -89,19 +96,20 @@ if($write_binary){
 	
 		foreach (@parts) {
 			if((($counter) % 20) == 0) {
-				print DEST "\n ";
+				print DEST_KEY "\n ";
 			} else {
 				if($counter != 0){
-					print DEST " ";
+					print DEST_KEY " ";
 				}
 			}
 		
-			print DEST $_;
+			print DEST_KEY $_;
 		
 			$counter++;
 		}
 	} 
-}    
 
-close(DEST);
+
+close(DEST_BIN);
+close(DEST_KEY);
 close(SRC);
