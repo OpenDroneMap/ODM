@@ -222,8 +222,8 @@ echo "  > vlfeat"
   echo "    - installing vlfeat"
   
   if [ "$ARCH" = "i686" ]; then
-    cp -f "$VLFEAT_PATH/bin/glnx32/sift" "$TOOLS_BIN_PATH/vlsift"
-    cp -f "$VLFEAT_PATH/bin/glnx32/libvl.so" "$TOOLS_LIB_PATH/"
+    cp -f "$VLFEAT_PATH/bin/glnx86/sift" "$TOOLS_BIN_PATH/vlsift"
+    cp -f "$VLFEAT_PATH/bin/glnx86/libvl.so" "$TOOLS_LIB_PATH/"
   fi
 
   if [ "$ARCH" = "x86_64" ]; then
