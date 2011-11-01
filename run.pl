@@ -65,6 +65,8 @@ sub now {
 sub parseArgs {
 
  ## defaults
+    $args{"--match-size"}            = "200";
+
     $args{"--resize-to"}             = "1200";
     
     $args{"--start-with"}            = "resize";
@@ -545,7 +547,7 @@ sub bundler {
     print "\n";
     print "\n  - running bundler - "; now(); print "\n";
     print "\n";
-
+	
     chdir($jobOptions{jobDir});
     
     mkdir($jobOptions{jobDir}."/bundle");
