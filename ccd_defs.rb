@@ -219,6 +219,7 @@ $ccd_widths = {
      :"Panasonic DMC-FX01"               => 5.76,   # 1/2.5"
      :"Panasonic DMC-FX07"               => 5.75,   # 1/2.5"
      :"Panasonic DMC-FX9"                => 5.76,   # 1/2.5"
+     :"Panasonic DMC-FS6"                => 5.76,   # 1/2.5"
      :"Panasonic DMC-FZ20"               => 5.760,  # 1/2.5"
      :"Panasonic DMC-FZ2"                => 4.54,   # 1/3.2"
      :"Panasonic DMC-FZ30"               => 7.176,  # 1/1.8"

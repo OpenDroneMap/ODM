@@ -147,7 +147,7 @@ begin
     }
     
     file_object[:model_id]  = "#{file_object[:jhead][:'Camera make']} #{file_object[:jhead][:'Camera model']}"
-    
+
     file_object[:width],file_object[:height]     = [file_object[:jhead][:Resolution].split(" x ")[0].to_i, file_object[:jhead][:Resolution].split(" x ")[1].to_i] if file_object[:jhead][:Resolution]
     
     

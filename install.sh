@@ -16,7 +16,8 @@ echo
 echo "  - script started - `date`"
 
             ## dest base path
-      TOOLS_PATH="$PWD"
+          TOOLS_PATH="$PWD"
+
             ## paths for the tools
       TOOLS_BIN_PATH="$TOOLS_PATH/bin"
       TOOLS_INC_PATH="$TOOLS_PATH/include"
@@ -24,29 +25,34 @@ echo "  - script started - `date`"
       TOOLS_SRC_PATH="$TOOLS_PATH/src"
       TOOLS_LOG_PATH="$TOOLS_PATH/logs"
   TOOLS_PATCHED_PATH="$TOOLS_PATH/patched_files"
+
             ## loacal dest paths
-        LIB_PATH="/usr/local/lib"
-        INC_PATH="/usr/local/include"
+		        LIB_PATH="/usr/local/lib"
+		        INC_PATH="/usr/local/include"
+		
             ## source paths
-      BUNDLER_PATH="$TOOLS_SRC_PATH/bundler"
-    CMVS_PMVS_PATH="$TOOLS_SRC_PATH/cmvs-pmvs"
-      CLAPACK_PATH="$TOOLS_SRC_PATH/clapack"
-       VLFEAT_PATH="$TOOLS_SRC_PATH/vlfeat"
-     PARALLEL_PATH="$TOOLS_SRC_PATH/parallel"
-        PSR_PATH="$TOOLS_SRC_PATH/PoissonRecon"
+	      BUNDLER_PATH="$TOOLS_SRC_PATH/bundler"
+	         CMVS_PATH="$TOOLS_SRC_PATH/cmvs"
+	         PMVS_PATH="$TOOLS_SRC_PATH/pmvs"
+	      CLAPACK_PATH="$TOOLS_SRC_PATH/clapack"
+	       VLFEAT_PATH="$TOOLS_SRC_PATH/vlfeat"
+	     PARALLEL_PATH="$TOOLS_SRC_PATH/parallel"
+	          PSR_PATH="$TOOLS_SRC_PATH/PoissonRecon"
+			  GRACLUS_PATH="$TOOLS_SRC_PATH/graclus"
+	
             ## executables
-     EXTRACT_FOCAL="$TOOLS_BIN_PATH/extract_focal.pl"
-         MATCHKEYS="$TOOLS_BIN_PATH/KeyMatch"
-     MATCHKEYSFULL="$TOOLS_BIN_PATH/KeyMatchFull"
-           BUNDLER="$TOOLS_BIN_PATH/bundler"
-       BUNDLE2PVMS="$TOOLS_BIN_PATH/Bundle2PMVS"
-              CMVS="$TOOLS_BIN_PATH/cmvs"
-              PMVS="$TOOLS_BIN_PATH/pmvs2"
-         GENOPTION="$TOOLS_BIN_PATH/genOption"
-            VLSIFT="$TOOLS_BIN_PATH/vlsift"
-          PARALLEL="$TOOLS_BIN_PATH/parallel"
-               PSR="$TOOLS_BIN_PATH/PoissonRecon"
-VLSIFT_TO_LOWESIFT="$TOOLS_BIN_PATH/convert_vlsift_to_lowesift.pl"
+	     EXTRACT_FOCAL="$TOOLS_BIN_PATH/extract_focal.pl"
+	         MATCHKEYS="$TOOLS_BIN_PATH/KeyMatch"
+	     MATCHKEYSFULL="$TOOLS_BIN_PATH/KeyMatchFull"
+	           BUNDLER="$TOOLS_BIN_PATH/bundler"
+	       BUNDLE2PVMS="$TOOLS_BIN_PATH/Bundle2PMVS"
+	              CMVS="$TOOLS_BIN_PATH/cmvs"
+	              PMVS="$TOOLS_BIN_PATH/pmvs2"
+	         GENOPTION="$TOOLS_BIN_PATH/genOption"
+	            VLSIFT="$TOOLS_BIN_PATH/vlsift"
+	          PARALLEL="$TOOLS_BIN_PATH/parallel"
+	               PSR="$TOOLS_BIN_PATH/PoissonRecon"
+	VLSIFT_TO_LOWESIFT="$TOOLS_BIN_PATH/convert_vlsift_to_lowesift.pl"
 
 ## get sys vars
 ARCH=`uname -m`
@@ -88,6 +94,7 @@ sudo apt-get install --assume-yes --install-recommends \
   imagemagick jhead \
   libjpeg-dev libboost-dev libgsl0-dev libx11-dev libxext-dev liblapack-dev \
   libzip-dev \
+  libcv-dev libcvaux-dev \
   > "$TOOLS_LOG_PATH/apt-get_install.log" 2>&1
 
 sudo gem install parallel  > /dev/null 2>&1
@@ -97,8 +104,6 @@ echo "  < done - `date`"
 ## downloading sources
 echo
 echo "  > getting the sources"
-
-git clone https://github.com/TheFrenchLeaf/CMVS-PMVS.git --quiet > /dev/null 2>&1 &
 
 ## getting all archives if not already present; save them to .tmp and rename them after download
 while read target source
@@ -119,6 +124,8 @@ clapack.tgz  http://www.netlib.org/clapack/clapack-3.2.1-CMAKE.tgz
 bundler.zip  http://phototour.cs.washington.edu/bundler/distr/bundler-v0.4-source.zip
 PoissonRecon.zip http://www.cs.jhu.edu/~misha/Code/PoissonRecon/Version2/PoissonRecon.zip
 vlfeat.tar.gz http://www.vlfeat.org/download/vlfeat-0.9.13-bin.tar.gz
+cmvs.tar.gz http://grail.cs.washington.edu/software/cmvs/cmvs-fix2.tar.gz
+graclus.tar.gz https://www.topoi.hu-berlin.de/graclus1.2.tar.gz
 EOF
 
 echo "  < done - `date`"
@@ -139,12 +146,13 @@ done
 
 wait
 
+mv -f graclus1.2			    "$GRACLUS_PATH"
 mv -f clapack-3.2.1-CMAKE "$CLAPACK_PATH"
 mv -f vlfeat-0.9.13       "$VLFEAT_PATH"
 mv -f bundler-v0.4-source "$BUNDLER_PATH"
 mv -f parallel-20100922   "$PARALLEL_PATH"
 mv -f PoissonRecon        "$PSR_PATH"
-mv -f CMVS-PMVS           "$CMVS_PMVS_PATH"
+mv -f cmvs                "$CMVS_PATH"
 
 echo "  < done - `date`"
 
@@ -169,13 +177,37 @@ sudo chown -R `id -u`:`id -g` *
 sudo chmod -R 777 *
 
 
+echo "  > graclus"
+	cd "$GRACLUS_PATH"
+
+	if [ "$ARCH" = "i686" ]; then
+		sed -i "$GRACLUS_PATH/Makefile.in" -e "11c\COPTIONS = -DNUMBITS=32"
+	fi
+
+	if [ "$ARCH" = "x86_64" ]; then
+		sed -i "$GRACLUS_PATH/Makefile.in" -e "11c\COPTIONS = -DNUMBITS=64"
+	fi
+	
+	echo "    - cleaning graclus"
+	make clean > "$TOOLS_LOG_PATH/graclus_1_clean.log" 2>&1
+
+	echo "    - building graclus"
+	make -j > "$TOOLS_LOG_PATH/graclus_2_build.log" 2>&1
+   
+	mkdir "$TOOLS_INC_PATH/metisLib"
+	cp -f "$GRACLUS_PATH/metisLib/"*.h "$TOOLS_INC_PATH/metisLib/"
+
+	cp -f lib* "$TOOLS_LIB_PATH/"
+echo "  < done - `date`"
+echo
+
 echo "  > poisson surface reconstruction "
   cd "$PSR_PATH"
   
   sed -i "$PSR_PATH/Makefile" -e "21c\BIN = ./"
     
   echo "    - building poisson surface reconstruction"
-  make -j$CORES > "$TOOLS_LOG_PATH/poisson_1_build.log" 2>&1
+  make -j > "$TOOLS_LOG_PATH/poisson_1_build.log" 2>&1
   
   cp -f "$PSR_PATH/PoissonRecon" "$TOOLS_BIN_PATH/PoissonRecon"
   
@@ -190,7 +222,7 @@ echo "  > parallel"
   ./configure > "$TOOLS_LOG_PATH/parallel_1_build.log" 2>&1
   
   echo "    - building paralel"
-  make -j$CORES > "$TOOLS_LOG_PATH/parallel_2_build.log" 2>&1
+  make -j > "$TOOLS_LOG_PATH/parallel_2_build.log" 2>&1
   
   cp -f src/parallel "$TOOLS_BIN_PATH/"
   
@@ -204,7 +236,7 @@ echo "  > clapack"
   
   set +e
   echo "    - building clapack"
-  make all -j$CORES > "$TOOLS_LOG_PATH/clapack_1_build.log" 2>&1
+  make all -j > "$TOOLS_LOG_PATH/clapack_1_build.log" 2>&1
   set -e
   
   echo "    - installing clapack"
@@ -235,16 +267,39 @@ echo
 
 
 echo "  > cmvs/pmvs"
-  cd "$CMVS_PMVS_PATH/program"
-  
-  echo "    - building cmvs/pmvs"
+  cd "$CMVS_PATH/program/main"
 
-  cmake .  > "$TOOLS_LOG_PATH/cmcs-pmvs_1_cmake.log" 2>&1
-  make -j  > "$TOOLS_LOG_PATH/cmcs-pmvs_2_build.log" 2>&1
+  sed -i "$CMVS_PATH/program/main/genOption.cc" -e "5c\#include <stdlib.h>\n" 
+  sed -i "$CMVS_PATH/program/base/cmvs/bundle.cc" -e "3c\#include <numeric>\n"
 
-  echo "    - installing cmvs/pmvs"
-  
-  cp -f "$CMVS_PMVS_PATH/program/main/cmvs" "$CMVS_PMVS_PATH/program/main/pmvs2" "$CMVS_PMVS_PATH/program/main/genOption" "$TOOLS_BIN_PATH/"
+  sed -i "$CMVS_PATH/program/main/Makefile" -e "10c\#Your INCLUDE path (e.g., -I\/usr\/include)" 
+  sed -i "$CMVS_PATH/program/main/Makefile" -e "11c\YOUR_INCLUDE_PATH =-I$INC_PATH -I$TOOLS_INC_PATH" 
+  sed -i "$CMVS_PATH/program/main/Makefile" -e "13c\#Your metis directory (contains header files under graclus1.2/metisLib/)" 
+  sed -i "$CMVS_PATH/program/main/Makefile" -e "14c\YOUR_INCLUDE_METIS_PATH = -I$TOOLS_INC_PATH/metisLib/"
+  sed -i "$CMVS_PATH/program/main/Makefile" -e "16c\#Your LDLIBRARY path (e.g., -L/usr/lib)" 
+  sed -i "$CMVS_PATH/program/main/Makefile" -e "17c\YOUR_LDLIB_PATH = -L$LIB_PATH -L$TOOLS_LIB_PATH"
+
+  if [ "$ARCH" = "i686" ]; then
+    sed -i "$CMVS_PATH/program/main/Makefile" -e "22c\CXXFLAGS_CMVS = -O2 -Wall -Wno-deprecated -DNUMBITS=32 \\\\"
+    sed -i "$CMVS_PATH/program/main/Makefile" -e '24c\    -fopenmp -DNUMBITS=32 ${OPENMP_FLAG}'
+  fi
+
+  if [ "$ARCH" = "x86_64" ]; then
+    sed -i "$CMVS_PATH/program/main/Makefile" -e "22c\CXXFLAGS_CMVS = -O2 -Wall -Wno-deprecated -DNUMBITS=64 \\\\"
+    sed -i "$CMVS_PATH/program/main/Makefile" -e '24c\    -fopenmp -DNUMBITS=64 ${OPENMP_FLAG}'
+  fi
+
+  echo "    - cleaning cmvs"
+  make clean > "$TOOLS_LOG_PATH/cmvs_1_clean.log" 2>&1
+
+  echo "    - building cmvs"
+  make -j > "$TOOLS_LOG_PATH/cmvs_2_build.log" 2>&1
+
+  echo "    - make depend cmvs"
+  sudo make depend > "$TOOLS_LOG_PATH/cmvs_3_depend.log" 2>&1
+
+  cp -f "$CMVS_PATH/program/main/cmvs" "$CMVS_PATH/program/main/pmvs2" "$CMVS_PATH/program/main/genOption" "$TOOLS_BIN_PATH/"
+  cp -f "$CMVS_PATH/program/main/"*so* "$TOOLS_LIB_PATH/"
 echo "  < done - `date`"
 echo
 
@@ -258,7 +313,7 @@ echo "  > bundler"
   make clean > "$TOOLS_LOG_PATH/bundler_1_clean.log" 2>&1
 
   echo "    - building bundler"
-  make -j $CORES > "$TOOLS_LOG_PATH/bundler_2_build.log" 2>&1
+  make -j  > "$TOOLS_LOG_PATH/bundler_2_build.log" 2>&1
 
   cp -f "$BUNDLER_PATH/bin/Bundle2PMVS" "$BUNDLER_PATH/bin/Bundle2Vis" "$BUNDLER_PATH/bin/KeyMatchFull" "$BUNDLER_PATH/bin/KeyMatch" "$BUNDLER_PATH/bin/bundler" "$BUNDLER_PATH/bin/RadialUndistort" "$TOOLS_BIN_PATH/"
 
