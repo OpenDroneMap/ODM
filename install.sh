@@ -160,6 +160,7 @@ echo "  < done - `date`"
 ## copying patches
 echo
 echo "  - copying patches"
+echo
 
 for file in `find $TOOLS_PATCHED_PATH -type f -print` ; do
   cp $file $TOOLS_PATH/${file/$TOOLS_PATCHED_PATH/.}
