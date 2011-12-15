@@ -53,7 +53,7 @@ optparse = OptionParser.new do|opts|
 
   $options[:cmvs_max_images] = 100
   opts.on('', '--cmvs-max-images int', "") do |param|
-    $options[:cmvs_maxImages] = param.to_i
+    $options[:cmvs_max_images] = param.to_i
   end
 
   $options[:matcher_ratio] = 0.6
@@ -68,7 +68,7 @@ optparse = OptionParser.new do|opts|
   
   $options[:pmvs_min_image_num] = 3
   opts.on('', '--pmvs-minImageNum n', "") do |param|
-    $options[:pmvs_minImageNum] = param.to_i
+    $options[:pmvs_min_image_num] = param.to_i
   end
   $options[:pmvs_wsize] = 7
   opts.on('', '--pmvs-wsize int', "") do |param|
