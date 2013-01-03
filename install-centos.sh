@@ -27,8 +27,15 @@ echo "  - script started - `date`"
   TOOLS_PATCHED_PATH="$TOOLS_PATH/patched_files"
 
             ## loacal dest paths
-		        LIB_PATH="/usr/local/lib"
-		        INC_PATH="/usr/local/include"
+
+if [ "$ARCH" = "i686" ]; then
+  LIB_PATH="/lib"
+fi
+
+if [ "$ARCH" = "x86_64" ]; then
+  LIB_PATH="/lib64"
+fi
+INC_PATH="/usr/local/include"
 		
             ## source paths
 	      BUNDLER_PATH="$TOOLS_SRC_PATH/bundler"
