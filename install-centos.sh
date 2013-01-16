@@ -26,8 +26,11 @@ echo "  - script started - `date`"
       TOOLS_LOG_PATH="$TOOLS_PATH/logs"
   TOOLS_PATCHED_PATH="$TOOLS_PATH/patched_files"
 
-            ## loacal dest paths
+## get sys vars
+ARCH=`uname -m`
+CORES=`grep -c processor /proc/cpuinfo`
 
+            ## loacal dest paths
 if [ "$ARCH" = "i686" ]; then
   LIB_PATH="/lib"
 fi
@@ -60,10 +63,6 @@ INC_PATH="/usr/local/include"
 	          PARALLEL="$TOOLS_BIN_PATH/parallel"
 	               PSR="$TOOLS_BIN_PATH/PoissonRecon"
 	VLSIFT_TO_LOWESIFT="$TOOLS_BIN_PATH/convert_vlsift_to_lowesift.pl"
-
-## get sys vars
-ARCH=`uname -m`
-CORES=`grep -c processor /proc/cpuinfo`
 
 ## prevents different (localized) output
 LC_ALL=C
