@@ -124,7 +124,7 @@ clapack.tgz  http://www.netlib.org/clapack/clapack-3.2.1-CMAKE.tgz
 bundler.zip  http://phototour.cs.washington.edu/bundler/distr/bundler-v0.4-source.zip
 PoissonRecon.zip http://www.cs.jhu.edu/~misha/Code/PoissonRecon/Version2/PoissonRecon.zip
 vlfeat.tar.gz http://www.vlfeat.org/download/vlfeat-0.9.13-bin.tar.gz
-cmvs.tar.gz http://grail.cs.washington.edu/software/cmvs/cmvs-fix2.tar.gz
+cmvs.tar.gz http://www.di.ens.fr/cmvs/cmvs-fix2.tar.gz
 graclus.tar.gz https://www.topoi.hu-berlin.de/graclus1.2.tar.gz
 EOF
 
