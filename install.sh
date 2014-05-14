@@ -175,7 +175,7 @@ echo "  - building"
 echo
 
 sudo chown -R `id -u`:`id -g` *
-sudo chmod -R 777 *
+#sudo chmod -R 777 *
 
 
 echo "  > graclus"
@@ -329,7 +329,7 @@ sudo install -o `id -u` -g `id -g` -m 644 -t "$LIB_PATH" lib/*.so
 sudo ldconfig -v > "$TOOLS_LOG_PATH/ldconfig.log" 2>&1
 
 sudo chown -R `id -u`:`id -g` *
-sudo chmod -R 777 *
+#sudo chmod -R 777 *
 
 echo "  - script finished - `date`"
 
