@@ -84,7 +84,7 @@ echo
 echo "  > installing required packages"
 
 echo "    - updating"
-sudo apt-get update --assume-yes > "$TOOLS_LOG_PATH/apt-get_get.log" 2>&1
+sudo apt-get update --assume-yes > "$TOOLS_LOG_PATH/apt-get_get.log" # 2>&1
 
 echo "    - installing"
 sudo apt-get install --assume-yes --install-recommends \
@@ -95,9 +95,9 @@ sudo apt-get install --assume-yes --install-recommends \
   libjpeg-dev libboost-dev libgsl0-dev libx11-dev libxext-dev liblapack-dev \
   libzip-dev \
   libcv-dev libcvaux-dev \
-  > "$TOOLS_LOG_PATH/apt-get_install.log" 2>&1
+  > "$TOOLS_LOG_PATH/apt-get_install.log" # 2>&1
 
-sudo gem install parallel  > /dev/null 2>&1
+sudo gem install parallel  > /dev/null # 2>&1
 
 echo "  < done - `date`"
 
@@ -135,13 +135,13 @@ echo
 echo "  - unzipping sources"
 
 for i in *.tar.bz2 ; do
-  tar xjf "$i" > "$TOOLS_LOG_PATH/extract_$i.log" 2>&1 & 
+  tar xjf "$i" > "$TOOLS_LOG_PATH/extract_$i.log" # 2>&1 & 
 done
 for i in *.tgz *.tar.gz ; do
-  tar xzf "$i" > "$TOOLS_LOG_PATH/extract_$i.log" 2>&1 &
+  tar xzf "$i" > "$TOOLS_LOG_PATH/extract_$i.log" # 2>&1 &
 done
 for i in *.zip ; do
-  unzip "$i" > "$TOOLS_LOG_PATH/extract_$i.log" 2>&1 &
+  unzip "$i" > "$TOOLS_LOG_PATH/extract_$i.log" # 2>&1 &
 done
 
 wait
@@ -190,10 +190,10 @@ echo "  > graclus"
 	fi
 	
 	echo "    - cleaning graclus"
-	make clean > "$TOOLS_LOG_PATH/graclus_1_clean.log" 2>&1
+	make clean > "$TOOLS_LOG_PATH/graclus_1_clean.log" # 2>&1
 
 	echo "    - building graclus"
-	make -j > "$TOOLS_LOG_PATH/graclus_2_build.log" 2>&1
+	make -j > "$TOOLS_LOG_PATH/graclus_2_build.log" # 2>&1
    
 	mkdir "$TOOLS_INC_PATH/metisLib"
 	cp -f "$GRACLUS_PATH/metisLib/"*.h "$TOOLS_INC_PATH/metisLib/"
@@ -208,7 +208,7 @@ echo "  > poisson surface reconstruction "
   sed -i "$PSR_PATH/Makefile" -e "21c\BIN = ./"
     
   echo "    - building poisson surface reconstruction"
-  make -j > "$TOOLS_LOG_PATH/poisson_1_build.log" 2>&1
+  make -j > "$TOOLS_LOG_PATH/poisson_1_build.log" # 2>&1
   
   cp -f "$PSR_PATH/PoissonRecon" "$TOOLS_BIN_PATH/PoissonRecon"
   
@@ -220,10 +220,10 @@ echo "  > parallel"
   cd "$PARALLEL_PATH"
   
   echo "    - configuring parallel"
-  ./configure > "$TOOLS_LOG_PATH/parallel_1_build.log" 2>&1
+  ./configure > "$TOOLS_LOG_PATH/parallel_1_build.log" # 2>&1
   
   echo "    - building paralel"
-  make -j > "$TOOLS_LOG_PATH/parallel_2_build.log" 2>&1
+  make -j > "$TOOLS_LOG_PATH/parallel_2_build.log" # 2>&1
   
   cp -f src/parallel "$TOOLS_BIN_PATH/"
   
@@ -237,11 +237,11 @@ echo "  > clapack"
   
   set +e
   echo "    - building clapack"
-  make all -j > "$TOOLS_LOG_PATH/clapack_1_build.log" 2>&1
+  make all -j > "$TOOLS_LOG_PATH/clapack_1_build.log" # 2>&1
   set -e
   
   echo "    - installing clapack"
-  make lapack_install > "$TOOLS_LOG_PATH/clapack_2_install.log" 2>&1
+  make lapack_install > "$TOOLS_LOG_PATH/clapack_2_install.log" # 2>&1
 
   sudo cp -Rf INCLUDE "$INC_PATH/clapack"
   
@@ -291,13 +291,13 @@ echo "  > cmvs/pmvs"
   fi
 
   echo "    - cleaning cmvs"
-  make clean > "$TOOLS_LOG_PATH/cmvs_1_clean.log" 2>&1
+  make clean > "$TOOLS_LOG_PATH/cmvs_1_clean.log" # 2>&1
 
   echo "    - building cmvs"
-  make -j > "$TOOLS_LOG_PATH/cmvs_2_build.log" 2>&1
+  make -j > "$TOOLS_LOG_PATH/cmvs_2_build.log" # 2>&1
 
   echo "    - make depend cmvs"
-  sudo make depend > "$TOOLS_LOG_PATH/cmvs_3_depend.log" 2>&1
+  sudo make depend > "$TOOLS_LOG_PATH/cmvs_3_depend.log" # 2>&1
 
   cp -f "$CMVS_PATH/program/main/cmvs" "$CMVS_PATH/program/main/pmvs2" "$CMVS_PATH/program/main/genOption" "$TOOLS_BIN_PATH/"
   cp -f "$CMVS_PATH/program/main/"*so* "$TOOLS_LIB_PATH/"
@@ -311,10 +311,10 @@ echo "  > bundler"
   sed -i "$BUNDLER_PATH/src/BundlerApp.h" -e "620c\        BundlerApp();"
 
   echo "    - cleaning bundler"
-  make clean > "$TOOLS_LOG_PATH/bundler_1_clean.log" 2>&1
+  make clean > "$TOOLS_LOG_PATH/bundler_1_clean.log" # 2>&1
 
   echo "    - building bundler"
-  make -j  > "$TOOLS_LOG_PATH/bundler_2_build.log" 2>&1
+  make -j  > "$TOOLS_LOG_PATH/bundler_2_build.log" # 2>&1
 
   cp -f "$BUNDLER_PATH/bin/Bundle2PMVS" "$BUNDLER_PATH/bin/Bundle2Vis" "$BUNDLER_PATH/bin/KeyMatchFull" "$BUNDLER_PATH/bin/KeyMatch" "$BUNDLER_PATH/bin/bundler" "$BUNDLER_PATH/bin/RadialUndistort" "$TOOLS_BIN_PATH/"
 
@@ -326,7 +326,7 @@ echo
 cd "$TOOLS_PATH"
 
 sudo install -o `id -u` -g `id -g` -m 644 -t "$LIB_PATH" lib/*.so
-sudo ldconfig -v > "$TOOLS_LOG_PATH/ldconfig.log" 2>&1
+sudo ldconfig -v > "$TOOLS_LOG_PATH/ldconfig.log" # 2>&1
 
 sudo chown -R `id -u`:`id -g` *
 #sudo chmod -R 777 *

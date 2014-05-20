@@ -1,0 +1,194 @@
+bundle.o: ../base/cmvs/bundle.cc ../base/cmvs/graclus.h \
+  ../base/cmvs/bundle.h ../base/cmvs/../stann/sfcnn.hpp \
+  ../base/cmvs/../stann/pair_iter.hpp ../base/cmvs/../stann/qknn.hpp \
+  ../base/cmvs/../stann/zorder_lt.hpp ../base/cmvs/../stann/dpoint.hpp \
+  ../base/cmvs/../stann/assert.hpp \
+  ../base/cmvs/../stann/zorder_type_traits.hpp \
+  ../base/cmvs/../stann/sep_float.hpp ../base/cmvs/../stann/bsearch.hpp \
+  ../base/cmvs/../numeric/mat3.h ../base/cmvs/../numeric/vec3.h \
+  ../base/cmvs/../numeric/vec2.h ../base/cmvs/../image/photoSetS.h \
+  ../base/cmvs/../image/photo.h ../base/cmvs/../image/../numeric/vec4.h \
+  ../base/cmvs/../image/../numeric/vec3.h ../base/cmvs/../image/image.h \
+  ../base/cmvs/../image/../numeric/vec3.h ../base/cmvs/../image/camera.h \
+  ../base/cmvs/../image/../numeric/mat4.h \
+  ../base/cmvs/../image/../numeric/vec4.h \
+  ../base/cmvs/../image/../numeric/mat3.h \
+  ../base/cmvs/../image/../numeric/mat3.h
+graclus.o: ../base/cmvs/graclus.cc ../base/cmvs/graclus.h
+camera.o: ../base/image/camera.cc ../base/image/camera.h \
+  ../base/image/../numeric/vec4.h ../base/image/../numeric/vec3.h \
+  ../base/image/../numeric/vec2.h ../base/image/../numeric/mat4.h \
+  ../base/image/../numeric/vec4.h ../base/image/../numeric/mat3.h \
+  ../base/image/../numeric/mat3.h
+image.o: ../base/image/image.cc ../base/image/../numeric/mat4.h \
+  ../base/image/../numeric/vec4.h ../base/image/../numeric/vec3.h \
+  ../base/image/../numeric/vec2.h ../base/image/../numeric/mat3.h \
+  ../base/image/image.h ../base/image/../numeric/vec3.h
+photo.o: ../base/image/photo.cc ../base/image/photo.h \
+  ../base/image/../numeric/vec4.h ../base/image/../numeric/vec3.h \
+  ../base/image/../numeric/vec2.h ../base/image/image.h \
+  ../base/image/../numeric/vec3.h ../base/image/camera.h \
+  ../base/image/../numeric/mat4.h ../base/image/../numeric/vec4.h \
+  ../base/image/../numeric/mat3.h ../base/image/../numeric/mat3.h
+photoSetS.o: ../base/image/photoSetS.cc ../base/image/photoSetS.h \
+  ../base/image/photo.h ../base/image/../numeric/vec4.h \
+  ../base/image/../numeric/vec3.h ../base/image/../numeric/vec2.h \
+  ../base/image/image.h ../base/image/../numeric/vec3.h \
+  ../base/image/camera.h ../base/image/../numeric/mat4.h \
+  ../base/image/../numeric/vec4.h ../base/image/../numeric/mat3.h \
+  ../base/image/../numeric/mat3.h
+mylapack.o: ../base/numeric/mylapack.cc ../base/numeric/mylapack.h
+detectFeatures.o: ../base/pmvs/detectFeatures.cc \
+  ../base/pmvs/../image/image.h ../base/pmvs/../image/../numeric/vec3.h \
+  ../base/pmvs/../image/../numeric/vec2.h ../base/pmvs/detectFeatures.h \
+  ../base/pmvs/../image/photoSetS.h ../base/pmvs/../image/photo.h \
+  ../base/pmvs/../image/../numeric/vec4.h \
+  ../base/pmvs/../image/../numeric/vec3.h ../base/pmvs/../image/image.h \
+  ../base/pmvs/../image/camera.h ../base/pmvs/../image/../numeric/mat4.h \
+  ../base/pmvs/../image/../numeric/vec4.h \
+  ../base/pmvs/../image/../numeric/mat3.h \
+  ../base/pmvs/../image/../numeric/mat3.h ../base/pmvs/point.h \
+  ../base/pmvs/../numeric/vec4.h ../base/pmvs/../numeric/mat3.h \
+  ../base/pmvs/harris.h ../base/pmvs/../numeric/vec3.h \
+  ../base/pmvs/detector.h ../base/pmvs/dog.h
+detector.o: ../base/pmvs/detector.cc ../base/pmvs/point.h \
+  ../base/pmvs/../numeric/vec4.h ../base/pmvs/../numeric/vec3.h \
+  ../base/pmvs/../numeric/vec2.h ../base/pmvs/../numeric/mat3.h \
+  ../base/pmvs/detector.h
+dog.o: ../base/pmvs/dog.cc ../base/pmvs/dog.h \
+  ../base/pmvs/../numeric/vec3.h ../base/pmvs/../numeric/vec2.h \
+  ../base/pmvs/detector.h ../base/pmvs/point.h \
+  ../base/pmvs/../numeric/vec4.h ../base/pmvs/../numeric/vec3.h \
+  ../base/pmvs/../numeric/mat3.h
+expand.o: ../base/pmvs/expand.cc ../base/pmvs/expand.h \
+  ../base/pmvs/patchOrganizerS.h ../base/pmvs/patch.h \
+  ../base/pmvs/../numeric/vec4.h ../base/pmvs/../numeric/vec3.h \
+  ../base/pmvs/../numeric/vec2.h ../base/pmvs/findMatch.h \
+  ../base/pmvs/../image/photoSetS.h ../base/pmvs/../image/photo.h \
+  ../base/pmvs/../image/../numeric/vec4.h ../base/pmvs/../image/image.h \
+  ../base/pmvs/../image/../numeric/vec3.h ../base/pmvs/../image/camera.h \
+  ../base/pmvs/../image/../numeric/mat4.h \
+  ../base/pmvs/../image/../numeric/vec4.h \
+  ../base/pmvs/../image/../numeric/mat3.h \
+  ../base/pmvs/../image/../numeric/vec3.h \
+  ../base/pmvs/../image/../numeric/mat3.h ../base/pmvs/seed.h \
+  ../base/pmvs/point.h ../base/pmvs/../numeric/mat3.h \
+  ../base/pmvs/filter.h ../base/pmvs/../numeric/vec2.h \
+  ../base/pmvs/optim.h ../base/pmvs/option.h
+filter.o: ../base/pmvs/filter.cc ../base/pmvs/../numeric/mylapack.h \
+  ../base/pmvs/findMatch.h ../base/pmvs/patch.h \
+  ../base/pmvs/../numeric/vec4.h ../base/pmvs/../numeric/vec3.h \
+  ../base/pmvs/../numeric/vec2.h ../base/pmvs/../image/photoSetS.h \
+  ../base/pmvs/../image/photo.h ../base/pmvs/../image/../numeric/vec4.h \
+  ../base/pmvs/../image/image.h ../base/pmvs/../image/../numeric/vec3.h \
+  ../base/pmvs/../image/camera.h ../base/pmvs/../image/../numeric/mat4.h \
+  ../base/pmvs/../image/../numeric/vec4.h \
+  ../base/pmvs/../image/../numeric/mat3.h \
+  ../base/pmvs/../image/../numeric/vec3.h \
+  ../base/pmvs/../image/../numeric/mat3.h ../base/pmvs/patchOrganizerS.h \
+  ../base/pmvs/seed.h ../base/pmvs/point.h ../base/pmvs/../numeric/mat3.h \
+  ../base/pmvs/expand.h ../base/pmvs/filter.h \
+  ../base/pmvs/../numeric/vec2.h ../base/pmvs/optim.h \
+  ../base/pmvs/option.h
+findMatch.o: ../base/pmvs/findMatch.cc ../base/pmvs/findMatch.h \
+  ../base/pmvs/patch.h ../base/pmvs/../numeric/vec4.h \
+  ../base/pmvs/../numeric/vec3.h ../base/pmvs/../numeric/vec2.h \
+  ../base/pmvs/../image/photoSetS.h ../base/pmvs/../image/photo.h \
+  ../base/pmvs/../image/../numeric/vec4.h ../base/pmvs/../image/image.h \
+  ../base/pmvs/../image/../numeric/vec3.h ../base/pmvs/../image/camera.h \
+  ../base/pmvs/../image/../numeric/mat4.h \
+  ../base/pmvs/../image/../numeric/vec4.h \
+  ../base/pmvs/../image/../numeric/mat3.h \
+  ../base/pmvs/../image/../numeric/vec3.h \
+  ../base/pmvs/../image/../numeric/mat3.h ../base/pmvs/patchOrganizerS.h \
+  ../base/pmvs/seed.h ../base/pmvs/point.h ../base/pmvs/../numeric/mat3.h \
+  ../base/pmvs/expand.h ../base/pmvs/filter.h \
+  ../base/pmvs/../numeric/vec2.h ../base/pmvs/optim.h \
+  ../base/pmvs/option.h ../base/pmvs/detectFeatures.h
+harris.o: ../base/pmvs/harris.cc ../base/pmvs/harris.h \
+  ../base/pmvs/../numeric/vec3.h ../base/pmvs/../numeric/vec2.h \
+  ../base/pmvs/detector.h ../base/pmvs/point.h \
+  ../base/pmvs/../numeric/vec4.h ../base/pmvs/../numeric/vec3.h \
+  ../base/pmvs/../numeric/mat3.h
+optim.o: ../base/pmvs/optim.cc ../base/pmvs/findMatch.h \
+  ../base/pmvs/patch.h ../base/pmvs/../numeric/vec4.h \
+  ../base/pmvs/../numeric/vec3.h ../base/pmvs/../numeric/vec2.h \
+  ../base/pmvs/../image/photoSetS.h ../base/pmvs/../image/photo.h \
+  ../base/pmvs/../image/../numeric/vec4.h ../base/pmvs/../image/image.h \
+  ../base/pmvs/../image/../numeric/vec3.h ../base/pmvs/../image/camera.h \
+  ../base/pmvs/../image/../numeric/mat4.h \
+  ../base/pmvs/../image/../numeric/vec4.h \
+  ../base/pmvs/../image/../numeric/mat3.h \
+  ../base/pmvs/../image/../numeric/vec3.h \
+  ../base/pmvs/../image/../numeric/mat3.h ../base/pmvs/patchOrganizerS.h \
+  ../base/pmvs/seed.h ../base/pmvs/point.h ../base/pmvs/../numeric/mat3.h \
+  ../base/pmvs/expand.h ../base/pmvs/filter.h \
+  ../base/pmvs/../numeric/vec2.h ../base/pmvs/optim.h \
+  ../base/pmvs/option.h
+option.o: ../base/pmvs/option.cc ../base/pmvs/option.h
+patch.o: ../base/pmvs/patch.cc ../base/pmvs/../numeric/vec4.h \
+  ../base/pmvs/../numeric/vec3.h ../base/pmvs/../numeric/vec2.h \
+  ../base/pmvs/patch.h
+patchOrganizerS.o: ../base/pmvs/patchOrganizerS.cc \
+  ../base/pmvs/patchOrganizerS.h ../base/pmvs/patch.h \
+  ../base/pmvs/../numeric/vec4.h ../base/pmvs/../numeric/vec3.h \
+  ../base/pmvs/../numeric/vec2.h ../base/pmvs/findMatch.h \
+  ../base/pmvs/../image/photoSetS.h ../base/pmvs/../image/photo.h \
+  ../base/pmvs/../image/../numeric/vec4.h ../base/pmvs/../image/image.h \
+  ../base/pmvs/../image/../numeric/vec3.h ../base/pmvs/../image/camera.h \
+  ../base/pmvs/../image/../numeric/mat4.h \
+  ../base/pmvs/../image/../numeric/vec4.h \
+  ../base/pmvs/../image/../numeric/mat3.h \
+  ../base/pmvs/../image/../numeric/vec3.h \
+  ../base/pmvs/../image/../numeric/mat3.h ../base/pmvs/seed.h \
+  ../base/pmvs/point.h ../base/pmvs/../numeric/mat3.h \
+  ../base/pmvs/expand.h ../base/pmvs/filter.h \
+  ../base/pmvs/../numeric/vec2.h ../base/pmvs/optim.h \
+  ../base/pmvs/option.h
+point.o: ../base/pmvs/point.cc ../base/pmvs/point.h \
+  ../base/pmvs/../numeric/vec4.h ../base/pmvs/../numeric/vec3.h \
+  ../base/pmvs/../numeric/vec2.h ../base/pmvs/../numeric/mat3.h
+seed.o: ../base/pmvs/seed.cc ../base/pmvs/seed.h ../base/pmvs/patch.h \
+  ../base/pmvs/../numeric/vec4.h ../base/pmvs/../numeric/vec3.h \
+  ../base/pmvs/../numeric/vec2.h ../base/pmvs/point.h \
+  ../base/pmvs/../numeric/mat3.h ../base/pmvs/findMatch.h \
+  ../base/pmvs/../image/photoSetS.h ../base/pmvs/../image/photo.h \
+  ../base/pmvs/../image/../numeric/vec4.h ../base/pmvs/../image/image.h \
+  ../base/pmvs/../image/../numeric/vec3.h ../base/pmvs/../image/camera.h \
+  ../base/pmvs/../image/../numeric/mat4.h \
+  ../base/pmvs/../image/../numeric/vec4.h \
+  ../base/pmvs/../image/../numeric/mat3.h \
+  ../base/pmvs/../image/../numeric/mat3.h ../base/pmvs/patchOrganizerS.h \
+  ../base/pmvs/expand.h ../base/pmvs/filter.h \
+  ../base/pmvs/../numeric/vec2.h ../base/pmvs/optim.h \
+  ../base/pmvs/option.h
+cmvs.o: cmvs.cc ../base/cmvs/bundle.h ../base/cmvs/../stann/sfcnn.hpp \
+  ../base/cmvs/../stann/pair_iter.hpp ../base/cmvs/../stann/qknn.hpp \
+  ../base/cmvs/../stann/zorder_lt.hpp ../base/cmvs/../stann/dpoint.hpp \
+  ../base/cmvs/../stann/assert.hpp \
+  ../base/cmvs/../stann/zorder_type_traits.hpp \
+  ../base/cmvs/../stann/sep_float.hpp ../base/cmvs/../stann/bsearch.hpp \
+  ../base/cmvs/../numeric/mat3.h ../base/cmvs/../numeric/vec3.h \
+  ../base/cmvs/../numeric/vec2.h ../base/cmvs/../image/photoSetS.h \
+  ../base/cmvs/../image/photo.h ../base/cmvs/../image/../numeric/vec4.h \
+  ../base/cmvs/../image/../numeric/vec3.h ../base/cmvs/../image/image.h \
+  ../base/cmvs/../image/../numeric/vec3.h ../base/cmvs/../image/camera.h \
+  ../base/cmvs/../image/../numeric/mat4.h \
+  ../base/cmvs/../image/../numeric/vec4.h \
+  ../base/cmvs/../image/../numeric/mat3.h \
+  ../base/cmvs/../image/../numeric/mat3.h
+genOption.o: genOption.cc
+pmvs2.o: pmvs2.cc ../base/pmvs/findMatch.h ../base/pmvs/patch.h \
+  ../base/pmvs/../numeric/vec4.h ../base/pmvs/../numeric/vec3.h \
+  ../base/pmvs/../numeric/vec2.h ../base/pmvs/../image/photoSetS.h \
+  ../base/pmvs/../image/photo.h ../base/pmvs/../image/../numeric/vec4.h \
+  ../base/pmvs/../image/image.h ../base/pmvs/../image/../numeric/vec3.h \
+  ../base/pmvs/../image/camera.h ../base/pmvs/../image/../numeric/mat4.h \
+  ../base/pmvs/../image/../numeric/vec4.h \
+  ../base/pmvs/../image/../numeric/mat3.h \
+  ../base/pmvs/../image/../numeric/vec3.h \
+  ../base/pmvs/../image/../numeric/mat3.h ../base/pmvs/patchOrganizerS.h \
+  ../base/pmvs/seed.h ../base/pmvs/point.h ../base/pmvs/../numeric/mat3.h \
+  ../base/pmvs/expand.h ../base/pmvs/filter.h \
+  ../base/pmvs/../numeric/vec2.h ../base/pmvs/optim.h \
+  ../base/pmvs/option.h ../base/pmvs/option.h
