@@ -1,0 +1,17 @@
+For kermit dataset, starting from this directory, you can run the
+following commands to test CMVS and PMVS2 (assuming that "cmvs",
+"genOption", and "pmvs2" are in your PATH.)
+
+> cd kermit-after-bundler
+> cmvs pmvs/
+> genOption pmvs/
+> sh pmvs/pmvs.sh
+
+
+Similarly, for hall dataset, starting from this directory, try the
+following commands.
+
+> cd hall-after-bundler
+> cmvs pmvs/ 20
+> genOption pmvs/
+> sh pmvs/pmvs.sh
