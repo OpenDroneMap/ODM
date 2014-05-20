@@ -125,7 +125,7 @@ bundler.zip  http://phototour.cs.washington.edu/bundler/distr/bundler-v0.4-sourc
 PoissonRecon.zip http://www.cs.jhu.edu/~misha/Code/PoissonRecon/Version2/PoissonRecon.zip
 vlfeat.tar.gz http://www.vlfeat.org/download/vlfeat-0.9.13-bin.tar.gz
 cmvs.tar.gz http://www.di.ens.fr/cmvs/cmvs-fix2.tar.gz
-graclus.tar.gz https://www.topoi.hu-berlin.de/graclus1.2.tar.gz
+graclus.tar.gz http://smathermather.github.io/BundlerTools/patched_files/src/graclus/graclus1.2.tar.gz
 EOF
 
 echo "  < done - `date`"
@@ -175,7 +175,7 @@ echo "  - building"
 echo
 
 sudo chown -R `id -u`:`id -g` *
-sudo chmod -R 777 *
+#sudo chmod -R 777 *
 
 
 echo "  > graclus"
@@ -329,7 +329,7 @@ sudo install -o `id -u` -g `id -g` -m 644 -t "$LIB_PATH" lib/*.so
 sudo ldconfig -v > "$TOOLS_LOG_PATH/ldconfig.log" # 2>&1
 
 sudo chown -R `id -u`:`id -g` *
-sudo chmod -R 777 *
+#sudo chmod -R 777 *
 
 echo "  - script finished - `date`"
 
