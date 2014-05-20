@@ -1,0 +1,11 @@
+mogrify -format pgm ./kermit000.jpg; /homes/sgi/furukawa/work/software/bundler-v0.4-source/bin/sift < ./kermit000.pgm > ./kermit000.key; rm ./kermit000.pgm; gzip -f ./kermit000.key
+mogrify -format pgm ./kermit001.jpg; /homes/sgi/furukawa/work/software/bundler-v0.4-source/bin/sift < ./kermit001.pgm > ./kermit001.key; rm ./kermit001.pgm; gzip -f ./kermit001.key
+mogrify -format pgm ./kermit002.jpg; /homes/sgi/furukawa/work/software/bundler-v0.4-source/bin/sift < ./kermit002.pgm > ./kermit002.key; rm ./kermit002.pgm; gzip -f ./kermit002.key
+mogrify -format pgm ./kermit003.jpg; /homes/sgi/furukawa/work/software/bundler-v0.4-source/bin/sift < ./kermit003.pgm > ./kermit003.key; rm ./kermit003.pgm; gzip -f ./kermit003.key
+mogrify -format pgm ./kermit004.jpg; /homes/sgi/furukawa/work/software/bundler-v0.4-source/bin/sift < ./kermit004.pgm > ./kermit004.key; rm ./kermit004.pgm; gzip -f ./kermit004.key
+mogrify -format pgm ./kermit005.jpg; /homes/sgi/furukawa/work/software/bundler-v0.4-source/bin/sift < ./kermit005.pgm > ./kermit005.key; rm ./kermit005.pgm; gzip -f ./kermit005.key
+mogrify -format pgm ./kermit006.jpg; /homes/sgi/furukawa/work/software/bundler-v0.4-source/bin/sift < ./kermit006.pgm > ./kermit006.key; rm ./kermit006.pgm; gzip -f ./kermit006.key
+mogrify -format pgm ./kermit007.jpg; /homes/sgi/furukawa/work/software/bundler-v0.4-source/bin/sift < ./kermit007.pgm > ./kermit007.key; rm ./kermit007.pgm; gzip -f ./kermit007.key
+mogrify -format pgm ./kermit008.jpg; /homes/sgi/furukawa/work/software/bundler-v0.4-source/bin/sift < ./kermit008.pgm > ./kermit008.key; rm ./kermit008.pgm; gzip -f ./kermit008.key
+mogrify -format pgm ./kermit009.jpg; /homes/sgi/furukawa/work/software/bundler-v0.4-source/bin/sift < ./kermit009.pgm > ./kermit009.key; rm ./kermit009.pgm; gzip -f ./kermit009.key
+mogrify -format pgm ./kermit010.jpg; /homes/sgi/furukawa/work/software/bundler-v0.4-source/bin/sift < ./kermit010.pgm > ./kermit010.key; rm ./kermit010.pgm; gzip -f ./kermit010.key

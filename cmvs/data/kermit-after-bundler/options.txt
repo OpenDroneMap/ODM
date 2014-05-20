@@ -1,0 +1,10 @@
+--match_table matches.init.txt
+--output bundle.out
+--output_all bundle_
+--output_dir bundle
+--variable_focal_length
+--use_focal_estimate
+--constrain_focal
+--constrain_focal_weight 0.0001
+--estimate_distortion
+--run_bundle

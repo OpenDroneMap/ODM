@@ -1,0 +1,54 @@
+
+
+--------------------------------------------------------------------------
+STANN: A Simple Thread-safe Approximate Nearest Neighbor C++ Library
+Version: 0.1
+Release Date: Dec 1, 2007
+--------------------------------------------------------------------------
+Copyright (c) 2006 2007 2008 Florida State University and 
+Michael Connor and Piyush Kumar: All Rights Reserved.
+
+
+This program may be freely redistributed under the condition that the
+copyright notices (including this file) are not removed, and  
+no compensation is received.  Private, research, and institutional     
+use is free.  You may distribute modified versions of this code UNDER  
+THE CONDITION THAT THIS CODE AND ANY MODIFICATIONS MADE TO IT IN THE   
+SAME FILE REMAIN UNDER COPYRIGHT OF THE ORIGINAL AUTHOR, BOTH SOURCE   
+AND OBJECT CODE ARE MADE FREELY AVAILABLE WITHOUT CHARGE, AND CLEAR    
+NOTICE IS GIVEN OF THE MODIFICATIONS.  Distribution of this code as    
+part of a commercial system is permissible ONLY BY DIRECT ARRANGEMENT  
+WITH THE AUTHORS.  (If you are not directly supplying this code to a    
+customer, and you are instead telling them how they can obtain it for  
+free, then you are not required to make any arrangement with us.)      
+The ideas that are used to construct this software library are 
+protected by provisional patent number 60986713.
+
+
+Disclaimer
+----------
+
+Florida State University and the authors make no representations about
+the suitability or fitness of this software for any purpose.  
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE, TITLE AND NON-INFRINGEMENT. IN NO EVENT
+SHALL THE COPYRIGHT HOLDERS BE LIABLE FOR ANY DAMAGES OR OTHER LIABILITY, 
+WHETHER IN CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+
+
+Authors
+-------
+Michael Connor and Piyush Kumar
+Dept of Computer Science
+Florida State University
+Tallahassee, FL 32306-4532
+
+Emails:
+stann @ compgeom dot com.
+
+Web Page:
+http://compgeom.com/~stann
+

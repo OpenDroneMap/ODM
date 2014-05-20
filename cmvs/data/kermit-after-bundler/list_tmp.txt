@@ -1,0 +1,11 @@
+./kermit000.jpg
+./kermit001.jpg
+./kermit002.jpg
+./kermit003.jpg
+./kermit004.jpg
+./kermit005.jpg
+./kermit006.jpg
+./kermit007.jpg
+./kermit008.jpg
+./kermit009.jpg
+./kermit010.jpg

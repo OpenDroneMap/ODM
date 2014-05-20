@@ -1,0 +1,11 @@
+./kermit000.jpg 0 660.80306
+./kermit001.jpg 0 660.80306
+./kermit002.jpg 0 660.80306
+./kermit003.jpg 0 660.80306
+./kermit004.jpg 0 660.80306
+./kermit005.jpg 0 660.80306
+./kermit006.jpg 0 660.80306
+./kermit007.jpg 0 660.80306
+./kermit008.jpg 0 660.80306
+./kermit009.jpg 0 660.80306
+./kermit010.jpg 0 660.80306
