@@ -1,5 +1,7 @@
 Run run.pl
+
 From Meshlab 1.3.3:
+
 	* Open Project file, navigate to:
 		* <project_location>/reconstruction-with-image-size-1200/bundle/bundle.out
 	* It will prompt for the image list file
