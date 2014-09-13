@@ -1,6 +1,8 @@
 Steps to get OpenDroneMap running:
 ==================================
 
+(Requires Ubuntu 12.04 32-bit at this time. May also work with Ubuntu 12.04 64-bit)
+
 Run install.sh to build.
 
 ``` ./install.sh ```
@@ -26,3 +28,7 @@ From Meshlab 1.3.3:
 		* Filters:Remeshing, Simplification and Reconstruction:Surface Reconstruction Poisson
 	* Texture the mesh
 		* Parameterization + texturing from registered rasters
+
+---
+
+Example data can be found at https://github.com/OpenDroneMap/odm_data
