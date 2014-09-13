@@ -1,3 +1,5 @@
+![](https://opendronemap.github.io/OpenDroneMap/img/odm_image.png)
+
 Steps to get OpenDroneMap running:
 ==================================
 
