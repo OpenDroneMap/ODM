@@ -3,11 +3,11 @@ Steps to get OpenDroneMap running:
 
 Run install.sh to build.
 
-```install.sh```
+``` install.sh ```
 
 From a directory full of your images, run
 
-```Run run.pl```
+``` Run run.pl ```
 
 ---
 
