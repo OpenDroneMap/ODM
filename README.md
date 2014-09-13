@@ -1,6 +1,8 @@
 Steps to get OpenDroneMap running:
 ==================================
 
+(Requires Ubuntu 12.04 32-bit at this time. May also work with Ubuntu 12.04 64-bit)
+
 Run install.sh to build.
 
 ``` ./install.sh ```
