@@ -105,6 +105,9 @@ echo "  < done - `date`"
 echo
 echo "  > getting the sources"
 
+## Reconstruct CMVS tar.gz from pieces...
+cat cmvs*.bz2* | ( cd .; tar jxv )
+
 ## getting all archives if not already present; save them to .tmp and rename them after download
 while read target source
 do
