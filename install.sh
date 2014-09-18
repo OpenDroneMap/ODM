@@ -88,7 +88,7 @@ sudo apt-get update --assume-yes > "$TOOLS_LOG_PATH/apt-get_get.log" 2>&1
 
 echo "    - installing"
 sudo apt-get install --assume-yes --install-recommends \
-  build-essential cmake g++ gcc gFortran perl ruby rubygems git \
+  build-essential cmake g++ gcc gFortran perl git \
   curl wget \
   unzip \
   imagemagick jhead \
@@ -97,7 +97,6 @@ sudo apt-get install --assume-yes --install-recommends \
   libcv-dev libcvaux-dev \
   > "$TOOLS_LOG_PATH/apt-get_install.log" 2>&1
 
-sudo gem install parallel  > /dev/null 2>&1
 
 echo "  < done - `date`"
 
