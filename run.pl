@@ -412,7 +412,7 @@ sub resize {
         if($fileObject->{isOk}){
 			unless (-e "$fileObject->{step_0_resizedImage}"){
           	  if($jobOptions{resizeTo} != "orig" && (($fileObject->{width} > $jobOptions{resizeTo}) || ($fileObject->{height} > $jobOptions{resizeTo}))){
-	                print "\n    resising $fileObject->{src} \tto $fileObject->{step_0_resizedImage}";
+	                print "\n    resizing $fileObject->{src} \tto $fileObject->{step_0_resizedImage}";
                 
 	                run("convert -resize $jobOptions{resizeTo}x$jobOptions{resizeTo} -quality 100 \"$jobOptions{srcDir}/$fileObject->{src}\" \"$fileObject->{step_0_resizedImage}\"");
 
