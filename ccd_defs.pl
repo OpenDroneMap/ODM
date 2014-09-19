@@ -149,6 +149,7 @@
      "NIKON COOLPIX P2"                 => 7.176,  # 1/1.8"
      "NIKON COOLPIX S4"                 => 5.76,   # 1/2.5"
      "NIKON COOLPIX S7c"                => 5.76,   # 1/2.5"
+     "NIKON COOLPIX S8000"              => 6.17,   # 1/2.3"     
      "NIKON CORPORATION NIKON D100"     => 23.7,
      "NIKON CORPORATION NIKON D1"       => 23.7,
      "NIKON CORPORATION NIKON D1H"      => 23.7,
