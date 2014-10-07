@@ -81,7 +81,7 @@ Died at ../../OpenDroneMap/./run.pl line 364.
 
 ```
 
-This means that your camera is not in the database, https://raw.githubusercontent.com/OpenDroneMap/OpenDroneMap/gh-pages/ccd_defs.pl
+This means that your camera is not in the database, https://github.com/OpenDroneMap/OpenDroneMap/blob/gh-pages/ccd_defs.pl
 
 This problem is easily remedied. We need to know CCD size in the camera. We'll get these for our Sony Cyber-shot DSC-HX5 from dpreview: http://www.dpreview.com/products/sony/compacts/sony_dschx5/specifications
 
