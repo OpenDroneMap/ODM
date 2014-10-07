@@ -145,6 +145,7 @@
      "Minolta Co., Ltd. DiMAGE Xi"      => 5.27,   # 1/2.7"
      "Minolta Co., Ltd. DiMAGE Xt"      => 5.27,   # 1/2.7"
      "Minolta Co., Ltd. DiMAGE Z1"  => 5.27, # 1/2.7" 
+     "NIKON CORPORATION NIKON 1 J4"     => 13.2,   # 1"
      "NIKON COOLPIX L3"                 => 5.76,   # 1/2.5"
      "NIKON COOLPIX P2"                 => 7.176,  # 1/1.8"
      "NIKON COOLPIX S4"                 => 5.76,   # 1/2.5"
