@@ -3,7 +3,7 @@
 What is it?
 ===========
 
-OpenDroneMap is a toolchain for processing raw civilian UAS imagery to other useful products? What kind of projects?
+OpenDroneMap is a toolchain for processing raw civilian UAS imagery to other useful products? What kind of products?
 
 1. Point Clouds
 2. Digital Surface Models
