@@ -1,5 +1,20 @@
 ![](https://opendronemap.github.io/OpenDroneMap/img/odm_image.png)
 
+What is it?
+===========
+
+OpenDroneMap is a toolchain for processing raw civilian UAS imagery to other useful products? What kind of projects?
+
+1. Point Clouds
+2. Digital Surface Models
+3. Textured Digital Surface Models
+4. Orthorectified Imagery
+5. Classified Point Clouds
+6. Digital Elevation Models
+7. etc.
+
+Sadly, it does not do all of this yet. So far, it does step 1: Point Clouds. But outputs 2-4 are on their way shortly, so stay tuned.
+
 Steps to get OpenDroneMap running:
 ==================================
 
@@ -18,7 +33,7 @@ From a directory full of your images, run
 
 From Meshlab 1.3.3:
 
-	* Open Project file, navigate to:
+    * Open Project file, navigate to:
 		* <project_location>/reconstruction-with-image-size-1200/bundle/bundle.out
 	* It will prompt for the image list file
 		* <project_location>/reconstruction-with-image-size-1200/list.txt
