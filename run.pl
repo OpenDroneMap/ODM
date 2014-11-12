@@ -202,7 +202,7 @@ sub parseArgs {
         print "\n  ";
                    
         print "\n         --resize-to: <positive integer|\"orig\">";
-        print "\n             default: 1200";
+        print "\n             default: 3000";
         print "\n                      will resize the images so that the maximum width/height of the images are smaller or equal to the specified number";
         print "\n                      if \"--resize-to orig\" is used it will use the images without resizing";
         print "\n  ";
@@ -452,14 +452,14 @@ sub getKeypoints {
 	
         if($fileObject->{isOk}){
             if($args{"--lowe-sift"}){
-                $vlsiftJobs    .= "echo -n \"$c/$objectStats{good} - \" && convert -format pgm \"$fileObject->{step_0_resizedImage}\" \"$fileObject->{step_1_pgmFile}\"";
+                $vlsiftJobs    .= "echo -n \" $c/$objectStats{good} - \" && convert -format pgm \"$fileObject->{step_0_resizedImage}\" \"$fileObject->{step_1_pgmFile}\"";
                 $vlsiftJobs    .= " && \"$BIN_PATH/sift\" < \"$fileObject->{step_1_pgmFile}\" > \"$fileObject->{step_1_keyFile}\"";
                 $vlsiftJobs    .= " && gzip -f \"$fileObject->{step_1_keyFile}\"";
                 $vlsiftJobs    .= " && rm -f \"$fileObject->{step_1_pgmFile}\"";
                 $vlsiftJobs    .= " && rm -f \"$fileObject->{step_1_keyFile}.sift\"\n";
             } else {
 				unless (-e "$jobOptions{jobDir}/$fileObject->{base}.key.bin") {
-	                $vlsiftJobs    .= "echo -n \"$c/$objectStats{good} - \" && convert -format pgm \"$fileObject->{step_0_resizedImage}\" \"$fileObject->{step_1_pgmFile}\"";
+	                $vlsiftJobs    .= "echo -n \" $c/$objectStats{good} - \" && convert -format pgm \"$fileObject->{step_0_resizedImage}\" \"$fileObject->{step_1_pgmFile}\"";
 	                $vlsiftJobs    .= " && \"$BIN_PATH/vlsift\" \"$fileObject->{step_1_pgmFile}\" -o \"$fileObject->{step_1_keyFile}.sift\" > /dev/null && perl \"$BIN_PATH/../convert_vlsift_to_lowesift.pl\" \"$jobOptions{jobDir}/$fileObject->{base}\"";
 	                $vlsiftJobs    .= " && gzip -f \"$fileObject->{step_1_keyFile}\"";
 	                $vlsiftJobs    .= " && rm -f \"$fileObject->{step_1_pgmFile}\"";
