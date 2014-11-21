@@ -121,7 +121,7 @@ do
     echo "    - already downloaded $source"
   fi
 done <<EOF
-parallel.tar.bz2  http://ftp.gnu.org/gnu/parallel/parallel-20100922.tar.bz2
+parallel.tar.bz2  http://ftp.gnu.org/gnu/parallel/parallel-20141022.tar.bz2
 clapack.tgz  http://www.netlib.org/clapack/clapack-3.2.1-CMAKE.tgz
 bundler.zip  http://phototour.cs.washington.edu/bundler/distr/bundler-v0.4-source.zip
 PoissonRecon.zip http://www.cs.jhu.edu/~misha/Code/PoissonRecon/Version2/PoissonRecon.zip
@@ -152,7 +152,7 @@ mv -f graclus1.2			    "$GRACLUS_PATH"
 mv -f clapack-3.2.1-CMAKE "$CLAPACK_PATH"
 mv -f vlfeat-0.9.13       "$VLFEAT_PATH"
 mv -f bundler-v0.4-source "$BUNDLER_PATH"
-mv -f parallel-20100922   "$PARALLEL_PATH"
+mv -f parallel-20141022   "$PARALLEL_PATH"
 mv -f PoissonRecon        "$PSR_PATH"
 mv -f cmvs                "$CMVS_PATH"
 
