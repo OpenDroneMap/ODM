@@ -164,6 +164,7 @@
      "NIKON CORPORATION NIKON D70s"     => 23.7,
      "NIKON CORPORATION NIKON D80"      => 23.6,
      "NIKON CORPORATION NIKON D700"     => 36.0,
+     "NIKON D5100"                      => 23.6,   # APS-C (23.6 x 15.7 mm)
      "NIKON E2500"                      => 5.27,   # 1/2.7"
      "NIKON E2500"                      => 5.27,   # 1/2.7"
      "NIKON E3100"                      => 5.27,   # 1/2.7"
