@@ -18,7 +18,9 @@ Sadly, it does not do all of this yet. So far, it does step 1: Point Clouds. But
 Steps to get OpenDroneMap running:
 ==================================
 
-(Requires Ubuntu 12.04 32-bit at this time. May also work with Ubuntu 12.04 64-bit.  See https://github.com/OpenDroneMap/odm_vagrant for running on Windows in a VM)
+<del>(Requires Ubuntu 12.04 32-bit at this time. May also work with Ubuntu 12.04 64-bit.</del>
+
+(Requires Ubuntu 12.04 or later, see https://github.com/OpenDroneMap/odm_vagrant for running on Windows in a VM)
 
 Run install.sh to build.
 
