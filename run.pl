@@ -193,8 +193,8 @@ sub parseArgs {
     }
     
     if($args{"--help"}){        
-        print "\nusgae: run.pl [options]";
-        print "\nit should be run from the folder contining the images to which should reconstructed";
+        print "\nusage: run.pl [options]";
+        print "\nit should be run from the folder containing the images to be reconstructed";
         print "\n";
         print "\noptions:";
         print "\n              --help: ";
@@ -232,7 +232,7 @@ sub parseArgs {
                    
         print "\n --matcher-threshold: <float> (percent)";
         print "\n             default: 2.0";
-        print "\n                      ignore matched keypoints if the two images share less then <float> percent of keypoints";
+        print "\n                      ignore matched keypoints if the two images share less than <float> percent of keypoints";
         print "\n  ";
                    
         print "\n     --matcher-ratio: <float";
