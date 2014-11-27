@@ -94,6 +94,7 @@ sudo apt-get install --assume-yes --install-recommends \
   imagemagick jhead \
   libjpeg-dev libboost-dev libgsl0-dev libx11-dev libxext-dev liblapack-dev \
   libzip-dev \
+  libswitch-perl \
   libcv-dev libcvaux-dev \
   > "$TOOLS_LOG_PATH/apt-get_install.log" 2>&1
 
