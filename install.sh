@@ -108,7 +108,7 @@ sudo apt-get update --assume-yes > "$TOOLS_LOG_PATH/apt-get_get.log" 2>&1
 
 echo "    - installing"
 sudo apt-get install --assume-yes --install-recommends \
-  build-essential cmake g++ gcc gFortran perl git \
+  build-essential cmake g++ gcc gFortran perl git autoconf \
   curl wget \
   unzip \
   imagemagick jhead proj-bin libproj-dev\
