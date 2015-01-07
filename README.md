@@ -30,6 +30,8 @@ From a directory full of your images, run
 
 ``` ./run.pl ```
 
+An overview of installing and running OpenDroneMap on Ubuntu can be found here: https://www.youtube.com/watch?v=e2qp3o8caPs
+
 ---
 
 
