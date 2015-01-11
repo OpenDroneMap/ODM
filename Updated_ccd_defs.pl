@@ -72,7 +72,6 @@
      "Canon Canon PowerShot S60"        => 7.176,  # 1/1.8"
      "Canon Canon PowerShot S70"        => 7.176,  # 1/1.8"
      "Canon Canon PowerShot S80"        => 7.176,  # 1/1.8"
-     "Canon Canon PowerShot S100"       => 7.44,   # 1/1.7"
      "Canon Canon PowerShot SD1000"     => 5.75,   # 1/2.5"
      "Canon Canon PowerShot SD100"      => 5.27,   # 1/2.7"
      "Canon Canon PowerShot SD10"       => 5.75,   # 1/2.5"
