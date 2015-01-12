@@ -57,6 +57,7 @@
      "Canon Canon PowerShot G7"         => 7.176,  # 1/1.8"
      "Canon Canon PowerShot G9"         => 7.600,  # 1/1.7"
      "Canon Canon PowerShot Pro1"       => 8.8,    # 2/3"
+     "Canon Canon PowerShot S100"       => 7.44,   # 1/1.7"
      "Canon Canon PowerShot S110"       => 5.27,   # 1/2.7"
      "Canon Canon PowerShot S1 IS"      => 5.27,   # 1/2.7"
      "Canon Canon PowerShot S200"       => 5.27,   # 1/2.7"
