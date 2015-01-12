@@ -13,7 +13,7 @@ OpenDroneMap is a toolchain for processing raw civilian UAS imagery to other use
 6. Digital Elevation Models
 7. etc.
 
-Sadly, it does not do all of this yet. So far, it does step 1: Point Clouds. But outputs 2-4 are on their way shortly, so stay tuned.
+Sadly, it does not do all of this yet. So far, it does step 1: Point Clouds. Outputs 2-4 are on their way. Check the alternate branch: https://github.com/OpenDroneMap/OpenDroneMap/tree/texturing_orthophoto_spotscale_additions for early access to / testing of these features.
 
 Steps to get OpenDroneMap running:
 ==================================
