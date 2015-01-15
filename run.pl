@@ -280,7 +280,11 @@ sub parseArgs {
 }
 
 sub prepareObjects {
- ## get the source list    
+    $jobOptions{resizeTo} = $args{"--resize-to"};
+
+    print "\n  using max image size of $jobOptions{resizeTo} x $jobOptions{resizeTo}";
+
+ ## get the source list
     @source_files = `ls -1 | egrep "\.[jJ]{1}[pP]{1}[eE]{0,1}[gG]{1}"`;
     
     print "\n  - source files - "; now(); print "\n";
@@ -327,7 +331,9 @@ sub prepareObjects {
         }
     
         if($fileObject{ccd} && $fileObject{focal} && $fileObject{width} && $fileObject{height}){
-            if($fileObject{width} > $fileObject{height}){
+            if($jobOptions{resizeTo} != "orig" && (($fileObject{width} > $jobOptions{resizeTo}) || ($fileObject{height} > $jobOptions{resizeTo}))) {
+                $fileObject{focalpx} = $jobOptions{resizeTo} * ($fileObject{focal} / $fileObject{ccd});
+            } elsif($fileObject{width} > $fileObject{height}) {
                 $fileObject{focalpx} = $fileObject{width} * ($fileObject{focal} / $fileObject{ccd});
             } else {
                 $fileObject{focalpx} = $fileObject{height} * ($fileObject{focal} / $fileObject{ccd});
@@ -367,11 +373,8 @@ sub prepareObjects {
     }
     
     print "\n";
-    
-    $jobOptions{resizeTo} = $args{"--resize-to"};
 
-    print "\n  using max image size of $jobOptions{resizeTo} x $jobOptions{resizeTo}";    
-    
+
     $jobOptions{jobDir} = "$jobOptions{srcDir}/reconstruction-with-image-size-$jobOptions{resizeTo}";
     
     $jobOptions{step_1_convert}         = "$jobOptions{jobDir}/_convert.templist.txt";
