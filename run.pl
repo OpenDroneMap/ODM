@@ -475,7 +475,7 @@ sub getKeypoints {
     print SIFT_DEST $vlsiftJobs;
     close(SIFT_DEST);
     
-    run("\"$BIN_PATH/parallel\" --halt-on-error 1 -j+0 < \"$jobOptions{step_1_vlsift}\"");
+    run("\"$BIN_PATH/parallel\" --halt-on-error 1 -j3 < \"$jobOptions{step_1_vlsift}\"");
     
     if($args{"--end-with"} ne "getKeypoints"){
         match();
