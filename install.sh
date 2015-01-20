@@ -38,8 +38,15 @@ echo "  - script started - `date`"
 	       VLFEAT_PATH="$TOOLS_SRC_PATH/vlfeat"
 	     PARALLEL_PATH="$TOOLS_SRC_PATH/parallel"
 	          PSR_PATH="$TOOLS_SRC_PATH/PoissonRecon"
-			  GRACLUS_PATH="$TOOLS_SRC_PATH/graclus"
-	
+              GRACLUS_PATH="$TOOLS_SRC_PATH/graclus"
+                  
+                  PCL_PATH="$TOOLS_SRC_PATH/pcl"
+          ODM_MESHING_PATH="$TOOLS_SRC_PATH/odm_meshing"
+        ODM_TEXTURING_PATH="$TOOLS_SRC_PATH/odm_texturing"
+       ODM_ORTHOPHOTO_PATH="$TOOLS_SRC_PATH/odm_orthophoto"
+      ODM_EXTRACT_UTM_PATH="$TOOLS_SRC_PATH/odm_extract_utm"
+           ODM_GEOREF_PATH="$TOOLS_SRC_PATH/odm_georef"
+
             ## executables
 	     EXTRACT_FOCAL="$TOOLS_BIN_PATH/extract_focal.pl"
 	         MATCHKEYS="$TOOLS_BIN_PATH/KeyMatch"
@@ -53,6 +60,12 @@ echo "  - script started - `date`"
 	          PARALLEL="$TOOLS_BIN_PATH/parallel"
 	               PSR="$TOOLS_BIN_PATH/PoissonRecon"
 	VLSIFT_TO_LOWESIFT="$TOOLS_BIN_PATH/convert_vlsift_to_lowesift.pl"
+
+               ODM_MESHING="$TOOLS_BIN_PATH/odm_meshing"
+             ODM_TEXTURING="$TOOLS_BIN_PATH/odm_texturing"
+            ODM_ORTHOPHOTO="$TOOLS_BIN_PATH/odm_orthophoto"
+           ODM_EXTRACT_UTM="$TOOLS_BIN_PATH/odm_extract_utm"
+                ODM_GEOREF="$TOOLS_BIN_PATH/odm_georef"
 
 ## get sys vars
 ARCH=`uname -m`
@@ -75,6 +88,13 @@ mkdir -p "$TOOLS_LIB_PATH"
 mkdir -p "$TOOLS_SRC_PATH"
 mkdir -p "$TOOLS_LOG_PATH"
 
+## Copy meshing and texturing to src folder
+cp -rf "odm_meshing" "$TOOLS_SRC_PATH/"
+cp -rf "odm_texturing" "$TOOLS_SRC_PATH/"
+cp -rf "odm_orthophoto" "$TOOLS_SRC_PATH/"
+cp -rf "odm_extract_utm" "$TOOLS_SRC_PATH/"
+cp -rf "odm_georef" "$TOOLS_SRC_PATH/"
+
 ## output sys info
 echo "System info:" > "$TOOLS_LOG_PATH/sysinfo.txt"
 uname -a > "$TOOLS_LOG_PATH/sysinfo.txt"
@@ -88,14 +108,14 @@ sudo apt-get update --assume-yes > "$TOOLS_LOG_PATH/apt-get_get.log" 2>&1
 
 echo "    - installing"
 sudo apt-get install --assume-yes --install-recommends \
-  build-essential cmake g++ gcc gFortran perl git \
+  build-essential cmake g++ gcc gFortran perl git autoconf \
   curl wget \
   unzip \
-  imagemagick jhead \
-  libjpeg-dev libboost-dev libgsl0-dev libx11-dev libxext-dev liblapack-dev \
+  imagemagick jhead proj-bin libproj-dev\
+  libjpeg-dev libboost1.48-all-dev libgsl0-dev libx11-dev libxext-dev liblapack-dev \
+  libeigen3-dev libflann-dev libvtk5-dev libqhull-dev libusb-1.0-0-dev\
   libzip-dev \
-  libswitch-perl \
-  libcv-dev libcvaux-dev \
+  libcv-dev libcvaux-dev libopencv-dev \
   > "$TOOLS_LOG_PATH/apt-get_install.log" 2>&1
 
 
@@ -129,6 +149,7 @@ PoissonRecon.zip http://www.cs.jhu.edu/~misha/Code/PoissonRecon/Version2/Poisson
 vlfeat.tar.gz http://www.vlfeat.org/download/vlfeat-0.9.13-bin.tar.gz
 cmvs.tar.gz http://www.di.ens.fr/cmvs/cmvs-fix2.tar.gz
 graclus.tar.gz http://smathermather.github.io/BundlerTools/patched_files/src/graclus/graclus1.2.tar.gz
+pcl.tar.gz https://github.com/PointCloudLibrary/pcl/archive/pcl-1.7.2.tar.gz
 EOF
 
 echo "  < done - `date`"
@@ -149,13 +170,15 @@ done
 
 wait
 
-mv -f graclus1.2			    "$GRACLUS_PATH"
+mv -f graclus1.2          "$GRACLUS_PATH"
 mv -f clapack-3.2.1-CMAKE "$CLAPACK_PATH"
 mv -f vlfeat-0.9.13       "$VLFEAT_PATH"
 mv -f bundler-v0.4-source "$BUNDLER_PATH"
 mv -f parallel-20141022   "$PARALLEL_PATH"
 mv -f PoissonRecon        "$PSR_PATH"
 mv -f cmvs                "$CMVS_PATH"
+mv -f pcl-pcl-1.7.2       "$PCL_PATH"
+
 
 echo "  < done - `date`"
 
@@ -179,7 +202,6 @@ echo
 
 sudo chown -R `id -u`:`id -g` *
 #sudo chmod -R 777 *
-
 
 echo "  > graclus"
 	cd "$GRACLUS_PATH"
@@ -325,6 +347,108 @@ echo "  > bundler"
 echo "  < done - `date`"
 echo
 
+echo "  > pcl "
+	#cd "$PCL_PATH"
+	
+	#Install pcl dependencies using the default package manager.
+	#sudo apt-get install libeigen3-dev libflann-dev libvtk5-dev libqhull-dev
+
+	#install the required boost version.
+	#sudo apt-get install libboost1.48-all-dev
+
+	mkdir -p "pcl"
+	mkdir -p "$TOOLS_LIB_PATH/pcl"
+	mkdir -p "$PCL_PATH/pcl_tmp"
+	mkdir -p "$PCL_PATH/pcl_build"
+
+	#mv -f "pcl-pcl-1.7.2" "$PCL_PATH/pcl_tmp"
+
+	cd "$PCL_PATH/pcl_build"
+
+	echo "    - configuring pcl"
+  	
+	cmake .. -DCMAKE_INSTALL_PREFIX="$TOOLS_LIB_PATH/pcl" -DCMAKE_BUILD_TYPE=Release -DPCL_VERBOSITY_LEVEL=Error -DBUILD_features=OFF -DBUILD_filters=OFF -DBUILD_geometry=OFF -DBUILD_keypoints=OFF -DBUILD_outofcore=OFF -DBUILD_people=OFF -DBUILD_recognition=OFF -DBUILD_registration=OFF -DBUILD_sample_consensus=OFF -DBUILD_segmentation=OFF -DBUILD_features=OFF -DBUILD_surface_on_nurbs=OFF -DBUILD_tools=OFF -DBUILD_tracking=OFF -DBUILD_visualization=OFF -DWITH_QT=OFF -DBUILD_OPENNI=OFF -DBUILD_OPENNI2=OFF -DWITH_OPENNI=OFF -DWITH_OPENNI2=OFF -DWITH_FZAPI=OFF -DWITH_LIBUSB=OFF -DWITH_PCAP=OFF -DWITH_PXCAPI=OFF > "$TOOLS_LOG_PATH/pcl_1_build.log" 2>&1
+  
+	echo "    - building and installing pcl"
+	make install > "$TOOLS_LOG_PATH/pcl_2_build.log" 2>&1
+
+echo "  < done - `date`"
+echo
+
+echo "  > meshing "
+	cd "$ODM_MESHING_PATH"
+	
+	echo "    - configuring odm_meshing"
+	cmake . -DPCL_DIR="$TOOLS_LIB_PATH/pcl" > "$TOOLS_LOG_PATH/odm_meshing_1_build.log" 2>&1
+	
+	echo "    - building odm_meshing"
+	make > "$TOOLS_LOG_PATH/odm_meshing_2_build.log" 2>&1
+	
+	# copy output program to the binaries folder.
+	cp -f "odm_meshing" "$TOOLS_BIN_PATH/odm_meshing"	
+	
+echo "  < done - `date`"
+echo
+
+echo "  > texturing "
+	cd "$ODM_TEXTURING_PATH"
+	
+	echo "    - configuring odm_texturing"
+	cmake . -DPCL_DIR="$TOOLS_LIB_PATH/pcl" > "$TOOLS_LOG_PATH/odm_texturing_1_build.log" 2>&1
+	
+	echo "    - building odm_texturing"
+	make > "$TOOLS_LOG_PATH/odm_texturing_2_build.log" 2>&1
+	
+	# copy output program to the binaries folder.
+	cp -f "odm_texturing" "$TOOLS_BIN_PATH/odm_texturing"	
+	
+echo "  < done - `date`"
+echo
+
+echo "  > extract_utm "
+	cd "$ODM_EXTRACT_UTM_PATH"
+	
+	echo "    - configuring odm_extract_utm"
+	cmake . > "$TOOLS_LOG_PATH/odm_extract_utm_1_build.log" 2>&1
+	
+	echo "    - building odm_extract_utm"
+	make > "$TOOLS_LOG_PATH/odm_extract_utm_2_build.log" 2>&1
+	
+	# copy output program to the binaries folder.
+	cp -f "odm_extract_utm" "$TOOLS_BIN_PATH/odm_extract_utm"	
+	
+echo "  < done - `date`"
+echo
+
+echo "  > georef "
+	cd "$ODM_GEOREF_PATH"
+	
+	echo "    - configuring odm_georef"
+	cmake . -DPCL_DIR="$TOOLS_LIB_PATH/pcl" > "$TOOLS_LOG_PATH/odm_georef_1_build.log" 2>&1
+	
+	echo "    - building odm_georef"
+	make > "$TOOLS_LOG_PATH/odm_georef_2_build.log" 2>&1
+	
+	# copy output program to the binaries folder.
+	cp -f "odm_georef" "$TOOLS_BIN_PATH/odm_georef"	
+	
+echo "  < done - `date`"
+echo
+
+echo "  > orthophoto "
+	cd "$ODM_ORTHOPHOTO_PATH"
+	
+	echo "    - configuring odm_orthophoto"
+	cmake . -DPCL_DIR="$TOOLS_LIB_PATH/pcl" > "$TOOLS_LOG_PATH/odm_orthophoto_1_build.log" 2>&1
+	
+	echo "    - building odm_orthophoto"
+	make > "$TOOLS_LOG_PATH/odm_orthophoto_2_build.log" 2>&1
+	
+	# copy output program to the binaries folder.
+	cp -f "odm_orthophoto" "$TOOLS_BIN_PATH/odm_orthophoto"	
+	
+echo "  < done - `date`"
+echo
 
 cd "$TOOLS_PATH"
 
