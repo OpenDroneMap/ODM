@@ -112,7 +112,7 @@ sudo apt-get install --assume-yes --install-recommends \
   curl wget \
   unzip \
   imagemagick jhead proj-bin libproj-dev\
-  libjpeg-dev libboost1.48-all-dev libgsl0-dev libx11-dev libxext-dev liblapack-dev \
+  libjpeg-dev libboost-all-dev libgsl0-dev libx11-dev libxext-dev liblapack-dev \
   libeigen3-dev libflann-dev libvtk5-dev libqhull-dev libusb-1.0-0-dev\
   libzip-dev \
   libcv-dev libcvaux-dev libopencv-dev \
