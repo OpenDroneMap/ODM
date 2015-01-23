@@ -1,0 +1,10 @@
+*~
+bin/
+include/
+lib/
+logs/
+src/
+
+cmvs.tar.gz
+parallel.tar.bz2
+pcl.tar.gz
