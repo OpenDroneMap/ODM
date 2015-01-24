@@ -114,6 +114,7 @@ sudo apt-get install --assume-yes --install-recommends \
   imagemagick jhead proj-bin libproj-dev\
   libjpeg-dev libboost-all-dev libgsl0-dev libx11-dev libxext-dev liblapack-dev \
   libeigen3-dev libflann-dev libvtk5-dev libqhull-dev libusb-1.0-0-dev\
+  libjson-perl \
   libzip-dev \
   libcv-dev libcvaux-dev libopencv-dev \
   > "$TOOLS_LOG_PATH/apt-get_install.log" 2>&1
