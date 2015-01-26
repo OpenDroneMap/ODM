@@ -641,6 +641,26 @@ sub pmvs {
     system("cp -Rf \"$jobOptions{jobDir}/pmvs/models\" \"$jobOptions{jobDir}-results\"");
 }
 
+sub gpsAlign {
+    print "\n";
+    print "\n  - aligning reconstruction with GPS - ";
+    print "\n";
+
+    chdir($jobOptions{jobDir});
+
+    # Create opensfm working folder
+    mkdir($jobOptions{jobDir}/opensfm);
+
+    # Convert bundle.out to opensfm
+    run("\"$OPENSFM_PATH/bin/import_bundler\" . --list ../list.txt --bundleout ../bundle/bundle.out");
+
+    # Align reconstruction.json
+    run("\"$OPENSFM_PATH/bin/align\" .");
+
+    # Write corrected GPS to images
+    run("\"$OPENSFM_PATH/bin/update_geotag\" .");
+}
+
 parseArgs();
 prepareObjects();
     
