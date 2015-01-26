@@ -38,7 +38,9 @@ echo "  - script started - `date`"
 	       VLFEAT_PATH="$TOOLS_SRC_PATH/vlfeat"
 	     PARALLEL_PATH="$TOOLS_SRC_PATH/parallel"
 	          PSR_PATH="$TOOLS_SRC_PATH/PoissonRecon"
-			  GRACLUS_PATH="$TOOLS_SRC_PATH/graclus"
+        GRACLUS_PATH="$TOOLS_SRC_PATH/graclus"
+          CERES_PATH="$TOOLS_SRC_PATH/ceres-solver"
+        OPENSFM_PATH="$TOOLS_SRC_PATH/OpenSfM"
 	
             ## executables
 	     EXTRACT_FOCAL="$TOOLS_BIN_PATH/extract_focal.pl"
@@ -96,6 +98,9 @@ sudo apt-get install --assume-yes --install-recommends \
   libzip-dev \
   libswitch-perl \
   libcv-dev libcvaux-dev \
+  libgoogle-glog-dev libatlas-base-dev libeigen3-dev libsuitesparse-dev \
+  libboost-python-dev \
+  python-pyexiv2 \
   > "$TOOLS_LOG_PATH/apt-get_install.log" 2>&1
 
 
@@ -129,7 +134,9 @@ PoissonRecon.zip http://www.cs.jhu.edu/~misha/Code/PoissonRecon/Version2/Poisson
 vlfeat.tar.gz http://www.vlfeat.org/download/vlfeat-0.9.13-bin.tar.gz
 cmvs.tar.gz http://www.di.ens.fr/cmvs/cmvs-fix2.tar.gz
 graclus.tar.gz http://smathermather.github.io/BundlerTools/patched_files/src/graclus/graclus1.2.tar.gz
+ceres-solver.tar.gz http://ceres-solver.org/ceres-solver-1.10.0.tar.gz
 EOF
+git clone git://github.com/mapillary/OpenSfM $OPENSFM_PATH
 
 echo "  < done - `date`"
 
@@ -156,6 +163,7 @@ mv -f bundler-v0.4-source "$BUNDLER_PATH"
 mv -f parallel-20141022   "$PARALLEL_PATH"
 mv -f PoissonRecon        "$PSR_PATH"
 mv -f cmvs                "$CMVS_PATH"
+mv -f ceres-solver-1.10.0 "$CERES_PATH"
 
 echo "  < done - `date`"
 
@@ -179,6 +187,36 @@ echo
 
 sudo chown -R `id -u`:`id -g` *
 #sudo chmod -R 777 *
+
+
+echo "  > ceres"
+  cd "$CERES_PATH"
+
+  echo "    - configuring ceres"
+  mkdir -p build
+  cd build
+  cmake .. -DCMAKE_INSTALL_PREFIX=$TOOLS_PATH \
+           -DCMAKE_C_FLAGS=-fPIC -DCMAKE_CXX_FLAGS=-fPIC \
+           -DBUILD_EXAMPLES=OFF -DBUILD_TESTING=OFF  > "$TOOLS_LOG_PATH/ceres_1_config.log" 2>&1
+  echo "    - building ceres"
+  make install > "$TOOLS_LOG_PATH/ceres_1_build.log" 2>&1
+
+echo "  < done - `date`"
+echo
+
+
+echo "  > OpenSfM"
+  cd "$OPENSFM_PATH"
+
+  echo "    - configuring opensfm"
+  mkdir -p lib/build
+  cd lib/build
+  cmake ../src -DCERES_ROOT_DIR=$TOOLS_PATH > "$TOOLS_LOG_PATH/opensfm_1_config.log" 2>&1
+  echo "    - building opensfm"
+  make > "$TOOLS_LOG_PATH/opensfm_1_build.log" 2>&1
+
+echo "  < done - `date`"
+echo
 
 
 echo "  > graclus"
@@ -324,6 +362,7 @@ echo "  > bundler"
   cp -f "$BUNDLER_PATH/lib/libANN_char.so" "$TOOLS_LIB_PATH/"
 echo "  < done - `date`"
 echo
+
 
 
 cd "$TOOLS_PATH"
