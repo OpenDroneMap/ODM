@@ -294,4 +294,9 @@
      "SONY DSC-W7"                              => 7.176,  # 1/1.8"
      "SONY DSC-W80"                             => 5.75,   # 1/2.5"
      "SONY DSC-HX5V"                            => 6.104,  # 1/2.4"
+     "SONY NEX-7"                               => 23.5, # APS-C" 
+     "SONY A7"                                  => 35.9, # Full-frame
+     "SONY A7R"                                 => 35.9, # Full-frame
+
+     
 );

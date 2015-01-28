@@ -68,14 +68,14 @@ sub parseArgs {
  ## defaults
     $args{"--match-size"}            = "200";
 
-    $args{"--resize-to"}             = "3000";
+    $args{"--resize-to"}             = "1200";
     
     $args{"--start-with"}            = "resize";
-    $args{"--end-with"}              = "pmvs";
+    $args{"--end-with"}              = "odm_texturing";
     
     $args{"--cmvs-maxImages"}        = 100;
 	
-    $args{"--matcher-ratio"}     	 = 0.6;
+    $args{"--matcher-ratio"}         = 0.6;
     $args{"--matcher-threshold"}     = 2.0;
     
     $args{"--pmvs-level"}            = 1;
@@ -83,6 +83,14 @@ sub parseArgs {
     $args{"--pmvs-threshold"}        = 0.7;
     $args{"--pmvs-wsize"}            = 7;
     $args{"--pmvs-minImageNum"}      = 3;
+
+    $args{"--odm_meshing-maxVertexCount"}   = 100000;
+    $args{"--odm_meshing-octreeDepth"}      = 9;
+    $args{"--odm_meshing-samplesPerNode"}   = 1;
+    $args{"--odm_meshing-solverDivide"}     = 9;
+
+    $args{"--odm_texturing-textureResolution"}   = 4096;
+    $args{"--odm_texturing-textureWithSize"}     = 3600;
     
     for($i = 0; $i <= $#ARGV; $i++) {
         if($ARGV[$i] =~ /^--[^a-z\-]*/){
@@ -187,13 +195,55 @@ sub parseArgs {
                         die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1];
                     }
                 }
+                if($ARGV[$i] eq "--odm_meshing-maxVertexCount"){
+                    if($ARGV[$i+1] =~ /^[0-9]*$/){
+                        $args{$ARGV[$i]} = $ARGV[$i+1];
+                    } else {
+                        die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1];
+                    }
+                }
+                if($ARGV[$i] eq "--odm_meshing-octreeDepth"){
+                    if($ARGV[$i+1] =~ /^[0-9]*$/){
+                        $args{$ARGV[$i]} = $ARGV[$i+1];
+                    } else {
+                        die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1];
+                    }
+                }
+                if($ARGV[$i] eq "--odm_meshing-samplesPerNode"){
+                    if($ARGV[$i+1] =~ /^[0-9]*\.?[0-9]*$/){
+                        $args{$ARGV[$i]} = $ARGV[$i+1];
+                    } else {
+                        die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1];
+                    }
+                }
+                if($ARGV[$i] eq "--odm_meshing-solverDivide"){
+                    if($ARGV[$i+1] =~ /^[0-9]*$/){
+                        $args{$ARGV[$i]} = $ARGV[$i+1];
+                    } else {
+                        die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1];
+                    }
+                }
+                if($ARGV[$i] eq "--odm_texturing-textureResolution"){
+                    if($ARGV[$i+1] =~ /^[0-9]*$/){
+                        $args{$ARGV[$i]} = $ARGV[$i+1];
+                    } else {
+                        die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1];
+                    }
+                }
+                if($ARGV[$i] eq "--odm_texturing-textureWithSize"){
+                    if($ARGV[$i+1] =~ /^[0-9]*$/){
+                        $args{$ARGV[$i]} = $ARGV[$i+1];
+                    } else {
+                        die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1];
+                    }
+                }
             }
         }
     }
     
     if($args{"--help"}){        
-        print "\nusage: run.pl [options]";
-        print "\nit should be run from the folder containing the images to be reconstructed";
+        print "\nusgae: run.pl [options]";
+        print "\nit should be run from the folder contining the images to which should reconstructed";
         print "\n";
         print "\noptions:";
         print "\n              --help: ";
@@ -201,7 +251,7 @@ sub parseArgs {
         print "\n  ";
                    
         print "\n         --resize-to: <positive integer|\"orig\">";
-        print "\n             default: 3000";
+        print "\n             default: 1200";
         print "\n                      will resize the images so that the maximum width/height of the images are smaller or equal to the specified number";
         print "\n                      if \"--resize-to orig\" is used it will use the images without resizing";
         print "\n  ";
@@ -231,7 +281,7 @@ sub parseArgs {
                    
         print "\n --matcher-threshold: <float> (percent)";
         print "\n             default: 2.0";
-        print "\n                      ignore matched keypoints if the two images share less than <float> percent of keypoints";
+        print "\n                      ignore matched keypoints if the two images share less then <float> percent of keypoints";
         print "\n  ";
                    
         print "\n     --matcher-ratio: <float";
@@ -263,6 +313,18 @@ sub parseArgs {
         print "\n                      see http://grail.cs.washington.edu/software/pmvs/documentation.html for an explanation of these parameters";
         print "\n";
         
+        print "\n     --odm_meshing-maxVertexCount: <positive integer>";
+        print "\n                       default: 100000";
+        print "\n                                The maximum vertex count of the output mesh.";
+                   
+        print "\n     --odm_meshing-octreeDepth: <positive integer>";
+        print "\n                       default: 9";
+        print "\n                                Octree depth used in the mesh reconstruction, increase to get more vertices, recommended values are 8-12";
+                   
+        print "\n  --odm_meshing-samplesPerNode: <float: 1.0 <= x>";
+        print "\n                       default: 1";
+        print "\n                                Number of points per octree node, recommended value: 1.0";
+
         exit;
     }
     
@@ -454,14 +516,14 @@ sub getKeypoints {
 	
         if($fileObject->{isOk}){
             if($args{"--lowe-sift"}){
-                $vlsiftJobs    .= "echo -n \" $c/$objectStats{good} - \" && convert -format pgm \"$fileObject->{step_0_resizedImage}\" \"$fileObject->{step_1_pgmFile}\"";
+                $vlsiftJobs    .= "echo -n \"$c/$objectStats{good} - \" && convert -format pgm \"$fileObject->{step_0_resizedImage}\" \"$fileObject->{step_1_pgmFile}\"";
                 $vlsiftJobs    .= " && \"$BIN_PATH/sift\" < \"$fileObject->{step_1_pgmFile}\" > \"$fileObject->{step_1_keyFile}\"";
                 $vlsiftJobs    .= " && gzip -f \"$fileObject->{step_1_keyFile}\"";
                 $vlsiftJobs    .= " && rm -f \"$fileObject->{step_1_pgmFile}\"";
                 $vlsiftJobs    .= " && rm -f \"$fileObject->{step_1_keyFile}.sift\"\n";
             } else {
 				unless (-e "$jobOptions{jobDir}/$fileObject->{base}.key.bin") {
-	                $vlsiftJobs    .= "echo -n \" $c/$objectStats{good} - \" && convert -format pgm \"$fileObject->{step_0_resizedImage}\" \"$fileObject->{step_1_pgmFile}\"";
+	                $vlsiftJobs    .= "echo -n \"$c/$objectStats{good} - \" && convert -format pgm \"$fileObject->{step_0_resizedImage}\" \"$fileObject->{step_1_pgmFile}\"";
 	                $vlsiftJobs    .= " && \"$BIN_PATH/vlsift\" \"$fileObject->{step_1_pgmFile}\" -o \"$fileObject->{step_1_keyFile}.sift\" > /dev/null && perl \"$BIN_PATH/../convert_vlsift_to_lowesift.pl\" \"$jobOptions{jobDir}/$fileObject->{base}\"";
 	                $vlsiftJobs    .= " && gzip -f \"$fileObject->{step_1_keyFile}\"";
 	                $vlsiftJobs    .= " && rm -f \"$fileObject->{step_1_pgmFile}\"";
@@ -477,7 +539,7 @@ sub getKeypoints {
     print SIFT_DEST $vlsiftJobs;
     close(SIFT_DEST);
     
-    run("\"$BIN_PATH/parallel\" --halt-on-error 1 -j+0 < \"$jobOptions{step_1_vlsift}\"");
+    run("\"$BIN_PATH/parallel\" --halt-on-error 1 -j3 < \"$jobOptions{step_1_vlsift}\"");
     
     if($args{"--end-with"} ne "getKeypoints"){
         match();
@@ -577,7 +639,7 @@ sub bundler {
     $bundlerOptions .= "--variable_focal_length\n";
     $bundlerOptions .= "--use_focal_estimate\n";
     $bundlerOptions .= "--constrain_focal\n";
-    $bundlerOptions .= "--constrain_focal_weight 0.01\n";
+    $bundlerOptions .= "--constrain_focal_weight 0.0\n";
     $bundlerOptions .= "--estimate_distortion\n";
     $bundlerOptions .= "--run_bundle";
         
@@ -638,6 +700,75 @@ sub pmvs {
     run("\"$BIN_PATH/pmvs2\" pmvs/ option-0000");
     
     system("cp -Rf \"$jobOptions{jobDir}/pmvs/models\" \"$jobOptions{jobDir}-results\"");
+    
+    if($args{"--end-with"} ne "pmvs"){
+        odm_meshing();
+    }
+}
+
+sub odm_meshing {
+    print "\n";
+    print "\n  - running meshing - ";
+    print "\n";
+    
+    chdir($jobOptions{jobDir});
+    mkdir($jobOptions{jobDir}."/odm_meshing");    
+
+
+    run("\"$BIN_PATH/odm_meshing\" -inputFile $jobOptions{jobDir}-results/option-0000.ply -outputFile $jobOptions{jobDir}-results/odm_mesh-0000.ply -logFile $jobOptions{jobDir}/odm_meshing/odm_meshing_log.txt -maxVertexCount $args{'--odm_meshing-maxVertexCount'} -octreeDepth $args{'--odm_meshing-octreeDepth'} -samplesPerNode $args{'--odm_meshing-samplesPerNode'}" );
+    
+    if($args{"--end-with"} ne "odm_meshing"){
+        odm_texturing();
+    }
+}
+
+sub odm_texturing {
+    print "\n";
+    print "\n  - running texturing - ";
+    print "\n";
+    
+    chdir($jobOptions{jobDir});
+    mkdir($jobOptions{jobDir}."/odm_texturing");   
+    mkdir("$jobOptions{jobDir}-results/odm_texturing"); 
+
+
+    run("\"$BIN_PATH/odm_texturing\" -bundleFile $jobOptions{jobDir}/pmvs/bundle.rd.out -imagesPath $jobOptions{srcDir}/ -imagesListPath $jobOptions{jobDir}/pmvs/list.rd.txt -inputModelPath $jobOptions{jobDir}-results/odm_mesh-0000.ply -outputFolder $jobOptions{jobDir}-results/odm_texturing/ -textureResolution $args{'--odm_texturing-textureResolution'} -bundleResizedTo $jobOptions{resizeTo} -textureWithSize $args{'--odm_texturing-textureWithSize'} -logFile $jobOptions{jobDir}/odm_texturing/odm_texturing_log.txt" );
+    
+    if($args{"--end-with"} ne "odm_texturing"){
+        odm_georeferencing();
+    }
+
+}
+
+sub odm_georeferencing {
+    print "\n";
+    print "\n  - running georeferencing - ";
+    print "\n";
+    
+    chdir($jobOptions{jobDir});
+    mkdir($jobOptions{jobDir}."/odm_georeferencing");
+
+    run("\"$BIN_PATH/odm_extract_utm\" -imagesPath $jobOptions{srcDir}/ -imageListFile $jobOptions{jobDir}/pmvs/list.rd.txt -outputCoordFile $jobOptions{jobDir}/odm_georeferencing/coordFile.txt");
+
+    run("\"$BIN_PATH/odm_georef\" -bundleFile $jobOptions{jobDir}/pmvs/bundle.rd.out -coordFile $jobOptions{jobDir}/odm_georeferencing/coordFile.txt -inputFile $jobOptions{jobDir}-results/odm_texturing/odm_textured_model.obj -outputFile $jobOptions{jobDir}-results/odm_texturing/odm_textured_model_geo.obj");
+    
+    if($args{"--end-with"} ne "odm_georeferencing"){
+        odm_orthophoto();
+    }
+
+}
+
+
+sub odm_orthophoto {
+    print "\n";
+    print "\n  - running orthophoto generation - ";
+    print "\n";
+    
+    chdir($jobOptions{jobDir});
+    mkdir($jobOptions{jobDir}."/odm_orthophoto");
+
+
+    run("\"$BIN_PATH/odm_orthophoto\" -inputFile $jobOptions{jobDir}-results/odm_texturing/odm_textured_model_geo.obj -outputFile $jobOptions{jobDir}-results/odm_orthphoto.png -resolution 20.0 -boundry -200 -200 -200 200 200 200 200 -200");
 
     if($args{"--end-with"} ne "pmvs"){
         gpsAlign();
@@ -688,20 +819,25 @@ sub opensfm {
     run("\"$OPENSFM_PATH/bin/export_bundler\" opensfm");
 }
 
+
 parseArgs();
 prepareObjects();
     
 chdir($jobOptions{jobDir});
     
 switch ($args{"--start-with"}) {
-    case "resize"          { resize();          }
-    case "getKeypoints"    { getKeypoints();    }
-    case "match"           { match();           }
-    case "bundler"         { bundler();         }
-    case "cmvs"            { cmvs();            }
-    case "pmvs"            { pmvs();            }
-    case "gpsAlign"        { gpsAlign();        }
-    case "opensfm"         { opensfm();         }
+    case "resize"              { resize();              }
+    case "getKeypoints"        { getKeypoints();        }    
+    case "match"               { match();               }
+    case "bundler"             { bundler();             }
+    case "cmvs"                { cmvs();                }
+    case "pmvs"                { pmvs();                }
+    case "odm_meshing"         { odm_meshing();         }
+    case "odm_texturing"       { odm_texturing();       }
+    case "odm_georeferencing"  { odm_georeferencing();  }
+    case "odm_orthophoto"      { odm_orthophoto();      }
+    case "gpsAlign"            { gpsAlign();            }
+    case "opensfm"             { opensfm();             }
 }
 
 print "\n";
