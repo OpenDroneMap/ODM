@@ -13,7 +13,7 @@ OpenDroneMap is a toolchain for processing raw civilian UAS imagery to other use
 6. Digital Elevation Models
 7. etc.
 
-Sadly, it does not do all of this yet. So far, it does step 1: Point Clouds. Outputs 2-4 are on their way. Check the alternate branch: https://github.com/OpenDroneMap/OpenDroneMap/tree/texturing_orthophoto_spotscale_additions for early access to / testing of these features.
+So far, it does Point Clouds, Digital Surface Models, Textured Digital Surface Models, and Orthorectified Imagery.
 
 Steps to get OpenDroneMap running:
 ==================================
@@ -32,23 +32,7 @@ From a directory full of your images, run
 
 An overview of installing and running OpenDroneMap on Ubuntu can be found here: https://www.youtube.com/watch?v=e2qp3o8caPs
 
----
-
-
-From Meshlab 1.3.3:
-
-    * Open Project file, navigate to:
-		* <project_location>/reconstruction-with-image-size-1200/bundle/bundle.out
-	* It will prompt for the image list file
-		* <project_location>/reconstruction-with-image-size-1200/list.txt
-	* Control-L and delete "0 model"
-	* Import dense point cloud:
-		* e.g. <project_location>/reconstruction-with-image-size-1200-results/option-0000.ply
-		* (there may be multiple ply files)
-	* Make a mesh:
-		* Filters:Remeshing, Simplification and Reconstruction:Surface Reconstruction Poisson
-	* Texture the mesh
-		* Parameterization + texturing from registered rasters
+Now that texturing is in the code base, you can access the full textured meshes using MeshLab. Open MeshLab, and choose File:Import Mesh and choose your textured mesh from a location similar to the following: reconstruction-with-image-size-1200-results\odm_texturing\odm_textured_model.obj
 
 ---
 
