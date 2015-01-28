@@ -71,7 +71,7 @@ sub parseArgs {
     $args{"--resize-to"}             = "3000";
     
     $args{"--start-with"}            = "resize";
-    $args{"--end-with"}              = "gpsAlign";
+    $args{"--end-with"}              = "pmvs";
     
     $args{"--cmvs-maxImages"}        = 100;
 	
@@ -97,23 +97,23 @@ sub parseArgs {
                     }
                 }
                 if($ARGV[$i] eq "--start-with"){
-                    if($ARGV[$i+1] eq "resize" || $ARGV[$i+1] eq "getKeypoints" || $ARGV[$i+1] eq "match" || $ARGV[$i+1] eq "bundler" || $ARGV[$i+1] eq "cmvs" || $ARGV[$i+1] eq "pmvs" || $ARGV[$i+1] eq "gpsAlign"){$args{$ARGV[$i]} = $ARGV[$i+1];
+                    if($ARGV[$i+1] eq "resize" || $ARGV[$i+1] eq "getKeypoints" || $ARGV[$i+1] eq "match" || $ARGV[$i+1] eq "bundler" || $ARGV[$i+1] eq "cmvs" || $ARGV[$i+1] eq "pmvs" || $ARGV[$i+1] eq "gpsAlign" || $ARGV[$i+1] eq "opensfm"){$args{$ARGV[$i]} = $ARGV[$i+1];
                     } else {    
-                        die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1]."\n\t valid values are \"resize\", \"getKeypoints\", \"match\", \"bundler\", \"cmvs\", \"pmvs\", \"gpsAlign\"";    
+                        die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1]."\n\t valid values are \"resize\", \"getKeypoints\", \"match\", \"bundler\", \"cmvs\", \"pmvs\", \"gpsAlign\"", \"opensfm\"";    
                     }
                 }
                 if($ARGV[$i] eq "--end-with"){
-                    if($ARGV[$i+1] eq "resize" || $ARGV[$i+1] eq "getKeypoints" || $ARGV[$i+1] eq "match" || $ARGV[$i+1] eq "bundler" || $ARGV[$i+1] eq "cmvs" || $ARGV[$i+1] eq "pmvs" || $ARGV[$i+1] eq "gpsAlign"){
+                    if($ARGV[$i+1] eq "resize" || $ARGV[$i+1] eq "getKeypoints" || $ARGV[$i+1] eq "match" || $ARGV[$i+1] eq "bundler" || $ARGV[$i+1] eq "cmvs" || $ARGV[$i+1] eq "pmvs" || $ARGV[$i+1] eq "gpsAlign" || $ARGV[$i+1] eq "opensfm"){
                         $args{$ARGV[$i]} = $ARGV[$i+1];
                     } else {    
-                        die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1]."\n\t valid values are \"resize\", \"getKeypoints\", \"match\", \"bundler\", \"cmvs\", \"pmvs\", \"gpsAlign\""; }
+                        die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1]."\n\t valid values are \"resize\", \"getKeypoints\", \"match\", \"bundler\", \"cmvs\", \"pmvs\", \"gpsAlign\"", \"opensfm\""; }
                 }
                 if($ARGV[$i] eq "--run-only"){
-                    if($ARGV[$i+1] eq "resize" || $ARGV[$i+1] eq "getKeypoints" || $ARGV[$i+1] eq "match" || $ARGV[$i+1] eq "bundler" || $ARGV[$i+1] eq "cmvs" || $ARGV[$i+1] eq "pmvs" || $ARGV[$i+1] eq "gpsAlign"){
+                    if($ARGV[$i+1] eq "resize" || $ARGV[$i+1] eq "getKeypoints" || $ARGV[$i+1] eq "match" || $ARGV[$i+1] eq "bundler" || $ARGV[$i+1] eq "cmvs" || $ARGV[$i+1] eq "pmvs" || $ARGV[$i+1] eq "gpsAlign" || $ARGV[$i+1] eq "opensfm"){
                         $args{"--start-with"} = $ARGV[$i+1];
                         $args{"--end-with"} = $ARGV[$i+1];
                     } else {    
-                        die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1]."\n\t valid values are \"resize\", \"getKeypoints\", \"match\", \"bundler\", \"cmvs\", \"pmvs\", \"gpsAlign\"";
+                        die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1]."\n\t valid values are \"resize\", \"getKeypoints\", \"match\", \"bundler\", \"cmvs\", \"pmvs\", \"gpsAlign\"", \"opensfm\"";
                     }
                 }
 	            if($ARGV[$i] eq "--matcher-threshold"){
@@ -206,17 +206,17 @@ sub parseArgs {
         print "\n                      if \"--resize-to orig\" is used it will use the images without resizing";
         print "\n  ";
                    
-        print "\n        --start-with: <\"resize\"|\"getKeypoints\"|\"match\"|\"bundler\"|\"cmvs\"|\"pmvs\"|\"gpsAlign\">";
+        print "\n        --start-with: <\"resize\"|\"getKeypoints\"|\"match\"|\"bundler\"|\"cmvs\"|\"pmvs\"|\"gpsAlign\"|\"opensfm\">";
         print "\n             default: resize";
         print "\n                      will start the sript at the specified step";
         print "\n  ";
                    
-        print "\n          --end-with: <\"resize\"|\"getKeypoints\"|\"match\"|\"bundler\"|\"cmvs\"|\"pmvs\"|\"gpsAlign\">";
+        print "\n          --end-with: <\"resize\"|\"getKeypoints\"|\"match\"|\"bundler\"|\"cmvs\"|\"pmvs\"|\"gpsAlign\"|\"opensfm\">";
         print "\n             default: gpsAlign";
         print "\n                      will stop the sript after the specified step";
         print "\n  ";
                    
-        print "\n          --run-only: <\"resize\"|\"getKeypoints\"|\"match\"|\"bundler\"|\"cmvs\"|\"pmvs\"|\"gpsAlign\">";
+        print "\n          --run-only: <\"resize\"|\"getKeypoints\"|\"match\"|\"bundler\"|\"cmvs\"|\"pmvs\"|\"gpsAlign\"|\"opensfm\">";
         print "\n                      will only execute the specified step";
         print "\n                      equal to --start-with <step> --end-with <step>";
         print "\n  ";
@@ -662,8 +662,31 @@ sub gpsAlign {
 
     # Write corrected GPS to images
     run("\"$OPENSFM_PATH/bin/update_geotag\" opensfm");
+
+    if($args{"--end-with"} ne "gpsAlign"){
+        opensfm();
+    }
 }
 
+sub opensfm {
+    print "\n";
+    print "\n  - reconstruct using OpenSfM - ";
+    print "\n";
+
+    chdir($jobOptions{jobDir});
+
+    # Create opensfm working folder
+    mkdir("opensfm");
+
+    # Convert bundler's input to opensfm
+    run("\"$OPENSFM_PATH/bin/import_bundler\" opensfm --list list.txt");
+
+    # Run OpenSfM reconstruction
+    run("\"$OPENSFM_PATH/bin/run_all\" opensfm");
+
+    # Convert back to bundler's format
+    run("\"$OPENSFM_PATH/bin/export_bundler\" opensfm");
+}
 
 parseArgs();
 prepareObjects();
@@ -678,6 +701,7 @@ switch ($args{"--start-with"}) {
     case "cmvs"            { cmvs();            }
     case "pmvs"            { pmvs();            }
     case "gpsAlign"        { gpsAlign();        }
+    case "opensfm"         { opensfm();         }
 }
 
 print "\n";
