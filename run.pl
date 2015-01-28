@@ -30,6 +30,7 @@ if(!File::Spec->file_name_is_absolute($BIN_PATH_REL)){
 require "$BIN_PATH_ABS/ccd_defs.pl";
 
 $BIN_PATH = $BIN_PATH_ABS."/bin";
+$OPENSFM_PATH = $BIN_PATH_ABS."/src/OpenSfM";
 
 my %objectStats    = {
     count           => 0,
@@ -70,7 +71,7 @@ sub parseArgs {
     $args{"--resize-to"}             = "3000";
     
     $args{"--start-with"}            = "resize";
-    $args{"--end-with"}              = "pmvs";
+    $args{"--end-with"}              = "gpsAlign";
     
     $args{"--cmvs-maxImages"}        = 100;
 	
@@ -96,25 +97,23 @@ sub parseArgs {
                     }
                 }
                 if($ARGV[$i] eq "--start-with"){
-                    if($ARGV[$i+1] eq "resize" || $ARGV[$i+1] eq "getKeypoints" || $ARGV[$i+1] eq "match" || $ARGV[$i+1] eq "bundler" || $ARGV[$i+1] eq "cmvs" || $ARGV[$i+1] eq "pmvs"){
-                        $args{$ARGV[$i]} = $ARGV[$i+1];
+                    if($ARGV[$i+1] eq "resize" || $ARGV[$i+1] eq "getKeypoints" || $ARGV[$i+1] eq "match" || $ARGV[$i+1] eq "bundler" || $ARGV[$i+1] eq "cmvs" || $ARGV[$i+1] eq "pmvs" || $ARGV[$i+1] eq "gpsAlign"){$args{$ARGV[$i]} = $ARGV[$i+1];
                     } else {    
-                        die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1]."\n\t valid values are \"resize\", \"getKeypoints\", \"match\", \"bundler\", \"cmvs\", \"pmvs\"";    
+                        die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1]."\n\t valid values are \"resize\", \"getKeypoints\", \"match\", \"bundler\", \"cmvs\", \"pmvs\", \"gpsAlign\"";    
                     }
                 }
                 if($ARGV[$i] eq "--end-with"){
-                    if($ARGV[$i+1] eq "resize" || $ARGV[$i+1] eq "getKeypoints" || $ARGV[$i+1] eq "match" || $ARGV[$i+1] eq "bundler" || $ARGV[$i+1] eq "cmvs" || $ARGV[$i+1] eq "pmvs"){
+                    if($ARGV[$i+1] eq "resize" || $ARGV[$i+1] eq "getKeypoints" || $ARGV[$i+1] eq "match" || $ARGV[$i+1] eq "bundler" || $ARGV[$i+1] eq "cmvs" || $ARGV[$i+1] eq "pmvs" || $ARGV[$i+1] eq "gpsAlign"){
                         $args{$ARGV[$i]} = $ARGV[$i+1];
                     } else {    
-                        die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1]."\n\t valid values are \"resize\", \"getKeypoints\", \"match\", \"bundler\", \"cmvs\", \"pmvs\"";
-                    }
+                        die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1]."\n\t valid values are \"resize\", \"getKeypoints\", \"match\", \"bundler\", \"cmvs\", \"pmvs\", \"gpsAlign\""; }
                 }
                 if($ARGV[$i] eq "--run-only"){
-                    if($ARGV[$i+1] eq "resize" || $ARGV[$i+1] eq "getKeypoints" || $ARGV[$i+1] eq "match" || $ARGV[$i+1] eq "bundler" || $ARGV[$i+1] eq "cmvs" || $ARGV[$i+1] eq "pmvs"){
+                    if($ARGV[$i+1] eq "resize" || $ARGV[$i+1] eq "getKeypoints" || $ARGV[$i+1] eq "match" || $ARGV[$i+1] eq "bundler" || $ARGV[$i+1] eq "cmvs" || $ARGV[$i+1] eq "pmvs" || $ARGV[$i+1] eq "gpsAlign"){
                         $args{"--start-with"} = $ARGV[$i+1];
                         $args{"--end-with"} = $ARGV[$i+1];
                     } else {    
-                        die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1]."\n\t valid values are \"resize\", \"getKeypoints\", \"match\", \"bundler\", \"cmvs\", \"pmvs\"";
+                        die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1]."\n\t valid values are \"resize\", \"getKeypoints\", \"match\", \"bundler\", \"cmvs\", \"pmvs\", \"gpsAlign\"";
                     }
                 }
 	            if($ARGV[$i] eq "--matcher-threshold"){
@@ -207,17 +206,17 @@ sub parseArgs {
         print "\n                      if \"--resize-to orig\" is used it will use the images without resizing";
         print "\n  ";
                    
-        print "\n        --start-with: <\"resize\"|\"getKeypoints\"|\"match\"|\"bundler\"|\"cmvs\"|\"pmvs\">";
+        print "\n        --start-with: <\"resize\"|\"getKeypoints\"|\"match\"|\"bundler\"|\"cmvs\"|\"pmvs\"|\"gpsAlign\">";
         print "\n             default: resize";
         print "\n                      will start the sript at the specified step";
         print "\n  ";
                    
-        print "\n          --end-with: <\"resize\"|\"getKeypoints\"|\"match\"|\"bundler\"|\"cmvs\"|\"pmvs\">";
-        print "\n             default: pmvs";
+        print "\n          --end-with: <\"resize\"|\"getKeypoints\"|\"match\"|\"bundler\"|\"cmvs\"|\"pmvs\"|\"gpsAlign\">";
+        print "\n             default: gpsAlign";
         print "\n                      will stop the sript after the specified step";
         print "\n  ";
                    
-        print "\n          --run-only: <\"resize\"|\"getKeypoints\"|\"match\"|\"bundler\"|\"cmvs\"|\"pmvs\">";
+        print "\n          --run-only: <\"resize\"|\"getKeypoints\"|\"match\"|\"bundler\"|\"cmvs\"|\"pmvs\"|\"gpsAlign\">";
         print "\n                      will only execute the specified step";
         print "\n                      equal to --start-with <step> --end-with <step>";
         print "\n  ";
@@ -639,6 +638,10 @@ sub pmvs {
     run("\"$BIN_PATH/pmvs2\" pmvs/ option-0000");
     
     system("cp -Rf \"$jobOptions{jobDir}/pmvs/models\" \"$jobOptions{jobDir}-results\"");
+
+    if($args{"--end-with"} ne "pmvs"){
+        gpsAlign();
+    }
 }
 
 sub gpsAlign {
@@ -649,17 +652,18 @@ sub gpsAlign {
     chdir($jobOptions{jobDir});
 
     # Create opensfm working folder
-    mkdir($jobOptions{jobDir}/opensfm);
+    mkdir("opensfm");
 
     # Convert bundle.out to opensfm
-    run("\"$OPENSFM_PATH/bin/import_bundler\" . --list ../list.txt --bundleout ../bundle/bundle.out");
+    run("\"$OPENSFM_PATH/bin/import_bundler\" opensfm --list list.txt --bundleout bundle/bundle.out");
 
     # Align reconstruction.json
-    run("\"$OPENSFM_PATH/bin/align\" .");
+    run("\"$OPENSFM_PATH/bin/align\" opensfm");
 
     # Write corrected GPS to images
-    run("\"$OPENSFM_PATH/bin/update_geotag\" .");
+    run("\"$OPENSFM_PATH/bin/update_geotag\" opensfm");
 }
+
 
 parseArgs();
 prepareObjects();
@@ -673,6 +677,7 @@ switch ($args{"--start-with"}) {
     case "bundler"         { bundler();         }
     case "cmvs"            { cmvs();            }
     case "pmvs"            { pmvs();            }
+    case "gpsAlign"        { gpsAlign();        }
 }
 
 print "\n";
