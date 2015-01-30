@@ -160,7 +160,7 @@ graclus.tar.gz http://smathermather.github.io/BundlerTools/patched_files/src/gra
 pcl.tar.gz https://github.com/PointCloudLibrary/pcl/archive/pcl-1.7.2.tar.gz
 ceres-solver.tar.gz http://ceres-solver.org/ceres-solver-1.10.0.tar.gz
 EOF
-git clone git://github.com/mapillary/OpenSfM $OPENSFM_PATH
+git clone  https://github.com/mapillary/OpenSfM.git $OPENSFM_PATH
 
 echo "  < done - `date`"
 
