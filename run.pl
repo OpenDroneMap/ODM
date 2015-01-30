@@ -105,23 +105,23 @@ sub parseArgs {
                     }
                 }
                 if($ARGV[$i] eq "--start-with"){
-                    if($ARGV[$i+1] eq "resize" || $ARGV[$i+1] eq "getKeypoints" || $ARGV[$i+1] eq "match" || $ARGV[$i+1] eq "bundler" || $ARGV[$i+1] eq "cmvs" || $ARGV[$i+1] eq "pmvs" || $ARGV[$i+1] eq "gpsAlign" || $ARGV[$i+1] eq "opensfm"){$args{$ARGV[$i]} = $ARGV[$i+1];
+                    if($ARGV[$i+1] eq "resize" || $ARGV[$i+1] eq "getKeypoints" || $ARGV[$i+1] eq "match" || $ARGV[$i+1] eq "bundler" || $ARGV[$i+1] eq "cmvs" || $ARGV[$i+1] eq "pmvs"){$args{$ARGV[$i]} = $ARGV[$i+1];
                     } else {    
-                        die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1]."\n\t valid values are \"resize\", \"getKeypoints\", \"match\", \"bundler\", \"cmvs\", \"pmvs\", \"gpsAlign\"", \"opensfm\"";    
+                        die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1]."\n\t valid values are \"resize\", \"getKeypoints\", \"match\", \"bundler\", \"cmvs\", \"pmvs\"";    
                     }
                 }
                 if($ARGV[$i] eq "--end-with"){
-                    if($ARGV[$i+1] eq "resize" || $ARGV[$i+1] eq "getKeypoints" || $ARGV[$i+1] eq "match" || $ARGV[$i+1] eq "bundler" || $ARGV[$i+1] eq "cmvs" || $ARGV[$i+1] eq "pmvs" || $ARGV[$i+1] eq "gpsAlign" || $ARGV[$i+1] eq "opensfm"){
+                    if($ARGV[$i+1] eq "resize" || $ARGV[$i+1] eq "getKeypoints" || $ARGV[$i+1] eq "match" || $ARGV[$i+1] eq "bundler" || $ARGV[$i+1] eq "cmvs" || $ARGV[$i+1] eq "pmvs"){
                         $args{$ARGV[$i]} = $ARGV[$i+1];
                     } else {    
-                        die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1]."\n\t valid values are \"resize\", \"getKeypoints\", \"match\", \"bundler\", \"cmvs\", \"pmvs\", \"gpsAlign\"", \"opensfm\""; }
+                        die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1]."\n\t valid values are \"resize\", \"getKeypoints\", \"match\", \"bundler\", \"cmvs\", \"pmvs\""; }
                 }
                 if($ARGV[$i] eq "--run-only"){
-                    if($ARGV[$i+1] eq "resize" || $ARGV[$i+1] eq "getKeypoints" || $ARGV[$i+1] eq "match" || $ARGV[$i+1] eq "bundler" || $ARGV[$i+1] eq "cmvs" || $ARGV[$i+1] eq "pmvs" || $ARGV[$i+1] eq "gpsAlign" || $ARGV[$i+1] eq "opensfm"){
+                    if($ARGV[$i+1] eq "resize" || $ARGV[$i+1] eq "getKeypoints" || $ARGV[$i+1] eq "match" || $ARGV[$i+1] eq "bundler" || $ARGV[$i+1] eq "cmvs" || $ARGV[$i+1] eq "pmvs"){
                         $args{"--start-with"} = $ARGV[$i+1];
                         $args{"--end-with"} = $ARGV[$i+1];
                     } else {    
-                        die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1]."\n\t valid values are \"resize\", \"getKeypoints\", \"match\", \"bundler\", \"cmvs\", \"pmvs\", \"gpsAlign\"", \"opensfm\"";
+                        die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1]."\n\t valid values are \"resize\", \"getKeypoints\", \"match\", \"bundler\", \"cmvs\", \"pmvs\"";
                     }
                 }
 	            if($ARGV[$i] eq "--matcher-threshold"){
@@ -256,17 +256,17 @@ sub parseArgs {
         print "\n                      if \"--resize-to orig\" is used it will use the images without resizing";
         print "\n  ";
                    
-        print "\n        --start-with: <\"resize\"|\"getKeypoints\"|\"match\"|\"bundler\"|\"cmvs\"|\"pmvs\"|\"gpsAlign\"|\"opensfm\">";
+        print "\n        --start-with: <\"resize\"|\"getKeypoints\"|\"match\"|\"bundler\"|\"cmvs\"|\"pmvs\">";
         print "\n             default: resize";
         print "\n                      will start the sript at the specified step";
         print "\n  ";
                    
-        print "\n          --end-with: <\"resize\"|\"getKeypoints\"|\"match\"|\"bundler\"|\"cmvs\"|\"pmvs\"|\"gpsAlign\"|\"opensfm\">";
-        print "\n             default: gpsAlign";
+        print "\n          --end-with: <\"resize\"|\"getKeypoints\"|\"match\"|\"bundler\"|\"cmvs\"|\"pmvs\">";
+        print "\n             default: pmvs";
         print "\n                      will stop the sript after the specified step";
         print "\n  ";
                    
-        print "\n          --run-only: <\"resize\"|\"getKeypoints\"|\"match\"|\"bundler\"|\"cmvs\"|\"pmvs\"|\"gpsAlign\"|\"opensfm\">";
+        print "\n          --run-only: <\"resize\"|\"getKeypoints\"|\"match\"|\"bundler\"|\"cmvs\"|\"pmvs\">";
         print "\n                      will only execute the specified step";
         print "\n                      equal to --start-with <step> --end-with <step>";
         print "\n  ";
@@ -288,9 +288,16 @@ sub parseArgs {
         print "\n             default: 0.6";
         print "\n                      ratio of the distance to the next best matched keypoint";
         print "\n  ";
-		
-		
                    
+        print "\n         --align-gps: ";
+        print "\n                      align with the geotag information on the image";
+        print "\n  ";
+
+        print "\n       --use-opensfm: ";
+        print "\n                      use OpenSfM instead of Bundler to find the camera positions (replaces getKeypoints, match and bundler steps)";
+        print "\n  ";
+
+
         print "\n    --cmvs-maxImages: <positive integer>";
         print "\n             default: 100";
         print "\n                      the maximum number of images per cluster";
@@ -496,7 +503,11 @@ sub resize {
     }
     
     if($args{"--end-with"} ne "resize"){
-        getKeypoints();
+        if($args{"--use-opensfm"}) {
+            opensfm();
+        } else {
+            getKeypoints();
+        }
     }
 }
 
@@ -539,7 +550,7 @@ sub getKeypoints {
     print SIFT_DEST $vlsiftJobs;
     close(SIFT_DEST);
     
-    run("\"$BIN_PATH/parallel\" --halt-on-error 1 -j3 < \"$jobOptions{step_1_vlsift}\"");
+    run("\"$BIN_PATH/parallel\" --no-notice --halt-on-error 1 -j3 < \"$jobOptions{step_1_vlsift}\"");
     
     if($args{"--end-with"} ne "getKeypoints"){
         match();
@@ -574,7 +585,7 @@ sub match {
     print MATCH_DEST $matchesJobs;
     close(MATCH_DEST);
 	
-    run("\"$BIN_PATH/parallel\" --halt-on-error 1 -j+0 < \"$jobOptions{step_2_macthes_jobs}\"");
+    run("\"$BIN_PATH/parallel\" --no-notice --halt-on-error 1 -j+0 < \"$jobOptions{step_2_macthes_jobs}\"");
 	
 	run("rm -f \"$jobOptions{step_2_matches}\"");
 	
@@ -615,10 +626,6 @@ sub bundler {
     chdir($jobOptions{jobDir});
     
     mkdir($jobOptions{jobDir}."/bundle");
-    mkdir($jobOptions{jobDir}."/pmvs");
-    mkdir($jobOptions{jobDir}."/pmvs/txt");
-    mkdir($jobOptions{jobDir}."/pmvs/visualize");
-    mkdir($jobOptions{jobDir}."/pmvs/models");
     
     $filesList = "";
     
@@ -650,8 +657,89 @@ sub bundler {
     close(BUNDLER_DEST);
     
     run("\"$BIN_PATH/bundler\" \"$jobOptions{step_3_filelist}\" --options_file \"$jobOptions{step_3_bundlerOptions}\" > bundle/out");
-    run("\"$BIN_PATH/Bundle2PMVS\" \"$jobOptions{step_3_filelist}\" bundle/bundle.out");
-    run("\"$BIN_PATH/RadialUndistort\" \"$jobOptions{step_3_filelist}\" bundle/bundle.out pmvs");
+
+    if($args{"--align-gps"}){
+        gpsAlign();
+    } else {
+        bundlerToPmvs("bundle/bundle.out");
+    }
+}
+
+sub gpsAlign {
+    print "\n";
+    print "\n  - aligning reconstruction with GPS - ";
+    print "\n";
+
+    chdir($jobOptions{jobDir});
+
+    # Create opensfm working folder
+    mkdir("opensfm");
+
+    # Convert bundle.out to opensfm
+    run("\"$OPENSFM_PATH/bin/import_bundler\" opensfm --list list.txt --bundleout bundle/bundle.out");
+
+    # Align reconstruction.json
+    run("\"$OPENSFM_PATH/bin/align\" opensfm");
+
+    # Write corrected GPS to images
+    run("\"$OPENSFM_PATH/bin/update_geotag\" opensfm");
+
+    # Convert back to bundler's format
+    run("\"$OPENSFM_PATH/bin/export_bundler\" opensfm");
+
+    bundlerToPmvs("opensfm/bundle_r000.out");
+}
+
+sub opensfm {
+    print "\n";
+    print "\n  - reconstruct using OpenSfM - ";
+    print "\n";
+
+    chdir($jobOptions{jobDir});
+
+    # Create bundler's list.txt
+    $filesList = "";
+    foreach $fileObject (@objects) {
+        if($fileObject->{isOk}){
+            $filesList .= sprintf("\./%s.jpg 0 %0.5f\n", $fileObject->{base}, $fileObject->{focalpx});
+        }
+    }
+    chomp($filesList);
+    system("echo \"$filesList\" > $jobOptions{step_3_filelist}");
+
+    # Configure OpenSfM
+    $opensfmConfig  = "use_exif_size: no\n";
+    system("echo \"$opensfmConfig\" > opensfm/config.yaml");
+
+    # Create opensfm working folder
+    mkdir("opensfm");
+
+    # Convert bundler's input to opensfm
+    run("\"$OPENSFM_PATH/bin/import_bundler\" opensfm --list list.txt");
+
+    # Run OpenSfM reconstruction
+    run("\"$OPENSFM_PATH/bin/run_all\" opensfm");
+
+    # Convert back to bundler's format
+    run("\"$OPENSFM_PATH/bin/export_bundler\" opensfm");
+
+    bundlerToPmvs("opensfm/bundle_r000.out");
+}
+
+sub bundlerToPmvs {
+    print "\n";
+    print "\n  - convert bundler output to PMVS - "; now(); print "\n";
+    print "\n";
+
+    chdir($jobOptions{jobDir});
+
+    mkdir($jobOptions{jobDir}."/pmvs");
+    mkdir($jobOptions{jobDir}."/pmvs/txt");
+    mkdir($jobOptions{jobDir}."/pmvs/visualize");
+    mkdir($jobOptions{jobDir}."/pmvs/models");
+
+    run("\"$BIN_PATH/Bundle2PMVS\" \"$jobOptions{step_3_filelist}\" \"$_[0]\"");
+    run("\"$BIN_PATH/RadialUndistort\" \"$jobOptions{step_3_filelist}\" \"$_[0]\" pmvs");
     
     $i = 0;
     
@@ -769,54 +857,6 @@ sub odm_orthophoto {
 
 
     run("\"$BIN_PATH/odm_orthophoto\" -inputFile $jobOptions{jobDir}-results/odm_texturing/odm_textured_model_geo.obj -outputFile $jobOptions{jobDir}-results/odm_orthphoto.png -resolution 20.0 -boundry -200 -200 -200 200 200 200 200 -200");
-
-    if($args{"--end-with"} ne "pmvs"){
-        gpsAlign();
-    }
-}
-
-sub gpsAlign {
-    print "\n";
-    print "\n  - aligning reconstruction with GPS - ";
-    print "\n";
-
-    chdir($jobOptions{jobDir});
-
-    # Create opensfm working folder
-    mkdir("opensfm");
-
-    # Convert bundle.out to opensfm
-    run("\"$OPENSFM_PATH/bin/import_bundler\" opensfm --list list.txt --bundleout bundle/bundle.out");
-
-    # Align reconstruction.json
-    run("\"$OPENSFM_PATH/bin/align\" opensfm");
-
-    # Write corrected GPS to images
-    run("\"$OPENSFM_PATH/bin/update_geotag\" opensfm");
-
-    if($args{"--end-with"} ne "gpsAlign"){
-        opensfm();
-    }
-}
-
-sub opensfm {
-    print "\n";
-    print "\n  - reconstruct using OpenSfM - ";
-    print "\n";
-
-    chdir($jobOptions{jobDir});
-
-    # Create opensfm working folder
-    mkdir("opensfm");
-
-    # Convert bundler's input to opensfm
-    run("\"$OPENSFM_PATH/bin/import_bundler\" opensfm --list list.txt");
-
-    # Run OpenSfM reconstruction
-    run("\"$OPENSFM_PATH/bin/run_all\" opensfm");
-
-    # Convert back to bundler's format
-    run("\"$OPENSFM_PATH/bin/export_bundler\" opensfm");
 }
 
 
@@ -836,8 +876,6 @@ switch ($args{"--start-with"}) {
     case "odm_texturing"       { odm_texturing();       }
     case "odm_georeferencing"  { odm_georeferencing();  }
     case "odm_orthophoto"      { odm_orthophoto();      }
-    case "gpsAlign"            { gpsAlign();            }
-    case "opensfm"             { opensfm();             }
 }
 
 print "\n";
