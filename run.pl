@@ -707,12 +707,12 @@ sub opensfm {
     chomp($filesList);
     system("echo \"$filesList\" > $jobOptions{step_3_filelist}");
 
+    # Create opensfm working folder
+    mkdir("opensfm");
+
     # Configure OpenSfM
     $opensfmConfig  = "use_exif_size: no\n";
     system("echo \"$opensfmConfig\" > opensfm/config.yaml");
-
-    # Create opensfm working folder
-    mkdir("opensfm");
 
     # Convert bundler's input to opensfm
     run("\"$OPENSFM_PATH/bin/import_bundler\" opensfm --list list.txt");
