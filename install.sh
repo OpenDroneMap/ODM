@@ -107,6 +107,20 @@ echo "    - updating"
 sudo apt-get update --assume-yes > "$TOOLS_LOG_PATH/apt-get_get.log" 2>&1
 
 echo "    - installing"
+
+if [[ `lsb_release -rs` == "12.04" ]];
+then 
+sudo apt-get install --assume-yes --install-recommends \
+  build-essential cmake g++ gcc gFortran perl git autoconf \
+  curl wget \
+  unzip \
+  imagemagick jhead proj-bin libproj-dev\
+  libjpeg-dev libboost1.48-all-dev libgsl0-dev libx11-dev libxext-dev liblapack-dev \
+  libeigen3-dev libflann-dev libvtk5-dev libqhull-dev libusb-1.0-0-dev\
+  libzip-dev \
+  libcv-dev libcvaux-dev libopencv-dev \
+  > "$TOOLS_LOG_PATH/apt-get_install.log" 2>&1
+else
 sudo apt-get install --assume-yes --install-recommends \
   build-essential cmake g++ gcc gFortran perl git autoconf \
   curl wget \
@@ -117,7 +131,7 @@ sudo apt-get install --assume-yes --install-recommends \
   libzip-dev \
   libcv-dev libcvaux-dev libopencv-dev \
   > "$TOOLS_LOG_PATH/apt-get_install.log" 2>&1
-
+fi
 
 echo "  < done - `date`"
 
