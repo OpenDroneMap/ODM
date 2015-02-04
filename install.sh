@@ -118,6 +118,7 @@ sudo apt-get install --assume-yes --install-recommends \
   libjpeg-dev libboost1.48-all-dev libgsl0-dev libx11-dev libxext-dev liblapack-dev \
   libeigen3-dev libflann-dev libvtk5-dev libqhull-dev libusb-1.0-0-dev\
   libzip-dev \
+  libswitch-perl \
   libcv-dev libcvaux-dev libopencv-dev \
   > "$TOOLS_LOG_PATH/apt-get_install.log" 2>&1
 else
@@ -129,6 +130,7 @@ sudo apt-get install --assume-yes --install-recommends \
   libjpeg-dev libboost-all-dev libgsl0-dev libx11-dev libxext-dev liblapack-dev \
   libeigen3-dev libflann-dev libvtk5-dev libqhull-dev libusb-1.0-0-dev\
   libzip-dev \
+  libswitch-perl \
   libcv-dev libcvaux-dev libopencv-dev \
   > "$TOOLS_LOG_PATH/apt-get_install.log" 2>&1
 fi
