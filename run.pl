@@ -13,6 +13,7 @@ use Data::Dumper;
 use Time::localtime;
 use Switch;
 use POSIX qw(strftime);
+use JSON;
 
 ## the defs
 
@@ -27,7 +28,18 @@ if(!File::Spec->file_name_is_absolute($BIN_PATH_REL)){
 	$BIN_PATH_ABS = File::Spec->rel2abs($BIN_PATH_REL);
 }
 
-require "$BIN_PATH_ABS/ccd_defs.pl";
+sub getCcdWidths{
+    local $/;
+    my $ccdPath = "$BIN_PATH_ABS/ccd_defs.json";
+    open( my $fh, '<', $ccdPath);
+
+    my $ccdWidths = decode_json(<$fh>);
+    close($fh);
+    undef $/;
+    return $ccdWidths;
+}
+
+$ccdWidths = getCcdWidths();
 
 $BIN_PATH = $BIN_PATH_ABS."/bin";
 
@@ -382,7 +394,7 @@ sub prepareObjects {
             ($fileObject{ccd})        = $file_ccd =~ /:[\ ]*([0-9\.]*)mm/;
             
             if(!$fileObject{ccd}){;
-                $fileObject{ccd}      = $ccdWidths{$fileObject{id}};
+                $fileObject{ccd}      = $ccdWidths->{$fileObject{id}};
             }
         } else {
             $fileObject{ccd}          = $args{"--force-ccd"};
