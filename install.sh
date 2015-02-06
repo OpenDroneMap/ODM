@@ -123,7 +123,7 @@ sudo apt-get install --assume-yes --install-recommends \
   libcv-dev libcvaux-dev libopencv-dev \
   libgoogle-glog-dev libatlas-base-dev libeigen3-dev libsuitesparse-dev \
   libboost-python-dev \
-  python-pyexiv2 \
+  python-numpy-dev python-pyexiv2 \
   > "$TOOLS_LOG_PATH/apt-get_install.log" 2>&1
 
 
@@ -482,9 +482,10 @@ echo "  > OpenSfM"
   cd "$OPENSFM_PATH"
 
   echo "    - configuring opensfm"
-  mkdir -p lib/build
-  cd lib/build
-  cmake ../src -DCERES_ROOT_DIR=$TOOLS_PATH > "$TOOLS_LOG_PATH/opensfm_1_config.log" 2>&1
+  git checkout tags/odm
+  mkdir -p build
+  cd build
+  cmake ../opensfm/src -DCERES_ROOT_DIR=$TOOLS_PATH > "$TOOLS_LOG_PATH/opensfm_1_config.log" 2>&1
   echo "    - building opensfm"
   make > "$TOOLS_LOG_PATH/opensfm_1_build.log" 2>&1
 
