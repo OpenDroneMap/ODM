@@ -82,7 +82,7 @@ sub parseArgs {
     $args{"--resize-to"}             = "1200";
     
     $args{"--start-with"}            = "resize";
-    $args{"--end-with"}              = "odm_texturing";
+    $args{"--end-with"}              = "odm_orthophoto";
     
     $args{"--cmvs-maxImages"}        = 100;
 	
@@ -102,6 +102,9 @@ sub parseArgs {
 
     $args{"--odm_texturing-textureResolution"}   = 4096;
     $args{"--odm_texturing-textureWithSize"}     = 3600;
+
+    $args{"--odm_georeferencing-gcpFile"}	= "gcp_list.txt";
+    $args{"--odm_georeferencing-useGcp"}	= "true";
     
     for($i = 0; $i <= $#ARGV; $i++) {
         if($ARGV[$i] =~ /^--[^a-z\-]*/){
@@ -243,8 +246,18 @@ sub parseArgs {
                         die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1];
                     }
                 }
-                if($ARGV[$i] eq "--odm_texturing-textureWithSize"){
+		if($ARGV[$i] eq "--odm_texturing-textureWithSize"){
                     if($ARGV[$i+1] =~ /^[0-9]*$/){
+                        $args{$ARGV[$i]} = $ARGV[$i+1];
+                    } else {
+                        die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1];
+                    }
+                }
+		if($ARGV[$i] eq "--odm_georeferencing-gcpFile"){
+                    $args{$ARGV[$i]} = $ARGV[$i+1];
+                }
+		if($ARGV[$i] eq "--odm_georeferencing-useGcp"){
+                    if($ARGV[$i+1] eq "true" || $ARGV[$i+1] eq "false"){
                         $args{$ARGV[$i]} = $ARGV[$i+1];
                     } else {
                         die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1];
@@ -253,7 +266,8 @@ sub parseArgs {
             }
         }
     }
-    
+   
+
     if($args{"--help"}){        
         print "\nusgae: run.pl [options]";
         print "\nit should be run from the folder contining the images to which should reconstructed";
@@ -549,7 +563,7 @@ sub getKeypoints {
     print SIFT_DEST $vlsiftJobs;
     close(SIFT_DEST);
     
-    run("\"$BIN_PATH/parallel\" --halt-on-error 1 -j3 < \"$jobOptions{step_1_vlsift}\"");
+    run("\"$BIN_PATH/parallel\" --halt-on-error 1 -j+0 < \"$jobOptions{step_1_vlsift}\"");
     
     if($args{"--end-with"} ne "getKeypoints"){
         match();
@@ -758,9 +772,13 @@ sub odm_georeferencing {
     chdir($jobOptions{jobDir});
     mkdir($jobOptions{jobDir}."/odm_georeferencing");
 
-    run("\"$BIN_PATH/odm_extract_utm\" -imagesPath $jobOptions{srcDir}/ -imageListFile $jobOptions{jobDir}/pmvs/list.rd.txt -outputCoordFile $jobOptions{jobDir}/odm_georeferencing/coordFile.txt");
-
-    run("\"$BIN_PATH/odm_georef\" -bundleFile $jobOptions{jobDir}/pmvs/bundle.rd.out -coordFile $jobOptions{jobDir}/odm_georeferencing/coordFile.txt -inputFile $jobOptions{jobDir}-results/odm_texturing/odm_textured_model.obj -outputFile $jobOptions{jobDir}-results/odm_texturing/odm_textured_model_geo.obj");
+    if($args{"--odm_georeferencing-useGcp"} ne "true") {
+        run("\"$BIN_PATH/odm_extract_utm\" -imagesPath $jobOptions{srcDir}/ -imageListFile $jobOptions{jobDir}/pmvs/list.rd.txt -outputCoordFile $jobOptions{jobDir}/odm_georeferencing/coordFile.txt");
+   
+        run("\"$BIN_PATH/odm_georef\" -bundleFile $jobOptions{jobDir}/pmvs/bundle.rd.out -coordFile $jobOptions{jobDir}/odm_georeferencing/coordFile.txt -inputFile $jobOptions{jobDir}-results/odm_texturing/odm_textured_model.obj -outputFile $jobOptions{jobDir}-results/odm_texturing/odm_textured_model_geo.obj -logFile $jobOptions{jobDir}/odm_georeferencing/odm_georeferencing_log.txt");
+    } else {
+        run("\"$BIN_PATH/odm_georef\" -bundleFile $jobOptions{jobDir}/pmvs/bundle.rd.out -gcpFile $jobOptions{srcDir}/$args{'--odm_georeferencing-gcpFile'} -imagesPath $jobOptions{srcDir}/ -imagesListPath $jobOptions{jobDir}/pmvs/list.rd.txt -bundleResizedTo $jobOptions{resizeTo} -inputFile $jobOptions{jobDir}-results/odm_texturing/odm_textured_model.obj -outputFile $jobOptions{jobDir}-results/odm_texturing/odm_textured_model_geo.obj -logFile $jobOptions{jobDir}/odm_georeferencing/odm_georeferencing_log.txt");
+}
     
     if($args{"--end-with"} ne "odm_georeferencing"){
         odm_orthophoto();
@@ -778,7 +796,7 @@ sub odm_orthophoto {
     mkdir($jobOptions{jobDir}."/odm_orthophoto");
 
 
-    run("\"$BIN_PATH/odm_orthophoto\" -inputFile $jobOptions{jobDir}-results/odm_texturing/odm_textured_model_geo.obj -outputFile $jobOptions{jobDir}-results/odm_orthphoto.png -resolution 20.0 -boundry -200 -200 -200 200 200 200 200 -200");
+    run("\"$BIN_PATH/odm_orthophoto\" -inputFile $jobOptions{jobDir}-results/odm_texturing/odm_textured_model_geo.obj -logFile $jobOptions{jobDir}/odm_orthophoto/odm_orthophoto_log.txt -outputFile $jobOptions{jobDir}-results/odm_orthphoto.png -resolution 20.0");
 
 }
 

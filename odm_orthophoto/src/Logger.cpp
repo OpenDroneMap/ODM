@@ -27,5 +27,3 @@ void Logger::setIsPrintingInCout(bool isPrintingInCout)
 {
     isPrintingInCout_ = isPrintingInCout;
 }
-
-
