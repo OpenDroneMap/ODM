@@ -342,13 +342,30 @@ void OdmTexturing::loadCameras()
         cam.pose = transform;
 
         std::getline(imageListFile, dummyLine);
-        cam.texture_file = imagesPath_ + dummyLine.substr(2,dummyLine.length());
+        size_t firstWhitespace = dummyLine.find_first_of(" ");
+
+        if (firstWhitespace != std::string::npos)
+        {
+            cam.texture_file = imagesPath_ + "/" + dummyLine.substr(2,firstWhitespace-2);
+        }
+        else
+        {
+            cam.texture_file = imagesPath_ + "/" + dummyLine.substr(2);
+        }
 
         // Read image to get full resolution size
         cv::Mat image = cv::imread(cam.texture_file);
 
+        if (image.empty())
+        {
+            throw OdmTexturingException("Failed to read image:\n'" + cam.texture_file + "'\n");
+        }
+
+        double imageWidth = static_cast<double>(image.cols);
+        double textureWithWidth = static_cast<double>(textureWithSize_);
+
         // Calculate scale factor to texture with textureWithSize
-        double factor = textureWithSize_/static_cast<double>(image.cols);
+        double factor = textureWithWidth/imageWidth;
         if (factor > 1.0f)
         {
             factor = 1.0f;
