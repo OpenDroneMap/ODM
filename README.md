@@ -15,6 +15,10 @@ OpenDroneMap is a toolchain for processing raw civilian UAS imagery to other use
 
 So far, it does Point Clouds, Digital Surface Models, Textured Digital Surface Models, and Orthorectified Imagery.
 
+Users' mailing list: http://lists.osgeo.org/cgi-bin/mailman/listinfo/opendronemap-users
+Developer's mailing list: http://lists.osgeo.org/cgi-bin/mailman/listinfo/opendronemap-dev
+
+
 Steps to get OpenDroneMap running:
 ==================================
 
