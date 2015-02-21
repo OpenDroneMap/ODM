@@ -79,7 +79,7 @@ sub parseArgs {
  ## defaults
     $args{"--match-size"}            = "200";
 
-    $args{"--resize-to"}             = "1200";
+    $args{"--resize-to"}             = "3000";
     
     $args{"--start-with"}            = "resize";
     $args{"--end-with"}              = "odm_orthophoto";
