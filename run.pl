@@ -278,7 +278,7 @@ sub parseArgs {
         print "\n  ";
                    
         print "\n         --resize-to: <positive integer|\"orig\">";
-        print "\n             default: 1200";
+        print "\n             default: 2400";
         print "\n                      will resize the images so that the maximum width/height of the images are smaller or equal to the specified number";
         print "\n                      if \"--resize-to orig\" is used it will use the images without resizing";
         print "\n  ";
