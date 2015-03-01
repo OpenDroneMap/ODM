@@ -22,3 +22,5 @@ Licensing for portions of OpenDroneMap are as follows:
   * Eigen - MPL2 - http://www.mozilla.org/MPL/2.0
   * Qhull - http://www.qhull.org/COPYING.txt
   * vtk5 - BSD - http://www.vtk.org/VTK/project/license.html
+* libext - https://github.com/OpenDroneMap/OpenDroneMap/blob/gh-pages/licenses/libext_copyright.txt
+* libx11 - https://github.com/OpenDroneMap/OpenDroneMap/blob/gh-pages/licenses/libx11_copyright.txt
