@@ -67,12 +67,14 @@ int OdmOrthoPhoto::run(int argc, char *argv[])
     }
     catch (const OdmOrthoPhotoException& e)
     {
+        log_.setIsPrintingInCout(true);
         log_ << e.what() << "\n";
         log_.print(logFile_);
         return EXIT_FAILURE;
     }
     catch (const std::exception& e)
     {
+        log_.setIsPrintingInCout(true);
         log_ << "Error in OdmOrthoPhoto:\n";
         log_ << e.what() << "\n";
         log_.print(logFile_);
@@ -80,6 +82,7 @@ int OdmOrthoPhoto::run(int argc, char *argv[])
     }
     catch (...)
     {
+        log_.setIsPrintingInCout(true);
         log_ << "Unknown error, terminating:\n";
         log_.print(logFile_);
         return EXIT_FAILURE;
