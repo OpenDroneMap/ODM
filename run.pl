@@ -716,7 +716,7 @@ sub cmvs {
 
 sub pmvs {
     print "\n";
-    print "\n  - running pmvs - ";
+    print "\n  - running pmvs - "; now(); print "\n";
     print "\n";
 
     chdir($jobOptions{jobDir});
@@ -732,7 +732,7 @@ sub pmvs {
 
 sub odm_meshing {
     print "\n";
-    print "\n  - running meshing - ";
+    print "\n  - running meshing - "; now(); print "\n";
     print "\n";
     
     chdir($jobOptions{jobDir});
@@ -748,7 +748,7 @@ sub odm_meshing {
 
 sub odm_texturing {
     print "\n";
-    print "\n  - running texturing - ";
+    print "\n  - running texturing - "; now(); print "\n";
     print "\n";
     
     chdir($jobOptions{jobDir});
@@ -766,7 +766,7 @@ sub odm_texturing {
 
 sub odm_georeferencing {
     print "\n";
-    print "\n  - running georeferencing - ";
+    print "\n  - running georeferencing - "; now(); print "\n";
     print "\n";
     
     chdir($jobOptions{jobDir});
@@ -789,7 +789,7 @@ sub odm_georeferencing {
 
 sub odm_orthophoto {
     print "\n";
-    print "\n  - running orthophoto generation - ";
+    print "\n  - running orthophoto generation - "; now(); print "\n";
     print "\n";
     
     chdir($jobOptions{jobDir});
