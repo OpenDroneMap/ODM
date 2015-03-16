@@ -119,25 +119,31 @@ sub parseArgs {
                     }
                 }
                 if($ARGV[$i] eq "--start-with"){
-                    if($ARGV[$i+1] eq "resize" || $ARGV[$i+1] eq "getKeypoints" || $ARGV[$i+1] eq "match" || $ARGV[$i+1] eq "bundler" || $ARGV[$i+1] eq "cmvs" || $ARGV[$i+1] eq "pmvs"){
+                    if($ARGV[$i+1] eq "resize" || $ARGV[$i+1] eq "getKeypoints" || $ARGV[$i+1] eq "match" || $ARGV[$i+1] eq "bundler" || $ARGV[$i+1] eq "cmvs" || $ARGV[$i+1] eq "pmvs" 
+			|| $ARGV[$i+1] eq "odm_meshing" || $ARGV[$i+1] eq "odm_texturing" || $ARGV[$i+1] eq "odm_georeferencing" || $ARGV[$i+1] eq "odm_orthophoto"){
                         $args{$ARGV[$i]} = $ARGV[$i+1];
                     } else {    
-                        die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1]."\n\t valid values are \"resize\", \"getKeypoints\", \"match\", \"bundler\", \"cmvs\", \"pmvs\"";    
+                        die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1]."\n\t valid values are \"resize\", \"getKeypoints\", \"match\", \"bundler\", \"cmvs\", \"pmvs\",
+			\"odm_meshing\", \"odm_texturing\", \"odm_georeferencing\", \"odm_orthophoto\"";    
                     }
                 }
                 if($ARGV[$i] eq "--end-with"){
-                    if($ARGV[$i+1] eq "resize" || $ARGV[$i+1] eq "getKeypoints" || $ARGV[$i+1] eq "match" || $ARGV[$i+1] eq "bundler" || $ARGV[$i+1] eq "cmvs" || $ARGV[$i+1] eq "pmvs"){
+                    if($ARGV[$i+1] eq "resize" || $ARGV[$i+1] eq "getKeypoints" || $ARGV[$i+1] eq "match" || $ARGV[$i+1] eq "bundler" || $ARGV[$i+1] eq "cmvs" || $ARGV[$i+1] eq "pmvs" 
+			|| $ARGV[$i+1] eq "odm_meshing" || $ARGV[$i+1] eq "odm_texturing" || $ARGV[$i+1] eq "odm_georeferencing" || $ARGV[$i+1] eq "odm_orthophoto"){
                         $args{$ARGV[$i]} = $ARGV[$i+1];
                     } else {    
-                        die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1]."\n\t valid values are \"resize\", \"getKeypoints\", \"match\", \"bundler\", \"cmvs\", \"pmvs\"";
+                        die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1]."\n\t valid values are \"resize\", \"getKeypoints\", \"match\", \"bundler\", \"cmvs\", \"pmvs\",
+			\"odm_meshing\", \"odm_texturing\", \"odm_georeferencing\", \"odm_orthophoto\"";
                     }
                 }
                 if($ARGV[$i] eq "--run-only"){
-                    if($ARGV[$i+1] eq "resize" || $ARGV[$i+1] eq "getKeypoints" || $ARGV[$i+1] eq "match" || $ARGV[$i+1] eq "bundler" || $ARGV[$i+1] eq "cmvs" || $ARGV[$i+1] eq "pmvs"){
+                    if($ARGV[$i+1] eq "resize" || $ARGV[$i+1] eq "getKeypoints" || $ARGV[$i+1] eq "match" || $ARGV[$i+1] eq "bundler" || $ARGV[$i+1] eq "cmvs" || $ARGV[$i+1] eq "pmvs" 
+			|| $ARGV[$i+1] eq "odm_meshing" || $ARGV[$i+1] eq "odm_texturing" || $ARGV[$i+1] eq "odm_georeferencing" || $ARGV[$i+1] eq "odm_orthophoto"){
                         $args{"--start-with"} = $ARGV[$i+1];
                         $args{"--end-with"} = $ARGV[$i+1];
                     } else {    
-                        die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1]."\n\t valid values are \"resize\", \"getKeypoints\", \"match\", \"bundler\", \"cmvs\", \"pmvs\"";
+                        die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1]."\n\t valid values are \"resize\", \"getKeypoints\", \"match\", \"bundler\", \"cmvs\", \"pmvs\",
+			\"odm_meshing\", \"odm_texturing\", \"odm_georeferencing\", \"odm_orthophoto\"";
                     }
                 }
 	            if($ARGV[$i] eq "--matcher-threshold"){
