@@ -23,8 +23,6 @@ Developer's mailing list: http://lists.osgeo.org/cgi-bin/mailman/listinfo/opendr
 Steps to get OpenDroneMap running:
 ==================================
 
-<del>(Requires Ubuntu 12.04 32-bit at this time. May also work with Ubuntu 12.04 64-bit.</del>
-
 (Requires Ubuntu 12.04 or later, see https://github.com/OpenDroneMap/odm_vagrant for running on Windows in a VM)
 
 Run install.sh to build.
