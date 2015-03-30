@@ -238,12 +238,14 @@ int Georef::run(int argc, char *argv[])
     }
     catch (const GeorefException& e)
     {
+        log_.setIsPrintingInCout(true);
         log_ << e.what() << "\n";
         log_.print(logFile_);
         return EXIT_FAILURE;
     }
     catch (const std::exception& e)
     {
+        log_.setIsPrintingInCout(true);
         log_ << "Error in Georef:\n";
         log_ << e.what() << "\n";
         log_.print(logFile_);
@@ -251,6 +253,7 @@ int Georef::run(int argc, char *argv[])
     }
     catch (...)
     {
+        log_.setIsPrintingInCout(true);
         log_ << "Unknown error, terminating:\n";
         log_.print(logFile_);
         return EXIT_FAILURE;
@@ -1080,6 +1083,5 @@ void Georef::printGeorefSystem()
     geoStream.close();
     log_ << "... georeference system saved.\n";
 }
-
 
 
