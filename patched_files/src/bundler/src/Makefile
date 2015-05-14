@@ -24,7 +24,7 @@ endif
 INCLUDE_PATH=-I../lib/imagelib -I../lib/sfm-driver -I../lib/matrix	\
 	-I../lib/5point -I../lib/sba-1.5 -I../lib/ann_1.1_char/include
 
-LIB_PATH=-L../lib -L../lib/ann_1.1_char/lib
+LIB_PATH=-L../lib -L../lib/ann_1.1_char/lib -L/usr/lib
 
 CPPFLAGS=$(OPTFLAGS) $(OTHERFLAGS) $(INCLUDE_PATH) $(DEFINES)
 
@@ -37,8 +37,10 @@ BUNDLER_OBJS=BaseApp.o BundlerApp.o keys.o Register.o Epipolar.o	\
 	BundleIO.o ProcessBundle.o BundleTwo.o Decompose.o		\
 	RelativePose.o Distortion.o TwoFrameModel.o LoadJPEG.o
 
-BUNDLER_LIBS=-limage -lsfmdrv -lsba.v1.5 -lmatrix -lz -llapack -lblas \
-	-lcblas -lminpack -lm -l5point -ljpeg -lANN_char -lgfortran
+LAPACK_LIBS=$(shell pkg-config lapack --libs) $(shell pkg-config cblas --libs)
+
+BUNDLER_LIBS=-limage -lsfmdrv -lsba.v1.5 -lmatrix -lz $(LAPACK_LIBS) \
+	-lm -l5point -ljpeg -lANN_char -lgfortran -lminpack
 
 
 all: $(BUNDLER) $(KEYMATCHFULL) $(KEYMATCH) $(BUNDLE2PMVS) $(BUNDLE2VIS) $(RADIALUNDISTORT)
@@ -63,7 +65,7 @@ $(KEYMATCH): KeyMatch.o keys2a.o
 
 $(BUNDLE2PMVS): Bundle2PMVS.o LoadJPEG.o
 	$(CXX) -o $@ $(CPPFLAGS) $(LIB_PATH) Bundle2PMVS.o LoadJPEG.o \
-		-limage -lmatrix -llapack -lblas -lcblas -lgfortran \
+		-limage -lmatrix $(LAPACK_LIBS) -lgfortran \
 		-lminpack -ljpeg
 	cp $@ ../bin
 
@@ -73,7 +75,7 @@ $(BUNDLE2VIS): Bundle2Vis.o
 
 $(RADIALUNDISTORT): RadialUndistort.o LoadJPEG.o
 	$(CXX) -o $@ $(CPPFLAGS) $(LIB_PATH) $^ \
-		-limage -lmatrix -llapack -lblas -lcblas -lgfortran \
+		-limage -lmatrix $(LAPACK_LIBS) -lgfortran \
 		-lminpack -ljpeg
 	cp $@ ../bin
 

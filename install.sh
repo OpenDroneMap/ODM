@@ -1,7 +1,95 @@
 #!/bin/bash
 
-set -o nounset
-set -o errexit
+# set debug mode
+if [ -n "${DEBUG}" ]
+then
+    set -h
+    set -x
+fi;
+# default flag values
+CLEAN_BUILD_DIR=0
+INSTALL_PACKAGES=0
+TOOLS_PATH=$(pwd)
+DEST_PATH='/usr/local'
+
+GETOPTS="d:l:ci"
+
+function die(){
+    set -e
+    echo "${1}"
+    exit 1
+}
+
+function usage(){
+        set +x
+        echo
+        printf "Usage: %s [-d INSTALL_DIR] [-c] [-i] \n" $0
+        echo " -d INSTALL_DIR install data to location"
+        echo " -c clean installation directory first"
+        echo " -i install system packages"
+        echo " -l install results in provided dir"
+        echo
+}
+
+function do_install(){
+    dest="$DEST_PATH/${1}"
+    src="${2}"
+    if [ -n "${3}" ]
+    then 
+        fmode="${3}"
+    else
+        fmode=755
+    fi;
+    mkdir -p $dest
+    
+    install -o $(id -u) -g $(id -g) -m $fmode -C -t $dest $src
+
+}
+
+getopts_passed=0
+while getopts $GETOPTS name
+do
+    case $name in
+    c)  
+        getopts_passed=1
+        CLEAN_BUILD_DIR=1
+        ;;
+    i)  
+        getopts_passed=1
+        INSTALL_PACKAGES=1
+        ;;
+    d)  
+        if [ "$OPTARG" ]
+        then
+            getopts_passed=1
+            TOOLS_PATH="$OPTARG"
+        fi
+        ;; 
+    l)
+        if [ "$OPTARG" ]
+        then
+            getopts_passed=1
+            DEST_PATH="$OPTARG"
+        fi
+        ;; 
+        
+    esac
+done
+
+echo "creating destination ${TOOLS_PATH}"
+mkdir -p $TOOLS_PATH
+pushd $TOOLS_PATH > /dev/null
+TOOLS_PATH=$(pwd)
+popd > /dev/null
+echo "Absolute path: ${TOOLS_PATH}"
+
+
+
+if [ $getopts_passed -ne 1 ]
+then
+    usage
+    exit 1
+fi;
 
 echo 
 echo "     created by Daniel Schwarz/daniel.schwarz@topoi.org"
@@ -15,57 +103,64 @@ echo
 echo
 echo "  - script started - `date`"
 
-            ## dest base path
-          TOOLS_PATH="$PWD"
+if [ "$INSTALL_PACKAGES" -ne 0 ] ; then echo " * Will install packages" ; fi;
+if [ "$CLEAN_BUILD_DIR" -ne 0 ] ; then echo " * Will clean install dir first" ; fi;
 
-            ## paths for the tools
-      TOOLS_BIN_PATH="$TOOLS_PATH/bin"
-      TOOLS_INC_PATH="$TOOLS_PATH/include"
-      TOOLS_LIB_PATH="$TOOLS_PATH/lib"
-      TOOLS_SRC_PATH="$TOOLS_PATH/src"
-      TOOLS_LOG_PATH="$TOOLS_PATH/logs"
-  TOOLS_PATCHED_PATH="$TOOLS_PATH/patched_files"
+echo " * Installing to $TOOLS_PATH"
+set -o nounset
+set -o errexit
 
-            ## loacal dest paths
-		        LIB_PATH="/usr/local/lib"
-		        INC_PATH="/usr/local/include"
-		
-            ## source paths
-	      BUNDLER_PATH="$TOOLS_SRC_PATH/bundler"
-	         CMVS_PATH="$TOOLS_SRC_PATH/cmvs"
-	         PMVS_PATH="$TOOLS_SRC_PATH/pmvs"
-	      CLAPACK_PATH="$TOOLS_SRC_PATH/clapack"
-	       VLFEAT_PATH="$TOOLS_SRC_PATH/vlfeat"
-	     PARALLEL_PATH="$TOOLS_SRC_PATH/parallel"
-	          PSR_PATH="$TOOLS_SRC_PATH/PoissonRecon"
-              GRACLUS_PATH="$TOOLS_SRC_PATH/graclus"
-                  
-                  PCL_PATH="$TOOLS_SRC_PATH/pcl"
-          ODM_MESHING_PATH="$TOOLS_SRC_PATH/odm_meshing"
-        ODM_TEXTURING_PATH="$TOOLS_SRC_PATH/odm_texturing"
-       ODM_ORTHOPHOTO_PATH="$TOOLS_SRC_PATH/odm_orthophoto"
-      ODM_EXTRACT_UTM_PATH="$TOOLS_SRC_PATH/odm_extract_utm"
-           ODM_GEOREF_PATH="$TOOLS_SRC_PATH/odm_georef"
+# limit make to number of cpus
+MAKE='make -j '$(($(cat /proc/cpuinfo | grep processor | wc -l) - 2))
 
-            ## executables
-	     EXTRACT_FOCAL="$TOOLS_BIN_PATH/extract_focal.pl"
-	         MATCHKEYS="$TOOLS_BIN_PATH/KeyMatch"
-	     MATCHKEYSFULL="$TOOLS_BIN_PATH/KeyMatchFull"
-	           BUNDLER="$TOOLS_BIN_PATH/bundler"
-	       BUNDLE2PVMS="$TOOLS_BIN_PATH/Bundle2PMVS"
-	              CMVS="$TOOLS_BIN_PATH/cmvs"
-	              PMVS="$TOOLS_BIN_PATH/pmvs2"
-	         GENOPTION="$TOOLS_BIN_PATH/genOption"
-	            VLSIFT="$TOOLS_BIN_PATH/vlsift"
-	          PARALLEL="$TOOLS_BIN_PATH/parallel"
-	               PSR="$TOOLS_BIN_PATH/PoissonRecon"
-	VLSIFT_TO_LOWESIFT="$TOOLS_BIN_PATH/convert_vlsift_to_lowesift.pl"
+## paths for the tools
+TOOLS_BIN_PATH="$TOOLS_PATH/bin"
+TOOLS_INC_PATH="$TOOLS_PATH/include"
+TOOLS_LIB_PATH="$TOOLS_PATH/lib"
+TOOLS_SRC_PATH="$TOOLS_PATH/src"
+TOOLS_LOG_PATH="$TOOLS_PATH/logs"
+TOOLS_PATCHED_PATH=$(dirname $0)"/patched_files"
 
-               ODM_MESHING="$TOOLS_BIN_PATH/odm_meshing"
-             ODM_TEXTURING="$TOOLS_BIN_PATH/odm_texturing"
-            ODM_ORTHOPHOTO="$TOOLS_BIN_PATH/odm_orthophoto"
-           ODM_EXTRACT_UTM="$TOOLS_BIN_PATH/odm_extract_utm"
-                ODM_GEOREF="$TOOLS_BIN_PATH/odm_georef"
+## loacal dest paths
+LIB_PATH="/usr/local/lib"
+INC_PATH="/usr/local/include"
+
+## source paths
+BUNDLER_PATH="$TOOLS_SRC_PATH/bundler"
+CMVS_PATH="$TOOLS_SRC_PATH/cmvs"
+PMVS_PATH="$TOOLS_SRC_PATH/pmvs"
+CLAPACK_PATH="$TOOLS_SRC_PATH/clapack"
+VLFEAT_PATH="$TOOLS_SRC_PATH/vlfeat"
+PARALLEL_PATH="$TOOLS_SRC_PATH/parallel"
+PSR_PATH="$TOOLS_SRC_PATH/PoissonRecon"
+GRACLUS_PATH="$TOOLS_SRC_PATH/graclus"
+
+PCL_PATH="$TOOLS_SRC_PATH/pcl"
+ODM_MESHING_PATH="$TOOLS_SRC_PATH/odm_meshing"
+ODM_TEXTURING_PATH="$TOOLS_SRC_PATH/odm_texturing"
+ODM_ORTHOPHOTO_PATH="$TOOLS_SRC_PATH/odm_orthophoto"
+ODM_EXTRACT_UTM_PATH="$TOOLS_SRC_PATH/odm_extract_utm"
+ODM_GEOREF_PATH="$TOOLS_SRC_PATH/odm_georef"
+
+## executables
+EXTRACT_FOCAL="$TOOLS_BIN_PATH/extract_focal.pl"
+MATCHKEYS="$TOOLS_BIN_PATH/KeyMatch"
+MATCHKEYSFULL="$TOOLS_BIN_PATH/KeyMatchFull"
+BUNDLER="$TOOLS_BIN_PATH/bundler"
+BUNDLE2PVMS="$TOOLS_BIN_PATH/Bundle2PMVS"
+CMVS="$TOOLS_BIN_PATH/cmvs"
+PMVS="$TOOLS_BIN_PATH/pmvs2"
+GENOPTION="$TOOLS_BIN_PATH/genOption"
+VLSIFT="$TOOLS_BIN_PATH/vlsift"
+PARALLEL="$TOOLS_BIN_PATH/parallel"
+PSR="$TOOLS_BIN_PATH/PoissonRecon"
+VLSIFT_TO_LOWESIFT="$TOOLS_BIN_PATH/convert_vlsift_to_lowesift.pl"
+
+ODM_MESHING="$TOOLS_BIN_PATH/odm_meshing"
+ODM_TEXTURING="$TOOLS_BIN_PATH/odm_texturing"
+ODM_ORTHOPHOTO="$TOOLS_BIN_PATH/odm_orthophoto"
+ODM_EXTRACT_UTM="$TOOLS_BIN_PATH/odm_extract_utm"
+ODM_GEOREF="$TOOLS_BIN_PATH/odm_georef"
 
 ## get sys vars
 ARCH=`uname -m`
@@ -74,12 +169,15 @@ CORES=`grep -c processor /proc/cpuinfo`
 ## prevents different (localized) output
 LC_ALL=C
 
-## removing old stuff
-sudo rm -Rf "$TOOLS_BIN_PATH"
-sudo rm -Rf "$TOOLS_INC_PATH"
-sudo rm -Rf "$TOOLS_LIB_PATH"
-sudo rm -Rf "$TOOLS_SRC_PATH"
-sudo rm -Rf "$TOOLS_LOG_PATH"
+if [ "$CLEAN_BUILD_DIR" -ne 0 ] 
+then 
+    ## removing old stuff
+    rm -Rf "$TOOLS_BIN_PATH"
+    rm -Rf "$TOOLS_INC_PATH"
+    rm -Rf "$TOOLS_LIB_PATH"
+    rm -Rf "$TOOLS_SRC_PATH"
+    rm -Rf "$TOOLS_LOG_PATH"
+fi;
 
 ## create needed directories
 mkdir -p "$TOOLS_BIN_PATH"
@@ -99,51 +197,54 @@ cp -rf "odm_georef" "$TOOLS_SRC_PATH/"
 echo "System info:" > "$TOOLS_LOG_PATH/sysinfo.txt"
 uname -a > "$TOOLS_LOG_PATH/sysinfo.txt"
 
-## install packages
-echo
-echo "  > installing required packages"
-
-echo "    - updating"
-sudo apt-get update --assume-yes > "$TOOLS_LOG_PATH/apt-get_get.log" 2>&1
-
-echo "    - installing"
-
-if [[ `lsb_release -rs` == "12.04" ]];
+if [ "$INSTALL_PACKAGES" -ne 0 ]
 then 
-sudo apt-get install --assume-yes --install-recommends \
-  build-essential cmake g++ gcc gFortran perl git autoconf \
-  curl wget \
-  unzip \
-  imagemagick jhead proj-bin libproj-dev\
-  libjpeg-dev libboost1.48-all-dev libgsl0-dev libx11-dev libxext-dev liblapack-dev \
-  libeigen3-dev libflann-dev libvtk5-dev libqhull-dev libusb-1.0-0-dev\
-  libzip-dev \
-  libswitch-perl libjson-perl \
-  libcv-dev libcvaux-dev libopencv-dev \
-  > "$TOOLS_LOG_PATH/apt-get_install.log" 2>&1
-else
-sudo apt-get install --assume-yes --install-recommends \
-  build-essential cmake g++ gcc gFortran perl git autoconf \
-  curl wget \
-  unzip \
-  imagemagick jhead proj-bin libproj-dev\
-  libjpeg-dev libboost-all-dev libgsl0-dev libx11-dev libxext-dev liblapack-dev \
-  libeigen3-dev libflann-dev libvtk5-dev libqhull-dev libusb-1.0-0-dev\
-  libjson-perl \
-  libzip-dev \
-  libswitch-perl \
-  libcv-dev libcvaux-dev libopencv-dev \
-  > "$TOOLS_LOG_PATH/apt-get_install.log" 2>&1
-fi
+    ## install packages
+    echo
+    echo "  > installing required packages"
 
-echo "  < done - `date`"
+    echo "    - updating"
+    sudo apt-get update --assume-yes > "$TOOLS_LOG_PATH/apt-get_get.log" 2>&1
+
+    echo "    - installing"
+
+    if [[ `lsb_release -rs` == "12.04" ]];
+    then 
+    sudo apt-get install --assume-yes --install-recommends \
+      build-essential cmake g++ gcc gFortran perl git autoconf \
+      curl wget \
+      unzip \
+      imagemagick jhead proj-bin libproj-dev\
+      libjpeg-dev libboost1.48-all-dev libgsl0-dev libx11-dev libxext-dev liblapack-dev \
+      libeigen3-dev libflann-dev libvtk5-dev libqhull-dev libusb-1.0-0-dev\
+      libzip-dev \
+      libswitch-perl libjson-perl \
+      libcv-dev libcvaux-dev libopencv-dev \
+      > "$TOOLS_LOG_PATH/apt-get_install.log" 2>&1
+    else
+    sudo apt-get install --assume-yes --install-recommends \
+      build-essential cmake g++ gcc gFortran perl git autoconf \
+      curl wget \
+      unzip \
+      imagemagick jhead proj-bin libproj-dev\
+      libjpeg-dev libboost-all-dev libgsl0-dev libx11-dev libxext-dev liblapack-dev \
+      libeigen3-dev libflann-dev libvtk5-dev libqhull-dev libusb-1.0-0-dev\
+      libjson-perl \
+      libzip-dev \
+      libswitch-perl \
+      libcv-dev libcvaux-dev libopencv-dev \
+      > "$TOOLS_LOG_PATH/apt-get_install.log" 2>&1
+    fi
+
+    echo "  < done - `date`"
+fi
 
 ## downloading sources
 echo
 echo "  > getting the sources"
 
 ## Reconstruct CMVS tar.gz from pieces...
-cat cmvs.tar.gz.part-?? > cmvs.tar.gz
+#cat cmvs.tar.gz.part-?? > cmvs.tar.gz
 
 ## getting all archives if not already present; save them to .tmp and rename them after download
 while read target source
@@ -159,15 +260,18 @@ do
     echo "    - already downloaded $source"
   fi
 done <<EOF
-parallel.tar.bz2  http://ftp.gnu.org/gnu/parallel/parallel-20141022.tar.bz2
-clapack.tgz  http://www.netlib.org/clapack/clapack-3.2.1-CMAKE.tgz
-bundler.zip  http://phototour.cs.washington.edu/bundler/distr/bundler-v0.4-source.zip
+bundler.zip https://github.com/snavely/bundler_sfm/archive/master.zip
 PoissonRecon.zip http://www.cs.jhu.edu/~misha/Code/PoissonRecon/Version2/PoissonRecon.zip
 vlfeat.tar.gz http://www.vlfeat.org/download/vlfeat-0.9.13-bin.tar.gz
 cmvs.tar.gz http://www.di.ens.fr/cmvs/cmvs-fix2.tar.gz
 graclus.tar.gz http://smathermather.github.io/BundlerTools/patched_files/src/graclus/graclus1.2.tar.gz
-pcl.tar.gz https://github.com/PointCloudLibrary/pcl/archive/pcl-1.7.2.tar.gz
 EOF
+
+#bundler.zip  http://phototour.cs.washington.edu/bundler/distr/bundler-v0.4-source.zip
+#parallel.tar.bz2  http://ftp.gnu.org/gnu/parallel/parallel-20141022.tar.bz2
+#clapack.tgz  http://www.netlib.org/clapack/clapack-3.2.1-CMAKE.tgz
+#pcl.tar.gz https://github.com/PointCloudLibrary/pcl/archive/pcl-1.7.2.tar.gz
+
 
 echo "  < done - `date`"
 
@@ -188,13 +292,13 @@ done
 wait
 
 mv -f graclus1.2          "$GRACLUS_PATH"
-mv -f clapack-3.2.1-CMAKE "$CLAPACK_PATH"
+#mv -f clapack-3.2.1-CMAKE "$CLAPACK_PATH"
 mv -f vlfeat-0.9.13       "$VLFEAT_PATH"
 mv -f bundler-v0.4-source "$BUNDLER_PATH"
-mv -f parallel-20141022   "$PARALLEL_PATH"
+#mv -f parallel-20141022   "$PARALLEL_PATH"
 mv -f PoissonRecon        "$PSR_PATH"
 mv -f cmvs                "$CMVS_PATH"
-mv -f pcl-pcl-1.7.2       "$PCL_PATH"
+#mv -f pcl-pcl-1.7.2       "$PCL_PATH"
 
 
 echo "  < done - `date`"
@@ -206,7 +310,7 @@ echo "  - copying patches"
 echo
 
 for file in `find $TOOLS_PATCHED_PATH -type f -print` ; do
-  cp $file $TOOLS_PATH/${file/$TOOLS_PATCHED_PATH/.}
+  cp -v $file $TOOLS_PATH/${file/$TOOLS_PATCHED_PATH/.}
 done
 
 echo "  < done - `date`"
@@ -217,25 +321,25 @@ echo
 echo "  - building"
 echo
 
-sudo chown -R `id -u`:`id -g` *
+chown -R `id -u`:`id -g` *
 #sudo chmod -R 777 *
 
 echo "  > graclus"
 	cd "$GRACLUS_PATH"
 
 	if [ "$ARCH" = "i686" ]; then
-		sed -i "$GRACLUS_PATH/Makefile.in" -e "11c\COPTIONS = -DNUMBITS=32"
+		sed -i "Makefile.in" -e "11c\COPTIONS = -DNUMBITS=32"
 	fi
 
 	if [ "$ARCH" = "x86_64" ]; then
-		sed -i "$GRACLUS_PATH/Makefile.in" -e "11c\COPTIONS = -DNUMBITS=64"
+		sed -i "Makefile.in" -e "11c\COPTIONS = -DNUMBITS=64"
 	fi
 	
 	echo "    - cleaning graclus"
-	make clean > "$TOOLS_LOG_PATH/graclus_1_clean.log" 2>&1
+	${MAKE} clean > "graclus_1_clean.log" 2>&1
 
 	echo "    - building graclus"
-	make -j > "$TOOLS_LOG_PATH/graclus_2_build.log" 2>&1
+	${MAKE}  > "graclus_2_build.log" 2>&1
    
 	mkdir "$TOOLS_INC_PATH/metisLib"
 	cp -f "$GRACLUS_PATH/metisLib/"*.h "$TOOLS_INC_PATH/metisLib/"
@@ -250,46 +354,12 @@ echo "  > poisson surface reconstruction "
   sed -i "$PSR_PATH/Makefile" -e "21c\BIN = ./"
     
   echo "    - building poisson surface reconstruction"
-  make -j > "$TOOLS_LOG_PATH/poisson_1_build.log" 2>&1
+  ${MAKE} > "$TOOLS_LOG_PATH/poisson_1_build.log" 2>&1
   
   cp -f "$PSR_PATH/PoissonRecon" "$TOOLS_BIN_PATH/PoissonRecon"
   
 echo "  < done - `date`"
 echo
-
-
-echo "  > parallel"
-  cd "$PARALLEL_PATH"
-  
-  echo "    - configuring parallel"
-  ./configure > "$TOOLS_LOG_PATH/parallel_1_build.log" 2>&1
-  
-  echo "    - building paralel"
-  make -j > "$TOOLS_LOG_PATH/parallel_2_build.log" 2>&1
-  
-  cp -f src/parallel "$TOOLS_BIN_PATH/"
-  
-echo "  < done - `date`"
-echo
-
-
-echo "  > clapack"
-  cd "$CLAPACK_PATH"
-  cp make.inc.example make.inc
-  
-  set +e
-  echo "    - building clapack"
-  make all -j > "$TOOLS_LOG_PATH/clapack_1_build.log" 2>&1
-  set -e
-  
-  echo "    - installing clapack"
-  make lapack_install > "$TOOLS_LOG_PATH/clapack_2_install.log" 2>&1
-
-  sudo cp -Rf INCLUDE "$INC_PATH/clapack"
-  
-echo "  < done - `date`"
-echo
-
 
 echo "  > vlfeat"
   cd "$VLFEAT_PATH"
@@ -333,13 +403,13 @@ echo "  > cmvs/pmvs"
   fi
 
   echo "    - cleaning cmvs"
-  make clean > "$TOOLS_LOG_PATH/cmvs_1_clean.log" 2>&1
+  ${MAKE} clean > "$TOOLS_LOG_PATH/cmvs_1_clean.log" 2>&1
 
   echo "    - building cmvs"
-  make -j > "$TOOLS_LOG_PATH/cmvs_2_build.log" 2>&1
+  (${MAKE} || die "Error during building cmvs/pmvs") | tee "$TOOLS_LOG_PATH/cmvs_2_build.log"
 
   echo "    - make depend cmvs"
-  sudo make depend > "$TOOLS_LOG_PATH/cmvs_3_depend.log" 2>&1
+  ${MAKE} depend > "$TOOLS_LOG_PATH/cmvs_3_depend.log" 2>&1
 
   cp -f "$CMVS_PATH/program/main/cmvs" "$CMVS_PATH/program/main/pmvs2" "$CMVS_PATH/program/main/genOption" "$TOOLS_BIN_PATH/"
   cp -f "$CMVS_PATH/program/main/"*so* "$TOOLS_LIB_PATH/"
@@ -353,10 +423,10 @@ echo "  > bundler"
   sed -i "$BUNDLER_PATH/src/BundlerApp.h" -e "620c\        BundlerApp();"
 
   echo "    - cleaning bundler"
-  make clean > "$TOOLS_LOG_PATH/bundler_1_clean.log" 2>&1
+  ${MAKE} clean > "$TOOLS_LOG_PATH/bundler_1_clean.log" 2>&1
 
   echo "    - building bundler"
-  make -j  > "$TOOLS_LOG_PATH/bundler_2_build.log" 2>&1
+  (${MAKE} || die "Error ") | tee "$TOOLS_LOG_PATH/bundler_2_build.log"
 
   cp -f "$BUNDLER_PATH/bin/Bundle2PMVS" "$BUNDLER_PATH/bin/Bundle2Vis" "$BUNDLER_PATH/bin/KeyMatchFull" "$BUNDLER_PATH/bin/KeyMatch" "$BUNDLER_PATH/bin/bundler" "$BUNDLER_PATH/bin/RadialUndistort" "$TOOLS_BIN_PATH/"
 
@@ -364,42 +434,19 @@ echo "  > bundler"
 echo "  < done - `date`"
 echo
 
-echo "  > pcl "
-	#cd "$PCL_PATH"
-	
-	#Install pcl dependencies using the default package manager.
-	#sudo apt-get install libeigen3-dev libflann-dev libvtk5-dev libqhull-dev
-
-	#install the required boost version.
-	#sudo apt-get install libboost1.48-all-dev
-
-	mkdir -p "pcl"
-	mkdir -p "$TOOLS_LIB_PATH/pcl"
-	mkdir -p "$PCL_PATH/pcl_tmp"
-	mkdir -p "$PCL_PATH/pcl_build"
-
-	#mv -f "pcl-pcl-1.7.2" "$PCL_PATH/pcl_tmp"
-
-	cd "$PCL_PATH/pcl_build"
-
-	echo "    - configuring pcl"
-  	
-	cmake .. -DCMAKE_INSTALL_PREFIX="$TOOLS_LIB_PATH/pcl" -DCMAKE_BUILD_TYPE=Release -DPCL_VERBOSITY_LEVEL=Error -DBUILD_features=OFF -DBUILD_filters=OFF -DBUILD_geometry=OFF -DBUILD_keypoints=OFF -DBUILD_outofcore=OFF -DBUILD_people=OFF -DBUILD_recognition=OFF -DBUILD_registration=OFF -DBUILD_sample_consensus=OFF -DBUILD_segmentation=OFF -DBUILD_features=OFF -DBUILD_surface_on_nurbs=OFF -DBUILD_tools=OFF -DBUILD_tracking=OFF -DBUILD_visualization=OFF -DWITH_QT=OFF -DBUILD_OPENNI=OFF -DBUILD_OPENNI2=OFF -DWITH_OPENNI=OFF -DWITH_OPENNI2=OFF -DWITH_FZAPI=OFF -DWITH_LIBUSB=OFF -DWITH_PCAP=OFF -DWITH_PXCAPI=OFF > "$TOOLS_LOG_PATH/pcl_1_build.log" 2>&1
-  
-	echo "    - building and installing pcl"
-	make install > "$TOOLS_LOG_PATH/pcl_2_build.log" 2>&1
-
-echo "  < done - `date`"
-echo
 
 echo "  > meshing "
 	cd "$ODM_MESHING_PATH"
 	
 	echo "    - configuring odm_meshing"
-	cmake . -DPCL_DIR="$TOOLS_LIB_PATH/pcl" > "$TOOLS_LOG_PATH/odm_meshing_1_build.log" 2>&1
+    pkg-config pcl_common-1.7 --exists|| die "Please install PCL package"
+
+    PCL_DIR=$(pkg-config pcl_common-1.7 --cflags-only-I | sed -e 's/\-I//' )
+
+	(cmake . -DPCL_DIR="$PCL_DIR" || die "Error during meshing config") | tee "$TOOLS_LOG_PATH/odm_meshing_configure.log"
 	
 	echo "    - building odm_meshing"
-	make > "$TOOLS_LOG_PATH/odm_meshing_2_build.log" 2>&1
+	(${MAKE} || die "Error when compiling odm_meshing") | tee  "$TOOLS_LOG_PATH/odm_meshing_2_build.log"
 	
 	# copy output program to the binaries folder.
 	cp -f "odm_meshing" "$TOOLS_BIN_PATH/odm_meshing"	
@@ -414,7 +461,7 @@ echo "  > texturing "
 	cmake . -DPCL_DIR="$TOOLS_LIB_PATH/pcl" > "$TOOLS_LOG_PATH/odm_texturing_1_build.log" 2>&1
 	
 	echo "    - building odm_texturing"
-	make > "$TOOLS_LOG_PATH/odm_texturing_2_build.log" 2>&1
+	${MAKE} > "$TOOLS_LOG_PATH/odm_texturing_2_build.log" 2>&1
 	
 	# copy output program to the binaries folder.
 	cp -f "odm_texturing" "$TOOLS_BIN_PATH/odm_texturing"	
@@ -429,7 +476,7 @@ echo "  > extract_utm "
 	cmake . > "$TOOLS_LOG_PATH/odm_extract_utm_1_build.log" 2>&1
 	
 	echo "    - building odm_extract_utm"
-	make > "$TOOLS_LOG_PATH/odm_extract_utm_2_build.log" 2>&1
+	${MAKE} > "$TOOLS_LOG_PATH/odm_extract_utm_2_build.log" 2>&1
 	
 	# copy output program to the binaries folder.
 	cp -f "odm_extract_utm" "$TOOLS_BIN_PATH/odm_extract_utm"	
@@ -444,7 +491,7 @@ echo "  > georef "
 	cmake . -DPCL_DIR="$TOOLS_LIB_PATH/pcl" > "$TOOLS_LOG_PATH/odm_georef_1_build.log" 2>&1
 	
 	echo "    - building odm_georef"
-	make > "$TOOLS_LOG_PATH/odm_georef_2_build.log" 2>&1
+	${MAKE} > "$TOOLS_LOG_PATH/odm_georef_2_build.log" 2>&1
 	
 	# copy output program to the binaries folder.
 	cp -f "odm_georef" "$TOOLS_BIN_PATH/odm_georef"	
@@ -459,7 +506,7 @@ echo "  > orthophoto "
 	cmake . -DPCL_DIR="$TOOLS_LIB_PATH/pcl" > "$TOOLS_LOG_PATH/odm_orthophoto_1_build.log" 2>&1
 	
 	echo "    - building odm_orthophoto"
-	make > "$TOOLS_LOG_PATH/odm_orthophoto_2_build.log" 2>&1
+	${MAKE} > "$TOOLS_LOG_PATH/odm_orthophoto_2_build.log" 2>&1
 	
 	# copy output program to the binaries folder.
 	cp -f "odm_orthophoto" "$TOOLS_BIN_PATH/odm_orthophoto"	
@@ -467,15 +514,19 @@ echo "  > orthophoto "
 echo "  < done - `date`"
 echo
 
-cd "$TOOLS_PATH"
+pushd "$TOOLS_PATH"
 
-sudo install -o `id -u` -g `id -g` -m 644 -t "$LIB_PATH" lib/*.so
-sudo ldconfig -v > "$TOOLS_LOG_PATH/ldconfig.log" 2>&1
+do_install bin 'bin/*'
+do_install include 'include/*'
+do_install lib 'lib/*'
+do_install bin run.pl
 
-sudo chown -R `id -u`:`id -g` *
+#nstall -o $(id -u) -g $(id -g) -m 755 -C -t "$DEST_PATH/$src" 
+#ldconfig -v | tee "$TOOLS_LOG_PATH/ldconfig.log"
+#chown -R $(id -u):$(id -g) *
 #sudo chmod -R 777 *
-sudo chmod 700 run.pl
+popd
+
+#chmod 755 run.pl
 
 echo "  - script finished - `date`"
-
-exit
