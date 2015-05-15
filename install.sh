@@ -542,6 +542,8 @@ pushd "$TOOLS_PATH"
 do_install 'bin/*' bin
 do_install 'lib/*' lib
 do_install ../run.pl bin
+do_install ../convert_vlsift_to_lowesift.pl bin
+do_install ../ccd_defs.json lib 644
 
 #nstall -o $(id -u) -g $(id -g) -m 755 -C -t "$DEST_PATH/$src" 
 #ldconfig -v | tee "$TOOLS_LOG_PATH/ldconfig.log"

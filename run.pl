@@ -28,20 +28,18 @@ if(!File::Spec->file_name_is_absolute($BIN_PATH_REL)){
 	$BIN_PATH_ABS = File::Spec->rel2abs($BIN_PATH_REL);
 }
 
-$BIN_PATH = $BIN_PATH_ABS."/bin";
-$LIB_PATH = $BIN_PATH_ABS."/lib";
+$LIB_PATH = File::Spec->rel2abs(join "/", $BIN_PATH_ABS, "..", "lib");
 
 ## add ODM bin path to $PATH
-$ENV{PATH} = join ":", $ENV{PATH}, $BIN_PATH;
+$ENV{PATH} = join ":", $ENV{PATH}, $BIN_ABS_PATH;
 
 ## add this library path to avoid dynlinking errors in tools
 $ENV{LD_LIBRARY_PATH} = join ":", $ENV{LD_LIBRARY_PATH}, $LIB_PATH;
 
 
-
 sub getCcdWidths{
     local $/;
-    my $ccdPath = "$BIN_PATH_ABS/ccd_defs.json";
+    my $ccdPath = "$LIB_PATH/ccd_defs.json";
     open( my $fh, '<', $ccdPath);
 
     my $ccdWidths = decode_json(<$fh>);
@@ -565,7 +563,7 @@ sub getKeypoints {
             } else {
 				unless (-e "$jobOptions{jobDir}/$fileObject->{base}.key.bin") {
 	                $vlsiftJobs    .= "echo -n \"$c/$objectStats{good} - \" && convert -format pgm \"$fileObject->{step_0_resizedImage}\" \"$fileObject->{step_1_pgmFile}\"";
-	                $vlsiftJobs    .= " && \"vlsift\" \"$fileObject->{step_1_pgmFile}\" -o \"$fileObject->{step_1_keyFile}.sift\" > /dev/null && perl \"$BIN_PATH/../convert_vlsift_to_lowesift.pl\" \"$jobOptions{jobDir}/$fileObject->{base}\"";
+	                $vlsiftJobs    .= " && \"vlsift\" \"$fileObject->{step_1_pgmFile}\" -o \"$fileObject->{step_1_keyFile}.sift\" > /dev/null && perl \"$convert_vlsift_to_lowesift.pl\" \"$jobOptions{jobDir}/$fileObject->{base}\"";
 	                $vlsiftJobs    .= " && gzip -f \"$fileObject->{step_1_keyFile}\"";
 	                $vlsiftJobs    .= " && rm -f \"$fileObject->{step_1_pgmFile}\"";
 	                $vlsiftJobs    .= " && rm -f \"$fileObject->{step_1_keyFile}.sift\"\n";
