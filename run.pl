@@ -29,9 +29,13 @@ if(!File::Spec->file_name_is_absolute($BIN_PATH_REL)){
 }
 
 $BIN_PATH = $BIN_PATH_ABS."/bin";
+$LIB_PATH = $BIN_PATH_ABS."/lib";
 
 ## add ODM bin path to $PATH
-$ENV{PATH}= join ":", $ENV{PATH}, $BIN_PATH;
+$ENV{PATH} = join ":", $ENV{PATH}, $BIN_PATH;
+
+## add this library path to avoid dynlinking errors in tools
+$ENV{LD_LIBRARY_PATH} = join ":", $ENV{LD_LIBRARY_PATH}, $LIB_PATH;
 
 
 
