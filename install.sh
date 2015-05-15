@@ -5,7 +5,11 @@ if [ -n "${DEBUG}" ]
 then
     set -h
     set -x
+    set -u
+    set -e
+
 fi;
+
 # default flag values
 CLEAN_BUILD_DIR=0
 INSTALL_PACKAGES=0
@@ -15,7 +19,6 @@ DEST_PATH='/usr/local'
 GETOPTS="d:l:ci"
 
 function die(){
-    set -e
     echo "${1}"
     exit 1
 }
@@ -107,9 +110,6 @@ if [ "$INSTALL_PACKAGES" -ne 0 ] ; then echo " * Will install packages" ; fi;
 if [ "$CLEAN_BUILD_DIR" -ne 0 ] ; then echo " * Will clean install dir first" ; fi;
 
 echo " * Installing to $TOOLS_PATH"
-set -o nounset
-set -o errexit
-
 # limit make to number of cpus
 MAKE='make -j '$(($(cat /proc/cpuinfo | grep processor | wc -l) - 2))
 
