@@ -134,7 +134,7 @@ if [ "$CLEAN_BUILD_DIR" -ne 0 ] ; then echo " * Will clean install dir first" ; 
 
 echo " * Installing to $TOOLS_PATH"
 # limit make to number of cpus
-MAKE='make -j '$(($(cat /proc/cpuinfo | grep processor | wc -l) - 2))
+MAKE='make -j '$(cat /proc/cpuinfo | grep processor | wc -l)
 
 ## paths for the tools
 TOOLS_BIN_PATH="$TOOLS_PATH/bin"
