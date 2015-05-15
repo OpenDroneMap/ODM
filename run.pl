@@ -563,7 +563,7 @@ sub getKeypoints {
             } else {
 				unless (-e "$jobOptions{jobDir}/$fileObject->{base}.key.bin") {
 	                $vlsiftJobs    .= "echo -n \"$c/$objectStats{good} - \" && convert -format pgm \"$fileObject->{step_0_resizedImage}\" \"$fileObject->{step_1_pgmFile}\"";
-	                $vlsiftJobs    .= " && \"vlsift\" \"$fileObject->{step_1_pgmFile}\" -o \"$fileObject->{step_1_keyFile}.sift\" > /dev/null && perl \"convert_vlsift_to_lowesift.pl\" \"$jobOptions{jobDir}/$fileObject->{base}\"";
+	                $vlsiftJobs    .= " && \"vlsift\" \"$fileObject->{step_1_pgmFile}\" -o \"$fileObject->{step_1_keyFile}.sift\" > /dev/null && \"convert_vlsift_to_lowesift.pl\" \"$jobOptions{jobDir}/$fileObject->{base}\"";
 	                $vlsiftJobs    .= " && gzip -f \"$fileObject->{step_1_keyFile}\"";
 	                $vlsiftJobs    .= " && rm -f \"$fileObject->{step_1_pgmFile}\"";
 	                $vlsiftJobs    .= " && rm -f \"$fileObject->{step_1_keyFile}.sift\"\n";
