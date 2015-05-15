@@ -10,17 +10,19 @@ then
 
 fi;
 
+trap "exit 1" TERM
+
 # default flag values
 CLEAN_BUILD_DIR=0
 INSTALL_PACKAGES=0
 TOOLS_PATH=$(pwd)
 DEST_PATH='/usr/local'
 
-GETOPTS="d:l:ci"
+GETOPTS="d:l:cih?"
 
 function die(){
     echo "${1}"
-    exit 1
+    kill -s TERM $$
 }
 
 function usage(){
@@ -35,17 +37,23 @@ function usage(){
 }
 
 function do_install(){
-    dest="$DEST_PATH/${1}"
-    src="${2}"
+    # src can be glob
+    src="${1}"
+    # construct destination including $DEST_PATH
+    dest="$DEST_PATH/${2}"
+
+    set +u
+    # file mode
     if [ -n "${3}" ]
     then 
         fmode="${3}"
     else
         fmode=755
     fi;
+    set -u
     mkdir -p $dest
     
-    install -o $(id -u) -g $(id -g) -m $fmode -C -t $dest $src
+    install -v -o $(id -u) -g $(id -g) -m $fmode -C -t $dest $src || die "Installation of $src failed"
 
 }
 
@@ -68,6 +76,14 @@ do
             TOOLS_PATH="$OPTARG"
         fi
         ;; 
+    \?)
+        usage
+        exit 1
+        ;;
+    h)
+        usage
+        exit 1
+        ;;
     l)
         if [ "$OPTARG" ]
         then
@@ -85,6 +101,13 @@ pushd $TOOLS_PATH > /dev/null
 TOOLS_PATH=$(pwd)
 popd > /dev/null
 echo "Absolute path: ${TOOLS_PATH}"
+
+echo "creating destination installation path: ${DEST_PATH}"
+mkdir -p $DEST_PATH
+pushd $DEST_PATH > /dev/null
+DEST_PATH=$(pwd)
+popd > /dev/null
+echo "Absolute path: ${DEST_PATH}"
 
 
 
@@ -262,7 +285,7 @@ do
 done <<EOF
 bundler.zip https://github.com/snavely/bundler_sfm/archive/master.zip
 PoissonRecon.zip http://www.cs.jhu.edu/~misha/Code/PoissonRecon/Version2/PoissonRecon.zip
-vlfeat.tar.gz http://www.vlfeat.org/download/vlfeat-0.9.13-bin.tar.gz
+vlfeat.tar.gz http://www.vlfeat.org/download/vlfeat-0.9.20-bin.tar.gz
 cmvs.tar.gz http://www.di.ens.fr/cmvs/cmvs-fix2.tar.gz
 graclus.tar.gz http://smathermather.github.io/BundlerTools/patched_files/src/graclus/graclus1.2.tar.gz
 EOF
@@ -293,7 +316,7 @@ wait
 
 mv -f graclus1.2          "$GRACLUS_PATH"
 #mv -f clapack-3.2.1-CMAKE "$CLAPACK_PATH"
-mv -f vlfeat-0.9.13       "$VLFEAT_PATH"
+mv -f vlfeat-0.9.20       "$VLFEAT_PATH"
 mv -f bundler-v0.4-source "$BUNDLER_PATH"
 #mv -f parallel-20141022   "$PARALLEL_PATH"
 mv -f PoissonRecon        "$PSR_PATH"
@@ -516,10 +539,9 @@ echo
 
 pushd "$TOOLS_PATH"
 
-do_install bin 'bin/*'
-do_install include 'include/*'
-do_install lib 'lib/*'
-do_install bin run.pl
+do_install 'bin/*' bin
+do_install 'lib/*' lib
+do_install ../run.pl bin
 
 #nstall -o $(id -u) -g $(id -g) -m 755 -C -t "$DEST_PATH/$src" 
 #ldconfig -v | tee "$TOOLS_LOG_PATH/ldconfig.log"
