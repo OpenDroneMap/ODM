@@ -28,9 +28,18 @@ if(!File::Spec->file_name_is_absolute($BIN_PATH_REL)){
 	$BIN_PATH_ABS = File::Spec->rel2abs($BIN_PATH_REL);
 }
 
+$LIB_PATH = File::Spec->rel2abs(join "/", $BIN_PATH_ABS, "..", "lib");
+
+## add ODM bin path to $PATH
+$ENV{PATH} = join ":", $ENV{PATH}, $BIN_ABS_PATH;
+
+## add this library path to avoid dynlinking errors in tools
+$ENV{LD_LIBRARY_PATH} = join ":", $ENV{LD_LIBRARY_PATH}, $LIB_PATH;
+
+
 sub getCcdWidths{
     local $/;
-    my $ccdPath = "$BIN_PATH_ABS/ccd_defs.json";
+    my $ccdPath = "$LIB_PATH/ccd_defs.json";
     open( my $fh, '<', $ccdPath);
 
     my $ccdWidths = decode_json(<$fh>);
@@ -41,7 +50,7 @@ sub getCcdWidths{
 
 $ccdWidths = getCcdWidths();
 
-$BIN_PATH = $BIN_PATH_ABS."/bin";
+
 
 my %objectStats    = {
     count           => 0,
@@ -547,14 +556,14 @@ sub getKeypoints {
         if($fileObject->{isOk}){
             if($args{"--lowe-sift"}){
                 $vlsiftJobs    .= "echo -n \"$c/$objectStats{good} - \" && convert -format pgm \"$fileObject->{step_0_resizedImage}\" \"$fileObject->{step_1_pgmFile}\"";
-                $vlsiftJobs    .= " && \"$BIN_PATH/sift\" < \"$fileObject->{step_1_pgmFile}\" > \"$fileObject->{step_1_keyFile}\"";
+                $vlsiftJobs    .= " && \"sift\" < \"$fileObject->{step_1_pgmFile}\" > \"$fileObject->{step_1_keyFile}\"";
                 $vlsiftJobs    .= " && gzip -f \"$fileObject->{step_1_keyFile}\"";
                 $vlsiftJobs    .= " && rm -f \"$fileObject->{step_1_pgmFile}\"";
                 $vlsiftJobs    .= " && rm -f \"$fileObject->{step_1_keyFile}.sift\"\n";
             } else {
 				unless (-e "$jobOptions{jobDir}/$fileObject->{base}.key.bin") {
 	                $vlsiftJobs    .= "echo -n \"$c/$objectStats{good} - \" && convert -format pgm \"$fileObject->{step_0_resizedImage}\" \"$fileObject->{step_1_pgmFile}\"";
-	                $vlsiftJobs    .= " && \"$BIN_PATH/vlsift\" \"$fileObject->{step_1_pgmFile}\" -o \"$fileObject->{step_1_keyFile}.sift\" > /dev/null && perl \"$BIN_PATH/../convert_vlsift_to_lowesift.pl\" \"$jobOptions{jobDir}/$fileObject->{base}\"";
+	                $vlsiftJobs    .= " && \"vlsift\" \"$fileObject->{step_1_pgmFile}\" -o \"$fileObject->{step_1_keyFile}.sift\" > /dev/null && \"convert_vlsift_to_lowesift.pl\" \"$jobOptions{jobDir}/$fileObject->{base}\"";
 	                $vlsiftJobs    .= " && gzip -f \"$fileObject->{step_1_keyFile}\"";
 	                $vlsiftJobs    .= " && rm -f \"$fileObject->{step_1_pgmFile}\"";
 	                $vlsiftJobs    .= " && rm -f \"$fileObject->{step_1_keyFile}.sift\"\n";
@@ -569,7 +578,7 @@ sub getKeypoints {
     print SIFT_DEST $vlsiftJobs;
     close(SIFT_DEST);
     
-    run("\"$BIN_PATH/parallel\" --halt-on-error 1 -j+0 < \"$jobOptions{step_1_vlsift}\"");
+    run("\"parallel\" --halt-on-error 1 -j+0 < \"$jobOptions{step_1_vlsift}\"");
     
     if($args{"--end-with"} ne "getKeypoints"){
         match();
@@ -595,7 +604,7 @@ sub match {
 			unless (-e "$jobOptions{step_2_matches_dir}/$i-$j.txt"){ 
 				
 			   
-				$matchesJobs        .=  "echo -n \".\" && touch \"$jobOptions{step_2_matches_dir}/$i-$j.txt\" && \"$BIN_PATH/KeyMatch\" \"@objects[$i]->{step_1_keyFile}\" \"@objects[$j]->{step_1_keyFile}\" \"$jobOptions{step_2_matches_dir}/$i-$j.txt\" $args{'--matcher-ratio'} $args{'--matcher-threshold'}\n";
+				$matchesJobs        .=  "echo -n \".\" && touch \"$jobOptions{step_2_matches_dir}/$i-$j.txt\" && \"KeyMatch\" \"@objects[$i]->{step_1_keyFile}\" \"@objects[$j]->{step_1_keyFile}\" \"$jobOptions{step_2_matches_dir}/$i-$j.txt\" $args{'--matcher-ratio'} $args{'--matcher-threshold'}\n";
 			}
 		}
 	}
@@ -604,7 +613,7 @@ sub match {
     print MATCH_DEST $matchesJobs;
     close(MATCH_DEST);
 	
-    run("\"$BIN_PATH/parallel\" --halt-on-error 1 -j+0 < \"$jobOptions{step_2_macthes_jobs}\"");
+    run("\"parallel\" --halt-on-error 1 -j+0 < \"$jobOptions{step_2_macthes_jobs}\"");
 	
 	run("rm -f \"$jobOptions{step_2_matches}\"");
 	
@@ -630,7 +639,7 @@ sub match {
     print MATCH_DEST $filesList;
     close(MATCH_DEST);
     
- #   run("\"$BIN_PATH/KeyMatchFull\" \"$jobOptions{step_2_filelist}\" \"$jobOptions{step_2_matches}\"    ");
+ #   run("\"KeyMatchFull\" \"$jobOptions{step_2_filelist}\" \"$jobOptions{step_2_matches}\"    ");
     
     if($args{"--end-with"} ne "match"){
         bundler();
@@ -679,9 +688,9 @@ sub bundler {
     print BUNDLER_DEST $filesList;
     close(BUNDLER_DEST);
     
-    run("\"$BIN_PATH/bundler\" \"$jobOptions{step_3_filelist}\" --options_file \"$jobOptions{step_3_bundlerOptions}\" > bundle/out");
-    run("\"$BIN_PATH/Bundle2PMVS\" \"$jobOptions{step_3_filelist}\" bundle/bundle.out");
-    run("\"$BIN_PATH/RadialUndistort\" \"$jobOptions{step_3_filelist}\" bundle/bundle.out pmvs");
+    run("\"bundler\" \"$jobOptions{step_3_filelist}\" --options_file \"$jobOptions{step_3_bundlerOptions}\" > bundle/out");
+    run("\"Bundle2PMVS\" \"$jobOptions{step_3_filelist}\" bundle/bundle.out");
+    run("\"RadialUndistort\" \"$jobOptions{step_3_filelist}\" bundle/bundle.out pmvs");
     
     $i = 0;
     
@@ -698,7 +707,7 @@ sub bundler {
         }
     }
     
-    system("\"$BIN_PATH/Bundle2Vis\" pmvs/bundle.rd.out pmvs/vis.dat");
+    system("\"Bundle2Vis\" pmvs/bundle.rd.out pmvs/vis.dat");
     
     if($args{"--end-with"} ne "bundler"){
         cmvs();
@@ -712,8 +721,8 @@ sub cmvs {
 
     chdir($jobOptions{jobDir});
     
-    run("\"$BIN_PATH/cmvs\" pmvs/ $args{'--cmvs-maxImages'} $CORES");
-    run("\"$BIN_PATH/genOption\" pmvs/ $args{'--pmvs-level'} $args{'--pmvs-csize'} $args{'--pmvs-threshold'} $args{'--pmvs-wsize'} $args{'--pmvs-minImageNum'} $CORES");
+    run("\"cmvs\" pmvs/ $args{'--cmvs-maxImages'} $CORES");
+    run("\"genOption\" pmvs/ $args{'--pmvs-level'} $args{'--pmvs-csize'} $args{'--pmvs-threshold'} $args{'--pmvs-wsize'} $args{'--pmvs-minImageNum'} $CORES");
     
     if($args{"--end-with"} ne "cmvs"){
         pmvs();
@@ -727,7 +736,7 @@ sub pmvs {
 
     chdir($jobOptions{jobDir});
     
-    run("\"$BIN_PATH/pmvs2\" pmvs/ option-0000");
+    run("\"pmvs2\" pmvs/ option-0000");
     
     system("cp -Rf \"$jobOptions{jobDir}/pmvs/models\" \"$jobOptions{jobDir}-results\"");
     
@@ -745,7 +754,7 @@ sub odm_meshing {
     mkdir($jobOptions{jobDir}."/odm_meshing");    
 
 
-    run("\"$BIN_PATH/odm_meshing\" -inputFile $jobOptions{jobDir}-results/option-0000.ply -outputFile $jobOptions{jobDir}-results/odm_mesh-0000.ply -logFile $jobOptions{jobDir}/odm_meshing/odm_meshing_log.txt -maxVertexCount $args{'--odm_meshing-maxVertexCount'} -octreeDepth $args{'--odm_meshing-octreeDepth'} -samplesPerNode $args{'--odm_meshing-samplesPerNode'}" );
+    run("\"odm_meshing\" -inputFile $jobOptions{jobDir}-results/option-0000.ply -outputFile $jobOptions{jobDir}-results/odm_mesh-0000.ply -logFile $jobOptions{jobDir}/odm_meshing/odm_meshing_log.txt -maxVertexCount $args{'--odm_meshing-maxVertexCount'} -octreeDepth $args{'--odm_meshing-octreeDepth'} -samplesPerNode $args{'--odm_meshing-samplesPerNode'}" );
     
     if($args{"--end-with"} ne "odm_meshing"){
         odm_texturing();
@@ -762,7 +771,7 @@ sub odm_texturing {
     mkdir("$jobOptions{jobDir}-results/odm_texturing"); 
 
 
-    run("\"$BIN_PATH/odm_texturing\" -bundleFile $jobOptions{jobDir}/pmvs/bundle.rd.out -imagesPath $jobOptions{srcDir}/ -imagesListPath $jobOptions{jobDir}/pmvs/list.rd.txt -inputModelPath $jobOptions{jobDir}-results/odm_mesh-0000.ply -outputFolder $jobOptions{jobDir}-results/odm_texturing/ -textureResolution $args{'--odm_texturing-textureResolution'} -bundleResizedTo $jobOptions{resizeTo} -textureWithSize $args{'--odm_texturing-textureWithSize'} -logFile $jobOptions{jobDir}/odm_texturing/odm_texturing_log.txt" );
+    run("\"odm_texturing\" -bundleFile $jobOptions{jobDir}/pmvs/bundle.rd.out -imagesPath $jobOptions{srcDir}/ -imagesListPath $jobOptions{jobDir}/pmvs/list.rd.txt -inputModelPath $jobOptions{jobDir}-results/odm_mesh-0000.ply -outputFolder $jobOptions{jobDir}-results/odm_texturing/ -textureResolution $args{'--odm_texturing-textureResolution'} -bundleResizedTo $jobOptions{resizeTo} -textureWithSize $args{'--odm_texturing-textureWithSize'} -logFile $jobOptions{jobDir}/odm_texturing/odm_texturing_log.txt" );
     
     if($args{"--end-with"} ne "odm_texturing"){
         odm_georeferencing();
@@ -779,11 +788,11 @@ sub odm_georeferencing {
     mkdir($jobOptions{jobDir}."/odm_georeferencing");
 
     if($args{"--odm_georeferencing-useGcp"} ne "true") {
-        run("\"$BIN_PATH/odm_extract_utm\" -imagesPath $jobOptions{srcDir}/ -imageListFile $jobOptions{jobDir}/pmvs/list.rd.txt -outputCoordFile $jobOptions{jobDir}/odm_georeferencing/coordFile.txt");
+        run("\"odm_extract_utm\" -imagesPath $jobOptions{srcDir}/ -imageListFile $jobOptions{jobDir}/pmvs/list.rd.txt -outputCoordFile $jobOptions{jobDir}/odm_georeferencing/coordFile.txt");
    
-        run("\"$BIN_PATH/odm_georef\" -bundleFile $jobOptions{jobDir}/pmvs/bundle.rd.out -coordFile $jobOptions{jobDir}/odm_georeferencing/coordFile.txt -inputFile $jobOptions{jobDir}-results/odm_texturing/odm_textured_model.obj -outputFile $jobOptions{jobDir}-results/odm_texturing/odm_textured_model_geo.obj -logFile $jobOptions{jobDir}/odm_georeferencing/odm_georeferencing_log.txt");
+        run("\"odm_georef\" -bundleFile $jobOptions{jobDir}/pmvs/bundle.rd.out -coordFile $jobOptions{jobDir}/odm_georeferencing/coordFile.txt -inputFile $jobOptions{jobDir}-results/odm_texturing/odm_textured_model.obj -outputFile $jobOptions{jobDir}-results/odm_texturing/odm_textured_model_geo.obj -logFile $jobOptions{jobDir}/odm_georeferencing/odm_georeferencing_log.txt");
     } else {
-        run("\"$BIN_PATH/odm_georef\" -bundleFile $jobOptions{jobDir}/pmvs/bundle.rd.out -gcpFile $jobOptions{srcDir}/$args{'--odm_georeferencing-gcpFile'} -imagesPath $jobOptions{srcDir}/ -imagesListPath $jobOptions{jobDir}/pmvs/list.rd.txt -bundleResizedTo $jobOptions{resizeTo} -inputFile $jobOptions{jobDir}-results/odm_texturing/odm_textured_model.obj -outputFile $jobOptions{jobDir}-results/odm_texturing/odm_textured_model_geo.obj -logFile $jobOptions{jobDir}/odm_georeferencing/odm_georeferencing_log.txt");
+        run("\"odm_georef\" -bundleFile $jobOptions{jobDir}/pmvs/bundle.rd.out -gcpFile $jobOptions{srcDir}/$args{'--odm_georeferencing-gcpFile'} -imagesPath $jobOptions{srcDir}/ -imagesListPath $jobOptions{jobDir}/pmvs/list.rd.txt -bundleResizedTo $jobOptions{resizeTo} -inputFile $jobOptions{jobDir}-results/odm_texturing/odm_textured_model.obj -outputFile $jobOptions{jobDir}-results/odm_texturing/odm_textured_model_geo.obj -logFile $jobOptions{jobDir}/odm_georeferencing/odm_georeferencing_log.txt");
 }
     
     if($args{"--end-with"} ne "odm_georeferencing"){
@@ -802,7 +811,7 @@ sub odm_orthophoto {
     mkdir($jobOptions{jobDir}."/odm_orthophoto");
 
 
-    run("\"$BIN_PATH/odm_orthophoto\" -inputFile $jobOptions{jobDir}-results/odm_texturing/odm_textured_model_geo.obj -logFile $jobOptions{jobDir}/odm_orthophoto/odm_orthophoto_log.txt -outputFile $jobOptions{jobDir}-results/odm_orthphoto.png -resolution 20.0");
+    run("\"odm_orthophoto\" -inputFile $jobOptions{jobDir}-results/odm_texturing/odm_textured_model_geo.obj -logFile $jobOptions{jobDir}/odm_orthophoto/odm_orthophoto_log.txt -outputFile $jobOptions{jobDir}-results/odm_orthphoto.png -resolution 20.0");
 
 }
 
