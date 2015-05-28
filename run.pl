@@ -761,7 +761,7 @@ sub odm_texturing {
     mkdir($jobOptions{jobDir}."/odm_texturing");   
     mkdir("$jobOptions{jobDir}-results/odm_texturing"); 
 
-
+	
     run("\"$BIN_PATH/odm_texturing\" -bundleFile $jobOptions{jobDir}/pmvs/bundle.rd.out -imagesPath $jobOptions{srcDir}/ -imagesListPath $jobOptions{jobDir}/pmvs/list.rd.txt -inputModelPath $jobOptions{jobDir}-results/odm_mesh-0000.ply -outputFolder $jobOptions{jobDir}-results/odm_texturing/ -textureResolution $args{'--odm_texturing-textureResolution'} -bundleResizedTo $jobOptions{resizeTo} -textureWithSize $args{'--odm_texturing-textureWithSize'} -logFile $jobOptions{jobDir}/odm_texturing/odm_texturing_log.txt" );
     
     if($args{"--end-with"} ne "odm_texturing"){
@@ -778,13 +778,16 @@ sub odm_georeferencing {
     chdir($jobOptions{jobDir});
     mkdir($jobOptions{jobDir}."/odm_georeferencing");
 
-    if($args{"--odm_georeferencing-useGcp"} ne "true") {
-        run("\"$BIN_PATH/odm_extract_utm\" -imagesPath $jobOptions{srcDir}/ -imageListFile $jobOptions{jobDir}/pmvs/list.rd.txt -outputCoordFile $jobOptions{jobDir}/odm_georeferencing/coordFile.txt");
-   
-        run("\"$BIN_PATH/odm_georef\" -bundleFile $jobOptions{jobDir}/pmvs/bundle.rd.out -coordFile $jobOptions{jobDir}/odm_georeferencing/coordFile.txt -inputFile $jobOptions{jobDir}-results/odm_texturing/odm_textured_model.obj -outputFile $jobOptions{jobDir}-results/odm_texturing/odm_textured_model_geo.obj -logFile $jobOptions{jobDir}/odm_georeferencing/odm_georeferencing_log.txt");
-    } else {
-        run("\"$BIN_PATH/odm_georef\" -bundleFile $jobOptions{jobDir}/pmvs/bundle.rd.out -gcpFile $jobOptions{srcDir}/$args{'--odm_georeferencing-gcpFile'} -imagesPath $jobOptions{srcDir}/ -imagesListPath $jobOptions{jobDir}/pmvs/list.rd.txt -bundleResizedTo $jobOptions{resizeTo} -inputFile $jobOptions{jobDir}-results/odm_texturing/odm_textured_model.obj -outputFile $jobOptions{jobDir}-results/odm_texturing/odm_textured_model_geo.obj -logFile $jobOptions{jobDir}/odm_georeferencing/odm_georeferencing_log.txt");
-}
+	if($args{"--odm_georeferencing-useGcp"} ne "true") {
+		run("\"$BIN_PATH/odm_extract_utm\" -imagesPath $jobOptions{srcDir}/ -imageListFile $jobOptions{jobDir}/pmvs/list.rd.txt -outputCoordFile $jobOptions{jobDir}/odm_georeferencing/coordFile.txt");  
+		run("\"$BIN_PATH/odm_georef\" -bundleFile $jobOptions{jobDir}/pmvs/bundle.rd.out -coordFile $jobOptions{jobDir}/odm_georeferencing/coordFile.txt -inputFile $jobOptions{jobDir}-results/odm_texturing/odm_textured_model.obj -outputFile $jobOptions{jobDir}-results/odm_texturing/odm_textured_model_geo.obj -logFile $jobOptions{jobDir}/odm_georeferencing/odm_georeferencing_log.txt");
+	} elsif (-e "$jobOptions{srcDir}/$args{'--odm_georeferencing-gcpFile'}") {
+		run("\"$BIN_PATH/odm_georef\" -bundleFile $jobOptions{jobDir}/pmvs/bundle.rd.out -gcpFile $jobOptions{srcDir}/$args{'--odm_georeferencing-gcpFile'} -imagesPath $jobOptions{srcDir}/ -imagesListPath $jobOptions{jobDir}/pmvs/list.rd.txt -bundleResizedTo $jobOptions{resizeTo} -inputFile $jobOptions{jobDir}-results/odm_texturing/odm_textured_model.obj -outputFile $jobOptions{jobDir}-results/odm_texturing/odm_textured_model_geo.obj -logFile $jobOptions{jobDir}/odm_georeferencing/odm_georeferencing_log.txt");
+	} else {
+		print "Warning: No GCP file. Consider rerunning with argument --odm_georeferencing-useGcp false --start-with odm_georeferencing";
+		print "Skipping orthophoto"
+		$args{"--end-with"} = "odm_georeferencing";
+	}
     
     if($args{"--end-with"} ne "odm_georeferencing"){
         odm_orthophoto();
