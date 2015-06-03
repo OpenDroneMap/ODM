@@ -424,7 +424,7 @@ void OdmTexturing::triangleToImageAssignment()
     {
         // Move vertices in mesh into the camera coordinate system
         pcl::PointCloud<pcl::PointXYZ>::Ptr cameraCloud (new pcl::PointCloud<pcl::PointXYZ>);
-        pcl::transformPointCloud (*meshCloud, *cameraCloud, cameras_[cameraIndex].pose);
+        pcl::transformPointCloud (*meshCloud, *cameraCloud, cameras_[cameraIndex].pose.inverse());
 
         // Cloud to contain points projected into current camera
         pcl::PointCloud<pcl::PointXY>::Ptr projections (new pcl::PointCloud<pcl::PointXY>);
