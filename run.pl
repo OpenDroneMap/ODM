@@ -785,7 +785,7 @@ sub odm_georeferencing {
 		run("\"$BIN_PATH/odm_georef\" -bundleFile $jobOptions{jobDir}/pmvs/bundle.rd.out -gcpFile $jobOptions{srcDir}/$args{'--odm_georeferencing-gcpFile'} -imagesPath $jobOptions{srcDir}/ -imagesListPath $jobOptions{jobDir}/pmvs/list.rd.txt -bundleResizedTo $jobOptions{resizeTo} -inputFile $jobOptions{jobDir}-results/odm_texturing/odm_textured_model.obj -outputFile $jobOptions{jobDir}-results/odm_texturing/odm_textured_model_geo.obj -logFile $jobOptions{jobDir}/odm_georeferencing/odm_georeferencing_log.txt");
 	} else {
 		print "Warning: No GCP file. Consider rerunning with argument --odm_georeferencing-useGcp false --start-with odm_georeferencing";
-		print "Skipping orthophoto"
+		print "Skipping orthophoto";
 		$args{"--end-with"} = "odm_georeferencing";
 	}
     
