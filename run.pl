@@ -367,7 +367,7 @@ sub parseArgs {
         print "\n                       default: 1";
         print "\n                                Number of points per octree node, recommended value: 1.0";
 
-        print "\n  --zip_results: <true|false>";
+        print "\n  --zip-results: <true|false>";
         print "\n        default: true";
         print "\n                 Set to false if you do not want to have gunzipped tarball of the results.";
 
@@ -840,8 +840,12 @@ switch ($args{"--start-with"}) {
     case "odm_orthophoto"      { odm_orthophoto();      }
 }
 
+if($args{"--zip-results"} eq "true") { 
+    print "\nCompressing results - "; now(); print "\n";
+    print "\n";
 
-
+    run("tar -czf $jobOptions{jobDir}-results.tar.gz $jobOptions{jobDir}-results/*");
+}
 
 print "\n";
 print "\n  - done - "; now(); print "\n";
