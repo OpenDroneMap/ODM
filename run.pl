@@ -843,8 +843,7 @@ switch ($args{"--start-with"}) {
 if($args{"--zip-results"} eq "true") { 
     print "\nCompressing results - "; now(); print "\n";
     print "\n";
-
-    run("tar -czf $jobOptions{jobDir}-results.tar.gz $jobOptions{jobDir}-results/*");
+    run("cd $jobOptions{jobDir}-results/ && tar -czf $jobOptions{jobDir}-results.tar.gz *");
 }
 
 print "\n";
