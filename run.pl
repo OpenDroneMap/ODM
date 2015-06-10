@@ -105,6 +105,8 @@ sub parseArgs {
 
     $args{"--odm_georeferencing-gcpFile"}	= "gcp_list.txt";
     $args{"--odm_georeferencing-useGcp"}	= "true";
+
+    $args{"--zip-results"}           = "true";
     
     for($i = 0; $i <= $#ARGV; $i++) {
         if($ARGV[$i] =~ /^--[^a-z\-]*/){
@@ -269,6 +271,13 @@ sub parseArgs {
                         die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1];
                     }
                 }
+		if($ARGV[$i] eq "--zip-results"){
+                    if($ARGV[$i+1] eq "true" || $ARGV[$i+1] eq "false"){
+                        $args{$ARGV[$i]} = $ARGV[$i+1];
+                    } else {
+                        die "\n invalid parameter for \"".$ARGV[$i]."\": ".$ARGV[$i+1];
+                    }
+                }
             }
         }
     }
@@ -357,6 +366,10 @@ sub parseArgs {
         print "\n  --odm_meshing-samplesPerNode: <float: 1.0 <= x>";
         print "\n                       default: 1";
         print "\n                                Number of points per octree node, recommended value: 1.0";
+
+        print "\n  --zip-results: <true|false>";
+        print "\n        default: true";
+        print "\n                 Set to false if you do not want to have gunzipped tarball of the results.";
 
         exit;
     }
@@ -825,6 +838,12 @@ switch ($args{"--start-with"}) {
     case "odm_texturing"       { odm_texturing();       }
     case "odm_georeferencing"  { odm_georeferencing();  }
     case "odm_orthophoto"      { odm_orthophoto();      }
+}
+
+if($args{"--zip-results"} eq "true") { 
+    print "\nCompressing results - "; now(); print "\n";
+    print "\n";
+    run("cd $jobOptions{jobDir}-results/ && tar -czf $jobOptions{jobDir}-results.tar.gz *");
 }
 
 print "\n";
