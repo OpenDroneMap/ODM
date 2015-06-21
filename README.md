@@ -60,7 +60,7 @@ If you run ODM with your own camera, it is possible you will see something like 
 
 ```
   - configuration:
-    --cmvs-maxImages: 100
+    --cmvs-maxImages: 500
     --end-with: pmvs
     --match-size: 200
     --matcher-ratio: 0.6
