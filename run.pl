@@ -84,7 +84,7 @@ sub parseArgs {
     $args{"--start-with"}            = "resize";
     $args{"--end-with"}              = "odm_orthophoto";
     
-    $args{"--cmvs-maxImages"}        = 100;
+    $args{"--cmvs-maxImages"}        = 500;
 	
     $args{"--matcher-ratio"}         = 0.6;
     $args{"--matcher-threshold"}     = 2.0;
