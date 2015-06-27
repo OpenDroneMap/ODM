@@ -552,14 +552,13 @@ void OdmTexturing::triangleToImageAssignment()
                         normal.z=diff0.x*diff1.y-diff0.y*diff1.x;
                         double norm=sqrt(normal.x*normal.x+normal.y*normal.y+normal.z*normal.z);
                         //Angle of face to camera
-                        double cos=normal.z/norm;
+                        double cos=-normal.z/norm;
 
                         //Save distance of faceIndex to current camera
                         local_tTIA_distances[faceIndex]=distance;
 
                         //Save angle of faceIndex to current camera
-                        if(normal.z>=0)
-                            local_tTIA_angles[faceIndex]=sqrt(1.0-cos*cos);
+                        local_tTIA_angles[faceIndex]=sqrt(1.0-cos*cos);
                         // If other projections are found inside the radius
                         if (radiusSearch > 0)
                         {
