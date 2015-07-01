@@ -684,6 +684,7 @@ sub bundler {
     $bundlerOptions .= "--constrain_focal\n";
     $bundlerOptions .= "--constrain_focal_weight 0.0\n";
     $bundlerOptions .= "--estimate_distortion\n";
+    $bundlerOptions .= "--use_ceres\n";
     $bundlerOptions .= "--run_bundle";
         
     system("echo \"$bundlerOptions\" > \"$jobOptions{step_3_bundlerOptions}\"");
