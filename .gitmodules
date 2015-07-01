@@ -1,0 +1,3 @@
+[submodule "src/bundler"]
+	path = src/bundler
+	url = https://github.com/chris-cooper/bundler_sfm
