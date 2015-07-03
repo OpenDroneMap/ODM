@@ -31,14 +31,15 @@ echo "  - script started - `date`"
 		        INC_PATH="/usr/local/include"
 		
             ## source paths
-	      BUNDLER_PATH="$TOOLS_SRC_PATH/bundler"
-	         CMVS_PATH="$TOOLS_SRC_PATH/cmvs"
-	         PMVS_PATH="$TOOLS_SRC_PATH/pmvs"
-	      CLAPACK_PATH="$TOOLS_SRC_PATH/clapack"
-	       VLFEAT_PATH="$TOOLS_SRC_PATH/vlfeat"
-	     PARALLEL_PATH="$TOOLS_SRC_PATH/parallel"
-	          PSR_PATH="$TOOLS_SRC_PATH/PoissonRecon"
-              GRACLUS_PATH="$TOOLS_SRC_PATH/graclus"
+        BUNDLER_PATH="$TOOLS_SRC_PATH/bundler"
+           CMVS_PATH="$TOOLS_SRC_PATH/cmvs"
+           PMVS_PATH="$TOOLS_SRC_PATH/pmvs"
+        CLAPACK_PATH="$TOOLS_SRC_PATH/clapack"
+         VLFEAT_PATH="$TOOLS_SRC_PATH/vlfeat"
+       PARALLEL_PATH="$TOOLS_SRC_PATH/parallel"
+            PSR_PATH="$TOOLS_SRC_PATH/PoissonRecon"
+        GRACLUS_PATH="$TOOLS_SRC_PATH/graclus"
+          CERES_PATH="$TOOLS_SRC_PATH/ceres-solver"
                   
                   PCL_PATH="$TOOLS_SRC_PATH/pcl"
           ODM_MESHING_PATH="$TOOLS_SRC_PATH/odm_meshing"
@@ -124,6 +125,7 @@ sudo apt-get install --assume-yes --install-recommends \
   libzip-dev \
   libswitch-perl libjson-perl \
   libcv-dev libcvaux-dev libopencv-dev \
+  libgoogle-glog-dev libatlas-base-dev libsuitesparse-dev \
   > "$TOOLS_LOG_PATH/apt-get_install.log" 2>&1
 else
 sudo apt-get install --assume-yes --install-recommends \
@@ -137,6 +139,7 @@ sudo apt-get install --assume-yes --install-recommends \
   libzip-dev \
   libswitch-perl \
   libcv-dev libcvaux-dev libopencv-dev \
+  libgoogle-glog-dev libatlas-base-dev libsuitesparse-dev \
   > "$TOOLS_LOG_PATH/apt-get_install.log" 2>&1
 fi
 
@@ -170,6 +173,7 @@ vlfeat.tar.gz http://www.vlfeat.org/download/vlfeat-0.9.13-bin.tar.gz
 cmvs.tar.gz http://www.di.ens.fr/cmvs/cmvs-fix2.tar.gz
 graclus.tar.gz http://smathermather.github.io/BundlerTools/patched_files/src/graclus/graclus1.2.tar.gz
 pcl.tar.gz https://github.com/PointCloudLibrary/pcl/archive/pcl-1.7.2.tar.gz
+ceres-solver.tar.gz http://ceres-solver.org/ceres-solver-1.10.0.tar.gz
 EOF
 
 echo "  < done - `date`"
@@ -197,7 +201,7 @@ mv -f parallel-20141022   "$PARALLEL_PATH"
 mv -f PoissonRecon        "$PSR_PATH"
 mv -f cmvs                "$CMVS_PATH"
 mv -f pcl-pcl-1.7.2       "$PCL_PATH"
-
+mv -f ceres-solver-1.10.0 "$CERES_PATH"
 
 echo "  < done - `date`"
 
@@ -348,6 +352,21 @@ echo "  > cmvs/pmvs"
 echo "  < done - `date`"
 echo
 
+echo "  > ceres"
+  cd "$CERES_PATH"
+
+  echo "    - configuring ceres"
+  mkdir -p build
+  cd build
+  cmake .. -DCMAKE_INSTALL_PREFIX=$TOOLS_PATH \
+           -DCMAKE_C_FLAGS=-fPIC -DCMAKE_CXX_FLAGS=-fPIC \
+           -DBUILD_EXAMPLES=OFF -DBUILD_TESTING=OFF  > "$TOOLS_LOG_PATH/ceres_1_config.log" 2>&1
+  
+  echo "    - building ceres"
+  make install > "$TOOLS_LOG_PATH/ceres_1_build.log" 2>&1
+
+echo "  < done - `date`"
+echo
 
 echo "  > bundler"
   cd "$BUNDLER_PATH"
