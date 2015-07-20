@@ -284,7 +284,7 @@ sub parseArgs {
    
 
     if($args{"--help"}){        
-        print "\nusgae: run.pl [options]";
+        print "\nusage: run.pl [options]";
         print "\nit should be run from the folder contining the images to which should reconstructed";
         print "\n";
         print "\noptions:";
