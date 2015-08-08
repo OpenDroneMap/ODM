@@ -19,6 +19,8 @@ Users' mailing list: http://lists.osgeo.org/cgi-bin/mailman/listinfo/opendronema
 
 Developer's mailing list: http://lists.osgeo.org/cgi-bin/mailman/listinfo/opendronemap-dev
 
+Overview video: https://www.youtube.com/watch?v=0UctfoeNB_Y
+
 
 Steps to get OpenDroneMap running:
 ==================================
