@@ -35,9 +35,10 @@ From a directory full of your images, run
 
 An overview of installing and running OpenDroneMap on Ubuntu can be found here: https://www.youtube.com/watch?v=e2qp3o8caPs
 
-and here:
+Here are some other videos:
 
-https://www.youtube.com/watch?v=7ZTufQkODLs
+- https://www.youtube.com/watch?v=7ZTufQkODLs (2015-01-30)
+- https://www.youtube.com/watch?v=m0i4GQdfl8A (2015-03-15)
 
 Now that texturing is in the code base, you can access the full textured meshes using MeshLab. Open MeshLab, and choose File:Import Mesh and choose your textured mesh from a location similar to the following: reconstruction-with-image-size-1200-results\odm_texturing\odm_textured_model.obj
 
