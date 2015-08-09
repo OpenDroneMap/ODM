@@ -46,6 +46,16 @@ Now that texturing is in the code base, you can access the full textured meshes 
 
 ---
 
+Alternatively, you can also run OpenDroneMap in a Docker container:
+
+    export IMAGES=/absolute/path/to/your/images
+    docker build -t opendronemap:latest .
+    docker run -v $IMAGES:/images opendronemap:latest
+
+To pass in custom parameters to the `run.pl` script, simply pass it as arguments to the `docker run` command.
+
+---
+
 Example data can be found at https://github.com/OpenDroneMap/odm_data
 
 ---
