@@ -31,15 +31,14 @@ echo "  - script started - `date`"
 		        INC_PATH="/usr/local/include"
 		
             ## source paths
-        BUNDLER_PATH="$TOOLS_SRC_PATH/bundler"
-           CMVS_PATH="$TOOLS_SRC_PATH/cmvs"
-           PMVS_PATH="$TOOLS_SRC_PATH/pmvs"
-        CLAPACK_PATH="$TOOLS_SRC_PATH/clapack"
-         VLFEAT_PATH="$TOOLS_SRC_PATH/vlfeat"
-       PARALLEL_PATH="$TOOLS_SRC_PATH/parallel"
-            PSR_PATH="$TOOLS_SRC_PATH/PoissonRecon"
-        GRACLUS_PATH="$TOOLS_SRC_PATH/graclus"
-          CERES_PATH="$TOOLS_SRC_PATH/ceres-solver"
+	      BUNDLER_PATH="$TOOLS_SRC_PATH/bundler"
+	         CMVS_PATH="$TOOLS_SRC_PATH/cmvs"
+	         PMVS_PATH="$TOOLS_SRC_PATH/pmvs"
+	      CLAPACK_PATH="$TOOLS_SRC_PATH/clapack"
+	       VLFEAT_PATH="$TOOLS_SRC_PATH/vlfeat"
+	     PARALLEL_PATH="$TOOLS_SRC_PATH/parallel"
+	          PSR_PATH="$TOOLS_SRC_PATH/PoissonRecon"
+              GRACLUS_PATH="$TOOLS_SRC_PATH/graclus"
                   
                   PCL_PATH="$TOOLS_SRC_PATH/pcl"
           ODM_MESHING_PATH="$TOOLS_SRC_PATH/odm_meshing"
@@ -104,10 +103,6 @@ uname -a > "$TOOLS_LOG_PATH/sysinfo.txt"
 echo
 echo "  > installing required packages"
 
-echo "    - installing git submodules"
-git submodule init
-git submodule update
-
 echo "    - updating"
 sudo apt-get update --assume-yes > "$TOOLS_LOG_PATH/apt-get_get.log" 2>&1
 
@@ -125,7 +120,6 @@ sudo apt-get install --assume-yes --install-recommends \
   libzip-dev \
   libswitch-perl libjson-perl \
   libcv-dev libcvaux-dev libopencv-dev \
-  libgoogle-glog-dev libatlas-base-dev libsuitesparse-dev \
   > "$TOOLS_LOG_PATH/apt-get_install.log" 2>&1
 else
 sudo apt-get install --assume-yes --install-recommends \
@@ -139,7 +133,6 @@ sudo apt-get install --assume-yes --install-recommends \
   libzip-dev \
   libswitch-perl \
   libcv-dev libcvaux-dev libopencv-dev \
-  libgoogle-glog-dev libatlas-base-dev libsuitesparse-dev \
   > "$TOOLS_LOG_PATH/apt-get_install.log" 2>&1
 fi
 
@@ -168,6 +161,7 @@ do
 done <<EOF
 parallel.tar.bz2  http://ftp.gnu.org/gnu/parallel/parallel-20141022.tar.bz2
 clapack.tgz  http://www.netlib.org/clapack/clapack-3.2.1-CMAKE.tgz
+bundler.zip  http://phototour.cs.washington.edu/bundler/distr/bundler-v0.4-source.zip
 PoissonRecon.zip http://www.cs.jhu.edu/~misha/Code/PoissonRecon/Version2/PoissonRecon.zip
 vlfeat.tar.gz http://www.vlfeat.org/download/vlfeat-0.9.13-bin.tar.gz
 cmvs.tar.gz http://www.di.ens.fr/cmvs/cmvs-fix2.tar.gz
@@ -196,10 +190,12 @@ wait
 mv -f graclus1.2          "$GRACLUS_PATH"
 mv -f clapack-3.2.1-CMAKE "$CLAPACK_PATH"
 mv -f vlfeat-0.9.13       "$VLFEAT_PATH"
+mv -f bundler-v0.4-source "$BUNDLER_PATH"
 mv -f parallel-20141022   "$PARALLEL_PATH"
 mv -f PoissonRecon        "$PSR_PATH"
 mv -f cmvs                "$CMVS_PATH"
 mv -f pcl-pcl-1.7.2       "$PCL_PATH"
+
 
 echo "  < done - `date`"
 
@@ -350,24 +346,11 @@ echo "  > cmvs/pmvs"
 echo "  < done - `date`"
 echo
 
-echo "  > ceres"
-  cd "$CERES_PATH"
-
-  echo "    - configuring ceres"
-  mkdir -p build
-  cd build
-  cmake .. -DCMAKE_INSTALL_PREFIX=$TOOLS_PATH \
-           -DCMAKE_C_FLAGS=-fPIC -DCMAKE_CXX_FLAGS=-fPIC \
-           -DBUILD_EXAMPLES=OFF -DBUILD_TESTING=OFF  > "$TOOLS_LOG_PATH/ceres_1_config.log" 2>&1
-  
-  echo "    - building ceres"
-  make install > "$TOOLS_LOG_PATH/ceres_1_build.log" 2>&1
-
-echo "  < done - `date`"
-echo
 
 echo "  > bundler"
   cd "$BUNDLER_PATH"
+
+  sed -i "$BUNDLER_PATH/src/BundlerApp.h" -e "620c\        BundlerApp();"
 
   echo "    - cleaning bundler"
   make clean > "$TOOLS_LOG_PATH/bundler_1_clean.log" 2>&1
@@ -375,9 +358,9 @@ echo "  > bundler"
   echo "    - building bundler"
   make -j  > "$TOOLS_LOG_PATH/bundler_2_build.log" 2>&1
 
-  ln -s "$BUNDLER_PATH/bin/Bundle2PMVS" "$BUNDLER_PATH/bin/Bundle2Vis" "$BUNDLER_PATH/bin/KeyMatchFull" "$BUNDLER_PATH/bin/KeyMatch" "$BUNDLER_PATH/bin/bundler" "$BUNDLER_PATH/bin/RadialUndistort" "$TOOLS_BIN_PATH/"
+  cp -f "$BUNDLER_PATH/bin/Bundle2PMVS" "$BUNDLER_PATH/bin/Bundle2Vis" "$BUNDLER_PATH/bin/KeyMatchFull" "$BUNDLER_PATH/bin/KeyMatch" "$BUNDLER_PATH/bin/bundler" "$BUNDLER_PATH/bin/RadialUndistort" "$TOOLS_BIN_PATH/"
 
-  ln -s "$BUNDLER_PATH/lib/libANN_char.so" "$TOOLS_LIB_PATH/"
+  cp -f "$BUNDLER_PATH/lib/libANN_char.so" "$TOOLS_LIB_PATH/"
 echo "  < done - `date`"
 echo
 
