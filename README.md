@@ -120,5 +120,18 @@ This problem is easily remedied. We need to know CCD size in the camera. We'll g
 So, we'll add the following line to our ccd_defs.json:
 
      "SONY DSC-HX5V": 6.104,
-     
+
+To check that ccd_defs.json compiles, run ccd_defs_check.pl
+If it prints the message 'CCD_DEFS compiles OK', then you can commit your changes.
+
 And so others can use it, we'll do a pull request to add it to our array for everyone else.
+
+---
+
+Maintainers can run the ccd_defs.json compilation test automatically by creating a
+symbolic link in .git/hooks to hooks/pre-commit
+
+     cd .git/hooks
+     ln -s ../../hooks/pre-commit
+
+If ccd_defs.json does not compile, then the pre-commit hook will abort the commit.
