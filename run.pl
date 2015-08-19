@@ -684,7 +684,6 @@ sub bundler {
     $bundlerOptions .= "--constrain_focal\n";
     $bundlerOptions .= "--constrain_focal_weight 0.0\n";
     $bundlerOptions .= "--estimate_distortion\n";
-    $bundlerOptions .= "--use_ceres\n";
     $bundlerOptions .= "--run_bundle";
         
     system("echo \"$bundlerOptions\" > \"$jobOptions{step_3_bundlerOptions}\"");
@@ -798,8 +797,8 @@ sub odm_georeferencing {
 	} elsif (-e "$jobOptions{srcDir}/$args{'--odm_georeferencing-gcpFile'}") {
 		run("\"$BIN_PATH/odm_georef\" -bundleFile $jobOptions{jobDir}/pmvs/bundle.rd.out -gcpFile $jobOptions{srcDir}/$args{'--odm_georeferencing-gcpFile'} -imagesPath $jobOptions{srcDir}/ -imagesListPath $jobOptions{jobDir}/pmvs/list.rd.txt -bundleResizedTo $jobOptions{resizeTo} -inputFile $jobOptions{jobDir}-results/odm_texturing/odm_textured_model.obj -outputFile $jobOptions{jobDir}-results/odm_texturing/odm_textured_model_geo.obj -logFile $jobOptions{jobDir}/odm_georeferencing/odm_georeferencing_log.txt");
 	} else {
-		print "Warning: No GCP file. Consider rerunning with argument --odm_georeferencing-useGcp false --start-with odm_georeferencing";
-		print "Skipping orthophoto";
+		print "Warning: No GCP file. Consider rerunning with argument --odm_georeferencing-useGcp false --start-with odm_georeferencing\n";
+		print "Skipping orthophoto\n";
 		$args{"--end-with"} = "odm_georeferencing";
 	}
     

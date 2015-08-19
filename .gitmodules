@@ -1,6 +1,0 @@
-[submodule "src/bundler"]
-	path = src/bundler
-	url = https://github.com/chris-cooper/bundler_sfm
-[submodule "src/ceres-solver"]
-	path = src/ceres-solver
-	url = https://ceres-solver.googlesource.com/ceres-solver
