@@ -1,0 +1,1004 @@
+#!/usr/bin/python
+
+import os, sys, multiprocessing, json, datetime, re, subprocess, shutil, shlex, collections, fractions
+import knnMatch_exif
+## the defs
+
+
+CURRENT_DIR = os.getcwd()
+BIN_PATH_ABS = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
+CORES = multiprocessing.cpu_count()
+
+
+def getCcdWidths():
+    with open(BIN_PATH_ABS + "/ccd_defs.json") as jsonFile:
+        return json.load(jsonFile)
+
+objects = []
+ccdWidths = getCcdWidths()
+
+BIN_PATH = BIN_PATH_ABS + "/bin"
+
+
+objectStats = {'count': 0, "good": 0, "bad": 0, "minWidth": 0, "minHeight": 0, "maxWidth": 0, "maxHeight": 0}
+jobOptions = {'resizeTo': 0, 'srcDir': CURRENT_DIR, 'utmZone': -999, 'utmSouth': False, 'utmEastOffset': 0, 'utmNorthOffset': 0}
+args = {}
+
+def run(cmd):
+    returnCode = os.system(cmd)
+    if (returnCode != 0):
+        sys.exit("\nquitting cause: \n\t" + cmd + "\nreturned with code " + str(returnCode) + ".\n")
+
+def now():
+    return datetime.datetime.now().strftime('%a %b %d %H:%M:%S %Z %Y')
+
+def parseArgs():
+
+ ## defaults
+    #args['--match-size']            = 200
+
+    args['--resize-to']             = 2400
+    
+    args['--start-with']            = "resize"
+    args['--end-with']              = "odm_orthophoto"
+    
+    args['--cmvs-maxImages']        = 500
+	
+    args['--matcher-ratio']         = 0.6
+    args['--matcher-threshold']     = 2.0
+    args['--matcher-preselect']     = True
+    args['--matcher-useKnn']        = True
+    args['--matcher-kDistance']     = 20
+    
+    args['--pmvs-level']            = 1
+    args['--pmvs-csize']            = 2
+    args['--pmvs-threshold']        = 0.7
+    args['--pmvs-wsize']            = 7
+    args['--pmvs-minImageNum']      = 3
+
+    args['--odm_meshing-maxVertexCount']   = 100000
+    args['--odm_meshing-octreeDepth']      = 9
+    args['--odm_meshing-samplesPerNode']   = 1
+    args['--odm_meshing-solverDivide']     = 9
+
+    args['--odm_texturing-textureResolution']   = 4096
+    args['--odm_texturing-textureWithSize']     = 3600
+
+    args['--odm_georeferencing-gcpFile']	= "gcp_list.txt"
+    args['--odm_georeferencing-useGcp']	= False
+
+    args['--zip-results']           = True
+
+    for i in range(1, len(sys.argv)):
+        if re.search("^--[^a-z\-]*", sys.argv[i]):
+            args[sys.argv[i]] = True
+            
+            if not re.search("^--[^a-z\-]*", sys.argv[i + 1]):
+                if sys.argv[i] == "--resize-to":
+                    if sys.argv[i + 1] == "orig":
+                        args[sys.argv[i]] = 0
+                    elif re.search("^[0-9]*$", sys.argv[i + 1]):
+                        args[sys.argv[i]] = int(sys.argv[i + 1].strip())
+                        print(str(args[sys.argv[i]]))
+                    else:
+                        sys.exit("\n invalid parameter for \"" + sys.argv[i] + "\": " + sys.argv[i + 1])
+
+                if sys.argv[i] == "--start-with":
+                    if (sys.argv[i + 1] == "resize" or sys.argv[i + 1] == "getKeypoints" or sys.argv[i + 1] == "match" or
+                        sys.argv[i + 1] == "bundler" or sys.argv[i + 1] == "cmvs" or sys.argv[i + 1] == "pmvs" or sys.argv[i + 1] == "odm_meshing" or
+                        sys.argv[i + 1] == "odm_texturing" or sys.argv[i + 1] == "odm_georeferencing" or sys.argv[i + 1] == "odm_orthophoto"):
+                        args[sys.argv[i]] = sys.argv[i + 1]
+                    else:
+                        sys.exit("\n invalid parameter for \"" + sys.argv[i] + "\": " + sys.argv[i + 1] + "\n\t valid values are \"resize\", \"getKeypoints\", \"match\", \"bundler\", \"cmvs\", \"pmvs\",\"odm_meshing\", \"odm_texturing\", \"odm_georeferencing\", \"odm_orthophoto\"")
+
+                if sys.argv[i] == "--end-with":
+                    if (sys.argv[i + 1] == "resize" or sys.argv[i + 1] == "getKeypoints" or sys.argv[i + 1] == "match" or sys.argv[i + 1] == "bundler" or
+                        sys.argv[i + 1] == "cmvs" or sys.argv[i + 1] == "pmvs" or sys.argv[i + 1] == "odm_meshing" or sys.argv[i + 1] == "odm_texturing" or
+                        sys.argv[i + 1] == "odm_georeferencing" or sys.argv[i + 1] == "odm_orthophoto"):
+                        args[sys.argv[i]] = sys.argv[i + 1]
+                    else:
+                        sys.exit("\n invalid parameter for \"" + sys.argv[i] + "\": " + sys.argv[i + 1] + "\n\t valid values are \"resize\", \"getKeypoints\", \"match\", \"bundler\", \"cmvs\", \"pmvs\", \"odm_meshing\", \"odm_texturing\", \"odm_georeferencing\", \"odm_orthophoto\"")
+
+                if sys.argv[i] == "--run-only":
+                    if (sys.argv[i + 1] == "resize" or sys.argv[i + 1] == "getKeypoints" or sys.argv[i + 1] == "match" or sys.argv[i + 1] == "bundler" or
+                        sys.argv[i + 1] == "cmvs" or sys.argv[i + 1] == "pmvs" or sys.argv[i + 1] == "odm_meshing" or sys.argv[i + 1] == "odm_texturing" or
+                        sys.argv[i + 1] == "odm_georeferencing" or sys.argv[i + 1] == "odm_orthophoto"):
+                        args['--start-with'] = sys.argv[i + 1]
+                        args['--end-with'] = sys.argv[i + 1]
+                    else:
+                        sys.exit("\n invalid parameter for \"" + sys.argv[i] + "\": " + sys.argv[i + 1] + "\n\t valid values are \"resize\", \"getKeypoints\", \"match\", \"bundler\", \"cmvs\", \"pmvs\", \"odm_meshing\", \"odm_texturing\", \"odm_georeferencing\", \"odm_orthophoto\"")
+
+                if sys.argv[i] == "--matcher-threshold":
+                    if re.search("^-?[0-9]*\.?[0-9]*$", sys.argv[i + 1]):
+                        args[sys.argv[i]] = float(sys.argv[i + 1].strip())
+                    else:
+                        sys.exit("\n invalid parameter for \"" + sys.argv[i] + "\": " + sys.argv[i + 1])
+
+                if sys.argv[i] == "--matcher-ratio":
+                    if re.search("^-?[0-9]*\.?[0-9]*$", sys.argv[i + 1]):
+                        args[sys.argv[i]] = float(sys.argv[i + 1].strip())
+                    else:
+                        sys.exit("\n invalid parameter for \"" + sys.argv[i] + "\": " + sys.argv[i + 1])
+
+                if sys.argv[i] == "--matcher-preselect":
+                    if sys.argv[i + 1] == "true" or sys.argv[i + 1] == "false":
+                        args[sys.argv[i]] = (sys.argv[i + 1].strip() == "true")
+                    else:
+                        sys.exit("\n invalid parameter for \"" + sys.argv[i] + "\": " + sys.argv[i + 1])
+
+                if sys.argv[i] == "--matcher-useKnn":
+                    if sys.argv[i + 1] == "true" or sys.argv[i + 1] == "false":
+                        args[sys.argv[i]] = (sys.argv[i + 1].strip() == "true")
+                    else:
+                        sys.exit("\n invalid parameter for \"" + sys.argv[i] + "\": " + sys.argv[i + 1])
+
+                if sys.argv[i] == "--matcher-kDistance":
+                    if re.search("^[0-9]*$", sys.argv[i + 1]):
+                        args[sys.argv[i]] = int(sys.argv[i + 1])
+                    else:
+                        sys.exit("\n invalid parameter for \"" + sys.argv[i] + "\": " + sys.argv[i + 1])
+
+                if sys.argv[i] == "--cmvs-maxImages":
+                    if re.search("^[0-9]*$", sys.argv[i + 1]):
+                        args[sys.argv[i]] = int(sys.argv[i + 1].strip())
+                    else:
+                        sys.exit("\n invalid parameter for \"" + sys.argv[i] + "\": " + sys.argv[i + 1])
+
+                if sys.argv[i] == "--pmvs-level":
+                    if re.search("^[0-9]*$", sys.argv[i + 1]):
+                        args[sys.argv[i]] = int(sys.argv[i + 1].strip())
+                    else:
+                        sys.exit("\n invalid parameter for \"" + sys.argv[i] + "\": " + sys.argv[i + 1])
+
+                if sys.argv[i] == "--pmvs-csize":
+                    if re.search("^[0-9]*$", sys.argv[i + 1]):
+                        args[sys.argv[i]] = int(sys.argv[i + 1].strip())
+                    else:
+                        sys.exit("\n invalid parameter for \"" + sys.argv[i] + "\": " + sys.argv[i + 1])
+
+                if sys.argv[i] == "--pmvs-threshold":
+                    if re.search("^-?[0-9]*\.?[0-9]*$", sys.argv[i + 1]):
+                        args[sys.argv[i]] = float(sys.argv[i + 1].strip())
+                    else:
+                        sys.exit("\n invalid parameter for \"" + sys.argv[i] + "\": " + sys.argv[i + 1])
+
+                if sys.argv[i] == "--pmvs-wsize":
+                    if re.search("^[0-9]*$", sys.argv[i + 1]):
+                        args[sys.argv[i]] = int(sys.argv[i + 1].strip())
+                    else:
+                        sys.exit("\n invalid parameter for \"" + sys.argv[i] + "\": " + sys.argv[i + 1])
+
+                if sys.argv[i] == "--pmvs-minImageNum":
+                    if re.search("^[0-9]*$", sys.argv[i + 1]):
+                        args[sys.argv[i]] = int(sys.argv[i + 1].strip())
+                    else:
+                        sys.exit("\n invalid parameter for \"" + sys.argv[i] + "\": " + sys.argv[i + 1])
+
+                
+                if sys.argv[i] == "--force-focal":
+                    if re.search("^[0-9]*\.?[0-9]*$", sys.argv[i + 1]):
+                        args[sys.argv[i]] = float(sys.argv[i + 1].strip())
+                    else:
+                        sys.exit("\n invalid parameter for \"" + sys.argv[i] + "\": " + sys.argv[i + 1])
+
+                if sys.argv[i] == "--force-ccd":
+                    if re.search("^[0-9]*\.?[0-9]*$", sys.argv[i + 1]):
+                        args[sys.argv[i]] = float(sys.argv[i + 1].strip())
+                    else:
+                        sys.exit("\n invalid parameter for \"" + sys.argv[i] + "\": " + sys.argv[i + 1])
+
+                if sys.argv[i] == "--odm_meshing-maxVertexCount":
+                    if re.search("^[0-9]*$", sys.argv[i + 1]):
+                        args[sys.argv[i]] = int(sys.argv[i + 1].strip())
+                    else:
+                        sys.exit("\n invalid parameter for \"" + sys.argv[i] + "\": " + sys.argv[i + 1])
+
+                if sys.argv[i] == "--odm_meshing-octreeDepth":
+                    if re.search("^[0-9]*$", sys.argv[i + 1]):
+                        args[sys.argv[i]] = int(sys.argv[i + 1].strip())
+                    else:
+                        sys.exit("\n invalid parameter for \"" + sys.argv[i] + "\": " + sys.argv[i + 1])
+
+                if sys.argv[i] == "--odm_meshing-samplesPerNode":
+                    if re.search("^[0-9]*\.?[0-9]*$", sys.argv[i + 1]):
+                        args[sys.argv[i]] = float(sys.argv[i + 1].strip())
+                    else:
+                        sys.exit("\n invalid parameter for \"" + sys.argv[i] + "\": " + sys.argv[i + 1])
+
+                if sys.argv[i] == "--odm_meshing-solverDivide":
+                    if re.search("^[0-9]*$", sys.argv[i + 1]):
+                        args[sys.argv[i]] = int(sys.argv[i + 1].strip())
+                    else:
+                        sys.exit("\n invalid parameter for \"" + sys.argv[i] + "\": " + sys.argv[i + 1])
+
+                if sys.argv[i] == "--odm_texturing-textureResolution":
+                    if re.search("^[0-9]*$", sys.argv[i + 1]):
+                        args[sys.argv[i]] = int(sys.argv[i + 1].strip())
+                    else:
+                        sys.exit("\n invalid parameter for \"" + sys.argv[i] + "\": " + sys.argv[i + 1])
+
+		if sys.argv[i] == "--odm_texturing-textureWithSize":
+                    if re.search("^[0-9]*$", sys.argv[i + 1]):
+                        args[sys.argv[i]] = int(sys.argv[i + 1].strip())
+                    else:
+                        sys.exit("\n invalid parameter for \"" + sys.argv[i] + "\": " + sys.argv[i + 1])
+
+		if sys.argv[i] == "--odm_georeferencing-gcpFile":
+                    args[sys.argv[i]] = sys.argv[i + 1]
+
+		if sys.argv[i] == "--odm_georeferencing-useGcp":
+                    if sys.argv[i + 1].strip() == "true" or sys.argv[i + 1].strip() == "false":
+                        args[sys.argv[i]] = (sys.argv[i + 1].strip() == "true")
+                    else:
+                        sys.exit("\n invalid parameter for \"" + sys.argv[i] + "\": " + sys.argv[i + 1])
+
+		if sys.argv[i] == "--zip-results":
+                    if sys.argv[i + 1].strip() == "true" or sys.argv[i + 1].strip() == "false":
+                        args[sys.argv[i]] = (sys.argv[i + 1].strip() == "true")
+                    else:
+                        sys.exit("\n invalid parameter for \"" + sys.argv[i] + "\": " + sys.argv[i + 1])
+
+    if '--help' in args:
+        print "Usage: run.py [options]"
+        print "it should be run from the folder contining the images to which should reconstructed"
+        print ""
+        print "options:"
+        print "              --help: "
+        print "                      Prints this screen"
+        print "  "
+                   
+        print "         --resize-to: <positive integer|\"orig\">"
+        print "             default: 2400"
+        print "                      will resize the images so that the maximum width/height of the images are smaller or equal to the specified number"
+        print "                      If \"--resize-to orig\" is used it will use the images without resizing"
+        print "  "
+                   
+        print "        --start-with: <\"resize\"|\"getKeypoints\"|\"match\"|\"bundler\"|\"cmvs\"|\"pmvs\"|\"odm_meshing\"|\"odm_texturing\"|\"odm_georeferencing\">"
+        print "             default: resize"
+        print "                      Will start the sript at the specified step"
+        print "  "
+                   
+        print "          --end-with: <\"resize\"|\"getKeypoints\"|\"match\"|\"bundler\"|\"cmvs\"|\"pmvs\"|\"odm_meshing\"|\"odm_texturing\"|\"odm_georeferencing\">"
+        print "             default: odm_orthophoto"
+        print "                      Will stop the sript after the specified step"
+        print "  "
+                   
+        print "          --run-only: <\"resize\"|\"getKeypoints\"|\"match\"|\"bundler\"|\"cmvs\"|\"pmvs\"|\"odm_meshing\"|\"odm_texturing\"|\"odm_georeferencing\">"
+        print "                      Will only execute the specified step"
+        print "                      equal to --start-with <step> --end-with <step>"
+        print "  "
+                   
+        print "       --force-focal: <positive float>"
+        print "                      Override the focal length information for the images"
+        print "  "
+                   
+        print "         --force-ccd: <positive float>"
+        print "                      Override the ccd width information for the images"
+        print "  "
+                   
+        print " --matcher-threshold: <float> (percent)"
+        print "             default: 2.0"
+        print "                      Ignore matched keypoints if the two images share less than <float> percent of keypoints"
+        print "  "
+                   
+        print "     --matcher-ratio: <float>"
+        print "             default: 0.6"
+        print "                      Ratio of the distance to the next best matched keypoint"
+        print "  "
+                   
+        print " --matcher-preselect: <bool>"
+        print "             default: true"
+        print "                      use GPS exif data, if available, to match each image only with its k-nearest neighbors, "
+        print "                      or all images within a certain distance threshold"
+        print "  "
+	           
+        print "    --matcher-useKnn: <bool>"
+        print "             default: true"
+        print "                      true means knn is to be used for preselection of pairs. "
+        print "                      set to false to use distance thresholding instead."
+        print "  "
+
+        print " --matcher-kDistance: <integer>"
+        print "             default: 20"
+        print "                      the k value if knnmode is used, denoting how many images each image should be matched against."
+        print "                      if distance matching is used, the parameter is the minimum distance between images in meters."
+        print "  "
+
+        print "    --cmvs-maxImages: <positive integer>"
+        print "             default: 100"
+        print "                      The maximum number of images per cluster"
+        print "  "
+                   
+        print "        --pmvs-level: <positive integer>"
+        print "             default: 1"
+        print "  "
+                  
+        print "        --pmvs-csize: <positive integer>"
+        print "             default: 2"
+        print "  "
+                   
+        print "    --pmvs-threshold: <float: -1.0 <= x <= 1.0>"
+        print "             default: 0.7"
+        print "  "
+                   
+        print "        --pmvs-wsize: <positive integer>"
+        print "             default: 7"
+        print "  "
+                   
+        print "  --pmvs-minImageNum: <positive integer>"
+        print "             default: 3"
+        print "                      See http://grail.cs.washington.edu/software/pmvs/documentation.html for an explanation of these parameters"
+        print " "
+        print "  "
+        
+        print "  --odm_meshing-maxVertexCount: <positive integer>"
+        print "                       default: 100000"
+        print "                                The maximum vertex count of the output mesh."
+        print "  "
+                   
+        print "     --odm_meshing-octreeDepth: <positive integer>"
+        print "                       default: 9"
+        print "                                Oct-tree depth used in the mesh reconstruction, increase to get more vertices, recommended values are 8-12"
+        print "  "
+                   
+        print "  --odm_meshing-samplesPerNode: <float: 1.0 <= x>"
+        print "                       default: 1"
+        print "                                Number of points per octree node, recommended value: 1.0"
+        print "  "
+
+        print "    --odm_meshing-solverDivide: <positive integer>"
+        print "                       default: 9"
+        print "                                Oct-tree depth at which the Laplacian equation is solved in the surface reconstruction step."
+        print "                                Increasing this value increases computation times slightly but helps reduce memory usage."
+        print "  "
+
+        print "   --odm_texturing-textureResolution: <positive integer>"
+        print "                             default: 4096"
+        print "                                      The resolution of the output textures. Must be greater than textureWithSize."
+        print "  "
+
+        print "     --odm_texturing-textureWithSize: <positive integer>"
+        print "                             default: 3600"
+        print "                                      The resolution to rescale the images performing the texturing."
+        print "  "
+
+        print "        --odm_georeferencing-gcpFile: <path string>"
+        print "                                      Path to the file containing the ground control points used for georeferencing."
+        print "                                      The file needs to be on the following line format:"
+        print "                                      easting northing height pixelrow pixelcol imagename"
+        print "  "
+
+        print "         --odm_georeferencing-useGcp: <true|false>"
+        print "                                      Set to true for enabling GCPs from the file above."
+        print "  "
+
+        print "  --zip-results: <true|false>"
+        print "        default: true"
+        print "                 Set to false if you do not want to have gunzipped tarball of the results."
+        print "  "
+
+        sys.exit()
+    
+    print "\n  - configuration:"
+
+    for key in collections.OrderedDict(sorted(args.items())):
+        if key != "":
+            print "    " + key + ": " + str(args[key])
+    
+    print "\n"
+
+def runAndReturn(cmdSrc, cmdDest):
+    srcProcess = subprocess.Popen(shlex.split(cmdSrc), stdout=subprocess.PIPE)
+    if cmdDest:
+        destProcess = subprocess.Popen(shlex.split(cmdDest), stdin=srcProcess.stdout, stdout=subprocess.PIPE)
+        stdout, stderr = destProcess.communicate()
+    else:
+        stdout, stderr = srcProcess.communicate()
+
+    return stdout.decode('ascii')
+
+def calculateEpsg(utmZone, south):
+    if south:
+        return 32700 + utmZone
+    else:
+        return 32600 + utmZone
+    
+def parseCoordinateSystem():
+    if os.path.isfile(jobOptions["jobDir"] + "/odm_georeferencing/coordFile.txt"):
+        with open(jobOptions["jobDir"] + "/odm_georeferencing/coordFile.txt") as f:
+            for lineNumber, line in enumerate(f):
+                if lineNumber == 0:
+                    tokens = line.split(' ')
+                    if len(tokens) == 3:
+                        utmZoneString = tokens[2][0:len(tokens[2])-2].strip()
+                        utmSouthBool = (tokens[2][len(tokens[2])-2].strip() == 'S')
+                        jobOptions["csString"] = "+datum=WGS84 +proj=utm +zone=" + utmZoneString + (" +south" if utmSouthBool else "")
+                        jobOptions["epsg"] = calculateEpsg(int(utmZoneString), utmSouthBool)
+                elif lineNumber == 1:
+                    tokens = line.split(' ')
+                    if len(tokens) == 2:
+                        jobOptions["utmEastOffset"] = int(tokens[0].strip())
+                        jobOptions["utmNorthOffset"] = int(tokens[1].strip())
+                else:
+                    break
+
+def prepareObjects():
+ ## get the source list
+    source_files = runAndReturn('ls -1', 'egrep "\.[jJ]{1}[pP]{1}[eE]{0,1}[gG]{1}"')
+    
+    print "\n  - source files - " + now()
+
+    for filename in source_files.split('\n'):
+        filename = filename.rstrip('\n')
+        if not filename:
+            continue
+        file_make = runAndReturn('jhead "' + filename + '"', 'grep "Camera make"')
+        file_model = runAndReturn('jhead "' + filename + '"', 'grep "Camera model"')
+        file_focal = runAndReturn('jhead "' + filename + '"', 'grep "Focal length"')
+        file_ccd = runAndReturn('jhead "' + filename + '"', 'grep "CCD width"')
+        file_resolution = runAndReturn('jhead "' + filename + '"', 'grep "Resolution"')
+
+        fileObject = {}
+
+        fileObject["src"] = filename
+        fileObject["base"] = re.sub("\.[^\.]*$", "", filename)
+
+        match = re.search(": ([^\n\r]*)", file_make)
+        if match:
+            fileObject["make"] = match.group(1).strip()
+            
+        match = re.search(": ([^\n\r]*)", file_model)
+        if match:
+            fileObject["model"] = match.group(1).strip()
+
+        if "make" in fileObject:
+            fileObject["make"] = re.sub("^\s+", "", fileObject["make"])
+            fileObject["make"] = re.sub("\s+$", "", fileObject["make"])
+
+        if "model" in fileObject:
+            fileObject["model"] = re.sub("^\s+", "", fileObject["model"])
+            fileObject["model"] = re.sub("\s+$", "", fileObject["model"])
+
+        if "make" in fileObject:
+            fileObject["id"] = fileObject["make"]
+        if "model" in fileObject:
+            fileObject["id"] += " " + fileObject["model"]
+
+        match = re.search(": ([0-9]*) x ([0-9]*)", file_resolution)
+        if match:
+            fileObject["width"] = int(match.group(1).strip())
+            fileObject["height"] = int(match.group(2).strip())
+
+        if not '--force-focal' in args:
+            match = re.search(":[\ ]*([0-9\.]*)mm", file_focal)
+            if match:
+                fileObject["focal"] = float((match.group()[1:-2]).strip())
+        else:
+            fileObject["focal"] = args['--force-focal']
+        
+        if not '--force-ccd' in args:
+            match = re.search(":[\ ]*([0-9\.]*)mm", file_ccd)
+            if match:
+                fileObject["ccd"] = float(match.group()[1:-2].strip())
+            
+            if (not "ccd" in fileObject) and ("id" in fileObject):
+                fileObject["ccd"] = float(ccdWidths[fileObject["id"]])
+        else:
+            fileObject["ccd"] = args['--force-ccd']
+
+        if "ccd" in fileObject and "focal" in fileObject and "width" in fileObject and "height" in fileObject:
+            if fileObject["width"] > fileObject["height"]:
+                fileObject["focalpx"] = fileObject["width"] * fileObject["focal"] / fileObject["ccd"]
+            else:
+                fileObject["focalpx"] = fileObject["height"] * fileObject["focal"] / fileObject["ccd"]
+            
+            fileObject["isOk"] = True
+            objectStats["good"] += 1
+            
+            print "     using " + fileObject["src"] + "     dimensions: " + str(fileObject["width"]) + "x" + str(fileObject["height"]) + " / focal: " + str(fileObject["focal"]) + "mm / ccd: " + str(fileObject["ccd"]) + "mm"
+        else:
+            fileObject["isOk"] = False
+            objectStats["bad"] += 1
+            
+            if "id" in fileObject:
+                print "\n    no CCD width or focal length found for " + fileObject["src"] + " - camera: \"" + fileObject["id"] + "\""
+            else:
+                print "\n    no CCD width or focal length found"
+
+        objectStats["count"] += 1
+
+        if "width" in fileObject and "height" in fileObject:
+            if objectStats["minWidth"] == 0:
+                objectStats["minWidth"] = fileObject["width"]
+            if objectStats["minHeight"] == 0:
+                objectStats["minHeight"] = fileObject["height"]
+
+            if objectStats["minWidth"] < fileObject["width"]:
+                objectStats["minWidth"] = objectStats["minWidth"]
+            else:
+                objectStats["minWidth"] = fileObject["width"]
+
+            if objectStats["minHeight"] < fileObject["height"]:
+                objectStats["minHeight"] = objectStats["minHeight"]
+            else:
+                objectStats["minHeight"] = fileObject["height"]
+
+            if objectStats["maxWidth"] > fileObject["width"]:
+                objectStats["maxWidth"] = objectStats["maxWidth"]
+            else:
+                objectStats["maxWidth"] = fileObject["width"]
+
+            if objectStats["maxHeight"] > fileObject["height"]:
+                objectStats["maxHeight"] = objectStats["maxHeight"]
+            else:
+                objectStats["maxHeight"] = fileObject["height"]
+
+        objects.append(fileObject)
+
+    
+    if not "good" in objectStats:
+        print "\n    found no usable images - quitting\n"
+        sys.exit()
+    else:
+        print "\n    found " + str(objectStats["good"]) + " usable images"
+    
+    print "\n"
+    
+    jobOptions["resizeTo"] = args['--resize-to']
+
+    print "  using max image size of " + str(jobOptions["resizeTo"]) + " x " + str(jobOptions["resizeTo"])
+    
+    jobOptions["jobDir"] = jobOptions["srcDir"] + "/reconstruction-with-image-size-" + str(jobOptions["resizeTo"])
+    
+    jobOptions["step_1_convert"]         = jobOptions["jobDir"] + "/_convert.templist.txt"
+    jobOptions["step_1_vlsift"]          = jobOptions["jobDir"] + "/_vlsift.templist.txt"
+    jobOptions["step_1_gzip"]            = jobOptions["jobDir"] + "/_gzip.templist.txt"
+    
+    jobOptions["step_2_filelist"]        = jobOptions["jobDir"] + "/_filelist.templist.txt"
+    jobOptions["step_2_macthes_jobs"]    = jobOptions["jobDir"] + "/_matches_jobs.templist.txt"
+    jobOptions["step_2_matches_dir"]  	 = jobOptions["jobDir"] + "/matches"
+    jobOptions["step_2_matches"]         = jobOptions["jobDir"] + "/matches.init.txt"
+    
+    jobOptions["step_3_filelist"]        = jobOptions["jobDir"] + "/list.txt"
+    jobOptions["step_3_bundlerOptions"]  = jobOptions["jobDir"] + "/options.txt"
+
+    try:
+        os.mkdir(jobOptions["jobDir"])
+    except:
+        pass
+
+    for fileObject in objects:
+        if fileObject["isOk"]:
+            fileObject["step_0_resizedImage"]  = jobOptions["jobDir"] + "/" + fileObject["base"] + ".jpg"
+            fileObject["step_1_pgmFile"]       = jobOptions["jobDir"] + "/" + fileObject["base"] + ".pgm"
+            fileObject["step_1_keyFile"]       = jobOptions["jobDir"] + "/" + fileObject["base"] + ".key"
+            fileObject["step_1_gzFile"]        = jobOptions["jobDir"] + "/" + fileObject["base"] + ".key.gz"
+
+def resize():
+    print "\n  - preparing images - " + now()
+
+    os.chdir(jobOptions["jobDir"])
+
+    for fileObject in objects:
+        if fileObject["isOk"]:
+            if not os.path.isfile(fileObject["step_0_resizedImage"]):
+                if jobOptions["resizeTo"] != 0 and ((int(fileObject["width"]) > jobOptions["resizeTo"]) or (fileObject["height"] > jobOptions["resizeTo"])):
+                    sys.stdout.write("    resizing " + fileObject["src"] +" \tto " + fileObject["step_0_resizedImage"])
+                    run("convert -resize " + str(jobOptions["resizeTo"]) + "x" + str(jobOptions["resizeTo"]) +" -quality 100 \"" + jobOptions["srcDir"] + "/" + fileObject["src"] + "\" \"" + fileObject["step_0_resizedImage"] + "\"")
+                else:
+                    sys.stdout.write("     copying " + fileObject["src"] + " \tto " + fileObject["step_0_resizedImage"])
+                    shutil.copyfile(CURRENT_DIR + "/" + fileObject["src"], fileObject["step_0_resizedImage"])
+            else:	
+	     	print "     using existing " + fileObject["src"] + " \tto " + fileObject["step_0_resizedImage"]
+
+            file_resolution = runAndReturn('jhead "' + fileObject["step_0_resizedImage"] + '"', 'grep "Resolution"')
+            match = re.search(": ([0-9]*) x ([0-9]*)", file_resolution)
+            if match:
+                fileObject["width"] = int(match.group(1).strip())
+                fileObject["height"] = int(match.group(2).strip())
+            print "\t (" + str(fileObject["width"]) + " x " + str(fileObject["height"]) + ")"
+    
+    if args['--end-with'] != "resize":
+        getKeypoints()
+
+def getKeypoints():
+    print "\n  - finding keypoints - " + now()
+    
+    os.chdir(jobOptions["jobDir"])
+    
+    vlsiftJobs = ""
+    c = 0
+
+    for fileObject in objects:
+        c += 1
+	
+        if fileObject["isOk"]:
+            if '--lowe-sift' in args:
+                vlsiftJobs    += "echo -n \"" + str(c) + "/" + str(objectStats["good"]) + " - \" && convert -format pgm \"" + fileObject["step_0_resizedImage"] + "\" \"" + fileObject["step_1_pgmFile"] + "\""
+                vlsiftJobs    += " && \"" + BIN_PATH + "/sift\" < \"" + fileObject["step_1_pgmFile"] + "\" > \"" + fileObject["step_1_keyFile"] + "\""
+                vlsiftJobs    += " && gzip -f \"" + fileObject["step_1_keyFile"] + "\""
+                vlsiftJobs    += " && rm -f \"" + fileObject["step_1_pgmFile"] + "\""
+                vlsiftJobs    += " && rm -f \"" + fileObject["step_1_keyFile"] + ".sift\"\n"
+            else:
+                if not os.path.isfile(jobOptions["jobDir"] + "/" + fileObject["base"] + ".key.bin"):
+                    vlsiftJobs    += "echo -n \"" + str(c) + "/" + str(objectStats["good"]) + " - \" && convert -format pgm \"" + fileObject["step_0_resizedImage"] + "\" \"" + fileObject["step_1_pgmFile"] + "\""
+	            vlsiftJobs    += " && \"" + BIN_PATH + "/vlsift\" \"" + fileObject["step_1_pgmFile"] + "\" -o \"" + fileObject["step_1_keyFile"] + ".sift\" > /dev/null && perl \"" + BIN_PATH + "/../convert_vlsift_to_lowesift.pl\" \"" + jobOptions["jobDir"] + "/" + fileObject["base"] + "\""
+	            vlsiftJobs    += " && gzip -f \"" + fileObject["step_1_keyFile"] + "\""
+	            vlsiftJobs    += " && rm -f \"" + fileObject["step_1_pgmFile"] + "\""
+	            vlsiftJobs    += " && rm -f \"" + fileObject["step_1_keyFile"] + ".sift\"\n"
+	        else:
+                    print "using existing " + jobOptions["jobDir"] + "/" + fileObject["base"] + ".key.bin"
+
+    siftDest = open(jobOptions["step_1_vlsift"], 'w')
+    siftDest.write(vlsiftJobs)
+    siftDest.close()
+
+    run("\"" + BIN_PATH + "/parallel\" --no-notice --halt-on-error 1 -j+0 < \"" + jobOptions["step_1_vlsift"] + "\"")
+    
+    if args['--end-with'] != "getKeypoints":
+        match()
+
+def match():
+    print "\n  - matching keypoints - " + now()
+
+    os.chdir(jobOptions["jobDir"])
+    try:
+        os.mkdir(jobOptions["step_2_matches_dir"])
+    except:
+        pass
+    
+    matchesJobs = ""   
+    c = 0
+    t = (objectStats["good"] - 1) * (objectStats["good"] / 2)    
+
+    preselected_pairs = []
+
+    # Create a file list with all keypoint files
+    filesList = ""
+    for fileObject in objects:
+        if fileObject["isOk"]:
+            filesList += fileObject["step_1_keyFile"] + "\n"
+    matchDest = open(jobOptions["step_2_filelist"], 'w')
+    matchDest.write(filesList)
+    matchDest.close()
+
+    #Check if preselection is to be run
+    if args["--matcher-preselect"]:
+        useKnn = True
+        if args["--matcher-useKnn"]:
+            useKnn = False
+        preselected_pairs = knnMatch_exif.preselect_pairs(BIN_PATH + "/odm_extract_utm", jobOptions["step_2_filelist"], args["--matcher-kDistance"], args["--matcher-useKnn"])
+    if len(preselected_pairs) != 0:
+        for i, j, in preselected_pairs:
+            c += 1
+            if i < 10:
+                print i, j            
+            if not os.path.isfile(jobOptions["step_2_matches_dir"] + "/" + str(i) + "-" + str(j) + ".txt"):
+                matchesJobs += "echo -n \".\" && touch \"" + jobOptions["step_2_matches_dir"] + "/" + str(i) + "-" + str(j) + ".txt\" && \"" + BIN_PATH + "/KeyMatch\" \"" + objects[i]["step_1_keyFile"] + "\" \"" + objects[j]["step_1_keyFile"] + "\" \"" + jobOptions["step_2_matches_dir"] + "/" + str(i) + "-" + str(j) + ".txt\" " + str(args['--matcher-ratio']) + " " + str(args['--matcher-threshold']) + "\n"
+
+
+# Match all image pairs
+    else:
+        if args["--matcher-preselect"] == "true":
+            print "Failed to run pair preselection, proceeding with exhaustive matching."
+        for i in range(0, objectStats["good"]):
+            for j in range(i + 1, objectStats["good"]):
+                c += 1
+                if not os.path.isfile(jobOptions["step_2_matches_dir"] + "/" + str(i) + "-" + str(j) + ".txt"):
+                    matchesJobs += "echo -n \".\" && touch \"" + jobOptions["step_2_matches_dir"] + "/" + str(i) + "-" + str(j) + ".txt\" && \"" + BIN_PATH + "/KeyMatch\" \"" + objects[i]["step_1_keyFile"] + "\" \"" + objects[j]["step_1_keyFile"] + "\" \"" + jobOptions["step_2_matches_dir"] + "/" + str(i) + "-" + str(j) + ".txt\" " + str(args['--matcher-ratio']) + " " + str(args['--matcher-threshold']) + "\n"
+
+    matchDest = open(jobOptions["step_2_macthes_jobs"], 'w')
+    matchDest.write(matchesJobs)
+    matchDest.close()
+	
+    run("\"" + BIN_PATH + "/parallel\" --no-notice --halt-on-error 1 -j+0 < \"" + jobOptions["step_2_macthes_jobs"] + "\"")
+    run("rm -f \"" + jobOptions["step_2_matches"] + "\"")
+	
+    for i in range(0, objectStats["good"]):
+        for j in range(i + 1, objectStats["good"]):            
+            c += 1            
+            if os.path.isfile(jobOptions["step_2_matches_dir"] + "/" + str(i) + "-" + str(j) + ".txt") and os.path.getsize(jobOptions["step_2_matches_dir"] + "/" + str(i) + "-" + str(j) + ".txt") > 0:                
+                run("echo \"" + str(i) + " " + str(j) + "\" >> \"" + jobOptions["step_2_matches"] + "\" && cat \"" + jobOptions["step_2_matches_dir"] + "/" + str(i) + "-" + str(j) + ".txt\" >> \"" + jobOptions["step_2_matches"] + "\"")
+
+    filesList = ""
+    for fileObject in objects:
+        if fileObject["isOk"]:
+            filesList += fileObject["step_1_keyFile"] + "\n"
+
+    matchDest = open(jobOptions["step_2_filelist"], 'w')
+    matchDest.write(filesList)
+    matchDest.close()
+    
+ #   run("\"" + BIN_PATH + "/KeyMatchFull\" \"" + jobOptions["step_2_filelist"] + "\" \"" + jobOptions["step_2_matches"] + "\"    ")
+    
+    if args['--end-with'] != "match":
+        bundler()
+
+def bundler():
+    print "\n  - running bundler - " + now()
+	
+    os.chdir(jobOptions["jobDir"])
+
+    try:
+        os.mkdir(jobOptions["jobDir"] + "/bundle")
+    except:
+        pass
+    try:
+        os.mkdir(jobOptions["jobDir"] + "/pmvs")
+    except:
+        pass
+    try:
+        os.mkdir(jobOptions["jobDir"] + "/pmvs/txt")
+    except:
+        pass
+    try:
+        os.mkdir(jobOptions["jobDir"] + "/pmvs/visualize")
+    except:
+        pass
+    try:
+        os.mkdir(jobOptions["jobDir"] + "/pmvs/models")
+    except:
+        pass
+    
+    filesList = ""
+
+    for fileObject in objects:
+        if fileObject["isOk"]:
+            filesList += "./" + fileObject["base"] + ".jpg 0 {:.5f}\n".format(fileObject["focalpx"])
+    
+    filesList = filesList.rstrip('\n')
+    
+    bundlerOptions  = "--match_table matches.init.txt\n"
+    bundlerOptions += "--output bundle.out\n"
+    bundlerOptions += "--output_all bundle_\n"
+    bundlerOptions += "--output_dir bundle\n"
+    bundlerOptions += "--variable_focal_length\n"
+    bundlerOptions += "--use_focal_estimate\n"
+    bundlerOptions += "--constrain_focal\n"
+    bundlerOptions += "--constrain_focal_weight 0.0\n"
+    bundlerOptions += "--estimate_distortion\n"
+    bundlerOptions += "--run_bundle"
+
+    run("echo \"" + bundlerOptions + "\" > \"" + jobOptions["step_3_bundlerOptions"] + "\"")
+
+    bundlerDest = open(jobOptions["step_3_filelist"], 'w')
+    bundlerDest.write(filesList)
+    bundlerDest.close()
+
+    run("\"" + BIN_PATH + "/bundler\" \"" + jobOptions["step_3_filelist"] + "\" --options_file \"" + jobOptions["step_3_bundlerOptions"] + "\" > bundle/out")
+    run("\"" + BIN_PATH + "/Bundle2PMVS\" \"" + jobOptions["step_3_filelist"] + "\" bundle/bundle.out")
+    run("\"" + BIN_PATH + "/RadialUndistort\" \"" + jobOptions["step_3_filelist"] + "\" bundle/bundle.out pmvs")
+    
+    i = 0
+    for fileObject in objects:        
+        if fileObject["isOk"]:            
+            if os.path.isfile("pmvs/" + fileObject["base"] + ".rd.jpg"):
+                nr = "{0:08d}".format(i)
+                i += 1                
+            
+                run("mv pmvs/" + fileObject["base"] + ".rd.jpg pmvs/visualize/" + str(nr) + ".jpg")                
+                run("mv pmvs/" + str(nr) + ".txt pmvs/txt/" + str(nr) + ".txt")                
+
+    run("\"" + BIN_PATH + "/Bundle2Vis\" pmvs/bundle.rd.out pmvs/vis.dat")                
+    
+    if args['--end-with'] != "bundler":        
+        cmvs()
+
+def cmvs():
+    print "\n  - running cmvs - " + now()
+
+    os.chdir(jobOptions["jobDir"])
+
+    run("\"" + BIN_PATH + "/cmvs\" pmvs/ " + str(args['--cmvs-maxImages']) + " " + str(CORES))
+    run("\"" + BIN_PATH + "/genOption\" pmvs/ " + str(args['--pmvs-level']) + " " + str(args['--pmvs-csize']) + " " + str(args['--pmvs-threshold']) + " " + str(args['--pmvs-wsize']) + " " + str(args['--pmvs-minImageNum']) + " " + str(CORES))
+    
+    if args['--end-with'] != "cmvs":
+        pmvs()
+
+def pmvs():
+    print "\n  - running pmvs - " + now()
+
+    os.chdir(jobOptions["jobDir"])
+    
+    run("\"" + BIN_PATH + "/pmvs2\" pmvs/ option-0000")
+    
+    run("cp -Rf \"" + jobOptions["jobDir"] + "/pmvs/models\" \"" + jobOptions["jobDir"] + "-results\"")
+    
+    if args['--end-with'] != "pmvs":
+        odm_meshing()
+
+def odm_meshing():
+    print "\n  - running meshing - " + now()
+    
+    os.chdir(jobOptions["jobDir"])
+    try:
+        os.mkdir(jobOptions["jobDir"] + "/odm_meshing")
+    except:
+        pass
+
+    run("\"" + BIN_PATH + "/odm_meshing\" -inputFile " + jobOptions["jobDir"] + "-results/option-0000.ply -outputFile " + jobOptions["jobDir"] + "-results/odm_mesh-0000.ply -logFile " + jobOptions["jobDir"] + "/odm_meshing/odm_meshing_log.txt -maxVertexCount " + str(args['--odm_meshing-maxVertexCount']) + " -octreeDepth " + str(args['--odm_meshing-octreeDepth']) + " -samplesPerNode " + str(args['--odm_meshing-samplesPerNode']) + " -solverDivide " + str(args['--odm_meshing-solverDivide']))
+    
+    if args['--end-with'] != "odm_meshing":
+        odm_texturing()
+
+def odm_texturing():
+    print "\n  - running texturing - " + now()
+    
+    os.chdir(jobOptions["jobDir"])
+    try:
+        os.mkdir(jobOptions["jobDir"] + "/odm_texturing")   
+        os.mkdir(jobOptions["jobDir"] + "-results/odm_texturing") 
+    except:
+        pass
+	
+    run("\"" + BIN_PATH + "/odm_texturing\" -bundleFile " + jobOptions["jobDir"] + "/pmvs/bundle.rd.out -imagesPath "+ jobOptions["srcDir"] + "/ -imagesListPath " + jobOptions["jobDir"] + "/pmvs/list.rd.txt -inputModelPath " + jobOptions["jobDir"] + "-results/odm_mesh-0000.ply -outputFolder " + jobOptions["jobDir"] + "-results/odm_texturing/ -textureResolution " + str(args['--odm_texturing-textureResolution']) + " -bundleResizedTo " + str(jobOptions["resizeTo"]) + " -textureWithSize " + str(args['--odm_texturing-textureWithSize']) + " -logFile " + jobOptions["jobDir"] + "/odm_texturing/odm_texturing_log.txt")
+    
+    if args['--end-with'] != "odm_texturing":
+        odm_georeferencing()
+
+def odm_georeferencing():
+    print "\n  - running georeferencing - " + now()
+    
+    os.chdir(jobOptions["jobDir"])
+    try:
+        os.mkdir(jobOptions["jobDir"] + "/odm_georeferencing")
+    except:
+        pass
+
+    if args['--odm_georeferencing-useGcp'] == False:
+        run("\"" + BIN_PATH + "/odm_extract_utm\" -imagesPath " + jobOptions["srcDir"] + "/ -imageListFile " + jobOptions["jobDir"] + "/pmvs/list.rd.txt -outputCoordFile " + jobOptions["jobDir"] + "/odm_georeferencing/coordFile.txt")
+        run("\"" + BIN_PATH + "/odm_georef\" -bundleFile " + jobOptions["jobDir"] + "/pmvs/bundle.rd.out -inputCoordFile " + jobOptions["jobDir"] + "/odm_georeferencing/coordFile.txt -inputFile " + jobOptions["jobDir"] + "-results/odm_texturing/odm_textured_model.obj -outputFile " + jobOptions["jobDir"] + "-results/odm_texturing/odm_textured_model_geo.obj -inputPointCloudFile " + jobOptions["jobDir"] + "-results/option-0000.ply -outputPointCloudFile " + jobOptions["jobDir"] + "-results/option-0000_georef.ply -logFile " + jobOptions["jobDir"] + "/odm_georeferencing/odm_georeferencing_log.txt -georefFileOutputPath " + jobOptions["jobDir"] + "-results/odm_texturing/odm_textured_model_geo_georef_system.txt")
+    elif os.path.isfile(jobOptions["srcDir"] + "/" + args['--odm_georeferencing-gcpFile']):
+        run("\"" + BIN_PATH + "/odm_georef\" -bundleFile " + jobOptions["jobDir"] + "/pmvs/bundle.rd.out -gcpFile " + jobOptions["srcDir"] + "/" + args['--odm_georeferencing-gcpFile'] + " -imagesPath " + jobOptions["srcDir"] + "/ -imagesListPath " + jobOptions["jobDir"] + "/pmvs/list.rd.txt -bundleResizedTo " + str(jobOptions["resizeTo"]) + " -inputFile " + jobOptions["jobDir"] + "-results/odm_texturing/odm_textured_model.obj -outputFile " + jobOptions["jobDir"] + "-results/odm_texturing/odm_textured_model_geo.obj -outputCoordFile " + jobOptions["jobDir"] + "/odm_georeferencing/coordFile.txt -inputPointCloudFile " + jobOptions["jobDir"] + "-results/option-0000.ply -outputPointCloudFile " + jobOptions["jobDir"] + "-results/option-0000_georef.ply -logFile " + jobOptions["jobDir"] + "/odm_georeferencing/odm_georeferencing_log.txt -georefFileOutputPath " + jobOptions["jobDir"] + "-results/odm_texturing/odm_textured_model_geo_georef_system.txt")
+    else:
+        print "Warning: No GCP file. Consider rerunning with argument --odm_georeferencing-useGcp false --start-with odm_georeferencing"
+        print "Skipping orthophoto"
+        args['--end-with'] = "odm_georeferencing"
+
+    if not "csString" in jobOptions:
+        parseCoordinateSystem()
+
+    if "csString" in jobOptions and "utmEastOffset" in jobOptions and "utmNorthOffset" in jobOptions:
+        images = []
+        with open(jobOptions["jobDir"] + "/pmvs/list.rd.txt") as f:
+            images = f.readlines()
+
+        if len(images) > 0:
+            with open(jobOptions["jobDir"] + "/odm_georeferencing/coordFile.txt") as f:
+                for lineNumber, line in enumerate(f):
+                    if lineNumber >= 2 and lineNumber - 2 < len(images):                    
+                        tokens = line.split(' ')
+                        if len(tokens) >= 3:
+                            x = float(tokens[0])
+                            y = float(tokens[1])
+                            z = float(tokens[2])
+                            filename = images[lineNumber - 2]
+                            run("echo " + str(x + jobOptions["utmEastOffset"]) + " " + str(y + jobOptions["utmNorthOffset"]) + " " + str(z) + " | cs2cs " + jobOptions["csString"] + " +to +datum=WGS84 +proj=latlong > " + jobOptions["jobDir"] + "/odm_georeferencing/latlong.txt")
+                            with open(jobOptions["jobDir"] + "/odm_georeferencing/latlong.txt") as latlongFile:
+                                latlongLine = latlongFile.readline()
+                                tokens = latlongLine.split()
+                                if len(tokens) >= 2:
+                                    exifGpsInfoWritten = False
+
+                                    lonString = tokens[0]  # Example: 83d18'16.285"W
+                                    latString = tokens[1]  # Example: 41d2'11.789"N
+                                    altString = ""
+                                    if len(tokens) > 2:
+                                        altString = tokens[2] # Example: 0.998
+                                    
+                                    tokens = re.split("[d '\"]+", lonString)
+                                    if len(tokens) >= 4:
+                                        lonDeg = tokens[0]
+                                        lonMin = tokens[1]
+                                        lonSec = tokens[2]
+                                        lonSecFrac = fractions.Fraction(lonSec)
+                                        lonSecNumerator = str(lonSecFrac._numerator)
+                                        lonSecDenominator = str(lonSecFrac._denominator)
+                                        lonRef = tokens[3]
+
+                                        tokens = re.split("[d '\"]+", latString)
+                                        if len(tokens) >= 4:
+                                            latDeg = tokens[0]
+                                            latMin = tokens[1]
+                                            latSec = tokens[2]
+                                            latSecFrac = fractions.Fraction(latSec)
+                                            latSecNumerator = str(latSecFrac._numerator)
+                                            latSecDenominator = str(latSecFrac._denominator)
+                                            latRef = tokens[3]
+                                        
+                                            exivCmd = "exiv2 -q"
+                                            exivCmd += " -M\"set Exif.GPSInfo.GPSLatitude " + latDeg + "/1 " + latMin + "/1 " + latSecNumerator + "/" + latSecDenominator + "\""
+                                            exivCmd += " -M\"set Exif.GPSInfo.GPSLatitudeRef " + latRef + "\""
+                                            exivCmd += " -M\"set Exif.GPSInfo.GPSLongitude " + lonDeg + "/1 " + lonMin + "/1 " + lonSecNumerator + "/" + lonSecDenominator + "\""
+                                            exivCmd += " -M\"set Exif.GPSInfo.GPSLongitudeRef " + lonRef + "\""
+
+                                            altNumerator = arcDenominator = 0
+                                            if altString:
+                                                altFrac = fractions.Fraction(altString)
+                                                altNumerator = str(altFrac._numerator)
+                                                altDenominator = str(altFrac._denominator)
+                                                exivCmd += " -M\"set Exif.GPSInfo.GPSAltitude " + altNumerator + "/" + altDenominator + "\""
+                                                exivCmd += " -M\"set Exif.GPSInfo.GPSAltitudeRef 0\""
+
+                                            exivCmd += " " + filename
+                                            run(exivCmd)
+                                            exifGpsInfoWritten = True
+
+                                    if not exifGpsInfoWritten:
+                                        print("    Warning: Failed setting EXIF GPS info for " + filename + " based on " + latlongLine)
+
+    if "epsg" in jobOptions and "utmEastOffset" in jobOptions and "utmNorthOffset" in jobOptions:
+        lasCmd = "\"" + BIN_PATH + "/txt2las\" -i " + jobOptions["jobDir"] + "-results/option-0000_georef.ply -o " + jobOptions["jobDir"] + "-results/pointcloud_georef.laz -skip 30 -parse xyzRGBssss -set_scale 0.01 0.01 0.01 -set_offset " + str(jobOptions["utmEastOffset"]) + " " + str(jobOptions["utmNorthOffset"]) + " 0 -translate_xyz " + str(jobOptions["utmEastOffset"]) + " " + str(jobOptions["utmNorthOffset"]) + " 0 -epsg " + str(jobOptions["epsg"])
+        print("    Creating geo-referenced LAS file (expecting warning)...")
+        run(lasCmd)
+    
+    if args['--end-with'] != "odm_georeferencing":
+        odm_orthophoto()
+
+
+def odm_orthophoto():
+    print "\n  - running orthophoto generation - " + now()
+    
+    os.chdir(jobOptions["jobDir"])
+    try:
+        os.mkdir(jobOptions["jobDir"] + "/odm_orthophoto")
+    except:
+        pass
+
+    run("\"" + BIN_PATH + "/odm_orthophoto\" -inputFile " + jobOptions["jobDir"] + "-results/odm_texturing/odm_textured_model_geo.obj -logFile " + jobOptions["jobDir"] + "/odm_orthophoto/odm_orthophoto_log.txt -outputFile " + jobOptions["jobDir"] + "-results/odm_orthphoto.png -resolution 20.0 -outputCornerFile " + jobOptions["jobDir"] + "/odm_orthphoto_corners.txt")
+
+    if not "csString" in jobOptions:
+        parseCoordinateSystem()
+
+    geoTiffCreated = False
+    if "csString" in jobOptions and "utmEastOffset" in jobOptions and "utmNorthOffset" in jobOptions:
+        ulx = uly = lrx = lry = 0.0
+        with open(jobOptions["jobDir"] + "/odm_orthphoto_corners.txt") as f:
+            for lineNumber, line in enumerate(f):
+                if lineNumber == 0:
+                    tokens = line.split(' ')
+                    if len(tokens) == 4:
+                        ulx = float(tokens[0]) + float(jobOptions["utmEastOffset"])
+                        lry = float(tokens[1]) + float(jobOptions["utmNorthOffset"])
+                        lrx = float(tokens[2]) + float(jobOptions["utmEastOffset"])
+                        uly = float(tokens[3]) + float(jobOptions["utmNorthOffset"])
+
+        print("    Creating GeoTIFF...")
+        sys.stdout.write("    ")
+        run("gdal_translate -a_ullr " + str(ulx) + " " + str(uly) + " " + str(lrx) + " " + str(lry) + " -a_srs \"" + jobOptions["csString"] + "\" " + jobOptions["jobDir"] + "-results/odm_orthphoto.png " + jobOptions["jobDir"] + "-results/odm_orthphoto.tif")
+        geoTiffCreated = True
+
+    if not geoTiffCreated:
+        print "    Warning: No geo-referenced orthophoto created due to missing geo-referencing or corner coordinates."
+
+parseArgs()
+prepareObjects()
+    
+os.chdir(jobOptions["jobDir"])
+
+if args['--start-with'] == "resize":
+    resize()
+elif args['--start-with'] == "getKeypoints":
+    getKeypoints()
+elif args['--start-with'] == "match":
+    match()
+elif args['--start-with'] == "bundler":
+    bundler()
+elif args['--start-with'] == "cmvs":
+    cmvs()
+elif args['--start-with'] == "pmvs":
+    pmvs()
+elif args['--start-with'] == "odm_meshing":
+    odm_meshing()
+elif args['--start-with'] == "odm_texturing":
+    odm_texturing()
+elif args['--start-with'] == "odm_georeferencing":
+    odm_georeferencing()
+elif args['--start-with'] == "odm_orthophoto":
+    odm_orthophoto()
+
+if args['--zip-results'] == True: 
+    print "\nCompressing results - " + now()
+    run("cd " + jobOptions["jobDir"] + "-results/ && tar -czf " + jobOptions["jobDir"] + "-results.tar.gz *")
+
+print "\n  - done - " + now()

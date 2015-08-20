@@ -41,6 +41,7 @@ echo "  - script started - `date`"
               GRACLUS_PATH="$TOOLS_SRC_PATH/graclus"
                   
                   PCL_PATH="$TOOLS_SRC_PATH/pcl"
+             LASTOOLS_PATH="$TOOLS_SRC_PATH/lastools"
           ODM_MESHING_PATH="$TOOLS_SRC_PATH/odm_meshing"
         ODM_TEXTURING_PATH="$TOOLS_SRC_PATH/odm_texturing"
        ODM_ORTHOPHOTO_PATH="$TOOLS_SRC_PATH/odm_orthophoto"
@@ -120,6 +121,8 @@ sudo apt-get install --assume-yes --install-recommends \
   libzip-dev \
   libswitch-perl libjson-perl \
   libcv-dev libcvaux-dev libopencv-dev \
+  gdal-bin \
+  exiv2 \
   > "$TOOLS_LOG_PATH/apt-get_install.log" 2>&1
 else
 sudo apt-get install --assume-yes --install-recommends \
@@ -133,6 +136,8 @@ sudo apt-get install --assume-yes --install-recommends \
   libzip-dev \
   libswitch-perl \
   libcv-dev libcvaux-dev libopencv-dev \
+  gdal-bin \
+  exiv2 \
   > "$TOOLS_LOG_PATH/apt-get_install.log" 2>&1
 fi
 
@@ -167,6 +172,7 @@ vlfeat.tar.gz http://www.vlfeat.org/download/vlfeat-0.9.13-bin.tar.gz
 cmvs.tar.gz http://www.di.ens.fr/cmvs/cmvs-fix2.tar.gz
 graclus.tar.gz http://smathermather.github.io/BundlerTools/patched_files/src/graclus/graclus1.2.tar.gz
 pcl.tar.gz https://github.com/PointCloudLibrary/pcl/archive/pcl-1.7.2.tar.gz
+LAStools.zip http://lastools.org/download/LAStools.zip
 EOF
 
 echo "  < done - `date`"
@@ -195,6 +201,8 @@ mv -f parallel-20141022   "$PARALLEL_PATH"
 mv -f PoissonRecon        "$PSR_PATH"
 mv -f cmvs                "$CMVS_PATH"
 mv -f pcl-pcl-1.7.2       "$PCL_PATH"
+mv -f LAStools            "$LASTOOLS_PATH"
+
 
 
 echo "  < done - `date`"
@@ -304,6 +312,23 @@ echo "  > vlfeat"
   if [ "$ARCH" = "x86_64" ]; then
     cp -f "$VLFEAT_PATH/bin/glnxa64/sift" "$TOOLS_BIN_PATH/vlsift"
     cp -f "$VLFEAT_PATH/bin/glnxa64/libvl.so" "$TOOLS_LIB_PATH/"
+  fi
+echo "  < done - `date`"
+echo
+
+echo "  > LAStools"
+  cd "$LASTOOLS_PATH"
+  
+  echo "    - installing LAStools"
+  
+  make > "$TOOLS_LOG_PATH/lastools_1_build.log" 2>&1
+
+  if [ "$ARCH" = "i686" ]; then
+    cp -f "$LASTOOLS_PATH/bin/txt2las" "$TOOLS_BIN_PATH/txt2las"
+  fi
+
+  if [ "$ARCH" = "x86_64" ]; then
+    cp -f "$LASTOOLS_PATH/bin/txt2las" "$TOOLS_BIN_PATH/txt2las"
   fi
 echo "  < done - `date`"
 echo

@@ -145,6 +145,11 @@ private:
     void setDefaultOutput();
 
     /*!
+      * \brief setDefaultPointCloudOutput   Setup the output file name given the input file name.
+      */
+    void setDefaultPointCloudOutput();
+
+    /*!
      * \brief createGeoreferencedModel    Makes the input file georeferenced and saves it to the output file.
      */
     void createGeoreferencedModel();
@@ -199,25 +204,32 @@ private:
       **/
     void printGeorefSystem();
     
-    Logger          log_;               /**< Logging object. */
-    std::string     logFile_;           /**< The path to the output log file. */
+    Logger          log_;                       /**< Logging object. */
+    std::string     logFile_;                   /**< The path to the output log file. */
     
-    std::string     bundleFilename_;    /**< The path to the cameras bundle file. **/
-    std::string     coordFilename_;     /**< The path to the cameras georeference file. **/
-    std::string     gcpFilename_;       /**< The path to the GCP file **/
-    std::string     imagesListPath_;    /**< Path to the image list. **/
-    std::string     imagesLocation_;    /**< The folder containing the images in the image list. **/
-    std::string     inputObjFilename_;  /**< The path to the input mesh obj file. **/
-    std::string     outputObjFilename_; /**< The path to the output mesh obj file. **/
+    std::string     bundleFilename_;            /**< The path to the cameras bundle file. **/
+    std::string     inputCoordFilename_;        /**< The path to the cameras exif gps positions file. **/
+    std::string     outputCoordFilename_;       /**< The path to the cameras georeferenced gps positions file. **/
+    std::string     gcpFilename_;               /**< The path to the GCP file **/
+    std::string     imagesListPath_;            /**< Path to the image list. **/
+    std::string     imagesLocation_;            /**< The folder containing the images in the image list. **/
+    std::string     inputObjFilename_;          /**< The path to the input mesh obj file. **/
+    std::string     outputObjFilename_;         /**< The path to the output mesh obj file. **/
+    std::string     inputPointCloudFilename_;   /**< The path to the input point cloud file. **/
+    std::string     outputPointCloudFilename_;  /**< The path to the output point cloud file. **/
+    std::string     georefFilename_;      /**< The path to the output offset file. **/
 
-    bool            useGCP_;             /**< Check if GCP-file is present and use this to georeference the model. **/
-    double          bundleResizedTo_;    /**< The size used in the previous steps to calculate the camera focal_length. */
+    bool            georeferencePointCloud_;
+    bool            exportCoordinateFile_;
+    bool            exportGeorefSystem_;
+    bool            useGCP_;                    /**< Check if GCP-file is present and use this to georeference the model. **/
+    double          bundleResizedTo_;           /**< The size used in the previous steps to calculate the camera focal_length. */
 
-    std::vector<GeorefCamera> cameras_; /**< A vector of all cameras. **/
-    std::vector<GeorefGCP> gcps_;       /**< A vector of all GCPs. **/
-    std::vector<std::string> imageList_;    /**< A vector containing the names of the corresponding cameras. **/
+    std::vector<GeorefCamera> cameras_;         /**< A vector of all cameras. **/
+    std::vector<GeorefGCP> gcps_;               /**< A vector of all GCPs. **/
+    std::vector<std::string> imageList_;        /**< A vector containing the names of the corresponding cameras. **/
     
-    GeorefSystem    georefSystem_;  /**< Contains the georeference system. **/
+    GeorefSystem    georefSystem_;              /**< Contains the georeference system. **/
 };
 
 /*!
