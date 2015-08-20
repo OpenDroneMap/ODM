@@ -8,4 +8,6 @@ odm_texturing-build/
 *.user
 cmvs.tar.gz
 parallel.tar.bz2
+LAStools.zip
 pcl.tar.gz
+*.pyc
