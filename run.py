@@ -36,6 +36,7 @@ def parseArgs():
 
  ## defaults
     #args['--match-size']            = 200
+    args['--help']                  = False
 
     args['--resize-to']             = 2400
     
@@ -70,16 +71,21 @@ def parseArgs():
     args['--zip-results']           = True
 
     for i in range(1, len(sys.argv)):
-        if re.search("^--[^a-z\-]*", sys.argv[i]):
-            args[sys.argv[i]] = True
+        # check to see if the argument given is valid
+        if re.search("^--[^a-z\-]*", sys.argv[i]) and sys.argv[i] not in args:
+            sys.exit("\n Invalid argument " + str(sys.argv[i]) + ". Run with --help to see options.")
             
+        #if the argv starts with "--" and is not the last argument
+        if re.search("^--[^a-z\-]*", sys.argv[i]) and i+1 < len(sys.argv):
+            #default is to set args value to True
+            args[sys.argv[i]] = True
+            #if there is a parameter following the argument, set that parameter value in args
             if not re.search("^--[^a-z\-]*", sys.argv[i + 1]):
                 if sys.argv[i] == "--resize-to":
                     if sys.argv[i + 1] == "orig":
                         args[sys.argv[i]] = 0
                     elif re.search("^[0-9]*$", sys.argv[i + 1]):
                         args[sys.argv[i]] = int(sys.argv[i + 1].strip())
-                        print(str(args[sys.argv[i]]))
                     else:
                         sys.exit("\n invalid parameter for \"" + sys.argv[i] + "\": " + sys.argv[i + 1])
 
@@ -173,8 +179,7 @@ def parseArgs():
                         args[sys.argv[i]] = int(sys.argv[i + 1].strip())
                     else:
                         sys.exit("\n invalid parameter for \"" + sys.argv[i] + "\": " + sys.argv[i + 1])
-
-                
+            
                 if sys.argv[i] == "--force-focal":
                     if re.search("^[0-9]*\.?[0-9]*$", sys.argv[i + 1]):
                         args[sys.argv[i]] = float(sys.argv[i + 1].strip())
@@ -203,11 +208,11 @@ def parseArgs():
                     if re.search("^[0-9]*\.?[0-9]*$", sys.argv[i + 1]):
                         args[sys.argv[i]] = float(sys.argv[i + 1].strip())
                     else:
-                        sys.exit("\n invalid parameter for \"" + sys.argv[i] + "\": " + sys.argv[i + 1])
+                       sys.exit("\n invalid parameter for \"" + sys.argv[i] + "\": " + sys.argv[i + 1])
 
                 if sys.argv[i] == "--odm_meshing-solverDivide":
                     if re.search("^[0-9]*$", sys.argv[i + 1]):
-                        args[sys.argv[i]] = int(sys.argv[i + 1].strip())
+                       args[sys.argv[i]] = int(sys.argv[i + 1].strip())
                     else:
                         sys.exit("\n invalid parameter for \"" + sys.argv[i] + "\": " + sys.argv[i + 1])
 
@@ -217,28 +222,32 @@ def parseArgs():
                     else:
                         sys.exit("\n invalid parameter for \"" + sys.argv[i] + "\": " + sys.argv[i + 1])
 
-		if sys.argv[i] == "--odm_texturing-textureWithSize":
+                if sys.argv[i] == "--odm_texturing-textureWithSize":
                     if re.search("^[0-9]*$", sys.argv[i + 1]):
                         args[sys.argv[i]] = int(sys.argv[i + 1].strip())
                     else:
                         sys.exit("\n invalid parameter for \"" + sys.argv[i] + "\": " + sys.argv[i + 1])
 
-		if sys.argv[i] == "--odm_georeferencing-gcpFile":
+                if sys.argv[i] == "--odm_georeferencing-gcpFile":
                     args[sys.argv[i]] = sys.argv[i + 1]
 
-		if sys.argv[i] == "--odm_georeferencing-useGcp":
+                if sys.argv[i] == "--odm_georeferencing-useGcp":
                     if sys.argv[i + 1].strip() == "true" or sys.argv[i + 1].strip() == "false":
                         args[sys.argv[i]] = (sys.argv[i + 1].strip() == "true")
                     else:
                         sys.exit("\n invalid parameter for \"" + sys.argv[i] + "\": " + sys.argv[i + 1])
 
-		if sys.argv[i] == "--zip-results":
+                if sys.argv[i] == "--zip-results":
                     if sys.argv[i + 1].strip() == "true" or sys.argv[i + 1].strip() == "false":
                         args[sys.argv[i]] = (sys.argv[i + 1].strip() == "true")
                     else:
                         sys.exit("\n invalid parameter for \"" + sys.argv[i] + "\": " + sys.argv[i + 1])
+        # then check if i is a --arg and the last argument
+        elif re.search("^--[^a-z\-]*", sys.argv[i]):# and i == (len(sys.argv)-1):
+            #default is to set args value to True
+            args[sys.argv[i]] = True
 
-    if '--help' in args:
+    if args['--help'] == True:
         print "Usage: run.py [options]"
         print "it should be run from the folder contining the images to which should reconstructed"
         print ""
