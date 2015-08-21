@@ -8,6 +8,10 @@ odm_texturing-build/
 *.user
 cmvs.tar.gz
 parallel.tar.bz2
+<<<<<<< HEAD
 LAStools.zip
 pcl.tar.gz
 *.pyc
+=======
+pcl.tar.gz
+>>>>>>> parent of 667ea4e... Revert "Upgrade Bundler + add support for Ceres solver"
