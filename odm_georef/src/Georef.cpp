@@ -2,6 +2,10 @@
 #include <pcl/io/obj_io.h>
 #include <pcl/common/transforms.h>
 
+// OpenCV
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
+
 // Modified PCL
 #include "modifiedPclFunctions.hpp"
 
@@ -10,18 +14,42 @@
 
 std::ostream& operator<<(std::ostream &os, const GeorefSystem &geo)
 {
-    return os << geo.system_ << " " << static_cast<int>(geo.falseEasting_) << " " << static_cast<int>(geo.falseNorthing_);
+    return os << geo.system_ << "\n" << static_cast<int>(geo.eastingOffset_) << " " << static_cast<int>(geo.northingOffset_);
+}
+
+GeorefGCP::GeorefGCP()
+    :x_(0.0), y_(0.0), z_(0.0), use_(false), localX_(0.0), localY_(0.0), localZ_(0.0),cameraIndex_(0), pixelX_(0), pixelY_(0.0), image_("")
+{
+}
+
+GeorefGCP::~GeorefGCP()
+{
+}
+
+void GeorefGCP::extractGCP(std::istringstream &gcpStream)
+{
+    gcpStream >> x_ >> y_ >> z_ >> pixelY_ >> pixelX_ >> image_;
+}
+
+Vec3 GeorefGCP::getPos()
+{
+    return Vec3(localX_,localY_,localZ_);
+}
+
+Vec3 GeorefGCP::getReferencedPos()
+{
+    return Vec3(x_,y_,z_);
 }
 
 GeorefCamera::GeorefCamera()
-    :focalLength_(0.0), k1_(0.0), k2_(0.0), transform_(NULL), position_(NULL)
+    :focalLength_(0.0), k1_(0.0), k2_(0.0), transform_(NULL), position_(NULL), pose_(NULL)
 {
 }
 
 GeorefCamera::GeorefCamera(const GeorefCamera &other)
     : focalLength_(other.focalLength_), k1_(other.k1_), k2_(other.k2_),
       easting_(other.easting_), northing_(other.northing_), altitude_(other.altitude_), 
-      transform_(NULL), position_(NULL)
+      transform_(NULL), position_(NULL), pose_(NULL)
 {
     if(NULL != other.transform_)
     {
@@ -30,6 +58,10 @@ GeorefCamera::GeorefCamera(const GeorefCamera &other)
     if(NULL != other.position_)
     {
         position_ = new Eigen::Vector3f(*other.position_);
+    }
+    if(pose_ != other.pose_)
+    {
+        pose_ = new Eigen::Affine3f(*other.pose_);
     }
 }
 
@@ -45,6 +77,11 @@ GeorefCamera::~GeorefCamera()
         delete position_;
         position_ = NULL;
     }
+    if(pose_ != NULL)
+    {
+        delete pose_;
+        pose_ = NULL;
+    }
 }
 
 void GeorefCamera::extractCamera(std::ifstream &bundleStream)
@@ -55,6 +92,7 @@ void GeorefCamera::extractCamera(std::ifstream &bundleStream)
     Eigen::Vector3f t;
     Eigen::Matrix3f rot;
     Eigen::Affine3f transform;
+    Eigen::Affine3f pose;
     
     bundleStream >> transform(0,0); // Read rotation (0,0) from bundle file
     bundleStream >> transform(0,1); // Read rotation (0,1) from bundle file
@@ -72,6 +110,47 @@ void GeorefCamera::extractCamera(std::ifstream &bundleStream)
     bundleStream >> t(1); // Read translation (1,3) from bundle file
     bundleStream >> t(2); // Read translation (2,3) from bundle file
     
+    //
+    pose(0,0) = transform(0,0);
+    pose(0,1) = transform(0,1);
+    pose(0,2) = transform(0,2);
+
+    pose(1,0) = transform(1,0);
+    pose(1,1) = transform(1,1);
+    pose(1,2) = transform(1,2);
+
+    pose(2,0) = transform(2,0);
+    pose(2,1) = transform(2,1);
+    pose(2,2) = transform(2,2);
+
+    pose(0,3) = t(0);
+    pose(1,3) = t(1);
+    pose(2,3) = t(2);
+
+    pose(3,0) = 0.0;
+    pose(3,1) = 0.0;
+    pose(3,2) = 0.0;
+    pose(3,3) = 1.0;
+
+    pose = pose.inverse();
+
+    // Column negation
+    pose(0,2) = -1.0*pose(0,2);
+    pose(1,2) = -1.0*pose(1,2);
+    pose(2,2) = -1.0*pose(2,2);
+
+    pose(0,1) = -1.0*pose(0,1);
+    pose(1,1) = -1.0*pose(1,1);
+    pose(2,1) = -1.0*pose(2,1);
+
+    if (pose_ != NULL)
+    {
+        delete pose_;
+        pose_ = NULL;
+    }
+
+    pose_ = new Eigen::Affine3f(pose);
+
     rot = transform.matrix().topLeftCorner<3,3>();
     
     // Calculate translation according to -R't and store in vector.
@@ -80,7 +159,8 @@ void GeorefCamera::extractCamera(std::ifstream &bundleStream)
     transform(0,3) = t(0);
     transform(1,3) = t(1);
     transform(2,3) = t(2);
-    
+
+
     // Set transform and position.
     if(NULL != transform_)
     {
@@ -136,10 +216,9 @@ std::ostream& operator<<(std::ostream &os, const GeorefCamera &cam)
     return os;
 }
 
-Georef::Georef()
+Georef::Georef() : log_(false)
 {
-    log_.setIsPrintingInCout(true);
-    
+    useGCP_ = false;
     bundleFilename_ = "";
     coordFilename_ = "";
     inputObjFilename_ = "";
@@ -155,16 +234,18 @@ int Georef::run(int argc, char *argv[])
     try
     {
         parseArguments(argc, argv);
-        makeGeoreferencedModel();
+        createGeoreferencedModel();
     }
     catch (const GeorefException& e)
     {
+        log_.setIsPrintingInCout(true);
         log_ << e.what() << "\n";
         log_.print(logFile_);
         return EXIT_FAILURE;
     }
     catch (const std::exception& e)
     {
+        log_.setIsPrintingInCout(true);
         log_ << "Error in Georef:\n";
         log_ << e.what() << "\n";
         log_.print(logFile_);
@@ -172,6 +253,7 @@ int Georef::run(int argc, char *argv[])
     }
     catch (...)
     {
+        log_.setIsPrintingInCout(true);
         log_ << "Unknown error, terminating:\n";
         log_.print(logFile_);
         return EXIT_FAILURE;
@@ -185,6 +267,10 @@ int Georef::run(int argc, char *argv[])
 void Georef::parseArguments(int argc, char *argv[])
 {
     bool outputSpecified = false;
+    bool imageListSpecified = false;
+    bool gcpFileSpecified = false;
+    bool imageLocation = false;
+    bool bundleResized = false;
     
     logFile_ = std::string(argv[0]) + "_log.txt";
     log_ << logFile_ << "\n";
@@ -214,6 +300,21 @@ void Georef::parseArguments(int argc, char *argv[])
         else if(argument == "-verbose")
         {
             log_.setIsPrintingInCout(true);
+        }
+        else if (argument == "-logFile")
+        {
+            ++argIndex;
+            if (argIndex >= argc)
+            {
+                throw GeorefException("Missing argument for '" + argument + "'.");
+            }
+            logFile_ = std::string(argv[argIndex]);
+            std::ofstream testFile(logFile_.c_str());
+            if (!testFile.is_open())
+            {
+                throw GeorefException("Argument '" + argument + "' has a bad value.");
+            }
+            log_ << "Log file path was set to: " << logFile_ << "\n";
         }
         else if(argument == "-bundleFile" && argIndex < argc)
         {
@@ -245,6 +346,55 @@ void Georef::parseArguments(int argc, char *argv[])
             inputObjFilename_ = std::string(argv[argIndex]);
             log_ << "Reading textured mesh from: " << inputObjFilename_ << "\n";
         }
+        else if(argument == "-gcpFile" && argIndex < argc)
+        {
+            argIndex++;
+            if (argIndex >= argc)
+            {
+                throw GeorefException("Argument '" + argument + "' expects 1 more input following it, but no more inputs were provided.");
+            }
+            gcpFilename_ = std::string(argv[argIndex]);
+            log_ << "Reading GCPs from: " << gcpFilename_ << "\n";
+            gcpFileSpecified = true;
+        }
+        else if(argument == "-imagesListPath" && argIndex < argc)
+        {
+            argIndex++;
+            if (argIndex >= argc)
+            {
+                throw GeorefException("Argument '" + argument + "' expects 1 more input following it, but no more inputs were provided.");
+            }
+            imagesListPath_ = std::string(argv[argIndex]);
+            log_ << "Reading image list from: " << imagesListPath_ << "\n";
+            imageListSpecified = true;
+        }
+        else if(argument == "-imagesPath" && argIndex < argc)
+        {
+            argIndex++;
+            if (argIndex >= argc)
+            {
+                throw GeorefException("Argument '" + argument + "' expects 1 more input following it, but no more inputs were provided.");
+            }
+            imagesLocation_ = std::string(argv[argIndex]);
+            log_ << "Images location is set to: " << imagesLocation_ << "\n";
+            imageLocation = true;
+        }
+        else if(argument == "-bundleResizedTo" && argIndex < argc)
+        {
+            argIndex++;
+            if (argIndex >= argc)
+            {
+                throw GeorefException("Argument '" + argument + "' expects 1 more input following it, but no more inputs were provided.");
+            }
+            std::stringstream ss(argv[argIndex]);
+            ss >> bundleResizedTo_;
+            if (ss.bad())
+            {
+                throw GeorefException("Argument '" + argument + "' has a bad value. (wrong type)");
+            }
+            log_ << "Bundle resize value is set to: " << bundleResizedTo_ << "\n";
+            bundleResized = true;
+        }
         else if(argument == "-outputFile" && argIndex < argc)
         {
             argIndex++;
@@ -263,9 +413,19 @@ void Georef::parseArguments(int argc, char *argv[])
         }
     }
     
+    if (imageListSpecified && gcpFileSpecified && imageLocation && bundleResized)
+    {
+        useGCP_ = true;
+    }
+    else
+    {
+        log_ << '\n';
+        log_ << "Missing input in order to use GCP for georeferencing. Using EXIF data instead.\n";
+    }
+
     if(!outputSpecified)
     {
-        makeDefaultOutput();
+        setDefaultOutput();
     }
 }
 
@@ -277,7 +437,7 @@ void Georef::printHelp()
     log_ << "Georef.exe\n\n";
     
     log_ << "Purpose:" << "\n";
-    log_ << "Create an orthograpical photo from an oriented textured mesh." << "\n";
+    log_ << "Georeference a textured mesh with the use of ground control points or exif data from the images." << "\n";
     
     log_ << "Usage:" << "\n";
     log_ << "The program requires a path to a camera bundle file, a camera georeference coords file, and an input OBJ mesh file. All other input parameters are optional." << "\n\n";
@@ -289,12 +449,26 @@ void Georef::printHelp()
     log_ << "Parameters are specified as: \"-<argument name> <argument>\", (without <>), and the following parameters are configureable: " << "\n";
     log_ << "\"-bundleFile <path>\" (mandatory)" << "\n";
     log_ << "\"Input cameras bundle file.\n\n";
+
+    log_ << "\"-gcpFile <path>\" (mandatory if using ground control points)\n";
+    log_ << "Path to the file containing the ground control points used for georeferencing.\n";
+    log_ << "The file needs to be on the following line format:\n";
+    log_ << "easting northing height pixelrow pixelcol imagename\n\n";
     
-    log_ << "\"-coordFile <path>\" (mandatory)" << "\n";
+    log_ << "\"-coordFile <path>\" (mandatory if using exif data)" << "\n";
     log_ << "\"Input cameras geroreferenced coords file.\n\n";
     
     log_ << "\"-inputFile <path>\" (mandatory)" << "\n";
     log_ << "\"Input obj file that must contain a textured mesh.\n\n";
+
+    log_ << "\"-imagesListPath <path>\" (mandatory if using ground control points)\n";
+    log_ << "Path to the list containing the image names used in the bundle.out file.\n\n";
+
+    log_ << "\"-imagesPath <path>\" (mandatory if using ground control points)\n";
+    log_ << "Path to the folder containing full resolution images.\n\n";
+
+    log_ << "\"-bundleResizedTo <integer>\" (mandatory if using ground control points)\n";
+    log_ << "The resized resolution used in bundler.\n\n";
     
     log_ << "\"-outputFile <path>\" (optional, default <inputFile>_geo)" << "\n";
     log_ << "\"Output obj file that will contain the georeferenced texture mesh.\n\n";
@@ -302,7 +476,7 @@ void Georef::printHelp()
     log_.setIsPrintingInCout(printInCoutPop);
 }
 
-void Georef::makeDefaultOutput()
+void Georef::setDefaultOutput()
 {
     if(inputObjFilename_.empty())
     {
@@ -318,20 +492,32 @@ void Georef::makeDefaultOutput()
     }
     
     tmp = tmp.substr(0, findPos);
-    
+
     outputObjFilename_ = tmp + "_geo.obj";
     log_ << "Writing output to: " << outputObjFilename_ << "\n";
 }
 
-void Georef::makeGeoreferencedModel()
+void Georef::createGeoreferencedModel()
+{
+    if (useGCP_)
+    {
+        createGeoreferencedModelFromGCPData();
+    }
+    else
+    {
+        createGeoreferencedModelFromExifData();
+    }
+}
+
+void Georef::readCameras()
 {
     // Read translations from bundle file
     std::ifstream bundleStream(bundleFilename_.c_str());
     if (!bundleStream.good())
     {
-        throw GeorefException("Failed opening " + bundleFilename_ + " for reading." + '\n');
+        throw GeorefException("Failed opening bundle file " + bundleFilename_ + " for reading." + '\n');
     }
-    
+
     // Read Cameras.
     std::string bundleLine;
     std::getline(bundleStream, bundleLine); // Read past bundle version comment
@@ -342,6 +528,340 @@ void Georef::makeGeoreferencedModel()
         cameras_.push_back(GeorefCamera());
         cameras_.back().extractCamera(bundleStream);
     }
+}
+
+void Georef::readGCPs()
+{
+    std::ifstream imageListStream(imagesListPath_.c_str());
+    if (!imageListStream.good())
+    {
+        throw GeorefException("Failed opening " + imagesListPath_ + " for reading.\n");
+    }
+
+    for (size_t i=0; i<cameras_.size(); ++i)
+    {
+        std::string imageName;
+        imageListStream >> imageName;
+        imageList_.push_back(imageName);
+    }
+
+    // Number of GCPs read
+    size_t nrGCPs = 0;
+
+    std::ifstream gcpStream(gcpFilename_.c_str());
+    if (!gcpStream.good())
+    {
+        throw GeorefException("Failed opening " + gcpFilename_ + " for reading.\n");
+    }
+    std::string gcpString;
+
+    // Read the first line in the file as the format of the projected coordinates
+    std::getline(gcpStream, georefSystem_.system_);
+
+    log_ << '\n';
+    log_<< "Reading following GCPs from file:\n";
+
+    // Read all GCPs
+    while(std::getline(gcpStream, gcpString))
+    {
+        std::istringstream istr(gcpString);
+        GeorefGCP gcp;
+        gcp.extractGCP(istr);
+        gcps_.push_back(gcp);
+        ++nrGCPs;
+
+        log_<<"x_: "<<gcp.x_<<" y_: "<<gcp.y_<<" z_: "<<gcp.z_<<" pixelX_: "<<gcp.pixelX_<<" pixelY_: "<<gcp.pixelY_<<" image: "<<gcp.image_<<"\n";
+    }
+
+    // Check if the GCPs have corresponding images in the bundle files and if they don't, remove them from the GCP-list
+    for (size_t gcpIndex = 0; gcpIndex<gcps_.size(); ++gcpIndex)
+    {
+        bool imageExists = false;
+        for (size_t cameraIndex = 0; cameraIndex < cameras_.size(); ++cameraIndex)
+        {
+            size_t found = imageList_[cameraIndex].find(gcps_[gcpIndex].image_);
+            if (found != std::string::npos)
+            {
+                gcps_[gcpIndex].cameraIndex_ = cameraIndex;
+                imageExists = true;
+            }
+        }
+        if (!imageExists)
+        {
+            log_ <<"Can't find image "<<gcps_[gcpIndex].image_<<". The corresponding GCP will not be used for georeferencing.\n";
+            gcps_.erase(gcps_.begin() + gcpIndex);
+            --gcpIndex;
+        }
+    }
+}
+
+void Georef::calculateGCPOffset()
+{
+    // Offsets
+    double eastingOffset = 0;
+    double northingOffset = 0;
+
+    // Add all GCPs to weight an offset
+    for (size_t gcpIndex = 0; gcpIndex<gcps_.size(); ++gcpIndex)
+    {
+        eastingOffset += (gcps_[gcpIndex].x_)/static_cast<double>(gcps_.size());
+        northingOffset += (gcps_[gcpIndex].y_)/static_cast<double>(gcps_.size());
+    }
+
+    georefSystem_.eastingOffset_ = static_cast<int>(std::floor(eastingOffset));
+    georefSystem_.northingOffset_ = static_cast<int>(std::floor(northingOffset));
+
+    log_ << '\n';
+    log_<<"The calculated easting offset for the georeferenced system: "<<georefSystem_.eastingOffset_<<"\n";
+    log_<<"The calculated northing offset for the georeferenced system: "<<georefSystem_.northingOffset_<<"\n";
+
+    log_ << '\n';
+    log_ << "Recalculated GCPs with offset:\n";
+
+    // Subtract the offset from all GCPs
+    for (size_t gcpIndex = 0; gcpIndex<gcps_.size(); ++gcpIndex)
+    {
+        gcps_[gcpIndex].x_ -= static_cast<double>(georefSystem_.eastingOffset_);
+        gcps_[gcpIndex].y_ -= static_cast<double>(georefSystem_.northingOffset_);
+        log_<<"x_: "<<gcps_[gcpIndex].x_<<" y_: "<<gcps_[gcpIndex].y_<<" z_: "<<gcps_[gcpIndex].z_<<"\n";
+    }
+}
+
+pcl::PointXYZ Georef::barycentricCoordinates(pcl::PointXY point, pcl::PointXYZ vert0, pcl::PointXYZ vert1, pcl::PointXYZ vert2, pcl::PointXY p0, pcl::PointXY p1, pcl::PointXY p2)
+{
+    // Shorthands
+    double x0 = p0.x; double y0 = p0.y;
+    double x1 = p1.x; double y1 = p1.y;
+    double x2 = p2.x; double y2 = p2.y;
+    double x = point.x; double y = point.y;
+
+    double q1x = x1 - x0;
+    double q1y = y1 - y0;
+    double q2x = x2 - x0;
+    double q2y = y2 - y0;
+
+    double norm = q1x * q2y - q1y * q2x;
+    double l1 = q2y*(x - x0) - q2x*(y - y0);
+    l1 /= norm;
+    double l2 = -q1y*(x - x0) + q1x*(y - y0);
+    l2 /= norm;
+
+    pcl::PointXYZ res;
+    res.x = (1.0 - l1 - l2)*vert0.x + l1*vert1.x + l2*vert2.x;
+    res.y = (1.0 - l1 - l2)*vert0.y + l1*vert1.y + l2*vert2.y;
+    res.z = (1.0 - l1 - l2)*vert0.z + l1*vert1.z + l2*vert2.z;
+
+    return res;
+}
+
+void Georef::performGeoreferencingWithGCP()
+{
+    log_ << '\n';
+    log_ << "Reading mesh file " << inputObjFilename_ <<"\n";
+    log_ << '\n';
+    pcl::TextureMesh mesh;
+    if (pcl::io::loadOBJFile(inputObjFilename_, mesh) == -1)
+    {
+        throw GeorefException("Error when reading model from:\n" + inputObjFilename_ + "\n");
+    }
+    else
+    {
+        log_ << "Successfully loaded " << inputObjFilename_ << ".\n";
+    }
+
+    // Convert vertices to pcl::PointXYZ cloud
+    pcl::PointCloud<pcl::PointXYZ>::Ptr meshCloud (new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::fromPCLPointCloud2 (mesh.cloud, *meshCloud);
+
+    // The number of GCP that is usable
+    int nrGCPUsable = 0;
+
+    for (size_t gcpIndex = 0; gcpIndex < gcps_.size(); ++gcpIndex)
+    {
+        // Bool to check if the GCP is intersecting any triangle
+        bool exists = false;
+
+        // Translate the GeoreferenceCamera to pcl-format in order to use pcl-functions
+        pcl::TextureMapping<pcl::PointXYZ>::Camera cam;
+        cam.focal_length = cameras_[gcps_[gcpIndex].cameraIndex_].focalLength_;
+        cam.pose = *(cameras_[gcps_[gcpIndex].cameraIndex_].pose_);
+        cam.texture_file = imagesLocation_ + '/' + gcps_[gcpIndex].image_;
+
+        cv::Mat image = cv::imread(cam.texture_file);
+        cam.height = static_cast<double>(image.rows);
+        cam.width = static_cast<double>(image.cols);
+        cam.focal_length *= static_cast<double>(cam.width)/bundleResizedTo_;
+
+        // The pixel position for the GCP in pcl-format in order to use pcl-functions
+        pcl::PointXY gcpPos;
+        gcpPos.x = static_cast<float>(gcps_[gcpIndex].pixelX_);
+        gcpPos.y = static_cast<float>(gcps_[gcpIndex].pixelY_);
+
+        // Move vertices in mesh into the camera coordinate system
+        pcl::PointCloud<pcl::PointXYZ>::Ptr cameraCloud (new pcl::PointCloud<pcl::PointXYZ>);
+        pcl::transformPointCloud (*meshCloud, *cameraCloud, cam.pose.inverse());
+
+        // The vertex indicies to be used in order to calculate the GCP in the models coordinates
+        size_t vert0Index = 0; size_t vert1Index = 0; size_t vert2Index = 0;
+
+        pcl::PointXY bestPixelPos0; pcl::PointXY bestPixelPos1; pcl::PointXY bestPixelPos2;
+
+        // The closest distance of a triangle to the camera
+        double bestDistance = std::numeric_limits<double>::infinity();
+
+        // Loop through all submeshes in model
+        for (size_t meshIndex = 0; meshIndex < mesh.tex_polygons.size(); ++meshIndex)
+        {
+            // Loop through all faces in submesh and check if inside polygon
+            for (size_t faceIndex = 0; faceIndex < mesh.tex_polygons[meshIndex].size(); ++faceIndex)
+            {
+                // Variables for the vertices in face as projections in the camera plane
+                pcl::PointXY pixelPos0; pcl::PointXY pixelPos1; pcl::PointXY pixelPos2;
+                if (isFaceProjected(cam,
+                                    cameraCloud->points[mesh.tex_polygons[meshIndex][faceIndex].vertices[0]],
+                                    cameraCloud->points[mesh.tex_polygons[meshIndex][faceIndex].vertices[1]],
+                                    cameraCloud->points[mesh.tex_polygons[meshIndex][faceIndex].vertices[2]],
+                                    pixelPos0, pixelPos1, pixelPos2))
+                {
+                    // If the pixel position of the GCP is inside the current triangle
+                    if (checkPointInsideTriangle(pixelPos0, pixelPos1, pixelPos2, gcpPos))
+                    {
+                        // Extract distances for all vertices for face to camera
+                        double d0 = cameraCloud->points[mesh.tex_polygons[meshIndex][faceIndex].vertices[0]].z;
+                        double d1 = cameraCloud->points[mesh.tex_polygons[meshIndex][faceIndex].vertices[1]].z;
+                        double d2 = cameraCloud->points[mesh.tex_polygons[meshIndex][faceIndex].vertices[2]].z;
+
+                        // Calculate largest distance and store in distance variable
+                        double distance = std::max(d0, std::max(d1,d2));
+
+                        // If the triangle is closer to the camera use this triangle
+                        if (distance < bestDistance)
+                        {
+                            // Update variables for the closest polygon
+                            bestDistance = distance;
+                            vert0Index = mesh.tex_polygons[meshIndex][faceIndex].vertices[0];
+                            vert1Index = mesh.tex_polygons[meshIndex][faceIndex].vertices[1];
+                            vert2Index = mesh.tex_polygons[meshIndex][faceIndex].vertices[2];
+                            bestPixelPos0 = pixelPos0;
+                            bestPixelPos1 = pixelPos1;
+                            bestPixelPos2 = pixelPos2;
+                            exists = true;
+                            ++nrGCPUsable;
+                        }
+                    }
+                }
+            }
+        }
+
+        if(exists)
+        {
+            // Shorthands for the vertices
+            pcl::PointXYZ v0 = meshCloud->points[vert0Index];
+            pcl::PointXYZ v1 = meshCloud->points[vert1Index];
+            pcl::PointXYZ v2 = meshCloud->points[vert2Index];
+            // Use barycentric coordinates to calculate position for the polygon intersection
+            pcl::PointXYZ gcpLocal = barycentricCoordinates(gcpPos, v0, v1, v2, bestPixelPos0, bestPixelPos1, bestPixelPos2);
+
+            log_ << "Position in model for gcp " << gcpIndex + 1<< ": x=" <<gcpLocal.x<<" y="<<gcpLocal.y<<" z="<<gcpLocal.z<<"\n";
+            gcps_[gcpIndex].localX_ = gcpLocal.x;
+            gcps_[gcpIndex].localY_ = gcpLocal.y;
+            gcps_[gcpIndex].localZ_ = gcpLocal.z;
+            gcps_[gcpIndex].use_ = true;
+        }
+    }
+
+    if (nrGCPUsable < 3)
+    {
+        throw GeorefException("Less than 3 GCPs have correspondences in the generated model.");
+    }
+
+    size_t gcp0; size_t gcp1; size_t gcp2;
+    log_ << '\n';
+    log_ << "Choosing optimal gcp triplet...\n";
+    chooseBestGCPTriplet(gcp0, gcp1, gcp2);
+    log_ << "Optimal gcp triplet chosen: ";
+    log_ << gcp0 << ", " << gcp1 << ", " << gcp2 << '\n';
+    log_ << '\n';
+    FindTransform transFinal;
+    transFinal.findTransform(gcps_[gcp0].getPos(), gcps_[gcp1].getPos(), gcps_[gcp2].getPos(),
+                             gcps_[gcp0].getReferencedPos(), gcps_[gcp1].getReferencedPos(), gcps_[gcp2].getReferencedPos());
+    log_ << "Final transform:\n";
+    log_ << transFinal.transform_ << '\n';
+
+    // The tranform used to transform model into the georeferenced system.
+    Eigen::Transform<float, 3, Eigen::Affine> transform;
+
+    transform(0, 0) = static_cast<float>(transFinal.transform_.r1c1_);
+    transform(1, 0) = static_cast<float>(transFinal.transform_.r2c1_);
+    transform(2, 0) = static_cast<float>(transFinal.transform_.r3c1_);
+    transform(3, 0) = static_cast<float>(transFinal.transform_.r4c1_);
+
+    transform(0, 1) = static_cast<float>(transFinal.transform_.r1c2_);
+    transform(1, 1) = static_cast<float>(transFinal.transform_.r2c2_);
+    transform(2, 1) = static_cast<float>(transFinal.transform_.r3c2_);
+    transform(3, 1) = static_cast<float>(transFinal.transform_.r4c2_);
+
+    transform(0, 2) = static_cast<float>(transFinal.transform_.r1c3_);
+    transform(1, 2) = static_cast<float>(transFinal.transform_.r2c3_);
+    transform(2, 2) = static_cast<float>(transFinal.transform_.r3c3_);
+    transform(3, 2) = static_cast<float>(transFinal.transform_.r4c3_);
+
+    transform(0, 3) = static_cast<float>(transFinal.transform_.r1c4_);
+    transform(1, 3) = static_cast<float>(transFinal.transform_.r2c4_);
+    transform(2, 3) = static_cast<float>(transFinal.transform_.r3c4_);
+    transform(3, 3) = static_cast<float>(transFinal.transform_.r4c4_);
+
+    log_ << '\n';
+    log_ << "Applying transform to mesh...\n";
+    // Move the mesh into position.
+    pcl::transformPointCloud(*meshCloud, *meshCloud, transform);
+    log_ << ".. mesh transformed.\n";
+
+    // Update the mesh.
+    pcl::toPCLPointCloud2 (*meshCloud, mesh.cloud);
+
+
+    // Iterate over each part of the mesh (one per material), to make texture file paths relative the .mtl file.
+    for(size_t t = 0; t < mesh.tex_materials.size(); ++t)
+    {
+        // The material of the current submesh.
+        pcl::TexMaterial& material = mesh.tex_materials[t];
+
+        size_t find = material.tex_file.find_last_of("/\\");
+        if(std::string::npos != find)
+        {
+            material.tex_file = material.tex_file.substr(find + 1);
+        }
+    }
+
+    log_ << '\n';
+    if (saveOBJFile(outputObjFilename_, mesh, 8) == -1)
+    {
+        throw GeorefException("Error when saving model:\n" + outputObjFilename_ + "\n");
+    }
+    else
+    {
+        log_ << "Successfully saved model.\n";
+    }
+
+    printGeorefSystem();
+}
+
+void Georef::createGeoreferencedModelFromGCPData()
+{
+    readCameras();
+
+    readGCPs();
+
+    calculateGCPOffset();
+
+    performGeoreferencingWithGCP();
+
+}
+
+void Georef::createGeoreferencedModelFromExifData()
+{
+    readCameras();
     
     // Read coords from coord file generated by extract_utm tool
     std::ifstream coordStream(coordFilename_.c_str());
@@ -353,10 +873,10 @@ void Georef::makeGeoreferencedModel()
     std::string coordString;
     std::getline(coordStream, georefSystem_.system_); // System
     {
-        std::getline(coordStream, coordString); // Flase easting & northing.
+        std::getline(coordStream, coordString);
         std::stringstream ss(coordString);
         
-        ss >> georefSystem_.falseEasting_ >> georefSystem_.falseNorthing_;
+        ss >> georefSystem_.eastingOffset_ >> georefSystem_.northingOffset_;
     }
     
     log_ << '\n';
@@ -371,7 +891,7 @@ void Georef::makeGeoreferencedModel()
     {
         if(nGeorefCameras >= cameras_.size())
         {
-            throw GeorefException("Error to many cameras in \'" + coordFilename_ + "\' coord file.\n");
+            throw GeorefException("Error, to many cameras in \'" + coordFilename_ + "\' coord file.\n");
         }
         
         std::istringstream istr(coordString);
@@ -404,25 +924,17 @@ void Georef::makeGeoreferencedModel()
     // The tranform used to move the chosen area into the ortho photo.
     Eigen::Transform<float, 3, Eigen::Affine> transform;
     
-    transform(0, 0) = static_cast<float>(transFinal.transform_.r1c1_);
-    transform(1, 0) = static_cast<float>(transFinal.transform_.r2c1_);
-    transform(2, 0) = static_cast<float>(transFinal.transform_.r3c1_);
-    transform(3, 0) = static_cast<float>(transFinal.transform_.r4c1_);
+    transform(0, 0) = static_cast<float>(transFinal.transform_.r1c1_);    transform(1, 0) = static_cast<float>(transFinal.transform_.r2c1_);
+    transform(2, 0) = static_cast<float>(transFinal.transform_.r3c1_);    transform(3, 0) = static_cast<float>(transFinal.transform_.r4c1_);
     
-    transform(0, 1) = static_cast<float>(transFinal.transform_.r1c2_);
-    transform(1, 1) = static_cast<float>(transFinal.transform_.r2c2_);
-    transform(2, 1) = static_cast<float>(transFinal.transform_.r3c2_);
-    transform(3, 1) = static_cast<float>(transFinal.transform_.r4c2_);
+    transform(0, 1) = static_cast<float>(transFinal.transform_.r1c2_);    transform(1, 1) = static_cast<float>(transFinal.transform_.r2c2_);
+    transform(2, 1) = static_cast<float>(transFinal.transform_.r3c2_);    transform(3, 1) = static_cast<float>(transFinal.transform_.r4c2_);
     
-    transform(0, 2) = static_cast<float>(transFinal.transform_.r1c3_);
-    transform(1, 2) = static_cast<float>(transFinal.transform_.r2c3_);
-    transform(2, 2) = static_cast<float>(transFinal.transform_.r3c3_);
-    transform(3, 2) = static_cast<float>(transFinal.transform_.r4c3_);
+    transform(0, 2) = static_cast<float>(transFinal.transform_.r1c3_);    transform(1, 2) = static_cast<float>(transFinal.transform_.r2c3_);
+    transform(2, 2) = static_cast<float>(transFinal.transform_.r3c3_);    transform(3, 2) = static_cast<float>(transFinal.transform_.r4c3_);
     
-    transform(0, 3) = static_cast<float>(transFinal.transform_.r1c4_);
-    transform(1, 3) = static_cast<float>(transFinal.transform_.r2c4_);
-    transform(2, 3) = static_cast<float>(transFinal.transform_.r3c4_);
-    transform(3, 3) = static_cast<float>(transFinal.transform_.r4c4_);
+    transform(0, 3) = static_cast<float>(transFinal.transform_.r1c4_);    transform(1, 3) = static_cast<float>(transFinal.transform_.r2c4_);
+    transform(2, 3) = static_cast<float>(transFinal.transform_.r3c4_);    transform(3, 3) = static_cast<float>(transFinal.transform_.r4c4_);
     
     log_ << '\n';
     log_ << "Reading mesh file...\n";
@@ -464,6 +976,50 @@ void Georef::makeGeoreferencedModel()
     log_ << ".. mesh file saved.\n";
     
     printGeorefSystem();
+}
+
+void Georef::chooseBestGCPTriplet(size_t &gcp0, size_t &gcp1, size_t &gcp2)
+{
+    double minTotError = std::numeric_limits<double>::infinity();
+
+    for(size_t t = 0; t < gcps_.size(); ++t)
+    {
+        if (gcps_[t].use_)
+        {
+            for(size_t s = t; s < gcps_.size(); ++s)
+            {
+                if (gcps_[s].use_)
+                {
+                    for(size_t p = s; p < gcps_.size(); ++p)
+                    {
+                        if (gcps_[p].use_)
+                        {
+                            FindTransform trans;
+                            trans.findTransform(gcps_[t].getPos(), gcps_[s].getPos(), gcps_[p].getPos(),
+                                                gcps_[t].getReferencedPos(), gcps_[s].getReferencedPos(), gcps_[p].getReferencedPos());
+
+                            // The total error for the curren camera triplet.
+                            double totError = 0.0;
+
+                            for(size_t r = 0; r < gcps_.size(); ++r)
+                            {
+                                totError += trans.error(gcps_[r].getPos(), gcps_[r].getReferencedPos());
+                            }
+
+                            if(minTotError > totError)
+                            {
+                                minTotError = totError;
+                                gcp0 = t;
+                                gcp1 = s;
+                                gcp2 = p;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    log_ << "Mean georeference error " << minTotError / static_cast<double>(cameras_.size()) << '\n';
 }
 
 void Georef::chooseBestCameraTriplet(size_t &cam0, size_t &cam1, size_t &cam2)
@@ -527,4 +1083,5 @@ void Georef::printGeorefSystem()
     geoStream.close();
     log_ << "... georeference system saved.\n";
 }
+
 

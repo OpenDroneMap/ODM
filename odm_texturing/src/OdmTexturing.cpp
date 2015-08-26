@@ -342,13 +342,30 @@ void OdmTexturing::loadCameras()
         cam.pose = transform;
 
         std::getline(imageListFile, dummyLine);
-        cam.texture_file = imagesPath_ + dummyLine.substr(2,dummyLine.length());
+        size_t firstWhitespace = dummyLine.find_first_of(" ");
+
+        if (firstWhitespace != std::string::npos)
+        {
+            cam.texture_file = imagesPath_ + "/" + dummyLine.substr(2,firstWhitespace-2);
+        }
+        else
+        {
+            cam.texture_file = imagesPath_ + "/" + dummyLine.substr(2);
+        }
 
         // Read image to get full resolution size
         cv::Mat image = cv::imread(cam.texture_file);
 
+        if (image.empty())
+        {
+            throw OdmTexturingException("Failed to read image:\n'" + cam.texture_file + "'\n");
+        }
+
+        double imageWidth = static_cast<double>(image.cols);
+        double textureWithWidth = static_cast<double>(textureWithSize_);
+
         // Calculate scale factor to texture with textureWithSize
-        double factor = textureWithSize_/static_cast<double>(image.cols);
+        double factor = textureWithWidth/imageWidth;
         if (factor > 1.0f)
         {
             factor = 1.0f;
@@ -379,6 +396,11 @@ void OdmTexturing::triangleToImageAssignment()
 
     // Vector containing information if the face has been given an optimal camera or not
     std::vector<bool> hasOptimalCamera = std::vector<bool>(mesh_->tex_polygons[0].size());
+
+    //Vector containing minimal distances to optimal camera
+    std::vector<double> tTIA_distances(mesh_->tex_polygons[0].size(),DBL_MAX);
+    //Vector containing minimal angles of face to cameraplane normals
+    std::vector<double> tTIA_angles(mesh_->tex_polygons[0].size(),DBL_MAX);
 
     // Set default value that no face has an optimal camera
     for (size_t faceIndex = 0; faceIndex < hasOptimalCamera.size(); ++faceIndex)
@@ -467,7 +489,8 @@ void OdmTexturing::triangleToImageAssignment()
 
 
         }
-
+        std::vector<double> local_tTIA_distances(mesh_->tex_polygons[0].size(),DBL_MAX);
+        std::vector<double> local_tTIA_angles(mesh_->tex_polygons[0].size(),DBL_MAX);
         // If any faces are visible in the current camera perform occlusion culling
         if (countInsideFrustum > 0)
         {
@@ -501,16 +524,45 @@ void OdmTexturing::triangleToImageAssignment()
                         // Perform radius search in the acceleration structure
                         int radiusSearch = kdTree.radiusSearch(center, radius, neighbors, neighborsSquaredDistance);
 
+                        // Extract distances for all vertices for face to camera
+                        double d0 = cameraCloud->points[mesh_->tex_polygons[0][faceIndex].vertices[0]].z;
+                        double d1 = cameraCloud->points[mesh_->tex_polygons[0][faceIndex].vertices[1]].z;
+                        double d2 = cameraCloud->points[mesh_->tex_polygons[0][faceIndex].vertices[2]].z;
+
+                        // Calculate largest distance and store in distance variable
+                        double distance = std::max(d0, std::max(d1,d2));
+
+                        //Get points
+                        pcl::PointXYZ p0=cameraCloud->points[mesh_->tex_polygons[0][faceIndex].vertices[0]];
+                        pcl::PointXYZ p1=cameraCloud->points[mesh_->tex_polygons[0][faceIndex].vertices[1]];
+                        pcl::PointXYZ p2=cameraCloud->points[mesh_->tex_polygons[0][faceIndex].vertices[2]];
+                        //Calculate face normal
+
+                        pcl::PointXYZ diff0;
+                        pcl::PointXYZ diff1;
+                        diff0.x=p1.x-p0.x;
+                        diff0.y=p1.y-p0.y;
+                        diff0.z=p1.z-p0.z;
+                        diff1.x=p2.x-p0.x;
+                        diff1.y=p2.y-p0.y;
+                        diff1.z=p2.z-p0.z;
+                        pcl::PointXYZ normal;
+                        normal.x=diff0.y*diff1.z-diff0.z*diff1.y;
+                        normal.y=-(diff0.x*diff1.z-diff0.z*diff1.x);
+                        normal.z=diff0.x*diff1.y-diff0.y*diff1.x;
+                        double norm=sqrt(normal.x*normal.x+normal.y*normal.y+normal.z*normal.z);
+                        //Angle of face to camera
+                        double cos=-normal.z/norm;
+
+                        //Save distance of faceIndex to current camera
+                        local_tTIA_distances[faceIndex]=distance;
+
+                        //Save angle of faceIndex to current camera
+                        local_tTIA_angles[faceIndex]=sqrt(1.0-cos*cos);
                         // If other projections are found inside the radius
                         if (radiusSearch > 0)
                         {
-                            // Extract distances for all vertices for face to camera
-                            double d0 = cameraCloud->points[mesh_->tex_polygons[0][faceIndex].vertices[0]].z;
-                            double d1 = cameraCloud->points[mesh_->tex_polygons[0][faceIndex].vertices[1]].z;
-                            double d2 = cameraCloud->points[mesh_->tex_polygons[0][faceIndex].vertices[2]].z;
 
-                            // Calculate largest distance and store in distance variable
-                            double distance = std::max(d0, std::max(d1,d2));
 
                             // Compare distance to all neighbors inside radius
                             for (size_t i = 0; i < neighbors.size(); ++i)
@@ -542,9 +594,14 @@ void OdmTexturing::triangleToImageAssignment()
         {
             if (visibility[faceIndex])
             {
-                hasOptimalCamera[faceIndex] = true;
-                tTIA_[faceIndex] = cameraIndex;
-                ++count;
+                if(local_tTIA_distances[faceIndex]<tTIA_distances[faceIndex]&&local_tTIA_angles[faceIndex]<tTIA_angles[faceIndex])
+                {
+                    tTIA_angles[faceIndex]=local_tTIA_angles[faceIndex];
+                    tTIA_distances[faceIndex]=local_tTIA_distances[faceIndex];
+                    hasOptimalCamera[faceIndex] = true;
+                    tTIA_[faceIndex] = cameraIndex;
+                    ++count;
+                }
             }
         }
 

@@ -2,6 +2,8 @@
 
 // C++
 #include <limits.h>
+#include <istream>
+#include <ostream>
 
 // PCL
 #include <pcl/io/obj_io.h>
@@ -20,6 +22,36 @@
 
 // Logger
 #include "Logger.hpp"
+
+/*!
+ * \brief   The WorldPoint struct encapsules world coordiantes used for the orhto photo boundary.
+ *          Points are separated into integersand fractional parts for high numerical stability.
+ */
+struct WorldPoint
+{
+    int eastInteger_;               /**< The inger part of the east point. */
+    float eastFractional_;          /**< The farctional part of the east point. */
+    int northInteger_;              /**< The inger part of the east point. */
+    float northFractional_;         /**< The farctional part of the east point. */
+    
+    /*!
+      * \brief Overloads operator '<<' for WorldPoint.
+      *
+      * \param os The output stream in which the WorldPoint should be printed.
+      * \param worldPoint The WorldPoint should be printed.
+      * \return A reference to the given output stream.
+      */
+    friend std::ostream & operator<< (std::ostream &os, const WorldPoint &worldPoint);
+    
+    /*!
+      * \brief Overloads operator '>>' for WorldPoint.
+      *
+      * \param is The input stream from which the WorldPoint should be extracted
+      * \param worldPoint The modified WorldPoint.
+      * \return A reference to the given input stream.
+      */
+    friend std::istream & operator>> (std::istream &os, WorldPoint &worldPoint);
+};
 
 /*!
  * \brief   The OdmOrthoPhoto class is used to create an orthograpic photo over a given area.
@@ -47,6 +79,7 @@ private:
 
     /*!
      * \brief parseArguments    Parses command line arguments.
+     *
      * \param   argc    Application argument count.
      * \param   argv    Argument values.
      */
@@ -63,12 +96,32 @@ private:
     void createOrthoPhoto();
     
     /*!
+      * \brief Adjusts the boundary points according to the given georef system.
+      */
+    void adjustBoundsForGeoRef();
+    
+    /*!
+      * \brief Adjusts the boundary points assuming the wolrd points are relative the local coordinate system.
+      */
+    void adjustBoundsForLocal();
+    
+    /*!
+      * \brief Adjusts the boundary points so that the entire model fits inside the photo.
+      *
+      * \param mesh The model which decides the boundary.
+      */
+    void adjustBoundsForEntireModel(const pcl::TextureMesh &mesh);
+    
+    /*!
       * \brief Creates a transformation which aligns the area for the orthophoto.
       */
     Eigen::Transform<float, 3, Eigen::Affine> getROITransform(float xMin, float yMin) const;
     
     /*!
       * \brief Renders a triangle into the ortho photo.
+      *
+      *        Pixel center defined as middle of pixel for triangle rasterisation, and in lower left corner for texture look-up.
+      *
       * \param texture The texture of the polygon.
       * \param polygon The polygon as athree indices relative meshCloud.
       * \param meshCloud Contains all vertices.
@@ -78,7 +131,19 @@ private:
     void drawTexturedTriangle(const cv::Mat &texture, const pcl::Vertices &polygon, const pcl::PointCloud<pcl::PointXYZ>::Ptr &meshCloud, const std::vector<Eigen::Vector2f> &uvs, size_t faceIndex);
     
     /*!
+      * \brief Sets the color of a pixel in the photo.
+      *
+      * \param row The row index of the pixel.
+      * \param col The column index of the pixel.
+      * \param s The u texture-coordinate, multiplied with the number of columns in the texture.
+      * \param t The v texture-coordinate, multiplied with the number of rows in the texture.
+      * \param texture The texture from which to get the color.
+      **/
+    void renderPixel(int row, int col, float u, float v, const cv::Mat &texture);
+    
+    /*!
       * \brief Calcualtes the barycentric coordinates of a point in a triangle.
+      *
       * \param v1 The first triangle vertex.
       * \param v2 The second triangle vertex.
       * \param v3 The third triangle vertex.
@@ -92,6 +157,7 @@ private:
     
     /*!
       * \brief Check if a given polygon is a sliver polygon.
+      *
       * \param v1 The first vertex of the polygon.
       * \param v2 The second vertex of the polygon.
       * \param v3 The third vertex of the polygon.
@@ -100,26 +166,36 @@ private:
     
     /*!
       * \brief Check if the model is suitable for ortho photo generation.
-      * \param mesh The
+      *
+      * \param mesh The model.
+      * \return True if the model is ok for generating ortho photo.
       */
     bool isModelOk(const pcl::TextureMesh &mesh);
-    
+
     Logger          log_;               /**< Logging object. */
 
     std::string     inputFile_;         /**< Path to the textured mesh as an obj-file. */
+    std::string     inputGeoRefFile_;   /**< Path to the georeference system file. */
     std::string     outputFile_;        /**< Path to the destination file. */
     std::string     logFile_;           /**< Path to the log file. */
-  
+
     float           resolution_;        /**< The number of pixels per meter in the ortho photo. */
-    
-    Eigen::Vector2f boundryPoint1_;     /**< The first boundry point for the ortho photo. */
-    Eigen::Vector2f boundryPoint2_;     /**< The second boundry point for the ortho photo. */
-    Eigen::Vector2f boundryPoint3_;     /**< The third boundry point for the ortho photo. */
-    Eigen::Vector2f boundryPoint4_;     /**< The fourth boundry point for the ortho photo. */
-    
+
+    bool            boundaryDefined_;    /**< True if the user has defined a boundary. */
+
+    WorldPoint      worldPoint1_;       /**< The first boundary point for the ortho photo, in world coordiantes. */
+    WorldPoint      worldPoint2_;       /**< The second boundary point for the ortho photo, in world coordiantes. */
+    WorldPoint      worldPoint3_;       /**< The third boundary point for the ortho photo, in world coordiantes. */
+    WorldPoint      worldPoint4_;       /**< The fourth boundary point for the ortho photo, in world coordiantes. */
+
+    Eigen::Vector2f boundaryPoint1_;     /**< The first boundary point for the ortho photo, in local coordinates. */
+    Eigen::Vector2f boundaryPoint2_;     /**< The second boundary point for the ortho photo, in local coordinates. */
+    Eigen::Vector2f boundaryPoint3_;     /**< The third boundary point for the ortho photo, in local coordinates. */
+    Eigen::Vector2f boundaryPoint4_;     /**< The fourth boundary point for the ortho photo, in local coordinates. */
+
     cv::Mat         photo_;             /**< The ortho photo as an OpenCV matrix, CV_8UC3. */
     cv::Mat         depth_;             /**< The depth of the ortho photo as an OpenCV matrix, CV_32F. */
-    
+
     bool            multiMaterial_;     /**< True if the mesh has multiple materials. **/
 };
 
