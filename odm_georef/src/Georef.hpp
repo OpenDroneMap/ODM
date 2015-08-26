@@ -21,10 +21,48 @@
 struct GeorefSystem
 {
     std::string system_;        /**< The name of the system. **/
-    double falseEasting_;       /**< The false easting of the cameras. **/
-    double falseNorthing_;      /**< The false northing of the cameras. **/
+    double eastingOffset_;      /**< The easting offset for the georeference system. **/
+    double northingOffset_;     /**< The northing offset for the georeference system. **/
     
     friend std::ostream& operator<<(std::ostream &os, const GeorefSystem &geo);
+};
+
+/*!
+  * \brief  The GeorefGCP struct used to store information about a GCP.
+  */
+struct GeorefGCP
+{
+    double x_;              /**< The X coordinate of the GCP **/
+    double y_;              /**< The Y coordinate of the GCP **/
+    double z_;              /**< The Z coordinate of the GCP **/
+
+    bool use_;              /**< Bool to check if the GCP is corresponding in the local model **/
+
+    double localX_;         /**< The corresponding X coordinate in the model **/
+    double localY_;         /**< The corresponding Y coordinate in the model **/
+    double localZ_;         /**< The corresponding Z coordinate in the model **/
+
+    size_t cameraIndex_;    /**< The index to the corresponding camera for the image. **/
+
+    int pixelX_;            /**< The pixels x-position for the GCP in the corresponding image **/
+    int pixelY_;            /**< The pixels y-position for the GCP in the corresponding image **/
+
+    std::string image_;     /**< The corresponding image for the GCP **/
+
+    GeorefGCP();
+    ~GeorefGCP();
+
+    void extractGCP(std::istringstream &gcpStream);
+
+    /*!
+     * \brief getPos                Get the local position of the GCP.
+     */
+    Vec3 getPos();
+
+    /*!
+     * \brief getReferencedPos      Get the georeferenced position of the GCP.
+     */
+    Vec3 getReferencedPos();
 };
 
 /*!
@@ -47,7 +85,7 @@ struct GeorefCamera
     void extractCameraGeoref(std::istringstream &coordStream);
     
     /*!
-     * \brief getReferencedPos     Get the local position of the camera.
+     * \brief getPos     Get the local position of the camera.
      */
     Vec3 getPos();
     
@@ -66,12 +104,13 @@ struct GeorefCamera
     
     Eigen::Affine3f* transform_;    /**< The rotation of the camera. **/
     Eigen::Vector3f* position_;     /**< The position of the camera. **/
+    Eigen::Affine3f* pose_;         /**< The pose of the camera. **/
     
     friend std::ostream& operator<<(std::ostream &os, const GeorefCamera &cam);
 };
 
 /*!
- * \brief   The OdmOrthoPhoto class is used to transform a mesh into a georeferenced system.
+ * \brief   The Georef class is used to transform a mesh into a georeferenced system.
  *          The class reads camera positions from a bundle file.
  *          The class reads the georefenced camera positions from a coords file.
  *          The class reads a textured mesh from an OBJ-file.
@@ -90,8 +129,8 @@ private:
     
     /*!
      * \brief parseArguments    Parses command line arguments.
-     * \param   argc    Application argument count.
-     * \param   argv    Argument values.
+     * \param   argc            Application argument count.
+     * \param   argv            Argument values.
      */
     void parseArguments(int argc, char* argv[]);
     
@@ -101,17 +140,57 @@ private:
     void printHelp();
     
     /*!
-     * \brief makeDefaultOutput     Setup the output file name given the input file name.
+     * \brief setDefaultOutput     Setup the output file name given the input file name.
      */
-    void makeDefaultOutput();
+    void setDefaultOutput();
+
+    /*!
+     * \brief createGeoreferencedModel    Makes the input file georeferenced and saves it to the output file.
+     */
+    void createGeoreferencedModel();
+
+    /*!
+     * \brief readCameras      Reads the camera information from the bundle file.
+     */
+    void readCameras();
+
+    /*!
+     * \brief readGCP           Reads the ground control points from the gcp file.
+     */
+    void readGCPs();
+
+    /*!
+      * \brief calculateGCPOffset       Calculates an offset weighted from the ground control points read in the readGCP function.
+      */
+    void calculateGCPOffset();
+
+    /*!
+      * \brief barycentricCoordinates   Returns the world position of a point inside a 2d triangle by using the triangle vertex positions.
+      */
+    pcl::PointXYZ barycentricCoordinates(pcl::PointXY point, pcl::PointXYZ vert0, pcl::PointXYZ vert1, pcl::PointXYZ vert2, pcl::PointXY p0, pcl::PointXY p1, pcl::PointXY p2);
+
+    /*!
+      * \brief performGeoreferencingWithGCP     Performs the georeferencing of the model with the ground control points.
+      */
+    void performGeoreferencingWithGCP();
+
+    /*!
+     * \brief createGeoreferencedModelFromGCPData    Makes the input file georeferenced and saves it to the output file.
+     */
+    void createGeoreferencedModelFromGCPData();
+
+    /*!
+     * \brief createGeoreferencedModelFromExifData    Makes the input file georeferenced and saves it to the output file.
+     */
+    void createGeoreferencedModelFromExifData();
     
     /*!
-     * \brief makeGeoreferencedModel    Makes the input file georeferenced and saves it to the output file.
+     *  \brief chooseBestGCPTriplet    Chooses the best triplet of GCPs to use when making the model georeferenced.
      */
-    void makeGeoreferencedModel();
-    
+    void chooseBestGCPTriplet(size_t &gcp0, size_t &gcp1, size_t &gcp2);
+
     /*!
-     * \brief chooseBestCameraTriplet    Chooses the best triplet of cameras to use when makin gthe model georeferenced.
+     * \brief chooseBestCameraTriplet    Chooses the best triplet of cameras to use when making the model georeferenced.
      */
     void chooseBestCameraTriplet(size_t &cam0, size_t &cam1, size_t &cam2);
     
@@ -125,10 +204,18 @@ private:
     
     std::string     bundleFilename_;    /**< The path to the cameras bundle file. **/
     std::string     coordFilename_;     /**< The path to the cameras georeference file. **/
+    std::string     gcpFilename_;       /**< The path to the GCP file **/
+    std::string     imagesListPath_;    /**< Path to the image list. **/
+    std::string     imagesLocation_;    /**< The folder containing the images in the image list. **/
     std::string     inputObjFilename_;  /**< The path to the input mesh obj file. **/
     std::string     outputObjFilename_; /**< The path to the output mesh obj file. **/
-    
+
+    bool            useGCP_;             /**< Check if GCP-file is present and use this to georeference the model. **/
+    double          bundleResizedTo_;    /**< The size used in the previous steps to calculate the camera focal_length. */
+
     std::vector<GeorefCamera> cameras_; /**< A vector of all cameras. **/
+    std::vector<GeorefGCP> gcps_;       /**< A vector of all GCPs. **/
+    std::vector<std::string> imageList_;    /**< A vector containing the names of the corresponding cameras. **/
     
     GeorefSystem    georefSystem_;  /**< Contains the georeference system. **/
 };

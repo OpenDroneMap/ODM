@@ -281,7 +281,7 @@ bool getPixelCoordinates(const pcl::PointXYZ &pt, const pcl::TextureMapping<pcl:
         UV_coordinates.y = static_cast<float> ((focal_y * (pt.y / pt.z) + cy)); //vertical
 
         // point is visible!
-        if (UV_coordinates.x >= 15.0 && UV_coordinates.x <= (sizeX - 15.0) && UV_coordinates.y >= 15.0 && UV_coordinates.y <= (sizeY - 15.0))
+        if (UV_coordinates.x >= 1.0 && UV_coordinates.x <= (sizeX - 1.0) && UV_coordinates.y >= 1.0 && UV_coordinates.y <= (sizeY - 1.0))
         {
             return (true); // point was visible by the camera
         }

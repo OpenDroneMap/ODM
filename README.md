@@ -15,24 +15,44 @@ OpenDroneMap is a toolchain for processing raw civilian UAS imagery to other use
 
 So far, it does Point Clouds, Digital Surface Models, Textured Digital Surface Models, and Orthorectified Imagery.
 
+Users' mailing list: http://lists.osgeo.org/cgi-bin/mailman/listinfo/opendronemap-users
+
+Developer's mailing list: http://lists.osgeo.org/cgi-bin/mailman/listinfo/opendronemap-dev
+
+Overview video: https://www.youtube.com/watch?v=0UctfoeNB_Y
+
+
 Steps to get OpenDroneMap running:
 ==================================
-
-<del>(Requires Ubuntu 12.04 32-bit at this time. May also work with Ubuntu 12.04 64-bit.</del>
 
 (Requires Ubuntu 12.04 or later, see https://github.com/OpenDroneMap/odm_vagrant for running on Windows in a VM)
 
 Run install.sh to build.
 
-``` ./install.sh ```
+    ./install.sh
 
 From a directory full of your images, run
 
-``` ./run.pl ```
+    ./run.pl
 
 An overview of installing and running OpenDroneMap on Ubuntu can be found here: https://www.youtube.com/watch?v=e2qp3o8caPs
 
-Now that texturing is in the code base, you can access the full textured meshes using MeshLab. Open MeshLab, and choose File:Import Mesh and choose your textured mesh from a location similar to the following: reconstruction-with-image-size-1200-results\odm_texturing\odm_textured_model.obj
+Here are some other videos:
+
+- https://www.youtube.com/watch?v=7ZTufQkODLs (2015-01-30)
+- https://www.youtube.com/watch?v=m0i4GQdfl8A (2015-03-15)
+
+Now that texturing is in the code base, you can access the full textured meshes using MeshLab. Open MeshLab, choose `File:Import Mesh` and choose your textured mesh from a location similar to the following: `reconstruction-with-image-size-1200-results\odm_texturing\odm_textured_model.obj`
+
+---
+
+Alternatively, you can also run OpenDroneMap in a Docker container:
+
+    export IMAGES=/absolute/path/to/your/images
+    docker build -t opendronemap:latest .
+    docker run -v $IMAGES:/images opendronemap:latest
+
+To pass in custom parameters to the `run.pl` script, simply pass it as arguments to the `docker run` command.
 
 ---
 
@@ -44,14 +64,23 @@ Long term, the aim is for the toolchain to also be able to optionally push to a 
 
 ---
 
+
+Documentation:
+==============
+
+For documentation, please take a look at our [wiki](https://github.com/OpenDroneMap/OpenDroneMap/wiki).
+
+
 Troubleshooting:
 ================
+
+Make sure you have enough RAM and CPU. Only lowercase file extension supported now.
 
 If you run ODM with your own camera, it is possible you will see something like this:
 
 ```
   - configuration:
-    --cmvs-maxImages: 100
+    --cmvs-maxImages: 500
     --end-with: pmvs
     --match-size: 200
     --matcher-ratio: 0.6
@@ -84,12 +113,25 @@ Died at ../../OpenDroneMap/./run.pl line 364.
 
 ```
 
-This means that your camera is not in the database, https://github.com/OpenDroneMap/OpenDroneMap/blob/gh-pages/ccd_defs.pl
+This means that your camera is not in the database, https://github.com/OpenDroneMap/OpenDroneMap/blob/gh-pages/ccd_defs.json
 
 This problem is easily remedied. We need to know CCD size in the camera. We'll get these for our Sony Cyber-shot DSC-HX5 from dpreview: http://www.dpreview.com/products/sony/compacts/sony_dschx5/specifications
 
-So, we'll add the following line to our ccd_defs.pl:
+So, we'll add the following line to our ccd_defs.json:
 
-     "SONY DSC-HX5V"                            => 6.104,  # 1/2.4"
-     
+     "SONY DSC-HX5V": 6.104,
+
+To check that ccd_defs.json compiles, run ccd_defs_check.pl
+If it prints the message 'CCD_DEFS compiles OK', then you can commit your changes.
+
 And so others can use it, we'll do a pull request to add it to our array for everyone else.
+
+---
+
+Maintainers can run the ccd_defs.json compilation test automatically by creating a
+symbolic link in .git/hooks to hooks/pre-commit
+
+     cd .git/hooks
+     ln -s ../../hooks/pre-commit
+
+If ccd_defs.json does not compile, then the pre-commit hook will abort the commit.

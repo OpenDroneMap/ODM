@@ -13,6 +13,12 @@ add_definitions(-Wall -Wextra -Wconversion -pedantic)
 # Find pcl at the location specified by PCL_DIR
 find_package(PCL 1.7 HINTS "${PCL_DIR}/share/pcl-1.7")
 
+# Find OpenCV at the default location
+find_package(OpenCV REQUIRED)
+
+# Only link with required opencv modules.
+set(OpenCV_LIBS opencv_core opencv_imgproc opencv_highgui)
+
 # Add the PCL and Eigen include dirs. 
 # Necessary since the PCL_INCLUDE_DIR variable set bu find_package is broken.)
 include_directories(${PCL_ROOT}/include/pcl-${PCL_VERSION_MAJOR}.${PCL_VERSION_MINOR})
@@ -25,4 +31,4 @@ aux_source_directory("./src" SRC_LIST)
 add_executable(${PROJECT_NAME} ${SRC_LIST})
 
 # Link
-target_link_libraries(${PROJECT_NAME} ${PCL_COMMON_LIBRARIES} ${PCL_IO_LIBRARIES} ${PCL_SURFACE_LIBRARIES} ${PROJ4_LIBRARY})
+target_link_libraries(${PROJECT_NAME} ${PCL_COMMON_LIBRARIES} ${PCL_IO_LIBRARIES} ${PCL_SURFACE_LIBRARIES} ${PROJ4_LIBRARY} ${OpenCV_LIBS})
