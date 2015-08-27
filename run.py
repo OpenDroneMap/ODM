@@ -207,14 +207,6 @@ parser.add_argument('--odm_texturing-textureWithSize',
                     help=('The resolution to rescale the images performing '
                             'the texturing.'))
 
-parser.add_argument('--odm_georeferencing-useGcp',
-                    metavar='<True | False>',
-                    default=True,
-                    type=bool,
-                    help=('Skip reading the GCP file and use EXIF data to '
-                            'extract geographical coordinates for generating '
-                            'an orthophoto.'))
-
 parser.add_argument('--odm_georeferencing-gcpFile',
                     metavar='<path string>',
                     default='gcp_list.txt',
