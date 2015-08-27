@@ -539,12 +539,9 @@ echo "  > OpenSfM"
   cd "$OPENSFM_PATH"
 
   echo "    - configuring opensfm"
-  git checkout tags/odm
-  mkdir -p build
-  cd build
-  cmake ../opensfm/src -DCERES_ROOT_DIR=$TOOLS_PATH > "$TOOLS_LOG_PATH/opensfm_1_config.log" 2>&1
+  git checkout master
   echo "    - building opensfm"
-  make > "$TOOLS_LOG_PATH/opensfm_1_build.log" 2>&1
+  CERES_ROOT_DIR=$TOOLS_PATH python setup.py build > "$TOOLS_LOG_PATH/opensfm_1_build.log" 2>&1
 
 echo "  < done - `date`"
 echo
