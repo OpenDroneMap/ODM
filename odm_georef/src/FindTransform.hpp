@@ -64,7 +64,7 @@ class OnMat3
 public:
     OnMat3(Vec3 r1, Vec3 r2, Vec3 r3);
     OnMat3(const OnMat3 &o);
-    
+
     Vec3 r1_;   /**< The first row of the matrix. **/
     Vec3 r2_;   /**< The second row of the matrix. **/
     Vec3 r3_;   /**< The third row of the matrix. **/

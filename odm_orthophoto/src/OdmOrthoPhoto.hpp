@@ -177,6 +177,7 @@ private:
     std::string     inputFile_;         /**< Path to the textured mesh as an obj-file. */
     std::string     inputGeoRefFile_;   /**< Path to the georeference system file. */
     std::string     outputFile_;        /**< Path to the destination file. */
+    std::string     outputCornerFile_;  /**< Path to the output corner file. */
     std::string     logFile_;           /**< Path to the log file. */
 
     float           resolution_;        /**< The number of pixels per meter in the ortho photo. */
