@@ -218,11 +218,15 @@ std::ostream& operator<<(std::ostream &os, const GeorefCamera &cam)
 
 Georef::Georef() : log_(false)
 {
+    georeferencePointCloud_ = false;
     useGCP_ = false;
     bundleFilename_ = "";
-    coordFilename_ = "";
+    inputCoordFilename_ = "";
+    outputCoordFilename_ = "";
     inputObjFilename_ = "";
     outputObjFilename_ = "";
+    exportCoordinateFile_ = false;
+    exportGeorefSystem_ = false;
 }
 
 Georef::~Georef()
@@ -267,10 +271,13 @@ int Georef::run(int argc, char *argv[])
 void Georef::parseArguments(int argc, char *argv[])
 {
     bool outputSpecified = false;
+    bool outputPointCloudSpecified = false;
     bool imageListSpecified = false;
     bool gcpFileSpecified = false;
     bool imageLocation = false;
     bool bundleResized = false;
+    bool outputCoordSpecified = false;
+    bool inputCoordSpecified = false;
     
     logFile_ = std::string(argv[0]) + "_log.txt";
     log_ << logFile_ << "\n";
@@ -326,15 +333,28 @@ void Georef::parseArguments(int argc, char *argv[])
             bundleFilename_ = std::string(argv[argIndex]);
             log_ << "Reading cameras from: " << bundleFilename_ << "\n";
         }
-        else if(argument == "-coordFile" && argIndex < argc)
+        else if(argument == "-inputCoordFile" && argIndex < argc)
         {
             argIndex++;
             if (argIndex >= argc)
             {
                 throw GeorefException("Argument '" + argument + "' expects 1 more input following it, but no more inputs were provided.");
             }
-            coordFilename_ = std::string(argv[argIndex]);
-            log_ << "Reading cameras georeferenced positions from: " << coordFilename_ << "\n";
+            inputCoordFilename_ = std::string(argv[argIndex]);
+            log_ << "Reading cameras gps exif positions from: " << inputCoordFilename_ << "\n";
+            inputCoordSpecified = true;
+        }
+        else if(argument == "-outputCoordFile" && argIndex < argc)
+        {
+            argIndex++;
+            if (argIndex >= argc)
+            {
+                throw GeorefException("Argument '" + argument + "' expects 1 more input following it, but no more inputs were provided.");
+            }
+            outputCoordFilename_ = std::string(argv[argIndex]);
+            log_ << "Exporting cameras georeferenced gps positions to: " << outputCoordFilename_ << "\n";
+            exportCoordinateFile_ = true;
+            outputCoordSpecified = true;
         }
         else if(argument == "-inputFile" && argIndex < argc)
         {
@@ -345,6 +365,17 @@ void Georef::parseArguments(int argc, char *argv[])
             }
             inputObjFilename_ = std::string(argv[argIndex]);
             log_ << "Reading textured mesh from: " << inputObjFilename_ << "\n";
+        }
+        else if(argument == "-inputPointCloudFile" && argIndex < argc)
+        {
+            argIndex++;
+            if (argIndex >= argc)
+            {
+                throw GeorefException("Argument '" + argument + "' expects 1 more input following it, but no more inputs were provided.");
+            }
+            inputPointCloudFilename_ = std::string(argv[argIndex]);
+            log_ << "Reading point cloud from: " << inputPointCloudFilename_ << "\n";
+            georeferencePointCloud_ = true;
         }
         else if(argument == "-gcpFile" && argIndex < argc)
         {
@@ -379,6 +410,17 @@ void Georef::parseArguments(int argc, char *argv[])
             log_ << "Images location is set to: " << imagesLocation_ << "\n";
             imageLocation = true;
         }
+        else if(argument == "-georefFileOutputPath" && argIndex < argc)
+        {
+            argIndex++;
+            if (argIndex >= argc)
+            {
+                throw GeorefException("Argument '" + argument + "' expects 1 more input following it, but no more inputs were provided.");
+            }
+            georefFilename_ = std::string(argv[argIndex]);
+            log_ << "Georef file output path is set to: " << georefFilename_ << "\n";
+            exportGeorefSystem_ = true;
+        }
         else if(argument == "-bundleResizedTo" && argIndex < argc)
         {
             argIndex++;
@@ -406,6 +448,17 @@ void Georef::parseArguments(int argc, char *argv[])
             log_ << "Writing output to: " << outputObjFilename_ << "\n";
             outputSpecified = true;
         }
+        else if(argument == "-outputPointCloudFile" && argIndex < argc)
+        {
+            argIndex++;
+            if (argIndex >= argc)
+            {
+                throw GeorefException("Argument '" + argument + "' expects 1 more input following it, but no more inputs were provided.");
+            }
+            outputPointCloudFilename_ = std::string(argv[argIndex]);
+            log_ << "Writing output to: " << outputPointCloudFilename_ << "\n";
+            outputPointCloudSpecified = true;
+        }
         else
         {
             printHelp();
@@ -413,6 +466,11 @@ void Georef::parseArguments(int argc, char *argv[])
         }
     }
     
+    if (inputCoordSpecified && outputCoordSpecified)
+    {
+        throw GeorefException("Both output and input coordfile specified, only one of those are accepted.");
+    }
+
     if (imageListSpecified && gcpFileSpecified && imageLocation && bundleResized)
     {
         useGCP_ = true;
@@ -421,6 +479,11 @@ void Georef::parseArguments(int argc, char *argv[])
     {
         log_ << '\n';
         log_ << "Missing input in order to use GCP for georeferencing. Using EXIF data instead.\n";
+    }
+
+    if(georeferencePointCloud_ && !outputPointCloudSpecified)
+    {
+        setDefaultPointCloudOutput();
     }
 
     if(!outputSpecified)
@@ -455,11 +518,17 @@ void Georef::printHelp()
     log_ << "The file needs to be on the following line format:\n";
     log_ << "easting northing height pixelrow pixelcol imagename\n\n";
     
-    log_ << "\"-coordFile <path>\" (mandatory if using exif data)" << "\n";
+    log_ << "\"-inputCoordFile <path>\" (mandatory if using exif data)" << "\n";
     log_ << "\"Input cameras geroreferenced coords file.\n\n";
+
+    log_ << "\"-outputCoordFile <path>\" (optional)" << "\n";
+    log_ << "\"Output cameras geroreferenced coords file.\n\n";
     
     log_ << "\"-inputFile <path>\" (mandatory)" << "\n";
     log_ << "\"Input obj file that must contain a textured mesh.\n\n";
+
+    log_ << "\"-inputPointCloudFile <path>\" (optional)" << "\n";
+    log_ << "\"Input ply file that must contain a point cloud.\n\n";
 
     log_ << "\"-imagesListPath <path>\" (mandatory if using ground control points)\n";
     log_ << "Path to the list containing the image names used in the bundle.out file.\n\n";
@@ -472,6 +541,9 @@ void Georef::printHelp()
     
     log_ << "\"-outputFile <path>\" (optional, default <inputFile>_geo)" << "\n";
     log_ << "\"Output obj file that will contain the georeferenced texture mesh.\n\n";
+
+    log_ << "\"-outputPointCloudFile <path>\" (mandatory if georeferencing a point cloud)" << "\n";
+    log_ << "\"Output ply file that will contain the georeferenced point cloud.\n\n";
     
     log_.setIsPrintingInCout(printInCoutPop);
 }
@@ -480,7 +552,7 @@ void Georef::setDefaultOutput()
 {
     if(inputObjFilename_.empty())
     {
-        throw GeorefException("Tried to generate default ouptut file without having an input file.");
+        throw GeorefException("Tried to generate default output file without having an input file.");
     }
     
     std::string tmp = inputObjFilename_;
@@ -495,6 +567,27 @@ void Georef::setDefaultOutput()
 
     outputObjFilename_ = tmp + "_geo.obj";
     log_ << "Writing output to: " << outputObjFilename_ << "\n";
+}
+
+void Georef::setDefaultPointCloudOutput()
+{
+    if(inputPointCloudFilename_.empty())
+    {
+        throw GeorefException("Tried to generate default point cloud ouptut file without having an input file.");
+    }
+
+    std::string tmp = inputPointCloudFilename_;
+    size_t findPos = tmp.find_last_of(".");
+
+    if(std::string::npos == findPos)
+    {
+        throw GeorefException("Tried to generate default ouptut file, could not find .ply in the input file:\n\'"+inputPointCloudFilename_+"\'");
+    }
+
+    tmp = tmp.substr(0, findPos);
+
+    outputPointCloudFilename_ = tmp + "_geo.ply";
+    log_ << "Writing output to: " << outputPointCloudFilename_ << "\n";
 }
 
 void Georef::createGeoreferencedModel()
@@ -535,7 +628,7 @@ void Georef::readGCPs()
     std::ifstream imageListStream(imagesListPath_.c_str());
     if (!imageListStream.good())
     {
-        throw GeorefException("Failed opening " + imagesListPath_ + " for reading.\n");
+        throw GeorefException("Failed opening image path " + imagesListPath_ + " for reading.\n");
     }
 
     for (size_t i=0; i<cameras_.size(); ++i)
@@ -551,7 +644,7 @@ void Georef::readGCPs()
     std::ifstream gcpStream(gcpFilename_.c_str());
     if (!gcpStream.good())
     {
-        throw GeorefException("Failed opening " + gcpFilename_ + " for reading.\n");
+        throw GeorefException("Failed opening gcp file " + gcpFilename_ + " for reading.\n");
     }
     std::string gcpString;
 
@@ -820,7 +913,6 @@ void Georef::performGeoreferencingWithGCP()
     // Update the mesh.
     pcl::toPCLPointCloud2 (*meshCloud, mesh.cloud);
 
-
     // Iterate over each part of the mesh (one per material), to make texture file paths relative the .mtl file.
     for(size_t t = 0; t < mesh.tex_materials.size(); ++t)
     {
@@ -844,7 +936,53 @@ void Georef::performGeoreferencingWithGCP()
         log_ << "Successfully saved model.\n";
     }
 
-    printGeorefSystem();
+    if(georeferencePointCloud_)
+    {
+        //pcl::PointCloud2<pcl::PointNormal>::Ptr pointCloud;
+        pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr pointCloud(new pcl::PointCloud<pcl::PointXYZRGBNormal>());
+        if(pcl::io::loadPLYFile<pcl::PointXYZRGBNormal> (inputPointCloudFilename_.c_str(), *pointCloud.get()) == -1) {
+            throw GeorefException("Error when reading point cloud:\n" + inputPointCloudFilename_ + "\n");
+        }
+        else
+        {
+            log_ << "Successfully loaded " << pointCloud->size() << " points with corresponding normals from file.\n";
+        }
+        log_ << '\n';
+        log_ << "Applying transform to point cloud...\n";
+        pcl::transformPointCloud(*pointCloud, *pointCloud, transform);
+        log_ << ".. point cloud transformed.\n";
+
+        pcl::PLYWriter plyWriter;
+
+        log_ << '\n';
+        log_ << "Saving point cloud file to \'" << outputPointCloudFilename_ << "\'...\n";
+        //pcl::io::savePLYFileASCII(outputPointCloudFilename_.c_str(), *pointCloud.get());
+        plyWriter.write(outputPointCloudFilename_.c_str(), *pointCloud.get(), false, false);
+        log_ << ".. point cloud file saved.\n";
+    }
+
+    if(exportCoordinateFile_)
+    {
+        log_ << '\n';
+        log_ << "Saving georeferenced camera positions to ";
+        log_ << outputCoordFilename_;
+        log_<< "\n";
+        std::ofstream coordStream(outputCoordFilename_.c_str());
+        coordStream << georefSystem_.system_ <<std::endl;
+        coordStream << static_cast<int>(georefSystem_.eastingOffset_) << " " << static_cast<int>(georefSystem_.northingOffset_) << std::endl;
+        for(size_t cameraIndex = 0; cameraIndex < cameras_.size(); ++cameraIndex)
+        {
+            Vec3 globalCameraPosition = (transFinal.transform_)*(cameras_[cameraIndex].getPos());
+            coordStream << globalCameraPosition.x_ << " " << globalCameraPosition.y_ << " " << globalCameraPosition.z_ << std::endl;
+        }
+        coordStream.close();
+        log_ << "...coordinate file saved.\n";
+    }
+
+    if(exportGeorefSystem_)
+    {
+        printGeorefSystem();
+    }
 }
 
 void Georef::createGeoreferencedModelFromGCPData()
@@ -864,10 +1002,10 @@ void Georef::createGeoreferencedModelFromExifData()
     readCameras();
     
     // Read coords from coord file generated by extract_utm tool
-    std::ifstream coordStream(coordFilename_.c_str());
+    std::ifstream coordStream(inputCoordFilename_.c_str());
     if (!coordStream.good())
     {
-        throw GeorefException("Failed opening " + coordFilename_ + " for reading." + '\n');
+        throw GeorefException("Failed opening coordinate file " + inputCoordFilename_ + " for reading." + '\n');
     }
     
     std::string coordString;
@@ -891,7 +1029,7 @@ void Georef::createGeoreferencedModelFromExifData()
     {
         if(nGeorefCameras >= cameras_.size())
         {
-            throw GeorefException("Error, to many cameras in \'" + coordFilename_ + "\' coord file.\n");
+            throw GeorefException("Error, to many cameras in \'" + inputCoordFilename_ + "\' coord file.\n");
         }
         
         std::istringstream istr(coordString);
@@ -903,7 +1041,7 @@ void Georef::createGeoreferencedModelFromExifData()
     
     if(nGeorefCameras < cameras_.size())
     {
-        throw GeorefException("Not enough cameras in \'" + coordFilename_ + "\' coord file.\n");
+        throw GeorefException("Not enough cameras in \'" + inputCoordFilename_ + "\' coord file.\n");
     }
     
     // The optimal camera triplet.
@@ -938,7 +1076,6 @@ void Georef::createGeoreferencedModelFromExifData()
     
     log_ << '\n';
     log_ << "Reading mesh file...\n";
-    // The textureds mesh.e
     pcl::TextureMesh mesh;
     pcl::io::loadOBJFile(inputObjFilename_, mesh);
     log_ << ".. mesh file read.\n";
@@ -955,7 +1092,6 @@ void Georef::createGeoreferencedModelFromExifData()
     
     // Update the mesh.
     pcl::toPCLPointCloud2 (*meshCloud, mesh.cloud);
-    
     
     // Iterate over each part of the mesh (one per material), to make texture file paths relative the .mtl file.
     for(size_t t = 0; t < mesh.tex_materials.size(); ++t)
@@ -975,7 +1111,35 @@ void Georef::createGeoreferencedModelFromExifData()
     saveOBJFile(outputObjFilename_, mesh, 8);
     log_ << ".. mesh file saved.\n";
     
-    printGeorefSystem();
+    if(georeferencePointCloud_)
+    {
+        //pcl::PointCloud2<pcl::PointNormal>::Ptr pointCloud;
+        pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr pointCloud(new pcl::PointCloud<pcl::PointXYZRGBNormal>());
+        if(pcl::io::loadPLYFile<pcl::PointXYZRGBNormal> (inputPointCloudFilename_.c_str(), *pointCloud.get()) == -1) {
+            throw GeorefException("Error when reading point cloud:\n" + inputPointCloudFilename_ + "\n");
+        }
+        else
+        {
+            log_ << "Successfully loaded " << pointCloud->size() << " points with corresponding normals from file.\n";
+        }
+        log_ << '\n';
+        log_ << "Applying transform to point cloud...\n";
+        pcl::transformPointCloud(*pointCloud, *pointCloud, transform);
+        log_ << ".. point cloud transformed.\n";
+
+        pcl::PLYWriter plyWriter;
+
+        log_ << '\n';
+        log_ << "Saving point cloud file to \'" << outputPointCloudFilename_ << "\'...\n";
+        //pcl::io::savePLYFileASCII(outputPointCloudFilename_.c_str(), *pointCloud.get());
+        plyWriter.write(outputPointCloudFilename_.c_str(), *pointCloud.get(), false, false);
+        log_ << ".. point cloud file saved.\n";
+    }
+
+    if(exportGeorefSystem_)
+    {
+        printGeorefSystem();
+    }
 }
 
 void Georef::chooseBestGCPTriplet(size_t &gcp0, size_t &gcp1, size_t &gcp2)
@@ -1073,12 +1237,12 @@ void Georef::printGeorefSystem()
         throw GeorefException("Tried to generate default ouptut file, could not find .obj in the output file:\n\'"+outputObjFilename_+"\'");
     }
     
-    tmp = tmp.substr(0, findPos);
+    //tmp = tmp.substr(0, findPos);
     
-    tmp = tmp + "_georef_system.txt";
+    //tmp = tmp + "_georef_system.txt";
     log_ << '\n';
-    log_ << "Saving georeference system file to \'" << tmp << "\'...\n";
-    std::ofstream geoStream(tmp.c_str());
+    log_ << "Saving georeference system file to \'" << georefFilename_ << "\'...\n";
+    std::ofstream geoStream(georefFilename_.c_str());
     geoStream << georefSystem_ << std::endl;
     geoStream.close();
     log_ << "... georeference system saved.\n";
