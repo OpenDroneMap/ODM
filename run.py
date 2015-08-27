@@ -340,14 +340,14 @@ def prepare_objects():
             fileObject["width"] = int(match.group(1).strip())
             fileObject["height"] = int(match.group(2).strip())
 
-        if '--force-focal' not in args:
+        if args.force_focal is None:
             match = re.search(":[\ ]*([0-9\.]*)mm", file_focal)
             if match:
                 fileObject["focal"] = float((match.group()[1:-2]).strip())
         else:
             fileObject["focal"] = args.force_focal
 
-        if '--force-ccd' not in args:
+        if args.force_ccd is None:
             match = re.search(":[\ ]*([0-9\.]*)mm", file_ccd)
             if match:
                 fileObject["ccd"] = float(match.group()[1:-2].strip())
