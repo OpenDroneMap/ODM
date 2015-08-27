@@ -488,9 +488,6 @@ def resize():
                 fileObject["height"] = int(match.group(2).strip())
             print "\t (" + str(fileObject["width"]) + " x " + str(fileObject["height"]) + ")"
 
-    if args.end_with != "resize":
-        opensfm()
-
 
 def getKeypoints():
     """Run vlsift to create keypoint files for each image"""
@@ -526,9 +523,6 @@ def getKeypoints():
     siftDest.close()
 
     run("\"" + BIN_PATH + "/parallel\" --no-notice --halt-on-error 1 -j+0 < \"" + jobOptions["step_1_vlsift"] + "\"")
-
-    if args.end_with != "getKeypoints":
-        match()
 
 
 def match():
@@ -605,9 +599,6 @@ def match():
 
 #   run("\"" + BIN_PATH + "/KeyMatchFull\" \"" + jobOptions["step_2_filelist"] + "\" \"" + jobOptions["step_2_matches"] + "\"    ")
 
-    if args.end_with != "match":
-        bundler()
-
 
 def bundler():
     """Run bundler and prepare bundle for PMVS"""
@@ -676,9 +667,6 @@ def bundler():
                 run("mv pmvs/" + str(nr) + ".txt pmvs/txt/" + str(nr) + ".txt")
 
     run("\"" + BIN_PATH + "/Bundle2Vis\" pmvs/bundle.rd.out pmvs/vis.dat")
-
-    if args.end_with != "bundler":
-        cmvs()
 
 
 def opensfm():
@@ -755,9 +743,6 @@ def cmvs():
     run("\"" + BIN_PATH + "/cmvs\" pmvs/ " + str(args.cmvs_maxImages) + " " + str(CORES))
     run("\"" + BIN_PATH + "/genOption\" pmvs/ " + str(args.pmvs_level) + " " + str(args.pmvs_csize) + " " + str(args.pmvs_threshold) + " " + str(args.pmvs_wsize) + " " + str(args.pmvs_minImageNum) + " " + str(CORES))
 
-    if args.end_with != "cmvs":
-        pmvs()
-
 
 def pmvs():
     """Run PMVS"""
@@ -768,9 +753,6 @@ def pmvs():
     run("\"" + BIN_PATH + "/pmvs2\" pmvs/ option-0000")
 
     run("cp -Rf \"" + jobOptions["jobDir"] + "/pmvs/models\" \"" + jobOptions["jobDir"] + "-results\"")
-
-    if args.end_with != "pmvs":
-        odm_meshing()
 
 
 def odm_meshing():
@@ -785,9 +767,6 @@ def odm_meshing():
 
     run("\"" + BIN_PATH + "/odm_meshing\" -inputFile " + jobOptions["jobDir"] + "-results/option-0000.ply -outputFile " + jobOptions["jobDir"] + "-results/odm_mesh-0000.ply -logFile " + jobOptions["jobDir"] + "/odm_meshing/odm_meshing_log.txt -maxVertexCount " + str(args.odm_meshing_maxVertexCount) + " -octreeDepth " + str(args.odm_meshing_octreeDepth) + " -samplesPerNode " + str(args.odm_meshing_samplesPerNode) + " -solverDivide " + str(args.odm_meshing_solverDivide))
 
-    if args.end_with != "odm_meshing":
-        odm_texturing()
-
 
 def odm_texturing():
     """Run odm_texturing"""
@@ -801,9 +780,6 @@ def odm_texturing():
         pass
 
     run("\"" + BIN_PATH + "/odm_texturing\" -bundleFile " + jobOptions["jobDir"] + "/pmvs/bundle.rd.out -imagesPath " + jobOptions["srcDir"] + "/ -imagesListPath " + jobOptions["jobDir"] + "/pmvs/list.rd.txt -inputModelPath " + jobOptions["jobDir"] + "-results/odm_mesh-0000.ply -outputFolder " + jobOptions["jobDir"] + "-results/odm_texturing/ -textureResolution " + str(args.odm_texturing_textureResolution) + " -bundleResizedTo " + str(jobOptions["resizeTo"]) + " -textureWithSize " + str(args.odm_texturing_textureWithSize) + " -logFile " + jobOptions["jobDir"] + "/odm_texturing/odm_texturing_log.txt")
-
-    if args.end_with != "odm_texturing":
-        odm_georeferencing()
 
 
 def odm_georeferencing():
@@ -903,9 +879,6 @@ def odm_georeferencing():
         print("    Creating geo-referenced LAS file (expecting warning)...")
         run(lasCmd)
 
-    if args.end_with != "odm_georeferencing":
-        odm_orthophoto()
-
 
 def odm_orthophoto():
     """Run odm_orthophoto"""
@@ -953,31 +926,43 @@ def odm_orthophoto():
         print("    Warning: No geo-referenced orthophoto created due to "
               "missing geo-referencing or corner coordinates.")
 
+
+if args.use_opensfm:
+    sfm_tasks = [
+        ("resize", resize),
+        ("opensfm", opensfm),
+    ]
+else:
+    sfm_tasks = [
+        ("resize", resize),
+        ("getKeypoints", getKeypoints),
+        ("match", match),
+        ("bundler", bundler),
+    ]
+
+tasks = sfm_tasks + [
+    ("cmvs", cmvs),
+    ("pmvs", pmvs),
+    ("odm_meshing", odm_meshing),
+    ("odm_texturing", odm_texturing),
+    ("odm_georeferencing", odm_georeferencing),
+    ("odm_orthophoto", odm_orthophoto),
+]
+
+
 if __name__ == '__main__':
     prepare_objects()
 
     os.chdir(jobOptions["jobDir"])
 
-    if args.start_with == "resize":
-        resize()
-    elif args.start_with == "getKeypoints":
-        getKeypoints()
-    elif args.start_with == "match":
-        match()
-    elif args.start_with == "bundler":
-        bundler()
-    elif args.start_with == "cmvs":
-        cmvs()
-    elif args.start_with == "pmvs":
-        pmvs()
-    elif args.start_with == "odm_meshing":
-        odm_meshing()
-    elif args.start_with == "odm_texturing":
-        odm_texturing()
-    elif args.start_with == "odm_georeferencing":
-        odm_georeferencing()
-    elif args.start_with == "odm_orthophoto":
-        odm_orthophoto()
+    run_tasks = False
+    for name, func in tasks:
+        if args.start_with == name:
+            run_tasks = True
+        if run_tasks:
+            func()
+        if args.end_with == name:
+            break
 
     if args.zip_results:
         print "\nCompressing results - " + now()
