@@ -863,7 +863,7 @@ if __name__ == '__main__':
 
     os.chdir(jobOptions["jobDir"])
 
-    run_tasks = True
+    run_tasks = False
     for name, func in tasks:
         if args.start_with == name:
             run_tasks = True
