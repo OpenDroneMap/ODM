@@ -12,12 +12,14 @@ import shlex
 # import collections  # Never used
 import fractions
 import argparse
+import errno
 
 import knnMatch_exif
 
 # the defs
 CURRENT_DIR = os.getcwd()
 BIN_PATH_ABS = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
+OPENSFM_PATH = os.path.join(BIN_PATH_ABS, "src/OpenSfM")
 CORES = multiprocessing.cpu_count()
 
 
@@ -225,6 +227,12 @@ parser.add_argument('--zip-results',
                     default=False,
                     help='compress the results using gunzip')
 
+parser.add_argument('--use-opensfm',
+                    type=bool,
+                    default=False,
+                    help='use OpenSfM instead of Bundler to find the camera positions '
+                         '(replaces getKeypoints, match and bundler steps)')
+
 args = parser.parse_args()
 
 print "\n  - configuration:"
@@ -261,6 +269,16 @@ def run_and_return(cmdSrc, cmdDest):
         stdout, stderr = srcProcess.communicate()
 
     return stdout.decode('ascii')
+
+
+def mkdir_p(path):
+    '''Make a directory including parent directories.
+    '''
+    try:
+        os.makedirs(path)
+    except os.error as exc:
+        if exc.errno != errno.EEXIST or not os.path.isdir(path):
+            raise
 
 
 def calculate_EPSG(utmZone, south):
@@ -340,14 +358,14 @@ def prepare_objects():
             fileObject["width"] = int(match.group(1).strip())
             fileObject["height"] = int(match.group(2).strip())
 
-        if '--force-focal' not in args:
+        if args.force_focal is None:
             match = re.search(":[\ ]*([0-9\.]*)mm", file_focal)
             if match:
                 fileObject["focal"] = float((match.group()[1:-2]).strip())
         else:
             fileObject["focal"] = args.force_focal
 
-        if '--force-ccd' not in args:
+        if args.force_ccd is None:
             match = re.search(":[\ ]*([0-9\.]*)mm", file_ccd)
             if match:
                 fileObject["ccd"] = float(match.group()[1:-2].strip())
@@ -471,7 +489,7 @@ def resize():
             print "\t (" + str(fileObject["width"]) + " x " + str(fileObject["height"]) + ")"
 
     if args.end_with != "resize":
-        getKeypoints()
+        opensfm()
 
 
 def getKeypoints():
@@ -661,6 +679,71 @@ def bundler():
 
     if args.end_with != "bundler":
         cmvs()
+
+
+def opensfm():
+    print "\n  - running OpenSfM - " + now()
+
+    os.chdir(jobOptions["jobDir"])
+
+    # Create bundler's list.txt
+    filesList = ""
+    print 'fileObject', objects
+    for fileObject in objects:
+        if fileObject["isOk"]:
+            filesList += "./" + fileObject["base"] + ".jpg 0 {:.5f}\n".format(fileObject["focalpx"])
+    filesList = filesList.rstrip('\n')
+
+    with open(jobOptions["step_3_filelist"], 'w') as fout:
+        fout.write(filesList)
+
+    # Create opensfm working folder
+    mkdir_p("opensfm")
+
+    # Configure OpenSfM
+    with open('opensfm/config.yaml', 'w') as fout:
+        fout.write("use_exif_size: no\n")
+
+    # Convert bundler's input to opensfm
+    run('"{}/bin/import_bundler" opensfm --list list.txt'.format(OPENSFM_PATH))
+
+    # Run OpenSfM reconstruction
+    run('"{}/bin/run_all" opensfm'.format(OPENSFM_PATH))
+
+    # Convert back to bundler's format
+    run('"{}/bin/export_bundler" opensfm'.format(OPENSFM_PATH))
+
+    bundler_to_pmvs("opensfm/bundle_r000.out")
+
+    if args.end_with != "bundler":
+        cmvs()
+
+
+def bundler_to_pmvs(bundle_out):
+    """Converts bundler's output to PMVS format"""
+    print "\n  - converting bundler output to PMVS - " + now()
+
+    os.chdir(jobOptions['jobDir'])
+
+    mkdir_p(jobOptions['jobDir'] + "/pmvs")
+    mkdir_p(jobOptions['jobDir'] + "/pmvs/txt")
+    mkdir_p(jobOptions['jobDir'] + "/pmvs/visualize")
+    mkdir_p(jobOptions['jobDir'] + "/pmvs/models")
+
+    run("\"" + BIN_PATH + "/Bundle2PMVS\" \"" + jobOptions["step_3_filelist"] + "\" " + bundle_out)
+    run("\"" + BIN_PATH + "/RadialUndistort\" \"" + jobOptions["step_3_filelist"] + "\" " + bundle_out + " pmvs")
+
+    i = 0
+    for fileObject in objects:
+        if fileObject["isOk"]:
+            if os.path.isfile("pmvs/" + fileObject["base"] + ".rd.jpg"):
+                nr = "{0:08d}".format(i)
+                i += 1
+
+                run("mv pmvs/" + fileObject["base"] + ".rd.jpg pmvs/visualize/" + str(nr) + ".jpg")
+                run("mv pmvs/" + str(nr) + ".txt pmvs/txt/" + str(nr) + ".txt")
+
+    run("\"" + BIN_PATH + "/Bundle2Vis\" pmvs/bundle.rd.out pmvs/vis.dat")
 
 
 def cmvs():
