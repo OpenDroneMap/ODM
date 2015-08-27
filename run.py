@@ -205,6 +205,11 @@ parser.add_argument('--odm_georeferencing-gcpFile',
                       the following line format: \
                       \neasting northing height pixelrow pixelcol imagename')
 
+parser.add_argument('--odm_georeferencing-useGcp',
+                    type = bool,
+                    default = False,
+                    help = 'set to true for enabling GCPs from the file above')
+
 parser.add_argument('--zip-results',
                     action = 'store_true',
                     default = False,
