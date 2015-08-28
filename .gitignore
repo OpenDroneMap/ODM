@@ -4,8 +4,7 @@ include/
 lib/
 logs/
 src/
-odm_texturing-build/
-*.user
+
 cmvs.tar.gz
 parallel.tar.bz2
 pcl.tar.gz
