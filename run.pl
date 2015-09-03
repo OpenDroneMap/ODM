@@ -497,7 +497,7 @@ sub prepareObjects {
         
     foreach $fileObject (@objects) {
         if($fileObject->{isOk}){
-            $fileObject->{step_0_resizedImage}  = "$jobOptions{jobDir}/$fileObject->{base}.jpg";
+            $fileObject->{step_0_resizedImage}  = "$jobOptions{jobDir}/$fileObject->{src}";
             
             $fileObject->{step_1_pgmFile}       = "$jobOptions{jobDir}/$fileObject->{base}.pgm";
             $fileObject->{step_1_keyFile}       = "$jobOptions{jobDir}/$fileObject->{base}.key";
@@ -668,7 +668,7 @@ sub bundler {
     foreach $fileObject (@objects) {
         if($fileObject->{isOk}){
             if($fileObject->{isOk}){
-                $filesList        .= sprintf("\./%s.jpg 0 %0.5f\n", $fileObject->{base}, $fileObject->{focalpx});
+                $filesList        .= sprintf("\./%s 0 %0.5f\n", $fileObject->{src}, $fileObject->{focalpx});
             }
         }
     }
