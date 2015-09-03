@@ -668,7 +668,7 @@ sub bundler {
     foreach $fileObject (@objects) {
         if($fileObject->{isOk}){
             if($fileObject->{isOk}){
-                $filesList        .= sprintf("\./%s.jpg 0 %0.5f\n", $fileObject->{base}, $fileObject->{focalpx});
+                $filesList        .= sprintf("\./%s 0 %0.5f\n", $fileObject->{src}, $fileObject->{focalpx});
             }
         }
     }
