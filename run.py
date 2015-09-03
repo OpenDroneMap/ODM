@@ -22,7 +22,6 @@ BIN_PATH_ABS = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
 OPENSFM_PATH = os.path.join(BIN_PATH_ABS, "src/OpenSfM")
 CORES = multiprocessing.cpu_count()
 
-
 def get_ccd_widths():
     """Return the CCD Width of the camera listed in the JSON defs file."""
     with open(BIN_PATH_ABS + '/ccd_defs.json') as jsonFile:
@@ -689,8 +688,13 @@ def opensfm():
     mkdir_p("opensfm")
 
     # Configure OpenSfM
+    config = [
+       "use_exif_size: no",
+       "preemptive_threshold: 5",
+       "processes: {}".format(CORES),
+    ]
     with open('opensfm/config.yaml', 'w') as fout:
-        fout.write("use_exif_size: no\n")
+        fout.write("\n".join(config))
 
     # Convert bundler's input to opensfm
     run('"{}/bin/import_bundler" opensfm --list list.txt'.format(OPENSFM_PATH))
