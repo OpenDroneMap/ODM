@@ -606,7 +606,7 @@ def bundler():
 
     for fileObject in objects:
         if fileObject["isOk"]:
-            filesList += "./" + fileObject["base"] + ".jpg 0 {:.5f}\n".format(fileObject["focalpx"])
+            filesList += "./" + fileObject["src"] + " 0 {:.5f}\n".format(fileObject["focalpx"])
 
     filesList = filesList.rstrip('\n')
 
