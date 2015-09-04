@@ -146,8 +146,10 @@ sudo apt-get install --assume-yes --install-recommends \
   libswitch-perl \
   libcv-dev libcvaux-dev libopencv-dev \
   libgoogle-glog-dev libatlas-base-dev libeigen3-dev libsuitesparse-dev \
-  libboost-python-dev \
-  python-numpy-dev python-pyexiv2 \
+  python-dev python-pip libboost-python-dev \
+  python-numpy-dev python-scipy python-yaml \
+  python-opencv \
+  python-pyexiv2 \
   gdal-bin \
   exiv2 \
   > "$TOOLS_LOG_PATH/apt-get_install.log" 2>&1
