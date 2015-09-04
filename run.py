@@ -456,7 +456,7 @@ def prepare_objects():
 
     for fileObject in objects:
         if fileObject["isOk"]:
-            fileObject["step_0_resizedImage"] = jobOptions["jobDir"] + "/" + fileObject["base"] + ".jpg"
+            fileObject["step_0_resizedImage"] = jobOptions["jobDir"] + "/" + fileObject["src"]
             fileObject["step_1_pgmFile"] = jobOptions["jobDir"] + "/" + fileObject["base"] + ".pgm"
             fileObject["step_1_keyFile"] = jobOptions["jobDir"] + "/" + fileObject["base"] + ".key"
             fileObject["step_1_gzFile"] = jobOptions["jobDir"] + "/" + fileObject["base"] + ".key.gz"
@@ -630,7 +630,7 @@ def bundler():
 
     for fileObject in objects:
         if fileObject["isOk"]:
-            filesList += "./" + fileObject["base"] + ".jpg 0 {:.5f}\n".format(fileObject["focalpx"])
+            filesList += "./" + fileObject["src"] + " 0 {:.5f}\n".format(fileObject["focalpx"])
 
     filesList = filesList.rstrip('\n')
 
@@ -678,7 +678,7 @@ def opensfm():
     print 'fileObject', objects
     for fileObject in objects:
         if fileObject["isOk"]:
-            filesList += "./" + fileObject["base"] + ".jpg 0 {:.5f}\n".format(fileObject["focalpx"])
+            filesList += "./" + fileObject["src"] + " 0 {:.5f}\n".format(fileObject["focalpx"])
     filesList = filesList.rstrip('\n')
 
     with open(jobOptions["step_3_filelist"], 'w') as fout:
