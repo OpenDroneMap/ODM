@@ -690,6 +690,7 @@ def opensfm():
     # Configure OpenSfM
     config = [
        "use_exif_size: no",
+       "features_process_size: {}".format(jobOptions["resizeTo"]),
        "preemptive_threshold: 5",
        "processes: {}".format(CORES),
     ]
