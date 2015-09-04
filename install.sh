@@ -539,7 +539,7 @@ echo "  > OpenSfM"
   cd "$OPENSFM_PATH"
 
   echo "    - configuring opensfm"
-  git checkout master
+  git checkout odm-1
   echo "    - building opensfm"
   CERES_ROOT_DIR=$TOOLS_PATH python setup.py build > "$TOOLS_LOG_PATH/opensfm_1_build.log" 2>&1
 
