@@ -690,12 +690,18 @@ def odm_texturing():
         pass
 
     # Create list of original image files
-    with open(jobOptions['jobDir'] + "/odm_texturing/image_list.txt", "w") as fout:
-        for fileObject in objects:
-            if fileObject["isOk"]:
-                fout.write("./" + fileObject["src"] + "\n")
+    pmvs_list = jobOptions["jobDir"] + "/pmvs/list.rd.txt"
+    texturing_list = jobOptions['jobDir'] + "/odm_texturing/image_list.txt"
+    with open(pmvs_list) as fin:
+        with open(texturing_list, "w") as fout:
+            for line in fin:
+                base = line.rstrip('\n')[2:-4]
+                for fileObject in objects:
+                    if fileObject["base"] == base:
+                        fout.write("./{}\n".format(fileObject["src"]))
+                        break
 
-    run("\"" + BIN_PATH + "/odm_texturing\" -bundleFile " + jobOptions["jobDir"] + "/pmvs/bundle.rd.out -imagesPath " + jobOptions["srcDir"] + "/ -imagesListPath " + jobOptions["jobDir"] + "/odm_texturing/image_list.txt -inputModelPath " + jobOptions["jobDir"] + "-results/odm_mesh-0000.ply -outputFolder " + jobOptions["jobDir"] + "-results/odm_texturing/ -textureResolution " + str(args.odm_texturing_textureResolution) + " -bundleResizedTo " + str(jobOptions["resizeTo"]) + " -textureWithSize " + str(args.odm_texturing_textureWithSize) + " -logFile " + jobOptions["jobDir"] + "/odm_texturing/odm_texturing_log.txt")
+    run("\"" + BIN_PATH + "/odm_texturing\" -bundleFile " + jobOptions["jobDir"] + "/pmvs/bundle.rd.out -imagesPath " + jobOptions["srcDir"] + "/ -imagesListPath " + texturing_list + " -inputModelPath " + jobOptions["jobDir"] + "-results/odm_mesh-0000.ply -outputFolder " + jobOptions["jobDir"] + "-results/odm_texturing/ -textureResolution " + str(args.odm_texturing_textureResolution) + " -bundleResizedTo " + str(jobOptions["resizeTo"]) + " -textureWithSize " + str(args.odm_texturing_textureWithSize) + " -logFile " + jobOptions["jobDir"] + "/odm_texturing/odm_texturing_log.txt")
 
 
 def odm_georeferencing():
