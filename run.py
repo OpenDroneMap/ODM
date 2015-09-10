@@ -671,7 +671,6 @@ def opensfm():
 
     # Create bundler's list.txt
     filesList = ""
-    print 'fileObject', objects
     for fileObject in objects:
         if fileObject["isOk"]:
             filesList += "./" + fileObject["src"] + " 0 {:.5f}\n".format(fileObject["focalpx"])
