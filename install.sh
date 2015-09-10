@@ -49,7 +49,6 @@ echo "  - script started - `date`"
       ODM_EXTRACT_UTM_PATH="$TOOLS_SRC_PATH/odm_extract_utm"
            ODM_GEOREF_PATH="$TOOLS_SRC_PATH/odm_georef"
 
-          CERES_PATH="$TOOLS_SRC_PATH/ceres-solver"
         OPENSFM_PATH="$TOOLS_SRC_PATH/OpenSfM"
 
             ## executables
@@ -517,22 +516,6 @@ echo "  > orthophoto "
 	# copy output program to the binaries folder.
 	cp -f "odm_orthophoto" "$TOOLS_BIN_PATH/odm_orthophoto"	
 	
-echo "  < done - `date`"
-echo
-
-
-echo "  > ceres"
-  cd "$CERES_PATH"
-
-  echo "    - configuring ceres"
-  mkdir -p build
-  cd build
-  cmake .. -DCMAKE_INSTALL_PREFIX=$TOOLS_PATH \
-           -DCMAKE_C_FLAGS=-fPIC -DCMAKE_CXX_FLAGS=-fPIC \
-           -DBUILD_EXAMPLES=OFF -DBUILD_TESTING=OFF  > "$TOOLS_LOG_PATH/ceres_1_config.log" 2>&1
-  echo "    - building ceres"
-  make install > "$TOOLS_LOG_PATH/ceres_1_build.log" 2>&1
-
 echo "  < done - `date`"
 echo
 
