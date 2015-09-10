@@ -19,6 +19,7 @@ import knnMatch_exif
 # the defs
 CURRENT_DIR = os.getcwd()
 BIN_PATH_ABS = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
+PYOPENCV_PATH = os.path.join(BIN_PATH_ABS, 'lib/python2.7/dist-packages')
 OPENSFM_PATH = os.path.join(BIN_PATH_ABS, "src/OpenSfM")
 CORES = multiprocessing.cpu_count()
 
@@ -245,7 +246,9 @@ print vars(args)
 
 def run(cmd):
     """Run a system command"""
+    print 'running', cmd
     returnCode = os.system(cmd)
+    print 'b'
     if (returnCode != 0):
         sys.exit("\nquitting cause: \n\t" + cmd + "\nreturned with code " +
                  str(returnCode) + ".\n")
@@ -690,14 +693,15 @@ def opensfm():
     with open('opensfm/config.yaml', 'w') as fout:
         fout.write("\n".join(config))
 
+    print 'running import_bundler'
     # Convert bundler's input to opensfm
-    run('"{}/bin/import_bundler" opensfm --list list.txt'.format(OPENSFM_PATH))
+    run('PYTHONPATH={} "{}/bin/import_bundler" opensfm --list list.txt'.format(PYOPENCV_PATH, OPENSFM_PATH))
 
     # Run OpenSfM reconstruction
-    run('"{}/bin/run_all" opensfm'.format(OPENSFM_PATH))
+    run('PYTHONPATH={} "{}/bin/run_all" opensfm'.format(PYOPENCV_PATH, OPENSFM_PATH))
 
     # Convert back to bundler's format
-    run('"{}/bin/export_bundler" opensfm'.format(OPENSFM_PATH))
+    run('PYTHONPATH={} "{}/bin/export_bundler" opensfm'.format(PYOPENCV_PATH, OPENSFM_PATH))
 
     bundler_to_pmvs("opensfm/bundle_r000.out")
 

@@ -40,6 +40,7 @@ echo "  - script started - `date`"
 	          PSR_PATH="$TOOLS_SRC_PATH/PoissonRecon"
         GRACLUS_PATH="$TOOLS_SRC_PATH/graclus"
           CERES_PATH="$TOOLS_SRC_PATH/ceres-solver"
+         OPENCV_PATH="$TOOLS_SRC_PATH/opencv"
                   
                   PCL_PATH="$TOOLS_SRC_PATH/pcl"
              LASTOOLS_PATH="$TOOLS_SRC_PATH/lastools"
@@ -185,6 +186,7 @@ cmvs.tar.gz http://www.di.ens.fr/cmvs/cmvs-fix2.tar.gz
 graclus.tar.gz http://smathermather.github.io/BundlerTools/patched_files/src/graclus/graclus1.2.tar.gz
 pcl.tar.gz https://github.com/PointCloudLibrary/pcl/archive/pcl-1.7.2.tar.gz
 ceres-solver.tar.gz http://ceres-solver.org/ceres-solver-1.10.0.tar.gz
+opencv.zip https://github.com/Itseez/opencv/archive/2.4.11.zip
 LAStools.zip http://lastools.org/download/LAStools.zip
 EOF
 git clone  https://github.com/mapillary/OpenSfM.git $OPENSFM_PATH
@@ -215,6 +217,7 @@ mv -f PoissonRecon        "$PSR_PATH"
 mv -f cmvs                "$CMVS_PATH"
 mv -f pcl-pcl-1.7.2       "$PCL_PATH"
 mv -f ceres-solver-1.10.0 "$CERES_PATH"
+mv -f opencv-2.4.11       "$OPENCV_PATH"
 mv -f LAStools            "$LASTOOLS_PATH"
 
 
@@ -394,9 +397,23 @@ echo "  > ceres"
   cmake .. -DCMAKE_INSTALL_PREFIX=$TOOLS_PATH \
            -DCMAKE_C_FLAGS=-fPIC -DCMAKE_CXX_FLAGS=-fPIC \
            -DBUILD_EXAMPLES=OFF -DBUILD_TESTING=OFF  > "$TOOLS_LOG_PATH/ceres_1_config.log" 2>&1
-  
+
   echo "    - building ceres"
   make install > "$TOOLS_LOG_PATH/ceres_1_build.log" 2>&1
+
+echo "  < done - `date`"
+echo
+
+echo "  > opencv"
+  cd "$OPENCV_PATH"
+
+  echo "    - configuring opencv"
+  mkdir -p build
+  cd build
+  cmake .. -DCMAKE_INSTALL_PREFIX=$TOOLS_PATH > "$TOOLS_LOG_PATH/opencv_1_config.log" 2>&1
+
+  echo "    - building opencv"
+  make install > "$TOOLS_LOG_PATH/opencv_1_build.log" 2>&1
 
 echo "  < done - `date`"
 echo
