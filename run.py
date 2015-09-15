@@ -12,14 +12,16 @@ import shlex
 # import collections  # Never used
 import fractions
 import argparse
+import errno
 
 import knnMatch_exif
 
 # the defs
 CURRENT_DIR = os.getcwd()
 BIN_PATH_ABS = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
+PYOPENCV_PATH = os.path.join(BIN_PATH_ABS, 'lib/python2.7/dist-packages')
+OPENSFM_PATH = os.path.join(BIN_PATH_ABS, "src/OpenSfM")
 CORES = multiprocessing.cpu_count()
-
 
 def get_ccd_widths():
     """Return the CCD Width of the camera listed in the JSON defs file."""
@@ -225,6 +227,12 @@ parser.add_argument('--zip-results',
                     default=False,
                     help='compress the results using gunzip')
 
+parser.add_argument('--use-opensfm',
+                    type=bool,
+                    default=False,
+                    help='use OpenSfM instead of Bundler to find the camera positions '
+                         '(replaces getKeypoints, match and bundler steps)')
+
 args = parser.parse_args()
 
 print "\n  - configuration:"
@@ -238,7 +246,9 @@ print vars(args)
 
 def run(cmd):
     """Run a system command"""
+    print 'running', cmd
     returnCode = os.system(cmd)
+    print 'b'
     if (returnCode != 0):
         sys.exit("\nquitting cause: \n\t" + cmd + "\nreturned with code " +
                  str(returnCode) + ".\n")
@@ -261,6 +271,16 @@ def run_and_return(cmdSrc, cmdDest):
         stdout, stderr = srcProcess.communicate()
 
     return stdout.decode('ascii')
+
+
+def mkdir_p(path):
+    '''Make a directory including parent directories.
+    '''
+    try:
+        os.makedirs(path)
+    except os.error as exc:
+        if exc.errno != errno.EEXIST or not os.path.isdir(path):
+            raise
 
 
 def calculate_EPSG(utmZone, south):
@@ -439,7 +459,7 @@ def prepare_objects():
 
     for fileObject in objects:
         if fileObject["isOk"]:
-            fileObject["step_0_resizedImage"] = jobOptions["jobDir"] + "/" + fileObject["base"] + ".jpg"
+            fileObject["step_0_resizedImage"] = jobOptions["jobDir"] + "/" + fileObject["src"]
             fileObject["step_1_pgmFile"] = jobOptions["jobDir"] + "/" + fileObject["base"] + ".pgm"
             fileObject["step_1_keyFile"] = jobOptions["jobDir"] + "/" + fileObject["base"] + ".key"
             fileObject["step_1_gzFile"] = jobOptions["jobDir"] + "/" + fileObject["base"] + ".key.gz"
@@ -606,7 +626,7 @@ def bundler():
 
     for fileObject in objects:
         if fileObject["isOk"]:
-            filesList += "./" + fileObject["base"] + ".jpg 0 {:.5f}\n".format(fileObject["focalpx"])
+            filesList += "./" + fileObject["src"] + " 0 {:.5f}\n".format(fileObject["focalpx"])
 
     filesList = filesList.rstrip('\n')
 
@@ -630,6 +650,77 @@ def bundler():
     run("\"" + BIN_PATH + "/bundler\" \"" + jobOptions["step_3_filelist"] + "\" --options_file \"" + jobOptions["step_3_bundlerOptions"] + "\" > bundle/out")
     run("\"" + BIN_PATH + "/Bundle2PMVS\" \"" + jobOptions["step_3_filelist"] + "\" bundle/bundle.out")
     run("\"" + BIN_PATH + "/RadialUndistort\" \"" + jobOptions["step_3_filelist"] + "\" bundle/bundle.out pmvs")
+
+    i = 0
+    for fileObject in objects:
+        if fileObject["isOk"]:
+            if os.path.isfile("pmvs/" + fileObject["base"] + ".rd.jpg"):
+                nr = "{0:08d}".format(i)
+                i += 1
+
+                run("mv pmvs/" + fileObject["base"] + ".rd.jpg pmvs/visualize/" + str(nr) + ".jpg")
+                run("mv pmvs/" + str(nr) + ".txt pmvs/txt/" + str(nr) + ".txt")
+
+    run("\"" + BIN_PATH + "/Bundle2Vis\" pmvs/bundle.rd.out pmvs/vis.dat")
+
+
+def opensfm():
+    print "\n  - running OpenSfM - " + now()
+
+    os.chdir(jobOptions["jobDir"])
+
+    # Create bundler's list.txt
+    filesList = ""
+    for fileObject in objects:
+        if fileObject["isOk"]:
+            filesList += "./" + fileObject["src"] + " 0 {:.5f}\n".format(fileObject["focalpx"])
+    filesList = filesList.rstrip('\n')
+
+    with open(jobOptions["step_3_filelist"], 'w') as fout:
+        fout.write(filesList)
+
+    # Create opensfm working folder
+    mkdir_p("opensfm")
+
+    # Configure OpenSfM
+    config = [
+       "use_exif_size: no",
+       "features_process_size: {}".format(jobOptions["resizeTo"]),
+       "preemptive_threshold: 5",
+       "processes: {}".format(CORES),
+    ]
+    with open('opensfm/config.yaml', 'w') as fout:
+        fout.write("\n".join(config))
+
+    print 'running import_bundler'
+    # Convert bundler's input to opensfm
+    run('PYTHONPATH={} "{}/bin/import_bundler" opensfm --list list.txt'.format(PYOPENCV_PATH, OPENSFM_PATH))
+
+    # Run OpenSfM reconstruction
+    run('PYTHONPATH={} "{}/bin/run_all" opensfm'.format(PYOPENCV_PATH, OPENSFM_PATH))
+
+    # Convert back to bundler's format
+    run('PYTHONPATH={} "{}/bin/export_bundler" opensfm'.format(PYOPENCV_PATH, OPENSFM_PATH))
+
+    bundler_to_pmvs("opensfm/bundle_r000.out")
+
+    if args.end_with != "bundler":
+        cmvs()
+
+
+def bundler_to_pmvs(bundle_out):
+    """Converts bundler's output to PMVS format"""
+    print "\n  - converting bundler output to PMVS - " + now()
+
+    os.chdir(jobOptions['jobDir'])
+
+    mkdir_p(jobOptions['jobDir'] + "/pmvs")
+    mkdir_p(jobOptions['jobDir'] + "/pmvs/txt")
+    mkdir_p(jobOptions['jobDir'] + "/pmvs/visualize")
+    mkdir_p(jobOptions['jobDir'] + "/pmvs/models")
+
+    run("\"" + BIN_PATH + "/Bundle2PMVS\" \"" + jobOptions["step_3_filelist"] + "\" " + bundle_out)
+    run("\"" + BIN_PATH + "/RadialUndistort\" \"" + jobOptions["step_3_filelist"] + "\" " + bundle_out + " pmvs")
 
     i = 0
     for fileObject in objects:
@@ -837,11 +928,20 @@ def odm_orthophoto():
               "missing geo-referencing or corner coordinates.")
 
 
-tasks = [
-    ("resize", resize),
-    ("getKeypoints", getKeypoints),
-    ("match", match),
-    ("bundler", bundler),
+if args.use_opensfm:
+    sfm_tasks = [
+        ("resize", resize),
+        ("opensfm", opensfm),
+    ]
+else:
+    sfm_tasks = [
+        ("resize", resize),
+        ("getKeypoints", getKeypoints),
+        ("match", match),
+        ("bundler", bundler),
+    ]
+
+tasks = sfm_tasks + [
     ("cmvs", cmvs),
     ("pmvs", pmvs),
     ("odm_meshing", odm_meshing),
