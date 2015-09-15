@@ -3,14 +3,13 @@ bin/
 include/
 lib/
 logs/
+share/
 src/
 
 cmvs.tar.gz
 parallel.tar.bz2
-<<<<<<< HEAD
 LAStools.zip
 pcl.tar.gz
+ceres-solver.tar.gz
 *.pyc
-=======
 pcl.tar.gz
->>>>>>> parent of 667ea4e... Revert "Upgrade Bundler + add support for Ceres solver"
