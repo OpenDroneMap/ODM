@@ -155,6 +155,8 @@ sudo apt-get install --assume-yes --install-recommends \
   > "$TOOLS_LOG_PATH/apt-get_install.log" 2>&1
 fi
 
+sudo pip install networkx exifread
+
 echo "  < done - `date`"
 
 ## downloading sources
