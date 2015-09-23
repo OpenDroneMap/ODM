@@ -550,6 +550,16 @@ echo "  > OpenSfM"
 echo "  < done - `date`"
 echo
 
+echo "  > jsonpickle"
+
+  echo "    - pip install "
+  sudo apt-get install python-pip python-dev build-essential
+  sudo pip install --upgrade pip
+  echo "    - jsonpickle install"
+  pip install jsonpickle
+
+echo "  < done - `date`"
+echo
 
 cd "$TOOLS_PATH"
 
