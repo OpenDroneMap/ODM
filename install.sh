@@ -550,6 +550,16 @@ echo "  > OpenSfM"
 echo "  < done - `date`"
 echo
 
+echo "  > jsonpickle"
+
+  echo "    - pip install "
+  sudo apt-get install python-pip python-dev build-essential
+  sudo pip install --upgrade pip
+  echo "    - jsonpickle install"
+  pip install jsonpickle
+
+echo "  < done - `date`"
+echo
 
 cd "$TOOLS_PATH"
 
@@ -559,6 +569,7 @@ sudo ldconfig -v > "$TOOLS_LOG_PATH/ldconfig.log" 2>&1
 sudo chown -R `id -u`:`id -g` *
 #sudo chmod -R 777 *
 sudo chmod 700 run.pl
+sudo chmod 700 run.py
 
 echo "  - script finished - `date`"
 
