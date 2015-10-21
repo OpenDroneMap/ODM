@@ -422,7 +422,7 @@ echo "  > opencv"
     -DBUILD_opencv_contrib=OFF \
     -DBUILD_opencv_gpu=OFF \
     -DBUILD_opencv_highgui=OFF \
-    -DBUILD_opencv_legacy =OFF \
+    -DBUILD_opencv_legacy=OFF \
     -DBUILD_opencv_ml=OFF \
     -DBUILD_opencv_objdetect=OFF \
     -DBUILD_opencv_ocl=OFF \
