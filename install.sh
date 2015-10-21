@@ -412,10 +412,30 @@ echo "  > opencv"
   echo "    - configuring opencv"
   mkdir -p build
   cd build
-  cmake .. -DCMAKE_INSTALL_PREFIX=$TOOLS_PATH > "$TOOLS_LOG_PATH/opencv_1_config.log" 2>&1
+  cmake .. \
+    -DCMAKE_INSTALL_PREFIX=$TOOLS_PATH \
+    -DBULID_DOCS=OFF \
+    -DBUILD_EXAMPLES=OFF \
+    -DBUILD_PERF_TESTS=OFF \
+    -DBUILD_opencv_apps=OFF \
+    -DBUILD_opencv_apps=OFF \
+    -DBUILD_opencv_contrib=OFF \
+    -DBUILD_opencv_gpu=OFF \
+    -DBUILD_opencv_highgui=OFF \
+    -DBUILD_opencv_legacy =OFF \
+    -DBUILD_opencv_ml=OFF \
+    -DBUILD_opencv_objdetect=OFF \
+    -DBUILD_opencv_ocl=OFF \
+    -DBUILD_opencv_photo=OFF \
+    -DBUILD_opencv_stitching=OFF \
+    -DBUILD_opencv_superres=OFF \
+    -DBUILD_opencv_ts=OFF \
+    -DBUILD_opencv_videostab=OFF \
+    -DBUILD_opencv_world=OFF \
+    > "$TOOLS_LOG_PATH/opencv_1_config.log" 2>&1
 
   echo "    - building opencv"
-  make install > "$TOOLS_LOG_PATH/opencv_1_build.log" 2>&1
+  make -j4 install > "$TOOLS_LOG_PATH/opencv_1_build.log" 2>&1
 
 echo "  < done - `date`"
 echo
