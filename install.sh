@@ -416,7 +416,10 @@ echo "  > opencv"
     -DCMAKE_INSTALL_PREFIX=$TOOLS_PATH \
     -DBULID_DOCS=OFF \
     -DBUILD_EXAMPLES=OFF \
+    -DBUILD_PACKAGE=OFF \
     -DBUILD_PERF_TESTS=OFF \
+    -DBUILD_TESTS=OFF \
+    -DBUILD_WITH_DEBUG_INFO=OFF \
     -DBUILD_opencv_apps=OFF \
     -DBUILD_opencv_apps=OFF \
     -DBUILD_opencv_contrib=OFF \
@@ -478,7 +481,7 @@ echo "  > pcl "
 	cmake .. -DCMAKE_INSTALL_PREFIX="$TOOLS_LIB_PATH/pcl" -DCMAKE_BUILD_TYPE=Release -DPCL_VERBOSITY_LEVEL=Error -DBUILD_features=OFF -DBUILD_filters=OFF -DBUILD_geometry=OFF -DBUILD_keypoints=OFF -DBUILD_outofcore=OFF -DBUILD_people=OFF -DBUILD_recognition=OFF -DBUILD_registration=OFF -DBUILD_sample_consensus=OFF -DBUILD_segmentation=OFF -DBUILD_features=OFF -DBUILD_surface_on_nurbs=OFF -DBUILD_tools=OFF -DBUILD_tracking=OFF -DBUILD_visualization=OFF -DWITH_QT=OFF -DBUILD_OPENNI=OFF -DBUILD_OPENNI2=OFF -DWITH_OPENNI=OFF -DWITH_OPENNI2=OFF -DWITH_FZAPI=OFF -DWITH_LIBUSB=OFF -DWITH_PCAP=OFF -DWITH_PXCAPI=OFF > "$TOOLS_LOG_PATH/pcl_1_build.log" 2>&1
   
 	echo "    - building and installing pcl"
-	make -j$CORES install > "$TOOLS_LOG_PATH/pcl_2_build.log" 2>&1
+	make install > "$TOOLS_LOG_PATH/pcl_2_build.log" 2>&1
 
 echo "  < done - `date`"
 echo
