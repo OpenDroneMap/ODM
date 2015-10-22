@@ -262,7 +262,7 @@ echo "  > graclus"
 	make clean > "$TOOLS_LOG_PATH/graclus_1_clean.log" 2>&1
 
 	echo "    - building graclus"
-	make -j > "$TOOLS_LOG_PATH/graclus_2_build.log" 2>&1
+	make -j$CORES > "$TOOLS_LOG_PATH/graclus_2_build.log" 2>&1
    
 	mkdir "$TOOLS_INC_PATH/metisLib"
 	cp -f "$GRACLUS_PATH/metisLib/"*.h "$TOOLS_INC_PATH/metisLib/"
@@ -277,7 +277,7 @@ echo "  > poisson surface reconstruction "
   sed -i "$PSR_PATH/Makefile" -e "21c\BIN = ./"
     
   echo "    - building poisson surface reconstruction"
-  make -j > "$TOOLS_LOG_PATH/poisson_1_build.log" 2>&1
+  make -j$CORES > "$TOOLS_LOG_PATH/poisson_1_build.log" 2>&1
   
   cp -f "$PSR_PATH/PoissonRecon" "$TOOLS_BIN_PATH/PoissonRecon"
   
@@ -292,7 +292,7 @@ echo "  > parallel"
   ./configure > "$TOOLS_LOG_PATH/parallel_1_build.log" 2>&1
   
   echo "    - building paralel"
-  make -j > "$TOOLS_LOG_PATH/parallel_2_build.log" 2>&1
+  make -j$CORES> "$TOOLS_LOG_PATH/parallel_2_build.log" 2>&1
   
   cp -f src/parallel "$TOOLS_BIN_PATH/"
   
@@ -306,11 +306,11 @@ echo "  > clapack"
   
   set +e
   echo "    - building clapack"
-  make all -j > "$TOOLS_LOG_PATH/clapack_1_build.log" 2>&1
+  make -j$CORES all > "$TOOLS_LOG_PATH/clapack_1_build.log" 2>&1
   set -e
   
   echo "    - installing clapack"
-  make lapack_install > "$TOOLS_LOG_PATH/clapack_2_install.log" 2>&1
+  make -j$CORES lapack_install > "$TOOLS_LOG_PATH/clapack_2_install.log" 2>&1
 
   sudo cp -Rf INCLUDE "$INC_PATH/clapack"
   
@@ -340,7 +340,7 @@ echo "  > LAStools"
   
   echo "    - installing LAStools"
   
-  make > "$TOOLS_LOG_PATH/lastools_1_build.log" 2>&1
+  make -j$CORES > "$TOOLS_LOG_PATH/lastools_1_build.log" 2>&1
 
   if [ "$ARCH" = "i686" ]; then
     cp -f "$LASTOOLS_PATH/bin/txt2las" "$TOOLS_BIN_PATH/txt2las"
@@ -380,7 +380,7 @@ echo "  > cmvs/pmvs"
   make clean > "$TOOLS_LOG_PATH/cmvs_1_clean.log" 2>&1
 
   echo "    - building cmvs"
-  make -j > "$TOOLS_LOG_PATH/cmvs_2_build.log" 2>&1
+  make -j$CORES > "$TOOLS_LOG_PATH/cmvs_2_build.log" 2>&1
 
   echo "    - make depend cmvs"
   sudo make depend > "$TOOLS_LOG_PATH/cmvs_3_depend.log" 2>&1
@@ -401,7 +401,7 @@ echo "  > ceres"
            -DBUILD_EXAMPLES=OFF -DBUILD_TESTING=OFF  > "$TOOLS_LOG_PATH/ceres_1_config.log" 2>&1
 
   echo "    - building ceres"
-  make install > "$TOOLS_LOG_PATH/ceres_1_build.log" 2>&1
+  make -j$CORES install > "$TOOLS_LOG_PATH/ceres_1_build.log" 2>&1
 
 echo "  < done - `date`"
 echo
@@ -435,7 +435,7 @@ echo "  > opencv"
     > "$TOOLS_LOG_PATH/opencv_1_config.log" 2>&1
 
   echo "    - building opencv"
-  make -j4 install > "$TOOLS_LOG_PATH/opencv_1_build.log" 2>&1
+  make -j$CORES install > "$TOOLS_LOG_PATH/opencv_1_build.log" 2>&1
 
 echo "  < done - `date`"
 echo
@@ -447,7 +447,7 @@ echo "  > bundler"
   make clean > "$TOOLS_LOG_PATH/bundler_1_clean.log" 2>&1
 
   echo "    - building bundler"
-  make -j  > "$TOOLS_LOG_PATH/bundler_2_build.log" 2>&1
+  make -j$CORES  > "$TOOLS_LOG_PATH/bundler_2_build.log" 2>&1
 
   ln -s "$BUNDLER_PATH/bin/Bundle2PMVS" "$BUNDLER_PATH/bin/Bundle2Vis" "$BUNDLER_PATH/bin/KeyMatchFull" "$BUNDLER_PATH/bin/KeyMatch" "$BUNDLER_PATH/bin/bundler" "$BUNDLER_PATH/bin/RadialUndistort" "$TOOLS_BIN_PATH/"
 
@@ -478,7 +478,7 @@ echo "  > pcl "
 	cmake .. -DCMAKE_INSTALL_PREFIX="$TOOLS_LIB_PATH/pcl" -DCMAKE_BUILD_TYPE=Release -DPCL_VERBOSITY_LEVEL=Error -DBUILD_features=OFF -DBUILD_filters=OFF -DBUILD_geometry=OFF -DBUILD_keypoints=OFF -DBUILD_outofcore=OFF -DBUILD_people=OFF -DBUILD_recognition=OFF -DBUILD_registration=OFF -DBUILD_sample_consensus=OFF -DBUILD_segmentation=OFF -DBUILD_features=OFF -DBUILD_surface_on_nurbs=OFF -DBUILD_tools=OFF -DBUILD_tracking=OFF -DBUILD_visualization=OFF -DWITH_QT=OFF -DBUILD_OPENNI=OFF -DBUILD_OPENNI2=OFF -DWITH_OPENNI=OFF -DWITH_OPENNI2=OFF -DWITH_FZAPI=OFF -DWITH_LIBUSB=OFF -DWITH_PCAP=OFF -DWITH_PXCAPI=OFF > "$TOOLS_LOG_PATH/pcl_1_build.log" 2>&1
   
 	echo "    - building and installing pcl"
-	make install > "$TOOLS_LOG_PATH/pcl_2_build.log" 2>&1
+	make -j$CORES install > "$TOOLS_LOG_PATH/pcl_2_build.log" 2>&1
 
 echo "  < done - `date`"
 echo
@@ -490,7 +490,7 @@ echo "  > meshing "
 	cmake . -DPCL_DIR="$TOOLS_LIB_PATH/pcl" > "$TOOLS_LOG_PATH/odm_meshing_1_build.log" 2>&1
 	
 	echo "    - building odm_meshing"
-	make > "$TOOLS_LOG_PATH/odm_meshing_2_build.log" 2>&1
+	make -j$CORES > "$TOOLS_LOG_PATH/odm_meshing_2_build.log" 2>&1
 	
 	# copy output program to the binaries folder.
 	cp -f "odm_meshing" "$TOOLS_BIN_PATH/odm_meshing"	
@@ -505,7 +505,7 @@ echo "  > texturing "
 	cmake . -DPCL_DIR="$TOOLS_LIB_PATH/pcl" > "$TOOLS_LOG_PATH/odm_texturing_1_build.log" 2>&1
 	
 	echo "    - building odm_texturing"
-	make > "$TOOLS_LOG_PATH/odm_texturing_2_build.log" 2>&1
+	make -j$CORES > "$TOOLS_LOG_PATH/odm_texturing_2_build.log" 2>&1
 	
 	# copy output program to the binaries folder.
 	cp -f "odm_texturing" "$TOOLS_BIN_PATH/odm_texturing"	
@@ -520,7 +520,7 @@ echo "  > extract_utm "
 	cmake . > "$TOOLS_LOG_PATH/odm_extract_utm_1_build.log" 2>&1
 	
 	echo "    - building odm_extract_utm"
-	make > "$TOOLS_LOG_PATH/odm_extract_utm_2_build.log" 2>&1
+	make -j$CORES > "$TOOLS_LOG_PATH/odm_extract_utm_2_build.log" 2>&1
 	
 	# copy output program to the binaries folder.
 	cp -f "odm_extract_utm" "$TOOLS_BIN_PATH/odm_extract_utm"	
@@ -535,7 +535,7 @@ echo "  > georef "
 	cmake . -DPCL_DIR="$TOOLS_LIB_PATH/pcl" > "$TOOLS_LOG_PATH/odm_georef_1_build.log" 2>&1
 	
 	echo "    - building odm_georef"
-	make > "$TOOLS_LOG_PATH/odm_georef_2_build.log" 2>&1
+	make -j$CORES > "$TOOLS_LOG_PATH/odm_georef_2_build.log" 2>&1
 	
 	# copy output program to the binaries folder.
 	cp -f "odm_georef" "$TOOLS_BIN_PATH/odm_georef"	
@@ -550,7 +550,7 @@ echo "  > orthophoto "
 	cmake . -DPCL_DIR="$TOOLS_LIB_PATH/pcl" > "$TOOLS_LOG_PATH/odm_orthophoto_1_build.log" 2>&1
 	
 	echo "    - building odm_orthophoto"
-	make > "$TOOLS_LOG_PATH/odm_orthophoto_2_build.log" 2>&1
+	make -j$CORES > "$TOOLS_LOG_PATH/odm_orthophoto_2_build.log" 2>&1
 	
 	# copy output program to the binaries folder.
 	cp -f "odm_orthophoto" "$TOOLS_BIN_PATH/odm_orthophoto"	
