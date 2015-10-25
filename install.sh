@@ -40,8 +40,7 @@ echo "  - script started - `date`"
 	          PSR_PATH="$TOOLS_SRC_PATH/PoissonRecon"
         GRACLUS_PATH="$TOOLS_SRC_PATH/graclus"
           CERES_PATH="$TOOLS_SRC_PATH/ceres-solver"
-         OPENCV_PATH="$TOOLS_SRC_PATH/opencv"
-                  
+
                   PCL_PATH="$TOOLS_SRC_PATH/pcl"
              LASTOOLS_PATH="$TOOLS_SRC_PATH/lastools"
           ODM_MESHING_PATH="$TOOLS_SRC_PATH/odm_meshing"
@@ -148,7 +147,6 @@ sudo apt-get install --assume-yes --install-recommends \
   libgoogle-glog-dev libatlas-base-dev libeigen3-dev libsuitesparse-dev \
   python-dev python-pip libboost-python-dev \
   python-numpy-dev python-scipy python-yaml \
-  python-opencv \
   python-pyexiv2 \
   gdal-bin \
   exiv2 \
@@ -188,7 +186,6 @@ cmvs.tar.gz http://www.di.ens.fr/cmvs/cmvs-fix2.tar.gz
 graclus.tar.gz http://smathermather.github.io/BundlerTools/patched_files/src/graclus/graclus1.2.tar.gz
 pcl.tar.gz https://github.com/PointCloudLibrary/pcl/archive/pcl-1.7.2.tar.gz
 ceres-solver.tar.gz http://ceres-solver.org/ceres-solver-1.10.0.tar.gz
-opencv.zip https://github.com/Itseez/opencv/archive/2.4.11.zip
 LAStools.zip http://lastools.org/download/LAStools.zip
 EOF
 git clone  https://github.com/mapillary/OpenSfM.git $OPENSFM_PATH
@@ -219,7 +216,6 @@ mv -f PoissonRecon        "$PSR_PATH"
 mv -f cmvs                "$CMVS_PATH"
 mv -f pcl-pcl-1.7.2       "$PCL_PATH"
 mv -f ceres-solver-1.10.0 "$CERES_PATH"
-mv -f opencv-2.4.11       "$OPENCV_PATH"
 mv -f LAStools            "$LASTOOLS_PATH"
 
 
@@ -402,43 +398,6 @@ echo "  > ceres"
 
   echo "    - building ceres"
   make -j$CORES install > "$TOOLS_LOG_PATH/ceres_1_build.log" 2>&1
-
-echo "  < done - `date`"
-echo
-
-echo "  > opencv"
-  cd "$OPENCV_PATH"
-
-  echo "    - configuring opencv"
-  mkdir -p build
-  cd build
-  cmake .. \
-    -DCMAKE_INSTALL_PREFIX=$TOOLS_PATH \
-    -DBULID_DOCS=OFF \
-    -DBUILD_EXAMPLES=OFF \
-    -DBUILD_PACKAGE=OFF \
-    -DBUILD_PERF_TESTS=OFF \
-    -DBUILD_TESTS=OFF \
-    -DBUILD_WITH_DEBUG_INFO=OFF \
-    -DBUILD_opencv_apps=OFF \
-    -DBUILD_opencv_apps=OFF \
-    -DBUILD_opencv_contrib=OFF \
-    -DBUILD_opencv_gpu=OFF \
-    -DBUILD_opencv_highgui=OFF \
-    -DBUILD_opencv_legacy=OFF \
-    -DBUILD_opencv_ml=OFF \
-    -DBUILD_opencv_objdetect=OFF \
-    -DBUILD_opencv_ocl=OFF \
-    -DBUILD_opencv_photo=OFF \
-    -DBUILD_opencv_stitching=OFF \
-    -DBUILD_opencv_superres=OFF \
-    -DBUILD_opencv_ts=OFF \
-    -DBUILD_opencv_videostab=OFF \
-    -DBUILD_opencv_world=OFF \
-    > "$TOOLS_LOG_PATH/opencv_1_config.log" 2>&1
-
-  echo "    - building opencv"
-  make -j$CORES install > "$TOOLS_LOG_PATH/opencv_1_build.log" 2>&1
 
 echo "  < done - `date`"
 echo
