@@ -22,7 +22,7 @@ echo "  - script started - `date`"
       TOOLS_BIN_PATH="$TOOLS_PATH/bin"
       TOOLS_INC_PATH="$TOOLS_PATH/include"
       TOOLS_LIB_PATH="$TOOLS_PATH/lib"
-      TOOLS_SRC_PATH="$TOOLS_PATH/src"
+        TOOLS_SRC_PATH="$TOOLS_PATH/src"
       TOOLS_LOG_PATH="$TOOLS_PATH/logs"
   TOOLS_PATCHED_PATH="$TOOLS_PATH/patched_files"
 
@@ -49,6 +49,7 @@ echo "  - script started - `date`"
       ODM_EXTRACT_UTM_PATH="$TOOLS_SRC_PATH/odm_extract_utm"
            ODM_GEOREF_PATH="$TOOLS_SRC_PATH/odm_georef"
 
+         OPENGV_PATH="$TOOLS_SRC_PATH/opengv"
         OPENSFM_PATH="$TOOLS_SRC_PATH/OpenSfM"
 
             ## executables
@@ -153,7 +154,7 @@ sudo apt-get install --assume-yes --install-recommends \
   > "$TOOLS_LOG_PATH/apt-get_install.log" 2>&1
 fi
 
-sudo pip install networkx exifread
+sudo pip install networkx exifread xmltodict
 
 echo "  < done - `date`"
 
@@ -188,6 +189,7 @@ pcl.tar.gz https://github.com/PointCloudLibrary/pcl/archive/pcl-1.7.2.tar.gz
 ceres-solver.tar.gz http://ceres-solver.org/ceres-solver-1.10.0.tar.gz
 LAStools.zip http://lastools.org/download/LAStools.zip
 EOF
+git clone  https://github.com/paulinus/opengv.git $OPENGV_PATH
 git clone  https://github.com/mapillary/OpenSfM.git $OPENSFM_PATH
 
 echo "  < done - `date`"
@@ -520,12 +522,25 @@ echo "  > orthophoto "
 echo "  < done - `date`"
 echo
 
+echo "  > OpenGV"
+  cd "$OPENGV_PATH"
+
+  echo "    - configuring opengv"
+  git checkout python-wrapper
+  mkdir -p build
+  cd build
+  cmake .. -DCMAKE_INSTALL_PREFIX=$TOOLS_PATH -DBUILD_TESTS=OFF -DBUILD_PYTHON=ON > "$TOOLS_LOG_PATH/opengv_1_build.log" 2>&1
+  echo "    - building opengv"
+  make install > "$TOOLS_LOG_PATH/opengv_2_build.log" 2>&1
+
+echo "  < done - `date`"
+echo
 
 echo "  > OpenSfM"
   cd "$OPENSFM_PATH"
 
   echo "    - configuring opensfm"
-  git checkout odm-1
+  git checkout spherical
   echo "    - building opensfm"
   CERES_ROOT_DIR=$TOOLS_PATH python setup.py build > "$TOOLS_LOG_PATH/opensfm_1_build.log" 2>&1
 
