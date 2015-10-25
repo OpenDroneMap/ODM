@@ -108,17 +108,12 @@ uname -a > "$TOOLS_LOG_PATH/sysinfo.txt"
 echo
 echo "  > installing required packages"
 
-echo "    - installing git submodules"
-git submodule init
-git submodule update
-
 echo "    - updating"
 sudo apt-get update --assume-yes > "$TOOLS_LOG_PATH/apt-get_get.log" 2>&1
 
 echo "    - installing"
-
 if [[ `lsb_release -rs` == "12.04" ]];
-then 
+then
 sudo apt-get install --assume-yes --install-recommends \
   build-essential cmake g++ gcc gFortran perl git autoconf \
   curl wget \
@@ -155,6 +150,10 @@ sudo apt-get install --assume-yes --install-recommends \
 fi
 
 sudo pip install networkx exifread xmltodict
+
+echo "    - installing git submodules"
+git submodule init
+git submodule update
 
 echo "  < done - `date`"
 
