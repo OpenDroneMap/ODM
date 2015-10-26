@@ -98,7 +98,7 @@ parser.add_argument('--matcher-ratio',
 parser.add_argument('--matcher-preselect',
                     type=bool,
                     metavar='',
-                    default=True,
+                    default=False,
                     help=('use GPS exif data, if available, to match each '
                             'image only with its k-nearest neighbors, or all '
                             'images within a certain distance threshold'))
@@ -562,7 +562,7 @@ def match():
 
 # Match all image pairs
     else:
-        if args.matcher_preselect == "true":
+        if args.matcher_preselect:
             print "Failed to run pair preselection, proceeding with exhaustive matching."
         for i in range(0, objectStats["good"]):
             for j in range(i + 1, objectStats["good"]):
@@ -689,6 +689,9 @@ def opensfm():
        "preemptive_threshold: 5",
        "processes: {}".format(CORES),
     ]
+    if args.matcher_preselect:
+        config.append("matching_gps_neighbors: 10")
+
     with open('opensfm/config.yaml', 'w') as fout:
         fout.write("\n".join(config))
 
