@@ -21,6 +21,14 @@ Developer's mailing list: http://lists.osgeo.org/cgi-bin/mailman/listinfo/opendr
 
 Overview video: https://www.youtube.com/watch?v=0UctfoeNB_Y
 
+Developers
+=================
+
+Help improve our software!
+
+1. Join our [Gitter](https://gitter.im/OpenDroneMap)
+2. Try to keep commits clean and simple
+3. Submit a pull request with detailed changes and test results
 
 Steps to get OpenDroneMap running:
 ==================================
