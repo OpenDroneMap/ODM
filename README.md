@@ -25,6 +25,7 @@ Developers
 =================
 
 Help improve our software!
+
 1. Join our [Gitter](https://gitter.im/OpenDroneMap)
 2. Try to keep commits clean and simple
 3. Submit a pull request with detailed changes and test results
