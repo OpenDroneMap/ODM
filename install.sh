@@ -143,7 +143,7 @@ sudo apt-get install --assume-yes --install-recommends \
   libgoogle-glog-dev libatlas-base-dev libeigen3-dev libsuitesparse-dev \
   python-dev python-pip libboost-python-dev \
   python-numpy-dev python-scipy python-yaml \
-  python-pyexiv2 \
+  python-opencv python-pyexiv2 \
   gdal-bin \
   exiv2 \
   > "$TOOLS_LOG_PATH/apt-get_install.log" 2>&1
