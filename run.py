@@ -81,6 +81,14 @@ parser.add_argument('--force-ccd',
                     type=float,
                     help='Override the ccd width information for the images')
 
+parser.add_argument('--min-num-features',
+                    metavar='<integer>',
+                    default=4000,
+                    type=int,
+                    help=('Minimum number of features to extract per image. '
+                          'More features leads to better results but slower '
+                          'execution.'))
+
 parser.add_argument('--matcher-threshold',
                     metavar='<percent>',
                     default=2.0,
@@ -116,6 +124,13 @@ parser.add_argument('--matcher-kDistance',
                     default=20,
                     type=int,
                     help='')
+
+parser.add_argument('--matcher-k',
+                    metavar='<integer>',
+                    default=8,
+                    type=int,
+                    help='Number of k-nearest images to match '
+                         'when using OpenSfM')
 
 parser.add_argument('--cmvs-maxImages',
                     metavar='<integer>',
@@ -685,12 +700,12 @@ def opensfm():
     # Configure OpenSfM
     config = [
        "use_exif_size: no",
-       "features_process_size: {}".format(jobOptions["resizeTo"]),
-       "preemptive_threshold: 5",
+       "feature_process_size: {}".format(jobOptions["resizeTo"]),
+       "feature_min_frames: {}".format(args.min_num_features),
        "processes: {}".format(CORES),
     ]
     if args.matcher_preselect:
-        config.append("matching_gps_neighbors: 10")
+        config.append("matching_gps_neighbors: {}".format(args.matcher_k))
 
     with open('opensfm/config.yaml', 'w') as fout:
         fout.write("\n".join(config))
