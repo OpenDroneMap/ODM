@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 2.8)
 
 # Set pcl dir to the input spedified with option -DPCL_DIR="path"
 set(PCL_DIR "PCL_DIR-NOTFOUND" CACHE "PCL_DIR" "Path to the pcl installation directory")
+set(OPENCV_DIR "OPENCV_DIR-NOTFOUND" CACHE "OPENCV_DIR" "Path to the OPENCV installation directory")
 
 # Add compiler options.
 add_definitions(-Wall -Wextra)
@@ -11,7 +12,7 @@ add_definitions(-Wall -Wextra)
 find_package(PCL 1.7 HINTS "${PCL_DIR}/share/pcl-1.7" REQUIRED)
 
 # Find OpenCV at the default location
-find_package(OpenCV REQUIRED)
+find_package(OpenCV HINTS "${OPENCV_DIR}" REQUIRED)
 
 # Only link with required opencv modules.
 set(OpenCV_LIBS opencv_core opencv_imgproc opencv_highgui)
