@@ -52,6 +52,12 @@ Here are some other videos:
 
 Now that texturing is in the code base, you can access the full textured meshes using MeshLab. Open MeshLab, choose `File:Import Mesh` and choose your textured mesh from a location similar to the following: `reconstruction-with-image-size-1200-results\odm_texturing\odm_textured_model.obj`
 
+For Ubuntu 15.10 users, this will help you get running: 
+```
+sudo apt-get install python-xmltodict
+sudo ln -s /usr/lib/x86_64-linux-gnu/libproj.so.9 /usr/lib/libproj.so
+```
+
 ---
 
 Alternatively, you can also run OpenDroneMap in a Docker container:
