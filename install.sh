@@ -128,7 +128,6 @@ sudo apt-get install --assume-yes --install-recommends \
   libeigen3-dev libflann-dev libvtk5-dev libqhull-dev libusb-1.0-0-dev\
   libzip-dev \
   libswitch-perl libjson-perl \
-##  libcv-dev libcvaux-dev libopencv-dev \
   gdal-bin \
   exiv2 \
   libgoogle-glog-dev libatlas-base-dev libsuitesparse-dev \
