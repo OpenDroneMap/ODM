@@ -128,7 +128,6 @@ sudo apt-get install --assume-yes --install-recommends \
   libeigen3-dev libflann-dev libvtk5-dev libqhull-dev libusb-1.0-0-dev\
   libzip-dev \
   libswitch-perl libjson-perl \
-  libcv-dev libcvaux-dev libopencv-dev \
   gdal-bin \
   exiv2 \
   libgoogle-glog-dev libatlas-base-dev libsuitesparse-dev \
@@ -144,7 +143,6 @@ sudo apt-get install --assume-yes --install-recommends \
   libjson-perl \
   libzip-dev \
   libswitch-perl \
-  libcv-dev libcvaux-dev libopencv-dev \
   libgoogle-glog-dev libatlas-base-dev libeigen3-dev libsuitesparse-dev \
   python-dev python-pip libboost-python-dev \
   python-numpy-dev python-scipy python-yaml \
@@ -482,7 +480,7 @@ echo "  > texturing "
 	cd "$ODM_TEXTURING_PATH"
 	
 	echo "    - configuring odm_texturing"
-	cmake . -DPCL_DIR="$TOOLS_LIB_PATH/pcl" > "$TOOLS_LOG_PATH/odm_texturing_1_build.log" 2>&1
+	cmake . -DPCL_DIR="$TOOLS_LIB_PATH/pcl" -DOPENCV_DIR="$TOOLS_PATH/share/OpenCV" > "$TOOLS_LOG_PATH/odm_texturing_1_build.log" 2>&1
 	
 	echo "    - building odm_texturing"
 	make > "$TOOLS_LOG_PATH/odm_texturing_2_build.log" 2>&1
@@ -512,7 +510,7 @@ echo "  > georef "
 	cd "$ODM_GEOREF_PATH"
 	
 	echo "    - configuring odm_georef"
-	cmake . -DPCL_DIR="$TOOLS_LIB_PATH/pcl" > "$TOOLS_LOG_PATH/odm_georef_1_build.log" 2>&1
+	cmake . -DPCL_DIR="$TOOLS_LIB_PATH/pcl" -DOPENCV_DIR="$TOOLS_PATH/share/OpenCV" > "$TOOLS_LOG_PATH/odm_georef_1_build.log" 2>&1
 	
 	echo "    - building odm_georef"
 	make > "$TOOLS_LOG_PATH/odm_georef_2_build.log" 2>&1
@@ -527,7 +525,7 @@ echo "  > orthophoto "
 	cd "$ODM_ORTHOPHOTO_PATH"
 	
 	echo "    - configuring odm_orthophoto"
-	cmake . -DPCL_DIR="$TOOLS_LIB_PATH/pcl" > "$TOOLS_LOG_PATH/odm_orthophoto_1_build.log" 2>&1
+	cmake . -DPCL_DIR="$TOOLS_LIB_PATH/pcl" -DOPENCV_DIR="$TOOLS_PATH/share/OpenCV" > "$TOOLS_LOG_PATH/odm_orthophoto_1_build.log" 2>&1
 	
 	echo "    - building odm_orthophoto"
 	make > "$TOOLS_LOG_PATH/odm_orthophoto_2_build.log" 2>&1
