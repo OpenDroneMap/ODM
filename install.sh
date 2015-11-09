@@ -38,14 +38,19 @@ echo "  - script started - `date`"
 	       VLFEAT_PATH="$TOOLS_SRC_PATH/vlfeat"
 	     PARALLEL_PATH="$TOOLS_SRC_PATH/parallel"
 	          PSR_PATH="$TOOLS_SRC_PATH/PoissonRecon"
-              GRACLUS_PATH="$TOOLS_SRC_PATH/graclus"
+        GRACLUS_PATH="$TOOLS_SRC_PATH/graclus"
+          CERES_PATH="$TOOLS_SRC_PATH/ceres-solver"
+         OPENCV_PATH="$TOOLS_SRC_PATH/opencv"
                   
                   PCL_PATH="$TOOLS_SRC_PATH/pcl"
+             LASTOOLS_PATH="$TOOLS_SRC_PATH/lastools"
           ODM_MESHING_PATH="$TOOLS_SRC_PATH/odm_meshing"
         ODM_TEXTURING_PATH="$TOOLS_SRC_PATH/odm_texturing"
        ODM_ORTHOPHOTO_PATH="$TOOLS_SRC_PATH/odm_orthophoto"
       ODM_EXTRACT_UTM_PATH="$TOOLS_SRC_PATH/odm_extract_utm"
            ODM_GEOREF_PATH="$TOOLS_SRC_PATH/odm_georef"
+
+        OPENSFM_PATH="$TOOLS_SRC_PATH/OpenSfM"
 
             ## executables
 	     EXTRACT_FOCAL="$TOOLS_BIN_PATH/extract_focal.pl"
@@ -103,6 +108,10 @@ uname -a > "$TOOLS_LOG_PATH/sysinfo.txt"
 echo
 echo "  > installing required packages"
 
+echo "    - installing git submodules"
+git submodule init
+git submodule update
+
 echo "    - updating"
 sudo apt-get update --assume-yes > "$TOOLS_LOG_PATH/apt-get_get.log" 2>&1
 
@@ -119,7 +128,9 @@ sudo apt-get install --assume-yes --install-recommends \
   libeigen3-dev libflann-dev libvtk5-dev libqhull-dev libusb-1.0-0-dev\
   libzip-dev \
   libswitch-perl libjson-perl \
-  libcv-dev libcvaux-dev libopencv-dev \
+  gdal-bin \
+  exiv2 \
+  libgoogle-glog-dev libatlas-base-dev libsuitesparse-dev \
   > "$TOOLS_LOG_PATH/apt-get_install.log" 2>&1
 else
 sudo apt-get install --assume-yes --install-recommends \
@@ -132,9 +143,17 @@ sudo apt-get install --assume-yes --install-recommends \
   libjson-perl \
   libzip-dev \
   libswitch-perl \
-  libcv-dev libcvaux-dev libopencv-dev \
+  libgoogle-glog-dev libatlas-base-dev libeigen3-dev libsuitesparse-dev \
+  python-dev python-pip libboost-python-dev \
+  python-numpy-dev python-scipy python-yaml \
+  python-opencv \
+  python-pyexiv2 \
+  gdal-bin \
+  exiv2 \
   > "$TOOLS_LOG_PATH/apt-get_install.log" 2>&1
 fi
+
+sudo pip install networkx exifread
 
 echo "  < done - `date`"
 
@@ -161,13 +180,16 @@ do
 done <<EOF
 parallel.tar.bz2  http://ftp.gnu.org/gnu/parallel/parallel-20141022.tar.bz2
 clapack.tgz  http://www.netlib.org/clapack/clapack-3.2.1-CMAKE.tgz
-bundler.zip  http://phototour.cs.washington.edu/bundler/distr/bundler-v0.4-source.zip
 PoissonRecon.zip http://www.cs.jhu.edu/~misha/Code/PoissonRecon/Version2/PoissonRecon.zip
 vlfeat.tar.gz http://www.vlfeat.org/download/vlfeat-0.9.13-bin.tar.gz
 cmvs.tar.gz http://www.di.ens.fr/cmvs/cmvs-fix2.tar.gz
 graclus.tar.gz http://smathermather.github.io/BundlerTools/patched_files/src/graclus/graclus1.2.tar.gz
 pcl.tar.gz https://github.com/PointCloudLibrary/pcl/archive/pcl-1.7.2.tar.gz
+ceres-solver.tar.gz http://ceres-solver.org/ceres-solver-1.10.0.tar.gz
+opencv.zip https://github.com/Itseez/opencv/archive/2.4.11.zip
+LAStools.zip http://lastools.org/download/LAStools.zip
 EOF
+git clone  https://github.com/mapillary/OpenSfM.git $OPENSFM_PATH
 
 echo "  < done - `date`"
 
@@ -190,11 +212,13 @@ wait
 mv -f graclus1.2          "$GRACLUS_PATH"
 mv -f clapack-3.2.1-CMAKE "$CLAPACK_PATH"
 mv -f vlfeat-0.9.13       "$VLFEAT_PATH"
-mv -f bundler-v0.4-source "$BUNDLER_PATH"
 mv -f parallel-20141022   "$PARALLEL_PATH"
 mv -f PoissonRecon        "$PSR_PATH"
 mv -f cmvs                "$CMVS_PATH"
 mv -f pcl-pcl-1.7.2       "$PCL_PATH"
+mv -f ceres-solver-1.10.0 "$CERES_PATH"
+mv -f opencv-2.4.11       "$OPENCV_PATH"
+mv -f LAStools            "$LASTOOLS_PATH"
 
 
 echo "  < done - `date`"
@@ -219,6 +243,7 @@ echo
 
 sudo chown -R `id -u`:`id -g` *
 #sudo chmod -R 777 *
+
 
 echo "  > graclus"
 	cd "$GRACLUS_PATH"
@@ -308,6 +333,23 @@ echo "  > vlfeat"
 echo "  < done - `date`"
 echo
 
+echo "  > LAStools"
+  cd "$LASTOOLS_PATH"
+  
+  echo "    - installing LAStools"
+  
+  make > "$TOOLS_LOG_PATH/lastools_1_build.log" 2>&1
+
+  if [ "$ARCH" = "i686" ]; then
+    cp -f "$LASTOOLS_PATH/bin/txt2las" "$TOOLS_BIN_PATH/txt2las"
+  fi
+
+  if [ "$ARCH" = "x86_64" ]; then
+    cp -f "$LASTOOLS_PATH/bin/txt2las" "$TOOLS_BIN_PATH/txt2las"
+  fi
+echo "  < done - `date`"
+echo
+
 
 echo "  > cmvs/pmvs"
   cd "$CMVS_PATH/program/main"
@@ -346,11 +388,38 @@ echo "  > cmvs/pmvs"
 echo "  < done - `date`"
 echo
 
+echo "  > ceres"
+  cd "$CERES_PATH"
+
+  echo "    - configuring ceres"
+  mkdir -p build
+  cd build
+  cmake .. -DCMAKE_INSTALL_PREFIX=$TOOLS_PATH \
+           -DCMAKE_C_FLAGS=-fPIC -DCMAKE_CXX_FLAGS=-fPIC \
+           -DBUILD_EXAMPLES=OFF -DBUILD_TESTING=OFF  > "$TOOLS_LOG_PATH/ceres_1_config.log" 2>&1
+
+  echo "    - building ceres"
+  make install > "$TOOLS_LOG_PATH/ceres_1_build.log" 2>&1
+
+echo "  < done - `date`"
+echo
+
+echo "  > opencv"
+  cd "$OPENCV_PATH"
+
+  echo "    - configuring opencv"
+  mkdir -p build
+  cd build
+  cmake .. -DCMAKE_INSTALL_PREFIX=$TOOLS_PATH > "$TOOLS_LOG_PATH/opencv_1_config.log" 2>&1
+
+  echo "    - building opencv"
+  make install > "$TOOLS_LOG_PATH/opencv_1_build.log" 2>&1
+
+echo "  < done - `date`"
+echo
 
 echo "  > bundler"
   cd "$BUNDLER_PATH"
-
-  sed -i "$BUNDLER_PATH/src/BundlerApp.h" -e "620c\        BundlerApp();"
 
   echo "    - cleaning bundler"
   make clean > "$TOOLS_LOG_PATH/bundler_1_clean.log" 2>&1
@@ -358,9 +427,9 @@ echo "  > bundler"
   echo "    - building bundler"
   make -j  > "$TOOLS_LOG_PATH/bundler_2_build.log" 2>&1
 
-  cp -f "$BUNDLER_PATH/bin/Bundle2PMVS" "$BUNDLER_PATH/bin/Bundle2Vis" "$BUNDLER_PATH/bin/KeyMatchFull" "$BUNDLER_PATH/bin/KeyMatch" "$BUNDLER_PATH/bin/bundler" "$BUNDLER_PATH/bin/RadialUndistort" "$TOOLS_BIN_PATH/"
+  ln -s "$BUNDLER_PATH/bin/Bundle2PMVS" "$BUNDLER_PATH/bin/Bundle2Vis" "$BUNDLER_PATH/bin/KeyMatchFull" "$BUNDLER_PATH/bin/KeyMatch" "$BUNDLER_PATH/bin/bundler" "$BUNDLER_PATH/bin/RadialUndistort" "$TOOLS_BIN_PATH/"
 
-  cp -f "$BUNDLER_PATH/lib/libANN_char.so" "$TOOLS_LIB_PATH/"
+  ln -s "$BUNDLER_PATH/lib/libANN_char.so" "$TOOLS_LIB_PATH/"
 echo "  < done - `date`"
 echo
 
@@ -411,7 +480,7 @@ echo "  > texturing "
 	cd "$ODM_TEXTURING_PATH"
 	
 	echo "    - configuring odm_texturing"
-	cmake . -DPCL_DIR="$TOOLS_LIB_PATH/pcl" > "$TOOLS_LOG_PATH/odm_texturing_1_build.log" 2>&1
+	cmake . -DPCL_DIR="$TOOLS_LIB_PATH/pcl" -DOPENCV_DIR="$TOOLS_PATH/share/OpenCV" > "$TOOLS_LOG_PATH/odm_texturing_1_build.log" 2>&1
 	
 	echo "    - building odm_texturing"
 	make > "$TOOLS_LOG_PATH/odm_texturing_2_build.log" 2>&1
@@ -441,7 +510,7 @@ echo "  > georef "
 	cd "$ODM_GEOREF_PATH"
 	
 	echo "    - configuring odm_georef"
-	cmake . -DPCL_DIR="$TOOLS_LIB_PATH/pcl" > "$TOOLS_LOG_PATH/odm_georef_1_build.log" 2>&1
+	cmake . -DPCL_DIR="$TOOLS_LIB_PATH/pcl" -DOPENCV_DIR="$TOOLS_PATH/share/OpenCV" > "$TOOLS_LOG_PATH/odm_georef_1_build.log" 2>&1
 	
 	echo "    - building odm_georef"
 	make > "$TOOLS_LOG_PATH/odm_georef_2_build.log" 2>&1
@@ -456,7 +525,7 @@ echo "  > orthophoto "
 	cd "$ODM_ORTHOPHOTO_PATH"
 	
 	echo "    - configuring odm_orthophoto"
-	cmake . -DPCL_DIR="$TOOLS_LIB_PATH/pcl" > "$TOOLS_LOG_PATH/odm_orthophoto_1_build.log" 2>&1
+	cmake . -DPCL_DIR="$TOOLS_LIB_PATH/pcl" -DOPENCV_DIR="$TOOLS_PATH/share/OpenCV" > "$TOOLS_LOG_PATH/odm_orthophoto_1_build.log" 2>&1
 	
 	echo "    - building odm_orthophoto"
 	make > "$TOOLS_LOG_PATH/odm_orthophoto_2_build.log" 2>&1
@@ -466,6 +535,19 @@ echo "  > orthophoto "
 	
 echo "  < done - `date`"
 echo
+
+
+echo "  > OpenSfM"
+  cd "$OPENSFM_PATH"
+
+  echo "    - configuring opensfm"
+  git checkout odm-1
+  echo "    - building opensfm"
+  CERES_ROOT_DIR=$TOOLS_PATH python setup.py build > "$TOOLS_LOG_PATH/opensfm_1_build.log" 2>&1
+
+echo "  < done - `date`"
+echo
+
 
 cd "$TOOLS_PATH"
 

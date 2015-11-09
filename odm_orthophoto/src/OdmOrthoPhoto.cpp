@@ -1,6 +1,7 @@
 // C++
 #include <math.h>
 #include <sstream>
+#include <fstream>
 
 // This
 #include "OdmOrthoPhoto.hpp"
@@ -44,6 +45,7 @@ OdmOrthoPhoto::OdmOrthoPhoto()
     inputGeoRefFile_ = "";
     outputFile_ = "ortho.jpg";
     logFile_    = "log.txt";
+    outputCornerFile_ = "";
 
     resolution_ = 0.0f;
 
@@ -229,6 +231,16 @@ void OdmOrthoPhoto::parseArguments(int argc, char *argv[])
             outputFile_ = std::string(argv[argIndex]);
             log_ << "Writing output to: " << outputFile_ << "\n";
         }
+        else if(argument == "-outputCornerFile")
+        {
+            argIndex++;
+            if (argIndex >= argc)
+            {
+                throw OdmOrthoPhotoException("Argument '" + argument + "' expects 1 more input following it, but no more inputs were provided.");
+            }
+            outputCornerFile_ = std::string(argv[argIndex]);
+            log_ << "Writing corners to: " << outputCornerFile_ << "\n";
+        }
         else
         {
             printHelp();
@@ -258,11 +270,14 @@ void OdmOrthoPhoto::printHelp()
     log_ << "\"-inputFile <path>\" (mandatory)\n";
     log_ << "\"Input obj file that must contain a textured mesh.\n\n";
 
-    log_ << "\"-inputGeoRefFile <path>\" (optional, if specified boundary points are assumed to be givan as world coordinates. If not specified, the boundary points are assumed to be local coordinates)\n";
+    log_ << "\"-inputGeoRefFile <path>\" (optional, if specified boundary points are assumed to be given as world coordinates. If not specified, the boundary points are assumed to be local coordinates)\n";
     log_ << "\"Input geograpical reference system file that describes the world position of the model's origin.\n\n";
 
     log_ << "\"-outputFile <path>\" (optional, default: ortho.jpg)\n";
     log_ << "\"Target file in which the orthophoto is saved.\n\n";
+
+    log_ << "\"-outputCornerFile <path>\" (optional)\n";
+    log_ << "\"Target text file for boundary corner points, written as \"xmin ymin xmax ymax\".\n\n";
 
     log_ << "\"-resolution <pixels/m>\" (mandatory)\n";
     log_ << "\"The number of pixels used per meter.\n\n";
@@ -364,7 +379,7 @@ void OdmOrthoPhoto::createOrthoPhoto()
     }
 
     // Init ortho photo
-    photo_ = cv::Mat::zeros(rowRes, colRes, CV_8UC3) + cv::Scalar(255, 255, 255);
+    photo_ = cv::Mat::zeros(rowRes, colRes, CV_8UC4) + cv::Scalar(255, 255, 255, 0);
     depth_ = cv::Mat::zeros(rowRes, colRes, CV_32F) - std::numeric_limits<float>::infinity();
 
     // Contains the vertices of the mesh.
@@ -431,6 +446,21 @@ void OdmOrthoPhoto::createOrthoPhoto()
     log_ << '\n';
     log_ << "Writing ortho photo to " << outputFile_ << "\n";
     cv::imwrite(outputFile_, photo_);
+
+    if (!outputCornerFile_.empty())
+    {
+        log_ << "Writing corner coordinates to " << outputCornerFile_ << "\n";
+        std::ofstream cornerStream(outputCornerFile_.c_str());
+        if (!cornerStream.is_open())
+        {
+            throw OdmOrthoPhotoException("Failed opening output corner file " + outputCornerFile_ + ".");
+        }
+        cornerStream.setf(std::ios::scientific, std::ios::floatfield);
+        cornerStream.precision(17);
+        cornerStream << xMin << " " << yMin << " " << xMax << " " << yMax;
+        cornerStream.close();
+    }
+
     log_ << "Orthophoto generation done.\n";
 }
 
@@ -443,34 +473,34 @@ void OdmOrthoPhoto::adjustBoundsForGeoRef()
 
     // The system name
     std::string system;
-    // The false easting and northing
-    int falseEasting, falseNorthing;
+    // The east and north offsets
+    int eastOffset, northOffset;
 
     // Parse file
     std::getline(geoRefStream, system);
-    if(!(geoRefStream >> falseEasting))
+    if(!(geoRefStream >> eastOffset))
     {
-            throw OdmOrthoPhotoException("Could not extract geographical reference system from \n" + inputGeoRefFile_ + "\nCould not extract false easting.");
+            throw OdmOrthoPhotoException("Could not extract geographical reference system from \n" + inputGeoRefFile_ + "\nCould not extract east offset.");
     }
-    if(!(geoRefStream >> falseNorthing))
+    if(!(geoRefStream >> northOffset))
     {
-            throw OdmOrthoPhotoException("Could not extract geographical reference system from \n" + inputGeoRefFile_ + "\nCould not extract false northing.");
+            throw OdmOrthoPhotoException("Could not extract geographical reference system from \n" + inputGeoRefFile_ + "\nCould not extract north offset.");
     }
 
-    log_ << "Georeference system\n";
+    log_ << "Georeference system:\n";
     log_ << system << "\n";
-    log_ << "False easting " << falseEasting << "\n";
-    log_ << "False northing " << falseNorthing << "\n";
+    log_ << "East offset: " << eastOffset << "\n";
+    log_ << "North offset: " << northOffset << "\n";
 
     // Adjust boundary points.
-    boundaryPoint1_[0] = static_cast<float>(worldPoint1_.eastInteger_  - falseEasting)  + worldPoint1_.eastFractional_;
-    boundaryPoint1_[1] = static_cast<float>(worldPoint1_.northInteger_ - falseNorthing) + worldPoint1_.northFractional_;
-    boundaryPoint2_[0] = static_cast<float>(worldPoint2_.eastInteger_  - falseEasting)  + worldPoint2_.eastFractional_;
-    boundaryPoint2_[1] = static_cast<float>(worldPoint2_.northInteger_ - falseNorthing) + worldPoint2_.northFractional_;
-    boundaryPoint3_[0] = static_cast<float>(worldPoint3_.eastInteger_  - falseEasting)  + worldPoint3_.eastFractional_;
-    boundaryPoint3_[1] = static_cast<float>(worldPoint3_.northInteger_ - falseNorthing) + worldPoint3_.northFractional_;
-    boundaryPoint4_[0] = static_cast<float>(worldPoint4_.eastInteger_  - falseEasting)  + worldPoint4_.eastFractional_;
-    boundaryPoint4_[1] = static_cast<float>(worldPoint4_.northInteger_ - falseNorthing) + worldPoint4_.northFractional_;
+    boundaryPoint1_[0] = static_cast<float>(worldPoint1_.eastInteger_  - eastOffset)  + worldPoint1_.eastFractional_;
+    boundaryPoint1_[1] = static_cast<float>(worldPoint1_.northInteger_ - northOffset) + worldPoint1_.northFractional_;
+    boundaryPoint2_[0] = static_cast<float>(worldPoint2_.eastInteger_  - eastOffset)  + worldPoint2_.eastFractional_;
+    boundaryPoint2_[1] = static_cast<float>(worldPoint2_.northInteger_ - northOffset) + worldPoint2_.northFractional_;
+    boundaryPoint3_[0] = static_cast<float>(worldPoint3_.eastInteger_  - eastOffset)  + worldPoint3_.eastFractional_;
+    boundaryPoint3_[1] = static_cast<float>(worldPoint3_.northInteger_ - northOffset) + worldPoint3_.northFractional_;
+    boundaryPoint4_[0] = static_cast<float>(worldPoint4_.eastInteger_  - eastOffset)  + worldPoint4_.eastFractional_;
+    boundaryPoint4_[1] = static_cast<float>(worldPoint4_.northInteger_ - northOffset) + worldPoint4_.northFractional_;
 
     log_ << "Local boundary points:\n";
     log_ << "Point 1: " << boundaryPoint1_[0] << " " << boundaryPoint1_[1] << "\n";
@@ -908,7 +938,7 @@ void OdmOrthoPhoto::renderPixel(int row, int col, float s, float t, const cv::Ma
     b += static_cast<float>(bl[0]) * dr * dt;
     b += static_cast<float>(br[0]) * dl * dt;
     
-    photo_.at<cv::Vec3b>(row,col) = cv::Vec3b(static_cast<unsigned char>(b), static_cast<unsigned char>(g), static_cast<unsigned char>(r));
+    photo_.at<cv::Vec4b>(row,col) = cv::Vec4b(static_cast<unsigned char>(b), static_cast<unsigned char>(g), static_cast<unsigned char>(r), 255);
 }
 
 void OdmOrthoPhoto::getBarycentricCoordiantes(pcl::PointXYZ v1, pcl::PointXYZ v2, pcl::PointXYZ v3, float x, float y, float &l1, float &l2, float &l3) const
