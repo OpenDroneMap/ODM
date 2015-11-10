@@ -53,6 +53,11 @@ parser.add_argument('--resize-to',  # currently doesn't support 'orig'
                     type=int,
                     help='resizes images by the largest side')
 
+parser.add_argument('--job-dir-name',
+                    metavar='<string>',
+                    type=str,
+                    help='Name of the output folder, only ASCII charaters can be used. If not provided "reconstruction-with-image-size-[resize-to]" will be used')
+
 parser.add_argument('--start-with', '-s',
                     metavar='<string>',
                     default='resize',
@@ -457,7 +462,10 @@ def prepare_objects():
 
     print "  using max image size of " + str(jobOptions["resizeTo"]) + " x " + str(jobOptions["resizeTo"])
 
-    jobOptions["jobDir"] = jobOptions["srcDir"] + "/reconstruction-with-image-size-" + str(jobOptions["resizeTo"])
+    if args.job_dir_name is None:
+        args.job_dir_name = "reconstruction-with-image-size-" + str(jobOptions["resizeTo"])
+
+    jobOptions["jobDir"] = jobOptions["srcDir"] + "/" + str(args.job_dir_name)
 
     jobOptions["step_1_convert"] = jobOptions["jobDir"] + "/_convert.templist.txt"
     jobOptions["step_1_vlsift"] = jobOptions["jobDir"] + "/_vlsift.templist.txt"
