@@ -258,11 +258,9 @@ args = parser.parse_args()
 
 print "\n  - configuration:"
 
-print vars(args)
-# for key in vars(args):
-#     if key != "":
-#         print "    " + key + ": " + str(args[key])
-# print "\n"
+# print vars(args)
+for arg in vars(args):
+    print "    ", arg, ":", getattr(args, arg)
 
 
 def run(cmd):
