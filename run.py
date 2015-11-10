@@ -222,6 +222,12 @@ parser.add_argument('--odm_georeferencing-useGcp',
                     default = False,
                     help = 'set to true for enabling GCPs from the file above')
 
+parser.add_argument('--odm_orthophoto-resolution',
+                    metavar='<float > 0.0>',
+                    default=20.0,
+                    type=float,
+                    help=('Orthophoto ground resolution in pixels/meter'))
+
 parser.add_argument('--zip-results',
                     action='store_true',
                     default=False,
@@ -903,7 +909,7 @@ def odm_orthophoto():
     except:
         pass
 
-    run("\"" + BIN_PATH + "/odm_orthophoto\" -inputFile " + jobOptions["jobDir"] + "-results/odm_texturing/odm_textured_model_geo.obj -logFile " + jobOptions["jobDir"] + "/odm_orthophoto/odm_orthophoto_log.txt -outputFile " + jobOptions["jobDir"] + "-results/odm_orthphoto.png -resolution 20.0 -outputCornerFile " + jobOptions["jobDir"] + "/odm_orthphoto_corners.txt")
+    run("\"" + BIN_PATH + "/odm_orthophoto\" -inputFile " + jobOptions["jobDir"] + "-results/odm_texturing/odm_textured_model_geo.obj -logFile " + jobOptions["jobDir"] + "/odm_orthophoto/odm_orthophoto_log.txt -outputFile " + jobOptions["jobDir"] + "-results/odm_orthphoto.png -resolution " + str(args.odm_orthophoto_resolution) + " -outputCornerFile " + jobOptions["jobDir"] + "/odm_orthphoto_corners.txt")
 
     if "csString" not in jobOptions:
         parse_coordinate_system()
