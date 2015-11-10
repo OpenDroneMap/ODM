@@ -511,13 +511,14 @@ def getKeypoints():
 
         if fileObject["isOk"]:
             if not os.path.isfile(jobOptions["jobDir"] + "/" + fileObject["base"] + ".key.bin"):
-                vlsiftJobs += "echo -n \"" + str(c) + "/" + str(objectStats["good"]) + " - \" && convert -format pgm \"" + fileObject["step_0_resizedImage"] + "\" \"" + fileObject["step_1_pgmFile"] + "\""
+                vlsiftJobs += "echo -n \"     " + str(c).zfill(len(str(objectStats["good"]))) + "/" + str(objectStats["good"]) + " - \" && convert -format pgm \"" + fileObject["step_0_resizedImage"] + "\" \"" + fileObject["step_1_pgmFile"] + "\""
                 vlsiftJobs += " && \"" + BIN_PATH + "/vlsift\" \"" + fileObject["step_1_pgmFile"] + "\" -o \"" + fileObject["step_1_keyFile"] + ".sift\" > /dev/null && perl \"" + BIN_PATH + "/../convert_vlsift_to_lowesift.pl\" \"" + jobOptions["jobDir"] + "/" + fileObject["base"] + "\""
                 vlsiftJobs += " && gzip -f \"" + fileObject["step_1_keyFile"] + "\""
                 vlsiftJobs += " && rm -f \"" + fileObject["step_1_pgmFile"] + "\""
-                vlsiftJobs += " && rm -f \"" + fileObject["step_1_keyFile"] + ".sift\"\n"
+                vlsiftJobs += " && rm -f \"" + fileObject["step_1_keyFile"] + ".sift\""
+                vlsiftJobs += " && echo \"\"\n"
             else:
-                print "using existing " + jobOptions["jobDir"] + "/" + fileObject["base"] + ".key.bin"
+                print "     using existing " + jobOptions["jobDir"] + "/" + fileObject["base"] + ".key.bin"
 
     siftDest = open(jobOptions["step_1_vlsift"], 'w')
     siftDest.write(vlsiftJobs)
