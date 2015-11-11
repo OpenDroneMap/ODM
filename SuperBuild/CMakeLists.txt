@@ -6,12 +6,14 @@ project(ODM-SuperBuild)
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/CMake)
 
 include(ExternalProject)
+include(ExternalProject-Setup)
 
 # Setup location where source tar-balls are downloaded
-set (DOWNLOAD_LOCATION "${CMAKE_SOURCE_DIR}/Downloads"
+set (SB_DOWNLOAD_LOCATION "${CMAKE_SOURCE_DIR}/Downloads"
      CACHE PATH "Location where source tar-balls are (to be) downloaded.")
 mark_as_advanced(DOWNLOAD_LOCATION)
 
+# Setup where the files will be installed
 set(SB_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
 
 # Check if CMAKE_INSTALL_PREFIX is set by default
@@ -31,30 +33,26 @@ endif()
 # ---------------------------------------------------------------------------------------------
 # OpenCV
 #
-set(ODM_OpenCV_RequiredVersion 2.4.11)
+set(ODM_OpenCV_Version 2.4.11)
+option(ODM_BUILD_OpenCV "Force to build OpenCV library" OFF)
 
-find_package( OpenCV ${ODM_OpenCV_RequiredVersion} EXACT QUIET)
-
-if(${OpenCV_FOUND})
-  message(STATUS "OpenCV found --- ${OpenCV_VERSION} ( < ${ODM_OpenCV_RequiredVersion} )")
-  set(OPENCV_DIR ${OpenCV_DIR})
-else()
-  message(STATUS "OpenCV not found --> Adding External project - OpenCV ${ODM_OpenCV_RequiredVersion}")
-  include(External-OpenCV)
-endif()
+SETUP_EXTERNAL_PROJECT(OpenCV ${ODM_OpenCV_Version} ${ODM_BUILD_OpenCV})
 
 
 # ---------------------------------------------------------------------------------------------
 # Point Cloud Library (PCL)
 #
-set(ODM_PCL_RequiredVersion 1.7.2)
+set(ODM_PCL_Version 1.7.2)
+option(ODM_BUILD_PCL "Force to build PCL library" OFF)
 
-find_package( PCL ${ODM_PCL_RequiredVersion} EXACT QUIET)
+SETUP_EXTERNAL_PROJECT(PCL ${ODM_PCL_Version} ${ODM_BUILD_PCL})
 
-if(${PCL_FOUND})
-  message(STATUS "PCL found --- ${PCL_VERSION} ( < ${ODM_PCL_RequiredVersion} )")
-  set(PCL_DIR ${PCL_DIR})
-else()
-  message(STATUS "PCL not found --> Adding External project - PCL ${ODM_PCL_RequiredVersion}")
-  include(External-PCL)
-endif()
+
+# ---------------------------------------------------------------------------------------------
+# Ceres Solver
+#
+
+set(ODM_Ceres_Version 1.10.0)
+option(ODM_BUILD_Ceres "Force to build Ceres library" OFF)
+
+SETUP_EXTERNAL_PROJECT(Ceres ${ODM_Ceres_Version} ${ODM_BUILD_Ceres})
