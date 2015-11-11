@@ -1,10 +1,9 @@
-
 ExternalProject_Add(pcl
   URL https://github.com/PointCloudLibrary/pcl/archive/pcl-1.7.2.tar.gz
   URL_MD5 02c72eb6760fcb1f2e359ad8871b9968
   BINARY_DIR ${SB_BUILD_DIR}
   INSTALL_DIR ${SB_INSTALL_PREFIX}
-  DOWNLOAD_DIR ${DOWNLOAD_LOCATION}
+  DOWNLOAD_DIR ${SB_DOWNLOAD_LOCATION}
   CMAKE_ARGS
     -DBUILD_features=OFF
     -DBUILD_filters=OFF

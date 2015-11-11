@@ -1,10 +1,9 @@
-
 ExternalProject_Add(opencv
   URL https://github.com/Itseez/opencv/archive/2.4.11.zip
   URL_MD5 b517e83489c709eee1d8be76b16976a7
   BINARY_DIR ${SB_BUILD_DIR}
   INSTALL_DIR ${SB_INSTALL_PREFIX}
-  DOWNLOAD_DIR ${DOWNLOAD_LOCATION}
+  DOWNLOAD_DIR ${SB_DOWNLOAD_LOCATION}
   CMAKE_ARGS
     -DBUILD_opencv_core=ON
     -DBUILD_opencv_imgproc=ON
