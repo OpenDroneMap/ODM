@@ -244,7 +244,7 @@ parser.add_argument('--zip-results',
 
 parser.add_argument('--use-opensfm',
                     type=bool,
-                    default=False,
+                    default=True,
                     help='use OpenSfM instead of Bundler to find the camera positions '
                          '(replaces getKeypoints, match and bundler steps)')
 
