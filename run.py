@@ -237,6 +237,12 @@ parser.add_argument('--odm_georeferencing-useGcp',
                     default = False,
                     help = 'set to true for enabling GCPs from the file above')
 
+parser.add_argument('--odm_orthophoto-resolution',
+                    metavar='<float > 0.0>',
+                    default=20.0,
+                    type=float,
+                    help=('Orthophoto ground resolution in pixels/meter'))
+
 parser.add_argument('--zip-results',
                     action='store_true',
                     default=False,
@@ -520,13 +526,14 @@ def getKeypoints():
 
         if fileObject["isOk"]:
             if not os.path.isfile(jobOptions["jobDir"] + "/" + fileObject["base"] + ".key.bin"):
-                vlsiftJobs += "echo -n \"" + str(c) + "/" + str(objectStats["good"]) + " - \" && convert -format pgm \"" + fileObject["step_0_resizedImage"] + "\" \"" + fileObject["step_1_pgmFile"] + "\""
+                vlsiftJobs += "echo -n \"     " + str(c).zfill(len(str(objectStats["good"]))) + "/" + str(objectStats["good"]) + " - \" && convert -format pgm \"" + fileObject["step_0_resizedImage"] + "\" \"" + fileObject["step_1_pgmFile"] + "\""
                 vlsiftJobs += " && \"" + BIN_PATH + "/vlsift\" \"" + fileObject["step_1_pgmFile"] + "\" -o \"" + fileObject["step_1_keyFile"] + ".sift\" > /dev/null && perl \"" + BIN_PATH + "/../convert_vlsift_to_lowesift.pl\" \"" + jobOptions["jobDir"] + "/" + fileObject["base"] + "\""
                 vlsiftJobs += " && gzip -f \"" + fileObject["step_1_keyFile"] + "\""
                 vlsiftJobs += " && rm -f \"" + fileObject["step_1_pgmFile"] + "\""
-                vlsiftJobs += " && rm -f \"" + fileObject["step_1_keyFile"] + ".sift\"\n"
+                vlsiftJobs += " && rm -f \"" + fileObject["step_1_keyFile"] + ".sift\""
+                vlsiftJobs += " && echo \"\"\n"
             else:
-                print "using existing " + jobOptions["jobDir"] + "/" + fileObject["base"] + ".key.bin"
+                print "     using existing " + jobOptions["jobDir"] + "/" + fileObject["base"] + ".key.bin"
 
     siftDest = open(jobOptions["step_1_vlsift"], 'w')
     siftDest.write(vlsiftJobs)
@@ -921,7 +928,7 @@ def odm_orthophoto():
     except:
         pass
 
-    run("\"" + BIN_PATH + "/odm_orthophoto\" -inputFile " + jobOptions["jobDir"] + "-results/odm_texturing/odm_textured_model_geo.obj -logFile " + jobOptions["jobDir"] + "/odm_orthophoto/odm_orthophoto_log.txt -outputFile " + jobOptions["jobDir"] + "-results/odm_orthphoto.png -resolution 20.0 -outputCornerFile " + jobOptions["jobDir"] + "/odm_orthphoto_corners.txt")
+    run("\"" + BIN_PATH + "/odm_orthophoto\" -inputFile " + jobOptions["jobDir"] + "-results/odm_texturing/odm_textured_model_geo.obj -logFile " + jobOptions["jobDir"] + "/odm_orthophoto/odm_orthophoto_log.txt -outputFile " + jobOptions["jobDir"] + "-results/odm_orthphoto.png -resolution " + str(args.odm_orthophoto_resolution) + " -outputCornerFile " + jobOptions["jobDir"] + "/odm_orthphoto_corners.txt")
 
     if "csString" not in jobOptions:
         parse_coordinate_system()
