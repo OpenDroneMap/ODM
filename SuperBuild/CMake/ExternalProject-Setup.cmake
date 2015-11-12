@@ -4,7 +4,7 @@ function(SETUP_EXTERNAL_PROJECT name version force_build)
 
   if(NOT ${force_build})
 
-    find_package(Ceres ${version} EXACT QUIET)
+    find_package(${name} ${version} EXACT QUIET)
 
     if(${${name}_FOUND})
       message(STATUS "${name} ${${name}_VERSION} found")
@@ -19,3 +19,9 @@ function(SETUP_EXTERNAL_PROJECT name version force_build)
   endif()
 
 endfunction()
+
+macro(SETUP_EXTERNAL_PROJECT_CUSTOM name)
+  set(ADD_LIB_MSG "--- Adding External project")
+  message(STATUS "${name} force build ${ADD_LIB_MSG}")
+  include(External-${name})
+endmacro()
