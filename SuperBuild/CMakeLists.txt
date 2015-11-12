@@ -9,21 +9,30 @@ include(ExternalProject)
 include(ExternalProject-Setup)
 
 # Setup location where source tar-balls are downloaded
-set (SB_DOWNLOAD_LOCATION "${CMAKE_SOURCE_DIR}/Downloads"
-     CACHE PATH "Location where source tar-balls are (to be) downloaded.")
-mark_as_advanced(DOWNLOAD_LOCATION)
+set(SB_DOWNLOAD_LOCATION "${CMAKE_SOURCE_DIR}/Downloads"
+    CACHE PATH "Location where source tar-balls are (to be) downloaded.")
+mark_as_advanced(SB_DOWNLOAD_LOCATION)
+
+message(STATUS "SuperBuild files will be downloaded to: ${SB_DOWNLOAD_LOCATION}")
 
 # Setup where the files will be installed
-set(SB_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
+set(SB_INSTALL_PREFIX "" 
+	  CACHE PATH "Path where the files will be installed")
+
+if("${SB_INSTALL_PREFIX}" STREQUAL "")
+	set(SB_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
+endif()
 
 # Check if CMAKE_INSTALL_PREFIX is set by default
-if(CMAKE_INSTALL_PREFIX STREQUAL "/usr/local")
+if(${SB_INSTALL_PREFIX} STREQUAL "/usr/local")
   message(WARNING
-    "The CMAKE_INSTALL_PREFIX variable seems to be set by default : "
-    "${CMAKE_INSTALL_PREFIX}. Be aware that this directory will be used"
+    "The SB_INSTALL_PREFIX variable seems to be set by default : "
+    "${SB_INSTALL_PREFIX}. Be aware that this directory will be used"
     " during the build (even without calling the install target). Please "
     "make sure you want to use this directory as the SuperBuild output.")
 endif()
+
+message(STATUS "SuperBuild will be installed to: ${SB_INSTALL_PREFIX}")
 
 
 #############################
