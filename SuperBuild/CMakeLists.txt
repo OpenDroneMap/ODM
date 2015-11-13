@@ -71,6 +71,14 @@ SETUP_EXTERNAL_PROJECT(Ceres ${ODM_Ceres_Version} ${ODM_BUILD_Ceres})
 
 
 # ---------------------------------------------------------------------------------------------
+# OpenGV
+#
+
+SETUP_EXTERNAL_PROJECT_CUSTOM(OpenVG)
+
+
+
+# ---------------------------------------------------------------------------------------------
 # Open Structure from Motion (OpenSfM)
 #
 
