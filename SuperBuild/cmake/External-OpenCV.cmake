@@ -1,9 +1,18 @@
-ExternalProject_Add(opencv
-  URL https://github.com/Itseez/opencv/archive/2.4.11.zip
-  URL_MD5 b517e83489c709eee1d8be76b16976a7
-  BINARY_DIR ${SB_BUILD_DIR}
-  INSTALL_DIR ${SB_INSTALL_PREFIX}
-  DOWNLOAD_DIR ${SB_DOWNLOAD_LOCATION}
+set(_proj_name opencv)
+set(_SB_BINARY_DIR "${CMAKE_BINARY_DIR}/${_proj_name}")
+
+ExternalProject_Add(${_proj_name}
+  PREFIX            ${_SB_BINARY_DIR}
+  TMP_DIR           ${_SB_BINARY_DIR}/tmp
+  STAMP_DIR         ${_SB_BINARY_DIR}/stamp
+  #--Download step--------------
+  DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
+  URL               https://github.com/Itseez/opencv/archive/2.4.11.zip
+  URL_MD5           b517e83489c709eee1d8be76b16976a7
+  #--Update/Patch step----------
+  UPDATE_COMMAND    ""
+  #--Configure step-------------
+  SOURCE_DIR        ${SB_SOURCE_DIR}/${_proj_name}
   CMAKE_ARGS
     -DBUILD_opencv_core=ON
     -DBUILD_opencv_imgproc=ON
@@ -38,7 +47,15 @@ ExternalProject_Add(opencv
     -DBUILD_opencv_ocl=OFF
     -DBUILD_opencv_ts=OFF
     -DCMAKE_BUILD_TYPE:STRING=Release
-    -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_PREFIX}
+    -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
+  #--Build step-----------------
+  BINARY_DIR        ${_SB_BINARY_DIR}
+  #--Install step---------------
+  INSTALL_DIR       ${SB_INSTALL_DIR}
+  #--Output logging-------------
+  LOG_DOWNLOAD      OFF
+  LOG_CONFIGURE     OFF
+  LOG_BUILD         OFF
 )
 
-set(OPENCV_DIR ${SB_INSTALL_PREFIX}/share)
+set(OPENCV_DIR ${SB_INSTALL_DIR}/share)
