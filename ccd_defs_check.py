@@ -14,7 +14,12 @@ try:
 	ccd_defs = get_ccd_widths()
 	print "CCD_DEFS compiles OK"
 	print "Definitions in file: {0}".format(len(ccd_defs))
+	exit_code=0
 except IOError as e:
 	print "I/O error with CCD_DEFS file: {0}".format(e.strerror)
+	exit_code=255
 except:
 	print "Error with CCD_DEFS file: {0}".format(sys.exc_info()[1])
+	exit_code=255
+
+sys.exit(exit_code)
