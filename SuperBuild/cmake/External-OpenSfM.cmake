@@ -2,7 +2,7 @@ set(_proj_name opensfm)
 set(_SB_BINARY_DIR "${CMAKE_BINARY_DIR}/${_proj_name}")
 
 ExternalProject_Add(${_proj_name}
-  DEPENDS           ceres
+  DEPENDS           ceres opencv
   PREFIX            ${_SB_BINARY_DIR}
   TMP_DIR           ${_SB_BINARY_DIR}/tmp
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
@@ -14,22 +14,16 @@ ExternalProject_Add(${_proj_name}
   UPDATE_COMMAND    ""
   #--Configure step-------------
   SOURCE_DIR        ${SB_SOURCE_DIR}/${_proj_name}
-  CMAKE_ARGS
-#    -DCMAKE_C_FLAGS=-fPIC
-#    -DCMAKE_CXX_FLAGS=-fPIC
-#    -DBUILD_EXAMPLES=OFF
-#    -DBUILD_TESTING=OFF
-#    -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
+  CONFIGURE_COMMAND cmake <SOURCE_DIR>/${_proj_name}/src
+    -DCERES_ROOT_DIR=${SB_INSTALL_DIR} 
+    -DOpenCV_DIR=${SB_INSTALL_DIR}/share/OpenCV
   #--Build step-----------------
   BINARY_DIR        ${_SB_BINARY_DIR}
   #--Install step---------------
-  INSTALL_DIR       ${SB_INSTALL_DIR}
+  INSTALL_COMMAND    ""
   #--Output logging-------------
   LOG_DOWNLOAD      OFF
   LOG_CONFIGURE     OFF
   LOG_BUILD         OFF
 )
-
-set(OPENSFM_DIR ${SB_INSTALL_DIR}/share)
-
 
