@@ -17,6 +17,13 @@ ExternalProject_Add(${_proj_name}
     -DBUILD_opencv_core=ON
     -DBUILD_opencv_imgproc=ON
     -DBUILD_opencv_highgui=ON
+    -DBUILD_opencv_video=ON
+    -DBUILD_opencv_ml=ON
+    -DBUILD_opencv_features2d=ON
+    -DBUILD_opencv_calib3d=ON
+    -DBUILD_opencv_contrib=ON
+    -DBUILD_opencv_flann=ON
+    -DBUILD_opencv_objdetect=ON
     -DWITH_CUDA=OFF
     -DWITH_GTK=OFF
     -DWITH_VTK=OFF
@@ -27,22 +34,15 @@ ExternalProject_Add(${_proj_name}
     -DBUILD_PERF_TESTS=OFF
     -DBUILD_DOCS=OFF
     -DBUILD_opencv_apps=OFF
-    -DBUILD_opencv_flann=OFF
     -DBUILD_opencv_legacy=OFF
     -DBUILD_opencv_photo=OFF
-    -DBUILD_opencv_video=OFF
-    -DBUILD_opencv_calib3d=OFF
     -DBUILD_opencv_gpu=OFF
-    -DBUILD_opencv_ml=OFF
     -DBUILD_opencv_python=OFF
     -DBUILD_opencv_videostab=OFF
-    -DBUILD_opencv_contrib=OFF
     -DBUILD_opencv_nonfree=OFF
     -DBUILD_opencv_stitching=OFF
     -DBUILD_opencv_world=OFF
-    -DBUILD_opencv_objdetect=OFF
     -DBUILD_opencv_superres=OFF
-    -DBUILD_opencv_features2d=OFF
     -DBUILD_opencv_java=OFF
     -DBUILD_opencv_ocl=OFF
     -DBUILD_opencv_ts=OFF
@@ -57,5 +57,3 @@ ExternalProject_Add(${_proj_name}
   LOG_CONFIGURE     OFF
   LOG_BUILD         OFF
 )
-
-set(OPENCV_DIR ${SB_INSTALL_DIR}/share)
