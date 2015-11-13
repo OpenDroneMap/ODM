@@ -273,7 +273,6 @@ print "\n  - configuration:"
 for arg in vars(args):
     print "    ", arg, ":", getattr(args, arg)
 
-sys.exit(0)
 
 def run(cmd):
     """Run a system command"""
