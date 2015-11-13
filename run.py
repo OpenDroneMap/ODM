@@ -75,6 +75,18 @@ parser.add_argument('--run-only',
                     choices=processopts,
                     help=('Can be one of:' + ' | '.join(processopts)))
 
+use_opensfm_parser = parser.add_mutually_exclusive_group(required=False)
+use_opensfm_parser.add_argument('--use-opensfm',
+                    dest='use_opensfm',
+                    action='store_true',
+                    help='use OpenSfM to find the camera positions '
+                         '(replaces getKeypoints, match and bundler steps)')
+use_opensfm_parser.add_argument('--use-bundler',
+                    dest='use_opensfm',
+                    action='store_false',
+                    help='use Bundler to find the camera positions.')
+parser.set_defaults(use_opensfm=True)
+
 parser.add_argument('--force-focal',
                     metavar='<positive float>',
                     type=float,
@@ -238,9 +250,9 @@ parser.add_argument('--odm_georeferencing-gcpFile',
                             'northing height pixelrow pixelcol imagename'))
 
 parser.add_argument('--odm_georeferencing-useGcp',
-                    type = bool,
-                    default = False,
-                    help = 'set to true for enabling GCPs from the file above')
+                    action='store_true',
+                    default=False,
+                    help = 'Enabling GCPs from the file above. The GCP file is not used by default.')
 
 parser.add_argument('--odm_orthophoto-resolution',
                     metavar='<float > 0.0>',
@@ -253,12 +265,6 @@ parser.add_argument('--zip-results',
                     default=False,
                     help='compress the results using gunzip')
 
-parser.add_argument('--use-opensfm',
-                    type=bool,
-                    default=True,
-                    help='use OpenSfM instead of Bundler to find the camera positions '
-                         '(replaces getKeypoints, match and bundler steps)')
-
 args = parser.parse_args()
 
 print "\n  - configuration:"
@@ -267,6 +273,7 @@ print "\n  - configuration:"
 for arg in vars(args):
     print "    ", arg, ":", getattr(args, arg)
 
+sys.exit(0)
 
 def run(cmd):
     """Run a system command"""
