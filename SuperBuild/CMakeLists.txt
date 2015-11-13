@@ -8,6 +8,10 @@ set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 include(ExternalProject)
 include(ExternalProject-Setup)
 
+################################
+# Setup SuperBuild directories #
+################################
+
 # Setup SuperBuild root location
 set(SB_ROOT_DIR ${CMAKE_SOURCE_DIR})
 
@@ -45,7 +49,7 @@ message(STATUS "SuperBuild source files will be installed to: ${SB_INSTALL_DIR}"
 set(ODM_OpenCV_Version 2.4.11)
 option(ODM_BUILD_OpenCV "Force to build OpenCV library" OFF)
 
-#SETUP_EXTERNAL_PROJECT(OpenCV ${ODM_OpenCV_Version} ${ODM_BUILD_OpenCV})
+SETUP_EXTERNAL_PROJECT(OpenCV ${ODM_OpenCV_Version} ${ODM_BUILD_OpenCV})
 
 
 # ---------------------------------------------------------------------------------------------
@@ -54,13 +58,12 @@ option(ODM_BUILD_OpenCV "Force to build OpenCV library" OFF)
 set(ODM_PCL_Version 1.7.2)
 option(ODM_BUILD_PCL "Force to build PCL library" OFF)
 
-#SETUP_EXTERNAL_PROJECT(PCL ${ODM_PCL_Version} ${ODM_BUILD_PCL})
+SETUP_EXTERNAL_PROJECT(PCL ${ODM_PCL_Version} ${ODM_BUILD_PCL})
 
 
 # ---------------------------------------------------------------------------------------------
 # Ceres Solver
 #
-
 set(ODM_Ceres_Version 1.10.0)
 option(ODM_BUILD_Ceres "Force to build Ceres library" OFF)
 
@@ -71,4 +74,4 @@ SETUP_EXTERNAL_PROJECT(Ceres ${ODM_Ceres_Version} ${ODM_BUILD_Ceres})
 # Open Structure from Motion (OpenSfM)
 #
 
-#SETUP_EXTERNAL_PROJECT_CUSTOM(OpenSfM)
+SETUP_EXTERNAL_PROJECT_CUSTOM(OpenSfM)
