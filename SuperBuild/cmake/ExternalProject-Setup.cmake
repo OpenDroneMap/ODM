@@ -1,4 +1,4 @@
-function(SETUP_EXTERNAL_PROJECT name version force_build)
+macro(SETUP_EXTERNAL_PROJECT name version force_build)
 
   set(ADD_LIB_MSG "--- Adding External project")
 
@@ -18,7 +18,7 @@ function(SETUP_EXTERNAL_PROJECT name version force_build)
     include(External-${name})
   endif()
 
-endfunction()
+endmacro()
 
 macro(SETUP_EXTERNAL_PROJECT_CUSTOM name)
   set(ADD_LIB_MSG "--- Adding External project")
