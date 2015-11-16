@@ -42,7 +42,7 @@ jobOptions = {'resizeTo': 0, 'srcDir': CURRENT_DIR, 'utmZone': -999,
               'utmSouth': False, 'utmEastOffset': 0, 'utmNorthOffset': 0}
 
 # parse arguments
-processopts = ['resize', 'getKeypoints', 'match', 'bundler', 'cmvs', 'pmvs',
+processopts = ['resize', 'opensfm', 'getKeypoints', 'match', 'bundler', 'cmvs', 'pmvs',
                'odm_meshing', 'odm_texturing', 'odm_georeferencing',
                'odm_orthophoto']
 
@@ -736,8 +736,6 @@ def opensfm():
 
     bundler_to_pmvs("opensfm/bundle_r000.out")
 
-    if args.end_with != "bundler":
-        cmvs()
 
 
 def bundler_to_pmvs(bundle_out):
@@ -999,6 +997,10 @@ if __name__ == '__main__':
     prepare_objects()
 
     os.chdir(jobOptions["jobDir"])
+
+    if args.run_only is not None:
+        args.start_with = args.run_only
+        args.end_with = args.run_only
 
     run_tasks = False
     for name, func in tasks:
