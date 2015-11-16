@@ -2,7 +2,7 @@ set(_proj_name opensfm)
 set(_SB_BINARY_DIR "${SB_BINARY_DIR}/${_proj_name}")
 
 ExternalProject_Add(${_proj_name}
-  DEPENDS           ceres opencv openvg
+  DEPENDS           ceres opencv opengv
   PREFIX            ${_SB_BINARY_DIR}
   TMP_DIR           ${_SB_BINARY_DIR}/tmp
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
