@@ -1,6 +1,7 @@
-macro(SETUP_EXTERNAL_PROJECT name version force_build)
+set(ADD_INTERNAL_LIB_MSG "--- Adding internal version")
+set(FORCE_BUILD_LIB_MSG "force build ${ADD_INTERNAL_LIB_MSG}")
 
-  set(ADD_LIB_MSG "--- Adding External project")
+macro(SETUP_EXTERNAL_PROJECT name version force_build)
 
   if(NOT ${force_build})
 
@@ -10,18 +11,17 @@ macro(SETUP_EXTERNAL_PROJECT name version force_build)
       message(STATUS "${name} ${${name}_VERSION} found")
       set(${name}_DIR ${${name}_DIR})
     else()
-      message(STATUS "${name} ${version} not found ${ADD_LIB_MSG}")
+      message(STATUS "${name} ${version} not found ${ADD_INTERNAL_LIB_MSG}")
       include(External-${name})
     endif()
   else()
-    message(STATUS "${name} ${version} force build ${ADD_LIB_MSG}")
+    message(STATUS "${name} ${version} ${FORCE_BUILD_LIB_MSG}")
     include(External-${name})
   endif()
 
 endmacro()
 
 macro(SETUP_EXTERNAL_PROJECT_CUSTOM name)
-  set(ADD_LIB_MSG "--- Adding External project")
-  message(STATUS "${name} force build ${ADD_LIB_MSG}")
+  message(STATUS "${name} ${FORCE_BUILD_LIB_MSG}")
   include(External-${name})
 endmacro()
