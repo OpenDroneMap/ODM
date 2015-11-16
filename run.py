@@ -120,34 +120,22 @@ parser.add_argument('--matcher-ratio',
                     help=('Ratio of the distance to the next best matched '
                             'keypoint'))
 
-parser.add_argument('--matcher-preselect',
-                    type=bool,
-                    metavar='',
-                    default=False,
-                    help=('use GPS exif data, if available, to match each '
-                            'image only with its k-nearest neighbors, or all '
-                            'images within a certain distance threshold'))
-
-parser.add_argument('--matcher-useKnn',
-                    type=bool,
-                    metavar='',
-                    default=True,
-                    help=('use GPS exif data, if available, to match each '
-                            'image only with its k-nearest neighbors, or all '
-                            'images within a certain distance threshold'))
-
-parser.add_argument('--matcher-kDistance',
-                    metavar='<integer>',
-                    default=20,
-                    type=int,
-                    help='')
-
-parser.add_argument('--matcher-k',
+parser.add_argument('--matcher-neighbors',
                     metavar='<integer>',
                     default=8,
                     type=int,
-                    help='Number of k-nearest images to match '
-                         'when using OpenSfM')
+                    help='Number of nearest images to pre-match based on GPS exif data. '
+                            'Set to 0 to skip pre-matching. '
+                            'Neighbors works together with Distance parameter, '
+                            'set both to 0 to not use pre-matching. OpenSFM uses both parameters at the same time, '
+                            'Bundler uses only one which has value, prefering the Neighbors parameter.')
+
+parser.add_argument('--matcher-distance',
+                    metavar='<integer>',
+                    default=0,
+                    type=int,
+                    help='Distance threshold in meters to find pre-matching images based on GPS exif data. '
+                            'Set to 0 to skip pre-matching.')
 
 parser.add_argument('--cmvs-maxImages',
                     metavar='<integer>',
@@ -579,24 +567,29 @@ def match():
     matchDest.write(filesList)
     matchDest.close()
 
-    # Check if preselection is to be run
-    if args.matcher_preselect:
-        useKnn = True
-        if args.matcher_useKnn:
-            useKnn = False  # BUG: never used
-        preselected_pairs = knnMatch_exif.preselect_pairs(BIN_PATH + "/odm_extract_utm", jobOptions["step_2_filelist"], args.matcher_kDistance, args.matcher_useKnn)
+    # try to do preselection
+    do_preselection = False
+    if args.matcher_neighbors > 0 or args.matcher_distance > 0:
+        do_preselection = True
+        if args.matcher_neighbors > 0:
+            k_distance = args.matcher_neighbors
+            use_knn_mode = True
+        else:
+            k_distance = args.matcher_distance
+            use_knn_mode = False
+        preselected_pairs = knnMatch_exif.preselect_pairs(BIN_PATH + "/odm_extract_utm", jobOptions["step_2_filelist"], k_distance, use_knn_mode)
+
     if len(preselected_pairs) != 0:
+        # preselection was succesfull
         for i, j, in preselected_pairs:
             c += 1
             if i < 10:
                 print i, j
             if not os.path.isfile(jobOptions["step_2_matches_dir"] + "/" + str(i) + "-" + str(j) + ".txt"):
                 matchesJobs += "echo -n \".\" && touch \"" + jobOptions["step_2_matches_dir"] + "/" + str(i) + "-" + str(j) + ".txt\" && \"" + BIN_PATH + "/KeyMatch\" \"" + objects[i]["step_1_keyFile"] + "\" \"" + objects[j]["step_1_keyFile"] + "\" \"" + jobOptions["step_2_matches_dir"] + "/" + str(i) + "-" + str(j) + ".txt\" " + str(args.matcher_ratio) + " " + str(args.matcher_threshold) + "\n"
-
-
-# Match all image pairs
     else:
-        if args.matcher_preselect:
+        # preselection failed, Match all image pairs
+        if do_preselection:
             print "Failed to run pair preselection, proceeding with exhaustive matching."
         for i in range(0, objectStats["good"]):
             for j in range(i + 1, objectStats["good"]):
@@ -722,9 +715,11 @@ def opensfm():
        "feature_process_size: {}".format(jobOptions["resizeTo"]),
        "feature_min_frames: {}".format(args.min_num_features),
        "processes: {}".format(CORES),
+       "matching_gps_neighbors: {}".format(args.matcher_neighbors),
     ]
-    if args.matcher_preselect:
-        config.append("matching_gps_neighbors: {}".format(args.matcher_k))
+
+    if args.matcher_distance>0:
+        config.append("matching_gps_distance: {}".format(args.matcher_distance))
 
     with open('opensfm/config.yaml', 'w') as fout:
         fout.write("\n".join(config))
