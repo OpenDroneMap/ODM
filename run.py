@@ -51,7 +51,7 @@ parser.add_argument('--resize-to',  # currently doesn't support 'orig'
                     metavar='<integer>',
                     default=2400,
                     type=int,
-                    help='resizes images by the largest side')
+                    help='Resizes images by the largest side. Default: %(default)s')
 
 parser.add_argument('--job-dir-name',
                     metavar='<string>',
@@ -59,21 +59,21 @@ parser.add_argument('--job-dir-name',
                     help='Name of the output folder, only ASCII charaters can be used. If not provided "reconstruction-with-image-size-[resize-to]" will be used')
 
 parser.add_argument('--start-with', '-s',
-                    metavar='<string>',
+                    metavar='<task>',
                     default='resize',
                     choices=processopts,
-                    help=('Can be one of: ' + ' | '.join(processopts)))
+                    help=('Start with the provided task. Can be one of: ' + ' | '.join(processopts)))
 
 parser.add_argument('--end-with', '-e',
-                    metavar='<string>',
+                    metavar='<task>',
                     default='odm_orthophoto',
                     choices=processopts,
-                    help=('Can be one of:' + ' | '.join(processopts)))
+                    help=('Finish at the provided task. Can be one of: ' + ' | '.join(processopts)))
 
 parser.add_argument('--run-only',
-                    metavar='<string>',
+                    metavar='<task>',
                     choices=processopts,
-                    help=('Can be one of:' + ' | '.join(processopts)))
+                    help=('Run only one task. Can be one of: ' + ' | '.join(processopts)))
 
 use_opensfm_parser = parser.add_mutually_exclusive_group(required=False)
 use_opensfm_parser.add_argument('--use-opensfm',
@@ -104,21 +104,21 @@ parser.add_argument('--min-num-features',
                     type=int,
                     help=('Minimum number of features to extract per image. '
                           'More features leads to better results but slower '
-                          'execution.'))
+                          'execution. Default: %(default)s'))
 
 parser.add_argument('--matcher-threshold',
                     metavar='<percent>',
                     default=2.0,
                     type=float,
                     help=('Ignore matched keypoints if the two images share '
-                            'less than <float> percent of keypoints'))
+                            'less than <float> percent of keypoints. Default: %(default)s'))
 
 parser.add_argument('--matcher-ratio',
                     metavar='<float>',
                     default=0.6,
                     type=float,
                     help=('Ratio of the distance to the next best matched '
-                            'keypoint'))
+                            'keypoint. Default: %(default)s'))
 
 parser.add_argument('--matcher-neighbors',
                     metavar='<integer>',
@@ -128,20 +128,22 @@ parser.add_argument('--matcher-neighbors',
                             'Set to 0 to skip pre-matching. '
                             'Neighbors works together with Distance parameter, '
                             'set both to 0 to not use pre-matching. OpenSFM uses both parameters at the same time, '
-                            'Bundler uses only one which has value, prefering the Neighbors parameter.')
+                            'Bundler uses only one which has value, prefering the Neighbors parameter.'
+                            ' Default: %(default)s')
 
 parser.add_argument('--matcher-distance',
                     metavar='<integer>',
                     default=0,
                     type=int,
                     help='Distance threshold in meters to find pre-matching images based on GPS exif data. '
-                            'Set to 0 to skip pre-matching.')
+                            'Set to 0 to skip pre-matching.'
+                            ' Default: %(default)s')
 
 parser.add_argument('--cmvs-maxImages',
                     metavar='<integer>',
                     default=500,
                     type=int,
-                    help='The maximum number of images per cluster')
+                    help='The maximum number of images per cluster. Default: %(default)s')
 
 parser.add_argument('--pmvs-level',
                     metavar='<positive integer>',
@@ -150,13 +152,13 @@ parser.add_argument('--pmvs-level',
                     help=('The level in the image pyramid that is used '
                             'for the computation. see '
                             'http://www.di.ens.fr/pmvs/documentation.html for '
-                            'more pmvs documentation'))
+                            'more pmvs documentation. Default: %(default)s'))
 
 parser.add_argument('--pmvs-csize',
                     metavar='< positive integer>',
                     default=2,
                     type=int,
-                    help='Cell size controls the density of reconstructions')
+                    help='Cell size controls the density of reconstructions. Default: %(default)s')
 
 parser.add_argument('--pmvs-threshold',
                     metavar='<float: -1.0 <= x <= 1.0>',
@@ -164,7 +166,7 @@ parser.add_argument('--pmvs-threshold',
                     type=float,
                     help=('A patch reconstruction is accepted as a success '
                             'and kept, if its associcated photometric consistency '
-                            'measure is above this threshold.'))
+                            'measure is above this threshold. Default: %(default)s'))
 
 parser.add_argument('--pmvs-wsize',
                     metavar='<positive integer>',
@@ -175,7 +177,7 @@ parser.add_argument('--pmvs-wsize',
                             'score. For example, when wsize=7, 7x7=49 pixel '
                             'colors are sampled in each image. Increasing the '
                             'value leads to more stable reconstructions, but '
-                            'the program becomes slower.'))
+                            'the program becomes slower. Default: %(default)s'))
 
 parser.add_argument('--pmvs-minImageNum',
                     metavar='<positive integer>',
@@ -189,7 +191,7 @@ parser.add_argument('--odm_meshing-maxVertexCount',
                     metavar='<positive integer>',
                     default=100000,
                     type=int,
-                    help='The maximum vertex count of the output mesh')
+                    help='The maximum vertex count of the output mesh. Default: %(default)s')
 
 parser.add_argument('--odm_meshing-octreeDepth',
                     metavar='<positive integer>',
@@ -197,14 +199,14 @@ parser.add_argument('--odm_meshing-octreeDepth',
                     type=int,
                     help=('Oct-tree depth used in the mesh reconstruction, '
                             'increase to get more vertices, recommended '
-                            'values are 8-12'))
+                            'values are 8-12, the default is %(default)s'))
 
 parser.add_argument('--odm_meshing-samplesPerNode',
                     metavar='<float >= 1.0>',
-                    default=1,
+                    default=1.0,
                     type=float,
                     help=('Number of points per octree node, recommended '
-                            'value: 1.0'))
+                            ' and default value: %(default)s'))
 
 parser.add_argument('--odm_meshing-solverDivide',
                     metavar='<positive integer>',
@@ -213,27 +215,27 @@ parser.add_argument('--odm_meshing-solverDivide',
                     help=('Oct-tree depth at which the Laplacian equation '
                             'is solved in the surface reconstruction step. '
                             'Increasing this value increases computation '
-                            'times slightly but helps reduce memory usage.'))
+                            'times slightly but helps reduce memory usage. Default: %(default)s'))
 
 parser.add_argument('--odm_texturing-textureResolution',
                     metavar='<positive integer>',
                     default=4096,
                     type=int,
                     help=('The resolution of the output textures. Must be '
-                            'greater than textureWithSize.'))
+                            'greater than textureWithSize. Default: %(default)s'))
 
 parser.add_argument('--odm_texturing-textureWithSize',
                     metavar='<positive integer>',
                     default=3600,
                     type=int,
                     help=('The resolution to rescale the images performing '
-                            'the texturing.'))
+                            'the texturing. Default: %(default)s'))
 
 parser.add_argument('--odm_georeferencing-gcpFile',
                     metavar='<path string>',
                     default='gcp_list.txt',
                     help=('path to the file containing the ground control '
-                            'points used for georeferencing.The file needs to '
+                            'points used for georeferencing. The default file is %(default)s. The file needs to '
                             'be on the following line format: \neasting '
                             'northing height pixelrow pixelcol imagename'))
 
@@ -246,12 +248,12 @@ parser.add_argument('--odm_orthophoto-resolution',
                     metavar='<float > 0.0>',
                     default=20.0,
                     type=float,
-                    help=('Orthophoto ground resolution in pixels/meter'))
+                    help=('Orthophoto ground resolution in pixels/meter. Default: %(default)s'))
 
 parser.add_argument('--zip-results',
                     action='store_true',
                     default=False,
-                    help='compress the results using gunzip')
+                    help='Compress the results using gunzip')
 
 args = parser.parse_args()
 
