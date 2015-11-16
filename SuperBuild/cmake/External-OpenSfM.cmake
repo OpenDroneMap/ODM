@@ -1,5 +1,5 @@
 set(_proj_name opensfm)
-set(_SB_BINARY_DIR "${CMAKE_BINARY_DIR}/${_proj_name}")
+set(_SB_BINARY_DIR "${SB_BINARY_DIR}/${_proj_name}")
 
 ExternalProject_Add(${_proj_name}
   DEPENDS           ceres opencv openvg

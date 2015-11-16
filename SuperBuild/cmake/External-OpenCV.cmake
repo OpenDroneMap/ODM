@@ -1,5 +1,5 @@
 set(_proj_name opencv)
-set(_SB_BINARY_DIR "${CMAKE_BINARY_DIR}/${_proj_name}")
+set(_SB_BINARY_DIR "${SB_BINARY_DIR}/${_proj_name}")
 
 ExternalProject_Add(${_proj_name}
   PREFIX            ${_SB_BINARY_DIR}
