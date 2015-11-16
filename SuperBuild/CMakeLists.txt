@@ -83,7 +83,7 @@ SETUP_EXTERNAL_PROJECT(Ceres ${ODM_Ceres_Version} ${ODM_BUILD_Ceres})
 # Open Geometric Vision (OpenGV)
 #
 
-SETUP_EXTERNAL_PROJECT_CUSTOM(OpenVG)
+SETUP_EXTERNAL_PROJECT_CUSTOM(OpenGV)
 
 
 # ---------------------------------------------------------------------------------------------
