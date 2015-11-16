@@ -50,5 +50,3 @@ ExternalProject_Add(${_proj_name}
   LOG_CONFIGURE     OFF
   LOG_BUILD         OFF
 )
-
-set(PCL_DIR ${SB_INSTALL_DIR}/share)
