@@ -8,6 +8,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 include(ExternalProject)
 include(ExternalProject-Setup)
 
+
 ################################
 # Setup SuperBuild directories #
 ################################
@@ -39,12 +40,12 @@ mark_as_advanced(SB_SOURCE_DIR)
 message(STATUS "SuperBuild source files will be installed to: ${SB_INSTALL_DIR}")
 
 
-#############################
-# Download third party libs #
-#############################
+#########################################
+# Download and install third party libs #
+#########################################
 
 # ---------------------------------------------------------------------------------------------
-# OpenCV
+# Open Source Computer Vision (OpenCV)
 #
 set(ODM_OpenCV_Version 2.4.11)
 option(ODM_BUILD_OpenCV "Force to build OpenCV library" OFF)
@@ -71,11 +72,10 @@ SETUP_EXTERNAL_PROJECT(Ceres ${ODM_Ceres_Version} ${ODM_BUILD_Ceres})
 
 
 # ---------------------------------------------------------------------------------------------
-# OpenGV
+# Open Geometric Vision (OpenGV)
 #
 
 SETUP_EXTERNAL_PROJECT_CUSTOM(OpenVG)
-
 
 
 # ---------------------------------------------------------------------------------------------
@@ -83,3 +83,10 @@ SETUP_EXTERNAL_PROJECT_CUSTOM(OpenVG)
 #
 
 SETUP_EXTERNAL_PROJECT_CUSTOM(OpenSfM)
+
+
+# ---------------------------------------------------------------------------------------------
+# Clustering Views for Multi-view Stereo (CMVS)
+#
+
+SETUP_EXTERNAL_PROJECT_CUSTOM(CMVS)
