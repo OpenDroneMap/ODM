@@ -2,14 +2,14 @@ set(_proj_name opensfm)
 set(_SB_BINARY_DIR "${SB_BINARY_DIR}/${_proj_name}")
 
 ExternalProject_Add(${_proj_name}
-  DEPENDS           ceres opencv openvg
+  DEPENDS           ceres opencv opengv
   PREFIX            ${_SB_BINARY_DIR}
   TMP_DIR           ${_SB_BINARY_DIR}/tmp
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
-  URL               https://github.com/mapillary/OpenSfM/archive/odm-1.zip
-  URL_MD5           5261d2df9af2b29a3bfde0b29421d108
+  URL               https://github.com/mapillary/OpenSfM/archive/odm-2.zip
+  URL_MD5           cacf024ec003fb7b0614e4f82d067715
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   #--Configure step-------------

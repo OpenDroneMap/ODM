@@ -5,6 +5,7 @@ lib/
 logs/
 share/
 src/
+download/
 
 cmvs.tar.gz
 parallel.tar.bz2

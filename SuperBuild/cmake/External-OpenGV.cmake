@@ -1,4 +1,4 @@
-set(_proj_name openvg)
+set(_proj_name opengv)
 set(_SB_BINARY_DIR "${SB_BINARY_DIR}/${_proj_name}")
 
 ExternalProject_Add(${_proj_name}
