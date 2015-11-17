@@ -170,6 +170,7 @@ class ODMTask(object):
 			eval(method_call_str)
 		except Exception, e:
 			log.ODM_ERROR('Method %s cannot be called' % method_call_str)
+			log.ODM_ERROR(str(e))
 		
 
 
