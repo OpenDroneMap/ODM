@@ -6,7 +6,7 @@ FAIL = '\033[91m'
 ENDC = '\033[0m'
 
 def ODM_INFO(str):
-	print '[INFO] ' + str
+	print OKBLUE + '[INFO] ' + str + ENDC
 
 def ODM_WARNING(str):
 	print WARNING + '[WARNING] ' + str + ENDC
