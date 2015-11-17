@@ -99,10 +99,10 @@ class ODMTaskManager(object):
 
 			# setup values
 			task = tasks[key]
-			task.num_inputs =  num_inputs
-			task.num_outputs =  num_outputs
-			task.inputs =  inputs
-			task.outputs =  outputs
+			task.num_inputs = num_inputs
+			task.num_outputs = num_outputs
+			task.inputs = inputs
+			task.outputs = outputs
 
 		return tasks
 
