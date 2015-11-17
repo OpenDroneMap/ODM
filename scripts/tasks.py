@@ -1,5 +1,8 @@
 import log
 
+import resize
+import opensfm
+
 # Define pipeline tasks
 tasks_dict = { '0': 'resize',
                '1': 'opensfm',
@@ -32,11 +35,13 @@ class ODMTaskManager(object):
 			tasks[key] = ODMTask(key, task_name)
 
 			# Setup each tasks i/o
+			command = None
 
 			if task_name == 'resize':
 				# setup this task
-				num_inputs = 0
-				num_outputs = 0
+				num_inputs = 1
+				num_outputs = 1
+				command = task_name + '.' + task_name
 				inputs = {}
 				outputs = {}
 
@@ -100,6 +105,7 @@ class ODMTaskManager(object):
 
 			# setup values
 			task = tasks[key]
+			task.command = command
 			task.num_inputs = num_inputs
 			task.num_outputs = num_outputs
 			task.inputs = inputs
@@ -124,6 +130,7 @@ class ODMTask(object):
 		# task definition
 		self.id = id
 		self.name = name
+		self.command = None
 
 		# task i/o
 		self.num_inputs  = 0
@@ -138,10 +145,11 @@ class ODMTask(object):
 	# Launch task
 	def run(self):
 
-		log.ODM_DEBUG('Running task %s %s ' % (self.id, self.name))
+		log.ODM_INFO('Running task %s %s ' % (self.id, self.name))
 
 		# while doing something
 		self.state = 1
+		self.launch_command()
 
 		# if succeeded with current task
 		if True:
@@ -151,5 +159,18 @@ class ODMTask(object):
 
 		# Return task state
 		return self.state
+
+	def launch_command(self):
+		if self.command is None:
+			log.ODM_ERROR('Call method for task %s not defined' % self.name)
+			return
+
+		method_call_str = str(self.command) + '()'
+		try:
+			eval(method_call_str)
+		except Exception, e:
+			log.ODM_ERROR('Method %s cannot be called' % method_call_str)
 		
+
+
 		
