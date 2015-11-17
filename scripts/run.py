@@ -2,12 +2,14 @@
 
 import context
 import system
+import log
 
 from datatypes import ODMApp
 
+	
 if __name__ == '__main__':
 
-	print '[INFO] Initializing OpenDroneMap app - %s' % system.now()
+	log.ODM_INFO('Initializing OpenDroneMap app - %s' % system.now())
 
 	# Initialize odm app
 	# internally configure all tasks
@@ -17,10 +19,9 @@ if __name__ == '__main__':
 	# by default we will start from the beginnig
 	init_task_id = 0
 
-	print '[INFO] Runnning OpenDroneMap app from state %s - %s' % (init_task_id, system.now())
+	log.ODM_INFO('Runnning OpenDroneMap app from state %s - %s' % (init_task_id, system.now()))
 
 	# run all tasks
 	app.run(init_task_id)
 
- 
-	print '[INFO] OpenDroneMap app finished - %s' % system.now()
+ 	log.ODM_INFO('OpenDroneMap app finished - %s' % system.now())

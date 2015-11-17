@@ -1,3 +1,4 @@
+import log
 
 # Define pipeline tasks
 tasks_dict = { '0': 'resize',
@@ -95,7 +96,7 @@ class ODMTaskManager(object):
 				inputs = {}
 				outputs = {}
 			else:
-				print '[ERROR] task_name  %s is not valid' % task_name
+				log.ODM_ERROR('task_name  %s is not valid' % task_name)
 
 			# setup values
 			task = tasks[key]
@@ -137,7 +138,7 @@ class ODMTask(object):
 	# Launch task
 	def run(self):
 
-		print '[INFO] Running task %s %s ' % (self.id, self.name)
+		log.ODM_DEBUG('Running task %s %s ' % (self.id, self.name))
 
 		# while doing something
 		self.state = 1
