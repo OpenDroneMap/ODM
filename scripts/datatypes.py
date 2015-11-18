@@ -2,11 +2,11 @@ import os
 import subprocess
 
 import log
-import context
+import dataset
 from tasks import ODMTaskManager
 
 class ODMApp:
-    '''   ODMJob - a class for ODM Activities
+    '''   ODMApp - a class for ODM Activities
     '''
     def __init__(self, images_dir, args=None):
         # Internal app config
@@ -14,41 +14,18 @@ class ODMApp:
         self.images_dir = os.path.abspath(images_dir)
 
         # Initialize odm photos
-        self.photos = self.init_photos(self.images_dir, self.args)
+        #self.photos = dataset.load_dataset(self.images_dir, self.args)
+        self.photos = []
         
         # Task manager
         # configure and schedule tasks
-        self.task_manager = ODMTaskManager()
+        self.task_manager = ODMTaskManager(self)
 
     # Run all tasks given an starting point
     def run(self, initial_task_id):
 
         self.task_manager.initial_task_id = initial_task_id
         self.task_manager.run_tasks()
-
-
-    def init_photos(self, images_dir, args):
-
-        # check if the extension is sopported
-        def supported_extension(file_name):
-            (pathfn, ext) = os.path.splitext(file_name)
-            return ext.lower() in context.supported_extensions
-
-        # find files in the given directory
-        files = os.listdir(images_dir)
-
-        # filter images for its extension type
-        # by now only 'jpg' and 'jpeg are supported
-        files = [f for f in files if supported_extension(f)]
-
-        photos = []
-
-        # create ODMPhoto list
-        for f in files:
-            file_name = os.path.join(images_dir, f)
-            photos.append(ODMPhoto(file_name, args))
-
-        return photos
 
 
 class ODMPhoto:
@@ -92,6 +69,11 @@ class ODMPhoto:
 
         # TODO(edgar): compute global min/max
         # def compute_min_max()
+            # min_width = min(min_width, width)
+            # max_width = max(max_width, width)
+            # min_height = min(min_height, heigth)
+            # max_height = max(max_height, height)
+
             ## populate & update max/mins
 #                    
             #if objODMJob.minWidth == 0:
