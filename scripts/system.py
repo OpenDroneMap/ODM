@@ -1,4 +1,11 @@
+import json
 import datetime
+import context
+
+def get_ccd_widths():
+    """Return the CCD Width of the camera listed in the JSON defs file."""
+    with open(context.ccd_widths_path) as jsonFile:
+        return json.load(jsonFile)
 
 def run(cmd):
     """Run a system command"""
