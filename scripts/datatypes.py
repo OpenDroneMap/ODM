@@ -55,6 +55,9 @@ class ODMPhoto:
         self.light_source = None
         self.metering_mode = None
         self.exposure = None
+        self.exposure_mode = None
+        self.exposure_bias = None
+        self.orientation = None
         self.gps_latitude = None
         self.gps_longitude = None
         self.gps_altitude = None
@@ -178,6 +181,9 @@ class ODMPhoto:
             elif key == 'Light Source': self.light_source = val
             elif key == 'Metering Mode': self.metering_mode = val
             elif key == 'Exposure': self.exposure = val
+            elif key == 'Exposure Mode': self.exposure_mode = val
+            elif key == 'Exposure bias': self.exposure_bias = val
+            elif key == 'Orientation': self.orientation = val
             elif key == 'GPS Latitude': self.gps_latitude = val
             elif key == 'GPS Longitude': self.gps_longitude = val
             elif key == 'GPS Altitude': self.gps_altitude = val
