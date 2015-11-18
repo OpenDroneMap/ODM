@@ -1,11 +1,11 @@
 import log
+import system
 
-import resize
 import opensfm
 import datatypes
 
-from dataset import load_dataset
 from resize import resize
+from dataset import load_dataset
 
 # Define pipeline tasks
 tasks_dict = { '0': 'load_dataset',
@@ -97,7 +97,6 @@ class ODMTaskManager(object):
 
 		return tasks
 
-
 	def run_tasks(self):
 		for id in range(self.initial_task_id, len(self.tasks)):
 			# catch task with current id
@@ -107,6 +106,10 @@ class ODMTaskManager(object):
 			self.current_task_id = task.id
 			# run task
 			task.state = task.run()
+			if task.state == 2:
+				log.ODM_INFO('Succeeded task %s: %s - %s' % (task.id, task.name, system.now()))
+			else:
+				log.ODM_ERROR('Aborted task %s: %s' % (task.id, task.name))
 
 
 class ODMTask(object):
@@ -126,26 +129,17 @@ class ODMTask(object):
 	def run(self):
 		# while doing something
 		self.state = 1
-		self.launch_command()
-		# if succeeded with current task
-		if True:
-			self.state = 2
-		else:
-			self.state = 3
-		# Return task state
-		return self.state
+		return self.launch_command()
 
 	def launch_command(self):
 		if self.command is None:
 			log.ODM_ERROR('Call method for task %s not defined' % self.name)
-			return
-		# run configured conmmand
+			return 3 # failed
+		# run conmmand
 		try:
-			self.command(**self.inputs)
+			succeed = self.command(**self.inputs)
+			return 2 if succeed else 3 # 2:succeed, 3:failed
 		except Exception, e:
 			log.ODM_ERROR('Method %s cannot be called' % str(self.command))
 			log.ODM_ERROR(str(e))
-		
-
-
-		
+			return 3 # failed
