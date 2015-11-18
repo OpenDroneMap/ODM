@@ -3,26 +3,24 @@ import subprocess
 
 import log
 import dataset
+import system
 from tasks import ODMTaskManager
 
 class ODMApp:
     '''   ODMApp - a class for ODM Activities
     '''
-    def __init__(self, images_dir, args=None):
+    def __init__(self, args):
         # Internal app config
         self.args = args
-        self.images_dir = os.path.abspath(images_dir)
-
+        self.images_dir = os.path.abspath(args['images_src'])
         # Initialize odm photos
-        #self.photos = dataset.load_dataset(self.images_dir, self.args)
         self.photos = []
-        
         # Task manager
         # configure and schedule tasks
         self.task_manager = ODMTaskManager(self)
 
     # Run all tasks given an starting point
-    def run(self, initial_task_id):
+    def run_all(self, initial_task_id):
 
         self.task_manager.initial_task_id = initial_task_id
         self.task_manager.run_tasks()
@@ -31,11 +29,12 @@ class ODMApp:
 class ODMPhoto:
     """   ODMPhoto - a class for ODMPhotos
     """
-    def __init__(self, file_name, args):
+    def __init__(self, path, args):
         #  general purpose
-        self.file_name = file_name
-
+        self.path = path
+        self.path_file = None
         # photo ideal attibutes
+        self.file_name = None
         self.file_size = None
         self.file_date = None
         self.camera_make = None
@@ -103,10 +102,8 @@ class ODMPhoto:
                 #objODMJob.maxHeight = self.height   
 
     def compute_focal_length(self):
-
-        if self.width is not None and self.height is not None and \
-           self.focal_length is not None and self.ccd_width is not None:
-            
+        if self.focal_length is not None and self.ccd_width is not None:
+            # compute the focal lenth in pixels
             if self.width > self.height:
                 self.focal_length_px = \
                     self.width * (self.focal_length / self.ccd_width)
@@ -114,30 +111,35 @@ class ODMPhoto:
                 self.focal_length_px = \
                     self.height * (self.focal_length / self.ccd_width)
 
-            log.ODM_INFO('Using %s dimensions: %s x %s | focal: %smm | ccd: %smm', \
+            log.ODM_DEBUG('Loaded %s | dimensions: %s x %s | focal: %smm | ccd: %smm' % \
                 (self.file_name, self.width, self.height, self.focal_length, self.ccd_width))
         else:
-            log.ODM_WARNING('No CCD width or focal length found for image file: \n' + self.file_name \
-                + ' camera: \"' + self.camera_model)
+            log.ODM_WARNING('No CCD width or focal length found for image file: \n' + 
+                self.file_name + ' camera: \"' + self.camera_model)
 
     def parse_jhead_values(self, args):
 
+         # load ccd_widths from file
+        ccd_widths = system.get_ccd_widths()
+
         # start pipe for jhead
-        src_process = subprocess.Popen(['jhead', self.file_name], 
+        src_process = subprocess.Popen(['jhead', self.path], 
                                        stdout=subprocess.PIPE)
         std_out, std_err = src_process.communicate()
 
         # split lines since the output has not a standard format
         std_out = std_out.decode('ascii')
         std_out = std_out.splitlines()
-       
+
         # loop overl lines
         for line in std_out[:-1]:
             # split line in two parts and catch keys and values
             key, val = [x.strip() for x in line.split(':')][:2]
 
             # parse values to attributes
-            if key == 'File name': self.file_name = val
+            if key == 'File name': 
+                self.path_file = val
+                self.file_name = dataset.extract_file_from_path_file(val)
             elif key == 'File size': self.file_size = val
             elif key == 'File date': self.file_date = val
             elif key == 'Camera make': self.camera_make = val
@@ -156,17 +158,17 @@ class ODMPhoto:
 
             # parse force-focal
             elif key == 'Focal length':
-                if args is None or not '--force-focal' in args:
-                    self.focal_length = float(val.split(' ')[0][:-2])
+                if args.get('force_focal') is not None:
+                    self.focal_length = args['force_focal']
                 else:
-                    self.focal_length = args['--force-focal']
+                    self.focal_length = float(val.split(' ')[0][:-2])
             
             # parse force-ccd
             elif key == 'CCD width': 
-                if args is None or not '--force-ccd' in args:
-                    self.ccd_width = float(val[:-2])
+                if args.get('force_ccd') is not None:
+                    self.ccd_width = args['force_ccd']
                 else:
-                    self.ccd_width = args['--force-ccd']
+                    self.ccd_width = float(val[:-2])
 
             elif key == 'Exposure time': self.exposure_time = val
             elif key == 'Aperture': self.aperture = val
@@ -181,4 +183,13 @@ class ODMPhoto:
             elif key == 'GPS Altitude': self.gps_altitude = val
             elif key == 'JPEG Quality': self.jpg_quality = val
             else: 
-                log.ODM_ERROR('Unknown key: %s' % key)
+                log.ODM_WARNING('Unknown key: %s' % key)
+            
+        # find ccd_width from file if needed
+        if self.ccd_width is None:
+            key = [x for x in ccd_widths.keys() if self.camera_model in x][0]
+            if key is not None:
+                self.ccd_width = float(ccd_widths[key])
+            else:
+                log.ODM_ERROR('Could not find ccd_width in file')
+   
