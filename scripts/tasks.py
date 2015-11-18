@@ -29,20 +29,14 @@ class ODMTaskManager(object):
 		self.tasks = self.init_tasks(tasks_dict, self.odm_app)
 
 	def init_tasks(self, _tasks_dict, _odm_app):
-
 		# dict to store tasks objects
 		tasks = {}
-
 		# loop over tasks dict
 		for key, in _tasks_dict:
-
 			# instantiate and append ODMTask
 			task_name = _tasks_dict[key]
 			tasks[key] = ODMTask(key, task_name)
-
-			# Setup each tasks i/o
-			command = None
-
+			# setup tasks
 			if  task_name == 'load_dataset':
 				# setup this task
 				command = load_dataset
@@ -57,34 +51,42 @@ class ODMTaskManager(object):
 
 			elif task_name == 'opensfm':
 				# setup this task
+				command = None
 				inputs = {}
 
 			elif task_name == 'cmvs':
 				# setup this task
+				command = None
 				inputs = {}
 
 			elif task_name == 'pmvs':
 				# setup this task
+				command = None
 				inputs = {}
 
 			elif task_name == 'odm_meshing':
 				# setup this task
+				command = None
 				inputs = {}
 
 			elif task_name == 'odm_texturing':
 				# setup this task
+				command = None
 				inputs = {}
 
 			elif task_name == 'odm_georeferencing':
 				# setup this task
+				command = None
 				inputs = {}
 
 			elif task_name == 'odm_orthophoto':
 				# setup this task
+				command = None
 				inputs = {}
 
 			elif task_name == 'zip_results':
 				# setup this task
+				command = None
 				inputs = {}
 
 			else:
