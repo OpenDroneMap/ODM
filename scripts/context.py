@@ -12,6 +12,7 @@ ccd_widths_path = os.path.join(root_path, 'ccd_defs.json')
 pyopencv_path = os.path.join(superbuild_path, 'install/lib/python2.7/dist-packages')
 sys.path.append(pyopencv_path)
 
+# add opensfm to python path
 opensfm_path = os.path.join(superbuild_path, "src/opensfm")
 
 # Define supported image extensions

@@ -6,6 +6,7 @@ import datatypes
 
 from resize import resize
 from dataset import load_dataset
+from opensfm import opensfm
 
 # Define pipeline tasks
 tasks_dict = { '0': 'load_dataset',
@@ -54,8 +55,8 @@ class ODMTaskManager(object):
 
 			elif task_name == 'opensfm':
 				# setup this task
-				command = None
-				inputs = {}
+				command = opensfm
+				inputs = { 'images_dir': _odm_app.images_dir }
 
 			elif task_name == 'cmvs':
 				# setup this task
