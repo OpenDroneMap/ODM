@@ -11,12 +11,14 @@ exec 1>&2
 
 echo "RUNNING PRE-COMMIT"
 
+EXIT_CODE=0
 # Get list of files about to be committed
 if git diff --cached --name-only --diff-filter=ACM | grep 'ccd_defs.json'; then
     echo "We changed ccd_defs.json"
     GIT_ROOT=$(git rev-parse --show-toplevel)
-    perl $GIT_ROOT/ccd_defs_check.pl
+    python $GIT_ROOT/ccd_defs_check.py
+    EXIT_CODE=$(echo $?)
 fi
 
 # non-zero exit fails the commit
-exit 0
+exit $EXIT_CODE

@@ -42,7 +42,7 @@ jobOptions = {'resizeTo': 0, 'srcDir': CURRENT_DIR, 'utmZone': -999,
               'utmSouth': False, 'utmEastOffset': 0, 'utmNorthOffset': 0}
 
 # parse arguments
-processopts = ['resize', 'getKeypoints', 'match', 'bundler', 'cmvs', 'pmvs',
+processopts = ['resize', 'opensfm', 'getKeypoints', 'match', 'bundler', 'cmvs', 'pmvs',
                'odm_meshing', 'odm_texturing', 'odm_georeferencing',
                'odm_orthophoto']
 
@@ -51,24 +51,41 @@ parser.add_argument('--resize-to',  # currently doesn't support 'orig'
                     metavar='<integer>',
                     default=2400,
                     type=int,
-                    help='resizes images by the largest side')
+                    help='Resizes images by the largest side. Default: %(default)s')
+
+parser.add_argument('--job-dir-name',
+                    metavar='<string>',
+                    type=str,
+                    help='Name of the output folder, only ASCII charaters can be used. If not provided "reconstruction-with-image-size-[resize-to]" will be used')
 
 parser.add_argument('--start-with', '-s',
-                    metavar='<string>',
+                    metavar='<task>',
                     default='resize',
                     choices=processopts,
-                    help=('Can be one of: ' + ' | '.join(processopts)))
+                    help=('Start with the provided task. Can be one of: ' + ' | '.join(processopts)))
 
 parser.add_argument('--end-with', '-e',
-                    metavar='<string>',
+                    metavar='<task>',
                     default='odm_orthophoto',
                     choices=processopts,
-                    help=('Can be one of:' + ' | '.join(processopts)))
+                    help=('Finish at the provided task. Can be one of: ' + ' | '.join(processopts)))
 
 parser.add_argument('--run-only',
-                    metavar='<string>',
+                    metavar='<task>',
                     choices=processopts,
-                    help=('Can be one of:' + ' | '.join(processopts)))
+                    help=('Run only one task. Can be one of: ' + ' | '.join(processopts)))
+
+use_opensfm_parser = parser.add_mutually_exclusive_group(required=False)
+use_opensfm_parser.add_argument('--use-opensfm',
+                    dest='use_opensfm',
+                    action='store_true',
+                    help='use OpenSfM to find the camera positions '
+                         '(replaces getKeypoints, match and bundler steps)')
+use_opensfm_parser.add_argument('--use-bundler',
+                    dest='use_opensfm',
+                    action='store_false',
+                    help='use Bundler to find the camera positions.')
+parser.set_defaults(use_opensfm=True)
 
 parser.add_argument('--force-focal',
                     metavar='<positive float>',
@@ -87,56 +104,46 @@ parser.add_argument('--min-num-features',
                     type=int,
                     help=('Minimum number of features to extract per image. '
                           'More features leads to better results but slower '
-                          'execution.'))
+                          'execution. Default: %(default)s'))
 
 parser.add_argument('--matcher-threshold',
                     metavar='<percent>',
                     default=2.0,
                     type=float,
                     help=('Ignore matched keypoints if the two images share '
-                            'less than <float> percent of keypoints'))
+                            'less than <float> percent of keypoints. Default: %(default)s'))
 
 parser.add_argument('--matcher-ratio',
                     metavar='<float>',
                     default=0.6,
                     type=float,
                     help=('Ratio of the distance to the next best matched '
-                            'keypoint'))
+                            'keypoint. Default: %(default)s'))
 
-parser.add_argument('--matcher-preselect',
-                    type=bool,
-                    metavar='',
-                    default=False,
-                    help=('use GPS exif data, if available, to match each '
-                            'image only with its k-nearest neighbors, or all '
-                            'images within a certain distance threshold'))
-
-parser.add_argument('--matcher-useKnn',
-                    type=bool,
-                    metavar='',
-                    default=True,
-                    help=('use GPS exif data, if available, to match each '
-                            'image only with its k-nearest neighbors, or all '
-                            'images within a certain distance threshold'))
-
-parser.add_argument('--matcher-kDistance',
-                    metavar='<integer>',
-                    default=20,
-                    type=int,
-                    help='')
-
-parser.add_argument('--matcher-k',
+parser.add_argument('--matcher-neighbors',
                     metavar='<integer>',
                     default=8,
                     type=int,
-                    help='Number of k-nearest images to match '
-                         'when using OpenSfM')
+                    help='Number of nearest images to pre-match based on GPS exif data. '
+                            'Set to 0 to skip pre-matching. '
+                            'Neighbors works together with Distance parameter, '
+                            'set both to 0 to not use pre-matching. OpenSFM uses both parameters at the same time, '
+                            'Bundler uses only one which has value, prefering the Neighbors parameter.'
+                            ' Default: %(default)s')
+
+parser.add_argument('--matcher-distance',
+                    metavar='<integer>',
+                    default=0,
+                    type=int,
+                    help='Distance threshold in meters to find pre-matching images based on GPS exif data. '
+                            'Set to 0 to skip pre-matching.'
+                            ' Default: %(default)s')
 
 parser.add_argument('--cmvs-maxImages',
                     metavar='<integer>',
                     default=500,
                     type=int,
-                    help='The maximum number of images per cluster')
+                    help='The maximum number of images per cluster. Default: %(default)s')
 
 parser.add_argument('--pmvs-level',
                     metavar='<positive integer>',
@@ -145,13 +152,13 @@ parser.add_argument('--pmvs-level',
                     help=('The level in the image pyramid that is used '
                             'for the computation. see '
                             'http://www.di.ens.fr/pmvs/documentation.html for '
-                            'more pmvs documentation'))
+                            'more pmvs documentation. Default: %(default)s'))
 
 parser.add_argument('--pmvs-csize',
                     metavar='< positive integer>',
                     default=2,
                     type=int,
-                    help='Cell size controls the density of reconstructions')
+                    help='Cell size controls the density of reconstructions. Default: %(default)s')
 
 parser.add_argument('--pmvs-threshold',
                     metavar='<float: -1.0 <= x <= 1.0>',
@@ -159,7 +166,7 @@ parser.add_argument('--pmvs-threshold',
                     type=float,
                     help=('A patch reconstruction is accepted as a success '
                             'and kept, if its associcated photometric consistency '
-                            'measure is above this threshold.'))
+                            'measure is above this threshold. Default: %(default)s'))
 
 parser.add_argument('--pmvs-wsize',
                     metavar='<positive integer>',
@@ -170,7 +177,7 @@ parser.add_argument('--pmvs-wsize',
                             'score. For example, when wsize=7, 7x7=49 pixel '
                             'colors are sampled in each image. Increasing the '
                             'value leads to more stable reconstructions, but '
-                            'the program becomes slower.'))
+                            'the program becomes slower. Default: %(default)s'))
 
 parser.add_argument('--pmvs-minImageNum',
                     metavar='<positive integer>',
@@ -184,7 +191,7 @@ parser.add_argument('--odm_meshing-maxVertexCount',
                     metavar='<positive integer>',
                     default=100000,
                     type=int,
-                    help='The maximum vertex count of the output mesh')
+                    help='The maximum vertex count of the output mesh. Default: %(default)s')
 
 parser.add_argument('--odm_meshing-octreeDepth',
                     metavar='<positive integer>',
@@ -192,14 +199,14 @@ parser.add_argument('--odm_meshing-octreeDepth',
                     type=int,
                     help=('Oct-tree depth used in the mesh reconstruction, '
                             'increase to get more vertices, recommended '
-                            'values are 8-12'))
+                            'values are 8-12, the default is %(default)s'))
 
 parser.add_argument('--odm_meshing-samplesPerNode',
                     metavar='<float >= 1.0>',
-                    default=1,
+                    default=1.0,
                     type=float,
                     help=('Number of points per octree node, recommended '
-                            'value: 1.0'))
+                            ' and default value: %(default)s'))
 
 parser.add_argument('--odm_meshing-solverDivide',
                     metavar='<positive integer>',
@@ -208,61 +215,53 @@ parser.add_argument('--odm_meshing-solverDivide',
                     help=('Oct-tree depth at which the Laplacian equation '
                             'is solved in the surface reconstruction step. '
                             'Increasing this value increases computation '
-                            'times slightly but helps reduce memory usage.'))
+                            'times slightly but helps reduce memory usage. Default: %(default)s'))
 
 parser.add_argument('--odm_texturing-textureResolution',
                     metavar='<positive integer>',
                     default=4096,
                     type=int,
                     help=('The resolution of the output textures. Must be '
-                            'greater than textureWithSize.'))
+                            'greater than textureWithSize. Default: %(default)s'))
 
 parser.add_argument('--odm_texturing-textureWithSize',
                     metavar='<positive integer>',
                     default=3600,
                     type=int,
                     help=('The resolution to rescale the images performing '
-                            'the texturing.'))
+                            'the texturing. Default: %(default)s'))
 
 parser.add_argument('--odm_georeferencing-gcpFile',
                     metavar='<path string>',
                     default='gcp_list.txt',
                     help=('path to the file containing the ground control '
-                            'points used for georeferencing.The file needs to '
+                            'points used for georeferencing. The default file is %(default)s. The file needs to '
                             'be on the following line format: \neasting '
                             'northing height pixelrow pixelcol imagename'))
 
 parser.add_argument('--odm_georeferencing-useGcp',
-                    type = bool,
-                    default = False,
-                    help = 'set to true for enabling GCPs from the file above')
+                    action='store_true',
+                    default=False,
+                    help = 'Enabling GCPs from the file above. The GCP file is not used by default.')
 
 parser.add_argument('--odm_orthophoto-resolution',
                     metavar='<float > 0.0>',
                     default=20.0,
                     type=float,
-                    help=('Orthophoto ground resolution in pixels/meter'))
+                    help=('Orthophoto ground resolution in pixels/meter. Default: %(default)s'))
 
 parser.add_argument('--zip-results',
                     action='store_true',
                     default=False,
-                    help='compress the results using gunzip')
-
-parser.add_argument('--use-opensfm',
-                    type=bool,
-                    default=True,
-                    help='use OpenSfM instead of Bundler to find the camera positions '
-                         '(replaces getKeypoints, match and bundler steps)')
+                    help='Compress the results using gunzip')
 
 args = parser.parse_args()
 
 print "\n  - configuration:"
 
-print vars(args)
-# for key in vars(args):
-#     if key != "":
-#         print "    " + key + ": " + str(args[key])
-# print "\n"
+# print vars(args)
+for arg in vars(args):
+    print "    ", arg, ":", getattr(args, arg)
 
 
 def run(cmd):
@@ -459,7 +458,10 @@ def prepare_objects():
 
     print "  using max image size of " + str(jobOptions["resizeTo"]) + " x " + str(jobOptions["resizeTo"])
 
-    jobOptions["jobDir"] = jobOptions["srcDir"] + "/reconstruction-with-image-size-" + str(jobOptions["resizeTo"])
+    if args.job_dir_name is None:
+        args.job_dir_name = "reconstruction-with-image-size-" + str(jobOptions["resizeTo"])
+
+    jobOptions["jobDir"] = jobOptions["srcDir"] + "/" + str(args.job_dir_name)
 
     jobOptions["step_1_convert"] = jobOptions["jobDir"] + "/_convert.templist.txt"
     jobOptions["step_1_vlsift"] = jobOptions["jobDir"] + "/_vlsift.templist.txt"
@@ -567,24 +569,29 @@ def match():
     matchDest.write(filesList)
     matchDest.close()
 
-    # Check if preselection is to be run
-    if args.matcher_preselect:
-        useKnn = True
-        if args.matcher_useKnn:
-            useKnn = False  # BUG: never used
-        preselected_pairs = knnMatch_exif.preselect_pairs(BIN_PATH + "/odm_extract_utm", jobOptions["step_2_filelist"], args.matcher_kDistance, args.matcher_useKnn)
+    # try to do preselection
+    do_preselection = False
+    if args.matcher_neighbors > 0 or args.matcher_distance > 0:
+        do_preselection = True
+        if args.matcher_neighbors > 0:
+            k_distance = args.matcher_neighbors
+            use_knn_mode = True
+        else:
+            k_distance = args.matcher_distance
+            use_knn_mode = False
+        preselected_pairs = knnMatch_exif.preselect_pairs(BIN_PATH + "/odm_extract_utm", jobOptions["step_2_filelist"], k_distance, use_knn_mode)
+
     if len(preselected_pairs) != 0:
+        # preselection was succesfull
         for i, j, in preselected_pairs:
             c += 1
             if i < 10:
                 print i, j
             if not os.path.isfile(jobOptions["step_2_matches_dir"] + "/" + str(i) + "-" + str(j) + ".txt"):
                 matchesJobs += "echo -n \".\" && touch \"" + jobOptions["step_2_matches_dir"] + "/" + str(i) + "-" + str(j) + ".txt\" && \"" + BIN_PATH + "/KeyMatch\" \"" + objects[i]["step_1_keyFile"] + "\" \"" + objects[j]["step_1_keyFile"] + "\" \"" + jobOptions["step_2_matches_dir"] + "/" + str(i) + "-" + str(j) + ".txt\" " + str(args.matcher_ratio) + " " + str(args.matcher_threshold) + "\n"
-
-
-# Match all image pairs
     else:
-        if args.matcher_preselect:
+        # preselection failed, Match all image pairs
+        if do_preselection:
             print "Failed to run pair preselection, proceeding with exhaustive matching."
         for i in range(0, objectStats["good"]):
             for j in range(i + 1, objectStats["good"]):
@@ -710,9 +717,11 @@ def opensfm():
        "feature_process_size: {}".format(jobOptions["resizeTo"]),
        "feature_min_frames: {}".format(args.min_num_features),
        "processes: {}".format(CORES),
+       "matching_gps_neighbors: {}".format(args.matcher_neighbors),
     ]
-    if args.matcher_preselect:
-        config.append("matching_gps_neighbors: {}".format(args.matcher_k))
+
+    if args.matcher_distance>0:
+        config.append("matching_gps_distance: {}".format(args.matcher_distance))
 
     with open('opensfm/config.yaml', 'w') as fout:
         fout.write("\n".join(config))
@@ -729,8 +738,6 @@ def opensfm():
 
     bundler_to_pmvs("opensfm/bundle_r000.out")
 
-    if args.end_with != "bundler":
-        cmvs()
 
 
 def bundler_to_pmvs(bundle_out):
@@ -992,6 +999,10 @@ if __name__ == '__main__':
     prepare_objects()
 
     os.chdir(jobOptions["jobDir"])
+
+    if args.run_only is not None:
+        args.start_with = args.run_only
+        args.end_with = args.run_only
 
     run_tasks = False
     for name, func in tasks:
