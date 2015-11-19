@@ -4,7 +4,7 @@ import subprocess
 import log
 import dataset
 import system
-from tasks import ODMTaskManager
+import tasks
 
 class ODMApp:
     '''   ODMApp - a class for ODM Activities
@@ -17,12 +17,24 @@ class ODMApp:
         self.photos = []
         # Task manager
         # configure and schedule tasks
-        self.task_manager = ODMTaskManager(self)
+        self.task_manager = tasks.ODMTaskManager(self)
 
     # Run all tasks given an starting point
-    def run_all(self, initial_task_id):
+    def run_all(self, initial_task, final_task):
 
-        self.task_manager.initial_task_id = initial_task_id
+        # found ids for tasks
+        t_dict = tasks.tasks_dict
+        initial_task_id = [k for k in t_dict if t_dict[k]==initial_task][0]
+        final_task_id = [k for k in t_dict if t_dict[k]==final_task][0]
+
+        if initial_task_id > final_task_id:
+            log.ODM_ERROR('Initial task must be lower than final')
+            return
+
+        # setup task manager
+        self.task_manager.initial_task_id = int(initial_task_id)
+        self.task_manager.final_task_id = int(final_task_id)
+        # run defined pipeline
         self.task_manager.run_tasks()
 
 
