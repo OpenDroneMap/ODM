@@ -33,15 +33,16 @@ class ODMPhoto:
         #  general purpose
         self.path = path
         self.path_file = None
-        # photo ideal attibutes
+        # current attibutes
         self.file_name = None
+        self.width = None
+        self.height = None
+        # other attributes
         self.file_size = None
         self.file_date = None
         self.camera_make = None
         self.camera_model = None
         self.date_time = None
-        self.width = None
-        self.height = None
         self.resolution = None
         self.flash_used = None
         self.focal_length = None
@@ -64,7 +65,7 @@ class ODMPhoto:
         self.jpg_quality = None
 
         # parse values
-        self.parse_jhead_values(args)
+        self.parse_jhead_values(self.path, args)
 
         # compute focal lenght into pixels
         self.compute_focal_length()
@@ -120,13 +121,13 @@ class ODMPhoto:
             log.ODM_WARNING('No CCD width or focal length found for image file: \n' + 
                 self.file_name + ' camera: \"' + self.camera_model)
 
-    def parse_jhead_values(self, args):
+    def parse_jhead_values(self, _path, args):
 
          # load ccd_widths from file
         ccd_widths = system.get_ccd_widths()
 
         # start pipe for jhead
-        src_process = subprocess.Popen(['jhead', self.path], 
+        src_process = subprocess.Popen(['jhead', _path], 
                                        stdout=subprocess.PIPE)
         std_out, std_err = src_process.communicate()
 
