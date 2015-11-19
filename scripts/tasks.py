@@ -36,6 +36,7 @@ class ODMTaskManager(object):
 			# instantiate and append ODMTask
 			task_name = _tasks_dict[key]
 			tasks[key] = ODMTask(key, task_name)
+
 			# setup tasks
 			if  task_name == 'load_dataset':
 				# setup this task
@@ -47,7 +48,9 @@ class ODMTaskManager(object):
 			elif task_name == 'resize':
 				# setup this task
 				command = resize
-				inputs = { 'photos': _odm_app.photos }
+				inputs = { 'images_dir': _odm_app.images_dir,
+						   'args': _odm_app.args ,
+				           'photos': _odm_app.photos }
 
 			elif task_name == 'opensfm':
 				# setup this task
