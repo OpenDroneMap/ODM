@@ -27,6 +27,7 @@ class ODMTaskManager(object):
 		self.odm_app = odm_app
 		self.initial_task_id = 0
 		self.current_task_id = 0
+		self.final_task_id = len(tasks_dict)
 		self.tasks = self.init_tasks(tasks_dict, self.odm_app)
 
 	def init_tasks(self, _tasks_dict, _odm_app):
@@ -104,7 +105,7 @@ class ODMTaskManager(object):
 		return tasks
 
 	def run_tasks(self):
-		for id in range(self.initial_task_id, len(self.tasks)):
+		for id in range(self.initial_task_id, self.final_task_id + 1):
 			# catch task with current id
 			task = self.tasks[str(id)]
 			# update task tracking

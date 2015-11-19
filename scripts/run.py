@@ -25,13 +25,21 @@ if __name__ == '__main__':
 	# internally configure all tasks
 	app = ODMApp(config.args)
 
-	# set from where we want to start
-	# by default we will start from the beginnig
-	init_task_id = 0
-
 	log.ODM_INFO('Runnning OpenDroneMap app - %s' % system.now())
 
-	# run all tasks
-	app.run_all(init_task_id)
+	# run single task
+	if config.args.get('run_only') is not None:
+		# task to run
+		tasks = config.args['run_only']
+		app.run_all(tasks, tasks)
+
+	# run multiple tasks
+	else:
+		# get initial and final tasks
+		initial_task = config.args['start_with']
+		final_task = config.args['end_with']
+
+		# run tasks
+		app.run_all(initial_task, final_task)
 
  	log.ODM_INFO('OpenDroneMap app finished - %s' % system.now())
