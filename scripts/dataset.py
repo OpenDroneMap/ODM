@@ -18,14 +18,16 @@ def load_dataset(images_dir, args, photos):
     # by now only 'jpg' and 'jpeg are supported
     files = [f for f in files if supported_extension(f)]
 
-    if len(files) < 2:
-        log.ODM_ERROR('Not found any supported image in %s' % images_dir)
+    if len(files) < 1:
+        log.ODM_ERROR('Not found enough supported image in %s' % images_dir)
         return False
 
     # create ODMPhoto list
     for f in files:
         file_name = os.path.join(images_dir, f)
         photos.append(datatypes.ODMPhoto(file_name, args))
+
+    log.ODM_DEBUG('Found %s usable images' % len(photos))
     return True
 
 def extract_file_from_path_file(path_file):
@@ -36,3 +38,7 @@ def extract_path_from_file(file):
     path_file = os.path.abspath(os.path.dirname(file))
     path, file = os.path.split(path_file)
     return path
+
+def join_paths(path1, path2):
+    return os.path.join(path1, path2)
+
