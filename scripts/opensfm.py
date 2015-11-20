@@ -8,9 +8,10 @@ def opensfm(project_path, args, photos):
     log.ODM_INFO('Running Open Structure from Motion (OpenSfm)')
     
     # check if we have input data
-    if photos is None:
+    if len(photos) == 0:
         log.ODM_WARNING('Photos array is empty - Proceed to load images')
-        photos = dataset.load_dataset(project_path, args)
+        images_dir = dataset.join_paths(project_path, 'images/')
+        photos = dataset.load_dataset(images_dir, args)
 
     # preconditions
     if len(photos) < 1:
@@ -21,16 +22,15 @@ def opensfm(project_path, args, photos):
     working_dir = dataset.join_paths(project_path, 'opensfm')
     system.mkdir_p(working_dir)
 
-    # define opensfm execution command
-    cmd = dataset.join_paths(context.opensfm_path, 'bin/detect_features')
+    try:
+        # define opensfm execution command
+        system.run('PYTHONPATH=%s %s/bin/run_all %s' % \
+            (context.pyopencv_path, context.opensfm_path, images_dir))
+    except Exception, e:
+        log.ODM_ERROR(str(e))
+        return False
 
-    # run opensfm
-    #system.run('PYTHONPATH=%s %s %s' % (context.pyopencv_path, cmd, project_path))
-
-    #run('PYTHONPATH={} "{}/bin/run_all" opensfm'.format(PYOPENCV_PATH, OPENSFM_PATH))
-
-    return False
-
+    return True
 
 def opensfm2():
     print "\n  - running OpenSfM - " + now()
