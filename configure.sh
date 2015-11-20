@@ -45,6 +45,7 @@ sudo apt-get install python-dev \
                      libpng-dev \
                      libtiff-dev \
                      libjasper-dev \
+                     libflann-dev \
                      libdc1394-22-dev \
                      libboost-all-dev \
 					 libboost-python-dev \
