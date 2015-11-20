@@ -21,7 +21,7 @@ def load_dataset(images_dir, args):
     files = [f for f in files if supported_extension(f)]
 
     if len(files) < 1:
-        log.ODM_ERROR('Not found enough supported image in %s' % images_dir)
+        log.ODM_ERROR('Not found enough supported images in %s' % images_dir)
         return
 
     photos = []
