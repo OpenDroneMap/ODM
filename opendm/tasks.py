@@ -1,16 +1,14 @@
 import log
 import system
 
-import opensfm
+import dataset
 import datatypes
 
-from resize import resize
-from dataset import load_dataset
-from opensfm import opensfm
+from scripts.resize import resize
+from scripts.opensfm import opensfm
 
 # Define pipeline tasks
-tasks_dict = { '0': 'load_dataset',
-			   '1': 'resize',
+tasks_dict = { '1': 'resize',
                '2': 'opensfm',
                '3': 'cmvs',
                '4': 'pmvs',
@@ -40,24 +38,19 @@ class ODMTaskManager(object):
 			tasks[key] = ODMTask(key, task_name)
 
 			# setup tasks
-			if  task_name == 'load_dataset':
-				# setup this task
-				command = load_dataset
-				inputs = { 'images_dir': _odm_app.images_dir,
-				           'args': _odm_app.args ,
-		                   'photos': _odm_app.photos }
-
-			elif task_name == 'resize':
+			if task_name == 'resize':
 				# setup this task
 				command = resize
-				inputs = { 'images_dir': _odm_app.images_dir,
-						   'args': _odm_app.args ,
+				inputs = { 'project_path': _odm_app.project_path,
+						   'args': _odm_app.args,
 				           'photos': _odm_app.photos }
 
 			elif task_name == 'opensfm':
 				# setup this task
 				command = opensfm
-				inputs = { 'images_dir': _odm_app.images_dir }
+				inputs = { 'project_path': _odm_app.project_path,
+						   'args': _odm_app.args,
+				           'photos': _odm_app.photos }
 
 			elif task_name == 'cmvs':
 				# setup this task
@@ -147,6 +140,5 @@ class ODMTask(object):
 			succeed = self.command(**self.inputs)
 			return 2 if succeed else 3 # 2:succeed, 3:failed
 		except Exception, e:
-			log.ODM_ERROR('Method %s cannot be called' % str(self.command))
 			log.ODM_ERROR(str(e))
 			return 3 # failed

@@ -1,4 +1,38 @@
-def opensfm():
+from opendm import log
+from opendm import dataset
+from opendm import system
+from opendm import context
+
+def opensfm(project_path, args, photos):
+
+    log.ODM_INFO('Running Open Structure from Motion (OpenSfm)')
+    
+    # check if we have input data
+    if photos is None:
+        log.ODM_WARNING('Photos array is empty - Proceed to load images')
+        photos = dataset.load_dataset(project_path, args)
+
+    # preconditions
+    if len(photos) < 1:
+        log.ODM_ERROR('Not enough photos in photos array to reconstruct')
+        return False
+
+    # create working directory
+    working_dir = dataset.join_paths(project_path, 'opensfm')
+    system.mkdir_p(working_dir)
+
+    # define opensfm execution command
+    cmd = dataset.join_paths(context.opensfm_path, 'bin/detect_features')
+
+    # run opensfm
+    #system.run('PYTHONPATH=%s %s %s' % (context.pyopencv_path, cmd, project_path))
+
+    #run('PYTHONPATH={} "{}/bin/run_all" opensfm'.format(PYOPENCV_PATH, OPENSFM_PATH))
+
+    return False
+
+
+def opensfm2():
     print "\n  - running OpenSfM - " + now()
 
     os.chdir(jobOptions["jobDir"])
