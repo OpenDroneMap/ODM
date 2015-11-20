@@ -2,7 +2,8 @@ import os
 import errno
 import json
 import datetime
-import context
+
+from opendm import context
 
 def get_ccd_widths():
     """Return the CCD Width of the camera listed in the JSON defs file."""

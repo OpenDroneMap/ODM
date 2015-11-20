@@ -12,7 +12,7 @@ class ODMApp:
     def __init__(self, args):
         # Internal app config
         self.args = args
-        self.images_dir = os.path.abspath(args['images_src'])
+        self.project_path = os.path.abspath(args['images_src'])
         # Initialize odm photos
         self.photos = []
         # Task manager
@@ -45,10 +45,13 @@ class ODMPhoto:
         #  general purpose
         self.path = path
         self.path_file = None
-        # current attibutes
+        # useful attibutes
         self.file_name = None
         self.width = None
         self.height = None
+        self.ccd_width = None
+        self.focal_length = None
+        self.focal_length_px = None
         # other attributes
         self.file_size = None
         self.file_date = None
@@ -57,9 +60,6 @@ class ODMPhoto:
         self.date_time = None
         self.resolution = None
         self.flash_used = None
-        self.focal_length = None
-        self.focal_length_px = None
-        self.ccd_width = None
         self.exposure_time = None
         self.aperture = None
         self.focus_distance = None

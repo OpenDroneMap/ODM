@@ -4,12 +4,14 @@ import log
 import context
 import datatypes
 
-def load_dataset(images_dir, args, photos):
+def load_dataset(images_dir, args):
 
     # check if the extension is sopported
     def supported_extension(file_name):
         (pathfn, ext) = os.path.splitext(file_name)
         return ext.lower() in context.supported_extensions
+
+    log.ODM_DEBUG('Loading dataset from: %s' % images_dir)
 
     # find files in the given directory
     files = os.listdir(images_dir)
@@ -20,15 +22,17 @@ def load_dataset(images_dir, args, photos):
 
     if len(files) < 1:
         log.ODM_ERROR('Not found enough supported image in %s' % images_dir)
-        return False
+        return
+
+    photos = []
 
     # create ODMPhoto list
     for f in files:
         file_name = os.path.join(images_dir, f)
         photos.append(datatypes.ODMPhoto(file_name, args))
 
-    log.ODM_DEBUG('Found %s usable images' % len(photos))
-    return True
+    log.ODM_INFO('Found %s usable images' % len(photos))
+    return photos
 
 def extract_file_from_path_file(path_file):
     path, file = os.path.split(path_file)

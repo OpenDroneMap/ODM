@@ -1,13 +1,19 @@
 import cv2
 import pyexiv2
 
-import log
-import system
-import dataset
+from opendm import log
+from opendm import system
+from opendm import dataset
 
-def resize(images_dir, args, photos):
+def resize(project_path, args, photos):
 
-    log.ODM_DEBUG('Preparing images - %s' % images_dir)
+    log.ODM_INFO('Preparing images - %s' % project_path)
+
+    # check if we have input data
+    if len(photos) == 0:
+        log.ODM_WARNING('Photos array is empty - Proceed to load images')
+        images_dir = dataset.join_paths(project_path, 'images')
+        photos = dataset.load_dataset(images_dir, args)
 
     # preconditions
     if len(photos) < 1:
@@ -15,7 +21,7 @@ def resize(images_dir, args, photos):
         return False
 
     # create working directory
-    working_dir = dataset.join_paths(images_dir, 'images_resize')
+    working_dir = dataset.join_paths(project_path, 'images_resize')
     system.mkdir_p(working_dir)
 
     # loop over photos
@@ -50,5 +56,5 @@ def resize(images_dir, args, photos):
             log.ODM_ERROR('%s' % e)
             return False
 
-    log.ODM_DEBUG('Resized %s images' % len(photos))
+    log.ODM_INFO('Resized %s images' % len(photos))
     return True

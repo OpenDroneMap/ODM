@@ -1,7 +1,7 @@
 import argparse
 
 # parse arguments
-processopts = ['resize', 'getKeypoints', 'match', 'bundler', 'cmvs', 'pmvs',
+processopts = ['resize', 'opensfm', 'cmvs', 'pmvs',
                'odm_meshing', 'odm_texturing', 'odm_georeferencing',
                'odm_orthophoto']
 
