@@ -98,3 +98,17 @@ SETUP_EXTERNAL_PROJECT_CUSTOM(OpenSfM)
 #
 
 SETUP_EXTERNAL_PROJECT_CUSTOM(CMVS)
+
+
+# ---------------------------------------------------------------------------------------------
+# Catkin
+#
+
+SETUP_EXTERNAL_PROJECT_CUSTOM(Catkin)
+
+
+# ---------------------------------------------------------------------------------------------
+# Catkin
+#
+
+SETUP_EXTERNAL_PROJECT_CUSTOM(Ecto)
