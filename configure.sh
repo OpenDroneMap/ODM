@@ -39,6 +39,7 @@ fi
 echo -e "\e[1;34mInstalling Optional Requisites\e[0;39m"
 sudo apt-get install python-dev \
                      python-numpy \
+                     python-pyexiv2 \
                      libtbb2 \
                      libtbb-dev \
                      libjpeg-dev \
