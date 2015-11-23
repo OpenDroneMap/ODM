@@ -33,7 +33,9 @@ Help improve our software!
 Steps to get OpenDroneMap running:
 ==================================
 
-(Requires Ubuntu 12.04 or later, see https://github.com/OpenDroneMap/odm_vagrant for running on Windows in a VM)
+(Requires Ubuntu 14.04 or later, see https://github.com/OpenDroneMap/odm_vagrant for running on Windows in a VM)
+
+Support for Ubuntu 12.04 is currently BROKEN with the addition of OpenSfM and Ceres-Solver. We are working hard to get it working again in the future. 
 
 Run install.sh to build.
 
@@ -41,7 +43,7 @@ Run install.sh to build.
 
 From a directory full of your images, run
 
-    ./run.pl
+    ./run.py
 
 An overview of installing and running OpenDroneMap on Ubuntu can be found here: https://www.youtube.com/watch?v=e2qp3o8caPs
 
@@ -60,7 +62,7 @@ Alternatively, you can also run OpenDroneMap in a Docker container:
     docker build -t opendronemap:latest .
     docker run -v $IMAGES:/images opendronemap:latest
 
-To pass in custom parameters to the `run.pl` script, simply pass it as arguments to the `docker run` command.
+To pass in custom parameters to the `run.py` script, simply pass it as arguments to the `docker run` command.
 
 ---
 
@@ -129,7 +131,7 @@ So, we'll add the following line to our ccd_defs.json:
 
      "SONY DSC-HX5V": 6.104,
 
-To check that ccd_defs.json compiles, run ccd_defs_check.pl
+To check that ccd_defs.json compiles, run `ccd_defs_check.py`
 If it prints the message 'CCD_DEFS compiles OK', then you can commit your changes.
 
 And so others can use it, we'll do a pull request to add it to our array for everyone else.
