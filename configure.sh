@@ -46,7 +46,7 @@ sudo apt-get install python-dev \
                      libtiff-dev \
                      libjasper-dev \
                      libflann-dev \
-                     libdc1394-22-dev \
+                     libproj-dev \
                      libboost-all-dev \
 					 libboost-python-dev \
 					 libxext-dev \
@@ -60,6 +60,10 @@ if [ $? -ne 0 ]
 then
     echo -e "\e[1;33mWARNING: \e[39mError when Installing Optional Requisites\e[0m"
 fi
+
+## Remove libdc1394-22-dev due to python opencv issue
+echo -e "\e[1;34mRemoving libdc1394-22-dev\e[0;39m"
+sudo apt-get remove libdc1394-22-dev
 
 ## Get sys vars
 NUM_CORES=`grep -c processor /proc/cpuinfo`
