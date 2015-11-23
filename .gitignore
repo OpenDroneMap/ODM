@@ -3,8 +3,14 @@ bin/
 include/
 lib/
 logs/
+share/
 src/
 
 cmvs.tar.gz
 parallel.tar.bz2
+LAStools.zip
 pcl.tar.gz
+ceres-solver.tar.gz
+*.pyc
+pcl.tar.gz
+opencv.zip
