@@ -42,4 +42,4 @@ USER odm
 # Entry point
 VOLUME ["/images"]
 WORKDIR /images
-ENTRYPOINT ["/code/run.pl"]
+ENTRYPOINT ["/code/run.py"]
