@@ -76,6 +76,15 @@ then
     echo -e "\e[1;33mWARNING: \e[39mError when Installing OpenSfM Dependencies\e[0m"
 fi
 
+## Installing OpenSfM Requisites
+echo -e "\e[1;34mInstalling Ecto Dependencies\e[0;39m"
+sudo pip install catkin-pkg
+if [ $? -ne 0 ] 
+then
+    echo -e "\e[1;33mWARNING: \e[39mError when Installing Ecto Dependencies\e[0m"
+fi
+
+
 ## Remove libdc1394-22-dev due to python opencv issue
 echo -e "\e[1;34mRemoving libdc1394-22-dev\e[0;39m"
 sudo apt-get remove libdc1394-22-dev
