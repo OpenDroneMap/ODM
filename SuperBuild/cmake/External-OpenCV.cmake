@@ -25,6 +25,8 @@ ExternalProject_Add(${_proj_name}
     -DBUILD_opencv_flann=ON
     -DBUILD_opencv_objdetect=ON
     -DBUILD_opencv_photo=ON
+    -DBUILD_opencv_legacy=ON
+    -DBUILD_opencv_python=ON
     -DWITH_CUDA=OFF
     -DWITH_GTK=OFF
     -DWITH_VTK=OFF
@@ -35,9 +37,7 @@ ExternalProject_Add(${_proj_name}
     -DBUILD_PERF_TESTS=OFF
     -DBUILD_DOCS=OFF
     -DBUILD_opencv_apps=OFF
-    -DBUILD_opencv_legacy=OFF
     -DBUILD_opencv_gpu=OFF
-    -DBUILD_opencv_python=OFF
     -DBUILD_opencv_videostab=OFF
     -DBUILD_opencv_nonfree=OFF
     -DBUILD_opencv_stitching=OFF
