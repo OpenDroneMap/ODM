@@ -98,6 +98,11 @@ class ODMTaskManager(object):
 		return tasks
 
 	def run_tasks(self):
+
+		#curr_task = self.tasks['resize']
+
+		#self.tasks['resize']
+
 		for id in range(self.initial_task_id, self.final_task_id + 1):
 			# catch task with current id
 			task = self.tasks[str(id)]
@@ -110,6 +115,7 @@ class ODMTaskManager(object):
 				log.ODM_INFO('Succeeded task %s: %s - %s' % (task.id, task.name, system.now()))
 			else:
 				log.ODM_ERROR('Aborted task %s: %s' % (task.id, task.name))
+
 
 
 class ODMTask(object):
