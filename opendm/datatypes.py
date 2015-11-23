@@ -1,4 +1,5 @@
 import os
+import pyexiv2
 import subprocess
 
 import log
@@ -41,10 +42,9 @@ class ODMApp:
 class ODMPhoto:
     """   ODMPhoto - a class for ODMPhotos
     """
-    def __init__(self, path, args):
+    def __init__(self, path_file, args):
         #  general purpose
-        self.path = path
-        self.path_file = None
+        self.path_file = path_file
         # useful attibutes
         self.file_name = None
         self.width = None
@@ -77,45 +77,11 @@ class ODMPhoto:
         self.jpg_quality = None
 
         # parse values
-        self.parse_jhead_values(self.path, args)
+        #self.parse_jhead_values(self.path_file, args)
+        self.parse_pyexiv2_values(self.path_file, args)
 
         # compute focal lenght into pixels
         self.compute_focal_length()
-
-        # TODO(edgar): compute global min/max
-        # def compute_min_max()
-            # min_width = min(min_width, width)
-            # max_width = max(max_width, width)
-            # min_height = min(min_height, heigth)
-            # max_height = max(max_height, height)
-
-            ## populate & update max/mins
-#                    
-            #if objODMJob.minWidth == 0:
-                #objODMJob.minWidth = self.width
-#                           
-            #if objODMJob.minHeight == 0:
-                #objODMJob.minHeight = self.height
-#
-            #if objODMJob.minWidth < self.width:
-                #objODMJob.minWidth = self.minWidth
-            #else:
-                #objODMJob.minWidth = self.width
-#           
-            #if objODMJob.minHeight < self.height:
-                #objODMJob.minHeight = objODMJob.minHeight
-            #else:
-                #objODMJob.minHeight = self.height
-#
-            #if objODMJob.maxWidth > self.width:
-                #objODMJob.maxWidth = objODMJob.maxWidth
-            #else:
-                #objODMJob.maxWidth = self.width
-#
-            #if objODMJob.maxHeight > self.height:
-                #objODMJob.maxHeight = objODMJob.maxHeight
-            #else:
-                #objODMJob.maxHeight = self.height   
 
     def compute_focal_length(self):
         if self.focal_length is not None and self.ccd_width is not None:
@@ -133,13 +99,42 @@ class ODMPhoto:
             log.ODM_WARNING('No CCD width or focal length found for image file: \n' + 
                 self.file_name + ' camera: \"' + self.camera_model)
 
-    def parse_jhead_values(self, _path, args):
+
+    def parse_pyexiv2_values(self, _path_file, args):
+        # read image metadata
+        metadata = pyexiv2.ImageMetadata(_path_file)
+        metadata.read()
+        # loop over image tags
+        for key in metadata:
+            # catch tag value
+            val = metadata[key].value
+            # parse tag names
+            if key == 'Exif.Image.Make':  self.camera_make = val
+            elif key == 'Exif.Image.Model': self.camera_model = val
+            elif key == 'Exif.Photo.PixelXDimension': self.width = val
+            elif key == 'Exif.Photo.PixelYDimension': self.height = val
+            elif key == 'Exif.Photo.FocalLength': 
+                self.focal_length = float(val)
+
+        # find ccd_width from file if needed
+        if self.ccd_width is None:
+            # load ccd_widths from file
+            ccd_widths = system.get_ccd_widths()
+
+            key = [x for x in ccd_widths.keys() if self.camera_model in x][0]
+            if key is not None:
+                self.ccd_width = float(ccd_widths[key])
+            else:
+                log.ODM_ERROR('Could not find ccd_width in file')
+
+
+    def parse_jhead_values(self, _path_file, args):
 
          # load ccd_widths from file
         ccd_widths = system.get_ccd_widths()
 
         # start pipe for jhead
-        src_process = subprocess.Popen(['jhead', _path], 
+        src_process = subprocess.Popen(['jhead', _path_file], 
                                        stdout=subprocess.PIPE)
         std_out, std_err = src_process.communicate()
 

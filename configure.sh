@@ -40,6 +40,7 @@ echo -e "\e[1;34mInstalling Optional Requisites\e[0;39m"
 sudo apt-get install python-dev \
                      python-numpy \
                      python-pyexiv2 \
+                     python-scipy \
                      libtbb2 \
                      libtbb-dev \
                      libjpeg-dev \
@@ -60,6 +61,19 @@ sudo apt-get install python-dev \
 if [ $? -ne 0 ] 
 then
     echo -e "\e[1;33mWARNING: \e[39mError when Installing Optional Requisites\e[0m"
+fi
+
+## Installing OpenSfM Requisites
+echo -e "\e[1;34mInstalling OpenSfM Dependencies\e[0;39m"
+sudo pip install networkx \
+                 PyYAML \
+                 numpy \
+                 exifread \
+                 gpxpy \
+                 xmltodict
+if [ $? -ne 0 ] 
+then
+    echo -e "\e[1;33mWARNING: \e[39mError when Installing OpenSfM Dependencies\e[0m"
 fi
 
 ## Remove libdc1394-22-dev due to python opencv issue

@@ -28,8 +28,8 @@ def load_dataset(images_dir, args):
 
     # create ODMPhoto list
     for f in files:
-        file_name = os.path.join(images_dir, f)
-        photos.append(datatypes.ODMPhoto(file_name, args))
+        path_file = os.path.join(images_dir, f)
+        photos.append(datatypes.ODMPhoto(path_file, args))
 
     log.ODM_INFO('Found %s usable images' % len(photos))
     return photos
