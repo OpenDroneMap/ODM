@@ -4,12 +4,9 @@ MAINTAINER Danilo Bargen <mail@dbrgn.ch>
 # Env variables
 ENV DEBIAN_FRONTEND noninteractive
 
-# Install git
-RUN apt-get update \
-    && apt-get install -y git
-
 # Install dependencies
-RUN apt-get install -y --install-recommends \
+RUN apt-get update \
+    && apt-get install -y --install-recommends \
         build-essential cmake g++ gcc gFortran perl git autoconf \
         curl wget \
         unzip \
@@ -45,4 +42,4 @@ USER odm
 # Entry point
 VOLUME ["/images"]
 WORKDIR /images
-ENTRYPOINT ["/code/run.pl"]
+ENTRYPOINT ["/code/run.py"]
