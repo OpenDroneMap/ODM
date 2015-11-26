@@ -2,7 +2,7 @@ import log
 import system
 
 import dataset
-import datatypes
+import types
 
 from scripts.resize import resize
 from scripts.opensfm import opensfm

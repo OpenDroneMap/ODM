@@ -1,79 +1,130 @@
+import ecto
+
 from opendm import log
-from opendm import dataset
+from opendm import io
 from opendm import system
 from opendm import context
 
-def opensfm(project_path, args, photos):
+class ODMOpenSfMCell(ecto.Cell):
 
-    log.ODM_INFO('Running Open Structure from Motion (OpenSfm)')
-    
-    # check if we have input data
-    if len(photos) == 0:
-        log.ODM_WARNING('Photos array is empty - Proceed to load images')
-        images_dir = dataset.join_paths(project_path, 'images/')
-        photos = dataset.load_dataset(images_dir, args)
+    def declare_params(self, params):
+        params.declare("use_exif_size", "The application arguments.", False)
+        params.declare("feature_process_size", "The application arguments.", False)
+        params.declare("feature_min_frames", "The application arguments.", 0)
+        params.declare("processes", "The application arguments.", 0)
+        params.declare("matching_gps_neighbors", "The application arguments.", 0)
 
-    # preconditions
-    if len(photos) < 1:
-        log.ODM_ERROR('Not enough photos in photos array to reconstruct')
-        return False
+    def declare_io(self, params, inputs, outputs):
+        inputs.declare("project_path", "The directory to the images to load.", "")
+        inputs.declare("photos", "Clusters output. list of ODMPhoto's", [])
+        inputs.declare("reconstructions", "Clusters output. list of reconstructions", [])
 
-    # create working directory
-    working_dir = dataset.join_paths(project_path, 'opensfm')
-    system.mkdir_p(working_dir)
+    def process(self, inputs, outputs):
 
-    try:
-        # define opensfm execution command
-        system.run('PYTHONPATH=%s %s/bin/run_all %s' % \
-            (context.pyopencv_path, context.opensfm_path, images_dir))
-    except Exception, e:
-        log.ODM_ERROR(str(e))
-        return False
+        log.ODM_INFO('Running OMD OpenSfm Cell')
 
-    return True
+        # get inputs
+        photos = self.inputs.photos
+        project_path = io.absolute_path_file(self.inputs.project_path)
 
-def opensfm2():
-    print "\n  - running OpenSfM - " + now()
+        # create file list directory
+        list_path = io.join_paths(project_path, 'opensfm')
+        system.mkdir_p(list_path)
 
-    os.chdir(jobOptions["jobDir"])
+        # check if reconstruction was done before
+        file_list_path = io.join_paths(list_path, 'image_list.txt')
 
-    # Create bundler's list.txt
-    filesList = ""
-    for fileObject in objects:
-        if fileObject["isOk"]:
-            filesList += "./" + fileObject["src"] + " 0 {:.5f}\n".format(fileObject["focalpx"])
-    filesList = filesList.rstrip('\n')
+        if io.file_exists(file_list_path):
+            log.ODM_WARNING('Found a valid reconstruction file')
+            log.ODM_INFO('Running OMD OpenSfm Cell - Finished')
+            return
 
-    with open(jobOptions["step_3_filelist"], 'w') as fout:
-        fout.write(filesList)
+        # create file list
+        with open(file_list_path, 'w') as fout:
+            for photo in photos:
+                fout.write('%s\n' % photo.path_file)
 
-    # Create opensfm working folder
-    mkdir_p("opensfm")
+        # create config file for OpenSfM
+        config = [
+            "use_exif_size: no",
+            "feature_process_size: %s" % self.params.feature_process_size,
+            "feature_min_frames: %s" % self.params.feature_min_frames,
+            "processes: %s" % self.params.processes,
+            "matching_gps_neighbors: %s" % self.params.matching_gps_neighbors
+        ]
 
-    # Configure OpenSfM
-    config = [
-       "use_exif_size: no",
-       "feature_process_size: {}".format(jobOptions["resizeTo"]),
-       "feature_min_frames: {}".format(args.min_num_features),
-       "processes: {}".format(CORES),
-    ]
-    if args.matcher_preselect:
-        config.append("matching_gps_neighbors: {}".format(args.matcher_k))
+        # write config file
+        config_filename = io.join_paths(project_path, 'config.yaml')
+        with open(config_filename, 'w') as fout:
+            fout.write("\n".join(config))
 
-    with open('opensfm/config.yaml', 'w') as fout:
-        fout.write("\n".join(config))
+        # Run OpenSfM reconstruction
+        system.run('PYTHONPATH=%s %s/bin/run_all %s' % 
+            (context.pyopencv_path, context.opensfm_path, list_path))
 
-    print 'running import_bundler'
-    # Convert bundler's input to opensfm
-    run('PYTHONPATH={} "{}/bin/import_bundler" opensfm --list list.txt'.format(PYOPENCV_PATH, OPENSFM_PATH))
+        # append reconstructions to output
+        self.outputs.reconstructions = []
+        
+        log.ODM_INFO('Running OMD OpenSfm Cell - Finished')
 
-    # Run OpenSfM reconstruction
-    run('PYTHONPATH={} "{}/bin/run_all" opensfm'.format(PYOPENCV_PATH, OPENSFM_PATH))
+#        # Convert back to bundler's format
+#        run('PYTHONPATH={} "{}/bin/export_bundler" opensfm'.format(PYOPENCV_PATH, OPENSFM_PATH))
+#
+#        bundler_to_pmvs("opensfm/bundle_r000.out")
 
-    # Convert back to bundler's format
-    run('PYTHONPATH={} "{}/bin/export_bundler" opensfm'.format(PYOPENCV_PATH, OPENSFM_PATH))
 
-    bundler_to_pmvs("opensfm/bundle_r000.out")
+#########################################################################################
 
-    if args.end_with != "bundler":
-        cmvs()
+
+class ODMLoadReconstructionCell(ecto.Cell):    
+
+    def declare_io(self, params, inputs, outputs):
+        inputs.declare("project_path", "The directory to the images to load.", "")
+        inputs.declare("photos", "Clusters output. list of ODMPhoto's", [])
+        outputs.declare("reconstructions", "Clusters output. list of reconstructions", [])
+
+    def process(self, inputs, outputs):        
+        log.ODM_INFO('Running OMD Load Reconstruction Cell')
+        log.ODM_INFO('Running OMD Load Reconstruction Cell - Finished')
+
+
+#########################################################################################
+
+
+class ODMConvertToBundleCell(ecto.Cell):    
+
+    def declare_io(self, params, inputs, outputs):
+        inputs.declare("project_path", "The directory to the images to load.", "")
+        inputs.declare("reconstructions", "The directory to the images to load.", "")
+        outputs.declare("bundler_file_path", "The directory to the images to load.", "")
+
+    def process(self, inputs, outputs):
+
+        log.ODM_INFO('Running OMD Convert to Bundle Cell')
+
+        # get inputs
+        reconstructions = self.inputs.reconstructions
+        project_path = io.absolute_path_file(self.inputs.project_path)
+
+        # create file list directory
+        list_path = io.join_paths(project_path, 'opensfm')
+        bundler_path_file =  io.join_paths(list_path, 'bundle_r000.out')
+        
+        # Run OpenSfM reconstruction
+#        system.run('PYTHONPATH=%s %s/bin/export_bundler %s' % 
+#            (context.pyopencv_path, context.opensfm_path, list_path))
+        
+        system.run('PYTHONPATH=%s %s/bin/export_pmvs %s' % 
+            (context.pyopencv_path, context.opensfm_path, list_path))
+
+        # appends created file to output
+        self.outputs.bundler_file_path = bundler_path_file
+        
+        if io.file_exists(bundler_path_file):
+            log.ODM_DEBUG('Bundler file created to: %s' % bundler_path_file)
+        else:
+            log.ODM_ERROR('Something went wrong when exporting to Bundler')
+            return
+
+        log.ODM_INFO('Running OMD Convert to Bundle Cell - Finished')
+
