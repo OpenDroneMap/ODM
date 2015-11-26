@@ -6,9 +6,9 @@ processopts = ['resize', 'opensfm', 'cmvs', 'pmvs',
                'odm_orthophoto']
 
 parser = argparse.ArgumentParser(description='OpenDroneMap')
-parser.add_argument('--images-src', 
+parser.add_argument('--project-path', 
                     metavar='<string>',
-                    help='Path to the images to process')
+                    help='Path to the project to process')
 
 parser.add_argument('--resize-to',  # currently doesn't support 'orig'
                     metavar='<integer>',

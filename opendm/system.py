@@ -2,8 +2,10 @@ import os
 import errno
 import json
 import datetime
+import sys
 
 from opendm import context
+from opendm import log
 
 def get_ccd_widths():
     """Return the CCD Width of the camera listed in the JSON defs file."""
@@ -12,10 +14,11 @@ def get_ccd_widths():
 
 def run(cmd):
     """Run a system command"""
-    print 'running', cmd
+    log.ODM_DEBUG('running %s' % cmd)
     returnCode = os.system(cmd)
-    print 'b'
+
     if (returnCode != 0):
+        # TODO(edgar): add as log.ODM_ERROR
         sys.exit("\nquitting cause: \n\t" + cmd + "\nreturned with code " +
                  str(returnCode) + ".\n")
 
