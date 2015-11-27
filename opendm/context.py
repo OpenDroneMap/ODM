@@ -20,7 +20,7 @@ opensfm_path = os.path.join(superbuild_path, "src/opensfm")
 pmvs2_path = os.path.join(superbuild_path, "install/bin/pmvs2")
 
 # Define supported image extensions
-supported_extensions = {'.jpg','.jpeg'}
+supported_extensions = {'.jpg','.jpeg','.png'}
 
 # Define the number of cores 
 num_cores = multiprocessing.cpu_count()
