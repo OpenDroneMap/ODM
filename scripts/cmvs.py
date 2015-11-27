@@ -3,37 +3,32 @@ import ecto
 from opendm import io
 from opendm import log
 from opendm import system
+from opendm import context
 
-class ODMCmvsCell(ecto.Cell):    
-    def declare_params(self, params):
-        params.declare("cmvs_max_images", "The application arguments.", False)
-        params.declare("pmvs_level", "The application arguments.", False)
-        params.declare("pmvs_csize", "The application arguments.", 0)
-        params.declare("pmvs_threshold", "The application arguments.", 0)
-        params.declare("pmvs_wsize", "The application arguments.", 0)
-        params.declare("pmvs_min_image_num", "The application arguments.", 0)
+class ODMCmvsCell(ecto.Cell):  
 
     def declare_io(self, params, inputs, outputs):
-        inputs.declare("project_path", "The directory to the images to load.", "")
-        inputs.declare("bundler_file_path", "Clusters output. list of reconstructions", [])
+        inputs.declare("args", "The application arguments.", {})
+        inputs.declare("reconstruction_path", "Clusters output. list of reconstructions", [])
 
     def process(self, inputs, outputs):
         
         log.ODM_INFO('Running OMD CMVS Cell')
 
         # get inputs
-        bundler_file_path = self.inputs.bundler_file_path
-        project_path = io.absolute_path_file(self.inputs.project_path)
+        args = self.inputs.args
+        rec_path = self.inputs.reconstruction_path
 
-        # run cmvs binary
-        #bin_dir='/home/vagrant/software/OpenDroneMap-edgarriba/SuperBuild/build/cmvs/main/cmvs'
-        bin_dir='/home/vagrant/software/OpenDroneMap-edgarriba/SuperBuild/build/cmvs/main/pmv2'
+        # the path to create the model
+        model_path = io.join_paths(rec_path, 'models/pmvs_options.txt.ply')
 
-        cmvs_max_images = self.params.cmvs_max_images
-        num_cores = 4
+        if io.file_exists(model_path):
+            log.ODM_WARNING('Found a valid PMVS file')
+            log.ODM_INFO('Running OMD OpenSfm Cell - Finished')
+            return ecto.OK if args['end_with'] != 'opensfm' else ecto.QUIT
 
-        system.run('%s %s %s %s' % 
-            (bin_dir, bundler_file_path, cmvs_max_images, num_cores))
-
+        # run pmvs2
+        system.run('%s %s/ pmvs_options.txt ' % (context.pmvs2_path, rec_path))
 
         log.ODM_INFO('Running OMD CMVS Cell - Finished')
+        return ecto.OK if args['end_with'] != 'cmvs' else ecto.QUIT

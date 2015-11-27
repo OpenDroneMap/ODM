@@ -1,5 +1,6 @@
 import os
 import sys
+import multiprocessing
 
 # Define some needed locations
 scripts_path = os.path.abspath(os.path.dirname(__file__))
@@ -15,5 +16,11 @@ sys.path.append(pyopencv_path)
 # add opensfm to python path
 opensfm_path = os.path.join(superbuild_path, "src/opensfm")
 
+# add pmvs to python path
+pmvs2_path = os.path.join(superbuild_path, "install/bin/pmvs2")
+
 # Define supported image extensions
 supported_extensions = {'.jpg','.jpeg'}
+
+# Define the number of cores 
+num_cores = multiprocessing.cpu_count()
