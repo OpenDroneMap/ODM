@@ -12,7 +12,6 @@ class ODMLoadDatasetCell(ecto.Cell):
         pass
 
     def declare_io(self, params, inputs, outputs):
-        inputs.declare("project_path", "The directory to the project.", "")
         inputs.declare("args", "The application arguments.", {})
         outputs.declare("photos", "Clusters output. list of ODMPhoto's", [])
 
@@ -23,10 +22,10 @@ class ODMLoadDatasetCell(ecto.Cell):
             return ext.lower() in context.supported_extensions
 
         log.ODM_INFO('Running ODM Load Dataset Cell')
-       
+
         # get parameters
         args = self.inputs.args
-        project_path = io.absolute_path_file(self.inputs.project_path)
+        project_path = io.absolute_path_file(args['project_path'])
         images_dir = io.join_paths(project_path, 'images')
 
         log.ODM_DEBUG('Loading dataset from: %s' % images_dir)
@@ -38,10 +37,7 @@ class ODMLoadDatasetCell(ecto.Cell):
         # by now only 'jpg' and 'jpeg are supported
         files = [f for f in files if supported_extension(f)]
 
-        if not files:
-            log.ODM_ERROR('Not enough supported images in %s' % images_dir)
-            return ecto.QUIT
-        else:
+        if files:
             photos = []
 
             # create ODMPhoto list
@@ -49,7 +45,10 @@ class ODMLoadDatasetCell(ecto.Cell):
                 path_file = io.join_paths(images_dir, f)
                 photos.append(types.ODMPhoto(path_file, args))
             
-            log.ODM_INFO('Found %s usable images' % len(photos))
+            log.ODM_INFO('Found %s usable images' % len(photos))            
+        else:
+            log.ODM_ERROR('Not enough supported images in %s' % images_dir)
+            return ecto.QUIT
 
         # append photos to cell output
         outputs.photos = photos
