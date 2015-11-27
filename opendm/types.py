@@ -12,8 +12,8 @@ class ODMPhoto:
     def __init__(self, path_file, args):
         #  general purpose
         self.path_file = path_file
+        self.filename = io.extract_file_from_path_file(path_file)
         # useful attibutes
-        self.filename = None
         self.width = None
         self.height = None
         self.ccd_width = None
@@ -25,13 +25,13 @@ class ODMPhoto:
         # parse values from metadata
         self.parse_pyexiv2_values(self.path_file, args)
         # compute focal lenght into pixels
-        self.compute_focal_length()
+        self.update_focal()
 
-    def compute_focal_length(self):
-        # set log message
-        msg = 'Loaded %s | dimensions: %s x %s' % \
-            (self.filename, self.width, self.height)
+        # print log message
+        log.ODM_DEBUG('Loaded image %s | dimensions: %s x %s | focal: %s | ccd: %s' % \
+            (self.filename, self.width, self.height, self.focal_length, self.ccd_width))
 
+    def update_focal(self):
         # compute focal length in pixels
         if self.focal_length and self.ccd_width:
             # take width or height as reference
@@ -43,17 +43,6 @@ class ODMPhoto:
                 # f(px) = h(px) * f(mm) / ccd(mm)
                 self.focal_length_px = \
                     self.height * (self.focal_length / self.ccd_width)
-            # update log message
-            msg += ' | focal: %smm | ccd: %smm' % (self.focal_length, self.ccd_width)
-        else:
-            # update log message
-            if self.focal_length:
-                msg += ' | focal: %smm' % self.focal_length
-            
-            if self.ccd_width:
-                msg += ' | ccd: %smm' % self.ccd_width
-        # print log message
-        log.ODM_DEBUG(msg)
 
     def parse_pyexiv2_values(self, _path_file, args):
         # read image metadata
@@ -70,8 +59,8 @@ class ODMPhoto:
             elif key == 'Exif.Photo.PixelYDimension': self.height = val
             elif key == 'Exif.Photo.FocalLength': self.focal_length = float(val)
 
-        # extract and set filename from path file
-        self.filename = io.extract_file_from_path_file(_path_file)
+        # TODO(edgar): set self.focal_length if args['force_frocal']
+        #              set self.ccd_width    if args['force_ccd']
 
         # find ccd_width from file if needed
         if self.ccd_width is None and self.camera_model is not None:
@@ -80,7 +69,7 @@ class ODMPhoto:
             # search ccd by camera model
             key = [x for x in ccd_widths.keys() if self.camera_model in x]
             # convert to float if found
-            if key: self.ccd_width = float(ccd_widths[key][0])
+            if key: self.ccd_width = float(ccd_widths[key[0]])
             # else:
             # log.ODM_ERROR('Could not find ccd_width in file')
 
