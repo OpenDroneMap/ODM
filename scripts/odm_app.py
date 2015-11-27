@@ -3,7 +3,7 @@ import ecto
 from dataset import ODMLoadDatasetCell
 #from resize import OMDResizeCell
 from cmvs import ODMCmvsCell
-from opensfm import ODMOpenSfMCell, ODMLoadReconstructionCell, ODMConvertToBundleCell
+from opensfm import ODMOpenSfMCell, ODMLoadReconstructionCell, ODMConvertToPMVSCell
 
 class ODMApp(ecto.BlackBox):
     '''   ODMApp - a class for ODM Activities
@@ -33,13 +33,8 @@ class ODMApp(ecto.BlackBox):
                                             processes=8,
                                             matching_gps_neighbors=p.args['matcher_k']),
                   'load_reconstruction': ODMLoadReconstructionCell(),
-                  'convert_reconstruction': ODMConvertToBundleCell(),
-                  'cmvs': ODMCmvsCell(cmvs_max_images=p.args['cmvs_maxImages'],
-                                    pmvs_level=p.args['pmvs_level'],
-                                    pmvs_csize=p.args['pmvs_csize'],
-                                    pmvs_threshold=p.args['pmvs_threshold'],
-                                    pmvs_wsize=p.args['pmvs_wsize'],
-                                    pmvs_min_image_num=p.args['pmvs_minImageNum'])
+                  'convert_reconstruction': ODMConvertToPMVSCell(),
+                  'cmvs': ODMCmvsCell()
 
         }
 
@@ -57,7 +52,7 @@ class ODMApp(ecto.BlackBox):
         connections = []
 
         # load the dataset
-        connections = [ self.project_path[:] >> self.load_dataset['images_dir'],
+        connections = [ self.project_path[:] >> self.load_dataset['project_path'],
                         self.args[:] >> self.load_dataset['args'] ]
         
         # resize images
@@ -65,18 +60,24 @@ class ODMApp(ecto.BlackBox):
 
         # connect loaded data with opensfm
         connections += [ self.project_path[:] >> self.opensfm['project_path'],
+                         self.args[:] >> self.opensfm['args'],
                          self.load_dataset['photos'] >> self.opensfm['photos'] ]
 
         # load reconstruction
-        connections += [ self.project_path[:] >> self.load_reconstruction['project_path'],
-                         self.load_dataset['photos'] >> self.load_reconstruction['photos'] ]
+        connections += [ self.project_path[:] >> 
+                         self.load_reconstruction['project_path'],
+                         self.load_dataset['photos'] >> 
+                         self.load_reconstruction['photos'] ]
 
-        # convert data to Bundler format
-        connections += [ self.project_path[:] >> self.convert_reconstruction['project_path'],
-                         self.load_reconstruction['reconstructions'] >> self.convert_reconstruction['reconstructions'] ]
+        # convert data to PMVS format
+        connections += [ self.project_path[:] >> 
+                         self.convert_reconstruction['project_path'],
+                         self.load_reconstruction['reconstructions'] >> 
+                         self.convert_reconstruction['reconstructions'] ]
 
         # run cmvs
-#        connections += [ self.project_path[:] >> self.cmvs['project_path'],
-#                         self.convert_reconstruction['bundler_file_path'] >> self.cmvs['bundler_file_path'] ]
+        connections += [ self.args[:] >> self.cmvs['args'],
+                         self.convert_reconstruction['reconstruction_path'] >> 
+                         self.cmvs['reconstruction_path'] ]
 
         return connections
