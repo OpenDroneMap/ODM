@@ -1,7 +1,9 @@
 import ecto
 
+from opendm import context
+
 from dataset import ODMLoadDatasetCell
-#from resize import OMDResizeCell
+from resize import ODMResizeCell
 from cmvs import ODMCmvsCell
 from opensfm import ODMOpenSfMCell, ODMLoadReconstructionCell, ODMConvertToPMVSCell
 
@@ -26,11 +28,11 @@ class ODMApp(ecto.BlackBox):
         cells = { 'project_path': ecto.Constant(value=p.project_path),
                   'args': ecto.Constant(value=p.args),
                   'load_dataset': ODMLoadDatasetCell(),
-                  #'resize': OMDResizeCell()
+                  'resize': ODMResizeCell(),
                   'opensfm': ODMOpenSfMCell(use_exif_size=False,
                                             feature_process_size=p.args['resize_to'],
                                             feature_min_frames=p.args['min_num_features'],
-                                            processes=8,
+                                            processes=context.num_cores,
                                             matching_gps_neighbors=p.args['matcher_k']),
                   'load_reconstruction': ODMLoadReconstructionCell(),
                   'convert_reconstruction': ODMConvertToPMVSCell(),
@@ -46,21 +48,19 @@ class ODMApp(ecto.BlackBox):
         initial_task = _p.args['start_with']
         final_task = _p.args['end_with']
         run_only = _p.args['run_only']
-        print run_only
 
         # define the connections like you would for the plasm
         connections = []
 
         # load the dataset
-        connections = [ self.project_path[:] >> self.load_dataset['project_path'],
-                        self.args[:] >> self.load_dataset['args'] ]
-        
-        # resize images
-        #connections += [ self.load_dataset['photos'] >> self.resize['photos'] ]
+        connections = [ self.args[:] >> self.load_dataset['args'] ]
 
-        # connect loaded data with opensfm
-        connections += [ self.project_path[:] >> self.opensfm['project_path'],
-                         self.args[:] >> self.opensfm['args'],
+        # resize images
+        connections += [ self.args[:] >> self.resize['args'],
+                         self.load_dataset['photos'] >> self.resize['photos'] ]
+
+        # run opensfm
+        connections += [ self.args[:] >> self.opensfm['args'],
                          self.load_dataset['photos'] >> self.opensfm['photos'] ]
 
         # load reconstruction
