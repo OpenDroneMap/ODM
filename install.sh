@@ -555,5 +555,5 @@ sudo ldconfig -v > "$TOOLS_LOG_PATH/ldconfig.log" 2>&1
 sudo chown -R `id -u`:`id -g` *
 #sudo chmod -R 777 *
 #sudo chmod 700 run.pl
-
+echo "  - script finished - `date`"
 exit
