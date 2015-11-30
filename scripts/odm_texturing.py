@@ -1,22 +1,52 @@
-def odm_texturing():
-    """Run odm_texturing"""
-    print "\n  - running texturing - " + now()
+import ecto
 
-    os.chdir(jobOptions["jobDir"])
-    try:
-        os.mkdir(jobOptions["jobDir"] + "/odm_texturing")
-        os.mkdir(jobOptions["jobDir"] + "-results/odm_texturing")
-    except:
-        pass
+from opendm import log
+from opendm import io
+from opendm import system
+from opendm import context
 
- 
-    run("\"" + BIN_PATH + "/odm_texturing\" -bundleFile " + jobOptions["jobDir"] + "/pmvs/bundle.rd.out -imagesPath "\
-        + jobOptions["srcDir"] + "/ -imagesListPath " + jobOptions["jobDir"] + "/pmvs/list.rd.txt -inputModelPath "  \
-        + jobOptions["jobDir"] + "-results/odm_mesh-0000.ply -outputFolder " + jobOptions["jobDir"]                  \
-        + "-results/odm_texturing/ -textureResolution " + str(args['--odm_texturing-textureResolution'])             \
-        + " -bundleResizedTo " + str(jobOptions["resizeTo"]) + " -textureWithSize " +                                \
-        str(args['--odm_texturing-textureWithSize']) + " -logFile " + jobOptions["jobDir"]                           \
-        + "/odm_texturing/odm_texturing_log.txt")
+class ODMTexturingCell(ecto.Cell):  
 
-    if args['--end-with'] != "odm_texturing":
-        odm_georeferencing()
+    def declare_io(self, params, inputs, outputs):
+        inputs.declare("args", "The application arguments.", {})
+        inputs.declare("model_path", "Clusters output. list of reconstructions", [])
+        outputs.declare("texture_path", "Clusters output. list of reconstructions", [])
+
+    def process(self, inputs, outputs):
+        
+        log.ODM_INFO('Running OMD Texturing Cell')
+
+        # get inputs
+        args = self.inputs.args
+        input_model_path = self.inputs.model_path
+        project_path = io.absolute_path_file(args['project_path'])
+
+        # define paths and create working directories
+        odm_texturing = io.join_paths(project_path, 'odm_texturing')
+        system.mkdir_p(odm_texturing)
+
+        images_path = io.join_paths(project_path, 'images_resize')
+        bundle_file = io.join_paths(project_path, 'opensfm/bundle_r000.out')
+        images_list_path = io.join_paths(project_path, 'opensfm/list_r000.out')
+
+        output_file = io.join_paths(odm_texturing, 'odm_mesh.ply')
+        log_file = io.join_paths(odm_texturing, 'odm_texturing_log.txt')
+
+        if not io.file_exists(output_file):
+            # run texturing binary
+            system.run('%s/odm_texturing -bundleFile %s '                     \
+                '-imagesPath %s/ -imagesListPath %s -inputModelPath %s '      \
+                '-outputFolder %s/ -textureResolution %s -bundleResizedTo %s '\
+                '-textureWithSize %s -logFile %s' %                           \
+                (context.odm_modules_path, bundle_file, images_path,          \
+                images_list_path, input_model_path, odm_texturing,            \
+                str(args['odm_texturing_textureResolution']),                 \
+                str(args['resize_to']),                                       \
+                str(args['odm_texturing_textureWithSize']), log_file))
+        else:
+            log.ODM_WARNING('Found a valid odm texture file in: %s' % output_file)
+        
+        self.outputs.texture_path = output_file
+        
+        log.ODM_INFO('Running OMD Texturing Cell - Finished')
+        return ecto.OK if args['end_with'] != 'odm_texturing' else ecto.QUIT
