@@ -35,13 +35,14 @@ class ODMResizeCell(ecto.Cell):
 
             # loop over photos
             for photo in photos:
-                try:
+
+                # TODO(edgar): check if resize is needed, else copy img.
+                # Try to avoid oversampling!
+                new_path_file = io.join_paths(resizing_dir, photo.filename)
+
+                if not io.file_exists(new_path_file):
                     # open and resize image with opencv
                     img = cv2.imread(photo.path_file)
-
-                    # TODO(edgar): check if resize is needed, else copy img.
-                    # Try to avoid oversampling!
-
                     # compute new size
                     max_side = max(photo.width, photo.height) \
                         if photo.width and photo.height \
@@ -49,7 +50,6 @@ class ODMResizeCell(ecto.Cell):
                     ratio = float(args['resize_to']) / float(max_side)
                     img_r = cv2.resize(img, None, fx=ratio, fy=ratio)
                     # write image with opencv
-                    new_path_file = io.join_paths(resizing_dir, photo.filename)
                     cv2.imwrite(new_path_file, img_r)
                     # read metadata with pyexiv2
                     old_meta = pyexiv2.ImageMetadata(photo.path_file)
@@ -66,14 +66,10 @@ class ODMResizeCell(ecto.Cell):
                     photo.update_focal()
 
                     # log message
-                    log.ODM_DEBUG('Resized image %s | dimensions: %s' % \
-                        (photo.filename, img_r.shape))
-
-                except cv2.error as e:
-                    # something went wrong with this image
-                    # TODO(edgar): remove photo from array
-                    log.ODM_ERROR('Could not resize image %s' % photo.file_name)
-                    log.ODM_ERROR('%s' % e)
+                    log.ODM_DEBUG('Resized %s | dimensions: %s to %s' % \
+                        (photo.filename, img_r.shape, args['resize_to']))
+                else:
+                    log.ODM_WARNING('Already resized %s' % photo.filename)
         else:
             log.ODM_ERROR('Not enough photos in photos to resize')
             return ecto.QUIT
