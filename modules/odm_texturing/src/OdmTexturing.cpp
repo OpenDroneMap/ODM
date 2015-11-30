@@ -342,7 +342,7 @@ void OdmTexturing::loadCameras()
         cam.pose = transform;
 
         std::getline(imageListFile, dummyLine);
-        size_t firstWhitespace = dummyLine.find_first_of(" ");
+        /*size_t firstWhitespace = dummyLine.find_first_of(" ");
 
         if (firstWhitespace != std::string::npos)
         {
@@ -351,7 +351,10 @@ void OdmTexturing::loadCameras()
         else
         {
             cam.texture_file = imagesPath_ + "/" + dummyLine.substr(2);
-        }
+        }*/
+
+        cam.texture_file = imagesPath_ + "/" + dummyLine;
+
 
         // Read image to get full resolution size
         cv::Mat image = cv::imread(cam.texture_file);
