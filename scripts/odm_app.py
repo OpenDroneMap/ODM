@@ -4,8 +4,10 @@ from opendm import context
 
 from dataset import ODMLoadDatasetCell
 from resize import ODMResizeCell
-from cmvs import ODMCmvsCell
-from opensfm import ODMOpenSfMCell, ODMLoadReconstructionCell, ODMConvertToPMVSCell
+from opensfm import ODMOpenSfMCell
+from pmvs import ODMPmvsCell
+from odm_meshing import ODMeshingCell
+from odm_texturing import ODMTexturingCell
 
 class ODMApp(ecto.BlackBox):
     '''   ODMApp - a class for ODM Activities
@@ -16,7 +18,6 @@ class ODMApp(ecto.BlackBox):
     @staticmethod
     def declare_direct_params(p):
         p.declare("args", "The application arguments.", {})
-        p.declare("project_path", "The directory to the project.", "")
 
     @staticmethod
     def declare_cells(p):
@@ -25,8 +26,7 @@ class ODMApp(ecto.BlackBox):
         Implement the virtual function from the base class
         Only cells from which something is forwarded have to be declared
         """
-        cells = { 'project_path': ecto.Constant(value=p.project_path),
-                  'args': ecto.Constant(value=p.args),
+        cells = { 'args': ecto.Constant(value=p.args),
                   'load_dataset': ODMLoadDatasetCell(),
                   'resize': ODMResizeCell(),
                   'opensfm': ODMOpenSfMCell(use_exif_size=False,
@@ -34,9 +34,9 @@ class ODMApp(ecto.BlackBox):
                                             feature_min_frames=p.args['min_num_features'],
                                             processes=context.num_cores,
                                             matching_gps_neighbors=p.args['matcher_k']),
-                  'load_reconstruction': ODMLoadReconstructionCell(),
-                  'convert_reconstruction': ODMConvertToPMVSCell(),
-                  'cmvs': ODMCmvsCell()
+                  'pmvs': ODMPmvsCell(),
+                  'meshing': ODMeshingCell(),
+                  'texturing': ODMTexturingCell()
 
         }
 
@@ -63,21 +63,17 @@ class ODMApp(ecto.BlackBox):
         connections += [ self.args[:] >> self.opensfm['args'],
                          self.load_dataset['photos'] >> self.opensfm['photos'] ]
 
-        # load reconstruction
-        connections += [ self.project_path[:] >> 
-                         self.load_reconstruction['project_path'],
-                         self.load_dataset['photos'] >> 
-                         self.load_reconstruction['photos'] ]
-
-        # convert data to PMVS format
-        connections += [ self.project_path[:] >> 
-                         self.convert_reconstruction['project_path'],
-                         self.load_reconstruction['reconstructions'] >> 
-                         self.convert_reconstruction['reconstructions'] ]
-
         # run cmvs
-        connections += [ self.args[:] >> self.cmvs['args'],
-                         self.convert_reconstruction['reconstruction_path'] >> 
-                         self.cmvs['reconstruction_path'] ]
+        connections += [ self.args[:] >> self.pmvs['args'],
+                         self.opensfm['reconstruction_path'] >> 
+                         self.pmvs['reconstruction_path'] ]
+
+        # create odm mesh
+        connections += [ self.args[:] >> self.meshing['args'],
+                         self.pmvs['model_path'] >> self.meshing['model_path'] ]
+
+        # create odm texture
+        connections += [ self.args[:] >> self.texturing['args'],
+                         self.meshing['mesh_path'] >> self.texturing['model_path'] ]
 
         return connections
