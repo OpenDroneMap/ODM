@@ -24,7 +24,7 @@ if __name__ == '__main__':
 
 	# create an instance of my App BlackBox
 	# internally configure all tasks
-	app = ODMApp(project_path=config.args['project_path'], args=config.args)
+	app = ODMApp(args=config.args)
 
 	# create a plasm that only contains the BlackBox
 	plasm = ecto.Plasm()
