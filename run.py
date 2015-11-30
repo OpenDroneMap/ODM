@@ -10,7 +10,6 @@ import subprocess
 import shutil
 import shlex
 # import collections  # Never used
-import fractions
 import argparse
 import errno
 
@@ -318,12 +317,15 @@ def parse_coordinate_system():
         with open(jobOptions['jobDir'] + '/odm_georeferencing/coordFile.txt') as f:
             for lineNumber, line in enumerate(f):
                 if lineNumber == 0:
-                    tokens = line.split(' ')
-                    if len(tokens) == 3:
-                        utmZoneString = tokens[2][0:len(tokens[2])-2].strip()
-                        utmSouthBool = (tokens[2][len(tokens[2])-2].strip() == 'S')
+                    # check for the WGS84 UTM 17N format
+                    match_wgs_utm = re.search('WGS84 UTM (\d{1,2})(N|S)',line.strip(),re.I)
+                    if match_wgs_utm:
+                        utmZoneString = match_wgs_utm.group(1)
+                        utmSouthBool = ( match_wgs_utm.group(2).upper() == 'S' )
                         jobOptions['csString'] = '+datum=WGS84 +proj=utm +zone=' + utmZoneString + (' +south' if utmSouthBool else '')
                         jobOptions['epsg'] = calculate_EPSG(int(utmZoneString), utmSouthBool)
+                    else:
+                        jobOptions['csString'] = line.strip()
                 elif lineNumber == 1:
                     tokens = line.split(' ')
                     if len(tokens) == 2:
@@ -332,6 +334,23 @@ def parse_coordinate_system():
                 else:
                     break
 
+def coord_to_fractions(coord,refs):
+    deg_dec = abs(float(coord))
+    deg = int(deg_dec)
+    minute_dec = (deg_dec-deg)*60
+    minute = int(minute_dec)
+
+    sec_dec = (minute_dec-minute)*60
+    sec_dec = round(sec_dec,3)
+    sec_denominator = 1000
+    sec_numerator = int(sec_dec*sec_denominator)
+    if float(coord) >= 0 :
+        latRef = refs[0]
+    else:
+        latRef = refs[1]
+
+    output = str(deg) + '/1 ' + str(minute) + '/1 ' + str(sec_numerator) + '/' + str(sec_denominator)
+    return (output, latRef)
 
 def prepare_objects():
     """Prepare the jobOptions and fileObjects dicts"""
@@ -865,59 +884,27 @@ def odm_georeferencing():
                             y = float(tokens[1])
                             z = float(tokens[2])
                             filename = images[lineNumber - 2]
-                            run("echo " + str(x + jobOptions["utmEastOffset"]) + " " + str(y + jobOptions["utmNorthOffset"]) + " " + str(z) + " | cs2cs " + jobOptions["csString"] + " +to +datum=WGS84 +proj=latlong > " + jobOptions["jobDir"] + "/odm_georeferencing/latlong.txt")
-                            with open(jobOptions["jobDir"] + "/odm_georeferencing/latlong.txt") as latlongFile:
-                                latlongLine = latlongFile.readline()
-                                tokens = latlongLine.split()
-                                if len(tokens) >= 2:
-                                    exifGpsInfoWritten = False
+                            coords_wgs84_out = run_and_return("echo " + str(x + jobOptions["utmEastOffset"]) + " " + str(y + jobOptions["utmNorthOffset"]) + " " + str(z), "gdaltransform -s_srs \"" + jobOptions["csString"] + "\" -t_srs \"EPSG:4326\"")
+                            coords_wgs84 = coords_wgs84_out.split(' ')
+                            lat_frac = coord_to_fractions(coords_wgs84[1],['N','S'])
+                            lon_frac = coord_to_fractions(coords_wgs84[0],['E','W'])
 
-                                    lonString = tokens[0]  # Example: 83d18'16.285"W
-                                    latString = tokens[1]  # Example: 41d2'11.789"N
-                                    altString = ""
-                                    if len(tokens) > 2:
-                                        altString = tokens[2]  # Example: 0.998
+                            exivCmd = "exiv2 -q"
+                            exivCmd += " -M\"set Exif.GPSInfo.GPSLatitude " + lat_frac[0] + "\""
+                            exivCmd += " -M\"set Exif.GPSInfo.GPSLatitudeRef " + lat_frac[1] + "\""
+                            exivCmd += " -M\"set Exif.GPSInfo.GPSLongitude " + lon_frac[0] + "\""
+                            exivCmd += " -M\"set Exif.GPSInfo.GPSLongitudeRef " + lon_frac[1] + "\""
 
-                                    tokens = re.split("[d '\"]+", lonString)
-                                    if len(tokens) >= 4:
-                                        lonDeg = tokens[0]
-                                        lonMin = tokens[1]
-                                        lonSec = tokens[2]
-                                        lonSecFrac = fractions.Fraction(lonSec)
-                                        lonSecNumerator = str(lonSecFrac._numerator)
-                                        lonSecDenominator = str(lonSecFrac._denominator)
-                                        lonRef = tokens[3]
-
-                                        tokens = re.split("[d '\"]+", latString)
-                                        if len(tokens) >= 4:
-                                            latDeg = tokens[0]
-                                            latMin = tokens[1]
-                                            latSec = tokens[2]
-                                            latSecFrac = fractions.Fraction(latSec)
-                                            latSecNumerator = str(latSecFrac._numerator)
-                                            latSecDenominator = str(latSecFrac._denominator)
-                                            latRef = tokens[3]
-
-                                            exivCmd = "exiv2 -q"
-                                            exivCmd += " -M\"set Exif.GPSInfo.GPSLatitude " + latDeg + "/1 " + latMin + "/1 " + latSecNumerator + "/" + latSecDenominator + "\""
-                                            exivCmd += " -M\"set Exif.GPSInfo.GPSLatitudeRef " + latRef + "\""
-                                            exivCmd += " -M\"set Exif.GPSInfo.GPSLongitude " + lonDeg + "/1 " + lonMin + "/1 " + lonSecNumerator + "/" + lonSecDenominator + "\""
-                                            exivCmd += " -M\"set Exif.GPSInfo.GPSLongitudeRef " + lonRef + "\""
-
-                                            altNumerator = arcDenominator = 0  # BUG: arcDenominator is never used
-                                            if altString:
-                                                altFrac = fractions.Fraction(altString)
-                                                altNumerator = str(altFrac._numerator)
-                                                altDenominator = str(altFrac._denominator)
-                                                exivCmd += " -M\"set Exif.GPSInfo.GPSAltitude " + altNumerator + "/" + altDenominator + "\""
-                                                exivCmd += " -M\"set Exif.GPSInfo.GPSAltitudeRef 0\""
-
-                                            exivCmd += " " + filename
-                                            run(exivCmd)
-                                            exifGpsInfoWritten = True
-
-                                    if not exifGpsInfoWritten:
-                                        print("    Warning: Failed setting EXIF GPS info for " + filename + " based on " + latlongLine)
+                            altitude = abs(int(float(coords_wgs84[2])*100))
+                            exivCmd += " -M\"set Exif.GPSInfo.GPSAltitude " + str(altitude) + "/100\""
+                            exivCmd += " -M\"set Exif.GPSInfo.GPSAltitudeRef "
+                            if coords_wgs84[2]>=0:
+                                exivCmd += "0"
+                            else:
+                                exivCmd += "1"
+                            exivCmd += "\""
+                            exivCmd += " " + filename
+                            run(exivCmd)
 
     if "epsg" in jobOptions and "utmEastOffset" in jobOptions and "utmNorthOffset" in jobOptions:
         lasCmd = "\"" + BIN_PATH + "/txt2las\" -i " + jobOptions["jobDir"] + "-results/option-0000_georef.ply -o " + jobOptions["jobDir"] + "-results/pointcloud_georef.laz -skip 30 -parse xyzRGBssss -set_scale 0.01 0.01 0.01 -set_offset " + str(jobOptions["utmEastOffset"]) + " " + str(jobOptions["utmNorthOffset"]) + " 0 -translate_xyz " + str(jobOptions["utmEastOffset"]) + " " + str(jobOptions["utmNorthOffset"]) + " 0 -epsg " + str(jobOptions["epsg"])
