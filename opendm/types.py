@@ -28,7 +28,7 @@ class ODMPhoto:
         self.update_focal()
 
         # print log message
-        log.ODM_DEBUG('Loaded image %s | dimensions: %s x %s | focal: %s | ccd: %s' % \
+        log.ODM_DEBUG('Loaded %s | dimensions: %s x %s | focal: %s | ccd: %s' % \
             (self.filename, self.width, self.height, self.focal_length, self.ccd_width))
 
     def update_focal(self):
