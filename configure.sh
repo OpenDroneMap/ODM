@@ -109,5 +109,6 @@ NUM_CORES=`grep -c processor /proc/cpuinfo`
 ## Compile SuperBuild
 cd SuperBuild 
 mkdir -p build && cd build
-#cmake .. && make -j ${NUM_CORES}
-cmake .. && make -j 1
+cmake .. && make -j ${NUM_CORES}
+
+echo -e "\e[1;34mScript finished\e[0;39m"
