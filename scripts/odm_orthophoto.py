@@ -33,9 +33,16 @@ class ODMOrthoPhotoCell(ecto.Cell):
             'res': str(20.0)
         }
 
-        # run odm_georeference
-        system.run('{bin}/odm_orthophoto -inputFile {model_geo} -logFile {log} ' \
-        '-outputFile {ortho} -resolution {res} -outputCornerFile {corners}'.format(**kwargs))
+        # check if we rerun cell or not
+        rerun_cell = args['run_only'] is not None \
+            and args['run_only'] == 'odm_orthophoto'
+
+        if not io.file_exists(kwargs['ortho']) or rerun_cell:
+            # run odm_georeference
+            system.run('{bin}/odm_orthophoto -inputFile {model_geo} -logFile {log} ' \
+            '-outputFile {ortho} -resolution {res} -outputCornerFile {corners}'.format(**kwargs))
+        else:
+            log.ODM_WARNING('Found a valid orthophoto in: %s' % kwargs['ortho'])
 
         log.ODM_INFO('Running OMD OrthoPhoto Cell - Finished')
         return ecto.OK if args['end_with'] != 'odm_orthophoto' else ecto.QUIT

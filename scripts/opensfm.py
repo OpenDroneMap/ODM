@@ -39,10 +39,14 @@ class ODMOpenSfMCell(ecto.Cell):
         system.mkdir_p(opensfm_path)
         system.mkdir_p(pmvs_path)
 
+        # check if we rerun cell or not
+        rerun_cell = args['run_only'] is not None \
+            and args['run_only'] == 'opensfm'
+
         ### check if reconstruction was done before
         reconstruction_file = io.join_paths(opensfm_path, 'reconstruction.json')
 
-        if not io.file_exists(reconstruction_file):
+        if not io.file_exists(reconstruction_file) or rerun_cell:
             # create file list
             list_path = io.join_paths(opensfm_path, 'image_list.txt')
             with open(list_path, 'w') as fout:
@@ -73,7 +77,7 @@ class ODMOpenSfMCell(ecto.Cell):
         ### check if reconstruction was exported to bundler before
         bundler_file = io.join_paths(opensfm_path, 'bundle_r000.out')
 
-        if not io.file_exists(bundler_file):
+        if not io.file_exists(bundler_file) or rerun_cell:
             # convert back to bundler's format
             system.run('PYTHONPATH=%s %s/bin/export_bundler %s' %
                 (context.pyopencv_path, context.opensfm_path, opensfm_path))
@@ -84,7 +88,7 @@ class ODMOpenSfMCell(ecto.Cell):
         ### check if reconstruction was exported to pmvs before
         pmvs_file = io.join_paths(pmvs_path, 'recon0/pmvs_options.txt')
 
-        if not io.file_exists(pmvs_file):
+        if not io.file_exists(pmvs_file) or rerun_cell:
             # run PMVS converter
             system.run('PYTHONPATH=%s %s/bin/export_pmvs %s --output %s' % 
                 (context.pyopencv_path, context.opensfm_path, opensfm_path, pmvs_path))

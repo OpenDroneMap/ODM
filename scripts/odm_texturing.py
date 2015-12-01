@@ -32,7 +32,11 @@ class ODMTexturingCell(ecto.Cell):
         output_file = io.join_paths(odm_texturing, 'odm_textured_model.obj')
         log_file = io.join_paths(odm_texturing, 'odm_texturing_log.txt')
 
-        if not io.file_exists(output_file):
+        # check if we rerun cell or not
+        rerun_cell = args['run_only'] is not None \
+            and args['run_only'] == 'odm_texturing'
+
+        if not io.file_exists(output_file) or rerun_cell:
             # run texturing binary
             system.run('%s/odm_texturing -bundleFile %s '                      \
                 '-imagesPath %s/ -imagesListPath %s -inputModelPath %s '       \
