@@ -83,7 +83,9 @@ fi
 ## Installing Ecto Requisites
 echo -e "\e[1;34mInstalling Ecto Dependencies\e[0;39m"
 sudo pip install -U catkin-pkg
-sudo apt-get install python-empy -y
+sudo apt-get install python-empy \
+                     python-nose \
+                     python-pyside -y
 if [ $? -ne 0 ] 
 then
     echo -e "\e[1;31mERROR: \e[39mError when Installing Ecto Dependencies\e[0m"
@@ -93,7 +95,8 @@ fi
 ## Installing OpenDroneMap Requisites
 echo -e "\e[1;34mInstalling OpenDroneMap Dependencies\e[0;39m"
 sudo apt-get install python-pyexiv2 \
-                     python-scipy -y
+                     python-scipy \
+                     jhead -y
 if [ $? -ne 0 ] 
 then
     echo -e "\e[1;31mERROR: \e[39mError when Installing OpenDroneMap Dependencies\e[0m"
