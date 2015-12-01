@@ -27,21 +27,21 @@ class ODMTexturingCell(ecto.Cell):
 
         images_path = io.join_paths(project_path, 'images_resize')
         bundle_file = io.join_paths(project_path, 'opensfm/bundle_r000.out')
-        images_list_path = io.join_paths(project_path, 'opensfm/list_r000.out')
+        images_list_file = io.join_paths(project_path, 'opensfm/list_r000.out')
 
-        output_file = io.join_paths(odm_texturing, 'odm_mesh.ply')
+        output_file = io.join_paths(odm_texturing, 'odm_textured_model.obj')
         log_file = io.join_paths(odm_texturing, 'odm_texturing_log.txt')
 
         if not io.file_exists(output_file):
             # run texturing binary
-            system.run('%s/odm_texturing -bundleFile %s '                     \
-                '-imagesPath %s/ -imagesListPath %s -inputModelPath %s '      \
-                '-outputFolder %s/ -textureResolution %s -bundleResizedTo %s '\
-                '-textureWithSize %s -logFile %s' %                           \
-                (context.odm_modules_path, bundle_file, images_path,          \
-                images_list_path, input_model_path, odm_texturing,            \
-                str(args['odm_texturing_textureResolution']),                 \
-                str(args['resize_to']),                                       \
+            system.run('%s/odm_texturing -bundleFile %s '                      \
+                '-imagesPath %s/ -imagesListPath %s -inputModelPath %s '       \
+                '-outputFolder %s/ -textureResolution %s -bundleResizedTo %s ' \
+                '-textureWithSize %s -logFile %s' %                            \
+                (context.odm_modules_path, bundle_file, images_path,           \
+                images_list_file, input_model_path, odm_texturing,             \
+                str(args['odm_texturing_textureResolution']),                  \
+                str(args['resize_to']),                                        \
                 str(args['odm_texturing_textureWithSize']), log_file))
         else:
             log.ODM_WARNING('Found a valid odm texture file in: %s' % output_file)
