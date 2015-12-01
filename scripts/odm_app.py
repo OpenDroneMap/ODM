@@ -8,6 +8,8 @@ from opensfm import ODMOpenSfMCell
 from pmvs import ODMPmvsCell
 from odm_meshing import ODMeshingCell
 from odm_texturing import ODMTexturingCell
+from odm_georeferencing import ODMGeoreferencingCell
+from odm_orthophoto import ODMOrthoPhotoCell
 
 class ODMApp(ecto.BlackBox):
     '''   ODMApp - a class for ODM Activities
@@ -36,7 +38,9 @@ class ODMApp(ecto.BlackBox):
                                             matching_gps_neighbors=p.args['matcher_k']),
                   'pmvs': ODMPmvsCell(),
                   'meshing': ODMeshingCell(),
-                  'texturing': ODMTexturingCell()
+                  'texturing': ODMTexturingCell(),
+                  'georeferencing': ODMGeoreferencingCell(),
+                  'orthophoto': ODMOrthoPhotoCell()
 
         }
 
@@ -75,5 +79,11 @@ class ODMApp(ecto.BlackBox):
         # create odm texture
         connections += [ self.args[:] >> self.texturing['args'],
                          self.meshing['mesh_path'] >> self.texturing['model_path'] ]
+
+        # create odm georeference
+        connections += [ self.args[:] >> self.georeferencing['args'] ]
+
+        # create odm orthophoto
+        connections += [ self.args[:] >> self.orthophoto['args'] ]
 
         return connections
