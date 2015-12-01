@@ -108,3 +108,5 @@ cd SuperBuild
 mkdir -p build && cd build
 #cmake .. && make -j ${NUM_CORES}
 cmake .. && make -j 1
+
+echo -e "\e[1;34mScript finished\e[0;39m"
