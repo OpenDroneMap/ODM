@@ -35,6 +35,10 @@ class ODMResizeCell(ecto.Cell):
 
         log.ODM_DEBUG('Resizing dataset to: %s' % resizing_dir)
 
+        # check if we rerun cell or not
+        rerun_cell = args['run_only'] is not None \
+            and args['run_only'] == 'resize'
+
         # loop over photos
         for photo in photos:
 
@@ -42,7 +46,7 @@ class ODMResizeCell(ecto.Cell):
             # Try to avoid oversampling!
             new_path_file = io.join_paths(resizing_dir, photo.filename)
 
-            if not io.file_exists(new_path_file):
+            if not io.file_exists(new_path_file) or rerun_cell:
                 # open and resize image with opencv
                 img = cv2.imread(photo.path_file)
                 # compute new size

@@ -29,7 +29,11 @@ class ODMeshingCell(ecto.Cell):
 
         self.outputs.mesh_path = output_file
 
-        if not io.file_exists(output_file):
+        # check if we rerun cell or not
+        rerun_cell = args['run_only'] is not None \
+            and args['run_only'] == 'odm_meshing'
+
+        if not io.file_exists(output_file) or rerun_cell:
             # run meshing binary
             system.run('%s/odm_meshing -inputFile %s -outputFile %s '          \
                 '-logFile %s -maxVertexCount %s -octreeDepth %s '              \

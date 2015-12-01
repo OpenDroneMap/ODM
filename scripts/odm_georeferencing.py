@@ -60,7 +60,12 @@ class ODMGeoreferencingCell(ecto.Cell):
         pointcloud_geo = io.join_paths(odm_texturing, 'odm_textured_model_geo.ply')
         system_geo = io.join_paths(odm_texturing, 'odm_textured_model_geo.txt')
 
-        if not io.file_exists(model_geo) or not io.file_exists(pointcloud_geo):
+        # check if we rerun cell or not
+        rerun_cell = args['run_only'] is not None \
+            and args['run_only'] == 'odm_georeferencing'
+
+        if not io.file_exists(model_geo) or \
+            not io.file_exists(pointcloud_geo) or rerun_cell:
 
             # odm_georeference definitions
             kwargs = {
