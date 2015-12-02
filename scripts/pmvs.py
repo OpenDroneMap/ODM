@@ -29,7 +29,7 @@ class ODMPmvsCell(ecto.Cell):
         rerun_cell = args['run_only'] is not None \
             and args['run_only'] == 'pmvs'
 
-        if not io.file_exists(model_path):
+        if not io.file_exists(model_path) or rerun_cell:
             log.ODM_DEBUG('Creating dense pointcloud in: %s' % model_path)
 
             # run pmvs2
