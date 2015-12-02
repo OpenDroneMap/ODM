@@ -34,6 +34,9 @@ class ODMLoadDatasetCell(ecto.Cell):
 
         if not io.dir_exists(images_dir) or rerun_cell:
             images_dir = io.join_paths(project_path, 'images')
+            if not io.dir_exists(images_dir):
+                log.ODM_ERROR("You must put your pictures into an <images> directory")
+                return ecto.QUIT
 
         log.ODM_DEBUG('Loading dataset from: %s' % images_dir)
 
