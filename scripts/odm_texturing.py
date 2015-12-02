@@ -22,31 +22,37 @@ class ODMTexturingCell(ecto.Cell):
         project_path = io.absolute_path_file(args['project_path'])
 
         # define paths and create working directories
+        odm_meshing = io.join_paths(project_path, 'odm_meshing')
         odm_texturing = io.join_paths(project_path, 'odm_texturing')
         system.mkdir_p(odm_texturing)
 
-        images_path = io.join_paths(project_path, 'images_resize')
-        bundle_file = io.join_paths(project_path, 'opensfm/bundle_r000.out')
-        images_list_file = io.join_paths(project_path, 'opensfm/list_r000.out')
-
-        output_file = io.join_paths(odm_texturing, 'odm_textured_model.obj')
-        log_file = io.join_paths(odm_texturing, 'odm_texturing_log.txt')
+        output_file = io.join_paths(odm_meshing, 'odm_mesh.ply')
 
         # check if we rerun cell or not
         rerun_cell = args['run_only'] is not None \
             and args['run_only'] == 'odm_texturing'
 
         if not io.file_exists(output_file) or rerun_cell:
+
+            # odm_texturing definitions
+            kwargs = {
+                'bin': context.odm_modules_path,
+                'out_dir': odm_texturing,
+                'bundle': io.join_paths(project_path,'opensfm/bundle_r000.out'),
+                'imgs_list': io.join_paths(project_path, 'opensfm/image_list.txt'),
+                'model': io.join_paths(odm_meshing, 'odm_mesh.ply'),
+                'log': io.join_paths(odm_texturing, 'odm_texturing_log.txt'),
+                'bsize': str(args['resize_to']),
+                'res': str(args['odm_texturing_textureResolution']),
+                'wsize': str(args['odm_texturing_textureWithSize'])
+            }
+
             # run texturing binary
-            system.run('%s/odm_texturing -bundleFile %s '                      \
-                '-imagesPath %s/ -imagesListPath %s -inputModelPath %s '       \
-                '-outputFolder %s/ -textureResolution %s -bundleResizedTo %s ' \
-                '-textureWithSize %s -logFile %s' %                            \
-                (context.odm_modules_path, bundle_file, images_path,           \
-                images_list_file, input_model_path, odm_texturing,             \
-                str(args['odm_texturing_textureResolution']),                  \
-                str(args['resize_to']),                                        \
-                str(args['odm_texturing_textureWithSize']), log_file))
+            system.run('{bin}/odm_texturing -bundleFile {bundle} '     \
+                '-imagesListPath {imgs_list} -inputModelPath {model} ' \
+                '-outputFolder {out_dir}/ -textureResolution {res} '   \
+                '-bundleResizedTo {bsize} -textureWithSize {wsize} '   \
+                '-logFile {log}'.format(**kwargs))
         else:
             log.ODM_WARNING('Found a valid odm texture file in: %s' % output_file)
         
