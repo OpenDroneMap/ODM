@@ -1,4 +1,5 @@
 import os
+import cv2
 import pyexiv2
 import subprocess
 
@@ -55,9 +56,14 @@ class ODMPhoto:
             # parse tag names
             if key == 'Exif.Image.Make':  self.camera_make = val
             elif key == 'Exif.Image.Model': self.camera_model = val
-            elif key == 'Exif.Photo.PixelXDimension': self.width = val
-            elif key == 'Exif.Photo.PixelYDimension': self.height = val
+            #elif key == 'Exif.Photo.PixelXDimension': self.width = val
+            #elif key == 'Exif.Photo.PixelYDimension': self.height = val
             elif key == 'Exif.Photo.FocalLength': self.focal_length = float(val)
+
+        # needed to do that since sometimes metadata contains wrong data
+        img = cv2.imread(_path_file)
+        self.width = img.shape[0]
+        self.height = img.shape[1]
 
         # TODO(edgar): set self.focal_length if args['force_frocal']
         #              set self.ccd_width    if args['force_ccd']
@@ -76,8 +82,47 @@ class ODMPhoto:
 
 # TODO: finish this class
 class ODMReconstruction(object):
-    """docstring for ODMReconstruction"""
-    def __init__(self, arg):
-        super(ODMReconstruction, self).__init__()
-        self.arg = arg
+    def __init__(self, root_path):
+        ### root path to the project
+        self.root_path = io.absolute_path_file(root_path)
+
+        ### modules paths
+
+        # here are defined where all modules should be located in
+        # order to keep track all files al directories during the
+        # whole reconstruction process.
+        self.dataset_raw = io.join_paths(self.root_path, 'images')
+        self.dataset_resized = io.join_paths(self.root_path, 'images_resized')
+        self.opensfm = io.join_paths(self.root_path, 'opensfm')
+        self.pmvs = io.join_paths(self.root_path, 'pmvs')
+        self.odm_meshing = io.join_paths(self.root_path, 'odm_meshing')
+        self.odm_texturing = io.join_paths(self.root_path, 'odm_texturing')
+        self.odm_georeferencing = io.join_paths(self.root_path, 'odm_georeferencing')
+        self.odm_orthophoto = io.join_paths(self.root_path, 'odm_orthophoto')
+
+        ### important files paths
+        
+        # opensfm
+        self.opensfm_bundle = io.join_paths(self.opensfm, 'bundle_r000.out')
+        self.opensfm_bundle_list = io.join_paths(self.opensfm, 'list_r000.out')
+        self.opensfm_image_list = io.join_paths(self.opensfm, 'image_list.txt')
+        self.opensfm_reconstruction = io.join_paths(self.opensfm, 'reconstruction.json')
+        # pmvs
+        self.pmvs_options = io.join_paths(self.pmvs, 'recon0/pmvs_options.txt')
+        self.pmvs_model = io.join_paths(self.pmvs, 'models/pmvs_options.txt.ply')
+        # odm_meshing
+        self.mesh = io.join_paths(self.odm_meshing, 'odm_mesh.ply')
+        # odm_texturing && odm_georeferencing
+        self.textured_model = io.join_paths(self.odm_texturing, 'odm_textured_model_geo.ply')
+        self.textured_model_obj = io.join_paths(self.odm_texturing, 'odm_textured_model.obj')
+        self.textured_model_mtl = io.join_paths(self.odm_texturing, 'odm_textured_model.mtl')
+        self.textured_model_obj_geo = io.join_paths(self.odm_texturing, 'odm_textured_model_geo.obj')
+        self.textured_model_mtl_geo = io.join_paths(self.odm_texturing, 'odm_textured_model_geo.mtl')
+        # odm_orthophoto
+        self.orthophoto = io.join_paths(self.odm_orthophoto, 'odm_orthophoto.png')
+
+
+
+
+
         

@@ -50,9 +50,7 @@ class ODMResizeCell(ecto.Cell):
                 # open and resize image with opencv
                 img = cv2.imread(photo.path_file)
                 # compute new size
-                max_side = max(photo.width, photo.height) \
-                    if photo.width and photo.height \
-                    else max(img.shape[0], img.shape[0])
+                max_side = max(photo.width, photo.height)
                 ratio = float(args['resize_to']) / float(max_side)
                 img_r = cv2.resize(img, None, fx=ratio, fy=ratio)
                 # write image with opencv
