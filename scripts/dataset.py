@@ -26,7 +26,14 @@ class ODMLoadDatasetCell(ecto.Cell):
         # get parameters
         args = self.inputs.args
         project_path = io.absolute_path_file(args['project_path'])
-        images_dir = io.join_paths(project_path, 'images')
+        images_dir = io.join_paths(project_path, 'images_resize')
+
+        # check if we rerun cell or not
+        rerun_cell = args['run_only'] is not None \
+            and args['run_only'] == 'resize'
+
+        if not io.dir_exists(images_dir) or rerun_cell:
+            images_dir = io.join_paths(project_path, 'images')
 
         log.ODM_DEBUG('Loading dataset from: %s' % images_dir)
 
@@ -38,9 +45,8 @@ class ODMLoadDatasetCell(ecto.Cell):
         files = [f for f in files if supported_extension(f)]
 
         if files:
-            photos = []
-
             # create ODMPhoto list
+            photos = []
             for f in files:
                 path_file = io.join_paths(images_dir, f)
                 photos.append(types.ODMPhoto(path_file, args))

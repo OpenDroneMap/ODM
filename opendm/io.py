@@ -20,3 +20,6 @@ def join_paths(path1, path2):
 
 def file_exists(path_file):
 	return os.path.isfile(path_file)
+
+def dir_exists(dirname):
+	return os.path.isdir(dirname)

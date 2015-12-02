@@ -64,6 +64,9 @@ class ODMResizeCell(ecto.Cell):
                 new_meta.read()
                 # copy metadata
                 old_meta.copy(new_meta)
+                # update metadata size
+                new_meta['Exif.Photo.PixelXDimension'].value = img_r.shape[0]
+                new_meta['Exif.Photo.PixelYDimension'].value = img_r.shape[1]
                 new_meta.write()
                 # update photos array with new values
                 photo.path_file = new_path_file
@@ -72,10 +75,12 @@ class ODMResizeCell(ecto.Cell):
                 photo.update_focal()
 
                 # log message
-                log.ODM_DEBUG('Resized %s | dimensions: %s to %s' % \
-                    (photo.filename, img_r.shape, args['resize_to']))
+                log.ODM_DEBUG('Resized %s | dimensions: %s' % \
+                    (photo.filename, img_r.shape))
             else:
-                log.ODM_WARNING('Already resized %s' % photo.filename)
+                # log message
+                log.ODM_WARNING('Already resized %s | dimensions: %s x %s' % \
+                    (photo.filename, photo.width, photo.height))
 
         log.ODM_INFO('Resized %s images' % len(photos))
         
