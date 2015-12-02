@@ -37,7 +37,6 @@ class ODMGeoreferencingCell(ecto.Cell):
             log.ODM_WARNING('Warning: No coordinates file. ' \
                 'Generating coordinates file in: %s' % coords_file)
             try:
-                coords_file = io.join_paths(odm_georeferencing, 'coords.txt')
                 log_file = io.join_paths(odm_georeferencing, 'odm_texturing_utm_log.txt')
 
                 system.run('%s/odm_extract_utm -imagesPath %s/ '      \
@@ -55,7 +54,7 @@ class ODMGeoreferencingCell(ecto.Cell):
             log.ODM_WARNING('Found a valid coordinates file in: %s' % coords_file)
 
         # define odm georeferencing outputs
-        # for convenience we'll all data put into odm_texturing
+        # for convenience we'll put all data into odm_texturing
         model_geo = io.join_paths(odm_texturing, 'odm_textured_model_geo.obj')
         pointcloud_geo = io.join_paths(odm_texturing, 'odm_textured_model_geo.ply')
         system_geo = io.join_paths(odm_texturing, 'odm_textured_model_geo.txt')

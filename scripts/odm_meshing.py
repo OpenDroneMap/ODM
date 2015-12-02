@@ -34,6 +34,8 @@ class ODMeshingCell(ecto.Cell):
             and args['run_only'] == 'odm_meshing'
 
         if not io.file_exists(output_file) or rerun_cell:
+            log.ODM_DEBUG('Writting odm mesh file in: %s' % output_file)
+
             # run meshing binary
             system.run('%s/odm_meshing -inputFile %s -outputFile %s '          \
                 '-logFile %s -maxVertexCount %s -octreeDepth %s '              \

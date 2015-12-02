@@ -26,13 +26,14 @@ class ODMTexturingCell(ecto.Cell):
         odm_texturing = io.join_paths(project_path, 'odm_texturing')
         system.mkdir_p(odm_texturing)
 
-        output_file = io.join_paths(odm_meshing, 'odm_mesh.ply')
+        output_file = io.join_paths(odm_texturing, 'odm_textured_model.obj')
 
         # check if we rerun cell or not
         rerun_cell = args['run_only'] is not None \
             and args['run_only'] == 'odm_texturing'
 
         if not io.file_exists(output_file) or rerun_cell:
+            log.ODM_DEBUG('Writting odm textured file in: %s' % output_file)
 
             # odm_texturing definitions
             kwargs = {
