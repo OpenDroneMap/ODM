@@ -40,7 +40,8 @@ class ODMTexturingCell(ecto.Cell):
                 'bin': context.odm_modules_path,
                 'out_dir': odm_texturing,
                 'bundle': io.join_paths(project_path,'opensfm/bundle_r000.out'),
-                'imgs_list': io.join_paths(project_path, 'opensfm/image_list.txt'),
+                'imgs_path': io.join_paths(project_path, 'images_resize'),
+                'imgs_list': io.join_paths(project_path, 'opensfm/list_r000.out'),
                 'model': io.join_paths(odm_meshing, 'odm_mesh.ply'),
                 'log': io.join_paths(odm_texturing, 'odm_texturing_log.txt'),
                 'bsize': str(args['resize_to']),
@@ -49,11 +50,11 @@ class ODMTexturingCell(ecto.Cell):
             }
 
             # run texturing binary
-            system.run('{bin}/odm_texturing -bundleFile {bundle} '     \
-                '-imagesListPath {imgs_list} -inputModelPath {model} ' \
-                '-outputFolder {out_dir}/ -textureResolution {res} '   \
-                '-bundleResizedTo {bsize} -textureWithSize {wsize} '   \
-                '-logFile {log}'.format(**kwargs))
+            system.run('{bin}/odm_texturing -bundleFile {bundle} '           \
+                '-imagesPath {imgs_path} -imagesListPath {imgs_list} '       \
+                '-inputModelPath {model} -outputFolder {out_dir}/ '          \
+                '-textureResolution {res} -bundleResizedTo {bsize} '         \
+                '-textureWithSize {wsize} -logFile {log}'.format(**kwargs))
         else:
             log.ODM_WARNING('Found a valid odm texture file in: %s' % output_file)
         
