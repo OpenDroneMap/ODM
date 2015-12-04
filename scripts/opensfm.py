@@ -63,7 +63,7 @@ class ODMOpenSfMCell(ecto.Cell):
             ]
 
             # write config file
-            config_filename = io.join_paths(project_path, 'config.yaml')
+            config_filename = io.join_paths(opensfm_path, 'config.yaml')
             with open(config_filename, 'w') as fout:
                 fout.write("\n".join(config))
 
