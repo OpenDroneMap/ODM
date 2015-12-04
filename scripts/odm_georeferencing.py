@@ -75,7 +75,7 @@ class ODMGeoreferencingCell(ecto.Cell):
                 'imgs_list': io.join_paths(project_path, 'opensfm/list_r000.out'),
                 'size': str(args['resize_to']),
                 'model': io.join_paths(project_path, 'odm_texturing/odm_textured_model.obj'),
-                'pc': io.join_paths(project_path, 'pmvs/recon0/models/pmvs_options.txt.ply'),
+                'pc': io.join_paths(project_path, 'pmvs/recon0/models/option-0000.ply'),
                 'log': io.join_paths(odm_georeferencing, 'odm_texturing_log.txt'),
                 'coords': io.join_paths(odm_georeferencing, 'coords.txt'),
                 'pc_geo': pointcloud_geo,
