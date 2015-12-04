@@ -353,8 +353,10 @@ void OdmTexturing::loadCameras()
             cam.texture_file = imagesPath_ + "/" + dummyLine.substr(2);
         }*/
 
-        cam.texture_file = imagesPath_ + "/" + dummyLine;
-
+        if (imagesPath_.size() == 0)
+            cam.texture_file = dummyLine;
+        else
+            cam.texture_file = imagesPath_ + "/" + dummyLine;
 
         // Read image to get full resolution size
         cv::Mat image = cv::imread(cam.texture_file);
