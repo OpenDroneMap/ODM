@@ -17,6 +17,8 @@ sys.path.append(pyopencv_path)
 opensfm_path = os.path.join(superbuild_path, "src/opensfm")
 
 # define pmvs path
+cmvs_path = os.path.join(superbuild_path, "install/bin/cmvs")
+cmvs_opts_path = os.path.join(superbuild_path, "install/bin/genOption")
 pmvs2_path = os.path.join(superbuild_path, "install/bin/pmvs2")
 
 # define odm modules path
