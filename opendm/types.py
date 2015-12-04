@@ -51,22 +51,25 @@ class ODMPhoto:
         metadata.read()
         # loop over image tags
         for key in metadata:
-            # catch tag value
-            val = metadata[key].value
-            # parse tag names
-            if key == 'Exif.Image.Make':  self.camera_make = val
-            elif key == 'Exif.Image.Model': self.camera_model = val
-            #elif key == 'Exif.Photo.PixelXDimension': self.width = val
-            #elif key == 'Exif.Photo.PixelYDimension': self.height = val
-            elif key == 'Exif.Photo.FocalLength': self.focal_length = float(val)
-
+            # try/catch tag value due to weird bug in  pyexiv2 
+            # ValueError: invalid literal for int() with base 10: ''
+            try:
+                val = metadata[key].value
+                # parse tag names
+                if key == 'Exif.Image.Make':  self.camera_make = val
+                elif key == 'Exif.Image.Model': self.camera_model = val
+                elif key == 'Exif.Photo.FocalLength': self.focal_length = float(val)
+            except Exception, e:
+                pass
+ 
         # needed to do that since sometimes metadata contains wrong data
         img = cv2.imread(_path_file)
-        self.width = img.shape[0]
-        self.height = img.shape[1]
+        self.width = img.shape[1]
+        self.height = img.shape[0]
 
-        # TODO(edgar): set self.focal_length if args['force_frocal']
-        #              set self.ccd_width    if args['force_ccd']
+        # force focal and ccd_width with user parameter
+        if args['force_focal']: self.focal_length = args['force_focal']
+        if args['force_ccd']: self.ccd_width = args['force_ccd']
 
         # find ccd_width from file if needed
         if self.ccd_width is None and self.camera_model is not None:
