@@ -28,7 +28,7 @@ parser.add_argument('--end-with', '-e',
                     choices=processopts,
                     help=('Can be one of:' + ' | '.join(processopts)))
 
-parser.add_argument('--rerun', '-r'
+parser.add_argument('--rerun', '-r',
                     metavar='<string>',
                     choices=processopts,
                     help=('Can be one of:' + ' | '.join(processopts)))

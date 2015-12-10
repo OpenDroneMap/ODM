@@ -9,11 +9,13 @@ from opendm import log
 class ODMLoadDatasetCell(ecto.Cell):
 
     def declare_params(self, params):
-        pass
+        params.declare("force_focal", 'Override the focal length information for the '
+                            'images', None)
+        params.declare("force_ccd", 'Override the ccd widht information for the '
+                            'images', None)
 
     def declare_io(self, params, inputs, outputs):
         inputs.declare("tree", "Struct with paths", [])
-        inputs.declare("args", "The application arguments.", {})
         outputs.declare("photos", "list of ODMPhoto's", [])
 
     def process(self, inputs, outputs):
@@ -25,17 +27,12 @@ class ODMLoadDatasetCell(ecto.Cell):
         log.ODM_INFO('Running ODM Load Dataset Cell')
 
         # get inputs
-        args = self.inputs.args
         tree = self.inputs.tree
 
         # set images directory
         images_dir = tree.dataset_resize
 
-        # check if we rerun cell or not
-        rerun_cell = args['rerun'] is not None \
-            and args['rerun'] == 'resize'
-
-        if not io.dir_exists(images_dir) or rerun_cell:
+        if not io.dir_exists(images_dir):
             images_dir = tree.dataset_raw
             if not io.dir_exists(images_dir):
                 log.ODM_ERROR("You must put your pictures into an <images> directory")
@@ -54,7 +51,10 @@ class ODMLoadDatasetCell(ecto.Cell):
             photos = []
             for f in files:
                 path_file = io.join_paths(images_dir, f)
-                photos.append(types.ODMPhoto(path_file, args))
+                photo = types.ODMPhoto(path_file,
+                                       self.params.force_focal,
+                                       self.params.force_ccd)
+                photos.append(photo)
             
             log.ODM_INFO('Found %s usable images' % len(photos))            
         else:

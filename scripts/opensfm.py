@@ -7,9 +7,6 @@ from opendm import context
 
 class ODMOpenSfMCell(ecto.Cell):
     def declare_params(self, params):
-        pass
-
-    def declare_params(self, params):
         params.declare("use_exif_size", "The application arguments.", False)
         params.declare("feature_process_size", "The application arguments.", False)
         params.declare("feature_min_frames", "The application arguments.", 0)

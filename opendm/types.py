@@ -10,7 +10,7 @@ import system
 class ODMPhoto:
     """   ODMPhoto - a class for ODMPhotos
     """
-    def __init__(self, path_file, args):
+    def __init__(self, path_file, force_focal, force_ccd):
         #  general purpose
         self.path_file = path_file
         self.filename = io.extract_file_from_path_file(path_file)
@@ -24,7 +24,7 @@ class ODMPhoto:
         self.camera_make = None
         self.camera_model = None
         # parse values from metadata
-        self.parse_pyexiv2_values(self.path_file, args)
+        self.parse_pyexiv2_values(self.path_file, force_focal, force_ccd)
         # compute focal lenght into pixels
         self.update_focal()
 
@@ -45,7 +45,7 @@ class ODMPhoto:
                 self.focal_length_px = \
                     self.height * (self.focal_length / self.ccd_width)
 
-    def parse_pyexiv2_values(self, _path_file, args):
+    def parse_pyexiv2_values(self, _path_file, _force_focal, _force_ccd):
         # read image metadata
         metadata = pyexiv2.ImageMetadata(_path_file)
         metadata.read()
@@ -68,8 +68,8 @@ class ODMPhoto:
         self.height = img.shape[0]
 
         # force focal and ccd_width with user parameter
-        if args['force_focal']: self.focal_length = args['force_focal']
-        if args['force_ccd']: self.ccd_width = args['force_ccd']
+        if _force_focal: self.focal_length = _force_focal
+        if _force_ccd: self.ccd_width = _force_ccd
 
         # find ccd_width from file if needed
         if self.ccd_width is None and self.camera_model is not None:
