@@ -2,6 +2,7 @@ import ecto
 
 from opendm import io
 from opendm import log
+from opendm import types
 from opendm import system
 from opendm import context
 
@@ -103,6 +104,14 @@ class ODMGeoreferencingCell(ecto.Cell):
         else:
             log.ODM_WARNING('Found a valid georeferenced model in: %s' \
                 % tree.odm_textured_model_ply_geo)
+
+
+        # update images metadata
+        geo_ref = types.ODM_GeoRef()
+        geo_ref.parse_coordinate_system(tree.odm_georeferencing_coords)
+
+        for idx, photo in enumerate(self.inputs.photos):
+            geo_ref.utm_to_latlon(tree.odm_georeferencing_latlon, photo, idx)
 
 
         log.ODM_INFO('Running OMD Georeferencing Cell - Finished')
