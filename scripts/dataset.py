@@ -12,8 +12,9 @@ class ODMLoadDatasetCell(ecto.Cell):
         pass
 
     def declare_io(self, params, inputs, outputs):
+        inputs.declare("tree", "Struct with paths", [])
         inputs.declare("args", "The application arguments.", {})
-        outputs.declare("photos", "Clusters output. list of ODMPhoto's", [])
+        outputs.declare("photos", "list of ODMPhoto's", [])
 
     def process(self, inputs, outputs):
         # check if the extension is sopported
@@ -23,17 +24,19 @@ class ODMLoadDatasetCell(ecto.Cell):
 
         log.ODM_INFO('Running ODM Load Dataset Cell')
 
-        # get parameters
+        # get inputs
         args = self.inputs.args
-        project_path = io.absolute_path_file(args['project_path'])
-        images_dir = io.join_paths(project_path, 'images_resize')
+        tree = self.inputs.tree
+
+        # set images directory
+        images_dir = tree.dataset_resize
 
         # check if we rerun cell or not
-        rerun_cell = args['run_only'] is not None \
-            and args['run_only'] == 'resize'
+        rerun_cell = args['rerun'] is not None \
+            and args['rerun'] == 'resize'
 
         if not io.dir_exists(images_dir) or rerun_cell:
-            images_dir = io.join_paths(project_path, 'images')
+            images_dir = tree.dataset_raw
             if not io.dir_exists(images_dir):
                 log.ODM_ERROR("You must put your pictures into an <images> directory")
                 return ecto.QUIT
@@ -44,7 +47,6 @@ class ODMLoadDatasetCell(ecto.Cell):
         files = io.get_files_list(images_dir)
 
         # filter images for its extension type
-        # by now only 'jpg' and 'jpeg are supported
         files = [f for f in files if supported_extension(f)]
 
         if files:

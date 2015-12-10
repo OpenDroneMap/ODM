@@ -1,7 +1,7 @@
 import argparse
 
 # parse arguments
-processopts = ['resize', 'opensfm', 'pmvs',
+processopts = ['resize', 'opensfm', 'cmvs', 'pmvs',
                'odm_meshing', 'odm_texturing', 'odm_georeferencing',
                'odm_orthophoto']
 
@@ -28,7 +28,7 @@ parser.add_argument('--end-with', '-e',
                     choices=processopts,
                     help=('Can be one of:' + ' | '.join(processopts)))
 
-parser.add_argument('--run-only',
+parser.add_argument('--rerun', '-r'
                     metavar='<string>',
                     choices=processopts,
                     help=('Can be one of:' + ' | '.join(processopts)))
@@ -143,6 +143,13 @@ parser.add_argument('--pmvs-minImageNum',
                             'minImageNum images for being reconstructed. 3 is '
                             'suggested in general.'))
 
+parser.add_argument('--pmvs-num-cores',
+                    metavar='<positive integer>',
+                    default=1,
+                    type=int,
+                    help=('The maximum number of cores to use in dense '
+                            'reconstruction.'))
+
 parser.add_argument('--odm_meshing-maxVertexCount',
                     metavar='<positive integer>',
                     default=100000,
@@ -210,11 +217,5 @@ parser.add_argument('--zip-results',
                     action='store_true',
                     default=False,
                     help='compress the results using gunzip')
-
-parser.add_argument('--use-opensfm',
-                    type=bool,
-                    default=True,
-                    help='use OpenSfM instead of Bundler to find the camera positions '
-                         '(replaces getKeypoints, match and bundler steps)')
 
 args = vars(parser.parse_args())

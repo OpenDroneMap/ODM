@@ -6,9 +6,13 @@ from opendm import system
 from opendm import context
 
 class ODMOrthoPhotoCell(ecto.Cell):
+    def declare_params(self, params):
+        params.declare("resolution", 'Orthophoto ground resolution in pixels/meter', 20)
 
     def declare_io(self, params, inputs, outputs):
+        inputs.declare("tree", "Struct with paths", [])
         inputs.declare("args", "The application arguments.", {})
+        inputs.declare("reconstruction", "list of ODMReconstructions", [])
 
     def process(self, inputs, outputs):
 
@@ -16,33 +20,32 @@ class ODMOrthoPhotoCell(ecto.Cell):
 
         # get inputs
         args = self.inputs.args
-        project_path = io.absolute_path_file(args['project_path'])
+        tree = self.inputs.tree
 
         # define paths and create working directories
-        odm_texturing = io.join_paths(project_path, 'odm_texturing')
-        odm_orthophoto = io.join_paths(project_path, 'odm_orthophoto')
-        system.mkdir_p(odm_orthophoto)
-
-        # odm_georeference definitions
-        kwargs = {
-            'bin': context.odm_modules_path,
-            'model_geo': io.join_paths(odm_texturing, 'odm_textured_model_geo.obj'),
-            'log': io.join_paths(odm_orthophoto, 'odm_orthophoto_log.txt'),
-            'ortho': io.join_paths(odm_orthophoto, 'odm_orthphoto.png'),
-            'corners': io.join_paths(odm_orthophoto, 'odm_orthphoto_corners.txt'),
-            'res': str(20.0)
-        }
+        system.mkdir_p(tree.odm_orthophoto)
 
         # check if we rerun cell or not
-        rerun_cell = args['run_only'] is not None \
-            and args['run_only'] == 'odm_orthophoto'
+        rerun_cell = args['rerun'] is not None \
+            and args['rerun'] == 'odm_orthophoto'
 
-        if not io.file_exists(kwargs['ortho']) or rerun_cell:
+        if not io.file_exists(tree.odm_orthophoto_file) or rerun_cell:
+
+            # odm_georeference definitions
+            kwargs = {
+                'bin': context.odm_modules_path,
+                'model_geo': tree.odm_textured_model_obj_geo,
+                'log': tree.odm_orthophoto_log,
+                'ortho': tree.odm_orthophoto_file,
+                'corners': tree.odm_orthophoto_corners,
+                'res': self.params.resolution
+            }
+
             # run odm_georeference
             system.run('{bin}/odm_orthophoto -inputFile {model_geo} -logFile {log} ' \
             '-outputFile {ortho} -resolution {res} -outputCornerFile {corners}'.format(**kwargs))
         else:
-            log.ODM_WARNING('Found a valid orthophoto in: %s' % kwargs['ortho'])
+            log.ODM_WARNING('Found a valid orthophoto in: %s' % tree.odm_orthophoto_file)
 
         log.ODM_INFO('Running OMD OrthoPhoto Cell - Finished')
         return ecto.OK if args['end_with'] != 'odm_orthophoto' else ecto.QUIT
