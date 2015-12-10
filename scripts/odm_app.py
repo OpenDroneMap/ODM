@@ -63,7 +63,7 @@ class ODMApp(ecto.BlackBox):
         return cells    
 
     def configure(self, p, _i, _o):
-        tree = types.ODMTree(p.args['project_path'])
+        tree = types.ODM_Tree(p.args['project_path'])
         self.tree = ecto.Constant(value=tree)
 
 

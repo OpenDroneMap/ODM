@@ -26,17 +26,10 @@ def now():
     """Return the current time"""
     return datetime.datetime.now().strftime('%a %b %d %H:%M:%S %Z %Y')
 
-def run_and_return(cmdSrc, cmdDest):
+def run_and_return(cmdSrc, cmdDest=None):
     """Run a system command and return the output"""
-    srcProcess = subprocess.Popen(shlex.split(cmdSrc), stdout=subprocess.PIPE)
-    if cmdDest:
-        destProcess = subprocess.Popen(shlex.split(cmdDest),
-                                       stdin=srcProcess.stdout,
-                                       stdout=subprocess.PIPE)
-        stdout, stderr = destProcess.communicate()
-    else:
-        stdout, stderr = srcProcess.communicate()
-
+    process = subprocess.Popen(cmdSrc, stdout=subprocess.PIPE, shell=True)
+    stdout, stderr = process.communicate()
     return stdout.decode('ascii')
 
 

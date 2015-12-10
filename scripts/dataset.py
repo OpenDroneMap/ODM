@@ -51,9 +51,9 @@ class ODMLoadDatasetCell(ecto.Cell):
             photos = []
             for f in files:
                 path_file = io.join_paths(images_dir, f)
-                photo = types.ODMPhoto(path_file,
-                                       self.params.force_focal,
-                                       self.params.force_ccd)
+                photo = types.ODM_Photo(path_file,
+                                        self.params.force_focal,
+                                        self.params.force_ccd)
                 photos.append(photo)
             
             log.ODM_INFO('Found %s usable images' % len(photos))            

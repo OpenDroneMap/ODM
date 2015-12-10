@@ -7,7 +7,7 @@ import log
 import io
 import system
 
-class ODMPhoto:
+class ODM_Photo:
     """   ODMPhoto - a class for ODMPhotos
     """
     def __init__(self, path_file, force_focal, force_ccd):
@@ -84,7 +84,88 @@ class ODMPhoto:
 
 
 # TODO: finish this class
-class ODMTree(object):
+class ODM_Reconstruction(object):
+    """docstring for ODMReconstruction"""
+    def __init__(self, arg):
+        super(ODMReconstruction, self).__init__()
+        self.arg = arg
+
+
+class ODM_GCPoint(object):
+    """docstring for ODMPoint"""
+    def __init__(self, x, y, z):
+        self.x = x
+        self.y = y
+        self.z = z
+
+
+class ODM_GeoRef(object):
+    """docstring for ODMUtmZone"""
+    def __init__(self):
+        self.datum = 'WGS84'
+        self.epsg = 0
+        self.utm_zone = 0
+        self.utm_pole = 'N'
+        self.utm_east_offset = 0
+        self.utm_north_offset = 0
+        self.gcps = []
+
+    def calculate_EPSG(self, _utm_zone, _pole):
+        """Calculate and return the EPSG"""
+        if _pole == 'S':
+            return 32700 + _utm_zone
+        elif _pole == 'N':
+            return 32600 + _utm_zone
+        else:
+            log.ODM_ERROR('Not knonw pole format %s' % _pole)
+            return
+
+    def utm_to_latlon(self, _file, _photo, idx):
+
+        gcp = self.gcps[idx]
+
+        kwargs = { 'datum': self.datum,
+                   'zone': self.utm_zone,
+                   'file': _file,
+                   'x': gcp.x + self.utm_east_offset,
+                   'y': gcp.y + self.utm_north_offset,
+                   'z': gcp.z }
+
+        latlon = system.run_and_return('echo {x} {y} | cs2cs +proj=utm ' \
+            '+datum={datum} +ellps={datum} +zone={zone} +units=m +to '   \
+            '+proj=latlon +ellps={datum}'.format(**kwargs))
+
+    def parse_coordinate_system(self, _file):
+        """Write attributes to jobOptions from coord file"""
+        # check for coordinate file existence
+        if not io.file_exists(_file):
+            log.ODM_ERROR('Could not find file %s' % _coords_file)
+            return
+
+        with open(_file) as f:
+            # extract reference system and utm zone from first line.
+            # We will assume the following format:
+            # 'WGS84 UTM 17N'
+            line = f.readline().split(' ')
+            self.datum = line[0]
+            self.utm_pole = line[2][len(line)-1]
+            self.utm_zone = int(line[2][:len(line)-1])
+            # extract east and west offsets from second line.
+            # We will assume the following format:
+            # '440143 4588391'
+            line = f.readline().split(' ')
+            self.utm_east_offset = int(line[0])
+            self.utm_north_offset = int(line[1])
+            # parse coordinates
+            lines = f.readlines()
+            for l in lines:
+                x, y, z = l.split(' ')[:3]
+                self.gcps.append(ODM_GCPoint(float(x), float(y), float(z)))
+
+        # update EPSG
+        self.epsg = self.calculate_EPSG(self.utm_zone, self.utm_pole)
+
+class ODM_Tree(object):
     def __init__(self, root_path):
         ### root path to the project
         self.root_path = io.absolute_path_file(root_path)
@@ -139,6 +220,8 @@ class ODMTree(object):
             self.odm_texturing, 'odm_texturing_log.txt')
 
         # odm_georeferencing
+        self.odm_georeferencing_latlon = io.join_paths(
+            self.odm_georeferencing, 'latlon.txt')
         self.odm_georeferencing_coords = io.join_paths(
             self.odm_georeferencing, 'coords.txt')
         self.odm_georeferencing_gcp = io.join_paths(
