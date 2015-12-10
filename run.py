@@ -100,7 +100,7 @@ parser.add_argument('--force-ccd',
 
 parser.add_argument('--min-num-features',
                     metavar='<integer>',
-                    default=4000,
+                    default=6000,
                     type=int,
                     help=('Minimum number of features to extract per image. '
                           'More features leads to better results but slower '
