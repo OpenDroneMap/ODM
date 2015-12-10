@@ -51,7 +51,7 @@ class ODMPhoto:
         metadata.read()
         # loop over image tags
         for key in metadata:
-            # try/catch tag value due to weird bug in  pyexiv2 
+            # try/catch tag value due to weird bug in pyexiv2 
             # ValueError: invalid literal for int() with base 10: ''
             try:
                 val = metadata[key].value
@@ -84,7 +84,7 @@ class ODMPhoto:
 
 
 # TODO: finish this class
-class ODMReconstruction(object):
+class ODMTree(object):
     def __init__(self, root_path):
         ### root path to the project
         self.root_path = io.absolute_path_file(root_path)
@@ -95,7 +95,7 @@ class ODMReconstruction(object):
         # order to keep track all files al directories during the
         # whole reconstruction process.
         self.dataset_raw = io.join_paths(self.root_path, 'images')
-        self.dataset_resized = io.join_paths(self.root_path, 'images_resized')
+        self.dataset_resize = io.join_paths(self.root_path, 'images_resize')
         self.opensfm = io.join_paths(self.root_path, 'opensfm')
         self.pmvs = io.join_paths(self.root_path, 'pmvs')
         self.odm_meshing = io.join_paths(self.root_path, 'odm_meshing')
@@ -110,19 +110,48 @@ class ODMReconstruction(object):
         self.opensfm_bundle_list = io.join_paths(self.opensfm, 'list_r000.out')
         self.opensfm_image_list = io.join_paths(self.opensfm, 'image_list.txt')
         self.opensfm_reconstruction = io.join_paths(self.opensfm, 'reconstruction.json')
+
         # pmvs
-        self.pmvs_options = io.join_paths(self.pmvs, 'recon0/pmvs_options.txt')
-        self.pmvs_model = io.join_paths(self.pmvs, 'models/pmvs_options.txt.ply')
+        self.pmvs_rec_path = io.join_paths(self.pmvs, 'recon0')
+        self.pmvs_bundle = io.join_paths(self.pmvs_rec_path, 'bundle.rd.out')
+        self.pmvs_visdat = io.join_paths(self.pmvs_rec_path, 'vis.dat')
+        self.pmvs_options = io.join_paths(self.pmvs_rec_path, 'pmvs_options.txt')
+        self.pmvs_model = io.join_paths(self.pmvs_rec_path, 'models/option-0000.ply')
+        
         # odm_meshing
-        self.mesh = io.join_paths(self.odm_meshing, 'odm_mesh.ply')
-        # odm_texturing && odm_georeferencing
-        self.textured_model = io.join_paths(self.odm_texturing, 'odm_textured_model_geo.ply')
-        self.textured_model_obj = io.join_paths(self.odm_texturing, 'odm_textured_model.obj')
-        self.textured_model_mtl = io.join_paths(self.odm_texturing, 'odm_textured_model.mtl')
-        self.textured_model_obj_geo = io.join_paths(self.odm_texturing, 'odm_textured_model_geo.obj')
-        self.textured_model_mtl_geo = io.join_paths(self.odm_texturing, 'odm_textured_model_geo.mtl')
+        self.odm_mesh = io.join_paths(self.odm_meshing, 'odm_mesh.ply')
+        self.odm_meshing_log = io.join_paths(self.odm_meshing, 'odm_meshing_log.txt')
+        
+        # odm_texturing
+        self.odm_textured_model_obj = io.join_paths(
+            self.odm_texturing, 'odm_textured_model.obj')
+        self.odm_textured_model_mtl = io.join_paths(
+            self.odm_texturing, 'odm_textured_model.mtl')
+        self.odm_textured_model_txt_geo = io.join_paths(
+            self.odm_texturing, 'odm_textured_model_geo.txt')
+        self.odm_textured_model_ply_geo = io.join_paths(
+            self.odm_texturing, 'odm_textured_model_geo.ply')
+        self.odm_textured_model_obj_geo = io.join_paths(
+            self.odm_texturing, 'odm_textured_model_geo.obj')
+        self.odm_textured_model_mtl_geo = io.join_paths(
+            self.odm_texturing, 'odm_textured_model_geo.mtl')
+        self.odm_texuring_log = io.join_paths(
+            self.odm_texturing, 'odm_texturing_log.txt')
+
+        # odm_georeferencing
+        self.odm_georeferencing_coords = io.join_paths(
+            self.odm_georeferencing, 'coords.txt')
+        self.odm_georeferencing_gcp = io.join_paths(
+            self.odm_georeferencing, 'gcp_list.txt')
+        self.odm_georeferencing_utm_log = io.join_paths(
+            self.odm_georeferencing, 'odm_georeferencing_utm_log.txt')
+        self.odm_georeferencing_log = io.join_paths(
+            self.odm_georeferencing, 'odm_georeferencing_log.txt')
+
         # odm_orthophoto
-        self.orthophoto = io.join_paths(self.odm_orthophoto, 'odm_orthophoto.png')
+        self.odm_orthophoto_file = io.join_paths(self.odm_orthophoto, 'odm_orthophoto.png')
+        self.odm_orthophoto_corners = io.join_paths(self.odm_orthophoto, 'odm_orthphoto_corners.txt')
+        self.odm_orthophoto_log = io.join_paths(self.odm_orthophoto, 'odm_orthophoto_log.txt')
 
 
 

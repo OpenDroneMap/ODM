@@ -12,6 +12,7 @@ class ODMResizeCell(ecto.Cell):
         pass
 
     def declare_io(self, params, inputs, outputs):
+        inputs.declare("tree", "Struct with paths", [])
         inputs.declare("args", "The application arguments.", [])
         inputs.declare("photos", "Clusters inputs. list of ODMPhoto's", [])
         outputs.declare("photos", "Clusters output. list of ODMPhoto's", [])
@@ -22,29 +23,28 @@ class ODMResizeCell(ecto.Cell):
 
         # get inputs
         args = self.inputs.args
+        tree = self.inputs.tree
         photos = self.inputs.photos
-        project_path = io.absolute_path_file(args['project_path'])
 
         if not photos:
             log.ODM_ERROR('Not enough photos in photos to resize')
             return ecto.QUIT
         
         # create working directory
-        resizing_dir = io.join_paths(project_path, 'images_resize')
-        system.mkdir_p(resizing_dir)
+        system.mkdir_p(tree.dataset_resize)
 
-        log.ODM_DEBUG('Resizing dataset to: %s' % resizing_dir)
+        log.ODM_DEBUG('Resizing dataset to: %s' % tree.dataset_resize)
 
         # check if we rerun cell or not
-        rerun_cell = args['run_only'] is not None \
-            and args['run_only'] == 'resize'
+        rerun_cell = args['rerun'] is not None \
+            and args['rerun'] == 'resize'
 
         # loop over photos
         for photo in photos:
 
             # TODO(edgar): check if resize is needed, else copy img.
             # Try to avoid oversampling!
-            new_path_file = io.join_paths(resizing_dir, photo.filename)
+            new_path_file = io.join_paths(tree.dataset_resize, photo.filename)
 
             if not io.file_exists(new_path_file) or rerun_cell:
                 # open and resize image with opencv

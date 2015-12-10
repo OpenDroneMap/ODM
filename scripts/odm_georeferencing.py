@@ -6,10 +6,20 @@ from opendm import system
 from opendm import context
 
 class ODMGeoreferencingCell(ecto.Cell):
+    def declare_params(self, params):
+        params.declare("gcp_file", 'path to the file containing the ground control '
+                            'points used for georeferencing.The file needs to '
+                            'be on the following line format: \neasting '
+                            'northing height pixelrow pixelcol imagename', 'gcp_list.txt')
+        params.declare("use_gcp", 'set to true for enabling GCPs from the file above', False)
+        params.declare("img_size", 'image size used in calibration', 2400)
 
     def declare_io(self, params, inputs, outputs):
+        inputs.declare("tree", "Struct with paths", [])
         inputs.declare("args", "The application arguments.", {})
-        inputs.declare("texture_path", "The application arguments.", {})
+        inputs.declare("photos", "list of ODMPhoto's", [])
+        inputs.declare("reconstruction", "list of ODMReconstructions", [])
+        outputs.declare("reconstruction", "list of ODMReconstructions", [])
 
     def process(self, inputs, outputs):
 
@@ -17,80 +27,82 @@ class ODMGeoreferencingCell(ecto.Cell):
 
         # get inputs
         args = self.inputs.args
-        project_path = io.absolute_path_file(args['project_path'])
+        tree = self.inputs.tree
 
         # define paths and create working directories
-        odm_texturing = io.join_paths(project_path, 'odm_texturing')
-        odm_georeferencing = io.join_paths(project_path, 'odm_georeferencing')
-        system.mkdir_p(odm_georeferencing)
-
-        images_path = io.join_paths(project_path, 'images_resize')
-        images_list_file = io.join_paths(project_path, 'opensfm/list_r000.out')
-
-        # define gcp file path, we'll assume that's placed in the project root
-        gcp_file = io.join_paths(project_path, args['odm_georeferencing_gcpFile'])
-        coords_file = io.join_paths(odm_georeferencing, 'coords.txt')
+        system.mkdir_p(tree.odm_georeferencing)
 
         # in case a gcp file it's not provided, let's try to generate it using
         # images metadata. Internally calls jhead.
-        if not args['odm_georeferencing_useGcp'] and not io.file_exists(coords_file):
+        if not self.params.use_gcp and \
+           not io.file_exists(tree.odm_georeferencing_coords):
+            
             log.ODM_WARNING('Warning: No coordinates file. ' \
-                'Generating coordinates file in: %s' % coords_file)
+                'Generating coordinates file in: %s' % tree.odm_georeferencing_coords)
             try:
-                log_file = io.join_paths(odm_georeferencing, 'odm_texturing_utm_log.txt')
+                # odm_georeference definitions
+                kwargs = {
+                    'bin': context.odm_modules_path,
+                    'imgs': tree.dataset_resize,
+                    'imgs_list': tree.opensfm_bundle_list,
+                    'coords': tree.odm_georeferencing_coords,
+                    'log': tree.odm_georeferencing_utm_log
+                }
 
-                system.run('%s/odm_extract_utm -imagesPath %s/ '      \
-                    '-imageListFile %s -outputCoordFile %s '          \
-                    '-logFile %s' %                                   \
-                    (context.odm_modules_path, images_path,           \
-                    images_list_file, coords_file, log_file))
+                # run UTM extraction binary
+                system.run('{bin}/odm_extract_utm -imagesPath {imgs}/ '      \
+                    '-imageListFile {imgs_list} -outputCoordFile {coords} '  \
+                    '-logFile {log}'.format(**kwargs))
+
             except Exception, e:
-                log.ODM_ERROR('Could not generate GCP file from images metadata.' \
-                    'Consider rerunning with argument --odm_georeferencing-useGcp'\
-                     ' and provide a proper GCP file')
-                log.ODM_ERROR(str(e))
+                log.ODM_ERROR('Could not generate GCP file from images metadata.'  \
+                    'Consider rerunning with argument --odm_georeferencing-useGcp' \
+                    ' and provide a proper GCP file')
+                log.ODM_ERROR(e)
                 return ecto.QUIT
-        elif io.file_exists(coords_file):
-            log.ODM_WARNING('Found a valid coordinates file in: %s' % coords_file)
-
-        # define odm georeferencing outputs
-        # for convenience we'll put all data into odm_texturing
-        model_geo = io.join_paths(odm_texturing, 'odm_textured_model_geo.obj')
-        pointcloud_geo = io.join_paths(odm_texturing, 'odm_textured_model_geo.ply')
-        system_geo = io.join_paths(odm_texturing, 'odm_textured_model_geo.txt')
 
         # check if we rerun cell or not
-        rerun_cell = args['run_only'] is not None \
-            and args['run_only'] == 'odm_georeferencing'
+        rerun_cell = args['rerun'] is not None \
+            and args['rerun'] == 'odm_georeferencing'
 
-        if not io.file_exists(model_geo) or \
-            not io.file_exists(pointcloud_geo) or rerun_cell:
+        if not io.file_exists(tree.odm_textured_model_obj_geo) or \
+           not io.file_exists(tree.odm_textured_model_ply_geo) or rerun_cell:
 
             # odm_georeference definitions
             kwargs = {
                 'bin': context.odm_modules_path,
-                'bundle': io.join_paths(project_path,'opensfm/bundle_r000.out'),
-                'gcp': io.join_paths(project_path, args['odm_georeferencing_gcpFile']),
-                'imgs': io.join_paths(project_path, 'images_resize'),
-                'imgs_list': io.join_paths(project_path, 'opensfm/list_r000.out'),
-                'size': str(args['resize_to']),
-                'model': io.join_paths(project_path, 'odm_texturing/odm_textured_model.obj'),
-                'pc': io.join_paths(project_path, 'pmvs/recon0/models/option-0000.ply'),
-                'log': io.join_paths(odm_georeferencing, 'odm_texturing_log.txt'),
-                'coords': io.join_paths(odm_georeferencing, 'coords.txt'),
-                'pc_geo': pointcloud_geo,
-                'geo_sys': system_geo,
-                'model_geo': model_geo,
+                'bundle': tree.opensfm_bundle,
+                'imgs': tree.dataset_resize,
+                'imgs_list': tree.opensfm_bundle_list,
+                'model': tree.odm_textured_model_obj,
+                'pc': tree.pmvs_model,
+                'log': tree.odm_georeferencing_log,
+                'coords': tree.odm_georeferencing_coords,
+                'pc_geo': tree.odm_textured_model_ply_geo,
+                'geo_sys': tree.odm_textured_model_txt_geo,
+                'model_geo': tree.odm_textured_model_obj_geo,
+                'size': self.params.img_size,
+                'gcp': io.join_paths(tree.root_path, self.params.gcp_file),
 
             }
 
-            # run odm_georeference
-            system.run('{bin}/odm_georef -bundleFile {bundle} -inputCoordFile {coords} ' \
-                '-bundleResizedTo {size} -inputFile {model} -outputFile {model_geo} '    \
-                '-inputPointCloudFile {pc} -outputPointCloudFile {pc_geo} '              \
-                '-logFile {log} -georefFileOutputPath {geo_sys}'.format(**kwargs))
+            if self.params.use_gcp and \
+               io.file_exists(tree.odm_georeferencing_coords):
+
+                system.run('{bin}/odm_georef -bundleFile {bundle} -inputCoordFile {coords} ' \
+                    '-bundleResizedTo {size} -inputFile {model} -outputFile {model_geo} '    \
+                    '-inputPointCloudFile {pc} -outputPointCloudFile {pc_geo} '              \
+                    '-logFile {log} -georefFileOutputPath {geo_sys} -gcpFile {gcp} '         \
+                    '-outputCoordFile {coords}'.format(**kwargs))
+            else:
+                system.run('{bin}/odm_georef -bundleFile {bundle} -inputCoordFile {coords} ' \
+                    '-inputFile {model} -outputFile {model_geo} '                            \
+                    '-inputPointCloudFile {pc} -outputPointCloudFile {pc_geo} '              \
+                    '-logFile {log} -georefFileOutputPath {geo_sys}'.format(**kwargs))
+
         else:
-            log.ODM_WARNING('Found a valid georeferenced model in: %s' % pointcloud_geo)
+            log.ODM_WARNING('Found a valid georeferenced model in: %s' \
+                % tree.odm_textured_model_ply_geo)
 
 
         log.ODM_INFO('Running OMD Georeferencing Cell - Finished')
