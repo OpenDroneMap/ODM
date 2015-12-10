@@ -9,7 +9,7 @@ from opendm import types
 
 class ODMResizeCell(ecto.Cell):    
     def declare_params(self, params):
-        pass
+        params.declare("resize_to", "resizes images by the largest side", 2400)
 
     def declare_io(self, params, inputs, outputs):
         inputs.declare("tree", "Struct with paths", [])
@@ -41,22 +41,24 @@ class ODMResizeCell(ecto.Cell):
 
         # loop over photos
         for photo in photos:
-
-            # TODO(edgar): check if resize is needed, else copy img.
-            # Try to avoid oversampling!
+            # define image paths
+            path_file = photo.path_file
             new_path_file = io.join_paths(tree.dataset_resize, photo.filename)
+            # set raw image path in case we want to rerun cell
+            if io.file_exists(new_path_file) and rerun_cell:
+                path_file = io.join_paths(tree.dataset_raw, photo.filename)
 
             if not io.file_exists(new_path_file) or rerun_cell:
                 # open and resize image with opencv
-                img = cv2.imread(photo.path_file)
+                img = cv2.imread(path_file)
                 # compute new size
-                max_side = max(photo.width, photo.height)
-                ratio = float(args['resize_to']) / float(max_side)
+                max_side = max(img.shape[0], img.shape[1])
+                ratio = float(self.params.resize_to) / float(max_side)
                 img_r = cv2.resize(img, None, fx=ratio, fy=ratio)
                 # write image with opencv
                 cv2.imwrite(new_path_file, img_r)
                 # read metadata with pyexiv2
-                old_meta = pyexiv2.ImageMetadata(photo.path_file)
+                old_meta = pyexiv2.ImageMetadata(path_file)
                 new_meta = pyexiv2.ImageMetadata(new_path_file)
                 old_meta.read()
                 new_meta.read()

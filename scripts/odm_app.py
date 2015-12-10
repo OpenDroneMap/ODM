@@ -31,8 +31,9 @@ class ODMApp(ecto.BlackBox):
         Only cells from which something is forwarded have to be declared
         """
         cells = { 'args': ecto.Constant(value=p.args),
-                  'dataset': ODMLoadDatasetCell(),
-                  'resize': ODMResizeCell(),
+                  'dataset': ODMLoadDatasetCell(force_focal=p.args['force_focal'],
+                                                force_ccd=p.args['force_ccd']),
+                  'resize': ODMResizeCell(resize_to=p.args['resize_to']),
                   'opensfm': ODMOpenSfMCell(use_exif_size=False,
                                             feature_process_size=p.args['resize_to'],
                                             feature_min_frames=p.args['min_num_features'],
@@ -71,16 +72,13 @@ class ODMApp(ecto.BlackBox):
         initial_task = _p.args['start_with']
         initial_task_id = config.processopts.index(initial_task)
 
-        print _p.args['rerun']
-
         ## define the connections like you would for the plasm
         connections = []
 
         ## load the dataset
-        connections = [ self.tree[:] >> self.dataset['tree'],
-                        self.args[:] >> self.dataset['args'] ]
+        connections = [ self.tree[:] >> self.dataset['tree'] ]
 
-        ## check we want to start with resize task
+        ## check if we want to start with resize task
         if initial_task_id <= config.processopts.index('resize'):
 
             # resize images
@@ -88,19 +86,21 @@ class ODMApp(ecto.BlackBox):
                              self.args[:] >> self.resize['args'],
                              self.dataset['photos'] >> self.resize['photos'] ]
         
-        # forward opensfm variables
-        connections += [ self.tree[:] >> self.opensfm['tree'],
-                         self.args[:] >> self.opensfm['args'] ]
-
-        ## check we want to start with opensfm task
-        if initial_task_id <= config.processopts.index('opensfm'):
+        ## check if we want to start with opensfm task
+        if config.processopts.index('resize') < initial_task_id \
+           <= config.processopts.index('opensfm') :
+            
             # run opensfm with images from load dataset
-            connections += [ self.dataset['photos'] >> self.opensfm['photos'] ]
+            connections += [ self.tree[:] >> self.opensfm['tree'],
+                             self.args[:] >> self.opensfm['args'],
+                             self.dataset['photos'] >> self.opensfm['photos'] ]
         else:
-            # run opensfm with images from resize
-            connections += [ self.resize['photos'] >> self.opensfm['photos'] ]
+            # run opensfm with images from load dataset
+            connections += [ self.tree[:] >> self.opensfm['tree'],
+                             self.args[:] >> self.opensfm['args'],
+                             self.resize['photos'] >> self.opensfm['photos'] ]
 
-        ## check we want to start with cmvs task
+        ## check if we want to start with cmvs task
         if initial_task_id <= config.processopts.index('cmvs'):
 
             # run cmvs
@@ -108,7 +108,7 @@ class ODMApp(ecto.BlackBox):
                              self.args[:] >> self.cmvs['args'],
                              self.opensfm['reconstruction'] >> self.cmvs['reconstruction'] ]
         
-        ## check we want to start with cmvs task
+        ## check if we want to start with cmvs task
         if initial_task_id <= config.processopts.index('pmvs'):
 
             # run pmvs
@@ -116,7 +116,7 @@ class ODMApp(ecto.BlackBox):
                              self.args[:] >> self.pmvs['args'],
                              self.cmvs['reconstruction'] >> self.pmvs['reconstruction'] ]
 
-        ## check we want to start with odm_meshing task
+        ## check if we want to start with odm_meshing task
         if initial_task_id <= config.processopts.index('odm_meshing'):
 
             # create odm mesh
@@ -124,7 +124,7 @@ class ODMApp(ecto.BlackBox):
                              self.args[:] >> self.meshing['args'],
                              self.pmvs['reconstruction'] >> self.meshing['reconstruction'] ]
 
-        ## check we want to start with odm_texturing task
+        ## check if we want to start with odm_texturing task
         if initial_task_id <= config.processopts.index('odm_texturing'):
 
             # create odm texture
@@ -132,7 +132,7 @@ class ODMApp(ecto.BlackBox):
                              self.args[:] >> self.texturing['args'],
                              self.meshing['reconstruction'] >> self.texturing['reconstruction'] ]
         
-        ## check we want to start with odm_georeferencing task
+        ## check if we want to start with odm_georeferencing task
         if initial_task_id <= config.processopts.index('odm_georeferencing'):
 
             # create odm georeference
@@ -141,7 +141,7 @@ class ODMApp(ecto.BlackBox):
                              self.dataset['photos'] >> self.georeferencing['photos'],
                              self.texturing['reconstruction'] >> self.georeferencing['reconstruction'] ]
 
-        ## check we want to start with odm_orthophoto task
+        ## check if we want to start with odm_orthophoto task
         if initial_task_id <= config.processopts.index('odm_orthophoto'):
 
             ## create odm orthophoto
