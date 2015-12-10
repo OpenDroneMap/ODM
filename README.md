@@ -26,9 +26,10 @@ Developers
 
 Help improve our software!
 
-1. Join our [Gitter](https://gitter.im/OpenDroneMap)
-2. Try to keep commits clean and simple
-3. Submit a pull request with detailed changes and test results
+[![Join the chat at https://gitter.im/OpenDroneMap/OpenDroneMap](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/OpenDroneMap/OpenDroneMap?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
+1. Try to keep commits clean and simple
+2. Submit a pull request with detailed changes and test results
 
 Steps to get OpenDroneMap running:
 ==================================
