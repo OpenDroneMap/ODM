@@ -3,6 +3,7 @@ import errno
 import json
 import datetime
 import sys
+import subprocess
 
 from opendm import context
 from opendm import log
