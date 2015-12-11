@@ -112,3 +112,9 @@ SETUP_EXTERNAL_PROJECT_CUSTOM(Catkin)
 #
 
 SETUP_EXTERNAL_PROJECT_CUSTOM(Ecto)
+
+# ---------------------------------------------------------------------------------------------
+# LAStools
+#
+
+SETUP_EXTERNAL_PROJECT_CUSTOM(LAStools)
