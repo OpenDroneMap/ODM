@@ -42,8 +42,9 @@ class ODMOrthoPhotoCell(ecto.Cell):
             }
 
             # run odm_georeference
-            system.run('{bin}/odm_orthophoto -inputFile {model_geo} -logFile {log} ' \
-            '-outputFile {ortho} -resolution {res} -outputCornerFile {corners}'.format(**kwargs))
+            system.run('{bin}/odm_orthophoto -inputFile {model_geo} '   \
+                '-logFile {log} -outputFile {ortho} -resolution {res} ' \
+                '-outputCornerFile {corners}'.format(**kwargs))
         else:
             log.ODM_WARNING('Found a valid orthophoto in: %s' % tree.odm_orthophoto_file)
 
