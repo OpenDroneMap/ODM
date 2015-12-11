@@ -96,7 +96,8 @@ fi
 echo -e "\e[1;34mInstalling OpenDroneMap Dependencies\e[0;39m"
 sudo apt-get install python-pyexiv2 \
                      python-scipy \
-                     jhead -y
+                     jhead \
+                     liblas-bin -y
 if [ $? -ne 0 ] 
 then
     echo -e "\e[1;31mERROR: \e[39mError when Installing OpenDroneMap Dependencies\e[0m"
