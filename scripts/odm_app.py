@@ -66,7 +66,6 @@ class ODMApp(ecto.BlackBox):
         tree = types.ODM_Tree(p.args['project_path'])
         self.tree = ecto.Constant(value=tree)
 
-
     def connections(self, _p):
         # define initial task
         initial_task = _p.args['start_with']
@@ -78,75 +77,45 @@ class ODMApp(ecto.BlackBox):
         ## load the dataset
         connections = [ self.tree[:] >> self.dataset['tree'] ]
 
-        ## check if we want to start with resize task
-        if initial_task_id <= config.processopts.index('resize'):
+        # run resize cell
+        connections += [ self.tree[:] >> self.resize['tree'],
+                         self.args[:] >> self.resize['args'],
+                         self.dataset['photos'] >> self.resize['photos'] ]
 
-            # resize images
-            connections += [ self.tree[:] >> self.resize['tree'],
-                             self.args[:] >> self.resize['args'],
-                             self.dataset['photos'] >> self.resize['photos'] ]
-        
-        ## check if we want to start with opensfm task
-        if config.processopts.index('resize') < initial_task_id \
-           <= config.processopts.index('opensfm') :
-            
-            # run opensfm with images from load dataset
-            connections += [ self.tree[:] >> self.opensfm['tree'],
-                             self.args[:] >> self.opensfm['args'],
-                             self.dataset['photos'] >> self.opensfm['photos'] ]
-        else:
-            # run opensfm with images from load dataset
-            connections += [ self.tree[:] >> self.opensfm['tree'],
-                             self.args[:] >> self.opensfm['args'],
-                             self.resize['photos'] >> self.opensfm['photos'] ]
+        # run opensfm with images from load dataset
+        connections += [ self.tree[:] >> self.opensfm['tree'],
+                         self.args[:] >> self.opensfm['args'],
+                         self.resize['photos'] >> self.opensfm['photos'] ]
+ 
+        # run cmvs
+        connections += [ self.tree[:] >> self.cmvs['tree'],
+                         self.args[:] >> self.cmvs['args'],
+                         self.opensfm['reconstruction'] >> self.cmvs['reconstruction'] ]
+  
+        # run pmvs
+        connections += [ self.tree[:] >> self.pmvs['tree'],
+                         self.args[:] >> self.pmvs['args'],
+                         self.cmvs['reconstruction'] >> self.pmvs['reconstruction'] ]
+ 
+        # create odm mesh
+        connections += [ self.tree[:] >> self.meshing['tree'],
+                         self.args[:] >> self.meshing['args'],
+                         self.pmvs['reconstruction'] >> self.meshing['reconstruction'] ]
+   
+        # create odm texture
+        connections += [ self.tree[:] >> self.texturing['tree'],
+                         self.args[:] >> self.texturing['args'],
+                         self.meshing['reconstruction'] >> self.texturing['reconstruction'] ]
+    
+        # create odm georeference
+        connections += [ self.tree[:] >> self.georeferencing['tree'],
+                         self.args[:] >> self.georeferencing['args'],
+                         self.dataset['photos'] >> self.georeferencing['photos'],
+                         self.texturing['reconstruction'] >> self.georeferencing['reconstruction'] ]
 
-        ## check if we want to start with cmvs task
-        if initial_task_id <= config.processopts.index('cmvs'):
-
-            # run cmvs
-            connections += [ self.tree[:] >> self.cmvs['tree'],
-                             self.args[:] >> self.cmvs['args'],
-                             self.opensfm['reconstruction'] >> self.cmvs['reconstruction'] ]
-        
-        ## check if we want to start with cmvs task
-        if initial_task_id <= config.processopts.index('pmvs'):
-
-            # run pmvs
-            connections += [ self.tree[:] >> self.pmvs['tree'],
-                             self.args[:] >> self.pmvs['args'],
-                             self.cmvs['reconstruction'] >> self.pmvs['reconstruction'] ]
-
-        ## check if we want to start with odm_meshing task
-        if initial_task_id <= config.processopts.index('odm_meshing'):
-
-            # create odm mesh
-            connections += [ self.tree[:] >> self.meshing['tree'],
-                             self.args[:] >> self.meshing['args'],
-                             self.pmvs['reconstruction'] >> self.meshing['reconstruction'] ]
-
-        ## check if we want to start with odm_texturing task
-        if initial_task_id <= config.processopts.index('odm_texturing'):
-
-            # create odm texture
-            connections += [ self.tree[:] >> self.texturing['tree'],
-                             self.args[:] >> self.texturing['args'],
-                             self.meshing['reconstruction'] >> self.texturing['reconstruction'] ]
-        
-        ## check if we want to start with odm_georeferencing task
-        if initial_task_id <= config.processopts.index('odm_georeferencing'):
-
-            # create odm georeference
-            connections += [ self.tree[:] >> self.georeferencing['tree'],
-                             self.args[:] >> self.georeferencing['args'],
-                             self.dataset['photos'] >> self.georeferencing['photos'],
-                             self.texturing['reconstruction'] >> self.georeferencing['reconstruction'] ]
-
-        ## check if we want to start with odm_orthophoto task
-        if initial_task_id <= config.processopts.index('odm_orthophoto'):
-
-            ## create odm orthophoto
-            connections += [ self.tree[:] >> self.orthophoto['tree'],
-                             self.args[:] >> self.orthophoto['args'],
-                             self.georeferencing['reconstruction'] >> self.orthophoto['reconstruction'] ]
+         ## create odm orthophoto
+        connections += [ self.tree[:] >> self.orthophoto['tree'],
+                         self.args[:] >> self.orthophoto['args'],
+                         self.georeferencing['reconstruction'] >> self.orthophoto['reconstruction'] ]
 
         return connections
