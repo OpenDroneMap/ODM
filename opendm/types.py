@@ -2,10 +2,13 @@ import os
 import cv2
 import pyexiv2
 import subprocess
+import re
+from fractions import Fraction
 
 import log
 import io
 import system
+import context
 
 class ODM_Photo:
     """   ODMPhoto - a class for ODMPhotos
@@ -103,7 +106,7 @@ class ODM_GeoRef(object):
     """docstring for ODMUtmZone"""
     def __init__(self):
         self.datum = 'WGS84'
-        self.epsg = 0
+        self.epsg = None
         self.utm_zone = 0
         self.utm_pole = 'N'
         self.utm_east_offset = 0
@@ -117,8 +120,28 @@ class ODM_GeoRef(object):
         elif _pole == 'N':
             return 32600 + _utm_zone
         else:
-            log.ODM_ERROR('Not knonw pole format %s' % _pole)
+            log.ODM_ERROR('Unknown pole format %s' % _pole)
             return
+
+
+    def convert_to_las(self, _file):
+
+        if not self.epsg:
+            log.ODM_ERROR('Empty EPSG: Could not convert to LAS')
+            return
+
+        kwargs = { 'bin': context.txt2las_path,
+                   'f_in': _file,
+                   'f_out': _file + '.laz',
+                   'east': self.utm_east_offset,
+                   'north': self.utm_north_offset,
+                   'epsg': self.epsg }
+
+        # call txt2las
+        system.run('{bin}/txt2las -i {f_in} -o {f_out} -skip 30 -parse xyzRGBssss ' \
+                   '-set_scale 0.01 0.01 0.01 -set_offset {east} {north} 0 '  \
+                   '-translate_xyz 0 -epsg {epsg}'.format(**kwargs))
+
 
     def utm_to_latlon(self, _file, _photo, idx):
 
@@ -133,7 +156,80 @@ class ODM_GeoRef(object):
 
         latlon = system.run_and_return('echo {x} {y} | cs2cs +proj=utm ' \
             '+datum={datum} +ellps={datum} +zone={zone} +units=m +to '   \
-            '+proj=latlon +ellps={datum}'.format(**kwargs))
+            '+proj=latlon +ellps={datum}'.format(**kwargs)).split()
+
+        # Example: 83d18'16.285"W
+        # Example: 41d2'11.789"N
+        # Example: 0.998
+
+        if len(latlon) == 3:
+            lon_str, lat_str, alt_str = latlon
+        elif len(latlon) == 2:
+            lon_str, lat_str = latlon
+            alt_str = ''
+        else:
+            log.ODM_ERROR('Something went wrong %s' % latlon)
+        
+        tokens = re.split("[d '\"]+", lon_str)
+        if len(tokens) >= 4:
+            lon_deg, lon_min, lon_sec = tokens[:3]
+            lon_sec_frac = Fraction(lon_sec)
+            lon_sec_numerator = str(lon_sec_frac._numerator)
+            lon_sec_denominator = str(lon_sec_frac._denominator)
+            lon_ref = tokens[3]
+
+            tokens = re.split("[d '\"]+", lat_str)
+            if len(tokens) >= 4:
+                lat_deg, lat_min, lat_sec = tokens[:3]
+                lat_sec_frac = Fraction(lat_sec)
+                lat_sec_numerator = str(lat_sec_frac._numerator)
+                lat_sec_denominator = str(lat_sec_frac._denominator)
+                lat_ref = tokens[3]
+
+                alt_numerator = arc_denominator = 0  # BUG: arc_denominator is never used
+
+                if alt_str:
+                    alt_frac = Fraction(alt_str)
+                    alt_numerator = alt_frac._numerator
+                    alt_denominator = alt_frac._denominator
+
+        # read image metadata
+        metadata = pyexiv2.ImageMetadata(_photo.path_file)
+        metadata.read()
+
+        ## set values
+
+        # GPS latitude
+        key = 'Exif.GPSInfo.GPSLatitude'
+        value = [Fraction(int(lat_deg), 1), Fraction(int(lat_min), 1), \
+                 Fraction(int(lat_sec_numerator), int(lat_sec_denominator))]
+        metadata[key] = pyexiv2.ExifTag(key, value)
+
+        key = 'Exif.GPSInfo.GPSLatitudeRef'
+        value = '%s' % lat_ref
+        metadata[key] = pyexiv2.ExifTag(key, value)
+
+        # GPS longitude
+        key = 'Exif.GPSInfo.GPSLongitude'
+        value = [Fraction(int(lon_deg), 1), Fraction(int(lon_min), 1), \
+                 Fraction(int(lon_sec_numerator), int(lon_sec_denominator))]
+        metadata[key] = pyexiv2.ExifTag(key, value)
+
+        key = 'Exif.GPSInfo.GPSLongitudeRef'
+        value = '%s' % lon_ref
+        metadata[key] = pyexiv2.ExifTag(key, value)
+
+        # GPS altitude
+        key = 'Exif.GPSInfo.GPSAltitude'
+        value = Fraction(int(gcp.z), 1)
+        metadata[key] = pyexiv2.ExifTag(key, value)
+
+        key = 'Exif.GPSInfo.GPSAltitudeRef'
+        metadata[key] = pyexiv2.ExifTag(key, '0')
+
+        ## write values
+        metadata.write()
+
 
     def parse_coordinate_system(self, _file):
         """Write attributes to jobOptions from coord file"""
