@@ -265,12 +265,10 @@ for arg in vars(args):
 
 def run(cmd):
     """Run a system command"""
-    print 'running', cmd
     returnCode = os.system(cmd)
-    print 'b'
+    #returnCode = subprocess.call(cmd, shell=True)
     if (returnCode != 0):
-        sys.exit("\nquitting cause: \n\t" + cmd + "\nreturned with code " +
-                 str(returnCode) + ".\n")
+        sys.exit("\nquitting, error while runnig command: \n\t" + cmd + "\n\nreturned with code: " + str(returnCode) + "\n")
 
 
 def now():
