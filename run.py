@@ -254,14 +254,6 @@ parser.add_argument('--zip-results',
                     default=False,
                     help='Compress the results using gunzip')
 
-args = parser.parse_args()
-
-print "\n  - configuration:"
-
-# print vars(args)
-for arg in vars(args):
-    print "    ", arg, ":", getattr(args, arg)
-
 
 def run(cmd):
     """Run a system command"""
@@ -283,9 +275,15 @@ def run_and_return(cmdSrc, cmdDest):
 
     return stdout.decode('ascii')
 
+
+
 def print_task_header(task):
     """Prints the task to be run"""
-    print "\n  - " + task + " - " + datetime.datetime.now().strftime('%a %b %d %H:%M:%S %Z %Y')
+    print "\n  - " + str(task) + " - " + datetime.datetime.now().strftime('%a %b %d %H:%M:%S %Z %Y')
+
+def print_task_info(info):
+    """Prints sub infos of a task"""
+    print "     " + str(info)
 
 def mkdir_p(path):
     """Make a directory including parent directories"""
@@ -420,15 +418,15 @@ def prepare_objects():
             fileObject["isOk"] = True
             objectStats["good"] += 1
 
-            print "     using " + fileObject["src"] + "     dimensions: " + str(fileObject["width"]) + "x" + str(fileObject["height"]) + " / focal: " + str(fileObject["focal"]) + "mm / ccd: " + str(fileObject["ccd"]) + "mm"
+            print_task_info("using " + fileObject["src"] + "     dimensions: " + str(fileObject["width"]) + "x" + str(fileObject["height"]) + " / focal: " + str(fileObject["focal"]) + "mm / ccd: " + str(fileObject["ccd"]) + "mm")
         else:
             fileObject["isOk"] = False
             objectStats["bad"] += 1
 
             if "id" in fileObject:
-                print "\n    no CCD width or focal length found for " + fileObject["src"] + " - camera: \"" + fileObject["id"] + "\""
+                print_task_info("no CCD width or focal length found for " + fileObject["src"] + " - camera: \"" + fileObject["id"] + "\"")
             else:
-                print "\n    no CCD width or focal length found"
+                print_task_info("no CCD width or focal length found")
 
         objectStats["count"] += 1
 
@@ -461,16 +459,12 @@ def prepare_objects():
         objects.append(fileObject)
 
     if "good" not in objectStats:
-        print "\n    found no usable images - quitting\n"
+        print_task_info("found no usable images - quitting")
         sys.exit()
     else:
-        print "\n    found " + str(objectStats["good"]) + " usable images"
-
-    print "\n"
+        print_task_info("found " + str(objectStats["good"]) + " usable images")
 
     jobOptions["resizeTo"] = args.resize_to
-
-    print "  using max image size of " + str(jobOptions["resizeTo"]) + " x " + str(jobOptions["resizeTo"])
 
     if args.job_dir_name is None:
         args.job_dir_name = "reconstruction-with-image-size-" + str(jobOptions["resizeTo"])
@@ -501,10 +495,11 @@ def prepare_objects():
             fileObject["step_1_keyFile"] = jobOptions["jobDir"] + "/" + fileObject["base"] + ".key"
             fileObject["step_1_gzFile"] = jobOptions["jobDir"] + "/" + fileObject["base"] + ".key.gz"
 
-
 def resize():
     """Resize images"""
-    print_task_header("preparing images")
+    print_task_header("resizing images")
+
+    print_task_info("using max image size of " + str(jobOptions["resizeTo"]) + " x " + str(jobOptions["resizeTo"]))
 
     os.chdir(jobOptions["jobDir"])
 
@@ -512,21 +507,20 @@ def resize():
         if fileObject["isOk"]:
             if not os.path.isfile(fileObject["step_0_resizedImage"]):
                 if jobOptions["resizeTo"] != 0 and ((int(fileObject["width"]) > jobOptions["resizeTo"]) or (fileObject["height"] > jobOptions["resizeTo"])):
-                    sys.stdout.write("    resizing " + fileObject["src"] + " \tto " + fileObject["step_0_resizedImage"])
+                    print_task_info("resizing " + fileObject["src"])
                     run("convert -resize " + str(jobOptions["resizeTo"]) + "x" + str(jobOptions["resizeTo"]) + " -quality 100 \"" + jobOptions["srcDir"] + "/" + fileObject["src"] + "\" \"" + fileObject["step_0_resizedImage"] + "\"")
                 else:
-                    sys.stdout.write("     copying " + fileObject["src"] + " \tto " + fileObject["step_0_resizedImage"])
+                    print_task_info("copying " + fileObject["src"])
                     shutil.copyfile(CURRENT_DIR + "/" + fileObject["src"], fileObject["step_0_resizedImage"])
             else:
-                print "     using existing " + fileObject["src"] + " \tto " + fileObject["step_0_resizedImage"]
+                print_task_info("using existing " + fileObject["src"])
 
             file_resolution = run_and_return('jhead "' + fileObject["step_0_resizedImage"] + '"', 'grep "Resolution"')
             match = re.search(": ([0-9]*) x ([0-9]*)", file_resolution)
             if match:
                 fileObject["width"] = int(match.group(1).strip())
                 fileObject["height"] = int(match.group(2).strip())
-            print "\t (" + str(fileObject["width"]) + " x " + str(fileObject["height"]) + ")"
-
+            # print " (" + str(fileObject["width"]) + " x " + str(fileObject["height"]) + ")"
 
 def getKeypoints():
     """Run vlsift to create keypoint files for each image"""
@@ -549,7 +543,7 @@ def getKeypoints():
                 vlsiftJobs += " && rm -f \"" + fileObject["step_1_keyFile"] + ".sift\""
                 vlsiftJobs += " && echo \"\"\n"
             else:
-                print "     using existing " + jobOptions["jobDir"] + "/" + fileObject["base"] + ".key.bin"
+                print_task_info("using existing " + jobOptions["jobDir"] + "/" + fileObject["base"] + ".key.bin")
 
     siftDest = open(jobOptions["step_1_vlsift"], 'w')
     siftDest.write(vlsiftJobs)
@@ -606,7 +600,7 @@ def match():
     else:
         # preselection failed, Match all image pairs
         if do_preselection:
-            print "Failed to run pair preselection, proceeding with exhaustive matching."
+            print_task_info("Failed to run pair preselection, proceeding with exhaustive matching.")
         for i in range(0, objectStats["good"]):
             for j in range(i + 1, objectStats["good"]):
                 c += 1
@@ -740,7 +734,7 @@ def opensfm():
     with open('opensfm/config.yaml', 'w') as fout:
         fout.write("\n".join(config))
 
-    print 'running import_bundler'
+    print_task_info("running import_bundler")
     # Convert bundler's input to opensfm
     run('PYTHONPATH={} "{}/bin/import_bundler" opensfm --list list.txt'.format(PYOPENCV_PATH, OPENSFM_PATH))
 
@@ -857,8 +851,8 @@ def odm_georeferencing():
     elif os.path.isfile(jobOptions["srcDir"] + "/" + args.odm_georeferencing_gcpFile):
         run("\"" + BIN_PATH + "/odm_georef\" -bundleFile " + jobOptions["jobDir"] + "/pmvs/bundle.rd.out -gcpFile " + jobOptions["srcDir"] + "/" + args.odm_georeferencing_gcpFile + " -imagesPath " + jobOptions["srcDir"] + "/ -imagesListPath " + jobOptions["jobDir"] + "/pmvs/list.rd.txt -bundleResizedTo " + str(jobOptions["resizeTo"]) + " -inputFile " + jobOptions["jobDir"] + "-results/odm_texturing/odm_textured_model.obj -outputFile " + jobOptions["jobDir"] + "-results/odm_texturing/odm_textured_model_geo.obj -outputCoordFile " + jobOptions["jobDir"] + "/odm_georeferencing/coordFile.txt -inputPointCloudFile " + jobOptions["jobDir"] + "-results/option-0000.ply -outputPointCloudFile " + jobOptions["jobDir"] + "-results/option-0000_georef.ply -logFile " + jobOptions["jobDir"] + "/odm_georeferencing/odm_georeferencing_log.txt -georefFileOutputPath " + jobOptions["jobDir"] + "-results/odm_texturing/odm_textured_model_geo_georef_system.txt")
     else:
-        print "Warning: No GCP file. Consider rerunning with argument --odm_georeferencing-useGcp false --start-with odm_georeferencing"
-        print "Skipping orthophoto"
+        print_task_info("Warning: No GCP file. Consider rerunning with argument --odm_georeferencing-useGcp false --start-with odm_georeferencing")
+        print_task_info("Skipping orthophoto")
         args.end_with = "odm_georeferencing"
 
     if "csString" not in jobOptions:
@@ -870,6 +864,7 @@ def odm_georeferencing():
             images = f.readlines()
 
         if len(images) > 0:
+            print_task_info("Writing EXIF of photo taking GPS coordinates to resized images...")
             with open(jobOptions["jobDir"] + "/odm_georeferencing/coordFile.txt") as f:
                 for lineNumber, line in enumerate(f):
                     if lineNumber >= 2 and lineNumber - 2 < len(images):
@@ -903,11 +898,11 @@ def odm_georeferencing():
 
     if "epsg" in jobOptions and "utmEastOffset" in jobOptions and "utmNorthOffset" in jobOptions:
         lasCmd = "\"" + BIN_PATH + "/txt2las\" -i " + jobOptions["jobDir"] + "-results/option-0000_georef.ply -o " + jobOptions["jobDir"] + "-results/pointcloud_georef.laz -skip 30 -parse xyzRGBssss -set_scale 0.01 0.01 0.01 -set_offset " + str(jobOptions["utmEastOffset"]) + " " + str(jobOptions["utmNorthOffset"]) + " 0 -translate_xyz " + str(jobOptions["utmEastOffset"]) + " " + str(jobOptions["utmNorthOffset"]) + " 0 -epsg " + str(jobOptions["epsg"])
-        print("    Creating geo-referenced LAS file (expecting warning)...")
+        print_task_info("Creating geo-referenced LAS file (expecting warning)...")
         run(lasCmd)
 
     # XYZ point cloud output
-    print("    Creating geo-referenced CSV file (XYZ format, can be used with GRASS to create DEM)")
+    print_task_info("Creating geo-referenced CSV file (XYZ format, can be used with GRASS to create DEM)...")
     with open(jobOptions["jobDir"] + "-results/pointcloud_georef.csv", "wb") as csvfile:
         csvfile_writer = csv.writer(csvfile, delimiter=",")
         reachedPoints = False
@@ -956,8 +951,7 @@ def odm_orthophoto():
                         uly = float(tokens[3]) + \
                             float(jobOptions["utmNorthOffset"])
 
-        print("    Creating GeoTIFF...")
-        sys.stdout.write("    ")
+        print_task_info("Creating GeoTIFF...")
         run("gdal_translate -a_ullr " + str(ulx) + " " + str(uly) + " " +
             str(lrx) + " " + str(lry) + " -a_srs \"" + jobOptions["csString"] +
             "\" " + jobOptions["jobDir"] + "-results/odm_orthphoto.png " +
@@ -965,9 +959,14 @@ def odm_orthophoto():
         geoTiffCreated = True
 
     if not geoTiffCreated:
-        print("    Warning: No geo-referenced orthophoto created due to "
-              "missing geo-referencing or corner coordinates.")
+        print_task_info("Warning: No geo-referenced orthophoto created due to missing geo-referencing or corner coordinates.")
 
+
+args = parser.parse_args()
+
+print_task_header("configuration")
+for arg in vars(args):
+    print_task_info(str(arg) + ": " + str(getattr(args, arg)))
 
 if args.use_opensfm:
     sfm_tasks = [
