@@ -478,10 +478,7 @@ def prepare_objects():
     jobOptions["step_3_filelist"] = jobOptions["jobDir"] + "/list.txt"
     jobOptions["step_3_bundlerOptions"] = jobOptions["jobDir"] + "/options.txt"
 
-    try:
-        os.mkdir(jobOptions["jobDir"])
-    except:
-        pass
+    mkdir_p(jobOptions["jobDir"])
 
     for fileObject in objects:
         if fileObject["isOk"]:
@@ -552,10 +549,7 @@ def match():
     print_task_header("matching keypoints")
 
     os.chdir(jobOptions["jobDir"])
-    try:
-        os.mkdir(jobOptions["step_2_matches_dir"])
-    except:
-        pass
+    mkdir_p(jobOptions["step_2_matches_dir"])
 
     matchesJobs = ""
     c = 0
@@ -633,26 +627,11 @@ def bundler():
 
     os.chdir(jobOptions["jobDir"])
 
-    try:
-        os.mkdir(jobOptions["jobDir"] + "/bundle")
-    except:
-        pass
-    try:
-        os.mkdir(jobOptions["jobDir"] + "/pmvs")
-    except:
-        pass
-    try:
-        os.mkdir(jobOptions["jobDir"] + "/pmvs/txt")
-    except:
-        pass
-    try:
-        os.mkdir(jobOptions["jobDir"] + "/pmvs/visualize")
-    except:
-        pass
-    try:
-        os.mkdir(jobOptions["jobDir"] + "/pmvs/models")
-    except:
-        pass
+    mkdir_p(jobOptions["jobDir"] + "/bundle")
+    mkdir_p(jobOptions["jobDir"] + "/pmvs")
+    mkdir_p(jobOptions["jobDir"] + "/pmvs/txt")
+    mkdir_p(jobOptions["jobDir"] + "/pmvs/visualize")
+    mkdir_p(jobOptions["jobDir"] + "/pmvs/models")
 
     filesList = ""
 
@@ -796,10 +775,7 @@ def odm_meshing():
     print_task_header("running meshing")
 
     os.chdir(jobOptions["jobDir"])
-    try:
-        os.mkdir(jobOptions["jobDir"] + "/odm_meshing")
-    except:
-        pass
+    mkdir_p(jobOptions["jobDir"] + "/odm_meshing")
 
     run("\"" + BIN_PATH + "/odm_meshing\" -inputFile " + jobOptions["jobDir"] + "-results/option-0000.ply -outputFile " + jobOptions["jobDir"] + "-results/odm_mesh-0000.ply -logFile " + jobOptions["jobDir"] + "/odm_meshing/odm_meshing_log.txt -maxVertexCount " + str(args.odm_meshing_maxVertexCount) + " -octreeDepth " + str(args.odm_meshing_octreeDepth) + " -samplesPerNode " + str(args.odm_meshing_samplesPerNode) + " -solverDivide " + str(args.odm_meshing_solverDivide))
 
@@ -809,11 +785,8 @@ def odm_texturing():
     print_task_header("running texturing")
 
     os.chdir(jobOptions["jobDir"])
-    try:
-        os.mkdir(jobOptions["jobDir"] + "/odm_texturing")
-        os.mkdir(jobOptions["jobDir"] + "-results/odm_texturing")
-    except:
-        pass
+    mkdir_p(jobOptions["jobDir"] + "/odm_texturing")
+    mkdir_p(jobOptions["jobDir"] + "-results/odm_texturing")
 
     # Create list of original image files
     pmvs_list = jobOptions["jobDir"] + "/pmvs/list.rd.txt"
@@ -835,10 +808,7 @@ def odm_georeferencing():
     print_task_header("running georeferencing")
 
     os.chdir(jobOptions["jobDir"])
-    try:
-        os.mkdir(jobOptions["jobDir"] + "/odm_georeferencing")
-    except:
-        pass
+    mkdir_p(jobOptions["jobDir"] + "/odm_georeferencing")
 
     if not args.odm_georeferencing_useGcp:
         run("\"" + BIN_PATH + "/odm_extract_utm\" -imagesPath " + jobOptions["srcDir"] + "/ -imageListFile " + jobOptions["jobDir"] + "/pmvs/list.rd.txt -outputCoordFile " + jobOptions["jobDir"] + "/odm_georeferencing/coordFile.txt")
@@ -917,10 +887,7 @@ def odm_orthophoto():
     print_task_header("running orthophoto generation")
 
     os.chdir(jobOptions["jobDir"])
-    try:
-        os.mkdir(jobOptions["jobDir"] + "/odm_orthophoto")
-    except:
-        pass
+    mkdir_p(jobOptions["jobDir"] + "/odm_orthophoto")
 
     run("\"" + BIN_PATH + "/odm_orthophoto\" -inputFile " + jobOptions["jobDir"] + "-results/odm_texturing/odm_textured_model_geo.obj -logFile " + jobOptions["jobDir"] + "/odm_orthophoto/odm_orthophoto_log.txt -outputFile " + jobOptions["jobDir"] + "-results/odm_orthphoto.png -resolution " + str(args.odm_orthophoto_resolution) + " -outputCornerFile " + jobOptions["jobDir"] + "/odm_orthphoto_corners.txt")
 
