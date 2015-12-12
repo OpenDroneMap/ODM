@@ -43,7 +43,7 @@ jobOptions = {'resizeTo': 0, 'srcDir': CURRENT_DIR, 'utmZone': -999,
 # parse arguments
 processopts = ['resize', 'opensfm', 'getKeypoints', 'match', 'bundler', 'cmvs', 'pmvs',
                'odm_meshing', 'odm_texturing', 'odm_georeferencing',
-               'odm_orthophoto']
+               'odm_orthophoto', 'compress']
 
 parser = argparse.ArgumentParser(description='OpenDroneMap')
 parser.add_argument('--resize-to',  # currently doesn't support 'orig'
@@ -248,11 +248,6 @@ parser.add_argument('--odm_orthophoto-resolution',
                     default=20.0,
                     type=float,
                     help=('Orthophoto ground resolution in pixels/meter. Default: %(default)s'))
-
-parser.add_argument('--zip-results',
-                    action='store_true',
-                    default=False,
-                    help='Compress the results using gunzip')
 
 
 def run(cmd):
@@ -961,6 +956,10 @@ def odm_orthophoto():
     if not geoTiffCreated:
         print_task_info("Warning: No geo-referenced orthophoto created due to missing geo-referencing or corner coordinates.")
 
+def compress_results():
+    """Compresses the final results folder"""
+    print_task_header("compressing results")
+    run("cd " + jobOptions["jobDir"] + "-results && tar -czf " + jobOptions["jobDir"] + "-results.tar.gz *")
 
 args = parser.parse_args()
 
@@ -988,6 +987,7 @@ tasks = sfm_tasks + [
     ("odm_texturing", odm_texturing),
     ("odm_georeferencing", odm_georeferencing),
     ("odm_orthophoto", odm_orthophoto),
+    ("compress", compress_results)
 ]
 
 
@@ -1008,10 +1008,5 @@ if __name__ == '__main__':
             func()
         if args.end_with == name:
             break
-
-    if args.zip_results:
-        print_task_header("compressing results")
-        run("cd " + jobOptions["jobDir"] + "-results/ && tar -czf " +
-            jobOptions["jobDir"] + "-results.tar.gz *")
 
     print_task_header("done")
