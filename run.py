@@ -270,12 +270,6 @@ def run(cmd):
     if (returnCode != 0):
         sys.exit("\nquitting, error while runnig command: \n\t" + cmd + "\n\nreturned with code: " + str(returnCode) + "\n")
 
-
-def now():
-    """Return the current time"""
-    return datetime.datetime.now().strftime('%a %b %d %H:%M:%S %Z %Y')
-
-
 def run_and_return(cmdSrc, cmdDest):
     """Run a system command and return the output"""
     srcProcess = subprocess.Popen(shlex.split(cmdSrc), stdout=subprocess.PIPE)
@@ -289,10 +283,12 @@ def run_and_return(cmdSrc, cmdDest):
 
     return stdout.decode('ascii')
 
+def print_task_header(task):
+    """Prints the task to be run"""
+    print "\n  - " + task + " - " + datetime.datetime.now().strftime('%a %b %d %H:%M:%S %Z %Y')
 
 def mkdir_p(path):
-    '''Make a directory including parent directories.
-    '''
+    """Make a directory including parent directories"""
     try:
         os.makedirs(path)
     except os.error as exc:
@@ -333,6 +329,7 @@ def parse_coordinate_system():
                     break
 
 def coord_to_fractions(coord,refs):
+    """Calculates the fraction format of the gps coordinates to be used with exif2"""
     deg_dec = abs(float(coord))
     deg = int(deg_dec)
     minute_dec = (deg_dec-deg)*60
@@ -354,7 +351,7 @@ def prepare_objects():
     """Prepare the jobOptions and fileObjects dicts"""
     source_files = run_and_return('ls -1', 'egrep "\.[jJ]{1}[pP]{1}[eE]{0,1}[gG]{1}"')
 
-    print "\n  - source files - " + now()
+    print_task_header("source files")
 
     for filename in source_files.split('\n'):
         filename = filename.rstrip('\n')
@@ -507,7 +504,7 @@ def prepare_objects():
 
 def resize():
     """Resize images"""
-    print "\n  - preparing images - " + now()
+    print_task_header("preparing images")
 
     os.chdir(jobOptions["jobDir"])
 
@@ -533,7 +530,7 @@ def resize():
 
 def getKeypoints():
     """Run vlsift to create keypoint files for each image"""
-    print "\n  - finding keypoints - " + now()
+    print_task_header("finding keypoints")
 
     os.chdir(jobOptions["jobDir"])
 
@@ -563,7 +560,7 @@ def getKeypoints():
 
 def match():
     """Run matches on images"""
-    print "\n  - matching keypoints - " + now()
+    print_task_header("matching keypoints")
 
     os.chdir(jobOptions["jobDir"])
     try:
@@ -643,7 +640,7 @@ def match():
 
 def bundler():
     """Run bundler and prepare bundle for PMVS"""
-    print "\n  - running bundler - " + now()
+    print_task_header("running bundler")
 
     os.chdir(jobOptions["jobDir"])
 
@@ -711,7 +708,7 @@ def bundler():
 
 
 def opensfm():
-    print "\n  - running OpenSfM - " + now()
+    print_task_header("running OpenSfM")
 
     os.chdir(jobOptions["jobDir"])
 
@@ -759,7 +756,7 @@ def opensfm():
 
 def bundler_to_pmvs(bundle_out):
     """Converts bundler's output to PMVS format"""
-    print "\n  - converting bundler output to PMVS - " + now()
+    print_task_header("converting bundler output to PMVS")
 
     os.chdir(jobOptions['jobDir'])
 
@@ -786,7 +783,7 @@ def bundler_to_pmvs(bundle_out):
 
 def cmvs():
     """Run CMVS"""
-    print "\n  - running cmvs - " + now()
+    print_task_header("running cmvs")
 
     os.chdir(jobOptions["jobDir"])
 
@@ -796,7 +793,7 @@ def cmvs():
 
 def pmvs():
     """Run PMVS"""
-    print "\n  - running pmvs - " + now()
+    print_task_header("running pmvs")
 
     os.chdir(jobOptions["jobDir"])
 
@@ -807,7 +804,7 @@ def pmvs():
 
 def odm_meshing():
     """Run odm_meshing"""
-    print "\n  - running meshing - " + now()
+    print_task_header("running meshing")
 
     os.chdir(jobOptions["jobDir"])
     try:
@@ -820,7 +817,7 @@ def odm_meshing():
 
 def odm_texturing():
     """Run odm_texturing"""
-    print "\n  - running texturing - " + now()
+    print_task_header("running texturing")
 
     os.chdir(jobOptions["jobDir"])
     try:
@@ -846,7 +843,7 @@ def odm_texturing():
 
 def odm_georeferencing():
     """Run odm_georeferencing"""
-    print "\n  - running georeferencing - " + now()
+    print_task_header("running georeferencing")
 
     os.chdir(jobOptions["jobDir"])
     try:
@@ -927,7 +924,7 @@ def odm_georeferencing():
 
 def odm_orthophoto():
     """Run odm_orthophoto"""
-    print "\n  - running orthophoto generation - " + now()
+    print_task_header("running orthophoto generation")
 
     os.chdir(jobOptions["jobDir"])
     try:
@@ -1014,8 +1011,8 @@ if __name__ == '__main__':
             break
 
     if args.zip_results:
-        print "\nCompressing results - " + now()
+        print_task_header("compressing results")
         run("cd " + jobOptions["jobDir"] + "-results/ && tar -czf " +
             jobOptions["jobDir"] + "-results.tar.gz *")
 
-    print "\n  - done - " + now()
+    print_task_header("done")
