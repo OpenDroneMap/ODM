@@ -12,7 +12,7 @@ import shlex
 # import collections  # Never used
 import argparse
 import errno
-
+import csv
 import knnMatch_exif
 
 # the defs
@@ -910,6 +910,21 @@ def odm_georeferencing():
         lasCmd = "\"" + BIN_PATH + "/txt2las\" -i " + jobOptions["jobDir"] + "-results/option-0000_georef.ply -o " + jobOptions["jobDir"] + "-results/pointcloud_georef.laz -skip 30 -parse xyzRGBssss -set_scale 0.01 0.01 0.01 -set_offset " + str(jobOptions["utmEastOffset"]) + " " + str(jobOptions["utmNorthOffset"]) + " 0 -translate_xyz " + str(jobOptions["utmEastOffset"]) + " " + str(jobOptions["utmNorthOffset"]) + " 0 -epsg " + str(jobOptions["epsg"])
         print("    Creating geo-referenced LAS file (expecting warning)...")
         run(lasCmd)
+
+    # XYZ point cloud output
+    print("    Creating geo-referenced CSV file (XYZ format, can be used with GRASS to create DEM)")
+    with open(jobOptions["jobDir"] + "-results/pointcloud_georef.csv", "wb") as csvfile:
+        csvfile_writer = csv.writer(csvfile, delimiter=",")
+        reachedPoints = False
+        with open(jobOptions["jobDir"] + "-results/option-0000_georef.ply") as f:
+            for lineNumber, line in enumerate(f):
+                if reachedPoints:
+                    tokens = line.split(" ")
+                    csv_line = [float(tokens[0])+jobOptions["utmEastOffset"],float(tokens[1])+jobOptions["utmNorthOffset"],tokens[2]]
+                    csvfile_writer.writerow(csv_line)
+                if line.startswith("end_header"):
+                    reachedPoints = True
+        csvfile.close()
 
 
 def odm_orthophoto():
