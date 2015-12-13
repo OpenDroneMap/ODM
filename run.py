@@ -32,10 +32,7 @@ ccdWidths = get_ccd_widths()
 
 BIN_PATH = BIN_PATH_ABS + '/bin'
 
-objectStats = {
-    'count': 0, 'good': 0, 'bad': 0, 'minWidth': 0, 'minHeight': 0,
-    'maxWidth': 0, 'maxHeight': 0
-    }
+objectStats = {'count': 0, 'good': 0, 'bad': 0}
 
 jobOptions = {'resizeTo': 0, 'srcDir': CURRENT_DIR, 'utmZone': -999,
               'utmSouth': False, 'utmEastOffset': 0, 'utmNorthOffset': 0}
@@ -342,30 +339,26 @@ def coord_to_fractions(coord,refs):
 
 def prepare_objects():
     """Prepare the jobOptions and fileObjects dicts"""
-    source_files = run_and_return('ls -1', 'egrep "\.[jJ]{1}[pP]{1}[eE]{0,1}[gG]{1}"')
-
     print_task_header("source files")
+
+    source_files = run_and_return('ls -1', 'egrep -i "[.]jpe?g$"')
 
     for filename in source_files.split('\n'):
         filename = filename.rstrip('\n')
         if not filename:
             continue
-        file_make = run_and_return('jhead "' + filename + '"', 'grep "Camera make"')
-        file_model = run_and_return('jhead "' + filename + '"', 'grep "Camera model"')
-        file_focal = run_and_return('jhead "' + filename + '"', 'grep "Focal length"')
-        file_ccd = run_and_return('jhead "' + filename + '"', 'grep "CCD width"')
-        file_resolution = run_and_return('jhead "' + filename + '"', 'grep "Resolution"')
+        file_exif_info = run_and_return('jhead "' + filename + '"',None)
 
         fileObject = {}
 
         fileObject["src"] = filename
         fileObject["base"] = re.sub("\.[^\.]*$", "", filename)
 
-        match = re.search(": ([^\n\r]*)", file_make)
+        match = re.search("Camera make[\ ]*: ([^\n\r]*)", file_exif_info)
         if match:
             fileObject["make"] = match.group(1).strip()
 
-        match = re.search(": ([^\n\r]*)", file_model)
+        match = re.search("Camera model[\ ]*: ([^\n\r]*)", file_exif_info)
         if match:
             fileObject["model"] = match.group(1).strip()
 
@@ -382,22 +375,21 @@ def prepare_objects():
         if "model" in fileObject:
             fileObject["id"] += " " + fileObject["model"]
 
-        match = re.search(": ([0-9]*) x ([0-9]*)", file_resolution)
+        match = re.search("Resolution[\ ]*: ([0-9]*) x ([0-9]*)", file_exif_info)
         if match:
             fileObject["width"] = int(match.group(1).strip())
             fileObject["height"] = int(match.group(2).strip())
-
         if args.force_focal is None:
-            match = re.search(":[\ ]*([0-9\.]*)mm", file_focal)
+            match = re.search("Focal length[\ ]*:[\ ]*([0-9\.]*)mm", file_exif_info)
             if match:
-                fileObject["focal"] = float((match.group()[1:-2]).strip())
+                fileObject["focal"] = float(match.group(1).strip())
         else:
             fileObject["focal"] = args.force_focal
 
         if args.force_ccd is None:
-            match = re.search(":[\ ]*([0-9\.]*)mm", file_ccd)
+            match = re.search("CCD width[\ ]*:[\ ]*([0-9\.]*)mm", file_exif_info)
             if match:
-                fileObject["ccd"] = float(match.group()[1:-2].strip())
+                fileObject["ccd"] = float(match.group(1).strip())
 
             if ("ccd" not in fileObject) and ("id" in fileObject):
                 fileObject["ccd"] = float(ccdWidths[fileObject["id"]])
@@ -421,35 +413,9 @@ def prepare_objects():
             if "id" in fileObject:
                 print_task_info("no CCD width or focal length found for " + fileObject["src"] + " - camera: \"" + fileObject["id"] + "\"")
             else:
-                print_task_info("no CCD width or focal length found")
+                print_task_info("no CCD width or focal length found for " + fileObject["src"])
 
         objectStats["count"] += 1
-
-        if "width" in fileObject and "height" in fileObject:
-            if objectStats["minWidth"] == 0:
-                objectStats["minWidth"] = fileObject["width"]
-            if objectStats["minHeight"] == 0:
-                objectStats["minHeight"] = fileObject["height"]
-
-            if objectStats["minWidth"] < fileObject["width"]:
-                objectStats["minWidth"] = objectStats["minWidth"]
-            else:
-                objectStats["minWidth"] = fileObject["width"]
-
-            if objectStats["minHeight"] < fileObject["height"]:
-                objectStats["minHeight"] = objectStats["minHeight"]
-            else:
-                objectStats["minHeight"] = fileObject["height"]
-
-            if objectStats["maxWidth"] > fileObject["width"]:
-                objectStats["maxWidth"] = objectStats["maxWidth"]
-            else:
-                objectStats["maxWidth"] = fileObject["width"]
-
-            if objectStats["maxHeight"] > fileObject["height"]:
-                objectStats["maxHeight"] = objectStats["maxHeight"]
-            else:
-                objectStats["maxHeight"] = fileObject["height"]
 
         objects.append(fileObject)
 
