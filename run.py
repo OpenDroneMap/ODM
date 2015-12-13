@@ -624,8 +624,11 @@ def bundler():
     bundlerDest.write(filesList)
     bundlerDest.close()
 
+    print_task_info("running bundler")
     run("\"" + BIN_PATH + "/bundler\" \"" + jobOptions["step_3_filelist"] + "\" --options_file \"" + jobOptions["step_3_bundlerOptions"] + "\" > bundle/out")
+    print_task_info("running Bundle2PMVS")
     run("\"" + BIN_PATH + "/Bundle2PMVS\" \"" + jobOptions["step_3_filelist"] + "\" bundle/bundle.out")
+    print_task_info("running RadialUndistort")
     run("\"" + BIN_PATH + "/RadialUndistort\" \"" + jobOptions["step_3_filelist"] + "\" bundle/bundle.out pmvs")
 
     i = 0
@@ -638,6 +641,7 @@ def bundler():
                 run("mv pmvs/" + fileObject["base"] + ".rd.jpg pmvs/visualize/" + str(nr) + ".jpg")
                 run("mv pmvs/" + str(nr) + ".txt pmvs/txt/" + str(nr) + ".txt")
 
+    print_task_info("running Bundle2Vis")
     run("\"" + BIN_PATH + "/Bundle2Vis\" pmvs/bundle.rd.out pmvs/vis.dat")
 
 
@@ -674,14 +678,16 @@ def opensfm():
     with open('opensfm/config.yaml', 'w') as fout:
         fout.write("\n".join(config))
 
-    print_task_info("running import_bundler")
     # Convert bundler's input to opensfm
+    print_task_info("running import_bundler")
     run('PYTHONPATH={} "{}/bin/import_bundler" opensfm --list list.txt'.format(PYOPENCV_PATH, OPENSFM_PATH))
 
     # Run OpenSfM reconstruction
+    print_task_info("running OpenSfM reconstruction")
     run('PYTHONPATH={} "{}/bin/run_all" opensfm'.format(PYOPENCV_PATH, OPENSFM_PATH))
 
     # Convert back to bundler's format
+    print_task_info("running export_bundler")
     run('PYTHONPATH={} "{}/bin/export_bundler" opensfm'.format(PYOPENCV_PATH, OPENSFM_PATH))
 
     bundler_to_pmvs("opensfm/bundle_r000.out")
@@ -699,7 +705,9 @@ def bundler_to_pmvs(bundle_out):
     mkdir_p(jobOptions['jobDir'] + "/pmvs/visualize")
     mkdir_p(jobOptions['jobDir'] + "/pmvs/models")
 
+    print_task_info("running Bundle2PMVS")
     run("\"" + BIN_PATH + "/Bundle2PMVS\" \"" + jobOptions["step_3_filelist"] + "\" " + bundle_out)
+    print_task_info("running RadialUndistort")
     run("\"" + BIN_PATH + "/RadialUndistort\" \"" + jobOptions["step_3_filelist"] + "\" " + bundle_out + " pmvs")
 
     i = 0
@@ -712,6 +720,7 @@ def bundler_to_pmvs(bundle_out):
                 run("mv pmvs/" + fileObject["base"] + ".rd.jpg pmvs/visualize/" + str(nr) + ".jpg")
                 run("mv pmvs/" + str(nr) + ".txt pmvs/txt/" + str(nr) + ".txt")
 
+    print_task_info("running Bundle2Vis")
     run("\"" + BIN_PATH + "/Bundle2Vis\" pmvs/bundle.rd.out pmvs/vis.dat")
 
 
