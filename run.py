@@ -624,7 +624,6 @@ def bundler():
     bundlerDest.write(filesList)
     bundlerDest.close()
 
-    print_task_info("running bundler")
     run("\"" + BIN_PATH + "/bundler\" \"" + jobOptions["step_3_filelist"] + "\" --options_file \"" + jobOptions["step_3_bundlerOptions"] + "\" > bundle/out")
     print_task_info("running Bundle2PMVS")
     run("\"" + BIN_PATH + "/Bundle2PMVS\" \"" + jobOptions["step_3_filelist"] + "\" bundle/bundle.out")
