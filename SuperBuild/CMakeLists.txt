@@ -81,40 +81,20 @@ SETUP_EXTERNAL_PROJECT(Ceres ${ODM_Ceres_Version} ${ODM_BUILD_Ceres})
 
 # ---------------------------------------------------------------------------------------------
 # Open Geometric Vision (OpenGV)
-#
-
-SETUP_EXTERNAL_PROJECT_CUSTOM(OpenGV)
-
-
-# ---------------------------------------------------------------------------------------------
 # Open Structure from Motion (OpenSfM)
-#
-
-SETUP_EXTERNAL_PROJECT_CUSTOM(OpenSfM)
-
-
-# ---------------------------------------------------------------------------------------------
 # Clustering Views for Multi-view Stereo (CMVS)
-#
-
-SETUP_EXTERNAL_PROJECT_CUSTOM(CMVS)
-
-
-# ---------------------------------------------------------------------------------------------
 # Catkin
-#
-
-SETUP_EXTERNAL_PROJECT_CUSTOM(Catkin)
-
-
-# ---------------------------------------------------------------------------------------------
-# Catkin
-#
-
-SETUP_EXTERNAL_PROJECT_CUSTOM(Ecto)
-
-# ---------------------------------------------------------------------------------------------
+# Ecto
 # LAStools
 #
 
-SETUP_EXTERNAL_PROJECT_CUSTOM(LAStools)
+set(custom_libs OpenGV
+				OpenSfM
+				CMVS
+				Catkin
+				Ecto
+				LAStools)
+
+foreach(lib ${custom_libs})
+	SETUP_EXTERNAL_PROJECT_CUSTOM(${lib})
+endforeach()
