@@ -1,24 +1,20 @@
-set(_proj_name ceres)
+set(_proj_name gflags)
 set(_SB_BINARY_DIR "${SB_BINARY_DIR}/${_proj_name}")
 
 ExternalProject_Add(${_proj_name}
-  DEPENDS           gflags
   PREFIX            ${_SB_BINARY_DIR}
   TMP_DIR           ${_SB_BINARY_DIR}/tmp
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
-  URL               http://ceres-solver.org/ceres-solver-1.10.0.tar.gz
-  URL_MD5           dbf9f452bd46e052925b835efea9ab16
+  URL               https://github.com/gflags/gflags/archive/master.zip
+  URL_MD5           d57049ed25d3921549315f2d2ee8ee49
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   #--Configure step-------------
   SOURCE_DIR        ${SB_SOURCE_DIR}/${_proj_name}
   CMAKE_ARGS
-    -DCMAKE_C_FLAGS=-fPIC
-    -DCMAKE_CXX_FLAGS=-fPIC
-    -DBUILD_EXAMPLES=OFF
-    -DBUILD_TESTING=OFF
+    -DCMAKE_BUILD_TYPE:STRING=Release
     -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
   #--Build step-----------------
   BINARY_DIR        ${_SB_BINARY_DIR}
