@@ -80,6 +80,15 @@ SETUP_EXTERNAL_PROJECT(Ceres ${ODM_Ceres_Version} ${ODM_BUILD_Ceres})
 
 
 # ---------------------------------------------------------------------------------------------
+# Google Flags library (GFlags)
+#
+set(ODM_GFlags_Version 2.1.2)
+option(ODM_BUILD_GFlags "Force to build GFlags library" OFF)
+
+SETUP_EXTERNAL_PROJECT(GFlags ${ODM_GFlags_Version} ${ODM_BUILD_GFlags})
+
+
+# ---------------------------------------------------------------------------------------------
 # Open Geometric Vision (OpenGV)
 # Open Structure from Motion (OpenSfM)
 # Clustering Views for Multi-view Stereo (CMVS)
