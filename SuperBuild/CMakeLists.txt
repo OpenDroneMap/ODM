@@ -71,21 +71,21 @@ SETUP_EXTERNAL_PROJECT(PCL ${ODM_PCL_Version} ${ODM_BUILD_PCL})
 
 
 # ---------------------------------------------------------------------------------------------
-# Ceres Solver
-#
-set(ODM_Ceres_Version 1.10.0)
-option(ODM_BUILD_Ceres "Force to build Ceres library" OFF)
-
-SETUP_EXTERNAL_PROJECT(Ceres ${ODM_Ceres_Version} ${ODM_BUILD_Ceres})
-
-
-# ---------------------------------------------------------------------------------------------
 # Google Flags library (GFlags)
 #
 set(ODM_GFlags_Version 2.1.2)
 option(ODM_BUILD_GFlags "Force to build GFlags library" OFF)
 
 SETUP_EXTERNAL_PROJECT(GFlags ${ODM_GFlags_Version} ${ODM_BUILD_GFlags})
+
+
+# ---------------------------------------------------------------------------------------------
+# Ceres Solver
+#
+set(ODM_Ceres_Version 1.10.0)
+option(ODM_BUILD_Ceres "Force to build Ceres library" OFF)
+
+SETUP_EXTERNAL_PROJECT(Ceres ${ODM_Ceres_Version} ${ODM_BUILD_Ceres})
 
 
 # ---------------------------------------------------------------------------------------------
@@ -107,3 +107,4 @@ set(custom_libs OpenGV
 foreach(lib ${custom_libs})
 	SETUP_EXTERNAL_PROJECT_CUSTOM(${lib})
 endforeach()
+
