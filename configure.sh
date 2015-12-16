@@ -38,7 +38,7 @@ sudo apt-get install libgtk2.0-dev \
                      libavcodec-dev \
                      libavformat-dev \
                      libswscale-dev \
-					 python-dev \
+                     python-dev \
                      python-numpy \
                      libtbb2 \
                      libtbb-dev \
@@ -48,7 +48,7 @@ sudo apt-get install libgtk2.0-dev \
                      libjasper-dev \
                      libflann-dev \
                      libproj-dev \
-					 libxext-dev \
+                     libxext-dev \
                      liblapack-dev \
                      libeigen3-dev \
                      libvtk5-dev -y
@@ -68,7 +68,7 @@ sudo apt-get install python-networkx \
                      libgoogle-glog-dev \
                      libsuitesparse-dev \
                      libboost-all-dev \
-					 libboost-python-dev -y
+                     libboost-python-dev -y
 
 sudo pip install -U PyYAML \
                     exifread \
@@ -82,7 +82,7 @@ fi
 
 ## Installing Ecto Requisites
 echo -e "\e[1;34mInstalling Ecto Dependencies\e[0;39m"
-sudo pip install -U catkin-pkg
+sudo pip install catkin-pkg
 sudo apt-get install python-empy \
                      python-nose \
                      python-pyside -y
@@ -106,6 +106,9 @@ fi
 
 ## Get sys vars
 NUM_CORES=`grep -c processor /proc/cpuinfo`
+
+## Set python path to SuperBuild
+export PYTHONPATH=$PYTHONPATH:`pwd`/SuperBuild/install/lib/python2.7/dist-packages
 
 ## Compile SuperBuild
 cd SuperBuild 
