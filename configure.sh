@@ -107,15 +107,11 @@ fi
 ## Get sys vars
 NUM_CORES=`grep -c processor /proc/cpuinfo`
 
-<<<<<<< HEAD
 ## Add SuperBuild path to the python path
-=======
-## Set python path to SuperBuild
->>>>>>> 6459763f7bf9ff7c9d2d82f95918013c4e5911c7
 export PYTHONPATH=$PYTHONPATH:`pwd`/SuperBuild/install/lib/python2.7/dist-packages
 
 ## Compile SuperBuild
-cd SuperBuild 
+cd SuperBuild
 mkdir -p build && cd build
 cmake .. && make -j ${NUM_CORES}
 
