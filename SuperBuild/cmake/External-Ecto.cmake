@@ -7,11 +7,9 @@ ExternalProject_Add(${_proj_name}
   TMP_DIR           ${_SB_BINARY_DIR}/tmp
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
   #--Download step--------------
-  DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
-  #URL               https://github.com/plasmodic/ecto/archive/master.zip
-  #URL_MD5           0f482403dc2abeb08341b4cf45edf020
-  URL               https://github.com/edgarriba/ecto/archive/master.zip
-  URL_MD5           dede524b9c3aece70e788c5d619c6e52
+  DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}/${_proj_name}
+  URL               https://github.com/plasmodic/ecto/archive/master.zip
+  URL_MD5           8cd70c525bcda99d9eba5ac2865e42dd
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   #--Configure step-------------

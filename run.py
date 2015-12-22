@@ -1,13 +1,13 @@
 #!/usr/bin/python
 
+from opendm import log
+from opendm import config
+from opendm import system
+
 import sys
 import ecto
 
 from scripts.odm_app import ODMApp
-
-from opendm import log
-from opendm import config
-from opendm import system
 
 def usage():
 	log.ODM_ERROR('USAGE: %s --project-path [project_path]' % sys.argv[0])

@@ -67,7 +67,11 @@ echo -e "\e[1;34mInstalling OpenSfM Dependencies\e[0;39m"
 sudo apt-get install python-networkx \
                      libgoogle-glog-dev \
                      libsuitesparse-dev \
-                     libboost-all-dev \
+                     libboost-filesystem1.55-dev \
+                     libboost-iostreams1.55-dev \
+                     libboost-regex1.55-dev \
+                     libboost-python1.55-dev \
+                     #libboost1.55-all-dev \
                      libboost-python-dev -y
 
 sudo pip install -U PyYAML \
@@ -82,7 +86,7 @@ fi
 
 ## Installing Ecto Requisites
 echo -e "\e[1;34mInstalling Ecto Dependencies\e[0;39m"
-sudo pip install catkin-pkg
+sudo pip install -U catkin-pkg
 sudo apt-get install python-empy \
                      python-nose \
                      python-pyside -y
