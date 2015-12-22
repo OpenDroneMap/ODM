@@ -6,7 +6,7 @@ ExternalProject_Add(${_proj_name}
   TMP_DIR           ${_SB_BINARY_DIR}/tmp
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
   #--Download step--------------
-  DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
+  DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}/${_proj_name}
   URL               https://github.com/edgarriba/CMVS-PMVS/archive/master.zip
   URL_MD5           dbb1493f49ca099b4208381bd20d1435
   #--Update/Patch step----------
