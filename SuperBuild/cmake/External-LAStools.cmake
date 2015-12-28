@@ -8,7 +8,7 @@ ExternalProject_Add(${_proj_name}
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
   URL               http://lastools.org/download/LAStools.zip
-  URL_MD5           fc9800fd41158ad873d999a3a18e312e
+  URL_MD5           975ae0bc730697e3553b81bb61d34bb7
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   #--Configure step-------------
