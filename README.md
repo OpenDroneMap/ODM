@@ -3,7 +3,9 @@
 What is it?
 ===========
 
-OpenDroneMap is a toolchain for processing raw civilian UAS imagery to other useful products. What kind of products?
+OpenDroneMap is an open source toolkit for processing aerial drone imagery. Typical drones use simple point-and-shoot cameras, so the images from drones, while from a different perspective, are similar to any pictures taken from point-and-shoot cameras, i.e. non-metric imagery. OpenDroneMap turns those simple images into three dimensional geographic data that can be used in combination with other geographic datasets.
+
+In a word, OpenDroneMap is a toolchain for processing raw civilian UAS imagery to other useful products. What kind of products?
 
 1. Point Clouds
 2. Digital Surface Models
