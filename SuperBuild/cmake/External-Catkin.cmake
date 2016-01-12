@@ -7,8 +7,8 @@ ExternalProject_Add(${_proj_name}
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
-  URL               https://github.com/ros/catkin/archive/indigo-devel.zip
-  URL_MD5           f3085118b4327d470da881062e761569
+  URL               https://github.com/ros/catkin/archive/0.6.16.zip
+  URL_MD5           F5D45AE68709CE6E3346FB8C019416F8
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   #--Configure step-------------
