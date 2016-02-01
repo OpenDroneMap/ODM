@@ -728,7 +728,7 @@ class ODMJob:
 
         run("\"" + BIN_PATH + "/pmvs2\" pmvs/ option-0000")
 
-        run("cp -Rf \"" + self.jobDir + "/pmvs/models\" \"" + jobResultsDir + "\"")
+        run("cp -Rf \"" + self.jobDir + "/pmvs/models\" \"" + self.jobResultsDir + "\"")
 
 
     def odm_meshing(self):
@@ -738,7 +738,7 @@ class ODMJob:
         os.chdir(self.jobDir)
         mkdir_p(self.jobDir + "/odm_meshing")
 
-        run("\"" + BIN_PATH + "/odm_meshing\" -inputFile " + self.jobResultsDir + "/option-0000.ply -outputFile " + jobResultsDir + "/odm_mesh-0000.ply -logFile " + self.jobDir + "/odm_meshing/odm_meshing_log.txt -maxVertexCount " + str(args.odm_meshing_maxVertexCount) + " -octreeDepth " + str(args.odm_meshing_octreeDepth) + " -samplesPerNode " + str(args.odm_meshing_samplesPerNode) + " -solverDivide " + str(args.odm_meshing_solverDivide))
+        run("\"" + BIN_PATH + "/odm_meshing\" -inputFile " + self.jobResultsDir + "/option-0000.ply -outputFile " + self.jobResultsDir + "/odm_mesh-0000.ply -logFile " + self.jobDir + "/odm_meshing/odm_meshing_log.txt -maxVertexCount " + str(args.odm_meshing_maxVertexCount) + " -octreeDepth " + str(args.odm_meshing_octreeDepth) + " -samplesPerNode " + str(args.odm_meshing_samplesPerNode) + " -solverDivide " + str(args.odm_meshing_solverDivide))
 
 
     def odm_texturing(self):
