@@ -8,10 +8,11 @@ from opendm import context
 class ODMOpenSfMCell(ecto.Cell):
     def declare_params(self, params):
         params.declare("use_exif_size", "The application arguments.", False)
-        params.declare("feature_process_size", "The application arguments.", False)
-        params.declare("feature_min_frames", "The application arguments.", 0)
-        params.declare("processes", "The application arguments.", 0)
-        params.declare("matching_gps_neighbors", "The application arguments.", 0)
+        params.declare("feature_process_size", "The application arguments.", 2400)
+        params.declare("feature_min_frames", "The application arguments.", 4000)
+        params.declare("processes", "The application arguments.", context.num_cores)
+        params.declare("matching_gps_neighbors", "The application arguments.", 8)
+        params.declare("matching_gps_distance", "The application arguments.", 0)
 
     def declare_io(self, params, inputs, outputs):
         inputs.declare("tree", "Struct with paths", [])
@@ -58,6 +59,9 @@ class ODMOpenSfMCell(ecto.Cell):
                 "processes: %s" % self.params.processes,
                 "matching_gps_neighbors: %s" % self.params.matching_gps_neighbors
             ]
+
+            if args['matcher_distance']>0:
+                config.append("matching_gps_distance: %s" % self.params.matching_gps_distance)
 
             # write config file
             config_filename = io.join_paths(tree.opensfm, 'config.yaml')
