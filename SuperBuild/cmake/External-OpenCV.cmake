@@ -29,7 +29,7 @@ ExternalProject_Add(${_proj_name}
     -DBUILD_opencv_python=ON
     -DWITH_FFMPEG=ON
     -DWITH_CUDA=OFF
-    -DWITH_GTK=OFF
+    -DWITH_GTK=ON
     -DWITH_VTK=OFF
     -DWITH_EIGEN=OFF
     -DWITH_OPENNI=OFF
