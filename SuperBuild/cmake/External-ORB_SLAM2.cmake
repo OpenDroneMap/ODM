@@ -69,3 +69,11 @@ ExternalProject_Add_Step(${_proj_name} configure_g2o
   ALWAYS 1
 )
 
+# Uncompress Vocabulary
+ExternalProject_Add_Step(${_proj_name} uncompress_vocabulary
+  COMMAND tar -xf ORBvoc.txt.tar.gz
+  DEPENDEES download
+  DEPENDERS configure
+  WORKING_DIRECTORY <SOURCE_DIR>/Vocabulary
+  ALWAYS 1
+)
