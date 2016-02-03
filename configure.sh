@@ -111,6 +111,9 @@ fi
 ## Get sys vars
 NUM_CORES=`grep -c processor /proc/cpuinfo`
 
+## Add SuperBuild path to the library path
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:`pwd`/SuperBuild/install/lib
+
 ## Add SuperBuild path to the python path
 export PYTHONPATH=$PYTHONPATH:`pwd`/SuperBuild/install/lib/python2.7/dist-packages
 
