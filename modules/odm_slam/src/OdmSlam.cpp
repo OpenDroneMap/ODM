@@ -30,11 +30,7 @@ int main(int argc, char **argv) {
         cap >> im;
         if(im.empty()) break;
 
-        // Save 
         double timestamp = ni * T;
-        keyframe_timestamps << ni << " " << timestamp << std::endl;
-
-
 
         SLAM.TrackMonocular(im, timestamp);
 
