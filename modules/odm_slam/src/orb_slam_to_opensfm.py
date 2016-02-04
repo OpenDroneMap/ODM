@@ -9,20 +9,6 @@ from opensfm import transformations as tf
 from opensfm.io import mkdir_p
 
 
-parser = argparse.ArgumentParser(
-    description='Convert ORB_SLAM2 output to OpenSfM')
-parser.add_argument(
-    'video',
-    help='the tracked video file')
-parser.add_argument(
-    'trajectory',
-    help='the trajectory file')
-parser.add_argument(
-    'config',
-    help='config file with camera calibration')
-args = parser.parse_args()
-
-
 def parse_orb_slam2_config_file(filename):
     '''
     Parse ORB_SLAM2 config file.
@@ -78,8 +64,8 @@ def shots_from_trajectory(trajectory_filename):
         timestamp = a[0]
         c = np.array(a[1:4])
         q = np.array(a[4:8])
-        R = tf.quaternion_matrix(q)[:3, :3]
-        t = -R.dot(c)
+        R = tf.quaternion_matrix([q[3], q[0], q[1], q[2]])[:3, :3].T
+        t = -R.dot(c) * 50
         shot = {
             'camera': 'slamcam',
             'rotation': list(cv2.Rodrigues(R)[0].flat),
@@ -99,6 +85,9 @@ def get_video_size(video):
 
 
 def extract_keyframes_from_video(video, reconstruction):
+    '''
+    Reads video and extracts a frame for each shot in reconstruction
+    '''
     image_path = 'images'
     mkdir_p(image_path)
     T = 0.1  # TODO(pau) get this from config
@@ -122,15 +111,30 @@ def extract_keyframes_from_video(video, reconstruction):
 
     cap.release()
 
-r = {
-    'cameras': {},
-    'shots': {}
-}
 
-r['cameras']['slamcam'] = camera_from_config(args.video, args.config)
-r['shots'] = shots_from_trajectory(args.trajectory)
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        description='Convert ORB_SLAM2 output to OpenSfM')
+    parser.add_argument(
+        'video',
+        help='the tracked video file')
+    parser.add_argument(
+        'trajectory',
+        help='the trajectory file')
+    parser.add_argument(
+        'config',
+        help='config file with camera calibration')
+    args = parser.parse_args()
 
-with open('reconstruction.json', 'w') as fout:
-    json.dump([r], fout, indent=4)
+    r = {
+        'cameras': {},
+        'shots': {}
+    }
 
-extract_keyframes_from_video(args.video, r)
+    r['cameras']['slamcam'] = camera_from_config(args.video, args.config)
+    r['shots'] = shots_from_trajectory(args.trajectory)
+
+    with open('reconstruction.json', 'w') as fout:
+        json.dump([r], fout, indent=4)
+
+    extract_keyframes_from_video(args.video, r)
