@@ -37,6 +37,10 @@ parser.add_argument('--video',
                     metavar='<string>',
                     help='Path to the video file to process')
 
+parser.add_argument('--slam-config',
+                    metavar='<string>',
+                    help='Path to config file for orb-slam')
+
 parser.add_argument('--force-focal',
                     metavar='<positive float>',
                     type=float,
