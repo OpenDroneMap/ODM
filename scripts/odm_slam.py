@@ -25,6 +25,7 @@ class ODMSlamCell(ecto.Cell):
         tree = self.inputs.tree
         args = self.inputs.args
         video = os.path.join(tree.root_path, args['video'])
+        slam_config = os.path.join(tree.root_path, args['slam_config'])
 
         if not video:
             log.ODM_ERROR('No video provided')
@@ -35,17 +36,16 @@ class ODMSlamCell(ecto.Cell):
         system.mkdir_p(tree.pmvs)
 
         vocabulary = os.path.join(context.orb_slam2_path, 'Vocabulary/ORBvoc.txt')
-        config_file = os.path.join(context.orb_slam2_path, 'Examples/Monocular/TUM1.yaml')
         orb_slam_cmd = os.path.join(context.odm_modules_path, 'odm_slam')
 
         # run slam binary
-        system.run(' '.join([
-            'cd {} &&'.format(tree.opensfm),
-            orb_slam_cmd,
-            vocabulary,
-            config_file,
-            video,
-        ]))
+        # system.run(' '.join([
+        #     'cd {} &&'.format(tree.opensfm),
+        #     orb_slam_cmd,
+        #     vocabulary,
+        #     slam_config,
+        #     video,
+        # ]))
 
         system.run(' '.join([
             'cd {} &&'.format(tree.opensfm),
@@ -54,9 +54,8 @@ class ODMSlamCell(ecto.Cell):
             os.path.join(context.odm_modules_src_path, 'odm_slam/src/orb_slam_to_opensfm.py'),
             video,
             os.path.join(tree.opensfm, 'KeyFrameTrajectory.txt'),
-            config_file,
+            slam_config,
         ]))
-
 
 
         ### check if reconstruction was exported to bundler before
