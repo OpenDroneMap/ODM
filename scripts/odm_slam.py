@@ -37,29 +37,42 @@ class ODMSlamCell(ecto.Cell):
 
         vocabulary = os.path.join(context.orb_slam2_path, 'Vocabulary/ORBvoc.txt')
         orb_slam_cmd = os.path.join(context.odm_modules_path, 'odm_slam')
+        trajectory = os.path.join(tree.opensfm, 'KeyFrameTrajectory.txt')
 
-        # run slam binary
-        # system.run(' '.join([
-        #     'cd {} &&'.format(tree.opensfm),
-        #     orb_slam_cmd,
-        #     vocabulary,
-        #     slam_config,
-        #     video,
-        # ]))
+        # check if we rerun cell or not
+        rerun_cell = args['rerun'] == 'slam'
 
-        system.run(' '.join([
-            'cd {} &&'.format(tree.opensfm),
-            'PYTHONPATH={}:{}'.format(context.pyopencv_path, context.opensfm_path),
-            'python',
-            os.path.join(context.odm_modules_src_path, 'odm_slam/src/orb_slam_to_opensfm.py'),
-            video,
-            os.path.join(tree.opensfm, 'KeyFrameTrajectory.txt'),
-            slam_config,
-        ]))
+        # check if slam was run before
+        if not io.file_exists(trajectory) or rerun_cell:
+            # run slam binary
+            system.run(' '.join([
+                'cd {} &&'.format(tree.opensfm),
+                orb_slam_cmd,
+                vocabulary,
+                slam_config,
+                video,
+            ]))
+        else:
+            log.ODM_WARNING('Found a valid slam trajectory in: {}'.format(
+                trajectory))
 
+        # check if trajectory was exported to opensfm before
+        if not io.file_exists(tree.opensfm_reconstruction) or rerun_cell:
+            # convert slam to opensfm
+            system.run(' '.join([
+                'cd {} &&'.format(tree.opensfm),
+                'PYTHONPATH={}:{}'.format(context.pyopencv_path, context.opensfm_path),
+                'python',
+                os.path.join(context.odm_modules_src_path, 'odm_slam/src/orb_slam_to_opensfm.py'),
+                video,
+                trajectory,
+                slam_config,
+            ]))
+        else:
+            log.ODM_WARNING('Found a valid OpenSfm file in: {}'.format(
+                tree.opensfm_reconstruction))
 
-        ### check if reconstruction was exported to bundler before
-
+        # check if reconstruction was exported to bundler before
         if not io.file_exists(tree.opensfm_bundle_list) or rerun_cell:
             # convert back to bundler's format
             system.run('PYTHONPATH=%s %s/bin/export_bundler %s' %
@@ -69,8 +82,7 @@ class ODMSlamCell(ecto.Cell):
                 (tree.opensfm_reconstruction))
 
 
-        ### check if reconstruction was exported to pmvs before
-
+        # check if reconstruction was exported to pmvs before
         if not io.file_exists(tree.pmvs_visdat) or rerun_cell:
             # run PMVS converter
             system.run('PYTHONPATH=%s %s/bin/export_pmvs %s --output %s' % 
