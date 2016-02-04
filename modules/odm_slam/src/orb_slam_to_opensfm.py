@@ -128,7 +128,8 @@ if __name__ == '__main__':
 
     r = {
         'cameras': {},
-        'shots': {}
+        'shots': {},
+        'points': {},
     }
 
     r['cameras']['slamcam'] = camera_from_config(args.video, args.config)

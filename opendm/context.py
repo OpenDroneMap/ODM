@@ -16,6 +16,9 @@ sys.path.append(pyopencv_path)
 # define opensfm path
 opensfm_path = os.path.join(superbuild_path, "src/opensfm")
 
+# define orb_slam2 path
+orb_slam2_path = os.path.join(superbuild_path, "src/orb_slam2")
+
 # define pmvs path
 cmvs_path = os.path.join(superbuild_path, "install/bin/cmvs")
 cmvs_opts_path = os.path.join(superbuild_path, "install/bin/genOption")
@@ -26,6 +29,7 @@ txt2las_path = os.path.join(superbuild_path, 'src/las-tools/bin')
 
 # define odm modules path
 odm_modules_path = os.path.join(root_path, "build/bin")
+odm_modules_src_path = os.path.join(root_path, "modules")
 
 # Define supported image extensions
 supported_extensions = {'.jpg','.jpeg','.png'}
