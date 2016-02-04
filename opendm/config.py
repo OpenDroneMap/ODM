@@ -33,6 +33,10 @@ parser.add_argument('--rerun', '-r',
                     choices=processopts,
                     help=('Can be one of:' + ' | '.join(processopts)))
 
+parser.add_argument('--video',
+                    metavar='<string>',
+                    help='Path to the video file to process')
+
 parser.add_argument('--force-focal',
                     metavar='<positive float>',
                     type=float,

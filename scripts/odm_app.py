@@ -7,6 +7,7 @@ from opendm import config
 from dataset import ODMLoadDatasetCell
 from resize import ODMResizeCell
 from opensfm import ODMOpenSfMCell
+from odm_slam import ODMSlamCell
 from pmvs import ODMPmvsCell
 from cmvs import ODMCmvsCell
 from odm_meshing import ODMeshingCell
@@ -40,6 +41,7 @@ class ODMApp(ecto.BlackBox):
                                             processes=context.num_cores,
                                             matching_gps_neighbors=p.args['matcher_neighbors'],
                                             matching_gps_distance=p.args['matcher_distance']),
+                  'slam': ODMSlamCell(),
                   'cmvs': ODMCmvsCell(max_images=p.args['cmvs_maxImages']),
                   'pmvs': ODMPmvsCell(level=p.args['pmvs_level'],
                                       csize=p.args['pmvs_csize'],
@@ -68,6 +70,8 @@ class ODMApp(ecto.BlackBox):
         self.tree = ecto.Constant(value=tree)
 
     def connections(self, _p):
+        run_slam = _p.args.get('video') is not None
+
         # define initial task
         initial_task = _p.args['start_with']
         initial_task_id = config.processopts.index(initial_task)
@@ -75,23 +79,33 @@ class ODMApp(ecto.BlackBox):
         ## define the connections like you would for the plasm
         connections = []
 
-        ## load the dataset
-        connections = [ self.tree[:] >> self.dataset['tree'] ]
+        if run_slam:
+            # run slam cell
+            connections += [ self.tree[:] >> self.slam['tree'],
+                             self.args[:] >> self.slam['args'] ]
 
-        # run resize cell
-        connections += [ self.tree[:] >> self.resize['tree'],
-                         self.args[:] >> self.resize['args'],
-                         self.dataset['photos'] >> self.resize['photos'] ]
+            # run cmvs
+            connections += [ self.tree[:] >> self.cmvs['tree'],
+                             self.args[:] >> self.cmvs['args'],
+                             self.slam['reconstruction'] >> self.cmvs['reconstruction'] ]
+        else:
+            #  load the dataset
+            connections = [ self.tree[:] >> self.dataset['tree'] ]
 
-        # run opensfm with images from load dataset
-        connections += [ self.tree[:] >> self.opensfm['tree'],
-                         self.args[:] >> self.opensfm['args'],
-                         self.resize['photos'] >> self.opensfm['photos'] ]
- 
-        # run cmvs
-        connections += [ self.tree[:] >> self.cmvs['tree'],
-                         self.args[:] >> self.cmvs['args'],
-                         self.opensfm['reconstruction'] >> self.cmvs['reconstruction'] ]
+            # run resize cell
+            connections += [ self.tree[:] >> self.resize['tree'],
+                             self.args[:] >> self.resize['args'],
+                             self.dataset['photos'] >> self.resize['photos'] ]
+
+            # run opensfm with images from load dataset
+            connections += [ self.tree[:] >> self.opensfm['tree'],
+                             self.args[:] >> self.opensfm['args'],
+                             self.resize['photos'] >> self.opensfm['photos'] ]
+
+            # run cmvs
+            connections += [ self.tree[:] >> self.cmvs['tree'],
+                             self.args[:] >> self.cmvs['args'],
+                             self.opensfm['reconstruction'] >> self.cmvs['reconstruction'] ]
   
         # run pmvs
         connections += [ self.tree[:] >> self.pmvs['tree'],
@@ -108,15 +122,16 @@ class ODMApp(ecto.BlackBox):
                          self.args[:] >> self.texturing['args'],
                          self.meshing['reconstruction'] >> self.texturing['reconstruction'] ]
     
-        # create odm georeference
-        connections += [ self.tree[:] >> self.georeferencing['tree'],
-                         self.args[:] >> self.georeferencing['args'],
-                         self.dataset['photos'] >> self.georeferencing['photos'],
-                         self.texturing['reconstruction'] >> self.georeferencing['reconstruction'] ]
+        if not run_slam:
+            # create odm georeference
+            connections += [ self.tree[:] >> self.georeferencing['tree'],
+                             self.args[:] >> self.georeferencing['args'],
+                             self.dataset['photos'] >> self.georeferencing['photos'],
+                             self.texturing['reconstruction'] >> self.georeferencing['reconstruction'] ]
 
-         ## create odm orthophoto
-        connections += [ self.tree[:] >> self.orthophoto['tree'],
-                         self.args[:] >> self.orthophoto['args'],
-                         self.georeferencing['reconstruction'] >> self.orthophoto['reconstruction'] ]
+             ## create odm orthophoto
+            connections += [ self.tree[:] >> self.orthophoto['tree'],
+                             self.args[:] >> self.orthophoto['args'],
+                             self.georeferencing['reconstruction'] >> self.orthophoto['reconstruction'] ]
 
         return connections
