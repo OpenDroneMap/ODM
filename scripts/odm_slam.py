@@ -38,6 +38,7 @@ class ODMSlamCell(ecto.Cell):
         vocabulary = os.path.join(context.orb_slam2_path, 'Vocabulary/ORBvoc.txt')
         orb_slam_cmd = os.path.join(context.odm_modules_path, 'odm_slam')
         trajectory = os.path.join(tree.opensfm, 'KeyFrameTrajectory.txt')
+        map_points = os.path.join(tree.opensfm, 'MapPoints.txt')
 
         # check if we rerun cell or not
         rerun_cell = args['rerun'] == 'slam'
@@ -66,6 +67,7 @@ class ODMSlamCell(ecto.Cell):
                 os.path.join(context.odm_modules_src_path, 'odm_slam/src/orb_slam_to_opensfm.py'),
                 video,
                 trajectory,
+                map_points,
                 slam_config,
             ]))
         else:

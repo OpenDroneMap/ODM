@@ -9,6 +9,9 @@ from opensfm import transformations as tf
 from opensfm.io import mkdir_p
 
 
+SCALE = 50
+
+
 def parse_orb_slam2_config_file(filename):
     '''
     Parse ORB_SLAM2 config file.
@@ -51,6 +54,12 @@ def camera_from_config(video_filename, config_filename):
     }
 
 
+def shot_id_from_timestamp(timestamp):
+    T = 0.1  # TODO(pau) get this from config
+    i = int(round(timestamp / T))
+    return 'frame{0:06d}.png'.format(i)
+
+
 def shots_from_trajectory(trajectory_filename):
     '''
     Create opensfm shots from an orb_slam2/TUM trajectory
@@ -65,15 +74,49 @@ def shots_from_trajectory(trajectory_filename):
         c = np.array(a[1:4])
         q = np.array(a[4:8])
         R = tf.quaternion_matrix([q[3], q[0], q[1], q[2]])[:3, :3].T
-        t = -R.dot(c) * 50
+        t = -R.dot(c) * SCALE
         shot = {
             'camera': 'slamcam',
             'rotation': list(cv2.Rodrigues(R)[0].flat),
             'translation': list(t.flat),
             'created_at': timestamp,
         }
-        shots['frame{0:012d}.png'.format(int(timestamp))] = shot
+        shots[shot_id_from_timestamp(timestamp)] = shot
     return shots
+
+
+def points_from_map_points(filename):
+    points = {}
+    with open(filename) as fin:
+        lines = fin.readlines()
+
+    for line in lines:
+        words = line.split()
+        point_id = words[1]
+        coords = map(float, words[2:5])
+        coords = [SCALE * i for i in coords]
+        points[point_id] = {
+            'coordinates': coords,
+            'color': [100, 0, 200]
+        }
+
+    return points
+
+
+def tracks_from_map_points(filename):
+    tracks = []
+    with open(filename) as fin:
+        lines = fin.readlines()
+
+    for line in lines:
+        words = line.split()
+        timestamp = float(words[0])
+        shot_id = shot_id_from_timestamp(timestamp)
+        point_id = words[1]
+        row = [shot_id, point_id, point_id, '0', '0', '0', '0', '0']
+        tracks.append('\t'.join(row))
+
+    return '\n'.join(tracks)
 
 
 def get_video_size(video):
@@ -122,6 +165,9 @@ if __name__ == '__main__':
         'trajectory',
         help='the trajectory file')
     parser.add_argument(
+        'points',
+        help='the map points file')
+    parser.add_argument(
         'config',
         help='config file with camera calibration')
     args = parser.parse_args()
@@ -134,8 +180,12 @@ if __name__ == '__main__':
 
     r['cameras']['slamcam'] = camera_from_config(args.video, args.config)
     r['shots'] = shots_from_trajectory(args.trajectory)
+    r['points'] = points_from_map_points(args.points)
+    tracks = tracks_from_map_points(args.points)
 
     with open('reconstruction.json', 'w') as fout:
         json.dump([r], fout, indent=4)
+    with open('tracks.csv', 'w') as fout:
+        fout.write(tracks)
 
     extract_keyframes_from_video(args.video, r)
