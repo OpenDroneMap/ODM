@@ -8,8 +8,7 @@ ExternalProject_Add(${_proj_name}
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
-  URL               https://github.com/raulmur/ORB_SLAM2/archive/2fc9730d9716c36b25ea1b0eba3bbd094e20f0d5.zip
-  URL_MD5           629f19b6d424e676ce82fa1c3a0ba43b
+  URL               https://github.com/paulinus/ORB_SLAM2/archive/7c11f186a53a75560cd17352d327b0bc127a82de.zip
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   #--Configure step-------------
