@@ -8,6 +8,8 @@ root_path, _ = os.path.split(scripts_path)
 
 superbuild_path = os.path.join(root_path, 'SuperBuild')
 ccd_widths_path = os.path.join(root_path, 'data/ccd_defs.json')
+tests_path = os.path.join(root_path, 'tests')
+tests_data_path = os.path.join(root_path, 'tests/test_data')
 
 # add opencv to python path
 pyopencv_path = os.path.join(superbuild_path, 'install/lib/python2.7/dist-packages')
