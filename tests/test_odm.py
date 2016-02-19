@@ -1,48 +1,46 @@
-import sys
+import unittest
 from opendm import config
+from opendm import context
 import ecto
 from scripts.odm_app import ODMApp
-from scripts.resize import ODMResizeCell
-err = sys.stderr
-# Fixture functions
-app = None
+from ecto.opts import scheduler_options, run_plasm
+#
 
-
-def setup_odm():
-    # initialize ecto
-    global app
-    app = ODMApp(args=config.args)
-    plasm = ecto.Plasm()
-    plasm.insert(app)
-    err.write('MODULE SETUP\n')
-
-
-def teardown_odm():
-    # teardown ecto
-    err.write('MODULE TEARDOWN\n')
-
-
-# The tests
-def test_config():
-    # check the args
-    test_args = 'tests/test_data' # sample test args
-    assert test_args == config.args.get('project_path')
-
-
-class TestResize:
-    def __init__(self):
-        # Initialize whatever
-
+class TestResize(unittest.TestCase):
+    '''
+    Tests the resize function
+    '''
     def setUp(self):
-        #call cell
-        resizeCell = ODMResizeCell()
+        # Run tests
+        self.parser = config.parser
+        scheduler_options(self.parser)
+        self.options = self.parser.parse_args()
+        self.options.project_path = context.tests_data_path
+        self.app, self.plasm = self.appSetup(self.options)
+        print 'Run Setup: Initial Run'
+        run_plasm(self.options, self.plasm)
 
-    def tearDown(self):
-        #teardown functions
+    def test_resize(self):
+        # rerun resize cell and set params
+        self.options.rerun = 'resize'
+        self.options.resize_to = 1600
+        print "Run Test 1: Rerun resize: %s" % self.options.resize_to
+        # rebuild app
+        self.app, self.plasm = self.appSetup(self.options)
+        run_plasm(self.options, self.plasm)
+        # assert each image is sized to the option.resize_to
+        print "Run Test 1: Check that the resize happens"
+        if self.app.resize.outputs.photos[0].height > self.app.resize.outputs.photos[0].width:
+            self.assertEquals(self.app.resize.outputs.photos[0].height, self.options.resize_to)
+        else:
+            self.assertEquals(self.app.resize.outputs.photos[0].width, self.options.resize_to)
 
 
-    # assert proper config/args
+    def appSetup(self, options):
+        app = ODMApp(args=vars(options))
+        plasm = ecto.Plasm()
+        plasm.insert(app)
+        return app, plasm
 
-    # Check images in images_resize
-
-    # Check images are resized (imagemagick?)
+if __name__ == '__main__':
+    unittest.main()
