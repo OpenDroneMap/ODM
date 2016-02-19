@@ -10,7 +10,6 @@
 exec 1>&2
 
 echo "RUNNING PRE-COMMIT"
-
 EXIT_CODE=0
 # Get list of files about to be committed
 if git diff --cached --name-only --diff-filter=ACM | grep 'ccd_defs.json'; then
