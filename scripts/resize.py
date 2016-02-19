@@ -7,7 +7,7 @@ from opendm import system
 from opendm import io
 from opendm import types
 
-class ODMResizeCell(ecto.Cell):    
+class ODMResizeCell(ecto.Cell):
     def declare_params(self, params):
         params.declare("resize_to", "resizes images by the largest side", 2400)
 
