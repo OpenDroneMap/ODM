@@ -71,8 +71,8 @@ sudo apt-get install python-networkx \
                      libboost-iostreams1.55-dev \
                      libboost-regex1.55-dev \
                      libboost-python1.55-dev \
-                     #libboost1.55-all-dev \
-                     libboost-python-dev -y
+                     libboost-date-time1.55-dev \
+                     libboost-thread1.55-dev -y
 
 sudo pip install -U PyYAML \
                     exifread \
