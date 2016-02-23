@@ -15,6 +15,9 @@ ExternalProject_Add(${_proj_name}
   #--Configure step-------------
   SOURCE_DIR        ${SB_SOURCE_DIR}/${_proj_name}
   CMAKE_ARGS
+    -DBUILD_DOC=OFF
+    -DBUILD_SAMPLES=OFF
+    -DCATKIN_ENABLE_TESTING=OFF
     -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
   #--Build step-----------------
   BINARY_DIR        ${_SB_BINARY_DIR}
