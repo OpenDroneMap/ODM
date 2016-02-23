@@ -235,7 +235,7 @@ class ODM_GeoRef(object):
         """Write attributes to jobOptions from coord file"""
         # check for coordinate file existence
         if not io.file_exists(_file):
-            log.ODM_ERROR('Could not find file %s' % _coords_file)
+            log.ODM_ERROR('Could not find file %s' % _file)
             return
 
         with open(_file) as f:
@@ -329,6 +329,7 @@ class ODM_Tree(object):
 
         # odm_orthophoto
         self.odm_orthophoto_file = io.join_paths(self.odm_orthophoto, 'odm_orthophoto.png')
+        self.odm_orthophoto_tif = io.join_paths(self.odm_orthophoto, 'odm_orthophoto.tif')
         self.odm_orthophoto_corners = io.join_paths(self.odm_orthophoto, 'odm_orthphoto_corners.txt')
         self.odm_orthophoto_log = io.join_paths(self.odm_orthophoto, 'odm_orthophoto_log.txt')
 
