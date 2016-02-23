@@ -78,11 +78,12 @@ class ODMOrthoPhotoCell(ecto.Cell):
                     'lry': lry,
                     'epsg': georef.epsg,
                     'png': tree.odm_orthophoto_file,
-                    'tiff': tree.odm_orthophoto_tif
+                    'tiff': tree.odm_orthophoto_tif,
+                    'log': tree.odm_orthophoto_tif_log
                 }
 
                 system.run('gdal_translate -a_ullr {ulx} {uly} {lrx} {lry} '
-                           '-a_srs \"EPSG:{epsg}\" {png} {tiff}'.format(**kwargs))
+                           '-a_srs \"EPSG:{epsg}\" {png} {tiff} > {log}'.format(**kwargs))
                 geoTiffCreated = True
             if not geoTiffCreated:
                 log.ODM_WARNING('No geo-referenced orthophoto created due '

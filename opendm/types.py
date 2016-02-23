@@ -332,6 +332,8 @@ class ODM_Tree(object):
         self.odm_orthophoto_tif = io.join_paths(self.odm_orthophoto, 'odm_orthophoto.tif')
         self.odm_orthophoto_corners = io.join_paths(self.odm_orthophoto, 'odm_orthphoto_corners.txt')
         self.odm_orthophoto_log = io.join_paths(self.odm_orthophoto, 'odm_orthophoto_log.txt')
+        self.odm_orthophoto_tif_log = io.join_paths(self.odm_orthophoto, 'gdal_translate_log.txt')
+
 
 
 
