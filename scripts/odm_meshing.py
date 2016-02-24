@@ -27,7 +27,9 @@ class ODMeshingCell(ecto.Cell):
         outputs.declare("reconstruction", "Clusters output. list of ODMReconstructions", [])
 
     def process(self, inputs, outputs):
-        
+        # Benchmarking
+        start_time = system.now_raw()
+
         log.ODM_INFO('Running OMD Meshing Cell')
 
         # get inputs
@@ -63,6 +65,9 @@ class ODMeshingCell(ecto.Cell):
         else:
             log.ODM_WARNING('Found a valid ODM Mesh file in: %s' % 
                 (tree.odm_mesh))
+
+        if args['time']:
+            system.benchmark(start_time, tree.benchmarking, 'Meshing')
         
         log.ODM_INFO('Running OMD Meshing Cell - Finished')
         return ecto.OK if args['end_with'] != 'odm_meshing' else ecto.QUIT

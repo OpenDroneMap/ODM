@@ -8,10 +8,12 @@ import subprocess
 from opendm import context
 from opendm import log
 
+
 def get_ccd_widths():
     """Return the CCD Width of the camera listed in the JSON defs file."""
     with open(context.ccd_widths_path) as jsonFile:
         return json.load(jsonFile)
+
 
 def run(cmd):
     """Run a system command"""
@@ -23,9 +25,26 @@ def run(cmd):
         sys.exit("\nquitting cause: \n\t" + cmd + "\nreturned with code " +
                  str(returnCode) + ".\n")
 
+
 def now():
     """Return the current time"""
     return datetime.datetime.now().strftime('%a %b %d %H:%M:%S %Z %Y')
+
+
+def now_raw():
+    return datetime.datetime.now()
+
+
+def benchmark(start, benchmarking_file, process):
+    """
+    runs a benchmark with a start datetime object
+    :return: the running time (delta)
+    """
+    # Write to benchmark file
+    delta = (datetime.datetime.now() - start).total_seconds()
+    with open(benchmarking_file, 'a') as b:
+        b.write('\n %s runtime: %s seconds' % (process, delta))
+
 
 def run_and_return(cmdSrc, cmdDest=None):
     """Run a system command and return the output"""
@@ -35,8 +54,8 @@ def run_and_return(cmdSrc, cmdDest=None):
 
 
 def mkdir_p(path):
-    '''Make a directory including parent directories.
-    '''
+    """Make a directory including parent directories.
+    """
     try:
         os.makedirs(path)
     except os.error as exc:

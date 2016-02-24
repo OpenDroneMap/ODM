@@ -21,7 +21,9 @@ class ODMTexturingCell(ecto.Cell):
         outputs.declare("reconstruction", "Clusters output. list of ODMReconstructions", [])
 
     def process(self, inputs, outputs):
-        
+        # Benchmarking
+        start_time = system.now_raw()
+
         log.ODM_INFO('Running OMD Texturing Cell')
 
         # get inputs
@@ -62,6 +64,9 @@ class ODMTexturingCell(ecto.Cell):
         else:
             log.ODM_WARNING('Found a valid ODM Texture file in: %s' \
                 % tree.odm_textured_model_obj)
-                
+
+        if args['time']:
+            system.benchmark(start_time, tree.benchmarking, 'Texturing')
+
         log.ODM_INFO('Running OMD Texturing Cell - Finished')
         return ecto.OK if args['end_with'] != 'odm_texturing' else ecto.QUIT

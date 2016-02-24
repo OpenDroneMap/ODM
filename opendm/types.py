@@ -281,6 +281,9 @@ class ODM_Tree(object):
         self.odm_orthophoto = io.join_paths(self.root_path, 'odm_orthophoto')
 
         ### important files paths
+
+        # benchmarking
+        self.benchmarking = io.join_paths(self.root_path, 'benchmark.txt')
         
         # opensfm
         self.opensfm_bundle = io.join_paths(self.opensfm, 'bundle_r000.out')
