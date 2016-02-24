@@ -14,7 +14,9 @@ ExternalProject_Add(${_proj_name}
   #--Configure step-------------
   SOURCE_DIR        ${SB_SOURCE_DIR}/${_proj_name}
   CMAKE_ARGS
+    -BUILD_PGPOINTCLOUD_TESTS=ON
     -BUILD_PLUGIN_PCL=ON
+    -BUILD_PLUGIN_PGPOINTCLOUD=ON
     -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
   #--Build step-----------------
   BINARY_DIR        ${_SB_BINARY_DIR}
