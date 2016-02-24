@@ -1,4 +1,5 @@
 import argparse
+import context
 
 # parse arguments
 processopts = ['resize', 'opensfm', 'cmvs', 'pmvs',
@@ -139,7 +140,7 @@ parser.add_argument('--pmvs-minImageNum',
 
 parser.add_argument('--pmvs-num-cores',
                     metavar='<positive integer>',
-                    default=1,
+                    default=context.num_cores,
                     type=int,
                     help=('The maximum number of cores to use in dense '
                             'reconstruction. Default: %(default)s'))
@@ -216,5 +217,11 @@ parser.add_argument('--zip-results',
                     action='store_true',
                     default=False,
                     help='compress the results using gunzip')
+
+parser.add_argument('--time',
+                    action='store_true',
+                    default=False,
+                    help='Generates a benchmark file with runtime info\n'
+                           'Default: %(default)s')
 
 args = vars(parser.parse_args())
