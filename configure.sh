@@ -26,6 +26,7 @@ sudo apt-get install build-essential \
                      git \
                      python-pip \
                      libgdal-dev \
+                     libgeotiff-dev \
                      pkg-config -y
 if [ $? -ne 0 ] 
 then
