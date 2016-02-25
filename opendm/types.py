@@ -138,10 +138,10 @@ class ODM_GeoRef(object):
                    'epsg': self.epsg }
 
         # call txt2las
-        system.run('{bin}/txt2las -i {f_in} -o {f_out} -skip 30 -parse xyzRGBssss ' \
-                   '-set_scale 0.01 0.01 0.01 -set_offset {east} {north} 0 '  \
-                   '-translate_xyz 0 -epsg {epsg}'.format(**kwargs))
-                   
+        #system.run('{bin}/txt2las -i {f_in} -o {f_out} -skip 30 -parse xyzRGBssss ' \
+        #           '-set_scale 0.01 0.01 0.01 -set_offset {east} {north} 0 '  \
+        #           '-translate_xyz 0 -epsg {epsg}'.format(**kwargs))
+        #           
         # create pipeline file transform.xml to enable transformation
         pipelineXml  = '<?xml version=\"1.0\" encoding=\"utf-8\"?>'
         pipelineXml += '<Pipeline version=\"1.0\">'
