@@ -25,6 +25,7 @@ sudo apt-get install build-essential \
                      cmake \
                      git \
                      python-pip \
+                     libgdal-dev \
                      pkg-config -y
 if [ $? -ne 0 ] 
 then
