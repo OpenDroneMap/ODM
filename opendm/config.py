@@ -6,6 +6,12 @@ processopts = ['resize', 'opensfm', 'cmvs', 'pmvs',
                'odm_meshing', 'odm_texturing', 'odm_georeferencing',
                'odm_orthophoto']
 
+class RerunFrom(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        print processopts[processopts.index(values):]
+        setattr(namespace, self.dest, processopts[processopts.index(values):])
+
+
 parser = argparse.ArgumentParser(description='OpenDroneMap')
 parser.add_argument('--project-path', 
                     metavar='<string>',
@@ -42,6 +48,7 @@ rerun.add_argument('--rerun-all',
                    help='force rerun of all tasks')
 
 rerun.add_argument('--rerun-from',
+                   action=RerunFrom,
                    metavar='<string>',
                    choices=processopts,
                    help=('Can be one of:' + ' | '.join(processopts)))
