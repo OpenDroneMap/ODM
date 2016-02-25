@@ -28,8 +28,9 @@ class ODMOrthoPhotoCell(ecto.Cell):
         system.mkdir_p(tree.odm_orthophoto)
 
         # check if we rerun cell or not
-        rerun_cell = args['rerun'] is not None \
-            and args['rerun'] == 'odm_orthophoto'
+        rerun_cell = (args['rerun'] is not None and
+                      args['rerun'] == 'odm_orthophoto') or \
+            args['rerun_all']
 
         if not io.file_exists(tree.odm_orthophoto_file) or rerun_cell:
 

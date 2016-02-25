@@ -41,8 +41,9 @@ class ODMPmvsCell(ecto.Cell):
         tree = self.inputs.tree
 
         # check if we rerun cell or not
-        rerun_cell = args['rerun'] is not None \
-            and args['rerun'] == 'pmvs'
+        rerun_cell = (args['rerun'] is not None and
+                      args['rerun'] == 'pmvs') or \
+            args['rerun_all']
 
         if not io.file_exists(tree.pmvs_model) or rerun_cell:
             log.ODM_DEBUG('Creating dense pointcloud in: %s' % tree.pmvs_model)
