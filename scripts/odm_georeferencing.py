@@ -63,8 +63,9 @@ class ODMGeoreferencingCell(ecto.Cell):
                 return ecto.QUIT
 
         # check if we rerun cell or not
-        rerun_cell = args['rerun'] is not None \
-            and args['rerun'] == 'odm_georeferencing'
+        rerun_cell = (args['rerun'] is not None and
+                      args['rerun'] == 'odm_georeferencing') or \
+            args['rerun_all']
 
         if not io.file_exists(tree.odm_textured_model_obj_geo) or \
            not io.file_exists(tree.odm_textured_model_ply_geo) or rerun_cell:
