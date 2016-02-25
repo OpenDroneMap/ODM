@@ -141,6 +141,14 @@ class ODM_GeoRef(object):
         system.run('{bin}/txt2las -i {f_in} -o {f_out} -skip 30 -parse xyzRGBssss ' \
                    '-set_scale 0.01 0.01 0.01 -set_offset {east} {north} 0 '  \
                    '-translate_xyz 0 -epsg {epsg}'.format(**kwargs))
+                   
+        # create pipeline file transform.xml to enable transformation
+        
+        # call pdal 
+    #    system.run('{bin}/pdal pipeline -i transform.xml --readers.ply.filename={f_in}' \
+    #               '--writers.las.filename={f_out}'.format(**kwargs))
+        
+        
 
 
     def utm_to_latlon(self, _file, _photo, idx):
