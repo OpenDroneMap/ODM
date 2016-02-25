@@ -21,6 +21,8 @@ class ODMOpenSfMCell(ecto.Cell):
         outputs.declare("reconstruction", "list of ODMReconstructions", [])
 
     def process(self, inputs, outputs):
+        # Benchmarking
+        start_time = system.now_raw()
 
         log.ODM_INFO('Running OMD OpenSfm Cell')
 
@@ -100,4 +102,8 @@ class ODMOpenSfMCell(ecto.Cell):
             log.ODM_WARNING('Found a valid CMVS file in: %s' % tree.pmvs_visdat)
 
         log.ODM_INFO('Running OMD OpenSfm Cell - Finished')
+
+        if args['time']:
+            system.benchmark(start_time, tree.benchmarking, 'OpenSfM')
+
         return ecto.OK if args['end_with'] != 'opensfm' else ecto.QUIT

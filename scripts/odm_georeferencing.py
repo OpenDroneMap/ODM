@@ -23,6 +23,8 @@ class ODMGeoreferencingCell(ecto.Cell):
         outputs.declare("reconstruction", "list of ODMReconstructions", [])
 
     def process(self, inputs, outputs):
+        # Benchmarking
+        start_time = system.now_raw()
 
         log.ODM_INFO('Running OMD Georeferencing Cell')
 
@@ -119,6 +121,8 @@ class ODMGeoreferencingCell(ecto.Cell):
         # convert ply model to LAS reference system
         geo_ref.convert_to_las(tree.odm_textured_model_ply_geo, tree.odm_georeferencing_pdal)
 
+        if args['time']:
+            system.benchmark(start_time, tree.benchmarking, 'Georeferencing')
 
         log.ODM_INFO('Running OMD Georeferencing Cell - Finished')
         return ecto.OK if args['end_with'] != 'odm_georeferencing' else ecto.QUIT

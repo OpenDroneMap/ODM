@@ -1,10 +1,10 @@
 import os
 import ecto
-
 from opendm import context
 from opendm import io
 from opendm import types
 from opendm import log
+from opendm import system
 
 class ODMLoadDatasetCell(ecto.Cell):
 
