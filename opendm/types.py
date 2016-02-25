@@ -171,7 +171,7 @@ class ODM_GeoRef(object):
             f.write(pipelineXml)
 
         # call pdal 
-        system.run('{bin}/pdal pipeline -i {XML} --readers.ply.filename={f_in}' \
+        system.run('{bin}/pdal pipeline -i {xml} --readers.ply.filename={f_in}' \
                    '--writers.las.filename={f_out}'.format(**kwargs))
 
     def utm_to_latlon(self, _file, _photo, idx):
