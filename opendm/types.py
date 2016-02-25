@@ -123,25 +123,54 @@ class ODM_GeoRef(object):
             log.ODM_ERROR('Unknown pole format %s' % _pole)
             return
 
-
-    def convert_to_las(self, _file):
+    def convert_to_las(self, _file, pdalXML):
 
         if not self.epsg:
             log.ODM_ERROR('Empty EPSG: Could not convert to LAS')
             return
 
-        kwargs = { 'bin': context.txt2las_path,
+        kwargs = { 'bin': context.pdal_path,
                    'f_in': _file,
-                   'f_out': _file + '.laz',
+                   'f_out': _file + '.las',
                    'east': self.utm_east_offset,
                    'north': self.utm_north_offset,
-                   'epsg': self.epsg }
+                   'epsg': self.epsg,
+                   'xml': pdalXML}
 
         # call txt2las
-        system.run('{bin}/txt2las -i {f_in} -o {f_out} -skip 30 -parse xyzRGBssss ' \
-                   '-set_scale 0.01 0.01 0.01 -set_offset {east} {north} 0 '  \
-                   '-translate_xyz 0 -epsg {epsg}'.format(**kwargs))
+        # system.run('{bin}/txt2las -i {f_in} -o {f_out} -skip 30 -parse xyzRGBssss ' \
+        #           '-set_scale 0.01 0.01 0.01 -set_offset {east} {north} 0 '  \
+        #           '-translate_xyz 0 -epsg {epsg}'.format(**kwargs))
+        #           
+        # create pipeline file transform.xml to enable transformation
+        pipelineXml  = '<?xml version=\"1.0\" encoding=\"utf-8\"?>'
+        pipelineXml += '<Pipeline version=\"1.0\">'
+        pipelineXml += '  <Writer type=\"writers.las\">'
+        pipelineXml += '    <Option name=\"filename\">'
+        pipelineXml += '      transformed.las'
+        pipelineXml += '    </Option>'
+        pipelineXml += '    <Filter type=\"filters.transformation\">'
+        pipelineXml += '      <Option name=\"matrix\">'
+        pipelineXml += '        1  0  0  {east}'.format(**kwargs)
+        pipelineXml += '        0  1  0  {north}'.format(**kwargs)
+        pipelineXml += '        0  0  1  0'
+        pipelineXml += '        0  0  0  1'
+        pipelineXml += '      </Option>'
+        pipelineXml += '      <Reader type=\"readers.ply\">'
+        pipelineXml += '        <Option name=\"filename\">'
+        pipelineXml += '          untransformed.ply'
+        pipelineXml += '        </Option>'
+        pipelineXml += '      </Reader>'
+        pipelineXml += '    </Filter>'
+        pipelineXml += '  </Writer>'
+        pipelineXml += '</Pipeline>'
 
+        with open(pdalXML, 'w') as f:
+            f.write(pipelineXml)
+
+        # call pdal 
+        system.run('{bin}/pdal pipeline -i {xml} --readers.ply.filename={f_in} '
+                   '--writers.las.filename={f_out}'.format(**kwargs))
 
     def utm_to_latlon(self, _file, _photo, idx):
 
@@ -154,8 +183,8 @@ class ODM_GeoRef(object):
                    'y': gcp.y + self.utm_north_offset,
                    'z': gcp.z }
 
-        latlon = system.run_and_return('echo {x} {y} | cs2cs +proj=utm ' \
-            '+datum={datum} +ellps={datum} +zone={zone} +units=m +to '   \
+        latlon = system.run_and_return('echo {x} {y} | cs2cs +proj=utm '
+            '+datum={datum} +ellps={datum} +zone={zone} +units=m +to '
             '+proj=latlon +ellps={datum}'.format(**kwargs)).split()
 
         # Example: 83d18'16.285"W
@@ -261,6 +290,7 @@ class ODM_GeoRef(object):
         # update EPSG
         self.epsg = self.calculate_EPSG(self.utm_zone, self.utm_pole)
 
+
 class ODM_Tree(object):
     def __init__(self, root_path):
         ### root path to the project
@@ -279,6 +309,7 @@ class ODM_Tree(object):
         self.odm_texturing = io.join_paths(self.root_path, 'odm_texturing')
         self.odm_georeferencing = io.join_paths(self.root_path, 'odm_georeferencing')
         self.odm_orthophoto = io.join_paths(self.root_path, 'odm_orthophoto')
+        self.odm_pdal = io.join_paths(self.root_path, 'pdal')
 
         ### important files paths
         
@@ -327,8 +358,9 @@ class ODM_Tree(object):
         self.odm_georeferencing_model_mtl_geo = io.join_paths(
             self.odm_georeferencing, 'odm_textured_model_geo.mtl')
         self.odm_georeferencing_xyz_file = io.join_paths(
-            self.odm_georeferencing, 'odm_georeferenced_model.csv'
-        )
+            self.odm_georeferencing, 'odm_georeferenced_model.csv')
+        self.odm_georeferencing_pdal = io.join_paths(
+            self.odm_georeferencing, 'pipeline.xml')
 
         # odm_orthophoto
         self.odm_orthophoto_file = io.join_paths(self.odm_orthophoto, 'odm_orthophoto.png')
@@ -337,9 +369,3 @@ class ODM_Tree(object):
         self.odm_orthophoto_log = io.join_paths(self.odm_orthophoto, 'odm_orthophoto_log.txt')
         self.odm_orthophoto_tif_log = io.join_paths(self.odm_orthophoto, 'gdal_translate_log.txt')
 
-
-
-
-
-
-        

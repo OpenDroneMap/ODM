@@ -7,6 +7,7 @@ from opendm import types
 from opendm import system
 from opendm import context
 
+
 class ODMGeoreferencingCell(ecto.Cell):
     def declare_params(self, params):
         params.declare("gcp_file", 'path to the file containing the ground control '
@@ -39,8 +40,9 @@ class ODMGeoreferencingCell(ecto.Cell):
         if not self.params.use_gcp and \
            not io.file_exists(tree.odm_georeferencing_coords):
             
-            log.ODM_WARNING('Warning: No coordinates file. ' \
-                'Generating coordinates file in: %s' % tree.odm_georeferencing_coords)
+            log.ODM_WARNING('Warning: No coordinates file. '
+                            'Generating coordinates file in: %s'
+                            % tree.odm_georeferencing_coords)
             try:
                 # odm_georeference definitions
                 kwargs = {
@@ -52,14 +54,14 @@ class ODMGeoreferencingCell(ecto.Cell):
                 }
 
                 # run UTM extraction binary
-                system.run('{bin}/odm_extract_utm -imagesPath {imgs}/ '      \
-                    '-imageListFile {imgs_list} -outputCoordFile {coords} '  \
-                    '-logFile {log}'.format(**kwargs))
+                system.run('{bin}/odm_extract_utm -imagesPath {imgs}/ '
+                           '-imageListFile {imgs_list} -outputCoordFile {coords} '
+                           '-logFile {log}'.format(**kwargs))
 
             except Exception, e:
-                log.ODM_ERROR('Could not generate GCP file from images metadata.'  \
-                    'Consider rerunning with argument --odm_georeferencing-useGcp' \
-                    ' and provide a proper GCP file')
+                log.ODM_ERROR('Could not generate GCP file from images metadata.'
+                              'Consider rerunning with argument --odm_georeferencing-useGcp'
+                              ' and provide a proper GCP file')
                 log.ODM_ERROR(e)
                 return ecto.QUIT
 
@@ -113,7 +115,8 @@ class ODMGeoreferencingCell(ecto.Cell):
                 geo_ref.utm_to_latlon(tree.odm_georeferencing_latlon, photo, idx)
 
             # convert ply model to LAS reference system
-            geo_ref.convert_to_las(tree.odm_georeferencing_model_ply_geo)
+            geo_ref.convert_to_las(tree.odm_georeferencing_model_ply_geo,
+                                   tree.odm_georeferencing_pdal)
 
             # XYZ point cloud output
             log.ODM_INFO("Creating geo-referenced CSV file (XYZ format, can be used with GRASS to create DEM)")
