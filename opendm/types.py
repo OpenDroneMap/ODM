@@ -132,7 +132,7 @@ class ODM_GeoRef(object):
 
         kwargs = { 'bin': context.txt2las_path,
                    'f_in': _file,
-                   'f_out': _file + '.laz',
+                   'f_out': _file + '.las',
                    'east': self.utm_east_offset,
                    'north': self.utm_north_offset,
                    'epsg': self.epsg }
@@ -143,33 +143,35 @@ class ODM_GeoRef(object):
                    '-translate_xyz 0 -epsg {epsg}'.format(**kwargs))
                    
         # create pipeline file transform.xml to enable transformation
-        pipelineXml = '<?xml version="1.0" encoding="utf-8"?>'
-        stringXml  += '<Pipeline version="1.0">
-        stringXml  += '  <Writer type="writers.las">'
-        stringXml  += '    <Option name="filename">'
-        stringXml  += '      transformed.las'
-        stringXml  += '    </Option>'
-        stringXml  += '    <Filter type="filters.transformation">'
-        stringXml  += '      <Option name="matrix">'
-        stringXml  += '        1  0  0  {east}'.format(**kwargs))
-        stringXml  += '        0  1  0  {north}'.format(**kwargs))
-        stringXml  += '        0  0  1  0'
-        stringXml  += '        0  0  0  1'
-        stringXml  += '      </Option>'
-        stringXml  += '      <Reader type="readers.ply">'
-        stringXml  += '        <Option name="filename">'
-        stringXml  += '          untransformed.ply'
-        stringXml  += '        </Option>'
-        stringXml  += '      </Reader>'
-        stringXml  += '    </Filter>'
-        stringXml  += '  </Writer>'
-        stringXml  += '</Pipeline>'
+        system.mkdir_p(tree.odm_pdal)
+        
+        pipelineXml   = '<?xml version="1.0" encoding="utf-8"?>'
+        pipelineXml  += '<Pipeline version="1.0">
+        pipelineXml  += '  <Writer type="writers.las">'
+        pipelineXml  += '    <Option name="filename">'
+        pipelineXml  += '      transformed.las'
+        pipelineXml  += '    </Option>'
+        pipelineXml  += '    <Filter type="filters.transformation">'
+        pipelineXml  += '      <Option name="matrix">'
+        pipelineXml  += '        1  0  0  {east}'.format(**kwargs))
+        pipelineXml  += '        0  1  0  {north}'.format(**kwargs))
+        pipelineXml  += '        0  0  1  0'
+        pipelineXml  += '        0  0  0  1'
+        pipelineXml  += '      </Option>'
+        pipelineXml  += '      <Reader type="readers.ply">'
+        pipelineXml  += '        <Option name="filename">'
+        pipelineXml  += '          untransformed.ply'
+        pipelineXml  += '        </Option>'
+        pipelineXml  += '      </Reader>'
+        pipelineXml  += '    </Filter>'
+        pipelineXml  += '  </Writer>'
+        pipelineXml  += '</Pipeline>'
 
-        with open("filename.xml", 'w') as f:
-            f.write(stringXml)
+        with open(self.odm_pdal_pipeline, 'w') as f:
+            f.write(pipelineXml)
 
         # call pdal 
-    #    system.run('{bin}/pdal pipeline -i transform.xml --readers.ply.filename={f_in}' \
+    #    system.run('{bin}/pipelineXml  +=  pipeline -i pipeline.xml --readers.ply.filename={f_in}' \
     #               '--writers.las.filename={f_out}'.format(**kwargs))
 
     def utm_to_latlon(self, _file, _photo, idx):
@@ -308,6 +310,7 @@ class ODM_Tree(object):
         self.odm_texturing = io.join_paths(self.root_path, 'odm_texturing')
         self.odm_georeferencing = io.join_paths(self.root_path, 'odm_georeferencing')
         self.odm_orthophoto = io.join_paths(self.root_path, 'odm_orthophoto')
+        self.odm_pdal = io.join_paths(self.root_path, 'pdal')
 
         ### important files paths
         
@@ -363,8 +366,8 @@ class ODM_Tree(object):
         self.odm_orthophoto_log = io.join_paths(self.odm_orthophoto, 'odm_orthophoto_log.txt')
         self.odm_orthophoto_tif_log = io.join_paths(self.odm_orthophoto, 'gdal_translate_log.txt')
 
-
-
+        # odm_pdal
+        self.odm_pdal_pipeline = io.join_paths(self.odm_orthophoto, 'pipeline.xml')
 
 
 
