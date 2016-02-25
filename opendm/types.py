@@ -165,7 +165,7 @@ class ODM_GeoRef(object):
         pipelineXml += '  </Writer>'
         pipelineXml += '</Pipeline>'
 
-        with open(self.odm_georeferencing_pdal, 'w') as f:
+        with open(tree.odm_georeferencing_pdal, 'w') as f:
             f.write(pipelineXml)
 
         # call pdal 
