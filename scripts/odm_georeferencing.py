@@ -117,7 +117,7 @@ class ODMGeoreferencingCell(ecto.Cell):
             geo_ref.utm_to_latlon(tree.odm_georeferencing_latlon, photo, idx)
 
         # convert ply model to LAS reference system
-        geo_ref.convert_to_las(tree.odm_textured_model_ply_geo)
+        geo_ref.convert_to_las(tree.odm_textured_model_ply_geo, tree.odm_georeferencing_pdal)
 
 
         log.ODM_INFO('Running OMD Georeferencing Cell - Finished')
