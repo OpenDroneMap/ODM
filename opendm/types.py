@@ -304,14 +304,6 @@ class ODM_Tree(object):
             self.odm_texturing, 'odm_textured_model.obj')
         self.odm_textured_model_mtl = io.join_paths(
             self.odm_texturing, 'odm_textured_model.mtl')
-        self.odm_textured_model_txt_geo = io.join_paths(
-            self.odm_texturing, 'odm_textured_model_geo.txt')
-        self.odm_textured_model_ply_geo = io.join_paths(
-            self.odm_texturing, 'odm_textured_model_geo.ply')
-        self.odm_textured_model_obj_geo = io.join_paths(
-            self.odm_texturing, 'odm_textured_model_geo.obj')
-        self.odm_textured_model_mtl_geo = io.join_paths(
-            self.odm_texturing, 'odm_textured_model_geo.mtl')
         self.odm_texuring_log = io.join_paths(
             self.odm_texturing, 'odm_texturing_log.txt')
 
@@ -326,6 +318,17 @@ class ODM_Tree(object):
             self.odm_georeferencing, 'odm_georeferencing_utm_log.txt')
         self.odm_georeferencing_log = io.join_paths(
             self.odm_georeferencing, 'odm_georeferencing_log.txt')
+        self.odm_georeferencing_model_txt_geo = io.join_paths(
+            self.odm_georeferencing, 'odm_georeferencing_model_geo.txt')
+        self.odm_georeferencing_model_ply_geo = io.join_paths(
+            self.odm_georeferencing, 'odm_georeferenced_model.ply')
+        self.odm_georeferencing_model_obj_geo = io.join_paths(
+            self.odm_georeferencing, 'odm_textured_model_geo.obj')
+        self.odm_georeferencing_model_mtl_geo = io.join_paths(
+            self.odm_georeferencing, 'odm_textured_model_geo.mtl')
+        self.odm_georeferencing_xyz_file = io.join_paths(
+            self.odm_georeferencing, 'odm_georeferenced_model.csv'
+        )
 
         # odm_orthophoto
         self.odm_orthophoto_file = io.join_paths(self.odm_orthophoto, 'odm_orthophoto.png')
