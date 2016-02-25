@@ -130,7 +130,7 @@ class ODM_GeoRef(object):
             log.ODM_ERROR('Empty EPSG: Could not convert to LAS')
             return
 
-        kwargs = { 'bin': context.txt2las_path,
+        kwargs = { 'bin': context.pdal_path,
                    'f_in': _file,
                    'f_out': _file + '.las',
                    'east': self.utm_east_offset,
