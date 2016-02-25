@@ -143,27 +143,27 @@ class ODM_GeoRef(object):
                    '-translate_xyz 0 -epsg {epsg}'.format(**kwargs))
                    
         # create pipeline file transform.xml to enable transformation
-        pipelineXml  = '\<?xml version=\"1.0\" encoding=\"utf-8\"?\>'
-        pipelineXml += '\<Pipeline version=\"1.0\"\>
-        pipelineXml += '  \<Writer type=\"writers.las\"\>'
-        pipelineXml += '    \<Option name=\"filename\"\>'
+        pipelineXml  = '<?xml version=\"1.0\" encoding=\"utf-8\"?>'
+        pipelineXml += '<Pipeline version=\"1.0\">'
+        pipelineXml += '  <Writer type=\"writers.las\">'
+        pipelineXml += '    <Option name=\"filename\">'
         pipelineXml += '      transformed.las'
-        pipelineXml += '    \</Option\>'
-        pipelineXml += '    \<Filter type=\"filters.transformation\"\>'
-        pipelineXml += '      \<Option name=\"matrix\"\>'
+        pipelineXml += '    </Option>'
+        pipelineXml += '    <Filter type=\"filters.transformation\">'
+        pipelineXml += '      <Option name=\"matrix\">'
         pipelineXml += '        1  0  0  {east}'.format(**kwargs))
         pipelineXml += '        0  1  0  {north}'.format(**kwargs))
         pipelineXml += '        0  0  1  0'
         pipelineXml += '        0  0  0  1'
-        pipelineXml += '      \</Option\>'
-        pipelineXml += '      \<Reader type=\"readers.ply\"\>'
-        pipelineXml += '        \<Option name=\"filename\"\>'
+        pipelineXml += '      </Option>'
+        pipelineXml += '      <Reader type=\"readers.ply\">'
+        pipelineXml += '        <Option name=\"filename\">'
         pipelineXml += '          untransformed.ply'
-        pipelineXml += '        \</Option\>'
-        pipelineXml += '      \</Reader\>'
-        pipelineXml += '    \</Filter\>'
-        pipelineXml += '  \</Writer\>'
-        pipelineXml += '\</Pipeline\>'
+        pipelineXml += '        </Option>'
+        pipelineXml += '      </Reader>'
+        pipelineXml += '    </Filter>'
+        pipelineXml += '  </Writer>'
+        pipelineXml += '</Pipeline>'
 
         with open(self.odm_georeferencing_pdal, 'w') as f:
             f.write(pipelineXml)
