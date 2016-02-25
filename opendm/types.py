@@ -123,7 +123,6 @@ class ODM_GeoRef(object):
             log.ODM_ERROR('Unknown pole format %s' % _pole)
             return
 
-
     def convert_to_las(self, _file, pdalXML):
 
         if not self.epsg:
@@ -139,7 +138,7 @@ class ODM_GeoRef(object):
                    'xml': pdalXML}
 
         # call txt2las
-        #system.run('{bin}/txt2las -i {f_in} -o {f_out} -skip 30 -parse xyzRGBssss ' \
+        # system.run('{bin}/txt2las -i {f_in} -o {f_out} -skip 30 -parse xyzRGBssss ' \
         #           '-set_scale 0.01 0.01 0.01 -set_offset {east} {north} 0 '  \
         #           '-translate_xyz 0 -epsg {epsg}'.format(**kwargs))
         #           
@@ -166,12 +165,11 @@ class ODM_GeoRef(object):
         pipelineXml += '  </Writer>'
         pipelineXml += '</Pipeline>'
 
-        
         with open(pdalXML, 'w') as f:
             f.write(pipelineXml)
 
         # call pdal 
-        system.run('{bin}/pdal pipeline -i {xml} --readers.ply.filename={f_in} ' \
+        system.run('{bin}/pdal pipeline -i {xml} --readers.ply.filename={f_in} '
                    '--writers.las.filename={f_out}'.format(**kwargs))
 
     def utm_to_latlon(self, _file, _photo, idx):
@@ -185,8 +183,8 @@ class ODM_GeoRef(object):
                    'y': gcp.y + self.utm_north_offset,
                    'z': gcp.z }
 
-        latlon = system.run_and_return('echo {x} {y} | cs2cs +proj=utm ' \
-            '+datum={datum} +ellps={datum} +zone={zone} +units=m +to '   \
+        latlon = system.run_and_return('echo {x} {y} | cs2cs +proj=utm '
+            '+datum={datum} +ellps={datum} +zone={zone} +units=m +to '
             '+proj=latlon +ellps={datum}'.format(**kwargs)).split()
 
         # Example: 83d18'16.285"W
@@ -292,6 +290,7 @@ class ODM_GeoRef(object):
         # update EPSG
         self.epsg = self.calculate_EPSG(self.utm_zone, self.utm_pole)
 
+
 class ODM_Tree(object):
     def __init__(self, root_path):
         ### root path to the project
@@ -336,14 +335,6 @@ class ODM_Tree(object):
             self.odm_texturing, 'odm_textured_model.obj')
         self.odm_textured_model_mtl = io.join_paths(
             self.odm_texturing, 'odm_textured_model.mtl')
-        self.odm_textured_model_txt_geo = io.join_paths(
-            self.odm_texturing, 'odm_textured_model_geo.txt')
-        self.odm_textured_model_ply_geo = io.join_paths(
-            self.odm_texturing, 'odm_textured_model_geo.ply')
-        self.odm_textured_model_obj_geo = io.join_paths(
-            self.odm_texturing, 'odm_textured_model_geo.obj')
-        self.odm_textured_model_mtl_geo = io.join_paths(
-            self.odm_texturing, 'odm_textured_model_geo.mtl')
         self.odm_texuring_log = io.join_paths(
             self.odm_texturing, 'odm_texturing_log.txt')
 
@@ -358,6 +349,16 @@ class ODM_Tree(object):
             self.odm_georeferencing, 'odm_georeferencing_utm_log.txt')
         self.odm_georeferencing_log = io.join_paths(
             self.odm_georeferencing, 'odm_georeferencing_log.txt')
+        self.odm_georeferencing_model_txt_geo = io.join_paths(
+            self.odm_georeferencing, 'odm_georeferencing_model_geo.txt')
+        self.odm_georeferencing_model_ply_geo = io.join_paths(
+            self.odm_georeferencing, 'odm_georeferenced_model.ply')
+        self.odm_georeferencing_model_obj_geo = io.join_paths(
+            self.odm_georeferencing, 'odm_textured_model_geo.obj')
+        self.odm_georeferencing_model_mtl_geo = io.join_paths(
+            self.odm_georeferencing, 'odm_textured_model_geo.mtl')
+        self.odm_georeferencing_xyz_file = io.join_paths(
+            self.odm_georeferencing, 'odm_georeferenced_model.csv')
         self.odm_georeferencing_pdal = io.join_paths(
             self.odm_georeferencing, 'pipeline.xml')
 
@@ -368,8 +369,3 @@ class ODM_Tree(object):
         self.odm_orthophoto_log = io.join_paths(self.odm_orthophoto, 'odm_orthophoto_log.txt')
         self.odm_orthophoto_tif_log = io.join_paths(self.odm_orthophoto, 'gdal_translate_log.txt')
 
-
-
-
-
-        
