@@ -25,6 +25,7 @@ pmvs2_path = os.path.join(superbuild_path, "install/bin/pmvs2")
 
 # define txt2las path
 txt2las_path = os.path.join(superbuild_path, 'src/las-tools/bin')
+pdal_path = os.path.join(superbuild_path, 'build/pdal/bin')
 
 # define odm modules path
 odm_modules_path = os.path.join(root_path, "build/bin")
