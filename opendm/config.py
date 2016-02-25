@@ -7,7 +7,7 @@ processopts = ['resize', 'opensfm', 'cmvs', 'pmvs',
                'odm_orthophoto']
 
 class RerunFrom(argparse.Action):
-    def __call__(self, parser, namespace, values, option_string=None)
+    def __call__(self, parser, namespace, values, option_string=None):
         setattr(namespace, self.dest, processopts[processopts.index(values):])
 
 
