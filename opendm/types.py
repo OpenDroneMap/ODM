@@ -135,7 +135,8 @@ class ODM_GeoRef(object):
                    'f_out': _file + '.las',
                    'east': self.utm_east_offset,
                    'north': self.utm_north_offset,
-                   'epsg': self.epsg }
+                   'epsg': self.epsg,
+                   'xml': pdalXML}
 
         # call txt2las
         #system.run('{bin}/txt2las -i {f_in} -o {f_out} -skip 30 -parse xyzRGBssss ' \
@@ -170,8 +171,8 @@ class ODM_GeoRef(object):
             f.write(pipelineXml)
 
         # call pdal 
-    #    system.run('{bin}/pipelineXml  +=  pipeline -i pipeline.xml --readers.ply.filename={f_in}' \
-    #               '--writers.las.filename={f_out}'.format(**kwargs))
+        system.run('{bin}/pdal pipeline -i {XML} --readers.ply.filename={f_in}' \
+                   '--writers.las.filename={f_out}'.format(**kwargs))
 
     def utm_to_latlon(self, _file, _photo, idx):
 
