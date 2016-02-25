@@ -124,7 +124,7 @@ class ODM_GeoRef(object):
             return
 
 
-    def convert_to_las(self, _file):
+    def convert_to_las(self, _file, pdalXML):
 
         if not self.epsg:
             log.ODM_ERROR('Empty EPSG: Could not convert to LAS')
@@ -165,7 +165,8 @@ class ODM_GeoRef(object):
         pipelineXml += '  </Writer>'
         pipelineXml += '</Pipeline>'
 
-        with open(tree.odm_georeferencing_pdal, 'w') as f:
+        
+        with open(pdalXML, 'w') as f:
             f.write(pipelineXml)
 
         # call pdal 
