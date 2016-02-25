@@ -6,6 +6,11 @@ processopts = ['resize', 'opensfm', 'cmvs', 'pmvs',
                'odm_meshing', 'odm_texturing', 'odm_georeferencing',
                'odm_orthophoto']
 
+class RerunFrom(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None)
+        setattr(namespace, self.dest, processopts[processopts.index(values):])
+
+
 parser = argparse.ArgumentParser(description='OpenDroneMap')
 parser.add_argument('--project-path', 
                     metavar='<string>',
@@ -29,10 +34,23 @@ parser.add_argument('--end-with', '-e',
                     choices=processopts,
                     help=('Can be one of:' + ' | '.join(processopts)))
 
-parser.add_argument('--rerun', '-r',
-                    metavar='<string>',
-                    choices=processopts,
-                    help=('Can be one of:' + ' | '.join(processopts)))
+rerun = parser.add_mutually_exclusive_group()
+
+rerun.add_argument('--rerun', '-r',
+                   metavar='<string>',
+                   choices=processopts,
+                   help=('Can be one of:' + ' | '.join(processopts)))
+
+rerun.add_argument('--rerun-all',
+                   action='store_true',
+                   default=False,
+                   help='force rerun of all tasks')
+
+rerun.add_argument('--rerun-from',
+                   action=RerunFrom,
+                   metavar='<string>',
+                   choices=processopts,
+                   help=('Can be one of:' + ' | '.join(processopts)))
 
 parser.add_argument('--force-focal',
                     metavar='<positive float>',
@@ -59,7 +77,7 @@ parser.add_argument('--matcher-threshold',
                     type=float,
                     help=('Ignore matched keypoints if the two images share '
                             'less than <float> percent of keypoints. Default:'
-			    ' $(default)s'))
+                            ' $(default)s'))
 
 parser.add_argument('--matcher-ratio',
                     metavar='<float>',

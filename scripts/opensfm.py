@@ -38,8 +38,11 @@ class ODMOpenSfMCell(ecto.Cell):
         system.mkdir_p(tree.pmvs)
 
         # check if we rerun cell or not
-        rerun_cell = args['rerun'] is not None \
-            and args['rerun'] == 'opensfm'
+        rerun_cell = (args['rerun'] is not None and
+                      args['rerun'] == 'opensfm') or \
+                     (args['rerun_all']) or \
+                     (args['rerun_from'] is not None and
+                      'opensfm' in args['rerun_from'])
 
 
         ### check if reconstruction was done before
