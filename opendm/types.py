@@ -151,8 +151,8 @@ class ODM_GeoRef(object):
         stringXml  += '    </Option>'
         stringXml  += '    <Filter type="filters.transformation">'
         stringXml  += '      <Option name="matrix">'
-        stringXml  += '        1  0  0  {east}'
-        stringXml  += '        0  1  0  {north}'
+        stringXml  += '        1  0  0  {east}'.format(**kwargs))
+        stringXml  += '        0  1  0  {north}'.format(**kwargs))
         stringXml  += '        0  0  1  0'
         stringXml  += '        0  0  0  1'
         stringXml  += '      </Option>'
