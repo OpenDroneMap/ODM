@@ -151,8 +151,8 @@ class ODM_GeoRef(object):
         pipelineXml += '    </Option>'
         pipelineXml += '    <Filter type=\"filters.transformation\">'
         pipelineXml += '      <Option name=\"matrix\">'
-        pipelineXml += '        1  0  0  {east}'.format(**kwargs))
-        pipelineXml += '        0  1  0  {north}'.format(**kwargs))
+        pipelineXml += '        1  0  0  {east}'
+        pipelineXml += '        0  1  0  {north}'
         pipelineXml += '        0  0  1  0'
         pipelineXml += '        0  0  0  1'
         pipelineXml += '      </Option>'
