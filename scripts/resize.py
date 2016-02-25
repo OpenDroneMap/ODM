@@ -38,7 +38,9 @@ class ODMResizeCell(ecto.Cell):
         # check if we rerun cell or not
         rerun_cell = (args['rerun'] is not None and
                       args['rerun'] == 'resize') or \
-            args['rerun_all']
+                     (args['rerun_all']) or \
+                     (args['rerun_from'] is not None and
+                      'resize' in args['rerun_from'])
 
         # loop over photos
         for photo in photos:

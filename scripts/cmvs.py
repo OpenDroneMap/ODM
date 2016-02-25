@@ -30,7 +30,9 @@ class ODMCmvsCell(ecto.Cell):
         # check if we rerun cell or not
         rerun_cell = (args['rerun'] is not None and
                       args['rerun'] == 'cmvs') or \
-            args['rerun_all']
+                     (args['rerun_all']) or \
+                     (args['rerun_from'] is not None and
+                      'cmvs' in args['rerun_from'])
 
         if not io.file_exists(tree.pmvs_bundle) or rerun_cell:
             log.ODM_DEBUG('Writting CMVS vis in: %s' % tree.pmvs_bundle)

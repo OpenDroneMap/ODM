@@ -34,7 +34,9 @@ class ODMTexturingCell(ecto.Cell):
         # check if we rerun cell or not
         rerun_cell = (args['rerun'] is not None and
                       args['rerun'] == 'odm_texturing') or \
-            args['rerun_all']
+                     (args['rerun_all']) or \
+                     (args['rerun_from'] is not None and
+                      'odm_texturing' in args['rerun_from'])
 
         if not io.file_exists(tree.odm_textured_model_obj) or rerun_cell:
             log.ODM_DEBUG('Writting ODM Textured file in: %s' \
