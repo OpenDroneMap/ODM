@@ -29,10 +29,22 @@ parser.add_argument('--end-with', '-e',
                     choices=processopts,
                     help=('Can be one of:' + ' | '.join(processopts)))
 
-parser.add_argument('--rerun', '-r',
-                    metavar='<string>',
-                    choices=processopts,
-                    help=('Can be one of:' + ' | '.join(processopts)))
+rerun = parser.add_mutually_exclusive_group()
+
+rerun.add_argument('--rerun', '-r',
+                   metavar='<string>',
+                   choices=processopts,
+                   help=('Can be one of:' + ' | '.join(processopts)))
+
+rerun.add_argument('--rerun-all',
+                   action='store_true',
+                   default=False,
+                   help='force rerun of all tasks')
+
+rerun.add_argument('--rerun-from',
+                   metavar='<string>',
+                   choices=processopts,
+                   help=('Can be one of:' + ' | '.join(processopts)))
 
 parser.add_argument('--force-focal',
                     metavar='<positive float>',
@@ -59,7 +71,7 @@ parser.add_argument('--matcher-threshold',
                     type=float,
                     help=('Ignore matched keypoints if the two images share '
                             'less than <float> percent of keypoints. Default:'
-			    ' $(default)s'))
+                            ' $(default)s'))
 
 parser.add_argument('--matcher-ratio',
                     metavar='<float>',
