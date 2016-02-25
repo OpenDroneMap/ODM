@@ -143,8 +143,6 @@ class ODM_GeoRef(object):
                    '-translate_xyz 0 -epsg {epsg}'.format(**kwargs))
                    
         # create pipeline file transform.xml to enable transformation
-        system.mkdir_p(tree.odm_pdal)
-        
         pipelineXml   = '<?xml version="1.0" encoding="utf-8"?>'
         pipelineXml  += '<Pipeline version="1.0">
         pipelineXml  += '  <Writer type="writers.las">'
@@ -167,7 +165,7 @@ class ODM_GeoRef(object):
         pipelineXml  += '  </Writer>'
         pipelineXml  += '</Pipeline>'
 
-        with open(self.odm_pdal_pipeline, 'w') as f:
+        with open(self.odm_georeferencing_pdal, 'w') as f:
             f.write(pipelineXml)
 
         # call pdal 
@@ -358,6 +356,8 @@ class ODM_Tree(object):
             self.odm_georeferencing, 'odm_georeferencing_utm_log.txt')
         self.odm_georeferencing_log = io.join_paths(
             self.odm_georeferencing, 'odm_georeferencing_log.txt')
+        self.odm_georeferencing_pdal = io.join_paths(
+            self.odm_georeferencing, 'pipeline.xml')
 
         # odm_orthophoto
         self.odm_orthophoto_file = io.join_paths(self.odm_orthophoto, 'odm_orthophoto.png')
@@ -366,8 +366,7 @@ class ODM_Tree(object):
         self.odm_orthophoto_log = io.join_paths(self.odm_orthophoto, 'odm_orthophoto_log.txt')
         self.odm_orthophoto_tif_log = io.join_paths(self.odm_orthophoto, 'gdal_translate_log.txt')
 
-        # odm_pdal
-        self.odm_pdal_pipeline = io.join_paths(self.odm_orthophoto, 'pipeline.xml')
+
 
 
 
