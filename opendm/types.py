@@ -143,13 +143,34 @@ class ODM_GeoRef(object):
                    '-translate_xyz 0 -epsg {epsg}'.format(**kwargs))
                    
         # create pipeline file transform.xml to enable transformation
-        
+        pipelineXml = '<?xml version="1.0" encoding="utf-8"?>'
+        stringXml  += '<Pipeline version="1.0">
+        stringXml  += '  <Writer type="writers.las">'
+        stringXml  += '    <Option name="filename">'
+        stringXml  += '      transformed.las'
+        stringXml  += '    </Option>'
+        stringXml  += '    <Filter type="filters.transformation">'
+        stringXml  += '      <Option name="matrix">'
+        stringXml  += '        1  0  0  {east}'
+        stringXml  += '        0  1  0  {north}'
+        stringXml  += '        0  0  1  0'
+        stringXml  += '        0  0  0  1'
+        stringXml  += '      </Option>'
+        stringXml  += '      <Reader type="readers.ply">'
+        stringXml  += '        <Option name="filename">'
+        stringXml  += '          untransformed.ply'
+        stringXml  += '        </Option>'
+        stringXml  += '      </Reader>'
+        stringXml  += '    </Filter>'
+        stringXml  += '  </Writer>'
+        stringXml  += '</Pipeline>'
+
+        with open("filename.xml", 'w') as f:
+            f.write(stringXml)
+
         # call pdal 
     #    system.run('{bin}/pdal pipeline -i transform.xml --readers.ply.filename={f_in}' \
     #               '--writers.las.filename={f_out}'.format(**kwargs))
-        
-        
-
 
     def utm_to_latlon(self, _file, _photo, idx):
 
