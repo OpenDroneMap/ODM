@@ -47,17 +47,17 @@ class ODMOrthoPhotoCell(ecto.Cell):
             }
 
             # run odm_orthophoto
-            system.run('{bin}/odm_orthophoto -inputFile {model_geo} '   \
-                '-logFile {log} -outputFile {ortho} -resolution {res} ' \
-                '-outputCornerFile {corners}'.format(**kwargs))
+            system.run('{bin}/odm_orthophoto -inputFile {model_geo} '
+                       '-logFile {log} -outputFile {ortho} -resolution {res} '
+                       '-outputCornerFile {corners}'.format(**kwargs))
 
             # Create georeferenced GeoTiff
-            geoTiffCreated = False
+            geotiffcreated = False
             georef = types.ODM_GeoRef()
             # creates the coord refs # TODO I don't want to have to do this twice- after odm_georef
             georef.parse_coordinate_system(tree.odm_georeferencing_coords)
 
-            if (georef.epsg and georef.utm_east_offset and georef.utm_north_offset):
+            if georef.epsg and georef.utm_east_offset and georef.utm_north_offset:
                 ulx = uly = lrx = lry = 0.0
                 with open(tree.odm_orthophoto_corners) as f:
                     for lineNumber, line in enumerate(f):
@@ -87,8 +87,8 @@ class ODMOrthoPhotoCell(ecto.Cell):
 
                 system.run('gdal_translate -a_ullr {ulx} {uly} {lrx} {lry} '
                            '-a_srs \"EPSG:{epsg}\" {png} {tiff} > {log}'.format(**kwargs))
-                geoTiffCreated = True
-            if not geoTiffCreated:
+                geotiffcreated = True
+            if not geotiffcreated:
                 log.ODM_WARNING('No geo-referenced orthophoto created due '
                                 'to missing geo-referencing or corner coordinates.')
 
@@ -97,54 +97,3 @@ class ODMOrthoPhotoCell(ecto.Cell):
 
         log.ODM_INFO('Running OMD OrthoPhoto Cell - Finished')
         return ecto.OK if args['end_with'] != 'odm_orthophoto' else ecto.QUIT
-
-
-def odm_orthophoto():
-    """Run odm_orthophoto"""
-    print "\n  - running orthophoto generation - " + system.now()
-
-    os.chdir(jobOptions["jobDir"])
-    try:
-        os.mkdir(jobOptions["jobDir"] + "/odm_orthophoto")
-    except:
-        pass
-
-    run("\"" + BIN_PATH + "/odm_orthophoto\" -inputFile " + jobOptions["jobDir"] +                \
-        "-results/odm_texturing/odm_textured_model_geo.obj -logFile " + jobOptions["jobDir"]      \
-        + "/odm_orthophoto/odm_orthophoto_log.txt -outputFile " + jobOptions["jobDir"]            \
-        + "-results/odm_orthphoto.png -resolution 20.0 -outputCornerFile " + jobOptions["jobDir"] \
-        + "/odm_orthphoto_corners.txt")
-
-    if "csString" not in jobOptions:
-        parse_coordinate_system()      # Writes the coord string to the jobOptions object
-
-    geoTiffCreated = False
-    if ("csString" in jobOptions and
-            "utmEastOffset" in jobOptions and "utmNorthOffset" in jobOptions):
-        ulx = uly = lrx = lry = 0.0
-        with open(jobOptions["jobDir"] +
-                  "/odm_orthphoto_corners.txt") as f:   # Open tree.odm_orthophoto_corners
-            for lineNumber, line in enumerate(f):
-                if lineNumber == 0:
-                    tokens = line.split(' ')
-                    if len(tokens) == 4:
-                        ulx = float(tokens[0]) + \
-                            float(jobOptions["utmEastOffset"])
-                        lry = float(tokens[1]) + \
-                            float(jobOptions["utmNorthOffset"])
-                        lrx = float(tokens[2]) + \
-                            float(jobOptions["utmEastOffset"])
-                        uly = float(tokens[3]) + \
-                            float(jobOptions["utmNorthOffset"])
-
-        print("    Creating GeoTIFF...")
-        sys.stdout.write("    ")
-        run("gdal_translate -a_ullr " + str(ulx) + " " + str(uly) + " " +
-            str(lrx) + " " + str(lry) + " -a_srs \"" + jobOptions["csString"] +
-            "\" " + jobOptions["jobDir"] + "-results/odm_orthphoto.png " +
-            jobOptions["jobDir"] + "-results/odm_orthphoto.tif")
-        geoTiffCreated = True
-
-    if not geoTiffCreated:
- 
-        print "    Warning: No geo-referenced orthophoto created due to missing geo-referencing or corner coordinates."
