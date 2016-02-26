@@ -354,9 +354,9 @@ class ODM_Tree(object):
         self.odm_georeferencing_model_ply_geo = io.join_paths(
             self.odm_georeferencing, 'odm_georeferenced_model.ply')
         self.odm_georeferencing_model_obj_geo = io.join_paths(
-            self.odm_georeferencing, 'odm_textured_model_geo.obj')
+            self.odm_texturing, 'odm_textured_model_geo.obj')  # these files will be kept in odm_texturing/
         self.odm_georeferencing_model_mtl_geo = io.join_paths(
-            self.odm_georeferencing, 'odm_textured_model_geo.mtl')
+            self.odm_texturing, 'odm_textured_model_geo.mtl')  # these files will be kept in odm_texturing/
         self.odm_georeferencing_xyz_file = io.join_paths(
             self.odm_georeferencing, 'odm_georeferenced_model.csv')
         self.odm_georeferencing_pdal = io.join_paths(
