@@ -137,7 +137,7 @@ class ODMGeoreferencingCell(ecto.Cell):
 
         else:
             log.ODM_WARNING('Found a valid georeferenced model in: %s'
-                            % tree.odm_textured_model_ply_geo)
+                            % tree.odm_georeferencing_model_ply_geo)
 
         log.ODM_INFO('Running OMD Georeferencing Cell - Finished')
         return ecto.OK if args['end_with'] != 'odm_georeferencing' else ecto.QUIT
