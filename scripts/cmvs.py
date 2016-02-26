@@ -5,6 +5,7 @@ from opendm import log
 from opendm import system
 from opendm import context
 
+
 class ODMCmvsCell(ecto.Cell):
 
     def declare_params(self, params):
@@ -53,7 +54,7 @@ class ODMCmvsCell(ecto.Cell):
             system.run('{bin} {prefix}/ {max_images} {cores}'.format(**kwargs))
         else:
             log.ODM_WARNING('Found a valid CMVS file in: %s' % 
-                (tree.pmvs_bundle))
+                            tree.pmvs_bundle)
 
         log.ODM_INFO('Running OMD CMVS Cell - Finished')
         return ecto.OK if args['end_with'] != 'cmvs' else ecto.QUIT

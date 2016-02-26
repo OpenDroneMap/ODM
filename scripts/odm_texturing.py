@@ -5,14 +5,14 @@ from opendm import io
 from opendm import system
 from opendm import context
 
-class ODMTexturingCell(ecto.Cell):  
 
+class ODMTexturingCell(ecto.Cell):
     def declare_params(self, params):
         params.declare("resize", 'resizes images by the largest side', 2400)
         params.declare("resolution", 'The resolution of the output textures. Must be '
-                            'greater than textureWithSize.', 4096)
+                                     'greater than textureWithSize.', 4096)
         params.declare("size", 'The resolution to rescale the images performing '
-                            'the texturing.', 3600)
+                               'the texturing.', 3600)
 
     def declare_io(self, params, inputs, outputs):
         inputs.declare("tree", "Struct with paths", [])
@@ -21,7 +21,7 @@ class ODMTexturingCell(ecto.Cell):
         outputs.declare("reconstruction", "Clusters output. list of ODMReconstructions", [])
 
     def process(self, inputs, outputs):
-        
+
         log.ODM_INFO('Running OMD Texturing Cell')
 
         # get inputs
@@ -39,8 +39,8 @@ class ODMTexturingCell(ecto.Cell):
                       'odm_texturing' in args['rerun_from'])
 
         if not io.file_exists(tree.odm_textured_model_obj) or rerun_cell:
-            log.ODM_DEBUG('Writting ODM Textured file in: %s' \
-                % tree.odm_textured_model_obj)
+            log.ODM_DEBUG('Writing ODM Textured file in: %s'
+                          % tree.odm_textured_model_obj)
 
             # odm_texturing definitions
             kwargs = {
@@ -57,14 +57,14 @@ class ODMTexturingCell(ecto.Cell):
             }
 
             # run texturing binary
-            system.run('{bin}/odm_texturing -bundleFile {bundle} '           \
-                '-imagesPath {imgs_path} -imagesListPath {imgs_list} '       \
-                '-inputModelPath {model} -outputFolder {out_dir}/ '          \
-                '-textureResolution {resolution} -bundleResizedTo {resize} ' \
-                '-textureWithSize {size} -logFile {log}'.format(**kwargs))
+            system.run('{bin}/odm_texturing -bundleFile {bundle} '
+                       '-imagesPath {imgs_path} -imagesListPath {imgs_list} '
+                       '-inputModelPath {model} -outputFolder {out_dir}/ '
+                       '-textureResolution {resolution} -bundleResizedTo {resize} '
+                       '-textureWithSize {size} -logFile {log}'.format(**kwargs))
         else:
-            log.ODM_WARNING('Found a valid ODM Texture file in: %s' \
-                % tree.odm_textured_model_obj)
-                
+            log.ODM_WARNING('Found a valid ODM Texture file in: %s'
+                            % tree.odm_textured_model_obj)
+
         log.ODM_INFO('Running OMD Texturing Cell - Finished')
         return ecto.OK if args['end_with'] != 'odm_texturing' else ecto.QUIT
