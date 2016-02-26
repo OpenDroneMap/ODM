@@ -7,6 +7,7 @@ from opendm import system
 from opendm import io
 from opendm import types
 
+
 class ODMResizeCell(ecto.Cell):
     def declare_params(self, params):
         params.declare("resize_to", "resizes images by the largest side", 2400)
@@ -29,7 +30,7 @@ class ODMResizeCell(ecto.Cell):
         if not photos:
             log.ODM_ERROR('Not enough photos in photos to resize')
             return ecto.QUIT
-        
+
         # create working directory
         system.mkdir_p(tree.dataset_resize)
 
@@ -78,15 +79,15 @@ class ODMResizeCell(ecto.Cell):
                 photo.update_focal()
 
                 # log message
-                log.ODM_DEBUG('Resized %s | dimensions: %s' % \
-                    (photo.filename, img_r.shape))
+                log.ODM_DEBUG('Resized %s | dimensions: %s' %
+                              (photo.filename, img_r.shape))
             else:
                 # log message
-                log.ODM_WARNING('Already resized %s | dimensions: %s x %s' % \
-                    (photo.filename, photo.width, photo.height))
+                log.ODM_WARNING('Already resized %s | dimensions: %s x %s' %
+                                (photo.filename, photo.width, photo.height))
 
         log.ODM_INFO('Resized %s images' % len(photos))
-        
+
         # append photos to cell output
         self.outputs.photos = photos
 
