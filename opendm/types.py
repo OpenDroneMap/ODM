@@ -1,7 +1,5 @@
-import os
 import cv2
 import pyexiv2
-import subprocess
 import re
 from fractions import Fraction
 
@@ -10,9 +8,11 @@ import io
 import system
 import context
 
+
 class ODM_Photo:
     """   ODMPhoto - a class for ODMPhotos
     """
+
     def __init__(self, path_file, force_focal, force_ccd):
         #  general purpose
         self.path_file = path_file
@@ -28,12 +28,12 @@ class ODM_Photo:
         self.camera_model = None
         # parse values from metadata
         self.parse_pyexiv2_values(self.path_file, force_focal, force_ccd)
-        # compute focal lenght into pixels
+        # compute focal length into pixels
         self.update_focal()
 
         # print log message
-        log.ODM_DEBUG('Loaded %s | dimensions: %s x %s | focal: %s | ccd: %s' % \
-            (self.filename, self.width, self.height, self.focal_length, self.ccd_width))
+        log.ODM_DEBUG('Loaded %s | dimensions: %s x %s | focal: %s | ccd: %s' %
+                      (self.filename, self.width, self.height, self.focal_length, self.ccd_width))
 
     def update_focal(self):
         # compute focal length in pixels
@@ -59,12 +59,15 @@ class ODM_Photo:
             try:
                 val = metadata[key].value
                 # parse tag names
-                if key == 'Exif.Image.Make':  self.camera_make = val
-                elif key == 'Exif.Image.Model': self.camera_model = val
-                elif key == 'Exif.Photo.FocalLength': self.focal_length = float(val)
+                if key == 'Exif.Image.Make':
+                    self.camera_make = val
+                elif key == 'Exif.Image.Model':
+                    self.camera_model = val
+                elif key == 'Exif.Photo.FocalLength':
+                    self.focal_length = float(val)
             except Exception, e:
                 pass
- 
+
         # needed to do that since sometimes metadata contains wrong data
         img = cv2.imread(_path_file)
         self.width = img.shape[1]
@@ -81,7 +84,8 @@ class ODM_Photo:
             # search ccd by camera model
             key = [x for x in ccd_widths.keys() if self.camera_model in x]
             # convert to float if found
-            if key: self.ccd_width = float(ccd_widths[key[0]])
+            if key:
+                self.ccd_width = float(ccd_widths[key[0]])
             # else:
             # log.ODM_ERROR('Could not find ccd_width in file')
 
@@ -89,6 +93,7 @@ class ODM_Photo:
 # TODO: finish this class
 class ODM_Reconstruction(object):
     """docstring for ODMReconstruction"""
+
     def __init__(self, arg):
         super(ODMReconstruction, self).__init__()
         self.arg = arg
@@ -96,6 +101,7 @@ class ODM_Reconstruction(object):
 
 class ODM_GCPoint(object):
     """docstring for ODMPoint"""
+
     def __init__(self, x, y, z):
         self.x = x
         self.y = y
@@ -104,6 +110,7 @@ class ODM_GCPoint(object):
 
 class ODM_GeoRef(object):
     """docstring for ODMUtmZone"""
+
     def __init__(self):
         self.datum = 'WGS84'
         self.epsg = None
@@ -129,13 +136,13 @@ class ODM_GeoRef(object):
             log.ODM_ERROR('Empty EPSG: Could not convert to LAS')
             return
 
-        kwargs = { 'bin': context.pdal_path,
-                   'f_in': _file,
-                   'f_out': _file + '.las',
-                   'east': self.utm_east_offset,
-                   'north': self.utm_north_offset,
-                   'epsg': self.epsg,
-                   'xml': pdalXML}
+        kwargs = {'bin': context.pdal_path,
+                  'f_in': _file,
+                  'f_out': _file + '.las',
+                  'east': self.utm_east_offset,
+                  'north': self.utm_north_offset,
+                  'epsg': self.epsg,
+                  'xml': pdalXML}
 
         # call txt2las
         # system.run('{bin}/txt2las -i {f_in} -o {f_out} -skip 30 -parse xyzRGBssss ' \
@@ -143,7 +150,7 @@ class ODM_GeoRef(object):
         #           '-translate_xyz 0 -epsg {epsg}'.format(**kwargs))
         #           
         # create pipeline file transform.xml to enable transformation
-        pipelineXml  = '<?xml version=\"1.0\" encoding=\"utf-8\"?>'
+        pipelineXml = '<?xml version=\"1.0\" encoding=\"utf-8\"?>'
         pipelineXml += '<Pipeline version=\"1.0\">'
         pipelineXml += '  <Writer type=\"writers.las\">'
         pipelineXml += '    <Option name=\"filename\">'
@@ -176,16 +183,16 @@ class ODM_GeoRef(object):
 
         gcp = self.gcps[idx]
 
-        kwargs = { 'datum': self.datum,
-                   'zone': self.utm_zone,
-                   'file': _file,
-                   'x': gcp.x + self.utm_east_offset,
-                   'y': gcp.y + self.utm_north_offset,
-                   'z': gcp.z }
+        kwargs = {'datum': self.datum,
+                  'zone': self.utm_zone,
+                  'file': _file,
+                  'x': gcp.x + self.utm_east_offset,
+                  'y': gcp.y + self.utm_north_offset,
+                  'z': gcp.z}
 
         latlon = system.run_and_return('echo {x} {y} | cs2cs +proj=utm '
-            '+datum={datum} +ellps={datum} +zone={zone} +units=m +to '
-            '+proj=latlon +ellps={datum}'.format(**kwargs)).split()
+                                       '+datum={datum} +ellps={datum} +zone={zone} +units=m +to '
+                                       '+proj=latlon +ellps={datum}'.format(**kwargs)).split()
 
         # Example: 83d18'16.285"W
         # Example: 41d2'11.789"N
@@ -198,7 +205,7 @@ class ODM_GeoRef(object):
             alt_str = ''
         else:
             log.ODM_ERROR('Something went wrong %s' % latlon)
-        
+
         tokens = re.split("[d '\"]+", lon_str)
         if len(tokens) >= 4:
             lon_deg, lon_min, lon_sec = tokens[:3]
@@ -226,7 +233,7 @@ class ODM_GeoRef(object):
         metadata = pyexiv2.ImageMetadata(_photo.path_file)
         metadata.read()
 
-        ## set values
+        # set values
 
         # GPS latitude
         key = 'Exif.GPSInfo.GPSLatitude'
@@ -256,9 +263,8 @@ class ODM_GeoRef(object):
         key = 'Exif.GPSInfo.GPSAltitudeRef'
         metadata[key] = pyexiv2.ExifTag(key, '0')
 
-        ## write values
+        # write values
         metadata.write()
-
 
     def parse_coordinate_system(self, _file):
         """Write attributes to jobOptions from coord file"""
@@ -273,8 +279,8 @@ class ODM_GeoRef(object):
             # 'WGS84 UTM 17N'
             line = f.readline().split(' ')
             self.datum = line[0]
-            self.utm_pole = line[2][len(line)-1]
-            self.utm_zone = int(line[2][:len(line)-1])
+            self.utm_pole = line[2][len(line) - 1]
+            self.utm_zone = int(line[2][:len(line) - 1])
             # extract east and west offsets from second line.
             # We will assume the following format:
             # '440143 4588391'
@@ -293,10 +299,10 @@ class ODM_GeoRef(object):
 
 class ODM_Tree(object):
     def __init__(self, root_path):
-        ### root path to the project
+        # root path to the project
         self.root_path = io.absolute_path_file(root_path)
 
-        ### modules paths
+        # modules paths
 
         # here are defined where all modules should be located in
         # order to keep track all files al directories during the
@@ -311,8 +317,8 @@ class ODM_Tree(object):
         self.odm_orthophoto = io.join_paths(self.root_path, 'odm_orthophoto')
         self.odm_pdal = io.join_paths(self.root_path, 'pdal')
 
-        ### important files paths
-        
+        # important files paths
+
         # opensfm
         self.opensfm_bundle = io.join_paths(self.opensfm, 'bundle_r000.out')
         self.opensfm_bundle_list = io.join_paths(self.opensfm, 'list_r000.out')
@@ -325,11 +331,11 @@ class ODM_Tree(object):
         self.pmvs_visdat = io.join_paths(self.pmvs_rec_path, 'vis.dat')
         self.pmvs_options = io.join_paths(self.pmvs_rec_path, 'pmvs_options.txt')
         self.pmvs_model = io.join_paths(self.pmvs_rec_path, 'models/option-0000.ply')
-        
+
         # odm_meshing
         self.odm_mesh = io.join_paths(self.odm_meshing, 'odm_mesh.ply')
         self.odm_meshing_log = io.join_paths(self.odm_meshing, 'odm_meshing_log.txt')
-        
+
         # odm_texturing
         self.odm_textured_model_obj = io.join_paths(
             self.odm_texturing, 'odm_textured_model.obj')
@@ -368,4 +374,3 @@ class ODM_Tree(object):
         self.odm_orthophoto_corners = io.join_paths(self.odm_orthophoto, 'odm_orthphoto_corners.txt')
         self.odm_orthophoto_log = io.join_paths(self.odm_orthophoto, 'odm_orthophoto_log.txt')
         self.odm_orthophoto_tif_log = io.join_paths(self.odm_orthophoto, 'gdal_translate_log.txt')
-
