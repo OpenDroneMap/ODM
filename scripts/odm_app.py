@@ -5,6 +5,7 @@ from opendm import context
 from opendm import types
 from opendm import config
 from opendm import io
+from opendm import system
 
 from dataset import ODMLoadDatasetCell
 from resize import ODMResizeCell
@@ -76,6 +77,8 @@ class ODMApp(ecto.BlackBox):
         if config.args.get('time') and io.file_exists(tree.benchmarking):
             # Delete the previously made file
             os.remove(tree.benchmarking)
+            with open(tree.benchmarking, 'a') as b:
+                b.write('ODM Benchmarking file created %s\nNumber of Cores: %s\n\n' % (system.now(), context.num_cores))
 
     def connections(self, _p):
         # define initial task
