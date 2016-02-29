@@ -39,7 +39,7 @@ class ODMOrthoPhotoCell(ecto.Cell):
             # odm_orthophoto definitions
             kwargs = {
                 'bin': context.odm_modules_path,
-                'model_geo': tree.odm_textured_model_obj_geo,
+                'model_geo': tree.odm_georeferencing_model_obj_geo,
                 'log': tree.odm_orthophoto_log,
                 'ortho': tree.odm_orthophoto_file,
                 'corners': tree.odm_orthophoto_corners,
