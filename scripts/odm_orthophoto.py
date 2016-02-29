@@ -18,6 +18,9 @@ class ODMOrthoPhotoCell(ecto.Cell):
 
     def process(self, inputs, outputs):
 
+        # Benchmarking
+        start_time = system.now_raw()
+
         log.ODM_INFO('Running OMD OrthoPhoto Cell')
 
         # get inputs
@@ -94,6 +97,9 @@ class ODMOrthoPhotoCell(ecto.Cell):
 
         else:
             log.ODM_WARNING('Found a valid orthophoto in: %s' % tree.odm_orthophoto_file)
+
+        if args['time']:
+            system.benchmark(start_time, tree.benchmarking, 'Orthophoto')
 
         log.ODM_INFO('Running OMD OrthoPhoto Cell - Finished')
         return ecto.OK if args['end_with'] != 'odm_orthophoto' else ecto.QUIT

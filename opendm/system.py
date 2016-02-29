@@ -31,6 +31,21 @@ def now():
     return datetime.datetime.now().strftime('%a %b %d %H:%M:%S %Z %Y')
 
 
+def now_raw():
+    return datetime.datetime.now()
+
+
+def benchmark(start, benchmarking_file, process):
+    """
+    runs a benchmark with a start datetime object
+    :return: the running time (delta)
+    """
+    # Write to benchmark file
+    delta = (datetime.datetime.now() - start).total_seconds()
+    with open(benchmarking_file, 'a') as b:
+        b.write('\n %s runtime: %s seconds' % (process, delta))
+
+
 def run_and_return(cmdSrc, cmdDest=None):
     """Run a system command and return the output"""
     process = subprocess.Popen(cmdSrc, stdout=subprocess.PIPE, shell=True)

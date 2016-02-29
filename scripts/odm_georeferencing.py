@@ -25,6 +25,8 @@ class ODMGeoreferencingCell(ecto.Cell):
         outputs.declare("reconstruction", "list of ODMReconstructions", [])
 
     def process(self, inputs, outputs):
+        # Benchmarking
+        start_time = system.now_raw()
 
         log.ODM_INFO('Running OMD Georeferencing Cell')
 
@@ -138,6 +140,9 @@ class ODMGeoreferencingCell(ecto.Cell):
         else:
             log.ODM_WARNING('Found a valid georeferenced model in: %s'
                             % tree.odm_georeferencing_model_ply_geo)
+
+        if args['time']:
+            system.benchmark(start_time, tree.benchmarking, 'Georeferencing')
 
         log.ODM_INFO('Running OMD Georeferencing Cell - Finished')
         return ecto.OK if args['end_with'] != 'odm_georeferencing' else ecto.QUIT

@@ -21,6 +21,9 @@ class ODMCmvsCell(ecto.Cell):
         outputs.declare("reconstruction", "list of ODMReconstructions", [])
 
     def process(self, inputs, outputs):
+
+        # Benchmarking
+        start_time = system.now_raw()
         
         log.ODM_INFO('Running OMD CMVS Cell')
 
@@ -55,6 +58,9 @@ class ODMCmvsCell(ecto.Cell):
         else:
             log.ODM_WARNING('Found a valid CMVS file in: %s' % 
                             tree.pmvs_bundle)
+
+        if args['time']:
+            system.benchmark(start_time, tree.benchmarking, 'CMVS')
 
         log.ODM_INFO('Running OMD CMVS Cell - Finished')
         return ecto.OK if args['end_with'] != 'cmvs' else ecto.QUIT
