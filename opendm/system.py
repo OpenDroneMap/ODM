@@ -43,7 +43,7 @@ def benchmark(start, benchmarking_file, process):
     # Write to benchmark file
     delta = (datetime.datetime.now() - start).total_seconds()
     with open(benchmarking_file, 'a') as b:
-        b.write('\n %s runtime: %s seconds' % (process, delta))
+        b.write('%s runtime: %s seconds\n' % (process, delta))
 
 
 def run_and_return(cmdSrc, cmdDest=None):
