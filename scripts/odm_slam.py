@@ -1,3 +1,5 @@
+"""Cell to run odm_slam."""
+
 import os
 
 import ecto
@@ -9,16 +11,20 @@ from opendm import context
 
 
 class ODMSlamCell(ecto.Cell):
+    """Run odm_slam on a video and export to opensfm format."""
+
     def declare_params(self, params):
+        """Cell parameters."""
         pass
 
     def declare_io(self, params, inputs, outputs):
+        """Cell inputs and outputs."""
         inputs.declare("tree", "Struct with paths", [])
         inputs.declare("args", "The application arguments.", {})
         outputs.declare("reconstruction", "list of ODMReconstructions", [])
 
     def process(self, inputs, outputs):
-
+        """Run the cell."""
         log.ODM_INFO('Running OMD Slam Cell')
 
         # get inputs
@@ -35,7 +41,8 @@ class ODMSlamCell(ecto.Cell):
         system.mkdir_p(tree.opensfm)
         system.mkdir_p(tree.pmvs)
 
-        vocabulary = os.path.join(context.orb_slam2_path, 'Vocabulary/ORBvoc.txt')
+        vocabulary = os.path.join(context.orb_slam2_path,
+                                  'Vocabulary/ORBvoc.txt')
         orb_slam_cmd = os.path.join(context.odm_modules_path, 'odm_slam')
         trajectory = os.path.join(tree.opensfm, 'KeyFrameTrajectory.txt')
         map_points = os.path.join(tree.opensfm, 'MapPoints.txt')
@@ -62,37 +69,41 @@ class ODMSlamCell(ecto.Cell):
             # convert slam to opensfm
             system.run(' '.join([
                 'cd {} &&'.format(tree.opensfm),
-                'PYTHONPATH={}:{}'.format(context.pyopencv_path, context.opensfm_path),
+                'PYTHONPATH={}:{}'.format(context.pyopencv_path,
+                                          context.opensfm_path),
                 'python',
-                os.path.join(context.odm_modules_src_path, 'odm_slam/src/orb_slam_to_opensfm.py'),
+                os.path.join(context.odm_modules_src_path,
+                             'odm_slam/src/orb_slam_to_opensfm.py'),
                 video,
                 trajectory,
                 map_points,
                 slam_config,
             ]))
         else:
-            log.ODM_WARNING('Found a valid OpenSfm file in: {}'.format(
+            log.ODM_WARNING('Found a valid OpenSfM file in: {}'.format(
                 tree.opensfm_reconstruction))
 
         # check if reconstruction was exported to bundler before
         if not io.file_exists(tree.opensfm_bundle_list) or rerun_cell:
             # convert back to bundler's format
-            system.run('PYTHONPATH=%s %s/bin/export_bundler %s' %
-                (context.pyopencv_path, context.opensfm_path, tree.opensfm))
+            system.run(
+                'PYTHONPATH={} {}/bin/export_bundler {}'.format(
+                    context.pyopencv_path, context.opensfm_path, tree.opensfm))
         else:
-            log.ODM_WARNING('Found a valid Bundler file in: %s' % 
-                (tree.opensfm_reconstruction))
-
+            log.ODM_WARNING(
+                'Found a valid Bundler file in: {}'.format(
+                    tree.opensfm_reconstruction))
 
         # check if reconstruction was exported to pmvs before
         if not io.file_exists(tree.pmvs_visdat) or rerun_cell:
             # run PMVS converter
-            system.run('PYTHONPATH=%s %s/bin/export_pmvs %s --output %s' % 
-                (context.pyopencv_path, context.opensfm_path, tree.opensfm, tree.pmvs))
+            system.run(
+                'PYTHONPATH={} {}/bin/export_pmvs {} --output {}'.format(
+                    context.pyopencv_path, context.opensfm_path, tree.opensfm,
+                    tree.pmvs))
         else:
-            log.ODM_WARNING('Found a valid CMVS file in: %s' % tree.pmvs_visdat)
+            log.ODM_WARNING('Found a valid CMVS file in: {}'.format(
+                tree.pmvs_visdat))
 
         log.ODM_INFO('Running OMD Slam Cell - Finished')
         return ecto.OK if args['end_with'] != 'odm_slam' else ecto.QUIT
-
-
