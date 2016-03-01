@@ -7,8 +7,8 @@ ExternalProject_Add(${_proj_name}
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
-  URL               https://github.com/paulinus/Pangolin/archive/952c62bd6adbbc8bf58c5941fbb353ce7ff9e022.zip
-  URL_MD5           1b8a3713a1b9da699187cf1e8dc60eab
+  URL               https://github.com/paulinus/Pangolin/archive/b7c66570b336e012bf3124e2a7411d417a1d35f7.zip
+  URL_MD5           9b7938d1045d26b27a637b663e647aef
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   #--Configure step-------------
