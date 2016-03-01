@@ -142,15 +142,20 @@ def extract_keyframes_from_video(video, reconstruction):
         shot = reconstruction['shots'][shot_id]
         timestamp = shot['created_at']
         keyframe_idx = int(round(timestamp / T))
-        while video_idx < keyframe_idx:
-            ret, frame = cap.read()
+
+        while video_idx <= keyframe_idx:
+            for i in range(20):
+                ret, frame = cap.read()
+                if ret:
+                    break
+                else:
+                    print 'retrying'
+            if not ret:
+                raise RuntimeError(
+                    'Cound not find keyframe {} in video'.format(shot_id))
+            if video_idx == keyframe_idx:
+                cv2.imwrite(os.path.join(image_path, shot_id), frame)
             video_idx += 1
-        if video_idx == keyframe_idx:
-            print 'saving', shot_id
-            cv2.imwrite(os.path.join(image_path, shot_id), frame)
-        else:
-            raise RuntimeError(
-                'Cound not find keyframe {} in video'.format(shot_id))
 
     cap.release()
 

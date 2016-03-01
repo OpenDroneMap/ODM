@@ -67,14 +67,22 @@ int main(int argc, char **argv) {
 
     ORB_SLAM2::System SLAM(argv[1], argv[2], ORB_SLAM2::System::MONOCULAR, true);
 
+    usleep(10 * 1e6);
+
     std::cout << "Start processing video ..." << std::endl;
 
     double T = 0.1;  // Seconds between frames
     cv::Mat im;
+    int num_frames = cap.get(CV_CAP_PROP_FRAME_COUNT);
     for(int ni = 0;; ++ni){
+        std::cout << "processing frame " << ni << "/" << num_frames << std::endl;
         // Get frame
-        cap >> im;
-        if(im.empty()) break;
+        bool res = false;
+        for (int trial = 0; !res && trial < 20; ++trial) {
+            std::cout << "trial " << trial << std::endl;
+            res = cap.read(im);
+        }
+        if(!res) break;
 
         double timestamp = ni * T;
 
