@@ -319,6 +319,9 @@ class ODM_Tree(object):
 
         # important files paths
 
+        # benchmarking
+        self.benchmarking = io.join_paths(self.root_path, 'benchmark.txt')
+
         # opensfm
         self.opensfm_bundle = io.join_paths(self.opensfm, 'bundle_r000.out')
         self.opensfm_bundle_list = io.join_paths(self.opensfm, 'list_r000.out')

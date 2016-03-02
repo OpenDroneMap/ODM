@@ -1,8 +1,11 @@
 import ecto
+import os
 
 from opendm import context
 from opendm import types
 from opendm import config
+from opendm import io
+from opendm import system
 
 from dataset import ODMLoadDatasetCell
 from resize import ODMResizeCell
@@ -69,6 +72,13 @@ class ODMApp(ecto.BlackBox):
     def configure(self, p, _i, _o):
         tree = types.ODM_Tree(p.args['project_path'])
         self.tree = ecto.Constant(value=tree)
+
+        # TODO(dakota) put this somewhere better maybe
+        if config.args.get('time') and io.file_exists(tree.benchmarking):
+            # Delete the previously made file
+            os.remove(tree.benchmarking)
+            with open(tree.benchmarking, 'a') as b:
+                b.write('ODM Benchmarking file created %s\nNumber of Cores: %s\n\n' % (system.now(), context.num_cores))
 
     def connections(self, _p):
         # define initial task

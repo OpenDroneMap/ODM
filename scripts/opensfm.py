@@ -23,6 +23,9 @@ class ODMOpenSfMCell(ecto.Cell):
 
     def process(self, inputs, outputs):
 
+        # Benchmarking
+        start_time = system.now_raw()
+
         log.ODM_INFO('Running OMD OpenSfm Cell')
 
         # get inputs
@@ -96,6 +99,9 @@ class ODMOpenSfMCell(ecto.Cell):
                        (context.pyopencv_path, context.opensfm_path, tree.opensfm, tree.pmvs))
         else:
             log.ODM_WARNING('Found a valid CMVS file in: %s' % tree.pmvs_visdat)
+
+        if args['time']:
+            system.benchmark(start_time, tree.benchmarking, 'OpenSfM')
 
         log.ODM_INFO('Running OMD OpenSfm Cell - Finished')
         return ecto.OK if args['end_with'] != 'opensfm' else ecto.QUIT
