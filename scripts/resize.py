@@ -20,6 +20,9 @@ class ODMResizeCell(ecto.Cell):
 
     def process(self, inputs, outputs):
 
+        # Benchmarking
+        start_time = system.now_raw()
+
         log.ODM_INFO('Running ODM Resize Cell')
 
         # get inputs
@@ -90,6 +93,9 @@ class ODMResizeCell(ecto.Cell):
 
         # append photos to cell output
         self.outputs.photos = photos
+
+        if args['time']:
+            system.benchmark(start_time, tree.benchmarking, 'Resizing')
 
         log.ODM_INFO('Running ODM Resize Cell - Finished')
         return ecto.OK if args['end_with'] != 'resize' else ecto.QUIT

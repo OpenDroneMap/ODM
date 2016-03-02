@@ -34,6 +34,9 @@ class ODMPmvsCell(ecto.Cell):
 
     def process(self, inputs, outputs):
 
+        # Benchmarking
+        start_time = system.now_raw()
+
         log.ODM_INFO('Running OMD PMVS Cell')
 
         # get inputs
@@ -71,6 +74,9 @@ class ODMPmvsCell(ecto.Cell):
 
         else:
             log.ODM_WARNING('Found a valid PMVS file in %s' % tree.pmvs_model)
+
+        if args['time']:
+            system.benchmark(start_time, tree.benchmarking, 'PMVS')
 
         log.ODM_INFO('Running OMD PMVS Cell - Finished')
         return ecto.OK if args['end_with'] != 'pmvs' else ecto.QUIT
