@@ -21,8 +21,7 @@ def run(cmd):
     returnCode = os.system(cmd)
 
     if (returnCode != 0):
-        # TODO(edgar): add as log.ODM_ERROR
-        sys.exit("\nquitting cause: \n\t" + cmd + "\nreturned with code " +
+        log.ODM_ERROR("quitting cause: \n\t" + cmd + "\nreturned with code " +
                  str(returnCode) + ".\n")
 
 
