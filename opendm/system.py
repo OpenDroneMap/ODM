@@ -23,6 +23,7 @@ def run(cmd):
     if (returnCode != 0):
         log.ODM_ERROR("quitting cause: \n\t" + cmd + "\nreturned with code " +
                  str(returnCode) + ".\n")
+        sys.exit('An error occurred. Check stdout above or the logs.')
 
 
 def now():

@@ -30,6 +30,10 @@ def ODM_ERROR(str):
     logging.error(str)
 
 
+def ODM_EXCEPTION(str):
+    logging.exception(str)
+
+
 def ODM_DEBUG(str):
     logging.debug(str)
 
