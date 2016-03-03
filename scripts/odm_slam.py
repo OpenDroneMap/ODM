@@ -79,6 +79,8 @@ class ODMSlamCell(ecto.Cell):
                 map_points,
                 slam_config,
             ]))
+            # link opensfm images to resized images
+            os.symlink(tree.opensfm + '/images', tree.dataset_resize)
         else:
             log.ODM_WARNING('Found a valid OpenSfM file in: {}'.format(
                 tree.opensfm_reconstruction))
