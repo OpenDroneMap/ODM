@@ -7,7 +7,6 @@ scripts_path = os.path.abspath(os.path.dirname(__file__))
 root_path, _ = os.path.split(scripts_path)
 
 superbuild_path = os.path.join(root_path, 'SuperBuild')
-ccd_widths_path = os.path.join(root_path, 'data/ccd_defs.json')
 tests_path = os.path.join(root_path, 'tests')
 tests_data_path = os.path.join(root_path, 'tests/test_data')
 
@@ -17,6 +16,7 @@ sys.path.append(pyopencv_path)
 
 # define opensfm path
 opensfm_path = os.path.join(superbuild_path, "src/opensfm")
+ccd_widths_path = os.path.join(opensfm_path, 'opensfm/data/sensor_data.json')
 
 # define pmvs path
 cmvs_path = os.path.join(superbuild_path, "install/bin/cmvs")
