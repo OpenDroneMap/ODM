@@ -2,6 +2,7 @@ import cv2
 import pyexiv2
 import re
 from fractions import Fraction
+from opensfm.exif import sensor_string
 
 import log
 import io
@@ -26,14 +27,15 @@ class ODM_Photo:
         # other attributes
         self.camera_make = None
         self.camera_model = None
+        self.make_model = None
         # parse values from metadata
         self.parse_pyexiv2_values(self.path_file, force_focal, force_ccd)
         # compute focal length into pixels
         self.update_focal()
 
         # print log message
-        log.ODM_DEBUG('Loaded %s | dimensions: %s x %s | focal: %s | ccd: %s' %
-                      (self.filename, self.width, self.height, self.focal_length, self.ccd_width))
+        log.ODM_DEBUG('Loaded %s | camera: %s | dimensions: %s x %s | focal: %s | ccd: %s' %
+                      (self.filename, self.make_model, self.width, self.height, self.focal_length, self.ccd_width))
 
     def update_focal(self):
         # compute focal length in pixels
@@ -65,8 +67,10 @@ class ODM_Photo:
                     self.camera_model = val
                 elif key == 'Exif.Photo.FocalLength':
                     self.focal_length = float(val)
-            except Exception, e:
+            except pyexiv2.ExifValueError, e:
                 pass
+
+        self.make_model = sensor_string(self.camera_make, self.camera_model)
 
         # needed to do that since sometimes metadata contains wrong data
         img = cv2.imread(_path_file)
@@ -74,20 +78,23 @@ class ODM_Photo:
         self.height = img.shape[0]
 
         # force focal and ccd_width with user parameter
-        if _force_focal: self.focal_length = _force_focal
-        if _force_ccd: self.ccd_width = _force_ccd
+        if _force_focal:
+            self.focal_length = _force_focal
+        if _force_ccd:
+            self.ccd_width = _force_ccd
 
         # find ccd_width from file if needed
         if self.ccd_width is None and self.camera_model is not None:
             # load ccd_widths from file
             ccd_widths = system.get_ccd_widths()
             # search ccd by camera model
-            key = [x for x in ccd_widths.keys() if self.camera_model in x]
+            key = [x for x in ccd_widths.keys() if self.make_model in x]
             # convert to float if found
             if key:
                 self.ccd_width = float(ccd_widths[key[0]])
-            # else:
-            # log.ODM_ERROR('Could not find ccd_width in file')
+            else:
+                log.ODM_WARNING('Could not find ccd_width in file. Use --force-ccd or edit the sensor_data.json '
+                                'file to manually input ccd width')
 
 
 # TODO: finish this class

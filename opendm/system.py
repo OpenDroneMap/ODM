@@ -4,6 +4,7 @@ import json
 import datetime
 import sys
 import subprocess
+import string
 
 from opendm import context
 from opendm import log
@@ -11,9 +12,9 @@ from opendm import log
 
 def get_ccd_widths():
     """Return the CCD Width of the camera listed in the JSON defs file."""
-    with open(context.ccd_widths_path) as jsonFile:
-        return json.load(jsonFile)
-
+    with open(context.ccd_widths_path) as f:
+        sensor_data = json.loads(f.read())
+    return dict(zip(map(string.lower, sensor_data.keys()), sensor_data.values()))
 
 def run(cmd):
     """Run a system command"""
