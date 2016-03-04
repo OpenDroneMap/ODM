@@ -114,7 +114,7 @@ fi
 NUM_CORES=`grep -c processor /proc/cpuinfo`
 
 ## Add SuperBuild path to the python path
-export PYTHONPATH=$PYTHONPATH:`pwd`/SuperBuild/install/lib/python2.7/dist-packages
+export PYTHONPATH=$PYTHONPATH:`pwd`/SuperBuild/install/lib/python2.7/dist-packages:`pwd`/SuperBuild/src/opensfm
 
 ## Compile SuperBuild
 cd SuperBuild
