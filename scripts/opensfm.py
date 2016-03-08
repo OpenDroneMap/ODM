@@ -26,7 +26,7 @@ class ODMOpenSfMCell(ecto.Cell):
         # Benchmarking
         start_time = system.now_raw()
 
-        log.ODM_INFO('Running OMD OpenSfm Cell')
+        log.ODM_INFO('Running ODM OpenSfM Cell')
 
         # get inputs
         tree = self.inputs.tree
@@ -34,7 +34,7 @@ class ODMOpenSfMCell(ecto.Cell):
         photos = self.inputs.photos
 
         if not photos:
-            log.ODM_ERROR('Not enough photos in photos array to start OpenSfm')
+            log.ODM_ERROR('Not enough photos in photos array to start OpenSfM')
             return ecto.QUIT
 
         # create working directories     
@@ -42,11 +42,11 @@ class ODMOpenSfMCell(ecto.Cell):
         system.mkdir_p(tree.pmvs)
 
         # check if we rerun cell or not
-        rerun_cell = (args['rerun'] is not None and
-                      args['rerun'] == 'opensfm') or \
-                     (args['rerun_all']) or \
-                     (args['rerun_from'] is not None and
-                      'opensfm' in args['rerun_from'])
+        rerun_cell = (args.rerun is not None and
+                      args.rerun == 'opensfm') or \
+                     (args.rerun_all) or \
+                     (args.rerun_from is not None and
+                      'opensfm' in args.rerun_from)
 
         # check if reconstruction was done before
 
@@ -78,7 +78,7 @@ class ODMOpenSfMCell(ecto.Cell):
             system.run('PYTHONPATH=%s %s/bin/run_all %s' %
                        (context.pyopencv_path, context.opensfm_path, tree.opensfm))
         else:
-            log.ODM_WARNING('Found a valid OpenSfm file in: %s' %
+            log.ODM_WARNING('Found a valid OpenSfM file in: %s' %
                             tree.opensfm_reconstruction)
 
         # check if reconstruction was exported to bundler before
@@ -100,8 +100,8 @@ class ODMOpenSfMCell(ecto.Cell):
         else:
             log.ODM_WARNING('Found a valid CMVS file in: %s' % tree.pmvs_visdat)
 
-        if args['time']:
+        if args.time:
             system.benchmark(start_time, tree.benchmarking, 'OpenSfM')
 
-        log.ODM_INFO('Running OMD OpenSfm Cell - Finished')
-        return ecto.OK if args['end_with'] != 'opensfm' else ecto.QUIT
+        log.ODM_INFO('Running ODM OpenSfM Cell - Finished')
+        return ecto.OK if args.end_with != 'opensfm' else ecto.QUIT
