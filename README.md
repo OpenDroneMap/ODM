@@ -44,7 +44,7 @@ Support for Ubuntu 12.04 is currently BROKEN with the addition of OpenSfM and Ce
 
     cd path/to/odm/dir
     git clone https://github.com/OpenDroneMap/OpenDroneMap.git .
-    export PYTHONPATH=$PYTHONPATH:`pwd`/SuperBuild/install/lib/python2.7/dist-packages
+    export PYTHONPATH=$PYTHONPATH:`pwd`/SuperBuild/install/lib/python2.7/dist-packages:`pwd`/SuperBuild/src/opensfm
     export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:`pwd`/SuperBuild/install/lib
     bash configure.sh
     mkdir build && cd build && cmake .. && make && cd ..
