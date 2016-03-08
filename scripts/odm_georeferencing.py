@@ -28,7 +28,7 @@ class ODMGeoreferencingCell(ecto.Cell):
         # Benchmarking
         start_time = system.now_raw()
 
-        log.ODM_INFO('Running OMD Georeferencing Cell')
+        log.ODM_INFO('Running ODM Georeferencing Cell')
 
         # get inputs
         args = self.inputs.args
@@ -68,11 +68,11 @@ class ODMGeoreferencingCell(ecto.Cell):
                 return ecto.QUIT
 
         # check if we rerun cell or not
-        rerun_cell = (args['rerun'] is not None and
-                      args['rerun'] == 'odm_georeferencing') or \
-                     (args['rerun_all']) or \
-                     (args['rerun_from'] is not None and
-                      'odm_georeferencing' in args['rerun_from'])
+        rerun_cell = (args.rerun is not None and
+                      args.rerun == 'odm_georeferencing') or \
+                     (args.rerun_all) or \
+                     (args.rerun_from is not None and
+                      'odm_georeferencing' in args.rerun_from)
 
         if not io.file_exists(tree.odm_georeferencing_model_obj_geo) or \
            not io.file_exists(tree.odm_georeferencing_model_ply_geo) or rerun_cell:
@@ -141,8 +141,8 @@ class ODMGeoreferencingCell(ecto.Cell):
             log.ODM_WARNING('Found a valid georeferenced model in: %s'
                             % tree.odm_georeferencing_model_ply_geo)
 
-        if args['time']:
+        if args.time:
             system.benchmark(start_time, tree.benchmarking, 'Georeferencing')
 
-        log.ODM_INFO('Running OMD Georeferencing Cell - Finished')
-        return ecto.OK if args['end_with'] != 'odm_georeferencing' else ecto.QUIT
+        log.ODM_INFO('Running ODM Georeferencing Cell - Finished')
+        return ecto.OK if args.end_with != 'odm_georeferencing' else ecto.QUIT
