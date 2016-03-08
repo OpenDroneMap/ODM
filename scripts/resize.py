@@ -34,17 +34,21 @@ class ODMResizeCell(ecto.Cell):
             log.ODM_ERROR('Not enough photos in photos to resize')
             return ecto.QUIT
 
+        if self.params.resize_to <= 0:
+            log.ODM_ERROR('Resize parameter must be greater than 0')
+            return ecto.QUIT
+
         # create working directory
         system.mkdir_p(tree.dataset_resize)
 
         log.ODM_DEBUG('Resizing dataset to: %s' % tree.dataset_resize)
 
         # check if we rerun cell or not
-        rerun_cell = (args['rerun'] is not None and
-                      args['rerun'] == 'resize') or \
-                     (args['rerun_all']) or \
-                     (args['rerun_from'] is not None and
-                      'resize' in args['rerun_from'])
+        rerun_cell = (args.rerun is not None and
+                      args.rerun == 'resize') or \
+                     (args.rerun_all) or \
+                     (args.rerun_from is not None and
+                      'resize' in args.rerun_from)
 
         # loop over photos
         for photo in photos:
@@ -60,6 +64,8 @@ class ODMResizeCell(ecto.Cell):
                 img = cv2.imread(path_file)
                 # compute new size
                 max_side = max(img.shape[0], img.shape[1])
+                if max_side <= self.params.resize_to:
+                    log.ODM_WARNING('Resize Parameter is greater than the largest side of the image')
                 ratio = float(self.params.resize_to) / float(max_side)
                 img_r = cv2.resize(img, None, fx=ratio, fy=ratio)
                 # write image with opencv
@@ -94,8 +100,8 @@ class ODMResizeCell(ecto.Cell):
         # append photos to cell output
         self.outputs.photos = photos
 
-        if args['time']:
+        if args.time:
             system.benchmark(start_time, tree.benchmarking, 'Resizing')
 
         log.ODM_INFO('Running ODM Resize Cell - Finished')
-        return ecto.OK if args['end_with'] != 'resize' else ecto.QUIT
+        return ecto.OK if args.end_with != 'resize' else ecto.QUIT
