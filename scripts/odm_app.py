@@ -38,52 +38,54 @@ class ODMApp(ecto.BlackBox):
         Only cells from which something is forwarded have to be declared
         """
         cells = {'args': ecto.Constant(value=p.args),
-                 'dataset': ODMLoadDatasetCell(force_focal=p.args['force_focal'],
-                                               force_ccd=p.args['force_ccd']),
-                 'resize': ODMResizeCell(resize_to=p.args['resize_to']),
+                 'dataset': ODMLoadDatasetCell(force_focal=p.args.force_focal,
+                                               force_ccd=p.args.force_ccd),
+                 'resize': ODMResizeCell(resize_to=p.args.resize_to),
                  'opensfm': ODMOpenSfMCell(use_exif_size=False,
-                                           feature_process_size=p.args['resize_to'],
-                                           feature_min_frames=p.args['min_num_features'],
+                                           feature_process_size=p.args.resize_to,
+                                           feature_min_frames=p.args.min_num_features,
                                            processes=context.num_cores,
-                                           matching_gps_neighbors=p.args['matcher_neighbors'],
-                                           matching_gps_distance=p.args['matcher_distance']),
-                 'cmvs': ODMCmvsCell(max_images=p.args['cmvs_maxImages']),
-                 'pmvs': ODMPmvsCell(level=p.args['pmvs_level'],
-                                     csize=p.args['pmvs_csize'],
-                                     thresh=p.args['pmvs_threshold'],
-                                     wsize=p.args['pmvs_wsize'],
-                                     min_imgs=p.args['pmvs_minImageNum'],
-                                     cores=p.args['pmvs_num_cores']),
-                 'meshing': ODMeshingCell(max_vertex=p.args['odm_meshing_maxVertexCount'],
-                                          oct_tree=p.args['odm_meshing_octreeDepth'],
-                                          samples=p.args['odm_meshing_samplesPerNode'],
-                                          solver=p.args['odm_meshing_solverDivide']),
-                 'texturing': ODMMvsTexCell(data_term=p.args['mvs_texturing_dataTerm'],
-                                            outlier_rem_type=p.args['mvs_texturing_outlierRemovalType'],
-                                            skip_vis_test=p.args['mvs_texturing_skipGeometricVisibilityTest'],                                       
-                                            skip_glob_seam_leveling=p.args['mvs_texturing_skipGlobalSeamLeveling'],
-                                            skip_loc_seam_leveling=p.args['mvs_texturing_skipLocalSeamLeveling'],
-                                            skip_hole_fill=p.args['mvs_texturing_skipHoleFilling'],
-                                            keep_unseen_faces=p.args['mvs_texturing_keepUnseenFaces']),
+                 'texturing': ODMMvsTexCell(data_term=p.args.mvs_texturing_dataTerm,
+                                            outlier_rem_type=p.args.mvs_texturing_outlierRemovalType,
+                                            skip_vis_test=p.args.mvs_texturing_skipGeometricVisibilityTest,
+                                            skip_glob_seam_leveling=p.args.mvs_texturing_skipGlobalSeamLeveling,
+                                            skip_loc_seam_leveling=p.args.mvs_texturing_skipLocalSeamLeveling,
+                                            skip_hole_fill=p.args.mvs_texturing_skipHoleFilling,
+                                            keep_unseen_faces=p.args.mvs_texturing_keepUnseenFaces),
 # Old odm_texturing
 #                 'texturing': ODMTexturingCell(resize=p.args['resize_to'],
 #                                               resolution=p.args['odm_texturing_textureResolution'],
-#                                               size=p.args['odm_texturing_textureWithSize']),
-                 'georeferencing': ODMGeoreferencingCell(img_size=p.args['resize_to'],
-                                                         gcp_file=p.args['odm_georeferencing_gcpFile'],
-                                                         use_gcp=p.args['odm_georeferencing_useGcp']),
-                 'orthophoto': ODMOrthoPhotoCell(resolution=p.args['odm_orthophoto_resolution'])
+                                           matching_gps_neighbors=p.args.matcher_neighbors,
+                                           matching_gps_distance=p.args.matcher_distance),
+                 'cmvs': ODMCmvsCell(max_images=p.args.cmvs_maxImages),
+                 'pmvs': ODMPmvsCell(level=p.args.pmvs_level,
+                                     csize=p.args.pmvs_csize,
+                                     thresh=p.args.pmvs_threshold,
+                                     wsize=p.args.pmvs_wsize,
+                                     min_imgs=p.args.pmvs_minImageNum,
+                                     cores=p.args.pmvs_num_cores),
+                 'meshing': ODMeshingCell(max_vertex=p.args.odm_meshing_maxVertexCount,
+                                          oct_tree=p.args.odm_meshing_octreeDepth,
+                                          samples=p.args.odm_meshing_samplesPerNode,
+                                          solver=p.args.odm_meshing_solverDivide),
+                 'texturing': ODMTexturingCell(resize=p.args.resize_to,
+                                               resolution=p.args.odm_texturing_textureResolution,
+                                               size=p.args.odm_texturing_textureWithSize),
+                 'georeferencing': ODMGeoreferencingCell(img_size=p.args.resize_to,
+                                                         gcp_file=p.args.odm_georeferencing_gcpFile,
+                                                         use_gcp=p.args.odm_georeferencing_useGcp),
+                 'orthophoto': ODMOrthoPhotoCell(resolution=p.args.odm_orthophoto_resolution)
 
                  }
 
         return cells
 
     def configure(self, p, _i, _o):
-        tree = types.ODM_Tree(p.args['project_path'])
+        tree = types.ODM_Tree(p.args.project_path)
         self.tree = ecto.Constant(value=tree)
 
         # TODO(dakota) put this somewhere better maybe
-        if config.args.get('time') and io.file_exists(tree.benchmarking):
+        if p.args.time and io.file_exists(tree.benchmarking):
             # Delete the previously made file
             os.remove(tree.benchmarking)
             with open(tree.benchmarking, 'a') as b:
