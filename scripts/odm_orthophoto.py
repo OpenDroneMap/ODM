@@ -31,11 +31,11 @@ class ODMOrthoPhotoCell(ecto.Cell):
         system.mkdir_p(tree.odm_orthophoto)
 
         # check if we rerun cell or not
-        rerun_cell = (args['rerun'] is not None and
-                      args['rerun'] == 'odm_orthophoto') or \
-                     (args['rerun_all']) or \
-                     (args['rerun_from'] is not None and
-                      'odm_orthophoto' in args['rerun_from'])
+        rerun_cell = (args.rerun is not None and
+                      args.rerun == 'odm_orthophoto') or \
+                     (args.rerun_all) or \
+                     (args.rerun_from is not None and
+                      'odm_orthophoto' in args.rerun_from)
 
         if not io.file_exists(tree.odm_orthophoto_file) or rerun_cell:
 
@@ -98,8 +98,8 @@ class ODMOrthoPhotoCell(ecto.Cell):
         else:
             log.ODM_WARNING('Found a valid orthophoto in: %s' % tree.odm_orthophoto_file)
 
-        if args['time']:
+        if args.time:
             system.benchmark(start_time, tree.benchmarking, 'Orthophoto')
 
-        log.ODM_INFO('Running OMD OrthoPhoto Cell - Finished')
-        return ecto.OK if args['end_with'] != 'odm_orthophoto' else ecto.QUIT
+        log.ODM_INFO('Running ODM OrthoPhoto Cell - Finished')
+        return ecto.OK if args.end_with != 'odm_orthophoto' else ecto.QUIT
