@@ -48,7 +48,7 @@ class ODMeshingCell(ecto.Cell):
                       'odm_meshing' in args.rerun_from)
 
         if not io.file_exists(tree.odm_mesh) or rerun_cell:
-            log.ODM_DEBUG('Writting ODM Mesh file in: %s' % tree.odm_mesh)
+            log.ODM_DEBUG('Writing ODM Mesh file in: %s' % tree.odm_mesh)
 
             kwargs = {
                 'bin': context.odm_modules_path,

@@ -66,7 +66,7 @@ class ODMOpenSfMCell(ecto.Cell):
                 "matching_gps_neighbors: %s" % self.params.matching_gps_neighbors
             ]
 
-            if args['matcher_distance'] > 0:
+            if args.matcher_distance > 0:
                 config.append("matching_gps_distance: %s" % self.params.matching_gps_distance)
 
             # write config file
