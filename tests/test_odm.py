@@ -1,46 +1,81 @@
 import unittest
+import os
+
+import ecto
 from opendm import config
 from opendm import context
-import ecto
 from scripts.odm_app import ODMApp
 from ecto.opts import scheduler_options, run_plasm
-#
+
+parser = config.parser
+scheduler_options(parser)
+options = config.config()
+
+
+def appSetup(options):
+    app = ODMApp(args=options)
+    plasm = ecto.Plasm()
+    plasm.insert(app)
+    return app, plasm
+
+
+def setUp():
+    # Run tests
+    print '%s' % options
+    options.project_path = context.tests_data_path
+    # options.rerun_all = True
+    app, plasm = appSetup(options)
+    print 'Run Setup: Initial Run'
+    run_plasm(options, plasm)
+    # options.rerun_all = False
+
 
 class TestResize(unittest.TestCase):
-    '''
+    """
     Tests the resize function
-    '''
-    def setUp(self):
-        # Run tests
-        self.parser = config.parser
-        scheduler_options(self.parser)
-        self.options = self.parser.parse_args()
-        self.options.project_path = context.tests_data_path
-        self.app, self.plasm = self.appSetup(self.options)
-        print 'Run Setup: Initial Run'
-        run_plasm(self.options, self.plasm)
+    """
 
     def test_resize(self):
         # rerun resize cell and set params
-        self.options.rerun = 'resize'
-        self.options.resize_to = 1600
-        print "Run Test 1: Rerun resize: %s" % self.options.resize_to
+        options.rerun = 'resize'
+        options.resize_to = 1600
         # rebuild app
-        self.app, self.plasm = self.appSetup(self.options)
-        run_plasm(self.options, self.plasm)
+        self.app, self.plasm = appSetup(options)
+        run_plasm(options, self.plasm)
         # assert each image is sized to the option.resize_to
+        print "Run Test 1: Check resize 1600"
+        self.assertEquals(max(self.app.resize.outputs.photos[0].height, self.app.resize.outputs.photos[0].width),
+                          options.resize_to)
+
+    def test_all_resized(self):
+        options.rerun = 'resize'
+        options.resize_to = 1600
+        print "Run Test 2: Rerun resize: %s" % options.resize_to
+        # rebuild app
+        self.app, self.plasm = appSetup(options)
+        run_plasm(options, self.plasm)
+        # assert the number of images in images == number of images in resize
         print "Run Test 1: Check that the resize happens"
-        if self.app.resize.outputs.photos[0].height > self.app.resize.outputs.photos[0].width:
-            self.assertEquals(self.app.resize.outputs.photos[0].height, self.options.resize_to)
-        else:
-            self.assertEquals(self.app.resize.outputs.photos[0].width, self.options.resize_to)
+        self.assertEquals(len(self.app.resize.outputs.photos), len(self.app.dataset.outputs.photos))
 
 
-    def appSetup(self, options):
-        app = ODMApp(args=vars(options))
-        plasm = ecto.Plasm()
-        plasm.insert(app)
-        return app, plasm
+# class TestOpenSfM(unittest.TestCase):
+#     """
+#     Tests the OpenSfM module
+#     """
+#
+#     def test_opensfm(self):
+#         options.rerun = 'opensfm'
+#         self.app, self.plasm = appSetup(options)
+#         run_plasm(options, self.plasm)
+#         # Test configuration
+#         self.assertEquals(self.app.opensfm)
+
+class TestPMVS(unittest.TestCase):
+
+    def test_pmvs(self):
+        self.assertTrue(os.path.isfile(context.pmvs2_path))
+
 
 if __name__ == '__main__':
     unittest.main()
