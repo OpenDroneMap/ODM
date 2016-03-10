@@ -54,6 +54,7 @@ class TestResize(unittest.TestCase):
         self.app, self.plasm = appSetup(options)
         run_plasm(options, self.plasm)
 
+
     def test_resize(self):
         # assert each image is sized to the option.resize_to
         self.assertEquals(max(self.app.resize.outputs.photos[0].height, self.app.resize.outputs.photos[0].width),
@@ -143,6 +144,7 @@ class TestOrthophoto(unittest.TestCase):
 
     def test_orthophoto(self):
         self.assertTrue(os.path.isfile(self.app.orthophoto.inputs.tree.odm_orthophoto_file))
+
 
 if __name__ == '__main__':
     unittest.main()
