@@ -1,0 +1,7 @@
+language: python
+python:
+  - "2.7"
+install:
+  - "./configure.sh"
+  - "mkdir build && cd build && cmake .. && make && cd .."
+script: nosetests
