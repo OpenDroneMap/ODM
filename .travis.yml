@@ -3,11 +3,11 @@ dist: trusty
 language: python
 python:
   - "2.7_with_system_site_packages"
-language: generic
 branches:
   only:
     - edgarriba-cmake
 install:
+  - pip install --upgrade numpy
   - pip install catkin-pkg
   - "bash configure.sh"
   - "mkdir build && cd build && cmake .. && make && cd .."
