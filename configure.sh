@@ -119,6 +119,6 @@ export PYTHONPATH=$PYTHONPATH:`pwd`/SuperBuild/install/lib/python2.7/dist-packag
 ## Compile SuperBuild
 cd SuperBuild
 mkdir -p build && cd build
-cmake .. && make -j1 # ${NUM_CORES}
+cmake .. && make -j ${NUM_CORES}
 
 echo -e "\e[1;34mScript finished\e[0;39m"
