@@ -6,6 +6,8 @@ python:
 branches:
   only:
     - edgarriba-cmake
+env:
+  - LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${HOME}/dakotabenjamin/OpenDroneMap/SuperBuild/install/lib
 install:
   - pip install --upgrade numpy
   - pip install catkin-pkg
