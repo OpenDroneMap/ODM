@@ -1,0 +1,16 @@
+sudo: required
+dist: trusty
+language: python
+python:
+  - "2.7_with_system_site_packages"
+branches:
+  only:
+    - edgarriba-cmake
+env:
+  - LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${HOME}/dakotabenjamin/OpenDroneMap/SuperBuild/install/lib
+install:
+  - pip install --upgrade numpy
+  - pip install catkin-pkg
+  - "bash configure.sh"
+  - "mkdir build && cd build && cmake .. && make && cd .."
+script: nosetests

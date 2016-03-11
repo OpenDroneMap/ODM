@@ -7,13 +7,13 @@ if [ ! $(command -v apt-get) ]; then
   exit 1
 fi
 
+set -ev
+
 ## Before installing
 echo -e "\e[1;34mUpdating the system\e[0;39m"
 sudo apt-get update
 END_CMD1=$?
-sudo apt-get upgrade -y
-END_CMD2=$?
-if [ $END_CMD1 -ne 0 -o $END_CMD2 -ne 0 ]
+if [ $END_CMD1 -ne 0 ]
 then
 	echo -e "\e[1;31mERROR: \e[39mWhen Updating the system\e[0m"
 	exit 1
@@ -69,12 +69,12 @@ echo -e "\e[1;34mInstalling OpenSfM Dependencies\e[0;39m"
 sudo apt-get install python-networkx \
                      libgoogle-glog-dev \
                      libsuitesparse-dev \
-                     libboost-filesystem1.55-dev \
-                     libboost-iostreams1.55-dev \
-                     libboost-regex1.55-dev \
-                     libboost-python1.55-dev \
-                     libboost-date-time1.55-dev \
-                     libboost-thread1.55-dev -y
+                     libboost-filesystem-dev \
+                     libboost-iostreams-dev \
+                     libboost-regex-dev \
+                     libboost-python-dev \
+                     libboost-date-time-dev \
+                     libboost-thread-dev -y
 
 sudo pip install -U PyYAML \
                     exifread \
