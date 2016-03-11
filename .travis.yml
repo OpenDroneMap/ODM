@@ -3,6 +3,7 @@ dist: trusty
 language: python
 python:
   - "2.7_with_system_site_packages"
+language: generic
 branches:
   only:
     - edgarriba-cmake
