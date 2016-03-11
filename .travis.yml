@@ -7,6 +7,7 @@ branches:
   only:
     - edgarriba-cmake
 install:
+  - pip install catkin-pkg
   - "bash configure.sh"
   - "mkdir build && cd build && cmake .. && make && cd .."
 script: nosetests
