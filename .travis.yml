@@ -2,7 +2,7 @@ sudo: required
 dist: trusty
 language: python
 python:
-  - "2.7"
+  - "2.7_with_system_site_packages"
 branches:
   only:
     - edgarriba-cmake
