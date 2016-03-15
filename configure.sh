@@ -11,9 +11,9 @@ fi
 echo -e "\e[1;34mUpdating the system\e[0;39m"
 sudo apt-get update
 END_CMD1=$?
-sudo apt-get upgrade -y
-END_CMD2=$?
-if [ $END_CMD1 -ne 0 -o $END_CMD2 -ne 0 ]
+# sudo apt-get upgrade -y
+# END_CMD2=$?
+if [ $END_CMD1 -ne 0 ]
 then
 	echo -e "\e[1;31mERROR: \e[39mWhen Updating the system\e[0m"
 	exit 1
@@ -27,7 +27,7 @@ sudo apt-get install build-essential \
                      python-pip \
                      libgdal-dev \
                      libgeotiff-dev \
-                     pkg-config -y
+                     pkg-config -y -qq
 if [ $? -ne 0 ] 
 then
     echo -e "\e[1;31mERROR: \e[39mWhen Installing Required Requisites\e[0m"
@@ -53,7 +53,7 @@ sudo apt-get install libgtk2.0-dev \
                      libxext-dev \
                      liblapack-dev \
                      libeigen3-dev \
-                     libvtk5-dev -y
+                     libvtk5-dev -y -qq
 if [ $? -ne 0 ] 
 then
     echo -e "\e[1;31mERROR: \e[39mError when Installing Dependencies Requisites\e[0m"
@@ -69,12 +69,12 @@ echo -e "\e[1;34mInstalling OpenSfM Dependencies\e[0;39m"
 sudo apt-get install python-networkx \
                      libgoogle-glog-dev \
                      libsuitesparse-dev \
-                     libboost-filesystem1.55-dev \
-                     libboost-iostreams1.55-dev \
-                     libboost-regex1.55-dev \
-                     libboost-python1.55-dev \
-                     libboost-date-time1.55-dev \
-                     libboost-thread1.55-dev -y
+                     libboost-filesystem-dev \
+                     libboost-iostreams-dev \
+                     libboost-regex-dev \
+                     libboost-python-dev \
+                     libboost-date-time-dev \
+                     libboost-thread-dev -y -qq
 
 sudo pip install -U PyYAML \
                     exifread \
@@ -91,7 +91,7 @@ echo -e "\e[1;34mInstalling Ecto Dependencies\e[0;39m"
 sudo pip install -U catkin-pkg
 sudo apt-get install python-empy \
                      python-nose \
-                     python-pyside -y
+                     python-pyside -y -qq
 if [ $? -ne 0 ] 
 then
     echo -e "\e[1;31mERROR: \e[39mError when Installing Ecto Dependencies\e[0m"
@@ -103,7 +103,7 @@ echo -e "\e[1;34mInstalling OpenDroneMap Dependencies\e[0;39m"
 sudo apt-get install python-pyexiv2 \
                      python-scipy \
                      jhead \
-                     liblas-bin -y
+                     liblas-bin -y -qq
 if [ $? -ne 0 ] 
 then
     echo -e "\e[1;31mERROR: \e[39mError when Installing OpenDroneMap Dependencies\e[0m"
@@ -119,6 +119,6 @@ export PYTHONPATH=$PYTHONPATH:`pwd`/SuperBuild/install/lib/python2.7/dist-packag
 ## Compile SuperBuild
 cd SuperBuild
 mkdir -p build && cd build
-cmake .. && make -j ${NUM_CORES}
+cmake .. && make -j${NUM_CORES}
 
 echo -e "\e[1;34mScript finished\e[0;39m"
