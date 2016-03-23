@@ -120,7 +120,7 @@ Any file ending in .obj or .ply can be opened and viewed in [MeshLab](http://mes
 
 You can also view the orthophoto GeoTIFF in QGIS or other mapping software:
 
-![](https://opendronemap.github.io/OpenDroneMap/img/odm_orthophoto_test.png)
+![](https://opendronemap.github.io/OpenDroneMap/img/bellus_map.png)
 
 #### Using Docker
 
