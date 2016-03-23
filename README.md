@@ -1,9 +1,13 @@
+# OpenDroneMap
+
 ![](https://opendronemap.github.io/OpenDroneMap/img/odm_image.png)
 
 What is it?
 ===========
 
 OpenDroneMap is an open source toolkit for processing aerial drone imagery. Typical drones use simple point-and-shoot cameras, so the images from drones, while from a different perspective, are similar to any pictures taken from point-and-shoot cameras, i.e. non-metric imagery. OpenDroneMap turns those simple images into three dimensional geographic data that can be used in combination with other geographic datasets.
+
+![](https://opendronemap.github.io/OpenDroneMap/img/tol_ptcloud.png)
 
 In a word, OpenDroneMap is a toolchain for processing raw civilian UAS imagery to other useful products. What kind of products?
 
@@ -48,6 +52,11 @@ Support for Ubuntu 12.04 is currently BROKEN with the addition of OpenSfM and Ce
     export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:`pwd`/SuperBuild/install/lib
     bash configure.sh
     mkdir build && cd build && cmake .. && make && cd ..
+
+ For Ubuntu 15.10 users, this will help you get running:
+
+    sudo apt-get install python-xmltodict
+    sudo ln -s /usr/lib/x86_64-linux-gnu/libproj.so.9 /usr/lib/libproj.so
     
 #### Running OpenDroneMap
 
@@ -61,6 +70,8 @@ Create a project folder and places your images in an "images" directory:
             |-- img-1234.jpg
             |-- ...
 
+
+Example data can be cloned from https://github.com/OpenDroneMap/odm_data
 
 Then run:
 
@@ -101,31 +112,35 @@ When the process finishes, the results will be organized as follows
         |-- odm_orthophoto_log.txt          # Log file
         |-- gdal_translate_log.txt          # Log for georeferencing the png file
 
+##### Viewing your results
+
+Any file ending in .obj or .ply can be opened and viewed in [MeshLab](http://meshlab.sourceforge.net/) or similar software. That includes `pmvs/recon0/models/option-000.ply`, `odm_meshing/odm_mesh.ply`, `odm_texturing/odm_textured_model[_geo].obj`, or `odm_georeferencing/odm_georeferenced_model.ply`. Below is an example textured mesh:
+
+![](https://opendronemap.github.io/OpenDroneMap/img/tol_text.png)
+
+You can also view the orthophoto GeoTIFF in QGIS or other mapping software:
+
+![](https://opendronemap.github.io/OpenDroneMap/img/odm_orthophoto_test.png)
+
+#### Using Docker
+
+You can build and run OpenDroneMap in a Docker container:
+
+    export IMAGES=/absolute/path/to/your/project
+    docker build -t opendronemap:latest .
+    docker run -v $IMAGES:/images opendronemap:latest
+
+Replace /absolute/path/to/your/images with an absolute path to the directory containing your project (where the images are)
+To pass in custom parameters to the `run.py` script, simply pass it as arguments to the `docker run` command.
+
+---
+
 Here are some other videos, which may be outdated:
 
 - https://www.youtube.com/watch?v=7ZTufQkODLs (2015-01-30)
 - https://www.youtube.com/watch?v=m0i4GQdfl8A (2015-03-15)
 
 Now that texturing is in the code base, you can access the full textured meshes using MeshLab. Open MeshLab, choose `File:Import Mesh` and choose your textured mesh from a location similar to the following: `reconstruction-with-image-size-1200-results\odm_texturing\odm_textured_model.obj`
-
-__For Ubuntu 15.10 users, this will help you get running:__
-
-    sudo apt-get install python-xmltodict
-    sudo ln -s /usr/lib/x86_64-linux-gnu/libproj.so.9 /usr/lib/libproj.so
-
----
-
-Alternatively, you can also run OpenDroneMap in a Docker container:
-
-    export IMAGES=/absolute/path/to/your/images
-    docker build -t opendronemap:latest .
-    docker run -v $IMAGES:/images opendronemap:latest
-
-To pass in custom parameters to the `run.py` script, simply pass it as arguments to the `docker run` command.
-
----
-
-Example data can be found at https://github.com/OpenDroneMap/odm_data
 
 ---
 
