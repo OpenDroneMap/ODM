@@ -26,8 +26,16 @@ sudo apt-get install build-essential \
                      git \
                      python-pip \
                      libgdal-dev \
+                     gdal-bin \
                      libgeotiff-dev \
                      pkg-config -y
+
+# If we have ubuntu version 14.04, the cmake version in apt-get is too low for mvs-texturing.
+if [[ `lsb_release -rs` == "14.04" ]];
+then
+    bash upgradecmake.sh
+fi
+
 if [ $? -ne 0 ] 
 then
     echo -e "\e[1;31mERROR: \e[39mWhen Installing Required Requisites\e[0m"

@@ -103,7 +103,9 @@ set(custom_libs OpenGV
 				Catkin
 				Ecto
 				LAStools
-				PDAL)
+				PDAL
+				MvsTexturing
+)
 
 foreach(lib ${custom_libs})
 	SETUP_EXTERNAL_PROJECT_CUSTOM(${lib})

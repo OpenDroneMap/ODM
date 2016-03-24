@@ -346,11 +346,12 @@ class ODM_Tree(object):
         self.odm_mesh = io.join_paths(self.odm_meshing, 'odm_mesh.ply')
         self.odm_meshing_log = io.join_paths(self.odm_meshing, 'odm_meshing_log.txt')
 
-        # odm_texturing
+        # texturing
         self.odm_textured_model_obj = io.join_paths(
             self.odm_texturing, 'odm_textured_model.obj')
         self.odm_textured_model_mtl = io.join_paths(
             self.odm_texturing, 'odm_textured_model.mtl')
+# Log is only used by old odm_texturing
         self.odm_texuring_log = io.join_paths(
             self.odm_texturing, 'odm_texturing_log.txt')
 
