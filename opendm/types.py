@@ -137,6 +137,24 @@ class ODM_GeoRef(object):
             log.ODM_ERROR('Unknown pole format %s' % _pole)
             return
 
+    def coord_to_fractions(self, coord, refs):
+        deg_dec = abs(float(coord))
+        deg = int(deg_dec)
+        minute_dec = (deg_dec-deg)*60
+        minute = int(minute_dec)
+
+        sec_dec = (minute_dec-minute)*60
+        sec_dec = round(sec_dec,3)
+        sec_denominator = 1000
+        sec_numerator = int(sec_dec*sec_denominator)
+        if float(coord) >= 0:
+            latRef = refs[0]
+        else:
+            latRef = refs[1]
+
+        output = str(deg) + '/1 ' + str(minute) + '/1 ' + str(sec_numerator) + '/' + str(sec_denominator)
+        return output, latRef
+
     def convert_to_las(self, _file, pdalXML):
 
         if not self.epsg:
@@ -190,16 +208,15 @@ class ODM_GeoRef(object):
 
         gcp = self.gcps[idx]
 
-        kwargs = {'datum': self.datum,
-                  'zone': self.utm_zone,
+        kwargs = {'epsg': self.epsg,
                   'file': _file,
                   'x': gcp.x + self.utm_east_offset,
                   'y': gcp.y + self.utm_north_offset,
                   'z': gcp.z}
 
-        latlon = system.run_and_return('echo {x} {y} | cs2cs +proj=utm '
-                                       '+datum={datum} +ellps={datum} +zone={zone} +units=m +to '
-                                       '+proj=latlon +ellps={datum}'.format(**kwargs)).split()
+        latlon = system.run_and_return('echo {x} {y} {z} '.format(**kwargs),
+                                       'gdaltransform -s_srs \"EPSG:{epsg}\" '
+                                       '-t_srs \"EPSG:4326\"'.format(**kwargs)).split()
 
         # Example: 83d18'16.285"W
         # Example: 41d2'11.789"N
@@ -213,28 +230,8 @@ class ODM_GeoRef(object):
         else:
             log.ODM_ERROR('Something went wrong %s' % latlon)
 
-        tokens = re.split("[d '\"]+", lon_str)
-        if len(tokens) >= 4:
-            lon_deg, lon_min, lon_sec = tokens[:3]
-            lon_sec_frac = Fraction(lon_sec)
-            lon_sec_numerator = str(lon_sec_frac._numerator)
-            lon_sec_denominator = str(lon_sec_frac._denominator)
-            lon_ref = tokens[3]
-
-            tokens = re.split("[d '\"]+", lat_str)
-            if len(tokens) >= 4:
-                lat_deg, lat_min, lat_sec = tokens[:3]
-                lat_sec_frac = Fraction(lat_sec)
-                lat_sec_numerator = str(lat_sec_frac._numerator)
-                lat_sec_denominator = str(lat_sec_frac._denominator)
-                lat_ref = tokens[3]
-
-                alt_numerator = arc_denominator = 0  # BUG: arc_denominator is never used
-
-                if alt_str:
-                    alt_frac = Fraction(alt_str)
-                    alt_numerator = alt_frac._numerator
-                    alt_denominator = alt_frac._denominator
+        lat_frac = self.coord_to_fractions(latlon[1], ['N', 'S'])
+        lon_frac = self.coord_to_fractions(latlon[0], ['E', 'W'])
 
         # read image metadata
         metadata = pyexiv2.ImageMetadata(_photo.path_file)
@@ -244,31 +241,41 @@ class ODM_GeoRef(object):
 
         # GPS latitude
         key = 'Exif.GPSInfo.GPSLatitude'
-        value = [Fraction(int(lat_deg), 1), Fraction(int(lat_min), 1), \
-                 Fraction(int(lat_sec_numerator), int(lat_sec_denominator))]
-        metadata[key] = pyexiv2.ExifTag(key, value)
+        value = lat_frac[0].split(' ')
+        log.ODM_DEBUG('lat_frac: %s %s %s' % (value[0], value[1], value[2]))
+        metadata[key] = pyexiv2.ExifTag(key,
+                                        [Fraction(value[0]),
+                                         Fraction(value[1]),
+                                         Fraction(value[2])])
 
         key = 'Exif.GPSInfo.GPSLatitudeRef'
-        value = '%s' % lat_ref
+        value = lat_frac[1]
         metadata[key] = pyexiv2.ExifTag(key, value)
 
         # GPS longitude
         key = 'Exif.GPSInfo.GPSLongitude'
-        value = [Fraction(int(lon_deg), 1), Fraction(int(lon_min), 1), \
-                 Fraction(int(lon_sec_numerator), int(lon_sec_denominator))]
-        metadata[key] = pyexiv2.ExifTag(key, value)
+        value = lon_frac[0].split(' ')
+        metadata[key] = pyexiv2.ExifTag(key,
+                                        [Fraction(value[0]),
+                                         Fraction(value[1]),
+                                         Fraction(value[2])])
 
         key = 'Exif.GPSInfo.GPSLongitudeRef'
-        value = '%s' % lon_ref
+        value = lon_frac[1]
         metadata[key] = pyexiv2.ExifTag(key, value)
 
         # GPS altitude
+        altitude = abs(int(float(latlon[2])*100))
         key = 'Exif.GPSInfo.GPSAltitude'
-        value = Fraction(int(gcp.z), 1)
+        value = Fraction(altitude, 1)
         metadata[key] = pyexiv2.ExifTag(key, value)
 
+        if latlon[2] >= 0:
+            altref = '0'
+        else:
+            altref = '1'
         key = 'Exif.GPSInfo.GPSAltitudeRef'
-        metadata[key] = pyexiv2.ExifTag(key, '0')
+        metadata[key] = pyexiv2.ExifTag(key, altref)
 
         # write values
         metadata.write()
@@ -284,24 +291,40 @@ class ODM_GeoRef(object):
             # extract reference system and utm zone from first line.
             # We will assume the following format:
             # 'WGS84 UTM 17N'
-            line = f.readline().split(' ')
-            self.datum = line[0]
-            self.utm_pole = line[2][len(line) - 1]
-            self.utm_zone = int(line[2][:len(line) - 1])
-            # extract east and west offsets from second line.
-            # We will assume the following format:
-            # '440143 4588391'
-            line = f.readline().split(' ')
-            self.utm_east_offset = int(line[0])
-            self.utm_north_offset = int(line[1])
+            line = f.readline()
+            log.ODM_DEBUG('Line: %s' % line)
+            ref = line.split(' ')
+            # match_wgs_utm = re.search('WGS84 UTM (\d{1,2})(N|S)', line, re.I)
+            if ref[0] == 'WGS84' and ref[1] == 'UTM': # match_wgs_utm:
+                self.datum = ref[0]
+                self.utm_pole = ref[2][len(ref) - 1]
+                self.utm_zone = int(ref[2][:len(ref) - 1])
+                # extract east and west offsets from second line.
+                # We will assume the following format:
+                # '440143 4588391'
+                # update EPSG
+                self.epsg = self.calculate_EPSG(self.utm_zone, self.utm_pole)
+            # If the first line looks like "EPSG:n" or "epsg:n"
+            elif ref[0].split(':')[0].lower() == 'epsg':
+                self.epsg = line.split(':')[1]
+            else:
+                log.ODM_ERROR('Could not parse coordinates. Bad CRS supplied: %s' % line)
+                return
+
+            offsets = f.readline().split(' ')
+            self.utm_east_offset = int(offsets[0])
+            self.utm_north_offset = int(offsets[1])
+
             # parse coordinates
             lines = f.readlines()
             for l in lines:
-                x, y, z = l.split(' ')[:3]
+                xyz = l.split(' ')
+                if len(xyz) == 3:
+                    x, y, z = xyz[:3]
+                elif len(xyz) == 2:
+                    x, y = xyz[:2]
+                    z = 0
                 self.gcps.append(ODM_GCPoint(float(x), float(y), float(z)))
-
-        # update EPSG
-        self.epsg = self.calculate_EPSG(self.utm_zone, self.utm_pole)
 
 
 class ODM_Tree(object):
