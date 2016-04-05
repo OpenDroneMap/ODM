@@ -33,6 +33,7 @@ class ODMGeoreferencingCell(ecto.Cell):
         # get inputs
         args = self.inputs.args
         tree = self.inputs.tree
+        gcpfile = io.join_paths(tree.root_path, self.params.gcp_file)
 
         # define paths and create working directories
         system.mkdir_p(tree.odm_georeferencing)
@@ -91,14 +92,14 @@ class ODMGeoreferencingCell(ecto.Cell):
                 'geo_sys': tree.odm_georeferencing_model_txt_geo,
                 'model_geo': tree.odm_georeferencing_model_obj_geo,
                 'size': self.params.img_size,
-                'gcp': io.join_paths(tree.root_path, self.params.gcp_file),
+                'gcp': gcpfile,
 
             }
 
             if self.params.use_gcp and \
-               io.file_exists(tree.odm_georeferencing_coords):
+               io.file_exists(gcpfile):
 
-                system.run('{bin}/odm_georef -bundleFile {bundle} -inputCoordFile {coords} '
+                system.run('{bin}/odm_georef -bundleFile {bundle} -imagesPath {imgs} -imagesListPath {imgs_list} '
                            '-bundleResizedTo {size} -inputFile {model} -outputFile {model_geo} '
                            '-inputPointCloudFile {pc} -outputPointCloudFile {pc_geo} '
                            '-logFile {log} -georefFileOutputPath {geo_sys} -gcpFile {gcp} '
