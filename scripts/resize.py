@@ -78,8 +78,8 @@ class ODMResizeCell(ecto.Cell):
                 # copy metadata
                 old_meta.copy(new_meta)
                 # update metadata size
-                new_meta['Exif.Photo.PixelXDimension'].value = img_r.shape[0]
-                new_meta['Exif.Photo.PixelYDimension'].value = img_r.shape[1]
+                new_meta['Exif.Photo.PixelXDimension'] = img_r.shape[0]
+                new_meta['Exif.Photo.PixelYDimension'] = img_r.shape[1]
                 new_meta.write()
                 # update photos array with new values
                 photo.path_file = new_path_file
@@ -105,3 +105,4 @@ class ODMResizeCell(ecto.Cell):
 
         log.ODM_INFO('Running ODM Resize Cell - Finished')
         return ecto.OK if args.end_with != 'resize' else ecto.QUIT
+
