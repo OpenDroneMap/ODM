@@ -8,7 +8,6 @@ ExternalProject_Add(${_proj_name}
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
   URL               https://github.com/paulinus/opengv/archive/python-wrapper.zip
-  URL_MD5           6afd5dfbec8f11b556e794d009bbbcc2
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   #--Configure step-------------
