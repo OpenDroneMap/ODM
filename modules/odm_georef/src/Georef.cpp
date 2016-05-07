@@ -862,7 +862,7 @@ void Georef::performGeoreferencingWithGCP()
 
     if (nrGCPUsable < 3)
     {
-        throw GeorefException("Less than 3 GCPs have correspondences in the generated model.");
+        throw GeorefException("Fewer than 3 GCPs have correspondences in the generated model.");
     }
 
     size_t gcp0; size_t gcp1; size_t gcp2;
