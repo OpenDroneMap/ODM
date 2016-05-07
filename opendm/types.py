@@ -67,7 +67,7 @@ class ODM_Photo:
                     self.camera_model = val
                 elif key == 'Exif.Photo.FocalLength':
                     self.focal_length = float(val)
-            except pyexiv2.ExifValueError, e:
+            except (pyexiv2.ExifValueError, ValueError) as e:
                 pass
 
         self.make_model = sensor_string(self.camera_make, self.camera_model)
