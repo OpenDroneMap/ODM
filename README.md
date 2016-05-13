@@ -79,7 +79,11 @@ Then run:
     
 There are many options for tuning your project. See the [wiki](https://github.com/OpenDroneMap/OpenDroneMap/wiki/3.-Run-Time-Parameters) or run `python run.py -h`
 
+<<<<<<< HEAD
 When the process finishes, the results will be organized as follows
+=======
+Long term, the aim is for the toolchain to also be able to optionally push to a variety of online data repositories, pushing hi-resolution aerials to [OpenAerialMap](https://openaerialmap.org/), point clouds to [OpenTopography](http://opentopography.org/), and pushing digital elevation models to an emerging global repository (yet to be named...). That leaves only digital surface model meshes and UV textured meshes with no global repository home.
+>>>>>>> Update master to become default branch (#302)
 
     |-- images/
         |-- img-1234.jpg
@@ -142,9 +146,9 @@ Here are some other videos, which may be outdated:
 
 Now that texturing is in the code base, you can access the full textured meshes using MeshLab. Open MeshLab, choose `File:Import Mesh` and choose your textured mesh from a location similar to the following: `reconstruction-with-image-size-1200-results\odm_texturing\odm_textured_model.obj`
 
----
 
 Long term, the aim is for the toolchain to also be able to optionally push to a variety of online data repositories, pushing hi-resolution aerials to [OpenAerialMap](http://opentopography.org/), point clouds to [OpenTopography](http://opentopography.org/), and pushing digital elevation models to an emerging global repository (yet to be named...). That leaves only digital surface model meshes and UV textured meshes with no global repository home.
+
 
 ---
 
