@@ -1,0 +1,63 @@
+html {
+height:100%;
+  background: url(../img/langley.jpg) no-repeat center center fixed; 
+  -webkit-background-size: cover;
+  -moz-background-size: cover;
+  -o-background-size: cover;
+  background-size: cover;
+}
+
+body {
+	text-align:center;
+	overflow-x:auto:
+    -webkit-font-smoothing: antialiased;
+    -webkit-overflow-scrolling: touch;
+	margin:0px;
+	padding:0px;
+}
+
+.main-header {
+color:#EAE373;
+font-family: 'Oswald', sans-serif;
+font-weight: 300;
+font-size:50px;
+padding-top:15%;
+}
+
+
+#map{
+height:100%;
+width:100%;
+}
+
+
+/* Titles */
+h2, h3, h4, h5, h6 {
+    font-family: 'Oswald', sans-serif;
+    font-weight: 300;
+    color: #fff;
+}
+
+h1 {
+color:#333333;
+font-family: 'Oswald', sans-serif;
+font-weight: 300;
+font-size:24px;
+}
+
+
+/* Paragraph & Typographic */
+p {
+    line-height: 20px;
+    margin-bottom: 10px;
+	font-size:12px;
+	font-weight:400;
+	color:white;
+}
+
+#logo {
+	position:absolute;
+	left:5px;
+	top:0px;
+	z-index:9999;
+}
