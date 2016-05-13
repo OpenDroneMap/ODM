@@ -115,7 +115,7 @@ echo "    - installing"
 if [[ `lsb_release -rs` == "12.04" ]];
 then
 sudo apt-get install --assume-yes --install-recommends \
-  build-essential cmake g++ gcc gFortran perl git autoconf \
+  build-essential cmake g++ gcc gfortran perl git autoconf \
   curl wget \
   unzip \
   imagemagick jhead proj-bin libproj-dev\
@@ -130,7 +130,7 @@ sudo apt-get install --assume-yes --install-recommends \
   > "$TOOLS_LOG_PATH/apt-get_install.log" 2>&1
 else
 sudo apt-get install --assume-yes --install-recommends \
-  build-essential cmake g++ gcc gFortran perl git autoconf \
+  build-essential cmake g++ gcc gfortran perl git autoconf \
   curl wget \
   unzip \
   imagemagick jhead proj-bin libproj-dev\
