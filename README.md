@@ -1,4 +1,4 @@
 OpenDroneMap
 ============
 
-Hosting for ![OpenDroneMap](https://opendronemap.org)
+Hosting for !(OpenDroneMap)[https://opendronemap.org]
