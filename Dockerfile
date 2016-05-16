@@ -67,6 +67,7 @@ RUN git submodule init && git submodule update
 
 # Build OpenDroneMap
 RUN bash ./configure.sh && \
+    mkdir build && cd build && cmake .. && make && cd .. && \
     chown -R odm:odm /code
 USER odm
 
