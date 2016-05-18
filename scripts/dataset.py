@@ -6,13 +6,14 @@ from opendm import io
 from opendm import types
 from opendm import log
 
+
 class ODMLoadDatasetCell(ecto.Cell):
 
     def declare_params(self, params):
         params.declare("force_focal", 'Override the focal length information for the '
-                            'images', None)
+                       'images', None)
         params.declare("force_ccd", 'Override the ccd widht information for the '
-                            'images', None)
+                       'images', None)
 
     def declare_io(self, params, inputs, outputs):
         inputs.declare("tree", "Struct with paths", [])

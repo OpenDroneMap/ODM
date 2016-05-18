@@ -28,7 +28,7 @@ GeorefGCP::~GeorefGCP()
 
 void GeorefGCP::extractGCP(std::istringstream &gcpStream)
 {
-    gcpStream >> x_ >> y_ >> z_ >> pixelY_ >> pixelX_ >> image_;
+    gcpStream >> x_ >> y_ >> z_ >> pixelX_ >> pixelY_ >> image_;
 }
 
 Vec3 GeorefGCP::getPos()
@@ -865,7 +865,7 @@ void Georef::performGeoreferencingWithGCP()
 
     if (nrGCPUsable < 3)
     {
-        throw GeorefException("Less than 3 GCPs have correspondences in the generated model.");
+        throw GeorefException("Fewer than 3 GCPs have correspondences in the generated model.");
     }
 
     size_t gcp0; size_t gcp1; size_t gcp2;

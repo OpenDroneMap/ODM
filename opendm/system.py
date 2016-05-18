@@ -4,14 +4,17 @@ import json
 import datetime
 import sys
 import subprocess
+import string
 
 from opendm import context
 from opendm import log
 
+
 def get_ccd_widths():
     """Return the CCD Width of the camera listed in the JSON defs file."""
-    with open(context.ccd_widths_path) as jsonFile:
-        return json.load(jsonFile)
+    with open(context.ccd_widths_path) as f:
+        sensor_data = json.loads(f.read())
+    return dict(zip(map(string.lower, sensor_data.keys()), sensor_data.values()))
 
 def run(cmd):
     """Run a system command"""
@@ -19,13 +22,30 @@ def run(cmd):
     returnCode = os.system(cmd)
 
     if (returnCode != 0):
-        # TODO(edgar): add as log.ODM_ERROR
-        sys.exit("\nquitting cause: \n\t" + cmd + "\nreturned with code " +
+        log.ODM_ERROR("quitting cause: \n\t" + cmd + "\nreturned with code " +
                  str(returnCode) + ".\n")
+        sys.exit('An error occurred. Check stdout above or the logs.')
+
 
 def now():
     """Return the current time"""
     return datetime.datetime.now().strftime('%a %b %d %H:%M:%S %Z %Y')
+
+
+def now_raw():
+    return datetime.datetime.now()
+
+
+def benchmark(start, benchmarking_file, process):
+    """
+    runs a benchmark with a start datetime object
+    :return: the running time (delta)
+    """
+    # Write to benchmark file
+    delta = (datetime.datetime.now() - start).total_seconds()
+    with open(benchmarking_file, 'a') as b:
+        b.write('%s runtime: %s seconds\n' % (process, delta))
+
 
 def run_and_return(cmdSrc, cmdDest=None):
     """Run a system command and return the output"""
@@ -35,8 +55,8 @@ def run_and_return(cmdSrc, cmdDest=None):
 
 
 def mkdir_p(path):
-    '''Make a directory including parent directories.
-    '''
+    """Make a directory including parent directories.
+    """
     try:
         os.makedirs(path)
     except os.error as exc:
@@ -50,26 +70,3 @@ def calculate_EPSG(utmZone, south):
         return 32700 + utmZone
     else:
         return 32600 + utmZone
-
-
-def parse_coordinate_system():
-    """Write attributes to jobOptions from coord file"""
-    if os.path.isfile(jobOptions['jobDir'] +
-                      '/odm_georeferencing/coordFile.txt'):
-        with open(jobOptions['jobDir'] + '/odm_georeferencing/coordFile.txt') as f:
-            for lineNumber, line in enumerate(f):
-                if lineNumber == 0:
-                    tokens = line.split(' ')
-                    if len(tokens) == 3:
-                        utmZoneString = tokens[2][0:len(tokens[2])-2].strip()
-                        utmSouthBool = (tokens[2][len(tokens[2])-2].strip() == 'S')
-                        jobOptions['csString'] = '+datum=WGS84 +proj=utm +zone='               \
-                            + utmZoneString + (' +south' if utmSouthBool else '')
-                        jobOptions['epsg'] = calculate_EPSG(int(utmZoneString), utmSouthBool)
-                elif lineNumber == 1:
-                    tokens = line.split(' ')
-                    if len(tokens) == 2:
-                        jobOptions['utmEastOffset'] = int(tokens[0].strip())
-                        jobOptions['utmNorthOffset'] = int(tokens[1].strip())
-                else:
-                    break
