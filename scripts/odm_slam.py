@@ -30,8 +30,8 @@ class ODMSlamCell(ecto.Cell):
         # get inputs
         tree = self.inputs.tree
         args = self.inputs.args
-        video = os.path.join(tree.root_path, args['video'])
-        slam_config = os.path.join(tree.root_path, args['slam_config'])
+        video = os.path.join(tree.root_path, args.video)
+        slam_config = os.path.join(tree.root_path, args.slam_config)
 
         if not video:
             log.ODM_ERROR('No video provided')
@@ -48,7 +48,7 @@ class ODMSlamCell(ecto.Cell):
         map_points = os.path.join(tree.opensfm, 'MapPoints.txt')
 
         # check if we rerun cell or not
-        rerun_cell = args['rerun'] == 'slam'
+        rerun_cell = args.rerun == 'slam'
 
         # check if slam was run before
         if not io.file_exists(trajectory) or rerun_cell:
@@ -108,4 +108,4 @@ class ODMSlamCell(ecto.Cell):
                 tree.pmvs_visdat))
 
         log.ODM_INFO('Running OMD Slam Cell - Finished')
-        return ecto.OK if args['end_with'] != 'odm_slam' else ecto.QUIT
+        return ecto.OK if args.end_with != 'odm_slam' else ecto.QUIT
