@@ -7,7 +7,8 @@ scripts_path = os.path.abspath(os.path.dirname(__file__))
 root_path, _ = os.path.split(scripts_path)
 
 superbuild_path = os.path.join(root_path, 'SuperBuild')
-ccd_widths_path = os.path.join(root_path, 'data/ccd_defs.json')
+tests_path = os.path.join(root_path, 'tests')
+tests_data_path = os.path.join(root_path, 'tests/test_data')
 
 # add opencv to python path
 pyopencv_path = os.path.join(superbuild_path, 'install/lib/python2.7/dist-packages')
@@ -15,6 +16,7 @@ sys.path.append(pyopencv_path)
 
 # define opensfm path
 opensfm_path = os.path.join(superbuild_path, "src/opensfm")
+ccd_widths_path = os.path.join(opensfm_path, 'opensfm/data/sensor_data.json')
 
 # define orb_slam2 path
 orb_slam2_path = os.path.join(superbuild_path, "src/orb_slam2")
@@ -26,6 +28,7 @@ pmvs2_path = os.path.join(superbuild_path, "install/bin/pmvs2")
 
 # define txt2las path
 txt2las_path = os.path.join(superbuild_path, 'src/las-tools/bin')
+pdal_path = os.path.join(superbuild_path, 'build/pdal/bin')
 
 # define odm modules path
 odm_modules_path = os.path.join(root_path, "build/bin")

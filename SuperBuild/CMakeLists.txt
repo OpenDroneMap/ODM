@@ -94,7 +94,6 @@ SETUP_EXTERNAL_PROJECT(Ceres ${ODM_Ceres_Version} ${ODM_BUILD_Ceres})
 # Clustering Views for Multi-view Stereo (CMVS)
 # Catkin
 # Ecto
-# LAStools
 #
 
 set(custom_libs OpenGV
@@ -102,6 +101,7 @@ set(custom_libs OpenGV
 				CMVS
 				Catkin
 				Ecto
+				PDAL
 				LAStools
 				Pangolin
 				ORB_SLAM2)
