@@ -66,6 +66,7 @@ class ODMApp(ecto.BlackBox):
                                                          gcp_file=p.args.odm_georeferencing_gcpFile,
                                                          use_gcp=p.args.odm_georeferencing_useGcp),
                  'orthophoto': ODMOrthoPhotoCell(resolution=p.args.odm_orthophoto_resolution)
+
                 }
 
         return cells
@@ -82,7 +83,7 @@ class ODMApp(ecto.BlackBox):
                 b.write('ODM Benchmarking file created %s\nNumber of Cores: %s\n\n' % (system.now(), context.num_cores))
 
     def connections(self, _p):
-        run_slam = _p.args.get('video') is not None
+        run_slam = _p.args.video
 
         # define initial task
         # TODO: What is this?
@@ -103,7 +104,7 @@ class ODMApp(ecto.BlackBox):
                             self.slam['reconstruction'] >> self.cmvs['reconstruction']]
         else:
             #  load the dataset
-            connections = [self.tree[:] >> self.dataset['tree']]
+            connections += [self.tree[:] >> self.dataset['tree']]
 
             # run resize cell
             connections += [self.tree[:] >> self.resize['tree'],

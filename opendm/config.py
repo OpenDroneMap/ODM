@@ -13,6 +13,8 @@ class RerunFrom(argparse.Action):
 
 
 parser = argparse.ArgumentParser(description='OpenDroneMap')
+
+
 def config():
     parser.add_argument('--project-path',
                         metavar='<string>',
