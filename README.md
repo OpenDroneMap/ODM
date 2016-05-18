@@ -3,7 +3,9 @@
 What is it?
 ===========
 
-OpenDroneMap is a toolchain for processing raw civilian UAS imagery to other useful products. What kind of products?
+OpenDroneMap is an open source toolkit for processing aerial drone imagery. Typical drones use simple point-and-shoot cameras, so the images from drones, while from a different perspective, are similar to any pictures taken from point-and-shoot cameras, i.e. non-metric imagery. OpenDroneMap turns those simple images into three dimensional geographic data that can be used in combination with other geographic datasets.
+
+In a word, OpenDroneMap is a toolchain for processing raw civilian UAS imagery to other useful products. What kind of products?
 
 1. Point Clouds
 2. Digital Surface Models
@@ -26,9 +28,10 @@ Developers
 
 Help improve our software!
 
-1. Join our [Gitter](https://gitter.im/OpenDroneMap)
-2. Try to keep commits clean and simple
-3. Submit a pull request with detailed changes and test results
+[![Join the chat at https://gitter.im/OpenDroneMap/OpenDroneMap](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/OpenDroneMap/OpenDroneMap?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
+1. Try to keep commits clean and simple
+2. Submit a pull request with detailed changes and test results
 
 Steps to get OpenDroneMap running:
 ==================================
@@ -76,7 +79,7 @@ Example data can be found at https://github.com/OpenDroneMap/odm_data
 
 ---
 
-Long term, the aim is for the toolchain to also be able to optionally push to a variety of online data repositories, pushing hi-resolution aerials to [OpenAerialMap](http://opentopography.org/), point clouds to [OpenTopography](http://opentopography.org/), and pushing digital elevation models to an emerging global repository (yet to be named...). That leaves only digital surface model meshes and UV textured meshes with no global repository home.
+Long term, the aim is for the toolchain to also be able to optionally push to a variety of online data repositories, pushing hi-resolution aerials to [OpenAerialMap](https://openaerialmap.org/), point clouds to [OpenTopography](http://opentopography.org/), and pushing digital elevation models to an emerging global repository (yet to be named...). That leaves only digital surface model meshes and UV textured meshes with no global repository home.
 
 ---
 
@@ -129,18 +132,20 @@ Died at ../../OpenDroneMap/./run.pl line 364.
 
 ```
 
-This means that your camera is not in the database, https://github.com/OpenDroneMap/OpenDroneMap/blob/gh-pages/ccd_defs.json
+~~This means that your camera is not in the database, https://github.com/OpenDroneMap/OpenDroneMap/blob/gh-pages/ccd_defs.json~~
 
-This problem is easily remedied. We need to know CCD size in the camera. We'll get these for our Sony Cyber-shot DSC-HX5 from dpreview: http://www.dpreview.com/products/sony/compacts/sony_dschx5/specifications
+~~This problem is easily remedied. We need to know CCD size in the camera. We'll get these for our Sony Cyber-shot DSC-HX5 from dpreview: http://www.dpreview.com/products/sony/compacts/sony_dschx5/specifications~~
 
-So, we'll add the following line to our ccd_defs.json:
+~~So, we'll add the following line to our ccd_defs.json:~~
 
-     "SONY DSC-HX5V": 6.104,
+     ~~"SONY DSC-HX5V": 6.104,~~
 
-To check that ccd_defs.json compiles, run `ccd_defs_check.py`
-If it prints the message 'CCD_DEFS compiles OK', then you can commit your changes.
+~~To check that ccd_defs.json compiles, run `ccd_defs_check.py`~~
+~~If it prints the message 'CCD_DEFS compiles OK', then you can commit your changes.~~
 
-And so others can use it, we'll do a pull request to add it to our array for everyone else.
+~~And so others can use it, we'll do a pull request to add it to our array for everyone else.~~
+
+See issue [#237](https://github.com/OpenDroneMap/OpenDroneMap/issues/237). OpenSfM uses its own sensor reference file, which you can find in the OpenSfM directory under `opensfm/data/`. 
 
 ---
 
