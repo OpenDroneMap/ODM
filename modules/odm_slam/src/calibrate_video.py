@@ -53,7 +53,7 @@ class Calibrator:
         """Run calibration using points extracted by process_image."""
         rms, camera_matrix, dist_coefs, rvecs, tvecs = cv2.calibrateCamera(
             self.object_points, self.image_points, self.image_size, None, None)
-        return rms, camera_matrix, dist_coefs
+        return rms, camera_matrix, dist_coefs.ravel()
 
     def _add_points(self, image_points):
         if self.image_points:
@@ -77,6 +77,24 @@ def video_frames(filename):
         else:
             break
     cap.release()
+
+
+def orb_slam_calibration_config(camera_matrix, dist_coefs):
+    """String with calibration parameters in orb_slam config format."""
+    lines = [
+        "# Camera calibration and distortion parameters (OpenCV)",
+        "Camera.fx: {}".format(camera_matrix[0, 0]),
+        "Camera.fy: {}".format(camera_matrix[1, 1]),
+        "Camera.cx: {}".format(camera_matrix[0, 2]),
+        "Camera.cy: {}".format(camera_matrix[1, 2]),
+        "",
+        "Camera.k1: {}".format(dist_coefs[0]),
+        "Camera.k2: {}".format(dist_coefs[1]),
+        "Camera.p1: {}".format(dist_coefs[2]),
+        "Camera.p2: {}".format(dist_coefs[3]),
+        "Camera.k3: {}".format(dist_coefs[4]),
+    ]
+    return "\n".join(lines)
 
 
 def parse_arguments():
@@ -123,12 +141,12 @@ if __name__ == '__main__':
         if args.visual:
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
-    print
 
     cv2.destroyAllWindows()
 
     rms, camera_matrix, dist_coefs = calibrator.calibrate()
 
+    print
     print "RMS:", rms
-    print "camera matrix:\n", camera_matrix
-    print "distortion coefficients: ", dist_coefs.ravel()
+    print
+    print orb_slam_calibration_config(camera_matrix, dist_coefs)
