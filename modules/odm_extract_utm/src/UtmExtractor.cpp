@@ -167,26 +167,26 @@ void UtmExtractor::extractUtm()
   std::string imageFilename;
   std::vector<Coord> coords;
   while (getline(imageListStream, imageFilename)) {
+
     // Run jhead on image to extract EXIF data to temporary file
-    std::string commandLine = "jhead -v " + imagesPath_ + "/" + imageFilename + " > extract_utm_output.txt";
-    system(commandLine.c_str());
+    std::string commandLine = "jhead -v " + imagesPath_ + imageFilename + " > extract_utm_output.txt";
+    std::cout << commandLine << std::endl;
+    system(commandLine.c_str()); //Alex: execute the jhead utility to get image info
     
     // Read temporary EXIF data file
     std::ifstream jheadDataStream;
-    jheadDataStream.open("extract_utm_output.txt"); //Alex: this file must contain incorrect stuff if we're not getting the data we need.
+    jheadDataStream.open("extract_utm_output.txt");
     if (!jheadDataStream.good()) {
       throw UtmExtractorException("Failed to open temporary jhead data file extract_utm_output.txt");
     }
     
     // Delete temporary file
-    remove("extract_utm_output.txt"); //Alex: why do we delete this?
-    //Alex: this file is empty when I look at it!! No wonder we don't find any GPS data here!
+    remove("extract_utm_output.txt"); //Alex: why do we delete this? Because it only exists briefly while we get the text output from the jhead utility
 
     // Parse jhead output
     double lon, lat, alt;
     if (!parsePosition(jheadDataStream, lon, lat, alt)) {
-      throw UtmExtractorException("Failed parsing GPS position.");  //Alex: This is where we fail on medium and large datasets!
-      jheadDataStream.close();
+      throw UtmExtractorException("Failed parsing GPS position.");
     }
     jheadDataStream.close();
 
