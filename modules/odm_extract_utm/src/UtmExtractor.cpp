@@ -173,18 +173,19 @@ void UtmExtractor::extractUtm()
     
     // Read temporary EXIF data file
     std::ifstream jheadDataStream;
-    jheadDataStream.open("extract_utm_output.txt");
+    jheadDataStream.open("extract_utm_output.txt"); //Alex: this file must contain incorrect stuff if we're not getting the data we need.
     if (!jheadDataStream.good()) {
       throw UtmExtractorException("Failed to open temporary jhead data file extract_utm_output.txt");
     }
     
     // Delete temporary file
-    remove("extract_utm_output.txt");
+    remove("extract_utm_output.txt"); //Alex: why do we delete this?
+    //Alex: this file is empty when I look at it!! No wonder we don't find any GPS data here!
 
     // Parse jhead output
     double lon, lat, alt;
     if (!parsePosition(jheadDataStream, lon, lat, alt)) {
-      throw UtmExtractorException("Failed parsing GPS position.");
+      throw UtmExtractorException("Failed parsing GPS position.");  //Alex: This is where we fail on medium and large datasets!
       jheadDataStream.close();
     }
     jheadDataStream.close();
