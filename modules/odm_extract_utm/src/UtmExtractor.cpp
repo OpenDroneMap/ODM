@@ -170,7 +170,6 @@ void UtmExtractor::extractUtm()
 
     // Run jhead on image to extract EXIF data to temporary file
     std::string commandLine = "jhead -v " + imagesPath_ + imageFilename + " > extract_utm_output.txt";
-    std::cout << commandLine << std::endl;
     system(commandLine.c_str()); //Alex: execute the jhead utility to get image info
     
     // Read temporary EXIF data file

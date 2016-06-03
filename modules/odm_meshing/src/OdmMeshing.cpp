@@ -272,7 +272,6 @@ void OdmMeshing::printHelp()
 
 void OdmMeshing::createMesh()
 {
-
     // Attempt to calculate the depth of the tree if unspecified
     if (treeDepth_ == 0)
     {

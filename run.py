@@ -10,7 +10,7 @@ import ecto
 from scripts.odm_app import ODMApp
 
 
-def usage():
+def usage(): #Show this to user if they don't provide a project path
     log.ODM_ERROR('USAGE: %s --project-path [project_path]' % sys.argv[0])
     log.ODM_ERROR('OpenDroneMap app finished - %s' % system.now())
     sys.exit(0)
@@ -20,7 +20,7 @@ if __name__ == '__main__':
 
     log.ODM_INFO('Initializing OpenDroneMap app - %s' % system.now())
 
-    # Force to provide the images path
+    #Show usage info to user if they don't provide a project path
     if config.args.get('project_path') is None:
         usage()
 
