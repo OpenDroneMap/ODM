@@ -7,17 +7,16 @@ from opendm import config
 from opendm import io
 from opendm import system
 
+#"Cell" for each SfM task:
 from dataset import ODMLoadDatasetCell
 from resize import ODMResizeCell
 from opensfm import ODMOpenSfMCell
 from pmvs import ODMPmvsCell
 from cmvs import ODMCmvsCell
 from odm_meshing import ODMeshingCell
-#from odm_texturing import ODMTexturingCell
 from mvstex import ODMMvsTexCell
 from odm_georeferencing import ODMGeoreferencingCell
 from odm_orthophoto import ODMOrthoPhotoCell
-
 
 class ODMApp(ecto.BlackBox):
     """ODMApp - a class for ODM Activities
@@ -65,10 +64,6 @@ class ODMApp(ecto.BlackBox):
                                             skip_loc_seam_leveling=p.args['mvs_texturing_skipLocalSeamLeveling'],
                                             skip_hole_fill=p.args['mvs_texturing_skipHoleFilling'],
                                             keep_unseen_faces=p.args['mvs_texturing_keepUnseenFaces']),
-# Old odm_texturing
-#                 'texturing': ODMTexturingCell(resize=p.args['resize_to'],
-#                                               resolution=p.args['odm_texturing_textureResolution'],
-#                                               size=p.args['odm_texturing_textureWithSize']),
                  'georeferencing': ODMGeoreferencingCell(img_size=p.args['resize_to'],
                                                          gcp_file=p.args['odm_georeferencing_gcpFile'],
                                                          use_gcp=p.args['odm_georeferencing_useGcp']),
