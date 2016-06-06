@@ -10,7 +10,7 @@ import ecto
 from scripts.odm_app import ODMApp
 
 
-def usage():
+def usage(): # Show this to user if they don't provide a project path
     log.ODM_ERROR('USAGE: %s --project-path [project_path]' % sys.argv[0])
     log.ODM_ERROR('OpenDroneMap app finished - %s' % system.now())
     sys.exit(0)
@@ -20,19 +20,19 @@ if __name__ == '__main__':
 
     log.ODM_INFO('Initializing OpenDroneMap app - %s' % system.now())
 
-    # Force to provide the images path
+    # Show usage info to user if they don't provide a project path
     if config.args.get('project_path') is None:
         usage()
 
     # create an instance of my App BlackBox
     # internally configure all tasks
-    app = ODMApp(args=config.args)
+    app = ODMApp(args=config.args) # pass configuration parameters to ODMApp. See odm_app.py. Makes one cell for each SFM task.
 
     # create a plasm that only contains the BlackBox
     plasm = ecto.Plasm()
     plasm.insert(app)
 
-    # execute the plasm
+    # execute the plasm with 1 iteration
     plasm.execute(niter=1)
 
     log.ODM_INFO('OpenDroneMap app finished - %s' % system.now())

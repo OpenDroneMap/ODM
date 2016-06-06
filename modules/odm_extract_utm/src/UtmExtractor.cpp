@@ -167,9 +167,10 @@ void UtmExtractor::extractUtm()
   std::string imageFilename;
   std::vector<Coord> coords;
   while (getline(imageListStream, imageFilename)) {
+
     // Run jhead on image to extract EXIF data to temporary file
-    std::string commandLine = "jhead -v " + imagesPath_ + "/" + imageFilename + " > extract_utm_output.txt";
-    system(commandLine.c_str());
+    std::string commandLine = "jhead -v " + imagesPath_ + imageFilename + " > extract_utm_output.txt";
+    system(commandLine.c_str()); //Alex: execute the jhead utility to get image info
     
     // Read temporary EXIF data file
     std::ifstream jheadDataStream;
@@ -179,13 +180,12 @@ void UtmExtractor::extractUtm()
     }
     
     // Delete temporary file
-    remove("extract_utm_output.txt");
+    remove("extract_utm_output.txt"); //Alex: why do we delete this? Because it only exists briefly while we get the text output from the jhead utility
 
     // Parse jhead output
     double lon, lat, alt;
     if (!parsePosition(jheadDataStream, lon, lat, alt)) {
       throw UtmExtractorException("Failed parsing GPS position.");
-      jheadDataStream.close();
     }
     jheadDataStream.close();
 
