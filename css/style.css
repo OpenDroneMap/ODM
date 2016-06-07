@@ -1,18 +1,18 @@
 html {
 height:100%;
-  background: url(../img/langley.jpg) no-repeat center center fixed; 
-  -webkit-background-size: cover;
-  -moz-background-size: cover;
-  -o-background-size: cover;
-  background-size: cover;
+	background: url(../img/langley.jpg) no-repeat center center fixed; 
+	-webkit-background-size: cover;
+	-moz-background-size: cover;
+	-o-background-size: cover;
+	background-size: cover;
 }
 
 body {
 	height: 100%;
 	text-align:center;
 	overflow-x:auto:
-    -webkit-font-smoothing: antialiased;
-    -webkit-overflow-scrolling: touch;
+	-webkit-font-smoothing: antialiased;
+	-webkit-overflow-scrolling: touch;
 	margin:0px;
 	padding:0px;
 
@@ -22,13 +22,14 @@ body {
 }
 
 .main-header {
-color:#EAE373;
-font-family: 'Oswald', sans-serif;
-font-weight: 300;
-font-size:50px;
-padding-left: 10px;
-padding-right: 10px;
-padding-top:15%;
+	color:#EAE373;
+	font-size:50px;
+	padding-left: 10px;
+	padding-right: 10px;
+}
+
+.main-header.home-logo {
+	padding-top:15%;
 }
 
 .main-header img {
@@ -47,16 +48,16 @@ padding-top:15%;
 
 /* Titles */
 h2, h3, h4, h5, h6 {
-    font-family: 'Oswald', sans-serif;
-    font-weight: 300;
-    color: #fff;
+	font-family: 'Oswald', sans-serif;
+	font-weight: 300;
+	color: #fff;
 }
 
 h1 {
-color:#558608;
-font-family: 'Oswald', sans-serif;
-font-weight: 300;
-font-size:24px;
+	color:#558608;
+	font-family: 'Oswald', sans-serif;
+	font-weight: 300;
+	font-size:24px;
 }
 
 h1.subtitle {
@@ -65,8 +66,8 @@ h1.subtitle {
 
 /* Paragraph & Typographic */
 p {
-    line-height: 20px;
-    margin-bottom: 10px;
+	line-height: 20px;
+	margin-bottom: 10px;
 	font-weight:400;
 }
 
@@ -75,4 +76,10 @@ p {
 	left:5px;
 	top:0px;
 	z-index:9999;
+}
+
+/* Custom styling for CSS menus */
+#cssmenu > ul > #menu-button {
+	text-align: right;
+	padding-right: 32px;
 }
