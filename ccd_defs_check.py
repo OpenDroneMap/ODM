@@ -7,7 +7,7 @@ BIN_PATH_ABS = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
 
 def get_ccd_widths():
 	"""Return the CCD Width of the camera listed in the JSON defs file."""
-	with open(BIN_PATH_ABS + '/ccd_defs.json') as jsonFile:
+	with open(BIN_PATH_ABS + '/data/ccd_defs.json') as jsonFile:
 		return json.load(jsonFile)
 
 try:

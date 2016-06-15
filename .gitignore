@@ -5,6 +5,11 @@ lib/
 logs/
 share/
 src/
+download/
+
+SuperBuild/build/
+SuperBuild/install/
+build/
 
 cmvs.tar.gz
 parallel.tar.bz2
