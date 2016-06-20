@@ -1,13 +1,13 @@
 # OpenDroneMap
 
-![](https://opendronemap.github.io/OpenDroneMap/img/odm_image.png)
+![](https://raw.githubusercontent.com/OpenDroneMap/OpenDroneMap/master/img/odm_image.png)
 
 What is it?
 ===========
 
 OpenDroneMap is an open source toolkit for processing aerial drone imagery. Typical drones use simple point-and-shoot cameras, so the images from drones, while from a different perspective, are similar to any pictures taken from point-and-shoot cameras, i.e. non-metric imagery. OpenDroneMap turns those simple images into three dimensional geographic data that can be used in combination with other geographic datasets.
 
-![](https://opendronemap.github.io/OpenDroneMap/img/tol_ptcloud.png)
+![](https://raw.githubusercontent.com/OpenDroneMap/OpenDroneMap/master/img/tol_ptcloud.png)
 
 In a word, OpenDroneMap is a toolchain for processing raw civilian UAS imagery to other useful products. What kind of products?
 
@@ -116,11 +116,11 @@ When the process finishes, the results will be organized as follows
 
 Any file ending in .obj or .ply can be opened and viewed in [MeshLab](http://meshlab.sourceforge.net/) or similar software. That includes `pmvs/recon0/models/option-000.ply`, `odm_meshing/odm_mesh.ply`, `odm_texturing/odm_textured_model[_geo].obj`, or `odm_georeferencing/odm_georeferenced_model.ply`. Below is an example textured mesh:
 
-![](https://opendronemap.github.io/OpenDroneMap/img/tol_text.png)
+![](https://raw.githubusercontent.com/OpenDroneMap/OpenDroneMap/master/img/tol_text.png)
 
 You can also view the orthophoto GeoTIFF in QGIS or other mapping software:
 
-![](https://raw.githubusercontent.com/OpenDroneMap/OpenDroneMap/dev/img/bellus_map.png)
+![](https://raw.githubusercontent.com/OpenDroneMap/OpenDroneMap/master/img/bellus_map.png)
 
 #### Using Docker
 
