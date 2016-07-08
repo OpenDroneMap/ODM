@@ -81,7 +81,7 @@ def config():
                         type=float,
                         help=('Ignore matched keypoints if the two images share '
                               'less than <float> percent of keypoints. Default:'
-                              ' $(default)s'))
+                              ' %(default)s'))
 
     parser.add_argument('--matcher-ratio',
                         metavar='<float>',
