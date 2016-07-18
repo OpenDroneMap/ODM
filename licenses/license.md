@@ -24,3 +24,4 @@ Licensing for portions of OpenDroneMap are as follows:
   * vtk5 - BSD - http://www.vtk.org/VTK/project/license.html
 * libext - https://github.com/OpenDroneMap/OpenDroneMap/blob/gh-pages/licenses/libext_copyright.txt
 * libx11 - https://github.com/OpenDroneMap/OpenDroneMap/blob/gh-pages/licenses/libx11_copyright.txt
+* MVS Texturing - BSD - https://github.com/nmoehrle/mvs-texturing/blob/master/LICENSE.txt
