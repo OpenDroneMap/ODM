@@ -6,6 +6,7 @@ from opendm import system
 
 import sys
 import ecto
+import os
 
 from scripts.odm_app import ODMApp
 
@@ -25,6 +26,17 @@ if __name__ == '__main__':
     # Force to provide the images path
     if args.project_path is None:
         usage()
+
+    #If user asks to rerun everything, delete all of the existing progress directories.
+    if args.rerun_all:
+        os.system("rm -rf "
+                  + args.project_path + "images_resize/ "
+                  + args.project_path + "odm_georeferencing/ "
+                  + args.project_path + "odm_meshing/ "
+                  + args.project_path + "odm_orthophoto/ "
+                  + args.project_path + "odm_texturing/ "
+                  + args.project_path + "opensfm/ "
+                  + args.project_path + "pmvs/")
 
     # create an instance of my App BlackBox
     # internally configure all tasks
