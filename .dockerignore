@@ -1,6 +1,11 @@
 Dockerfile
 tests/test_data
 SuperBuild/build
-SuperBuild/download
-SuperBuild/install
-SuperBuild/src
+opensfm
+pmvs
+odm_orthophoto
+odm_texturing
+odm_meshing
+odm_georeferencing
+images_resize
+build
