@@ -128,8 +128,14 @@ You can also view the orthophoto GeoTIFF in QGIS or other mapping software:
 
 #### Using Docker
 
-You can build and run OpenDroneMap in a Docker container:
+OpenDroneMap is Dockerized, meaning you can use containerization to build and run it without manually performing the
+installation procedure described above and - most importantly - without tampering with the libraries and packages already
+installed on your machine. Docker software is free to install and use in this context. If you don't have it installed,
+see the [Docker Ubuntu installation tutorial] (https://docs.docker.com/engine/installation/linux/ubuntulinux/) and follow the
+instructions up until "Create a Docker group" inclusive. Once Docker is installed, an OpenDroneMap Docker image can be created
+as follows:
 
+    git clone
     export IMAGES=/absolute/path/to/your/project
     docker build -t opendronemap:latest .
     docker run -v $IMAGES:/images opendronemap:latest
