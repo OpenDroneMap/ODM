@@ -1,61 +1,22 @@
-FROM ubuntu:14.04
-MAINTAINER Danilo Bargen <mail@dbrgn.ch>
+#HELP FOR USERS: Replace example file paths with your own in the example commands below:
+#BUILD COMMAND: docker build -t odm .
+#AUTOMATIC RUN COMMAND:
+#    docker run -it --rm \
+#    -v $(pwd)/images:/code/images \
+#    -v $(pwd)/odm_orthophoto:/code/odm_orthophoto \
+#    -v $(pwd)/odm_texturing:/code/odm_texturing \
+#    --user odm_user
+#    odm_image
+#MANUAL RUN COMMAND: docker run -it -v /home/alex/OpenDroneMap/images:/code/images --rm --entrypoint bash odm
+#WORK INSIDE DOCKER IMAGE: docker run -it -v `pwd`:/code/ --rm --entrypoint bash odm
+#REBUILD PACKAGES: docker build -t packages -f packages.Dockerfile .
 
-# Env variables
-ENV DEBIAN_FRONTEND noninteractive
-
-# Install dependencies
-RUN apt-get update \
-    && sudo apt-get remove libdc1394-22-dev \
-    && apt-get install -y --install-recommends \
-        build-essential \
-                     cmake \
-                     git \
-                     python-pip \
-                     libgdal-dev \
-                     libgeotiff-dev \
-                     pkg-config \
-                     libgtk2.0-dev \
-                     libavcodec-dev \
-                     libavformat-dev \
-                     libswscale-dev \
-                     python-dev \
-                     python-numpy \
-                     libtbb2 \
-                     libtbb-dev \
-                     libjpeg-dev \
-                     libpng-dev \
-                     libtiff-dev \
-                     libjasper-dev \
-                     libflann-dev \
-                     libproj-dev \
-                     libxext-dev \
-                     liblapack-dev \
-                     libeigen3-dev \
-                     libvtk5-dev \
-                     python-networkx \
-                     libgoogle-glog-dev \
-                     libsuitesparse-dev \
-                     libboost-filesystem-dev \
-                     libboost-iostreams-dev \
-                     libboost-regex-dev \
-                     libboost-python-dev \
-                     libboost-date-time-dev \
-                     libboost-thread-dev \
-                     python-empy \
-                     python-nose \
-                     python-pyside \
-                     python-pyexiv2 \
-                     python-scipy \
-                     jhead \
-                     liblas-bin \
-    && apt-get autoremove \
-    && apt-get clean
+FROM packages
 
 # Add users
 RUN useradd -m -U odm
 
-# Prepare directories
+# Prepare directories`
 RUN mkdir /code
 WORKDIR /code
 
@@ -67,14 +28,18 @@ RUN git submodule init && git submodule update
 
 # Build OpenDroneMap
 RUN bash ./configure.sh && \
-    mkdir build && cd build && cmake .. && make && cd .. && \
     chown -R odm:odm /code
+
+#Make build folder
+RUN mkdir build && cd build && cmake .. && make
+
 USER odm
 
-ENV PYTHONPATH=${PYTHONPATH}:/code/SuperBuild/install/lib/python2.7/dist-packages:/code/SuperBuild/src/opensfm \
-    LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/code/SuperBuild/install/lib
+ENV PYTHONPATH="$PYTHONPATH:/code/SuperBuild/install/lib/python2.7/dist-packages"
+ENV PYTHONPATH="$PYTHONPATH:/code/SuperBuild/src/opensfm"
+ENV LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/code/SuperBuild/install/lib"
+ENV SESSION="DDODMMAP_SESSION"
 
 # Entry point
-VOLUME ["/images"]
-# WORKDIR /images
-ENTRYPOINT ["python", "/code/run.py", "--project-path", "/images"]
+# VOLUME ["/code/images"]
+ENTRYPOINT ["python", "/code/run.py", "--project-path", "/code/"]
