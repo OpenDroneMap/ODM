@@ -19,11 +19,11 @@ In a word, OpenDroneMap is a toolchain for processing raw civilian UAS imagery t
 6. Digital Elevation Models
 7. etc.
 
-So far, it does Point Clouds, Digital Surface Models, Textured Digital Surface Models, and Orthorectified Imagery.
+So far, it does Point Clouds, Digital Surface Models, Textured Digital Surface Models, and Orthorectified Imagery. Open Drone Map now includes state-of-the-art 3D reconstruction work by Michael Waechter, Nils Moehrle, and Michael Goesele. See their publication at http://www.gcc.tu-darmstadt.de/media/gcc/papers/Waechter-2014-LTB.pdf.
 
 Users' mailing list: http://lists.osgeo.org/cgi-bin/mailman/listinfo/opendronemap-users
 
-Developer's mailing list: http://lists.osgeo.org/cgi-bin/mailman/listinfo/opendronemap-dev
+Developers' mailing list: http://lists.osgeo.org/cgi-bin/mailman/listinfo/opendronemap-dev
 
 Overview video: https://www.youtube.com/watch?v=0UctfoeNB_Y
 
@@ -42,7 +42,7 @@ Steps to get OpenDroneMap running:
 
 (Requires Ubuntu 14.04 or later, see https://github.com/OpenDroneMap/odm_vagrant for running on Windows in a VM)
 
-Support for Ubuntu 12.04 is currently BROKEN with the addition of OpenSfM and Ceres-Solver. We are working hard to get it working again in the future. 
+Support for Ubuntu 12.04 is currently BROKEN with the addition of OpenSfM and Ceres-Solver. We are working hard to get it working again in the future.
 
 #### Building OpenDroneMap using git
 
