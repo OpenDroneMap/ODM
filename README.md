@@ -44,7 +44,6 @@ Steps to get OpenDroneMap running:
 
 Support for Ubuntu 12.04 is currently BROKEN with the addition of OpenSfM and Ceres-Solver. We are working hard to get it working again in the future.
 
->>>>>>> 15fa661bc8fabc98be2f153e44c0f5b94ade84af
 #### Building OpenDroneMap using git
 
     cd path/to/odm/dir
