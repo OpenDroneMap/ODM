@@ -131,6 +131,7 @@ like so:
 
     git clone https://github.com/OpenDroneMap/OpenDroneMap.git
     cd OpenDroneMap
+    docker build -t packages -f packages.Dockerfile .
     docker build -t odm_image .
     docker run -it --user root\
          -v /home/alex/ODM_MVS/images:/code/images\
