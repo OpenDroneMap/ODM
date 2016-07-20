@@ -134,9 +134,9 @@ like so:
     docker build -t packages -f packages.Dockerfile .
     docker build -t odm_image .
     docker run -it --user root\
-         -v /home/alex/ODM_MVS/images:/code/images\
-         -v /home/alex/ODM_MVS/odm_orthophoto:/code/odm_orthophoto\
-         -v /home/alex/ODM_MVS/odm_texturing:/code/odm_texturing\
+         -v $(pwd)/images:/code/images\
+         -v $(pwd)/odm_orthophoto:/code/odm_orthophoto\
+         -v $(pwd)/odm_texturing:/code/odm_texturing\
          --rm odm_image 
 
 Using this method, the containerized ODM will process the images in the OpenDroneMap/images directory and output results
