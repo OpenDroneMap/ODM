@@ -2,8 +2,7 @@
 
 ![](https://raw.githubusercontent.com/OpenDroneMap/OpenDroneMap/master/img/odm_image.png)
 
-What is it?
-===========
+## What is it?
 
 OpenDroneMap is an open source toolkit for processing aerial drone imagery. Typical drones use simple point-and-shoot cameras, so the images from drones, while from a different perspective, are similar to any pictures taken from point-and-shoot cameras, i.e. non-metric imagery. OpenDroneMap turns those simple images into three dimensional geographic data that can be used in combination with other geographic datasets.
 
@@ -27,8 +26,7 @@ Developers' mailing list: http://lists.osgeo.org/cgi-bin/mailman/listinfo/opendr
 
 Overview video: https://www.youtube.com/watch?v=0UctfoeNB_Y
 
-Developers
-=================
+## Developers
 
 Help improve our software!
 
@@ -37,14 +35,13 @@ Help improve our software!
 1. Try to keep commits clean and simple
 2. Submit a pull request with detailed changes and test results
 
-Steps to get OpenDroneMap running:
-==================================
+## Build and Run OpenDroneMap in Ubuntu:
 
 (Requires Ubuntu 14.04 or later, see https://github.com/OpenDroneMap/odm_vagrant for running on Windows in a VM)
 
 Support for Ubuntu 12.04 is currently BROKEN with the addition of OpenSfM and Ceres-Solver. We are working hard to get it working again in the future.
 
-#### Building OpenDroneMap using git
+### Build OpenDroneMap
 
     cd path/to/odm/dir
     git clone https://github.com/OpenDroneMap/OpenDroneMap.git .
@@ -58,18 +55,16 @@ Support for Ubuntu 12.04 is currently BROKEN with the addition of OpenSfM and Ce
     sudo apt-get install python-xmltodict
     sudo ln -s /usr/lib/x86_64-linux-gnu/libproj.so.9 /usr/lib/libproj.so
     
-#### Running OpenDroneMap
+### Run OpenDroneMap
 
 First you need a set of images, which may or may not be georeferenced. There are two ways OpenDroneMap can understand geographic coordinates. First, the images can be geotagged in their EXIF data. This is the default. Alternatively, you can create a GCP file, [a process detailed here](https://github.com/OpenDroneMap/OpenDroneMap/wiki/2.-Running-OpenDroneMap#running-odm-with-ground-control)
 
 Create a project folder and places your images in an "images" directory:
 
-
     |-- /path/to/project/
         |-- images/
             |-- img-1234.jpg
             |-- ...
-
 
 Example data can be cloned from https://github.com/OpenDroneMap/odm_data
 
@@ -79,10 +74,10 @@ Then run:
     
 There are many options for tuning your project. See the [wiki](https://github.com/OpenDroneMap/OpenDroneMap/wiki/3.-Run-Time-Parameters) or run `python run.py -h`
 
-##### Viewing Results
+### View Results
 
 When the process finishes, the results will be organized as follows:
-====================================================================
+
     |-- images/
         |-- img-1234.jpg
         |-- ...
@@ -122,7 +117,7 @@ You can also view the orthophoto GeoTIFF in QGIS or other mapping software:
 
 ![](https://raw.githubusercontent.com/OpenDroneMap/OpenDroneMap/master/img/bellus_map.png)
 
-#### Build and Run Using Docker
+## Build and Run Using Docker
 
 (Instructions below apply to Ubuntu 14.04, but the Docker image workflow 
 has equivalent procedures for Mac OS X and Windows. See [docs.docker.com](docs.docker.com))
@@ -157,7 +152,7 @@ simply use the following `docker run` command after building the image:
 
 To pass in custom parameters to the run.py script, simply pass it as arguments to the `docker run` command.
 
-### Examples
+## Examples
 
 Here are some other videos, which may be outdated:
 
@@ -172,11 +167,7 @@ aerials to [OpenAerialMap](http://opentopography.org/), point clouds to [OpenTop
 and pushing digital elevation models to an emerging global repository (yet to be named...). That leaves only 
 digital surface model meshes and UV textured meshes with no global repository home.
 
----
-
-
-Documentation:
-==============
+## Documentation:
 
 For documentation, please take a look at our [wiki](https://github.com/OpenDroneMap/OpenDroneMap/wiki).
 
