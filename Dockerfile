@@ -13,9 +13,6 @@
 
 FROM packages
 
-# Add users
-RUN useradd -m -U odm
-
 # Prepare directories`
 RUN mkdir /code
 WORKDIR /code
@@ -27,13 +24,10 @@ ADD . /code/
 RUN git submodule init && git submodule update
 
 # Build OpenDroneMap
-RUN bash ./configure.sh && \
-    chown -R odm:odm /code
+RUN bash ./configure.sh
 
 #Make build folder
 RUN mkdir build && cd build && cmake .. && make
-
-USER odm
 
 ENV PYTHONPATH="$PYTHONPATH:/code/SuperBuild/install/lib/python2.7/dist-packages"
 ENV PYTHONPATH="$PYTHONPATH:/code/SuperBuild/src/opensfm"
@@ -41,5 +35,4 @@ ENV LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/code/SuperBuild/install/lib"
 ENV SESSION="DDODMMAP_SESSION"
 
 # Entry point
-# VOLUME ["/code/images"]
 ENTRYPOINT ["python", "/code/run.py", "--project-path", "/code/"]
