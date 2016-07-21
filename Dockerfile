@@ -1,7 +1,7 @@
 #Pull in previously built packages image with lots of libraries.
 FROM packages
 
-# Prepare directories`
+# Prepare directories
 RUN mkdir /code
 WORKDIR /code
 
