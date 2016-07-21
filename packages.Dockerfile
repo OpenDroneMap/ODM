@@ -1,10 +1,4 @@
-#Help for users:
-#BUILD COMMAND EXAMPLE: docker build -t alex1 .
-#AUTOMATIC RUN COMMAND EXAMPLE: docker run -it -v /home/alex/OpenDroneMap/images:/code/images --rm alex1
-#MANUAL RUN COMMAND EXAMPLE: docker run -it -v /home/alex/OpenDroneMap/images:/code/images --rm --entrypoint bash alex1
-
 FROM ubuntu:14.04
-MAINTAINER Danilo Bargen <mail@dbrgn.ch>
 MAINTAINER Alex Hagiopol <alex.hagiopol@icloud.com>
 
 # Env variables
