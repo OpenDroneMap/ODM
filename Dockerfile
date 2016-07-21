@@ -5,21 +5,21 @@ FROM packages
 RUN mkdir /code
 WORKDIR /code
 
-# Add repository files
-ADD ccd_defs_check.py /code/ccd_defs_check.py
-ADD CMakeLists.txt /code/CMakeLists.txt
-ADD configure.sh /code/configure.sh
-ADD /.git/ /code/.git/
-ADD .gitignore /code/.gitignore
-ADD .gitmodules /code/.gitmodules
-ADD /modules/ /code/modules/
-ADD /opendm/ /code/opendm/
-ADD /patched_files/ /code/patched_files/
-ADD run.py /code/run.py
-ADD /scripts/ /code/scripts/
-ADD /SuperBuild/cmake/ /code/SuperBuild/cmake/
-ADD /SuperBuild/CMakeLists.txt /code/SuperBuild/CMakeLists.txt
-ADD /tests/ /code/tests/
+# Copy repository files
+COPY ccd_defs_check.py /code/ccd_defs_check.py
+COPY CMakeLists.txt /code/CMakeLists.txt
+COPY configure.sh /code/configure.sh
+COPY /.git/ /code/.git/
+COPY .gitignore /code/.gitignore
+COPY .gitmodules /code/.gitmodules
+COPY /modules/ /code/modules/
+COPY /opendm/ /code/opendm/
+COPY /patched_files/ /code/patched_files/
+COPY run.py /code/run.py
+COPY /scripts/ /code/scripts/
+COPY /SuperBuild/cmake/ /code/SuperBuild/cmake/
+COPY /SuperBuild/CMakeLists.txt /code/SuperBuild/CMakeLists.txt
+COPY /tests/ /code/tests/
 
 # Update submodules
 RUN git submodule init && git submodule update

@@ -6,15 +6,14 @@ sudo apt-get update
 
 echo "Installing Required Requisites"
 sudo apt-get install -y build-essential \
-                     cmake \
                      git \
                      python-pip \
                      libgdal-dev \
                      gdal-bin \
                      libgeotiff-dev \
-                     pkg-config -y -qq
+                     pkg-config -qq
 
-echo "Upgrading CMake for MVS-Texturing"
+echo "Getting CMake 3.1 for MVS-Texturing"
 sudo apt-get install -y software-properties-common python-software-properties
 sudo add-apt-repository ppa:george-edison55/cmake-3.x -y
 sudo apt-get update -y
@@ -38,7 +37,7 @@ sudo apt-get install -y libgtk2.0-dev \
                      libxext-dev \
                      liblapack-dev \
                      libeigen3-dev \
-                     libvtk5-dev -y -qq
+                     libvtk5-dev -qq
 
 echo "Removing libdc1394-22-dev due to python opencv issue"
 sudo apt-get remove libdc1394-22-dev
@@ -64,7 +63,7 @@ echo "Installing Ecto Dependencies"
 sudo pip install -U catkin-pkg
 sudo apt-get install -y python-empy \
                      python-nose \
-                     python-pyside -y -qq
+                     python-pyside -qq
 
 echo "Installing OpenDroneMap Dependencies"
 sudo apt-get install -y python-pyexiv2 \
