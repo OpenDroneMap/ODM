@@ -1,17 +1,26 @@
 #!/bin/bash
 
+#Add necessary paths. Also add to .bashrc
+echo "Adding library paths to ~/.bashrc"
+export PYTHONPATH=$PYTHONPATH:$(pwd)/SuperBuild/install/lib/python2.7/dist-packages
+export PYTHONPATH=$PYTHONPATH:$(pwd)/SuperBuild/src/opensfm
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$(pwd)/SuperBuild/install/lib
+echo 'export PYTHONPATH=$PYTHONPATH:$(pwd)/SuperBuild/install/lib/python2.7/dist-packages' >> ~/.bashrc
+echo 'export PYTHONPATH=$PYTHONPATH:$(pwd)/SuperBuild/src/opensfm' >> ~/.bashrc
+echo 'export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$(pwd)/SuperBuild/install/lib' >> ~/.bashrc
+
 ## Before installing
 echo "Updating the system"
 sudo apt-get update
 
 echo "Installing Required Requisites"
-sudo apt-get install -y build-essential \
+sudo apt-get install -y -qq build-essential \
                      git \
                      python-pip \
                      libgdal-dev \
                      gdal-bin \
                      libgeotiff-dev \
-                     pkg-config -qq
+                     pkg-config
 
 echo "Getting CMake 3.1 for MVS-Texturing"
 sudo apt-get install -y software-properties-common python-software-properties
@@ -20,7 +29,7 @@ sudo apt-get update -y
 sudo apt-get install cmake -y
 
 echo "Installing OpenCV Dependencies"
-sudo apt-get install -y libgtk2.0-dev \
+sudo apt-get install -y -qq libgtk2.0-dev \
                      libavcodec-dev \
                      libavformat-dev \
                      libswscale-dev \
@@ -37,14 +46,14 @@ sudo apt-get install -y libgtk2.0-dev \
                      libxext-dev \
                      liblapack-dev \
                      libeigen3-dev \
-                     libvtk5-dev -qq
+                     libvtk5-dev
 
 echo "Removing libdc1394-22-dev due to python opencv issue"
 sudo apt-get remove libdc1394-22-dev
 
 ## Installing OpenSfM Requisites
 echo "Installing OpenSfM Dependencies"
-sudo apt-get install -y python-networkx \
+sudo apt-get install -y -qq python-networkx \
                      libgoogle-glog-dev \
                      libsuitesparse-dev \
                      libboost-filesystem-dev \
@@ -52,7 +61,7 @@ sudo apt-get install -y python-networkx \
                      libboost-regex-dev \
                      libboost-python-dev \
                      libboost-date-time-dev \
-                     libboost-thread-dev -y -qq
+                     libboost-thread-dev
 
 sudo pip install -U PyYAML \
                     exifread \
@@ -61,9 +70,9 @@ sudo pip install -U PyYAML \
 
 echo "Installing Ecto Dependencies"
 sudo pip install -U catkin-pkg
-sudo apt-get install -y python-empy \
+sudo apt-get install -y -qq python-empy \
                      python-nose \
-                     python-pyside -qq
+                     python-pyside
 
 echo "Installing OpenDroneMap Dependencies"
 sudo apt-get install -y python-pyexiv2 \
@@ -74,6 +83,11 @@ sudo apt-get install -y python-pyexiv2 \
 echo "Compiling SuperBuild"
 cd SuperBuild
 mkdir -p build && cd build
-cmake .. && make -j8
+cmake .. && make -j$(nproc)
+
+echo "Compiling build"
+cd ../..
+mkdir -p build && cd build
+cmake .. && make -j$(nproc)
 
 echo "Configuration Finished"
