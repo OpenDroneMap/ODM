@@ -43,12 +43,9 @@ Support for Ubuntu 12.04 is currently BROKEN with the addition of OpenSfM and Ce
 
 ### Build OpenDroneMap
 
-    cd path/to/odm/dir
-    git clone https://github.com/OpenDroneMap/OpenDroneMap.git .
-    export PYTHONPATH=$PYTHONPATH:`pwd`/SuperBuild/install/lib/python2.7/dist-packages:`pwd`/SuperBuild/src/opensfm
-    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:`pwd`/SuperBuild/install/lib
+    git clone https://github.com/OpenDroneMap/OpenDroneMap.git
+    cd OpenDroneMap    
     bash configure.sh
-    mkdir build && cd build && cmake .. && make && cd ..
 
  For Ubuntu 15.10 users, this will help you get running:
 
@@ -122,8 +119,7 @@ You can also view the orthophoto GeoTIFF in QGIS or other mapping software:
 (Instructions below apply to Ubuntu 14.04, but the Docker image workflow 
 has equivalent procedures for Mac OS X and Windows. See [docs.docker.com](docs.docker.com))
 
-OpenDroneMap is Dockerized, meaning you can use containerization to build and run it without manually performing the
-installation procedure described above and - most importantly - without tampering with the libraries and packages already
+OpenDroneMap is Dockerized, meaning you can use containerization to build and run it without tampering with the configuration of libraries and packages already
 installed on your machine. Docker software is free to install and use in this context. If you don't have it installed,
 see the [Docker Ubuntu installation tutorial] (https://docs.docker.com/engine/installation/linux/ubuntulinux/) and follow the
 instructions up until "Create a Docker group" inclusive. Once Docker is installed, an OpenDroneMap Docker image can be created

@@ -4,18 +4,26 @@ MAINTAINER Alex Hagiopol <alex.hagiopol@icloud.com>
 # Env variables
 ENV DEBIAN_FRONTEND noninteractive
 
-# Install dependencies
+#Install dependencies
+#Required Requisites
 RUN apt-get update \
-    && sudo apt-get remove libdc1394-22-dev \
-    && apt-get install -y \
-        build-essential \
-                     cmake \
-                     git \
-                     python-pip \
-                     libgdal-dev \
-                     libgeotiff-dev \
-                     pkg-config \
-                     libgtk2.0-dev \
+    && apt-get install -y -qq \
+       build-essential \
+       git \
+       python-pip \
+       libgdal-dev \
+       gdal-bin \
+       libgeotiff-dev \
+       pkg-config
+
+#CMake 3.1 for MVS-Texturing
+RUN sudo apt-get install -y software-properties-common python-software-properties
+RUN sudo add-apt-repository -y ppa:george-edison55/cmake-3.x
+RUN sudo apt-get update -y
+RUN sudo apt-get install cmake -y
+
+#Installing OpenCV Dependencies
+RUN sudo apt-get install -y -qq libgtk2.0-dev \
                      libavcodec-dev \
                      libavformat-dev \
                      libswscale-dev \
@@ -32,8 +40,13 @@ RUN apt-get update \
                      libxext-dev \
                      liblapack-dev \
                      libeigen3-dev \
-                     libvtk5-dev \
-                     python-networkx \
+                     libvtk5-dev
+
+#Removing libdc1394-22-dev due to python opencv issue
+RUN sudo apt-get remove libdc1394-22-dev
+
+#Installing OpenSfM Dependencies
+RUN sudo apt-get install -y -qq python-networkx \
                      libgoogle-glog-dev \
                      libsuitesparse-dev \
                      libboost-filesystem-dev \
@@ -41,8 +54,25 @@ RUN apt-get update \
                      libboost-regex-dev \
                      libboost-python-dev \
                      libboost-date-time-dev \
-                     libboost-thread-dev \
-                     python-empy \
+                     libboost-thread-dev
+RUN sudo pip install -U PyYAML \
+                    exifread \
+                    gpxpy \
+                    xmltodict \
+                    catkin-pkg
+
+#Installing Ecto Dependencies
+RUN sudo apt-get install -y -qq python-empy \
+                     python-nose \
+                     python-pyside
+
+#"Installing OpenDroneMap Dependencies"
+RUN sudo apt-get install -y python-pyexiv2 \
+                     python-scipy \
+                     jhead \
+                     liblas-bin -y -qq
+
+RUN sudo apt-get install -y python-empy \
                      python-nose \
                      python-pyside \
                      python-pyexiv2 \
@@ -56,3 +86,4 @@ RUN apt-get update \
 ENV PYTHONPATH="$PYTHONPATH:/code/SuperBuild/install/lib/python2.7/dist-packages"
 ENV PYTHONPATH="$PYTHONPATH:/code/SuperBuild/src/opensfm"
 ENV LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/code/SuperBuild/install/lib"
+
