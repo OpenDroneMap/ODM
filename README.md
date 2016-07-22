@@ -42,12 +42,22 @@ Help improve our software!
 Support for Ubuntu 12.04 is currently BROKEN with the addition of OpenSfM and Ceres-Solver. We are working hard to get it working again in the future.
 
 ### Build OpenDroneMap
+Start with the following:
 
     git clone https://github.com/OpenDroneMap/OpenDroneMap.git
+    
+Next, open the ~/.bashrc file on your machine and add the following 3 lines at the end. The file can be opened with ```gedit ~/.bashrc```. Be sure to replace the "/your/path/" with the correct path to the location where you cloned OpenDroneMap:
+
+    export PYTHONPATH=$PYTHONPATH:/your/path/OpenDroneMap/SuperBuild/install/lib/python2.7/dist-packages
+    export PYTHONPATH=$PYTHONPATH:/your/path/OpenDroneMap/SuperBuild/src/opensfm
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/your/path/OpenDroneMap/SuperBuild/install/lib
+
+Now, enter the OpenDroneMap directory and compile all of the code by executing a single configuration script:
+
     cd OpenDroneMap    
     bash configure.sh
 
- For Ubuntu 15.10 users, this will help you get running:
+For Ubuntu 15.10 users, this will help you get running:
 
     sudo apt-get install python-xmltodict
     sudo ln -s /usr/lib/x86_64-linux-gnu/libproj.so.9 /usr/lib/libproj.so
