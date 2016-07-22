@@ -9,6 +9,7 @@ ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update \
     && apt-get install -y -qq \
        build-essential \
+       cmake \
        git \
        python-pip \
        libgdal-dev \

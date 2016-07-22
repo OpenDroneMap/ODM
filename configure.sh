@@ -7,6 +7,7 @@ sudo apt-get update
 echo "Installing Required Requisites"
 sudo apt-get install -y -qq build-essential \
                      git \
+                     cmake \
                      python-pip \
                      libgdal-dev \
                      gdal-bin \
