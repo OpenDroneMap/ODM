@@ -20,7 +20,7 @@ RUN apt-get update \
 RUN sudo apt-get install -y software-properties-common python-software-properties
 RUN sudo add-apt-repository -y ppa:george-edison55/cmake-3.x
 RUN sudo apt-get update -y
-RUN sudo apt-get install cmake -y
+RUN sudo apt-get install -y --only-upgrade cmake
 
 #Installing OpenCV Dependencies
 RUN sudo apt-get install -y -qq libgtk2.0-dev \

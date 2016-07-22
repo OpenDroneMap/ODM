@@ -1,14 +1,5 @@
 #!/bin/bash
 
-#Add necessary paths. Also add to .bashrc
-echo "Adding library paths to ~/.bashrc"
-export PYTHONPATH=$PYTHONPATH:$(pwd)/SuperBuild/install/lib/python2.7/dist-packages
-export PYTHONPATH=$PYTHONPATH:$(pwd)/SuperBuild/src/opensfm
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$(pwd)/SuperBuild/install/lib
-echo 'export PYTHONPATH=$PYTHONPATH:$(pwd)/SuperBuild/install/lib/python2.7/dist-packages' >> ~/.bashrc
-echo 'export PYTHONPATH=$PYTHONPATH:$(pwd)/SuperBuild/src/opensfm' >> ~/.bashrc
-echo 'export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$(pwd)/SuperBuild/install/lib' >> ~/.bashrc
-
 ## Before installing
 echo "Updating the system"
 sudo apt-get update
@@ -24,9 +15,9 @@ sudo apt-get install -y -qq build-essential \
 
 echo "Getting CMake 3.1 for MVS-Texturing"
 sudo apt-get install -y software-properties-common python-software-properties
-sudo add-apt-repository ppa:george-edison55/cmake-3.x -y
+sudo add-apt-repository -y ppa:george-edison55/cmake-3.x
 sudo apt-get update -y
-sudo apt-get install cmake -y
+sudo apt-get install -y --only-upgrade cmake
 
 echo "Installing OpenCV Dependencies"
 sudo apt-get install -y -qq libgtk2.0-dev \
