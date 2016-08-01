@@ -13,7 +13,8 @@ from opensfm import ODMOpenSfMCell
 from pmvs import ODMPmvsCell
 from cmvs import ODMCmvsCell
 from odm_meshing import ODMeshingCell
-from odm_texturing import ODMTexturingCell
+#from odm_texturing import ODMTexturingCell
+from mvstex import ODMMvsTexCell
 from odm_georeferencing import ODMGeoreferencingCell
 from odm_orthophoto import ODMOrthoPhotoCell
 
@@ -57,9 +58,16 @@ class ODMApp(ecto.BlackBox):
                                           oct_tree=p.args.odm_meshing_octreeDepth,
                                           samples=p.args.odm_meshing_samplesPerNode,
                                           solver=p.args.odm_meshing_solverDivide),
-                 'texturing': ODMTexturingCell(resize=p.args.resize_to,
-                                               resolution=p.args.odm_texturing_textureResolution,
-                                               size=p.args.odm_texturing_textureWithSize),
+                 'texturing': ODMMvsTexCell(data_term=p.args.mvs_texturing_dataTerm,
+                                            outlier_rem_type=p.args.mvs_texturing_outlierRemovalType,
+                                            skip_vis_test=p.args.mvs_texturing_skipGeometricVisibilityTest,
+                                            skip_glob_seam_leveling=p.args.mvs_texturing_skipGlobalSeamLeveling,
+                                            skip_loc_seam_leveling=p.args.mvs_texturing_skipLocalSeamLeveling,
+                                            skip_hole_fill=p.args.mvs_texturing_skipHoleFilling,
+                                            keep_unseen_faces=p.args.mvs_texturing_keepUnseenFaces),
+# Old odm_texturing
+#                 'texturing': ODMTexturingCell(resize=p.args['resize_to'],
+#                                               resolution=p.args['odm_texturing_textureResolution'],
                  'georeferencing': ODMGeoreferencingCell(img_size=p.args.resize_to,
                                                          gcp_file=p.args.odm_georeferencing_gcpFile,
                                                          use_gcp=p.args.odm_georeferencing_useGcp),
