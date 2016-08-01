@@ -3,7 +3,7 @@ import context
 
 # parse arguments
 processopts = ['resize', 'opensfm', 'cmvs', 'pmvs',
-               'odm_meshing', 'odm_texturing', 'odm_georeferencing',
+               'odm_meshing', 'mvs_texturing', 'odm_georeferencing',
                'odm_orthophoto']
 
 
@@ -199,6 +199,46 @@ def config():
                               'times slightly but helps reduce memory usage. '
                               'Default: %(default)s'))
 
+    parser.add_argument('--mvs_texturing-dataTerm',
+                        metavar='<string>',
+                        default='gmi',
+                        help=('Data term: [area, gmi]. Default:  %(default)s'))
+
+    parser.add_argument('--mvs_texturing-outlierRemovalType',
+                        metavar='<string>',
+                        default='none',
+                        help=('Type of photometric outlier removal method: ' 
+                              '[none, gauss_damping, gauss_clamping]. Default: '  
+                              '%(default)s'))
+
+    parser.add_argument('--mvs_texturing-skipGeometricVisibilityTest',
+                        metavar='<string>',
+                        default="false",
+                        help=('Skip geometric visibility test. Default:  %(default)s'))
+
+    parser.add_argument('--mvs_texturing-skipGlobalSeamLeveling',
+                        metavar='<string>',
+                        default="false",
+                        help=('Skip geometric visibility test. Default:  %(default)s'))
+
+    parser.add_argument('--mvs_texturing-skipLocalSeamLeveling',
+                        metavar='<string>',
+                        default="false",
+                        help=('Skip local seam blending. Default:  %(default)s'))
+
+    parser.add_argument('--mvs_texturing-skipHoleFilling',
+                        metavar='<string>',
+                        default="false",
+                        help=('Skip filling of holes in the mesh. Default:  %(default)s'))
+
+    parser.add_argument('--mvs_texturing-keepUnseenFaces',
+                        metavar='<string>',
+                        default="false",
+                        help=('Keep faces in the mesh that are not seen in any camera. ' 
+                              'Default:  %(default)s'))
+
+    # Old odm_texturing arguments
+
     parser.add_argument('--odm_texturing-textureResolution',
                         metavar='<positive integer>',
                         default=4096,
@@ -212,6 +252,8 @@ def config():
                         type=int,
                         help=('The resolution to rescale the images performing '
                               'the texturing. Default: %(default)s'))
+
+    # End of old odm_texturing arguments
 
     parser.add_argument('--odm_georeferencing-gcpFile',
                         metavar='<path string>',
