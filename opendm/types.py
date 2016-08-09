@@ -25,9 +25,9 @@ class ODM_Photo:
         self.focal_length = None
         self.focal_length_px = None
         # other attributes
-        self.camera_make = None
-        self.camera_model = None
-        self.make_model = None
+        self.camera_make = ''
+        self.camera_model = ''
+        self.make_model = ''
         # parse values from metadata
         self.parse_pyexiv2_values(self.path_file, force_focal, force_ccd)
         # compute focal length into pixels
