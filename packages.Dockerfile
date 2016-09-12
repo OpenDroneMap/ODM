@@ -18,13 +18,13 @@ RUN apt-get update \
        pkg-config
 
 #CMake 3.1 for MVS-Texturing
-RUN sudo apt-get install -y software-properties-common python-software-properties
-RUN sudo add-apt-repository -y ppa:george-edison55/cmake-3.x
-RUN sudo apt-get update -y
-RUN sudo apt-get install -y --only-upgrade cmake
+RUN apt-get install -y software-properties-common python-software-properties
+RUN add-apt-repository -y ppa:george-edison55/cmake-3.x
+RUN apt-get update -y
+RUN apt-get install -y --only-upgrade cmake
 
 #Installing OpenCV Dependencies
-RUN sudo apt-get install -y -qq libgtk2.0-dev \
+RUN apt-get install -y -qq libgtk2.0-dev \
                      libavcodec-dev \
                      libavformat-dev \
                      libswscale-dev \
@@ -44,10 +44,10 @@ RUN sudo apt-get install -y -qq libgtk2.0-dev \
                      libvtk5-dev
 
 #Removing libdc1394-22-dev due to python opencv issue
-RUN sudo apt-get remove libdc1394-22-dev
+RUN apt-get remove libdc1394-22-dev
 
 #Installing OpenSfM Dependencies
-RUN sudo apt-get install -y -qq python-networkx \
+RUN apt-get install -y -qq python-networkx \
                      libgoogle-glog-dev \
                      libsuitesparse-dev \
                      libboost-filesystem-dev \
@@ -56,24 +56,24 @@ RUN sudo apt-get install -y -qq python-networkx \
                      libboost-python-dev \
                      libboost-date-time-dev \
                      libboost-thread-dev
-RUN sudo pip install -U PyYAML \
+RUN pip install -U PyYAML \
                     exifread \
                     gpxpy \
                     xmltodict \
                     catkin-pkg
 
 #Installing Ecto Dependencies
-RUN sudo apt-get install -y -qq python-empy \
+RUN apt-get install -y -qq python-empy \
                      python-nose \
                      python-pyside
 
 #"Installing OpenDroneMap Dependencies"
-RUN sudo apt-get install -y python-pyexiv2 \
+RUN apt-get install -y python-pyexiv2 \
                      python-scipy \
                      jhead \
                      liblas-bin -y -qq
 
-RUN sudo apt-get install -y python-empy \
+RUN apt-get install -y python-empy \
                      python-nose \
                      python-pyside \
                      python-pyexiv2 \
