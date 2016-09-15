@@ -69,8 +69,11 @@ class ODM_Photo:
                     self.focal_length = float(val)
             except (pyexiv2.ExifValueError, ValueError) as e:
                 pass
+            except NotImplementedError as e:
+                pass
 
-        self.make_model = sensor_string(self.camera_make, self.camera_model)
+        if self.camera_make and self.camera_model:
+            self.make_model = sensor_string(self.camera_make, self.camera_model)
 
         # needed to do that since sometimes metadata contains wrong data
         img = cv2.imread(_path_file)
