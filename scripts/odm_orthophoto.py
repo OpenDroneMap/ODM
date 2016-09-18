@@ -92,6 +92,7 @@ class ODMOrthoPhotoCell(ecto.Cell):
                            '-co TILED=yes -co SPARSE_OK=yes '
                            '-co BLOCKXSIZE=256 -co BLOCKYSIZE=256 '
                            '-co INTERLEAVE=BAND -co COMPRESS=JPEG '
+                           '-co JPEG_QUALITY=90 '
                            '-a_srs \"EPSG:{epsg}\" {png} {tiff} > {log}'.format(**kwargs))
                 geotiffcreated = True
             if not geotiffcreated:
