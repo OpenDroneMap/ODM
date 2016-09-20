@@ -172,6 +172,23 @@ private:
       */
     bool isModelOk(const pcl::TextureMesh &mesh);
 
+    /*!
+      * \brief Loads a model from an .obj file (replacement for the pcl obj loader).
+      *
+      * \param inputFile Path to the .obj file.
+      * \param mesh The model.
+      * \return True if model was loaded successfully.
+      */
+    bool loadObjFile(std::string inputFile, pcl::TextureMesh &mesh);
+
+    /*!
+      * \brief Function is compied straight from the function in the pcl::io module.
+      */
+    bool readHeader (const std::string &file_name, pcl::PCLPointCloud2 &cloud,
+                     Eigen::Vector4f &origin, Eigen::Quaternionf &orientation,
+                     int &file_version, int &data_type, unsigned int &data_idx,
+                     const int offset);
+
     Logger          log_;               /**< Logging object. */
 
     std::string     inputFile_;         /**< Path to the textured mesh as an obj-file. */
@@ -198,6 +215,8 @@ private:
     cv::Mat         depth_;             /**< The depth of the ortho photo as an OpenCV matrix, CV_32F. */
 
     bool            multiMaterial_;     /**< True if the mesh has multiple materials. **/
+
+    std::vector<pcl::MTLReader> companions_; /**< Materials (used by loadOBJFile). **/
 };
 
 /*!
