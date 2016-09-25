@@ -89,13 +89,13 @@ class ODMOrthoPhotoCell(ecto.Cell):
                 }
 
                 system.run('gdal_translate -a_ullr {ulx} {uly} {lrx} {lry} '
-							'-co TILED=yes'
-							'-co COMPRESS=DEFLATE'
-							'-co PREDICTOR=2'
-							'-co BLOCKXSIZE=256'
-							'-co BLOCKYSIZE=256'
-							'-co INTERLEAVE=band'
-							'-co NUM_THREADS=ALL_CPUS'
+							'-co TILED=yes' 
+							'-co COMPRESS=DEFLATE' 
+							'-co PREDICTOR=2' 
+							'-co BLOCKXSIZE=256' 
+							'-co BLOCKYSIZE=256' 
+							'-co INTERLEAVE=band' 
+							'-co NUM_THREADS=ALL_CPUS' 
                            '-a_srs \"EPSG:{epsg}\" {png} {tiff} > {log}'.format(**kwargs))
                 geotiffcreated = True
             if not geotiffcreated:
