@@ -212,28 +212,28 @@ def config():
                               '%(default)s'))
 
     parser.add_argument('--mvs_texturing-skipGeometricVisibilityTest',
-                        metavar='<string>',
-                        default="false",
+                        action='store_true',
+                        default=False,
                         help=('Skip geometric visibility test. Default:  %(default)s'))
 
     parser.add_argument('--mvs_texturing-skipGlobalSeamLeveling',
-                        metavar='<string>',
-                        default="false",
+                        action='store_true',
+                        default=False,
                         help=('Skip geometric visibility test. Default:  %(default)s'))
 
     parser.add_argument('--mvs_texturing-skipLocalSeamLeveling',
-                        metavar='<string>',
-                        default="false",
+                        action='store_true',
+                        default=False,
                         help=('Skip local seam blending. Default:  %(default)s'))
 
     parser.add_argument('--mvs_texturing-skipHoleFilling',
-                        metavar='<string>',
-                        default="false",
+                        action='store_true',
+                        default=False,
                         help=('Skip filling of holes in the mesh. Default:  %(default)s'))
 
     parser.add_argument('--mvs_texturing-keepUnseenFaces',
-                        metavar='<string>',
-                        default="false",
+                        action='store_true',
+                        default=False,
                         help=('Keep faces in the mesh that are not seen in any camera. ' 
                               'Default:  %(default)s'))
 
