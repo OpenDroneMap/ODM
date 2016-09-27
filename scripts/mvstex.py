@@ -11,11 +11,11 @@ class ODMMvsTexCell(ecto.Cell):
     def declare_params(self, params):
         params.declare("data_term", 'Data term: [area, gmi] default: gmi', "gmi")
         params.declare("outlier_rem_type", 'Type of photometric outlier removal method: [none, gauss_damping, gauss_clamping]. default: none', "none")
-        params.declare("skip_vis_test", 'Skip geometric visibility test based on ray intersection.', "false")
-        params.declare("skip_glob_seam_leveling", 'Skip global seam leveling.', "false")
-        params.declare("skip_loc_seam_leveling", 'Skip local seam leveling (Poisson editing).', "false")
-        params.declare("skip_hole_fill", 'Skip hole filling.', "false")
-        params.declare("keep_unseen_faces", 'Keep unseen faces.', "false")
+        params.declare("skip_vis_test", 'Skip geometric visibility test based on ray intersection.', False)
+        params.declare("skip_glob_seam_leveling", 'Skip global seam leveling.', False)
+        params.declare("skip_loc_seam_leveling", 'Skip local seam leveling (Poisson editing).', False)
+        params.declare("skip_hole_fill", 'Skip hole filling.', False)
+        params.declare("keep_unseen_faces", 'Keep unseen faces.', False)
 
     def declare_io(self, params, inputs, outputs):
         inputs.declare("tree", "Struct with paths", [])
@@ -58,15 +58,15 @@ class ODMMvsTexCell(ecto.Cell):
             skipHoleFilling = ""
             keepUnseenFaces = ""
             
-            if (self.params.skip_vis_test.lower() == "true"):
+            if (self.params.skip_vis_test):
                 skipGeometricVisibilityTest = "--skip_geometric_visibility_test"
-            if (self.params.skip_glob_seam_leveling.lower() == "true"):
+            if (self.params.skip_glob_seam_leveling):
                 skipGlobalSeamLeveling = "--skip_global_seam_leveling"
-            if (self.params.skip_loc_seam_leveling.lower() == "true"):
+            if (self.params.skip_loc_seam_leveling):
                 skipLocalSeamLeveling = "--skip_local_seam_leveling"
-            if (self.params.skip_hole_fill.lower() == "true"):
+            if (self.params.skip_hole_fill):
                 skipHoleFilling = "--skip_hole_filling"
-            if (self.params.keep_unseen_faces.lower() == "true"):
+            if (self.params.keep_unseen_faces):
                 keepUnseenFaces = "--keep_unseen_faces"
             
             # mvstex definitions
