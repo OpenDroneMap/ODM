@@ -64,7 +64,7 @@ For Ubuntu 15.10 users, this will help you get running:
     
 ### Run OpenDroneMap
 
-First you need a set of images, which may or may not be georeferenced. There are two ways OpenDroneMap can understand geographic coordinates. First, the images can be geotagged in their EXIF data. This is the default. Alternatively, you can create a GCP file, [a process detailed here](https://github.com/OpenDroneMap/OpenDroneMap/wiki/2.-Running-OpenDroneMap#running-odm-with-ground-control)
+First you need a set of images, which may or may not be georeferenced. There are two ways OpenDroneMap can understand geographic coordinates. First, the images can be geotagged in their EXIF data. This is the default. Alternatively, you can create a GCP file, [a process detailed here](https://github.com/OpenDroneMap/OpenDroneMap/wiki/Running-OpenDroneMap#running-odm-with-ground-control)
 
 Create a project folder and places your images in an "images" directory:
 
@@ -79,7 +79,7 @@ Then run:
 
     python run.py --project-path /path/to/project
     
-There are many options for tuning your project. See the [wiki](https://github.com/OpenDroneMap/OpenDroneMap/wiki/3.-Run-Time-Parameters) or run `python run.py -h`
+There are many options for tuning your project. See the [wiki](https://github.com/OpenDroneMap/OpenDroneMap/wiki/Run-Time-Parameters) or run `python run.py -h`
 
 ### View Results
 
@@ -131,7 +131,7 @@ has equivalent procedures for Mac OS X and Windows. See [docs.docker.com](docs.d
 
 OpenDroneMap is Dockerized, meaning you can use containerization to build and run it without tampering with the configuration of libraries and packages already
 installed on your machine. Docker software is free to install and use in this context. If you don't have it installed,
-see the [Docker Ubuntu installation tutorial] (https://docs.docker.com/engine/installation/linux/ubuntulinux/) and follow the
+see the [Docker Ubuntu installation tutorial](https://docs.docker.com/engine/installation/linux/ubuntulinux/) and follow the
 instructions up until "Create a Docker group" inclusive. Once Docker is installed, an OpenDroneMap Docker image can be created
 like so:
 
