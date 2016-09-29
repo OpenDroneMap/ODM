@@ -8,15 +8,17 @@ ExternalProject_Add(${_proj_name}
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
-  URL               https://github.com/mapillary/OpenSfM/archive/a4b07056aec1184692c1432fbdd1074710aec32b.zip
-  URL_MD5           42B2B1994C3309BBF4525C8CC1F6F741
+  GIT_REPOSITORY    https://github.com/mapillary/OpenSfM.git
+  GIT_TAG           dense
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   #--Configure step-------------
   SOURCE_DIR        ${SB_SOURCE_DIR}/${_proj_name}
   CONFIGURE_COMMAND cmake <SOURCE_DIR>/${_proj_name}/src
-    -DCERES_ROOT_DIR=${SB_INSTALL_DIR} 
+    -DCERES_ROOT_DIR=${SB_INSTALL_DIR}
     -DOpenCV_DIR=${SB_INSTALL_DIR}/share/OpenCV
+    -DOPENSFM_BUILD_TESTS=off
+
   #--Build step-----------------
   BINARY_DIR        ${_SB_BINARY_DIR}
   #--Install step---------------
