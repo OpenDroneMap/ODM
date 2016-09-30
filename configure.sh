@@ -58,7 +58,8 @@ sudo apt-get install -y -qq python-networkx \
                      libboost-regex-dev \
                      libboost-python-dev \
                      libboost-date-time-dev \
-                     libboost-thread-dev
+                     libboost-thread-dev \
+                     python-pyproj
 
 sudo pip install -U PyYAML \
                     exifread \
