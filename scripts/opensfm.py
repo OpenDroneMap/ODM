@@ -92,18 +92,17 @@ class ODMOpenSfMCell(ecto.Cell):
             log.ODM_WARNING('Found a valid OpenSfM file in: %s' %
                             tree.opensfm_reconstruction)
 
+        # check if reconstruction was exported to bundler before
+        if not io.file_exists(tree.opensfm_bundle_list) or rerun_cell:
+            # convert back to bundler's format
+            system.run('PYTHONPATH=%s %s/bin/export_bundler %s' %
+                       (context.pyopencv_path, context.opensfm_path, tree.opensfm))
+        else:
+            log.ODM_WARNING('Found a valid Bundler file in: %s' %
+                            tree.opensfm_reconstruction)
+
         if not args.use_opensfm_pointcloud:
-            # check if reconstruction was exported to bundler before
-            if not io.file_exists(tree.opensfm_bundle_list) or rerun_cell:
-                # convert back to bundler's format
-                system.run('PYTHONPATH=%s %s/bin/export_bundler %s' %
-                           (context.pyopencv_path, context.opensfm_path, tree.opensfm))
-            else:
-                log.ODM_WARNING('Found a valid Bundler file in: %s' %
-                                tree.opensfm_reconstruction)
-
             # check if reconstruction was exported to pmvs before
-
             if not io.file_exists(tree.pmvs_visdat) or rerun_cell:
                 # run PMVS converter
                 system.run('PYTHONPATH=%s %s/bin/export_pmvs %s --output %s' %
