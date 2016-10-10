@@ -1,5 +1,10 @@
 #!/bin/bash
 
+## Set up library paths
+RUNPATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+export PYTHONPATH=$RUNPATH/SuperBuild/install/lib/python2.7/dist-packages:$RUNPATH/SuperBuild/src/opensfm:$PYTHONPATH
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$RUNPATH/SuperBuild/install/lib
+
 ## Before installing
 echo "Updating the system"
 sudo apt-get update
@@ -12,7 +17,8 @@ sudo apt-get install -y -qq build-essential \
                      libgdal-dev \
                      gdal-bin \
                      libgeotiff-dev \
-                     pkg-config
+                     pkg-config \
+                     libimage-exiftool-perl
 
 echo "Getting CMake 3.1 for MVS-Texturing"
 sudo apt-get install -y software-properties-common python-software-properties
@@ -53,7 +59,8 @@ sudo apt-get install -y -qq python-networkx \
                      libboost-regex-dev \
                      libboost-python-dev \
                      libboost-date-time-dev \
-                     libboost-thread-dev
+                     libboost-thread-dev \
+                     python-pyproj
 
 sudo pip install -U PyYAML \
                     exifread \
