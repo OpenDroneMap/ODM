@@ -84,14 +84,18 @@ class ODMMvsTexCell(ecto.Cell):
                 'skipHoleFilling': skipHoleFilling,
                 'keepUnseenFaces': keepUnseenFaces
             }
-            
-            log.ODM_DEBUG('Generating .nvm file from pmvs output: %s'
-                          % '{nvm_file}'.format(**kwargs))
-                          
-            # Create .nvm camera file.
-            pmvs2nvmcams.run('{pmvs_folder}'.format(**kwargs), 
-                             '{nvm_file}'.format(**kwargs))
-            
+
+            if args.use_opensfm_pointcloud:
+                kwargs['nvm_file'] = io.join_paths(tree.opensfm,
+                                                   "reconstruction.nvm")
+            else:
+                log.ODM_DEBUG('Generating .nvm file from pmvs output: %s'
+                              % '{nvm_file}'.format(**kwargs))
+
+                # Create .nvm camera file.
+                pmvs2nvmcams.run('{pmvs_folder}'.format(**kwargs),
+                                 '{nvm_file}'.format(**kwargs))
+
             # run texturing binary
             system.run('{bin} {nvm_file} {model} {out_dir} '
                        '-d {dataTerm} -o {outlierRemovalType} '

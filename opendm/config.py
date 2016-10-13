@@ -110,6 +110,12 @@ def config():
                              'images based on GPS exif data. Set to 0 to skip '
                              'pre-matching. Default: %(default)s')
 
+    parser.add_argument('--use-opensfm-pointcloud',
+                        action='store_true',
+                        default=False,
+                        help='Use OpenSfM to compute the point cloud instead '
+                             'of PMVS')
+
     parser.add_argument('--cmvs-maxImages',
                         metavar='<integer>',
                         default=500,
