@@ -110,20 +110,26 @@ class ODMApp(ecto.BlackBox):
                         self.args[:] >> self.opensfm['args'],
                         self.resize['photos'] >> self.opensfm['photos']]
 
-        # run cmvs
-        connections += [self.tree[:] >> self.cmvs['tree'],
-                        self.args[:] >> self.cmvs['args'],
-                        self.opensfm['reconstruction'] >> self.cmvs['reconstruction']]
+        if _p.args.use_opensfm_pointcloud:
+            # create odm mesh from opensfm point cloud
+            connections += [self.tree[:] >> self.meshing['tree'],
+                            self.args[:] >> self.meshing['args'],
+                            self.opensfm['reconstruction'] >> self.meshing['reconstruction']]
+        else:
+            # run cmvs
+            connections += [self.tree[:] >> self.cmvs['tree'],
+                            self.args[:] >> self.cmvs['args'],
+                            self.opensfm['reconstruction'] >> self.cmvs['reconstruction']]
 
-        # run pmvs
-        connections += [self.tree[:] >> self.pmvs['tree'],
-                        self.args[:] >> self.pmvs['args'],
-                        self.cmvs['reconstruction'] >> self.pmvs['reconstruction']]
+            # run pmvs
+            connections += [self.tree[:] >> self.pmvs['tree'],
+                            self.args[:] >> self.pmvs['args'],
+                            self.cmvs['reconstruction'] >> self.pmvs['reconstruction']]
 
-        # create odm mesh
-        connections += [self.tree[:] >> self.meshing['tree'],
-                        self.args[:] >> self.meshing['args'],
-                        self.pmvs['reconstruction'] >> self.meshing['reconstruction']]
+            # create odm mesh from pmvs point cloud
+            connections += [self.tree[:] >> self.meshing['tree'],
+                            self.args[:] >> self.meshing['args'],
+                            self.pmvs['reconstruction'] >> self.meshing['reconstruction']]
 
         # create odm texture
         connections += [self.tree[:] >> self.texturing['tree'],
