@@ -55,7 +55,8 @@ RUN apt-get install -y -qq python-networkx \
                      libboost-regex-dev \
                      libboost-python-dev \
                      libboost-date-time-dev \
-                     libboost-thread-dev
+                     libboost-thread-dev \
+                     python-pyproj
 RUN pip install -U PyYAML \
                     exifread \
                     gpxpy \
