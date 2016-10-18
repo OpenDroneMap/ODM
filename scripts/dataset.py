@@ -12,12 +12,12 @@ class ODMLoadDatasetCell(ecto.Cell):
     def declare_params(self, params):
         params.declare("force_focal", 'Override the focal length information for the '
                        'images', None)
-        params.declare("force_ccd", 'Override the ccd widht information for the '
+        params.declare("force_ccd", 'Override the ccd width information for the '
                        'images', None)
 
     def declare_io(self, params, inputs, outputs):
         inputs.declare("tree", "Struct with paths", [])
-        outputs.declare("photos", "list of ODMPhoto's", [])
+        outputs.declare("photos", "list of ODMPhotos", [])
 
     def process(self, inputs, outputs):
         # check if the extension is sopported
