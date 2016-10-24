@@ -18,22 +18,8 @@ logging.basicConfig(level=logging.DEBUG,
                     format='%(levelname)-14s %(message)s' + ENDC)
 
 
-def ODM_INFO(str):
-    logging.info(str)
-
-
-def ODM_WARNING(str):
-    logging.warning(str)
-
-
-def ODM_ERROR(str):
-    logging.error(str)
-
-
-def ODM_EXCEPTION(str):
-    logging.exception(str)
-
-
-def ODM_DEBUG(str):
-    logging.debug(str)
-
+ODM_INFO = logging.info
+ODM_WARNING = logging.warning
+ODM_ERROR = logging.error
+ODM_EXCEPTION = logging.exception
+ODM_DEBUG = logging.debug
