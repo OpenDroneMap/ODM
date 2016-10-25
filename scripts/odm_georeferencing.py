@@ -117,9 +117,6 @@ class ODMGeoreferencingCell(ecto.Cell):
             geo_ref = types.ODM_GeoRef()
             geo_ref.parse_coordinate_system(tree.odm_georeferencing_coords)
 
-            for idx, photo in enumerate(self.inputs.photos):
-                geo_ref.utm_to_latlon(tree.odm_georeferencing_latlon, photo, idx)
-
             # convert ply model to LAS reference system
             geo_ref.convert_to_las(tree.odm_georeferencing_model_ply_geo,
                                    tree.odm_georeferencing_pdal)
