@@ -210,7 +210,7 @@ void UtmExtractor::extractUtm()
   // Open output file
   std::ofstream outputCoordStream(outputCoordFileName_.c_str());
   if (!outputCoordStream.good()) {
-    throw UtmExtractorException("Failed to openg " + outputCoordFileName_ + " for writing.");
+    throw UtmExtractorException("Failed to open " + outputCoordFileName_ + " for writing.");
   }
   outputCoordStream.precision(10);
 
