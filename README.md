@@ -42,7 +42,7 @@ Steps to get OpenDroneMap running:
 
 (Requires Ubuntu 14.04 or later, see https://github.com/OpenDroneMap/odm_vagrant for running on Windows in a VM)
 
-Support for Ubuntu 12.04 is currently BROKEN with the addition of OpenSfM and Ceres-Solver. We are working hard to get it working again in the future. 
+Support for Ubuntu 12.04 is currently BROKEN with the addition of OpenSfM and Ceres-Solver. It is likely to remain broken unless a champion is found to fix it.
 
 #### Building OpenDroneMap using git
 
