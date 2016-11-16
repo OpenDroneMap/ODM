@@ -159,6 +159,10 @@ simply use the following `docker run` command after building the image:
 
 To pass in custom parameters to the run.py script, simply pass it as arguments to the `docker run` command.
 
+## User Interface
+
+A web interface and API to OpenDroneMap is currently under active development in the [WebODM](https://github.com/OpenDroneMap/WebODM) repository.
+
 ## Examples
 
 Here are some other videos, which may be outdated:
