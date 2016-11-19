@@ -6,7 +6,7 @@ ENV DEBIAN_FRONTEND noninteractive
 
 # Install dependencies
 RUN apt-get update \
-    && sudo apt-get remove libdc1394-22-dev \
+    && apt-get remove libdc1394-22-dev \
     && apt-get install -y --install-recommends \
         build-essential \
                      cmake \
