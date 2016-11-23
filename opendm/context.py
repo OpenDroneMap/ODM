@@ -23,6 +23,9 @@ cmvs_path = os.path.join(superbuild_path, "install/bin/cmvs")
 cmvs_opts_path = os.path.join(superbuild_path, "install/bin/genOption")
 pmvs2_path = os.path.join(superbuild_path, "install/bin/pmvs2")
 
+# define mvstex path
+mvstex_path = os.path.join(superbuild_path, "install/bin/texrecon")
+
 # define txt2las path
 txt2las_path = os.path.join(superbuild_path, 'src/las-tools/bin')
 pdal_path = os.path.join(superbuild_path, 'build/pdal/bin')

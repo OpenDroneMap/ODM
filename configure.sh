@@ -1,43 +1,32 @@
 #!/bin/bash
 
-# Check OS
-if [ ! $(command -v apt-get) ]; then
-  echo -e "\e[1;31mERROR: Not a Debian-based linux system. 
-           Impossible to install OpenCV with this script\e[0;39m"
-  exit 1
-fi
+## Set up library paths
+RUNPATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+export PYTHONPATH=$RUNPATH/SuperBuild/install/lib/python2.7/dist-packages:$RUNPATH/SuperBuild/src/opensfm:$PYTHONPATH
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$RUNPATH/SuperBuild/install/lib
 
 ## Before installing
-echo -e "\e[1;34mUpdating the system\e[0;39m"
+echo "Updating the system"
 sudo apt-get update
-END_CMD1=$?
-# sudo apt-get upgrade -y
-# END_CMD2=$?
-if [ $END_CMD1 -ne 0 ]
-then
-	echo -e "\e[1;31mERROR: \e[39mWhen Updating the system\e[0m"
-	exit 1
-fi
 
-## Install Required Requisites
-echo -e "\e[1;34mInstalling Required Requisites\e[0;39m"
-sudo apt-get install build-essential \
-                     cmake \
+echo "Installing Required Requisites"
+sudo apt-get install -y -qq build-essential \
                      git \
+                     cmake \
                      python-pip \
                      libgdal-dev \
                      gdal-bin \
                      libgeotiff-dev \
-                     pkg-config -y -qq
-if [ $? -ne 0 ] 
-then
-    echo -e "\e[1;31mERROR: \e[39mWhen Installing Required Requisites\e[0m"
-    exit 1
-fi
+                     pkg-config
 
-## Installing Optional Requisites
-echo -e "\e[1;34mInstalling OpenCV Dependencies\e[0;39m"
-sudo apt-get install libgtk2.0-dev \
+echo "Getting CMake 3.1 for MVS-Texturing"
+sudo apt-get install -y software-properties-common python-software-properties
+sudo add-apt-repository -y ppa:george-edison55/cmake-3.x
+sudo apt-get update -y
+sudo apt-get install -y --only-upgrade cmake
+
+echo "Installing OpenCV Dependencies"
+sudo apt-get install -y -qq libgtk2.0-dev \
                      libavcodec-dev \
                      libavformat-dev \
                      libswscale-dev \
@@ -54,20 +43,14 @@ sudo apt-get install libgtk2.0-dev \
                      libxext-dev \
                      liblapack-dev \
                      libeigen3-dev \
-                     libvtk5-dev -y -qq
-if [ $? -ne 0 ] 
-then
-    echo -e "\e[1;31mERROR: \e[39mError when Installing Dependencies Requisites\e[0m"
-    exit 1
-fi
+                     libvtk5-dev
 
-## Remove libdc1394-22-dev due to python opencv issue
-echo -e "\e[1;34mRemoving libdc1394-22-dev\e[0;39m"
+echo "Removing libdc1394-22-dev due to python opencv issue"
 sudo apt-get remove libdc1394-22-dev
 
 ## Installing OpenSfM Requisites
-echo -e "\e[1;34mInstalling OpenSfM Dependencies\e[0;39m"
-sudo apt-get install python-networkx \
+echo "Installing OpenSfM Dependencies"
+sudo apt-get install -y -qq python-networkx \
                      libgoogle-glog-dev \
                      libsuitesparse-dev \
                      libboost-filesystem-dev \
@@ -75,51 +58,34 @@ sudo apt-get install python-networkx \
                      libboost-regex-dev \
                      libboost-python-dev \
                      libboost-date-time-dev \
-                     libboost-thread-dev -y -qq
+                     libboost-thread-dev \
+                     python-pyproj
 
 sudo pip install -U PyYAML \
                     exifread \
                     gpxpy \
                     xmltodict
-if [ $? -ne 0 ] 
-then
-    echo -e "\e[1;31mERROR: \e[39mError when Installing OpenSfM Dependencies\e[0m"
-    exit 1
-fi
 
-## Installing Ecto Requisites
-echo -e "\e[1;34mInstalling Ecto Dependencies\e[0;39m"
+echo "Installing Ecto Dependencies"
 sudo pip install -U catkin-pkg
-sudo apt-get install python-empy \
+sudo apt-get install -y -qq python-empy \
                      python-nose \
-                     python-pyside -y -qq
-if [ $? -ne 0 ] 
-then
-    echo -e "\e[1;31mERROR: \e[39mError when Installing Ecto Dependencies\e[0m"
-    exit 1
-fi
+                     python-pyside
 
-## Installing OpenDroneMap Requisites
-echo -e "\e[1;34mInstalling OpenDroneMap Dependencies\e[0;39m"
-sudo apt-get install python-pyexiv2 \
+echo "Installing OpenDroneMap Dependencies"
+sudo apt-get install -y -qq python-pyexiv2 \
                      python-scipy \
                      jhead \
-                     liblas-bin -y -qq
-if [ $? -ne 0 ] 
-then
-    echo -e "\e[1;31mERROR: \e[39mError when Installing OpenDroneMap Dependencies\e[0m"
-    exit 1
-fi
+                     liblas-bin 
 
-## Get sys vars
-NUM_CORES=`grep -c processor /proc/cpuinfo`
-
-## Add SuperBuild path to the python path
-export PYTHONPATH=$PYTHONPATH:`pwd`/SuperBuild/install/lib/python2.7/dist-packages:`pwd`/SuperBuild/src/opensfm
-
-## Compile SuperBuild
+echo "Compiling SuperBuild"
 cd SuperBuild
 mkdir -p build && cd build
-cmake .. && make -j${NUM_CORES}
+cmake .. && make -j$(nproc)
 
-echo -e "\e[1;34mScript finished\e[0;39m"
+echo "Compiling build"
+cd ../..
+mkdir -p build && cd build
+cmake .. && make -j$(nproc)
+
+echo "Configuration Finished"
