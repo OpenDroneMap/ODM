@@ -69,8 +69,14 @@ class ODM_Photo:
                     self.focal_length = float(val)
             except (pyexiv2.ExifValueError, ValueError) as e:
                 pass
-            except NotImplementedError as e:
-                pass
+            except NotImplementedError:
+                log.ODM_DEBUG('invalid key: %s' %key)
+                log.ODM_DEBUG(
+                    'deleting invalid tags (original image will be saved as ' +
+                    _path_file + '_original)'
+                )
+                tag = key.split('.')[0]
+                system.run('exiftool -%s:all= %s' %(tag, _path_file))
 
         if self.camera_make and self.camera_model:
             self.make_model = sensor_string(self.camera_make, self.camera_model)
