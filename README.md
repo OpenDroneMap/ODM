@@ -20,41 +20,27 @@ In a word, OpenDroneMap is a toolchain for processing raw civilian UAS imagery t
 
 So far, it does Point Clouds, Digital Surface Models, Textured Digital Surface Models, and Orthorectified Imagery. Open Drone Map now includes state-of-the-art 3D reconstruction work by Michael Waechter, Nils Moehrle, and Michael Goesele. See their publication at http://www.gcc.tu-darmstadt.de/media/gcc/papers/Waechter-2014-LTB.pdf.
 
-Users' mailing list: http://lists.osgeo.org/cgi-bin/mailman/listinfo/opendronemap-users
 
-Developers' mailing list: http://lists.osgeo.org/cgi-bin/mailman/listinfo/opendronemap-dev
+## QUICKSTART
 
-Overview video: https://www.youtube.com/watch?v=0UctfoeNB_Y
+Requires Ubuntu 14.04 or later, see https://github.com/OpenDroneMap/odm_vagrant for running on Windows in a VM
 
-## Developers
+*Support for Ubuntu 12.04 is currently BROKEN with the addition of OpenSfM and Ceres-Solver. It is likely to remain broken unless a champion is found to fix it.*
 
-Help improve our software!
+**[Download the latest release here](https://github.com/OpenDroneMap/OpenDroneMap/releases)**
 
-[![Join the chat at https://gitter.im/OpenDroneMap/OpenDroneMap](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/OpenDroneMap/OpenDroneMap?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+Current version: 0.2 (beta)
 
-1. Try to keep commits clean and simple
-2. Submit a pull request with detailed changes and test results
-
-## Build and Run OpenDroneMap in Ubuntu:
-
-(Requires Ubuntu 14.04 or later, see https://github.com/OpenDroneMap/odm_vagrant for running on Windows in a VM)
-
-Support for Ubuntu 12.04 is currently BROKEN with the addition of OpenSfM and Ceres-Solver. It is likely to remain broken unless a champion is found to fix it.
-
-### Build OpenDroneMap
-Start with the following:
-
-    git clone https://github.com/OpenDroneMap/OpenDroneMap.git
+### Installation
     
-Next, open the ~/.bashrc file on your machine and add the following 3 lines at the end. The file can be opened with ```gedit ~/.bashrc```. Be sure to replace the "/your/path/" with the correct path to the location where you cloned OpenDroneMap:
+Before installing you need to set your environment variables. Open the ~/.bashrc file on your machine and add the following 3 lines at the end. The file can be opened with ```gedit ~/.bashrc``` if you are using an Ubuntu desktop environment. Be sure to replace the "/your/path/" with the correct path to the location where you extracted OpenDroneMap:
 
     export PYTHONPATH=$PYTHONPATH:/your/path/OpenDroneMap/SuperBuild/install/lib/python2.7/dist-packages
     export PYTHONPATH=$PYTHONPATH:/your/path/OpenDroneMap/SuperBuild/src/opensfm
     export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/your/path/OpenDroneMap/SuperBuild/install/lib
 
 Now, enter the OpenDroneMap directory and compile all of the code by executing a single configuration script:
-
-    cd OpenDroneMap    
+  
     bash configure.sh
 
 For Ubuntu 15.10 users, this will help you get running:
@@ -64,7 +50,7 @@ For Ubuntu 15.10 users, this will help you get running:
     
 ### Run OpenDroneMap
 
-First you need a set of images, which may or may not be georeferenced. There are two ways OpenDroneMap can understand geographic coordinates. First, the images can be geotagged in their EXIF data. This is the default. Alternatively, you can create a GCP file, [a process detailed here](https://github.com/OpenDroneMap/OpenDroneMap/wiki/Running-OpenDroneMap#running-odm-with-ground-control)
+First you need a set of images, taken from a drone or otherwise. 
 
 Create a project folder and places your images in an "images" directory:
 
@@ -92,11 +78,11 @@ When the process finishes, the results will be organized as follows:
         |-- img-1234.jpg
         |-- ...
     |-- opensfm/
-        |-- not much useful in here
+        |-- see mapillary/opensfm repository for more info
     |-- pmvs/
         |-- recon0/
             |-- models/
-                |-- option-0000.ply         # Dense point cloud
+                |-- option-0000.ply         # Dense point cloud (not georeferenced)
     |-- odm_meshing/
         |-- odm_mesh.ply                    # A 3D mesh
         |-- odm_meshing_log.txt             # Output of the meshing task. May point out errors.
@@ -180,5 +166,15 @@ digital surface model meshes and UV textured meshes with no global repository ho
 
 ## Documentation:
 
-For documentation, please take a look at our [wiki](https://github.com/OpenDroneMap/OpenDroneMap/wiki).
+For documentation, please take a look at our [wiki](https://github.com/OpenDroneMap/OpenDroneMap/wiki).Check here first if you are heaving problems. If you still need help, look through the issue queue or create one. There's also a general help chat [here](https://gitter.im/OpenDroneMap/generalhelp). 
+
+## Developers
+
+Help improve our software!
+
+[![Join the chat at https://gitter.im/OpenDroneMap/OpenDroneMap](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/OpenDroneMap/OpenDroneMap?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
+1. Try to keep commits clean and simple
+2. Submit a pull request with detailed changes and test results
+
 
