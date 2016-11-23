@@ -13,7 +13,8 @@ from opensfm import ODMOpenSfMCell
 from pmvs import ODMPmvsCell
 from cmvs import ODMCmvsCell
 from odm_meshing import ODMeshingCell
-from odm_texturing import ODMTexturingCell
+#from odm_texturing import ODMTexturingCell
+from mvstex import ODMMvsTexCell
 from odm_georeferencing import ODMGeoreferencingCell
 from odm_orthophoto import ODMOrthoPhotoCell
 
@@ -57,9 +58,16 @@ class ODMApp(ecto.BlackBox):
                                           oct_tree=p.args.odm_meshing_octreeDepth,
                                           samples=p.args.odm_meshing_samplesPerNode,
                                           solver=p.args.odm_meshing_solverDivide),
-                 'texturing': ODMTexturingCell(resize=p.args.resize_to,
-                                               resolution=p.args.odm_texturing_textureResolution,
-                                               size=p.args.odm_texturing_textureWithSize),
+                 'texturing': ODMMvsTexCell(data_term=p.args.mvs_texturing_dataTerm,
+                                            outlier_rem_type=p.args.mvs_texturing_outlierRemovalType,
+                                            skip_vis_test=p.args.mvs_texturing_skipGeometricVisibilityTest,
+                                            skip_glob_seam_leveling=p.args.mvs_texturing_skipGlobalSeamLeveling,
+                                            skip_loc_seam_leveling=p.args.mvs_texturing_skipLocalSeamLeveling,
+                                            skip_hole_fill=p.args.mvs_texturing_skipHoleFilling,
+                                            keep_unseen_faces=p.args.mvs_texturing_keepUnseenFaces),
+# Old odm_texturing
+#                 'texturing': ODMTexturingCell(resize=p.args['resize_to'],
+#                                               resolution=p.args['odm_texturing_textureResolution'],
                  'georeferencing': ODMGeoreferencingCell(img_size=p.args.resize_to,
                                                          gcp_file=p.args.odm_georeferencing_gcpFile,
                                                          use_gcp=p.args.odm_georeferencing_useGcp),
@@ -102,20 +110,26 @@ class ODMApp(ecto.BlackBox):
                         self.args[:] >> self.opensfm['args'],
                         self.resize['photos'] >> self.opensfm['photos']]
 
-        # run cmvs
-        connections += [self.tree[:] >> self.cmvs['tree'],
-                        self.args[:] >> self.cmvs['args'],
-                        self.opensfm['reconstruction'] >> self.cmvs['reconstruction']]
+        if _p.args.use_opensfm_pointcloud:
+            # create odm mesh from opensfm point cloud
+            connections += [self.tree[:] >> self.meshing['tree'],
+                            self.args[:] >> self.meshing['args'],
+                            self.opensfm['reconstruction'] >> self.meshing['reconstruction']]
+        else:
+            # run cmvs
+            connections += [self.tree[:] >> self.cmvs['tree'],
+                            self.args[:] >> self.cmvs['args'],
+                            self.opensfm['reconstruction'] >> self.cmvs['reconstruction']]
 
-        # run pmvs
-        connections += [self.tree[:] >> self.pmvs['tree'],
-                        self.args[:] >> self.pmvs['args'],
-                        self.cmvs['reconstruction'] >> self.pmvs['reconstruction']]
+            # run pmvs
+            connections += [self.tree[:] >> self.pmvs['tree'],
+                            self.args[:] >> self.pmvs['args'],
+                            self.cmvs['reconstruction'] >> self.pmvs['reconstruction']]
 
-        # create odm mesh
-        connections += [self.tree[:] >> self.meshing['tree'],
-                        self.args[:] >> self.meshing['args'],
-                        self.pmvs['reconstruction'] >> self.meshing['reconstruction']]
+            # create odm mesh from pmvs point cloud
+            connections += [self.tree[:] >> self.meshing['tree'],
+                            self.args[:] >> self.meshing['args'],
+                            self.pmvs['reconstruction'] >> self.meshing['reconstruction']]
 
         # create odm texture
         connections += [self.tree[:] >> self.texturing['tree'],

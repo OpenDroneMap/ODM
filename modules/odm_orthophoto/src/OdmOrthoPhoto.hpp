@@ -24,8 +24,8 @@
 #include "Logger.hpp"
 
 /*!
- * \brief   The WorldPoint struct encapsules world coordiantes used for the orhto photo boundary.
- *          Points are separated into integersand fractional parts for high numerical stability.
+ * \brief   The WorldPoint struct encapsules world coordinates used for the ortho photo boundary.
+ *          Points are separated into integers and fractional parts for high numerical stability.
  */
 struct WorldPoint
 {
@@ -54,7 +54,7 @@ struct WorldPoint
 };
 
 /*!
- * \brief   The OdmOrthoPhoto class is used to create an orthograpic photo over a given area.
+ * \brief   The OdmOrthoPhoto class is used to create an orthographic photo over a given area.
  *          The class reads an oriented textured mesh from an OBJ-file.
  *          The class uses file read from pcl.
  *          The class uses image read and write from opencv.
@@ -125,7 +125,7 @@ private:
       * \param texture The texture of the polygon.
       * \param polygon The polygon as athree indices relative meshCloud.
       * \param meshCloud Contains all vertices.
-      * \param uvs Contains the texture coordiantes for the active material.
+      * \param uvs Contains the texture coordinates for the active material.
       * \param faceIndex The index of the face.
       */
     void drawTexturedTriangle(const cv::Mat &texture, const pcl::Vertices &polygon, const pcl::PointCloud<pcl::PointXYZ>::Ptr &meshCloud, const std::vector<Eigen::Vector2f> &uvs, size_t faceIndex);
@@ -140,9 +140,9 @@ private:
       * \param texture The texture from which to get the color.
       **/
     void renderPixel(int row, int col, float u, float v, const cv::Mat &texture);
-    
+
     /*!
-      * \brief Calcualtes the barycentric coordinates of a point in a triangle.
+      * \brief Calculates the barycentric coordinates of a point in a triangle.
       *
       * \param v1 The first triangle vertex.
       * \param v2 The second triangle vertex.
@@ -153,8 +153,8 @@ private:
       * \param l2 The second vertex weight.
       * \param l3 The third vertex weight.
       */
-    void getBarycentricCoordiantes(pcl::PointXYZ v1, pcl::PointXYZ v2, pcl::PointXYZ v3, float x, float y, float &l1, float &l2, float &l3) const;
-    
+    void getBarycentricCoordinates(pcl::PointXYZ v1, pcl::PointXYZ v2, pcl::PointXYZ v3, float x, float y, float &l1, float &l2, float &l3) const;
+
     /*!
       * \brief Check if a given polygon is a sliver polygon.
       *
@@ -172,6 +172,23 @@ private:
       */
     bool isModelOk(const pcl::TextureMesh &mesh);
 
+    /*!
+      * \brief Loads a model from an .obj file (replacement for the pcl obj loader).
+      *
+      * \param inputFile Path to the .obj file.
+      * \param mesh The model.
+      * \return True if model was loaded successfully.
+      */
+    bool loadObjFile(std::string inputFile, pcl::TextureMesh &mesh);
+
+    /*!
+      * \brief Function is compied straight from the function in the pcl::io module.
+      */
+    bool readHeader (const std::string &file_name, pcl::PCLPointCloud2 &cloud,
+                     Eigen::Vector4f &origin, Eigen::Quaternionf &orientation,
+                     int &file_version, int &data_type, unsigned int &data_idx,
+                     const int offset);
+
     Logger          log_;               /**< Logging object. */
 
     std::string     inputFile_;         /**< Path to the textured mesh as an obj-file. */
@@ -184,10 +201,10 @@ private:
 
     bool            boundaryDefined_;    /**< True if the user has defined a boundary. */
 
-    WorldPoint      worldPoint1_;       /**< The first boundary point for the ortho photo, in world coordiantes. */
-    WorldPoint      worldPoint2_;       /**< The second boundary point for the ortho photo, in world coordiantes. */
-    WorldPoint      worldPoint3_;       /**< The third boundary point for the ortho photo, in world coordiantes. */
-    WorldPoint      worldPoint4_;       /**< The fourth boundary point for the ortho photo, in world coordiantes. */
+    WorldPoint      worldPoint1_;       /**< The first boundary point for the ortho photo, in world coordinates. */
+    WorldPoint      worldPoint2_;       /**< The second boundary point for the ortho photo, in world coordinates. */
+    WorldPoint      worldPoint3_;       /**< The third boundary point for the ortho photo, in world coordinates. */
+    WorldPoint      worldPoint4_;       /**< The fourth boundary point for the ortho photo, in world coordinates. */
 
     Eigen::Vector2f boundaryPoint1_;     /**< The first boundary point for the ortho photo, in local coordinates. */
     Eigen::Vector2f boundaryPoint2_;     /**< The second boundary point for the ortho photo, in local coordinates. */
@@ -198,6 +215,8 @@ private:
     cv::Mat         depth_;             /**< The depth of the ortho photo as an OpenCV matrix, CV_32F. */
 
     bool            multiMaterial_;     /**< True if the mesh has multiple materials. **/
+
+    std::vector<pcl::MTLReader> companions_; /**< Materials (used by loadOBJFile). **/
 };
 
 /*!

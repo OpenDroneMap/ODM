@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.1)
 
 project(ODM-SuperBuild)
 
@@ -101,7 +101,9 @@ set(custom_libs OpenGV
 				CMVS
 				Catkin
 				Ecto
-				PDAL)
+				PDAL
+				MvsTexturing
+)
 
 foreach(lib ${custom_libs})
 	SETUP_EXTERNAL_PROJECT_CUSTOM(${lib})

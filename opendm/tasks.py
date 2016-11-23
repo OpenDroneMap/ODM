@@ -13,7 +13,8 @@ tasks_dict = {'1': 'resize',
               '3': 'cmvs',
               '4': 'pmvs',
               '5': 'odm_meshing',
-              '6': 'odm_texturing',
+#              '6': 'odm_texturing',
+              '6': 'mvs_texturing',
               '7': 'odm_georeferencing',
               '8': 'odm_orthophoto',
               '9': 'zip_results'}
@@ -68,7 +69,7 @@ class ODMTaskManager(object):
                 command = None
                 inputs = {}
 
-            elif task_name == 'odm_texturing':
+            elif task_name == 'mvs_texturing':
                 # setup this task
                 command = None
                 inputs = {}

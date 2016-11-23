@@ -50,7 +50,7 @@ class ODMGeoreferencingCell(ecto.Cell):
                 # odm_georeference definitions
                 kwargs = {
                     'bin': context.odm_modules_path,
-                    'imgs': tree.dataset_raw,
+                    'imgs': tree.dataset_resize,
                     'imgs_list': tree.opensfm_bundle_list,
                     'coords': tree.odm_georeferencing_coords,
                     'log': tree.odm_georeferencing_utm_log
@@ -82,10 +82,9 @@ class ODMGeoreferencingCell(ecto.Cell):
             kwargs = {
                 'bin': context.odm_modules_path,
                 'bundle': tree.opensfm_bundle,
-                'imgs': tree.dataset_raw,
+                'imgs': tree.dataset_resize,
                 'imgs_list': tree.opensfm_bundle_list,
                 'model': tree.odm_textured_model_obj,
-                'pc': tree.pmvs_model,
                 'log': tree.odm_georeferencing_log,
                 'coords': tree.odm_georeferencing_coords,
                 'pc_geo': tree.odm_georeferencing_model_ply_geo,
@@ -95,6 +94,10 @@ class ODMGeoreferencingCell(ecto.Cell):
                 'gcp': gcpfile,
 
             }
+            if args.use_opensfm_pointcloud:
+                kwargs['pc'] = tree.opensfm_model
+            else:
+                kwargs['pc'] = tree.pmvs_model
 
             if self.params.use_gcp and \
                io.file_exists(gcpfile):
