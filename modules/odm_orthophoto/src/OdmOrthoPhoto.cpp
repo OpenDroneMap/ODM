@@ -319,7 +319,7 @@ void OdmOrthoPhoto::createOrthoPhoto()
     }
 
     log_ << "Reading mesh file...\n";
-    // The textureds mesh.
+    // The textured mesh.
     pcl::TextureMesh mesh;
     loadObjFile(inputFile_, mesh);
     log_ << ".. mesh file read.\n\n";
@@ -359,7 +359,7 @@ void OdmOrthoPhoto::createOrthoPhoto()
     float yDiff = yMax - yMin;
     log_ << "Ortho photo area : " << xDiff*yDiff << "m2\n";
 
-    // The resolution neccesary to fit the area with the given resolution.
+    // The resolution necessary to fit the area with the given resolution.
     int rowRes = static_cast<int>(std::ceil(resolution_*yDiff));
     int colRes = static_cast<int>(std::ceil(resolution_*xDiff));
     log_ << "Ortho photo resolution, width x height : " << colRes << "x" << rowRes << '\n';
@@ -389,7 +389,6 @@ void OdmOrthoPhoto::createOrthoPhoto()
     pcl::fromPCLPointCloud2 (mesh.cloud, *meshCloud);
 
     // Split model and make copies of vertices and texture coordinates for all faces
-    //if (splitModel)
     if (splitModel)
     {
         pcl::PointCloud<pcl::PointXYZ>::Ptr meshCloudSplit (new pcl::PointCloud<pcl::PointXYZ>);
@@ -449,7 +448,7 @@ void OdmOrthoPhoto::createOrthoPhoto()
     pcl::transformPointCloud(*meshCloud, *meshCloud, transform);
     log_ << ".. mesh translated and scaled.\n\n";
 
-    // Flatten texture coordiantes.
+    // Flatten texture coordinates.
     std::vector<Eigen::Vector2f> uvs;
     for(size_t t = 0; t < mesh.tex_coordinates.size(); ++t)
     {
@@ -646,7 +645,7 @@ void OdmOrthoPhoto::adjustBoundsForEntireModel(const pcl::TextureMesh &mesh)
 
 Eigen::Transform<float, 3, Eigen::Affine> OdmOrthoPhoto::getROITransform(float xMin, float yMin) const
 {
-    // The tranform used to move the chosen area into the ortho photo.
+    // The transform used to move the chosen area into the ortho photo.
     Eigen::Transform<float, 3, Eigen::Affine> transform;
 
     transform(0, 0) = resolution_;     // x Scaling.
@@ -708,7 +707,7 @@ void OdmOrthoPhoto::drawTexturedTriangle(const cv::Mat &texture, const pcl::Vert
     v2x = v2.x; v2y = v2.y; v2z = v2.z;
     v3x = v3.x; v3y = v3.y; v3z = v3.z;
 
-    // Get texture coorinates. (Special cases for PCL when using multiple materials vs one material)
+    // Get texture coordinates. (Special cases for PCL when using multiple materials vs one material)
     if(multiMaterial_)
     {
         v1u = uvs[3*faceIndex][0]; v1v = uvs[3*faceIndex][1];
@@ -727,22 +726,22 @@ void OdmOrthoPhoto::drawTexturedTriangle(const cv::Mat &texture, const pcl::Vert
     int xMin = static_cast<int>(std::min(std::min(v1x, v2x), v3x));
     if(xMin > photo_.cols)
     {
-        return; // Completly outside to the right.
+        return; // Completely outside to the right.
     }
     int xMax = static_cast<int>(std::max(std::max(v1x, v2x), v3x));
     if(xMax < 0)
     {
-        return; // Completly outside to the left.
+        return; // Completely outside to the left.
     }
     int yMin = static_cast<int>(std::min(std::min(v1y, v2y), v3y));
     if(yMin > photo_.rows)
     {
-        return; // Completly outside to the top.
+        return; // Completely outside to the top.
     }
     int yMax = static_cast<int>(std::max(std::max(v1y, v2y), v3y));
     if(yMax < 0)
     {
-        return; // Completly outside to the bottom.
+        return; // Completely outside to the bottom.
     }
 
     // Top point row and column positions
@@ -841,7 +840,7 @@ void OdmOrthoPhoto::drawTexturedTriangle(const cv::Mat &texture, const pcl::Vert
         // The last pixel row for the top part of the triangle.
         int rqEnd = std::min(static_cast<int>(std::floor(midR+0.5f)), photo_.rows);
 
-        // Travers along row from top to middle.
+        // Traverse along row from top to middle.
         for(int rq = rqStart; rq < rqEnd; ++rq)
         {
             // Set the current column positions.
@@ -856,8 +855,8 @@ void OdmOrthoPhoto::drawTexturedTriangle(const cv::Mat &texture, const pcl::Vert
             for(int cq = cqStart; cq < cqEnd; ++cq)
             {
                 // Get barycentric coordinates for the current point.
-                getBarycentricCoordiantes(v1, v2, v3, static_cast<float>(cq)+0.5f, static_cast<float>(rq)+0.5f, l1, l2, l3);
-                
+                getBarycentricCoordinates(v1, v2, v3, static_cast<float>(cq)+0.5f, static_cast<float>(rq)+0.5f, l1, l2, l3);
+
                 if(0.f > l1 || 0.f > l2 || 0.f > l3)
                 {
                     //continue;
@@ -899,7 +898,7 @@ void OdmOrthoPhoto::drawTexturedTriangle(const cv::Mat &texture, const pcl::Vert
         // The last pixel row for the bottom part of the triangle.
         int rqEnd = std::min(static_cast<int>(std::floor(botR+0.5f)), photo_.rows);
 
-        // Travers along row from middle to bottom.
+        // Traverse along row from middle to bottom.
         for(int rq = rqStart; rq < rqEnd; ++rq)
         {
             // Set the current column positions.
@@ -914,8 +913,8 @@ void OdmOrthoPhoto::drawTexturedTriangle(const cv::Mat &texture, const pcl::Vert
             for(int cq = cqStart; cq < cqEnd; ++cq)
             {
                 // Get barycentric coordinates for the current point.
-                getBarycentricCoordiantes(v1, v2, v3, static_cast<float>(cq)+0.5f, static_cast<float>(rq)+0.5f, l1, l2, l3);
-                
+                getBarycentricCoordinates(v1, v2, v3, static_cast<float>(cq)+0.5f, static_cast<float>(rq)+0.5f, l1, l2, l3);
+
                 if(0.f > l1 || 0.f > l2 || 0.f > l3)
                 {
                     //continue;
@@ -997,7 +996,7 @@ void OdmOrthoPhoto::renderPixel(int row, int col, float s, float t, const cv::Ma
     photo_.at<cv::Vec4b>(row,col) = cv::Vec4b(static_cast<unsigned char>(b), static_cast<unsigned char>(g), static_cast<unsigned char>(r), 255);
 }
 
-void OdmOrthoPhoto::getBarycentricCoordiantes(pcl::PointXYZ v1, pcl::PointXYZ v2, pcl::PointXYZ v3, float x, float y, float &l1, float &l2, float &l3) const
+void OdmOrthoPhoto::getBarycentricCoordinates(pcl::PointXYZ v1, pcl::PointXYZ v2, pcl::PointXYZ v3, float x, float y, float &l1, float &l2, float &l3) const
 {
     // Diff along y.
     float y2y3 = v2.y-v3.y;
