@@ -8,8 +8,8 @@ ExternalProject_Add(${_proj_name}
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
-  URL               https://github.com/mapillary/OpenSfM/archive/odm-3.zip
-  URL_MD5           a0853c6fe6d8193f7006e17dd896154e
+  URL               https://github.com/mapillary/OpenSfM/archive/odm-4.zip
+  URL_MD5           C7444B8595AAE33C6E191D8E8518BD5E
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   #--Configure step-------------
