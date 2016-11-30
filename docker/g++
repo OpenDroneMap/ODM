@@ -1,0 +1,12 @@
+#!/bin/bash
+
+args=""
+
+for i in "$@"
+do
+    if [[ $i != -march* ]]; then
+        args="$args $i"
+    fi
+done
+
+/usr/bin/g++_real -march=core2 $args
