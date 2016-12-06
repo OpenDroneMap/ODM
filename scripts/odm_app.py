@@ -139,7 +139,7 @@ class ODMApp(ecto.BlackBox):
         # create odm georeference
         connections += [self.tree[:] >> self.georeferencing['tree'],
                         self.args[:] >> self.georeferencing['args'],
-                        self.dataset['photos'] >> self.georeferencing['photos'],
+                        self.resize['photos'] >> self.georeferencing['photos'],
                         self.texturing['reconstruction'] >> self.georeferencing['reconstruction']]
 
         # create odm orthophoto
