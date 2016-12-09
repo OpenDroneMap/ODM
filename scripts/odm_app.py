@@ -78,7 +78,7 @@ class ODMApp(ecto.BlackBox):
         return cells
 
     def configure(self, p, _i, _o):
-        tree = types.ODM_Tree(p.args.project_path)
+        tree = types.ODM_Tree(p.args.project_path, p.args.images)
         self.tree = ecto.Constant(value=tree)
 
         # TODO(dakota) put this somewhere better maybe

@@ -16,6 +16,10 @@ parser = argparse.ArgumentParser(description='OpenDroneMap')
 
 
 def config():
+    parser.add_argument('--images', '-i',
+                        metavar='<string>',
+                        help='Path to input images'),
+
     parser.add_argument('--project-path',
                         metavar='<string>',
                         help='Path to the project to process')
