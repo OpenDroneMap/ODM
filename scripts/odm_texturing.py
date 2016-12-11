@@ -13,6 +13,7 @@ class ODMTexturingCell(ecto.Cell):
                                      'greater than textureWithSize.', 4096)
         params.declare("size", 'The resolution to rescale the images performing '
                                'the texturing.', 3600)
+        params.declare("verbose", 'print additional messages to console', False)
 
     def declare_io(self, params, inputs, outputs):
         inputs.declare("tree", "Struct with paths", [])
@@ -30,6 +31,7 @@ class ODMTexturingCell(ecto.Cell):
         # get inputs
         args = self.inputs.args
         tree = self.inputs.tree
+        verbose = '-verbose' if self.params.verbose else ''
 
         # define paths and create working directories
         system.mkdir_p(tree.odm_texturing)
@@ -56,14 +58,15 @@ class ODMTexturingCell(ecto.Cell):
                 'log': tree.odm_texuring_log,
                 'resize': self.params.resize,
                 'resolution': self.params.resolution,
-                'size': self.params.size
+                'size': self.params.size,
+                'verbose': verbose
             }
 
             # run texturing binary
             system.run('{bin}/odm_texturing -bundleFile {bundle} '
                        '-imagesPath {imgs_path} -imagesListPath {imgs_list} '
                        '-inputModelPath {model} -outputFolder {out_dir}/ '
-                       '-textureResolution {resolution} -bundleResizedTo {resize} '
+                       '-textureResolution {resolution} -bundleResizedTo {resize} {verbose} '
                        '-textureWithSize {size} -logFile {log}'.format(**kwargs))
         else:
             log.ODM_WARNING('Found a valid ODM Texture file in: %s'
