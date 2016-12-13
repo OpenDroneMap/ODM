@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.1)
 
 project(ODM-SuperBuild)
 
@@ -103,7 +103,9 @@ set(custom_libs OpenGV
 				CMVS
 				Catkin
 				Ecto
-				PDAL)
+				PDAL
+				MvsTexturing
+)
 
 # Dependencies of the SLAM module
 if(ODM_BUILD_SLAM)

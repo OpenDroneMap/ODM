@@ -1,10 +1,18 @@
 import os
 import ecto
 
+from functools import partial
+from multiprocessing import Pool
 from opendm import context
 from opendm import io
 from opendm import types
 from opendm import log
+
+
+def make_odm_photo(force_focal, force_ccd, path_file):
+    return types.ODM_Photo(path_file,
+                           force_focal,
+                           force_ccd)
 
 
 class ODMLoadDatasetCell(ecto.Cell):
@@ -12,12 +20,12 @@ class ODMLoadDatasetCell(ecto.Cell):
     def declare_params(self, params):
         params.declare("force_focal", 'Override the focal length information for the '
                        'images', None)
-        params.declare("force_ccd", 'Override the ccd widht information for the '
+        params.declare("force_ccd", 'Override the ccd width information for the '
                        'images', None)
 
     def declare_io(self, params, inputs, outputs):
         inputs.declare("tree", "Struct with paths", [])
-        outputs.declare("photos", "list of ODMPhoto's", [])
+        outputs.declare("photos", "list of ODMPhotos", [])
 
     def process(self, inputs, outputs):
         # check if the extension is sopported
@@ -49,13 +57,11 @@ class ODMLoadDatasetCell(ecto.Cell):
 
         if files:
             # create ODMPhoto list
-            photos = []
-            for f in files:
-                path_file = io.join_paths(images_dir, f)
-                photo = types.ODM_Photo(path_file,
-                                        self.params.force_focal,
-                                        self.params.force_ccd)
-                photos.append(photo)
+            path_files = [io.join_paths(images_dir, f) for f in files]
+            photos = Pool().map(
+                partial(make_odm_photo, self.params.force_focal, self.params.force_ccd),
+                path_files
+            )
             
             log.ODM_INFO('Found %s usable images' % len(photos))            
         else:
