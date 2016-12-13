@@ -3,7 +3,7 @@ import context
 
 # parse arguments
 processopts = ['resize', 'opensfm', 'slam', 'cmvs', 'pmvs',
-               'odm_meshing', 'odm_texturing', 'odm_georeferencing',
+               'odm_meshing', 'mvs_texturing', 'odm_georeferencing',
                'odm_orthophoto']
 
 
@@ -89,7 +89,7 @@ def config():
                         type=float,
                         help=('Ignore matched keypoints if the two images share '
                               'less than <float> percent of keypoints. Default:'
-                              ' $(default)s'))
+                              ' %(default)s'))
 
     parser.add_argument('--matcher-ratio',
                         metavar='<float>',
@@ -117,6 +117,12 @@ def config():
                         help='Distance threshold in meters to find pre-matching '
                              'images based on GPS exif data. Set to 0 to skip '
                              'pre-matching. Default: %(default)s')
+
+    parser.add_argument('--use-opensfm-pointcloud',
+                        action='store_true',
+                        default=False,
+                        help='Use OpenSfM to compute the point cloud instead '
+                             'of PMVS')
 
     parser.add_argument('--cmvs-maxImages',
                         metavar='<integer>',
@@ -207,6 +213,46 @@ def config():
                               'times slightly but helps reduce memory usage. '
                               'Default: %(default)s'))
 
+    parser.add_argument('--mvs_texturing-dataTerm',
+                        metavar='<string>',
+                        default='gmi',
+                        help=('Data term: [area, gmi]. Default:  %(default)s'))
+
+    parser.add_argument('--mvs_texturing-outlierRemovalType',
+                        metavar='<string>',
+                        default='none',
+                        help=('Type of photometric outlier removal method: ' 
+                              '[none, gauss_damping, gauss_clamping]. Default: '  
+                              '%(default)s'))
+
+    parser.add_argument('--mvs_texturing-skipGeometricVisibilityTest',
+                        action='store_true',
+                        default=False,
+                        help=('Skip geometric visibility test. Default:  %(default)s'))
+
+    parser.add_argument('--mvs_texturing-skipGlobalSeamLeveling',
+                        action='store_true',
+                        default=False,
+                        help=('Skip geometric visibility test. Default:  %(default)s'))
+
+    parser.add_argument('--mvs_texturing-skipLocalSeamLeveling',
+                        action='store_true',
+                        default=False,
+                        help=('Skip local seam blending. Default:  %(default)s'))
+
+    parser.add_argument('--mvs_texturing-skipHoleFilling',
+                        action='store_true',
+                        default=False,
+                        help=('Skip filling of holes in the mesh. Default:  %(default)s'))
+
+    parser.add_argument('--mvs_texturing-keepUnseenFaces',
+                        action='store_true',
+                        default=False,
+                        help=('Keep faces in the mesh that are not seen in any camera. ' 
+                              'Default:  %(default)s'))
+
+    # Old odm_texturing arguments
+
     parser.add_argument('--odm_texturing-textureResolution',
                         metavar='<positive integer>',
                         default=4096,
@@ -220,6 +266,8 @@ def config():
                         type=int,
                         help=('The resolution to rescale the images performing '
                               'the texturing. Default: %(default)s'))
+
+    # End of old odm_texturing arguments
 
     parser.add_argument('--odm_georeferencing-gcpFile',
                         metavar='<path string>',

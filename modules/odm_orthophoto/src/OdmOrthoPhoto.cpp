@@ -266,7 +266,7 @@ void OdmOrthoPhoto::printHelp()
     log_ << "Call the program with flag \"-help\", or without parameters to print this message, or check any generated log file.\n";
     log_ << "Call the program with flag \"-verbose\", to print log messages in the standard output stream as well as in the log file.\n\n";
 
-    log_ << "Parameters are specified as: \"-<argument name> <argument>\", (without <>), and the following parameters are configureable:n";
+    log_ << "Parameters are specified as: \"-<argument name> <argument>\", (without <>), and the following parameters are configureable:\n";
     log_ << "\"-inputFile <path>\" (mandatory)\n";
     log_ << "\"Input obj file that must contain a textured mesh.\n\n";
 
@@ -319,20 +319,22 @@ void OdmOrthoPhoto::createOrthoPhoto()
     }
 
     log_ << "Reading mesh file...\n";
-    // The textureds mesh.
+    // The textured mesh.
     pcl::TextureMesh mesh;
-    pcl::io::loadOBJFile(inputFile_, mesh);
+    loadObjFile(inputFile_, mesh);
     log_ << ".. mesh file read.\n\n";
 
     // Does the model have more than one material?
     multiMaterial_ = 1 < mesh.tex_materials.size();
+
+    bool splitModel = false;
 
     if(multiMaterial_)
     {
         // Need to check relationship between texture coordinates and faces.
         if(!isModelOk(mesh))
         {
-            throw OdmOrthoPhotoException("Could not generate ortho photo: The given mesh has multiple textures, but the number of texture coordinates is NOT equal to 3 times the number of faces.");
+            splitModel = true;
         }
     }
 
@@ -357,7 +359,7 @@ void OdmOrthoPhoto::createOrthoPhoto()
     float yDiff = yMax - yMin;
     log_ << "Ortho photo area : " << xDiff*yDiff << "m2\n";
 
-    // The resolution neccesary to fit the area with the given resolution.
+    // The resolution necessary to fit the area with the given resolution.
     int rowRes = static_cast<int>(std::ceil(resolution_*yDiff));
     int colRes = static_cast<int>(std::ceil(resolution_*xDiff));
     log_ << "Ortho photo resolution, width x height : " << colRes << "x" << rowRes << '\n';
@@ -386,6 +388,57 @@ void OdmOrthoPhoto::createOrthoPhoto()
     pcl::PointCloud<pcl::PointXYZ>::Ptr meshCloud (new pcl::PointCloud<pcl::PointXYZ>);
     pcl::fromPCLPointCloud2 (mesh.cloud, *meshCloud);
 
+    // Split model and make copies of vertices and texture coordinates for all faces
+    if (splitModel)
+    {
+        pcl::PointCloud<pcl::PointXYZ>::Ptr meshCloudSplit (new pcl::PointCloud<pcl::PointXYZ>);
+        std::vector<Eigen::Vector2f> textureCoordinates = std::vector<Eigen::Vector2f>(0);
+
+        size_t vertexIndexCount = 0;
+        for(size_t t = 0; t < mesh.tex_polygons.size(); ++t)
+        {
+
+            for(size_t faceIndex = 0; faceIndex < mesh.tex_polygons[t].size(); ++faceIndex)
+            {
+                pcl::Vertices polygon = mesh.tex_polygons[t][faceIndex];
+
+                // The index to the vertices of the polygon.
+                size_t v1i = polygon.vertices[0];
+                size_t v2i = polygon.vertices[1];
+                size_t v3i = polygon.vertices[2];
+
+                // The polygon's points.
+                pcl::PointXYZ v1 = meshCloud->points[v1i];
+                pcl::PointXYZ v2 = meshCloud->points[v2i];
+                pcl::PointXYZ v3 = meshCloud->points[v3i];
+
+                Eigen::Vector2f vt1 = mesh.tex_coordinates[0][3*faceIndex];
+                Eigen::Vector2f vt2 = mesh.tex_coordinates[0][3*faceIndex + 1];
+                Eigen::Vector2f vt3 = mesh.tex_coordinates[0][3*faceIndex + 2];
+
+                meshCloudSplit->points.push_back(v1);
+                textureCoordinates.push_back(vt1);
+                mesh.tex_polygons[t][faceIndex].vertices[0] = vertexIndexCount;
+                ++vertexIndexCount;
+
+                meshCloudSplit->points.push_back(v2);
+                textureCoordinates.push_back(vt2);
+                mesh.tex_polygons[t][faceIndex].vertices[1] = vertexIndexCount;
+                ++vertexIndexCount;
+
+                meshCloudSplit->points.push_back(v3);
+                textureCoordinates.push_back(vt3);
+                mesh.tex_polygons[t][faceIndex].vertices[2] = vertexIndexCount;
+                ++vertexIndexCount;
+            }
+        }
+
+        mesh.tex_coordinates.clear();
+        mesh.tex_coordinates.push_back(textureCoordinates);
+
+        meshCloud = meshCloudSplit;
+    }
+
     // Creates a transformation which aligns the area for the ortho photo.
     Eigen::Transform<float, 3, Eigen::Affine> transform = getROITransform(xMin, -yMax);
 
@@ -395,12 +448,13 @@ void OdmOrthoPhoto::createOrthoPhoto()
     pcl::transformPointCloud(*meshCloud, *meshCloud, transform);
     log_ << ".. mesh translated and scaled.\n\n";
 
-    // Flatten texture coordiantes.
+    // Flatten texture coordinates.
     std::vector<Eigen::Vector2f> uvs;
     for(size_t t = 0; t < mesh.tex_coordinates.size(); ++t)
     {
         uvs.insert(uvs.end(), mesh.tex_coordinates[t].begin(), mesh.tex_coordinates[t].end());
     }
+    //cv::namedWindow("dsfs");
 
     // The current material texture
     cv::Mat texture;
@@ -416,7 +470,7 @@ void OdmOrthoPhoto::createOrthoPhoto()
         // The material of the current submesh.
         pcl::TexMaterial material = mesh.tex_materials[t];
         texture = cv::imread(material.tex_file);
-        
+
         // Check for missing files.
         if(texture.empty())
         {
@@ -591,7 +645,7 @@ void OdmOrthoPhoto::adjustBoundsForEntireModel(const pcl::TextureMesh &mesh)
 
 Eigen::Transform<float, 3, Eigen::Affine> OdmOrthoPhoto::getROITransform(float xMin, float yMin) const
 {
-    // The tranform used to move the chosen area into the ortho photo.
+    // The transform used to move the chosen area into the ortho photo.
     Eigen::Transform<float, 3, Eigen::Affine> transform;
 
     transform(0, 0) = resolution_;     // x Scaling.
@@ -653,12 +707,13 @@ void OdmOrthoPhoto::drawTexturedTriangle(const cv::Mat &texture, const pcl::Vert
     v2x = v2.x; v2y = v2.y; v2z = v2.z;
     v3x = v3.x; v3y = v3.y; v3z = v3.z;
 
-    // Get texture coorinates. (Special cases for PCL when using multiple materials vs one material)
+    // Get texture coordinates. (Special cases for PCL when using multiple materials vs one material)
     if(multiMaterial_)
     {
         v1u = uvs[3*faceIndex][0]; v1v = uvs[3*faceIndex][1];
         v2u = uvs[3*faceIndex+1][0]; v2v = uvs[3*faceIndex+1][1];
         v3u = uvs[3*faceIndex+2][0]; v3v = uvs[3*faceIndex+2][1];
+
     }
     else
     {
@@ -671,22 +726,22 @@ void OdmOrthoPhoto::drawTexturedTriangle(const cv::Mat &texture, const pcl::Vert
     int xMin = static_cast<int>(std::min(std::min(v1x, v2x), v3x));
     if(xMin > photo_.cols)
     {
-        return; // Completly outside to the right.
+        return; // Completely outside to the right.
     }
     int xMax = static_cast<int>(std::max(std::max(v1x, v2x), v3x));
     if(xMax < 0)
     {
-        return; // Completly outside to the left.
+        return; // Completely outside to the left.
     }
     int yMin = static_cast<int>(std::min(std::min(v1y, v2y), v3y));
     if(yMin > photo_.rows)
     {
-        return; // Completly outside to the top.
+        return; // Completely outside to the top.
     }
     int yMax = static_cast<int>(std::max(std::max(v1y, v2y), v3y));
     if(yMax < 0)
     {
-        return; // Completly outside to the bottom.
+        return; // Completely outside to the bottom.
     }
 
     // Top point row and column positions
@@ -785,7 +840,7 @@ void OdmOrthoPhoto::drawTexturedTriangle(const cv::Mat &texture, const pcl::Vert
         // The last pixel row for the top part of the triangle.
         int rqEnd = std::min(static_cast<int>(std::floor(midR+0.5f)), photo_.rows);
 
-        // Travers along row from top to middle.
+        // Traverse along row from top to middle.
         for(int rq = rqStart; rq < rqEnd; ++rq)
         {
             // Set the current column positions.
@@ -800,8 +855,8 @@ void OdmOrthoPhoto::drawTexturedTriangle(const cv::Mat &texture, const pcl::Vert
             for(int cq = cqStart; cq < cqEnd; ++cq)
             {
                 // Get barycentric coordinates for the current point.
-                getBarycentricCoordiantes(v1, v2, v3, static_cast<float>(cq)+0.5f, static_cast<float>(rq)+0.5f, l1, l2, l3);
-                
+                getBarycentricCoordinates(v1, v2, v3, static_cast<float>(cq)+0.5f, static_cast<float>(rq)+0.5f, l1, l2, l3);
+
                 if(0.f > l1 || 0.f > l2 || 0.f > l3)
                 {
                     //continue;
@@ -843,7 +898,7 @@ void OdmOrthoPhoto::drawTexturedTriangle(const cv::Mat &texture, const pcl::Vert
         // The last pixel row for the bottom part of the triangle.
         int rqEnd = std::min(static_cast<int>(std::floor(botR+0.5f)), photo_.rows);
 
-        // Travers along row from middle to bottom.
+        // Traverse along row from middle to bottom.
         for(int rq = rqStart; rq < rqEnd; ++rq)
         {
             // Set the current column positions.
@@ -858,8 +913,8 @@ void OdmOrthoPhoto::drawTexturedTriangle(const cv::Mat &texture, const pcl::Vert
             for(int cq = cqStart; cq < cqEnd; ++cq)
             {
                 // Get barycentric coordinates for the current point.
-                getBarycentricCoordiantes(v1, v2, v3, static_cast<float>(cq)+0.5f, static_cast<float>(rq)+0.5f, l1, l2, l3);
-                
+                getBarycentricCoordinates(v1, v2, v3, static_cast<float>(cq)+0.5f, static_cast<float>(rq)+0.5f, l1, l2, l3);
+
                 if(0.f > l1 || 0.f > l2 || 0.f > l3)
                 {
                     //continue;
@@ -941,7 +996,7 @@ void OdmOrthoPhoto::renderPixel(int row, int col, float s, float t, const cv::Ma
     photo_.at<cv::Vec4b>(row,col) = cv::Vec4b(static_cast<unsigned char>(b), static_cast<unsigned char>(g), static_cast<unsigned char>(r), 255);
 }
 
-void OdmOrthoPhoto::getBarycentricCoordiantes(pcl::PointXYZ v1, pcl::PointXYZ v2, pcl::PointXYZ v3, float x, float y, float &l1, float &l2, float &l3) const
+void OdmOrthoPhoto::getBarycentricCoordinates(pcl::PointXYZ v1, pcl::PointXYZ v2, pcl::PointXYZ v3, float x, float y, float &l1, float &l2, float &l3) const
 {
     // Diff along y.
     float y2y3 = v2.y-v3.y;
@@ -993,4 +1048,366 @@ bool OdmOrthoPhoto::isModelOk(const pcl::TextureMesh &mesh)
     log_ << "Number of faces in the model " << nFaces << '\n';
     
     return 3*nFaces == nTextureCoordinates;
+}
+
+
+bool OdmOrthoPhoto::loadObjFile(std::string inputFile, pcl::TextureMesh &mesh)
+{
+    int data_type;
+    unsigned int data_idx;
+    int file_version;
+    int offset = 0;
+    Eigen::Vector4f origin;
+    Eigen::Quaternionf orientation;
+
+    if (!readHeader(inputFile, mesh.cloud, origin, orientation, file_version, data_type, data_idx, offset))
+    {
+        throw OdmOrthoPhotoException("Problem reading header in modelfile!\n");
+    }
+
+    std::ifstream fs;
+
+    fs.open (inputFile.c_str (), std::ios::binary);
+    if (!fs.is_open () || fs.fail ())
+    {
+        //PCL_ERROR ("[pcl::OBJReader::readHeader] Could not open file '%s'! Error : %s\n", file_name.c_str (), strerror(errno));
+        fs.close ();
+        log_<<"Could not read mesh from file ";
+        log_ << inputFile.c_str();
+        log_ <<"\n";
+
+        throw OdmOrthoPhotoException("Problem reading mesh from file!\n");
+    }
+
+    // Seek at the given offset
+    fs.seekg (data_idx, std::ios::beg);
+
+    // Get normal_x field indices
+    int normal_x_field = -1;
+    for (std::size_t i = 0; i < mesh.cloud.fields.size (); ++i)
+    {
+        if (mesh.cloud.fields[i].name == "normal_x")
+        {
+            normal_x_field = i;
+            break;
+        }
+    }
+
+    std::size_t v_idx = 0;
+    std::size_t vn_idx = 0;
+    std::size_t vt_idx = 0;
+    std::size_t f_idx = 0;
+    std::string line;
+    std::vector<std::string> st;
+    std::vector<Eigen::Vector2f> coordinates;
+    std::vector<Eigen::Vector2f> allTexCoords;
+
+    std::map<int, int> f2vt;
+
+    try
+    {
+        while (!fs.eof ())
+        {
+            getline (fs, line);
+            // Ignore empty lines
+            if (line == "")
+                continue;
+
+            // Tokenize the line
+            std::stringstream sstream (line);
+            sstream.imbue (std::locale::classic ());
+            line = sstream.str ();
+            boost::trim (line);
+            boost::split (st, line, boost::is_any_of ("\t\r "), boost::token_compress_on);
+
+            // Ignore comments
+            if (st[0] == "#")
+                continue;
+            // Vertex
+            if (st[0] == "v")
+            {
+                try
+                {
+                    for (int i = 1, f = 0; i < 4; ++i, ++f)
+                    {
+                        float value = boost::lexical_cast<float> (st[i]);
+                        memcpy (&mesh.cloud.data[v_idx * mesh.cloud.point_step + mesh.cloud.fields[f].offset], &value, sizeof (float));
+                    }
+
+                    ++v_idx;
+                }
+                catch (const boost::bad_lexical_cast &e)
+                {
+                    log_<<"Unable to convert %s to vertex coordinates!\n";
+                    throw OdmOrthoPhotoException("Unable to convert %s to vertex coordinates!");
+                }
+                continue;
+            }
+            // Vertex normal
+            if (st[0] == "vn")
+            {
+                try
+                {
+                    for (int i = 1, f = normal_x_field; i < 4; ++i, ++f)
+                    {
+                        float value = boost::lexical_cast<float> (st[i]);
+                        memcpy (&mesh.cloud.data[vn_idx * mesh.cloud.point_step + mesh.cloud.fields[f].offset],
+                        &value,
+                        sizeof (float));
+                    }
+                    ++vn_idx;
+                }
+                catch (const boost::bad_lexical_cast &e)
+                {
+                    log_<<"Unable to convert %s to vertex normal!\n";
+                    throw OdmOrthoPhotoException("Unable to convert %s to vertex normal!");
+                }
+                continue;
+            }
+            // Texture coordinates
+            if (st[0] == "vt")
+            {
+                try
+                {
+                    Eigen::Vector3f c (0, 0, 0);
+                    for (std::size_t i = 1; i < st.size (); ++i)
+                        c[i-1] = boost::lexical_cast<float> (st[i]);
+
+                    if (c[2] == 0)
+                        coordinates.push_back (Eigen::Vector2f (c[0], c[1]));
+                    else
+                        coordinates.push_back (Eigen::Vector2f (c[0]/c[2], c[1]/c[2]));
+                    ++vt_idx;
+
+                }
+                catch (const boost::bad_lexical_cast &e)
+                {
+                    log_<<"Unable to convert %s to vertex texture coordinates!\n";
+                    throw OdmOrthoPhotoException("Unable to convert %s to vertex texture coordinates!");
+                }
+                continue;
+            }
+            // Material
+            if (st[0] == "usemtl")
+            {
+                mesh.tex_polygons.push_back (std::vector<pcl::Vertices> ());
+                mesh.tex_materials.push_back (pcl::TexMaterial ());
+                for (std::size_t i = 0; i < companions_.size (); ++i)
+                {
+                    std::vector<pcl::TexMaterial>::const_iterator mat_it = companions_[i].getMaterial (st[1]);
+                    if (mat_it != companions_[i].materials_.end ())
+                    {
+                        mesh.tex_materials.back () = *mat_it;
+                        break;
+                    }
+                }
+                // We didn't find the appropriate material so we create it here with name only.
+                if (mesh.tex_materials.back ().tex_name == "")
+                    mesh.tex_materials.back ().tex_name = st[1];
+                mesh.tex_coordinates.push_back (coordinates);
+                coordinates.clear ();
+                continue;
+            }
+            // Face
+            if (st[0] == "f")
+            {
+                //We only care for vertices indices
+                pcl::Vertices face_v; face_v.vertices.resize (st.size () - 1);
+                for (std::size_t i = 1; i < st.size (); ++i)
+                {
+                    int v;
+                    sscanf (st[i].c_str (), "%d", &v);
+                    v = (v < 0) ? v_idx + v : v - 1;
+                    face_v.vertices[i-1] = v;
+
+                    int v2, vt, vn;
+                    sscanf (st[i].c_str (), "%d/%d/%d", &v2, &vt, &vn);
+                    f2vt[3*(f_idx) + i-1] = vt-1;
+                }
+                mesh.tex_polygons.back ().push_back (face_v);
+                ++f_idx;
+                continue;
+            }
+        }
+    }
+    catch (const char *exception)
+    {
+        fs.close ();
+        log_<<"Unable to read file!\n";
+        throw OdmOrthoPhotoException("Unable to read file!");
+    }
+
+    if (vt_idx != v_idx)
+    {
+        std::vector<Eigen::Vector2f> texcoordinates = std::vector<Eigen::Vector2f>(0);
+
+        for (size_t faceIndex = 0; faceIndex < f_idx; ++faceIndex)
+        {
+            for(size_t i = 0; i < 3; ++i)
+            {
+                Eigen::Vector2f vt = mesh.tex_coordinates[0][f2vt[3*faceIndex+i]];
+                texcoordinates.push_back(vt);
+            }
+        }
+
+        mesh.tex_coordinates.clear();
+        mesh.tex_coordinates.push_back(texcoordinates);
+    }
+
+    fs.close();
+    return (0);
+}
+
+bool OdmOrthoPhoto::readHeader (const std::string &file_name, pcl::PCLPointCloud2 &cloud,
+                                Eigen::Vector4f &origin, Eigen::Quaternionf &orientation,
+                                int &file_version, int &data_type, unsigned int &data_idx,
+                                const int offset)
+{
+    origin       = Eigen::Vector4f::Zero ();
+    orientation  = Eigen::Quaternionf::Identity ();
+    file_version = 0;
+    cloud.width  = cloud.height = cloud.point_step = cloud.row_step = 0;
+    cloud.data.clear ();
+    data_type = 0;
+    data_idx = offset;
+
+    std::ifstream fs;
+    std::string line;
+
+    if (file_name == "" || !boost::filesystem::exists (file_name))
+    {
+        return false;
+    }
+
+    // Open file in binary mode to avoid problem of
+    // std::getline() corrupting the result of ifstream::tellg()
+    fs.open (file_name.c_str (), std::ios::binary);
+    if (!fs.is_open () || fs.fail ())
+    {
+        fs.close ();
+        return false;
+    }
+
+    // Seek at the given offset
+    fs.seekg (offset, std::ios::beg);
+
+    // Read the header and fill it in with wonderful values
+    bool vertex_normal_found = false;
+    bool vertex_texture_found = false;
+    // Material library, skip for now!
+    // bool material_found = false;
+    std::vector<std::string> material_files;
+    std::size_t nr_point = 0;
+    std::vector<std::string> st;
+
+    try
+    {
+        while (!fs.eof ())
+        {
+            getline (fs, line);
+            // Ignore empty lines
+            if (line == "")
+            continue;
+
+            // Tokenize the line
+            std::stringstream sstream (line);
+            sstream.imbue (std::locale::classic ());
+            line = sstream.str ();
+            boost::trim (line);
+            boost::split (st, line, boost::is_any_of ("\t\r "), boost::token_compress_on);
+            // Ignore comments
+            if (st.at (0) == "#")
+                continue;
+
+            // Vertex
+            if (st.at (0) == "v")
+            {
+                ++nr_point;
+                continue;
+            }
+
+            // Vertex texture
+            if ((st.at (0) == "vt") && !vertex_texture_found)
+            {
+                vertex_texture_found = true;
+                continue;
+            }
+
+            // Vertex normal
+            if ((st.at (0) == "vn") && !vertex_normal_found)
+            {
+                vertex_normal_found = true;
+                continue;
+            }
+
+            // Material library, skip for now!
+            if (st.at (0) == "mtllib")
+            {
+                material_files.push_back (st.at (1));
+                continue;
+            }
+        }
+    }
+    catch (const char *exception)
+    {
+        fs.close ();
+        return false;
+    }
+
+    if (!nr_point)
+    {
+        fs.close ();
+        return false;
+    }
+
+    int field_offset = 0;
+    for (int i = 0; i < 3; ++i, field_offset += 4)
+    {
+        cloud.fields.push_back (pcl::PCLPointField ());
+        cloud.fields[i].offset   = field_offset;
+        cloud.fields[i].datatype = pcl::PCLPointField::FLOAT32;
+        cloud.fields[i].count    = 1;
+    }
+
+    cloud.fields[0].name = "x";
+    cloud.fields[1].name = "y";
+    cloud.fields[2].name = "z";
+
+    if (vertex_normal_found)
+    {
+        std::string normals_names[3] = { "normal_x", "normal_y", "normal_z" };
+        for (int i = 0; i < 3; ++i, field_offset += 4)
+        {
+            cloud.fields.push_back (pcl::PCLPointField ());
+            pcl::PCLPointField& last = cloud.fields.back ();
+            last.name     = normals_names[i];
+            last.offset   = field_offset;
+            last.datatype = pcl::PCLPointField::FLOAT32;
+            last.count    = 1;
+        }
+    }
+
+    if (material_files.size () > 0)
+    {
+        for (std::size_t i = 0; i < material_files.size (); ++i)
+        {
+            pcl::MTLReader companion;
+
+            if (companion.read (file_name, material_files[i]))
+            {
+                log_<<"Problem reading material file.";
+            }
+
+            companions_.push_back (companion);
+        }
+    }
+
+    cloud.point_step = field_offset;
+    cloud.width      = nr_point;
+    cloud.height     = 1;
+    cloud.row_step   = cloud.point_step * cloud.width;
+    cloud.is_dense   = true;
+    cloud.data.resize (cloud.point_step * nr_point);
+    fs.close ();
+    return true;
 }

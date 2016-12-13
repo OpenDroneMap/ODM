@@ -25,9 +25,9 @@ class ODM_Photo:
         self.focal_length = None
         self.focal_length_px = None
         # other attributes
-        self.camera_make = None
-        self.camera_model = None
-        self.make_model = None
+        self.camera_make = ''
+        self.camera_model = ''
+        self.make_model = ''
         # parse values from metadata
         self.parse_pyexiv2_values(self.path_file, force_focal, force_ccd)
         # compute focal length into pixels
@@ -69,8 +69,11 @@ class ODM_Photo:
                     self.focal_length = float(val)
             except (pyexiv2.ExifValueError, ValueError) as e:
                 pass
+            except NotImplementedError as e:
+                pass
 
-        self.make_model = sensor_string(self.camera_make, self.camera_model)
+        if self.camera_make and self.camera_model:
+            self.make_model = sensor_string(self.camera_make, self.camera_model)
 
         # needed to do that since sometimes metadata contains wrong data
         img = cv2.imread(_path_file)
@@ -357,6 +360,7 @@ class ODM_Tree(object):
         self.opensfm_bundle_list = io.join_paths(self.opensfm, 'list_r000.out')
         self.opensfm_image_list = io.join_paths(self.opensfm, 'image_list.txt')
         self.opensfm_reconstruction = io.join_paths(self.opensfm, 'reconstruction.json')
+        self.opensfm_model = io.join_paths(self.opensfm, 'depthmaps/merged.ply')
 
         # pmvs
         self.pmvs_rec_path = io.join_paths(self.pmvs, 'recon0')
@@ -369,13 +373,14 @@ class ODM_Tree(object):
         self.odm_mesh = io.join_paths(self.odm_meshing, 'odm_mesh.ply')
         self.odm_meshing_log = io.join_paths(self.odm_meshing, 'odm_meshing_log.txt')
 
-        # odm_texturing
+        # texturing
         self.odm_texturing_undistorted_image_path = io.join_paths(
             self.odm_texturing, 'undistorted')
         self.odm_textured_model_obj = io.join_paths(
             self.odm_texturing, 'odm_textured_model.obj')
         self.odm_textured_model_mtl = io.join_paths(
             self.odm_texturing, 'odm_textured_model.mtl')
+# Log is only used by old odm_texturing
         self.odm_texuring_log = io.join_paths(
             self.odm_texturing, 'odm_texturing_log.txt')
 
@@ -406,6 +411,6 @@ class ODM_Tree(object):
         # odm_orthophoto
         self.odm_orthophoto_file = io.join_paths(self.odm_orthophoto, 'odm_orthophoto.png')
         self.odm_orthophoto_tif = io.join_paths(self.odm_orthophoto, 'odm_orthophoto.tif')
-        self.odm_orthophoto_corners = io.join_paths(self.odm_orthophoto, 'odm_orthphoto_corners.txt')
+        self.odm_orthophoto_corners = io.join_paths(self.odm_orthophoto, 'odm_orthophoto_corners.txt')
         self.odm_orthophoto_log = io.join_paths(self.odm_orthophoto, 'odm_orthophoto_log.txt')
         self.odm_orthophoto_tif_log = io.join_paths(self.odm_orthophoto, 'gdal_translate_log.txt')
