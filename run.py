@@ -28,6 +28,7 @@ if __name__ == '__main__':
         usage()
 
     #If user asks to rerun everything, delete all of the existing progress directories.
+    # TODO: Move this somewhere it's not hard-coded
     if args.rerun_all:
         os.system("rm -rf "
                   + args.project_path + "images_resize/ "
