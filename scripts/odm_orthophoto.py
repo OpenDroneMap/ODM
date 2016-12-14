@@ -21,7 +21,7 @@ class ODMOrthoPhotoCell(ecto.Cell):
         # Benchmarking
         start_time = system.now_raw()
 
-        log.ODM_INFO('Running OMD OrthoPhoto Cell')
+        log.ODM_INFO('Running ODM Orthophoto Cell')
 
         # get inputs
         args = self.inputs.args
@@ -54,52 +54,56 @@ class ODMOrthoPhotoCell(ecto.Cell):
                        '-logFile {log} -outputFile {ortho} -resolution {res} '
                        '-outputCornerFile {corners}'.format(**kwargs))
 
-            # Create georeferenced GeoTiff
-            geotiffcreated = False
-            georef = types.ODM_GeoRef()
-            # creates the coord refs # TODO I don't want to have to do this twice- after odm_georef
-            georef.parse_coordinate_system(tree.odm_georeferencing_coords)
+            if not io.file_exists(tree.odm_georeferencing_coords):
+                log.ODM_WARNING('No coordinates file. A georeferenced raster '
+                                'will not be created')
+            else:
+                # Create georeferenced GeoTiff
+                geotiffcreated = False
+                georef = types.ODM_GeoRef()
+                # creates the coord refs # TODO I don't want to have to do this twice- after odm_georef
+                georef.parse_coordinate_system(tree.odm_georeferencing_coords)
 
-            if georef.epsg and georef.utm_east_offset and georef.utm_north_offset:
-                ulx = uly = lrx = lry = 0.0
-                with open(tree.odm_orthophoto_corners) as f:
-                    for lineNumber, line in enumerate(f):
-                        if lineNumber == 0:
-                            tokens = line.split(' ')
-                            if len(tokens) == 4:
-                                ulx = float(tokens[0]) + \
-                                    float(georef.utm_east_offset)
-                                lry = float(tokens[1]) + \
-                                    float(georef.utm_north_offset)
-                                lrx = float(tokens[2]) + \
-                                    float(georef.utm_east_offset)
-                                uly = float(tokens[3]) + \
-                                    float(georef.utm_north_offset)
-                log.ODM_INFO('Creating GeoTIFF')
+                if georef.epsg and georef.utm_east_offset and georef.utm_north_offset:
+                    ulx = uly = lrx = lry = 0.0
+                    with open(tree.odm_orthophoto_corners) as f:
+                        for lineNumber, line in enumerate(f):
+                            if lineNumber == 0:
+                                tokens = line.split(' ')
+                                if len(tokens) == 4:
+                                    ulx = float(tokens[0]) + \
+                                        float(georef.utm_east_offset)
+                                    lry = float(tokens[1]) + \
+                                        float(georef.utm_north_offset)
+                                    lrx = float(tokens[2]) + \
+                                        float(georef.utm_east_offset)
+                                    uly = float(tokens[3]) + \
+                                        float(georef.utm_north_offset)
+                    log.ODM_INFO('Creating GeoTIFF')
 
-                kwargs = {
-                    'ulx': ulx,
-                    'uly': uly,
-                    'lrx': lrx,
-                    'lry': lry,
-                    'epsg': georef.epsg,
-                    'png': tree.odm_orthophoto_file,
-                    'tiff': tree.odm_orthophoto_tif,
-                    'log': tree.odm_orthophoto_tif_log
-                }
+                    kwargs = {
+                        'ulx': ulx,
+                        'uly': uly,
+                        'lrx': lrx,
+                        'lry': lry,
+                        'epsg': georef.epsg,
+                        'png': tree.odm_orthophoto_file,
+                        'tiff': tree.odm_orthophoto_tif,
+                        'log': tree.odm_orthophoto_tif_log
+                    }
 
-                system.run('gdal_translate -a_ullr {ulx} {uly} {lrx} {lry} '
-							'-co TILED=yes '
-							'-co COMPRESS=DEFLATE '
-							'-co PREDICTOR=2 '
-							'-co BLOCKXSIZE=512 '
-							'-co BLOCKYSIZE=512 '
-							'-co NUM_THREADS=ALL_CPUS '
-                           '-a_srs \"EPSG:{epsg}\" {png} {tiff} > {log}'.format(**kwargs))
-                geotiffcreated = True
-            if not geotiffcreated:
-                log.ODM_WARNING('No geo-referenced orthophoto created due '
-                                'to missing geo-referencing or corner coordinates.')
+                    system.run('gdal_translate -a_ullr {ulx} {uly} {lrx} {lry} '
+                                '-co TILED=yes '
+                                '-co COMPRESS=DEFLATE '
+                                '-co PREDICTOR=2 '
+                                '-co BLOCKXSIZE=512 '
+                                '-co BLOCKYSIZE=512 '
+                                '-co NUM_THREADS=ALL_CPUS '
+                               '-a_srs \"EPSG:{epsg}\" {png} {tiff} > {log}'.format(**kwargs))
+                    geotiffcreated = True
+                if not geotiffcreated:
+                    log.ODM_WARNING('No geo-referenced orthophoto created due '
+                                    'to missing geo-referencing or corner coordinates.')
 
         else:
             log.ODM_WARNING('Found a valid orthophoto in: %s' % tree.odm_orthophoto_file)
