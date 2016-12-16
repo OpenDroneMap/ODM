@@ -27,9 +27,9 @@ ExternalProject_Add(${_proj_name}
     -DBUILD_opencv_photo=ON
     -DBUILD_opencv_legacy=ON
     -DBUILD_opencv_python=ON
-    -DWITH_FFMPEG=OFF
+    -DWITH_FFMPEG=${ODM_BUILD_SLAM}
     -DWITH_CUDA=OFF
-    -DWITH_GTK=OFF
+    -DWITH_GTK=${ODM_BUILD_SLAM}
     -DWITH_VTK=OFF
     -DWITH_EIGEN=OFF
     -DWITH_OPENNI=OFF
