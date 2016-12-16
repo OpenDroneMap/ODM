@@ -23,11 +23,14 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -std=c++11")
 
+set(PANGOLIN_ROOT ${CMAKE_BINARY_DIR}/../SuperBuild/install)
+
 set(ORB_SLAM_ROOT ${CMAKE_BINARY_DIR}/../SuperBuild/src/orb_slam2)
 
 include_directories(${EIGEN_ROOT})
 include_directories(${ORB_SLAM_ROOT})
 include_directories(${ORB_SLAM_ROOT}/include)
+link_directories(${PANGOLIN_ROOT}/lib)
 link_directories(${ORB_SLAM_ROOT}/lib)
 
 # Add source directory
