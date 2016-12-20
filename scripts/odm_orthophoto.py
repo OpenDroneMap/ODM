@@ -10,6 +10,7 @@ from opendm import types
 class ODMOrthoPhotoCell(ecto.Cell):
     def declare_params(self, params):
         params.declare("resolution", 'Orthophoto ground resolution in pixels/meter', 20)
+        params.declare("verbose", 'print additional messages to console', False)
 
     def declare_io(self, params, inputs, outputs):
         inputs.declare("tree", "Struct with paths", [])
@@ -26,6 +27,7 @@ class ODMOrthoPhotoCell(ecto.Cell):
         # get inputs
         args = self.inputs.args
         tree = self.inputs.tree
+        verbose = '-verbose' if self.params.verbose else ''
 
         # define paths and create working directories
         system.mkdir_p(tree.odm_orthophoto)
@@ -46,12 +48,13 @@ class ODMOrthoPhotoCell(ecto.Cell):
                 'log': tree.odm_orthophoto_log,
                 'ortho': tree.odm_orthophoto_file,
                 'corners': tree.odm_orthophoto_corners,
-                'res': self.params.resolution
+                'res': self.params.resolution,
+                'verbose': verbose
             }
 
             # run odm_orthophoto
             system.run('{bin}/odm_orthophoto -inputFile {model_geo} '
-                       '-logFile {log} -outputFile {ortho} -resolution {res} '
+                       '-logFile {log} -outputFile {ortho} -resolution {res} {verbose} '
                        '-outputCornerFile {corners}'.format(**kwargs))
 
             # Create georeferenced GeoTiff
