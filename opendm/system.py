@@ -16,15 +16,16 @@ def get_ccd_widths():
         sensor_data = json.loads(f.read())
     return dict(zip(map(string.lower, sensor_data.keys()), sensor_data.values()))
 
+
 def run(cmd):
     """Run a system command"""
     log.ODM_DEBUG('running %s' % cmd)
-    returnCode = os.system(cmd)
+    retcode = subprocess.call(cmd, shell=True)
 
-    if (returnCode != 0):
-        log.ODM_ERROR("quitting cause: \n\t" + cmd + "\nreturned with code " +
-                 str(returnCode) + ".\n")
-        sys.exit('An error occurred. Check stdout above or the logs.')
+    if retcode < 0:
+        raise Exception("Child was terminated by signal {}".format(-retcode))
+    elif retcode > 0:
+        raise Exception("Child returned {}".format(retcode))
 
 
 def now():
