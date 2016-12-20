@@ -42,12 +42,16 @@ class ODMOrthoPhotoCell(ecto.Cell):
             # odm_orthophoto definitions
             kwargs = {
                 'bin': context.odm_modules_path,
-                'model_geo': tree.odm_georeferencing_model_obj_geo,
                 'log': tree.odm_orthophoto_log,
                 'ortho': tree.odm_orthophoto_file,
                 'corners': tree.odm_orthophoto_corners,
                 'res': self.params.resolution
             }
+
+            kwargs['model_geo'] = tree.odm_georeferencing_model_obj_geo \
+                if io.file_exists(tree.odm_georeferencing_coords) \
+                else tree.odm_textured_model_obj
+
 
             # run odm_orthophoto
             system.run('{bin}/odm_orthophoto -inputFile {model_geo} '
