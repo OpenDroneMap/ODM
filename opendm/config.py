@@ -288,7 +288,7 @@ def config():
                         default=False,
                         help='compress the results using gunzip')
 
-    parser.add_argument('--verbose',
+    parser.add_argument('--verbose', '-v',
                         action='store_true',
                         default=False,
                         help='Print additional messages to the console\n'
