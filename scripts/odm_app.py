@@ -56,7 +56,8 @@ class ODMApp(ecto.BlackBox):
                  'meshing': ODMeshingCell(max_vertex=p.args.mesh_size,
                                           oct_tree=p.args.mesh_octree_depth,
                                           samples=p.args.mesh_samples,
-                                          solver=p.args.mesh_solver_divide),
+                                          solver=p.args.mesh_solver_divide,
+                                          verbose=p.args.verbose),
                  'texturing': ODMMvsTexCell(data_term=p.args.texturing_data_term,
                                             outlier_rem_type=p.args.texturing_outlier_removal_type,
                                             skip_vis_test=p.args.texturing_skip_visibility_test,
@@ -65,9 +66,10 @@ class ODMApp(ecto.BlackBox):
                                             skip_hole_fill=p.args.texturing_skip_hole_filling,
                                             keep_unseen_faces=p.args.texturing_keep_unseen_faces),
                  'georeferencing': ODMGeoreferencingCell(img_size=p.args.resize_to,
-                                                         gcp_file=p.args.gcp),
-                 'orthophoto': ODMOrthoPhotoCell(resolution=p.args.orthophoto_resolution)
-
+                                                         gcp_file=p.args.gcp,
+                                                         verbose=p.args.verbose),
+                 'orthophoto': ODMOrthoPhotoCell(resolution=p.args.orthophoto_resolution,
+                                                 verbose=p.args.verbose)
                  }
 
         return cells
