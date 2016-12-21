@@ -16,6 +16,7 @@ class ODMGeoreferencingCell(ecto.Cell):
                             'be on the following line format: \neasting '
                             'northing height pixelrow pixelcol imagename', 'gcp_list.txt')
         params.declare("img_size", 'image size used in calibration', 2400)
+        params.declare("verbose", 'print additional messages to console', False)
 
     def declare_io(self, params, inputs, outputs):
         inputs.declare("tree", "Struct with paths", [])
@@ -42,6 +43,7 @@ class ODMGeoreferencingCell(ecto.Cell):
         gcpfile = io.join_paths(tree.root_path, self.params.gcp_file) \
             if self.params.gcp_file else find('gcp_list.txt', tree.root_path)
         geocreated = True
+        verbose = '-verbose' if self.params.verbose else ''
 
         # define paths and create working directories
         system.mkdir_p(tree.odm_georeferencing)
@@ -63,17 +65,19 @@ class ODMGeoreferencingCell(ecto.Cell):
                 'imgs_list': tree.opensfm_bundle_list,
                 'coords': tree.odm_georeferencing_coords,
                 'log': tree.odm_georeferencing_utm_log
+                'verbose': verbose
             }
 
             # run UTM extraction binary
             extract_utm = system.run_and_return('{bin}/odm_extract_utm -imagesPath {imgs}/ '
-                       '-imageListFile {imgs_list} -outputCoordFile {coords} '
+                       '-imageListFile {imgs_list} -outputCoordFile {coords} {verbose} '
                        '-logFile {log}'.format(**kwargs))
 
             if extract_utm != '':
                 log.ODM_WARNING('Could not generate coordinates file. '
                                 'Ignore if there is a GCP file. Error: %s'
                                 % extract_utm)
+
 
         # check if we rerun cell or not
         rerun_cell = (args.rerun is not None and
@@ -99,6 +103,7 @@ class ODMGeoreferencingCell(ecto.Cell):
                 'model_geo': tree.odm_georeferencing_model_obj_geo,
                 'size': self.params.img_size,
                 'gcp': gcpfile,
+                'verbose': verbose
 
             }
             if args.use_opensfm_pointcloud:
@@ -112,14 +117,14 @@ class ODMGeoreferencingCell(ecto.Cell):
                 log.ODM_INFO('Found %s' % gcpfile)
                 system.run('{bin}/odm_georef -bundleFile {bundle} -imagesPath {imgs} -imagesListPath {imgs_list} '
                            '-bundleResizedTo {size} -inputFile {model} -outputFile {model_geo} '
-                           '-inputPointCloudFile {pc} -outputPointCloudFile {pc_geo} '
+                           '-inputPointCloudFile {pc} -outputPointCloudFile {pc_geo} {verbose} '
                            '-logFile {log} -georefFileOutputPath {geo_sys} -gcpFile {gcp} '
                            '-outputCoordFile {coords}'.format(**kwargs))
             elif io.file_exists(tree.odm_georeferencing_coords):
                 log.ODM_INFO('Running georeferencing with generated coords file.')
                 system.run('{bin}/odm_georef -bundleFile {bundle} -inputCoordFile {coords} '
                            '-inputFile {model} -outputFile {model_geo} '
-                           '-inputPointCloudFile {pc} -outputPointCloudFile {pc_geo} '
+                           '-inputPointCloudFile {pc} -outputPointCloudFile {pc_geo} {verbose} '
                            '-logFile {log} -georefFileOutputPath {geo_sys}'.format(**kwargs))
             else:
                 log.ODM_WARNING('Georeferencing failed. Make sure your '

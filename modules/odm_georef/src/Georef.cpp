@@ -1197,7 +1197,7 @@ void Georef::chooseBestCameraTriplet(size_t &cam0, size_t &cam1, size_t &cam2)
                 trans.findTransform(cameras_[t].getPos(), cameras_[s].getPos(), cameras_[p].getPos(),
                                     cameras_[t].getReferencedPos(), cameras_[s].getReferencedPos(), cameras_[p].getReferencedPos());
                 
-                // The total error for the curren camera triplet.
+                // The total error for the current camera triplet.
                 double totError = 0.0;
                 
                 for(size_t r = 0; r < cameras_.size(); ++r)
