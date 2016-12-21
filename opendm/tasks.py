@@ -54,16 +54,6 @@ class ODMTaskManager(object):
                           'args': _odm_app.args,
                           'photos': _odm_app.photos}
 
-            elif task_name == 'cmvs':
-                # setup this task
-                command = None
-                inputs = {}
-
-            elif task_name == 'pmvs':
-                # setup this task
-                command = None
-                inputs = {}
-
             elif task_name == 'odm_meshing':
                 # setup this task
                 command = None

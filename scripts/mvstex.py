@@ -5,7 +5,6 @@ from opendm import io
 from opendm import system
 from opendm import context
 
-import pmvs2nvmcams
 
 class ODMMvsTexCell(ecto.Cell):
     def declare_params(self, params):
@@ -73,8 +72,7 @@ class ODMMvsTexCell(ecto.Cell):
             kwargs = {
                 'bin': context.mvstex_path,
                 'out_dir': io.join_paths(tree.odm_texturing, "odm_textured_model"),
-                'pmvs_folder': tree.pmvs_rec_path,
-                'nvm_file': io.join_paths(tree.pmvs_rec_path, "nvmCams.nvm"),
+                'nvm_file': io.join_paths(tree.opensfm, "reconstruction.nvm"),
                 'model': tree.odm_mesh,
                 'dataTerm': self.params.data_term,
                 'outlierRemovalType': self.params.outlier_rem_type,
@@ -84,17 +82,6 @@ class ODMMvsTexCell(ecto.Cell):
                 'skipHoleFilling': skipHoleFilling,
                 'keepUnseenFaces': keepUnseenFaces
             }
-
-            if args.use_opensfm_pointcloud:
-                kwargs['nvm_file'] = io.join_paths(tree.opensfm,
-                                                   "reconstruction.nvm")
-            else:
-                log.ODM_DEBUG('Generating .nvm file from pmvs output: %s'
-                              % '{nvm_file}'.format(**kwargs))
-
-                # Create .nvm camera file.
-                pmvs2nvmcams.run('{pmvs_folder}'.format(**kwargs),
-                                 '{nvm_file}'.format(**kwargs))
 
             # run texturing binary
             system.run('{bin} {nvm_file} {model} {out_dir} '

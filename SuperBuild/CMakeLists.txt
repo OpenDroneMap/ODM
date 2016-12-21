@@ -98,7 +98,6 @@ SETUP_EXTERNAL_PROJECT(Ceres ${ODM_Ceres_Version} ${ODM_BUILD_Ceres})
 
 set(custom_libs OpenGV
 				OpenSfM
-				CMVS
 				Catkin
 				Ecto
 				PDAL
