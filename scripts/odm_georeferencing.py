@@ -16,6 +16,7 @@ class ODMGeoreferencingCell(ecto.Cell):
                             'be on the following line format: \neasting '
                             'northing height pixelrow pixelcol imagename', 'gcp_list.txt')
         params.declare("img_size", 'image size used in calibration', 2400)
+        params.declare("use_exif", 'use exif', False)
         params.declare("verbose", 'print additional messages to console', False)
 
     def declare_io(self, params, inputs, outputs):
@@ -64,7 +65,7 @@ class ODMGeoreferencingCell(ecto.Cell):
                 'imgs': tree.dataset_resize,
                 'imgs_list': tree.opensfm_bundle_list,
                 'coords': tree.odm_georeferencing_coords,
-                'log': tree.odm_georeferencing_utm_log
+                'log': tree.odm_georeferencing_utm_log,
                 'verbose': verbose
             }
 
@@ -113,13 +114,17 @@ class ODMGeoreferencingCell(ecto.Cell):
 
             # Check to see if the GCP file exists
 
-            if self.params.gcp_file or find('gcp_list.txt', tree.root_path):
+            if not self.params.use_exif and (self.params.gcp_file or find('gcp_list.txt', tree.root_path)):
                 log.ODM_INFO('Found %s' % gcpfile)
-                system.run('{bin}/odm_georef -bundleFile {bundle} -imagesPath {imgs} -imagesListPath {imgs_list} '
-                           '-bundleResizedTo {size} -inputFile {model} -outputFile {model_geo} '
-                           '-inputPointCloudFile {pc} -outputPointCloudFile {pc_geo} {verbose} '
-                           '-logFile {log} -georefFileOutputPath {geo_sys} -gcpFile {gcp} '
-                           '-outputCoordFile {coords}'.format(**kwargs))
+                try:
+                    system.run('{bin}/odm_georef -bundleFile {bundle} -imagesPath {imgs} -imagesListPath {imgs_list} '
+                               '-bundleResizedTo {size} -inputFile {model} -outputFile {model_geo} '
+                               '-inputPointCloudFile {pc} -outputPointCloudFile {pc_geo} {verbose} '
+                               '-logFile {log} -georefFileOutputPath {geo_sys} -gcpFile {gcp} '
+                               '-outputCoordFile {coords}'.format(**kwargs))
+                except Exception:
+                    log.ODM_EXCEPTION('Georeferencing failed. ')
+                    return ecto.QUIT
             elif io.file_exists(tree.odm_georeferencing_coords):
                 log.ODM_INFO('Running georeferencing with generated coords file.')
                 system.run('{bin}/odm_georef -bundleFile {bundle} -inputCoordFile {coords} '

@@ -67,6 +67,7 @@ class ODMApp(ecto.BlackBox):
                                             keep_unseen_faces=p.args.texturing_keep_unseen_faces),
                  'georeferencing': ODMGeoreferencingCell(img_size=p.args.resize_to,
                                                          gcp_file=p.args.gcp,
+                                                         use_exif=p.args.use_exif,
                                                          verbose=p.args.verbose),
                  'orthophoto': ODMOrthoPhotoCell(resolution=p.args.orthophoto_resolution,
                                                  verbose=p.args.verbose)
