@@ -260,6 +260,12 @@ def config():
                               'be on the following line format: \neasting '
                               'northing height pixelrow pixelcol imagename'))
 
+    parser.add_argument('--use-exif',
+                        action='store_true',
+                        default=False,
+                        help=('Use this tag if you have a gcp_list.txt but '
+                              'want to use the exif geotags instead'))
+
     # Depreciated
     parser.add_argument('--odm_georeferencing-useGcp',
                         action='store_true',
