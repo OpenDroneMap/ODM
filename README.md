@@ -29,7 +29,7 @@ Requires Ubuntu 14.04 or later, see https://github.com/OpenDroneMap/odm_vagrant 
 
 **[Download the latest release here](https://github.com/OpenDroneMap/OpenDroneMap/releases)**
 
-Current version: 0.2-RC1 (beta)
+Current version: 0.2 (this software is in beta)
 
 1. Extract and enter the OpenDroneMap directory
 2. Run `bash configure.sh`
