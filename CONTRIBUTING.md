@@ -63,7 +63,6 @@ Include details about your configuration and environment:
     * Problem happens with all datasets and projects, not only some datasets or projects: [Yes/No]
 
 ### Pull Requests
-* ***Pull Requests should be made to the `dev` branch unless it is a critical bug.*** 
 * Include screenshots and animated GIFs in your pull request whenever possible.
 * Follow the [PEP8 Python Style Guide](https://www.python.org/dev/peps/pep-0008/).
 * End files with a newline.
