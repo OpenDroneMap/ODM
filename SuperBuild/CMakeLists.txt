@@ -11,6 +11,8 @@ set(CMAKE_MODULE_PATH ${SB_ROOT_DIR}/cmake)
 include(ExternalProject)
 include(ExternalProject-Setup)
 
+option(ODM_BUILD_SLAM "Build SLAM module" OFF)
+
 
 ################################
 # Setup SuperBuild directories #
@@ -104,6 +106,13 @@ set(custom_libs OpenGV
 				PDAL
 				MvsTexturing
 )
+
+# Dependencies of the SLAM module
+if(ODM_BUILD_SLAM)
+	list(APPEND custom_libs
+				Pangolin
+				ORB_SLAM2)
+endif()
 
 foreach(lib ${custom_libs})
 	SETUP_EXTERNAL_PROJECT_CUSTOM(${lib})
