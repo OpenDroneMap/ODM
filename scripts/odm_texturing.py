@@ -1,3 +1,5 @@
+import os
+
 import ecto
 
 from opendm import log
@@ -43,6 +45,28 @@ class ODMTexturingCell(ecto.Cell):
                      (args.rerun_from is not None and
                       'odm_texturing' in args.rerun_from)
 
+        # Undistort radial distortion
+        if not os.path.isdir(tree.odm_texturing_undistorted_image_path) or rerun_cell:
+            system.run(' '.join([
+                'cd {} &&'.format(tree.opensfm),
+                'PYTHONPATH={}:{}'.format(context.pyopencv_path,
+                                          context.opensfm_path),
+                'python',
+                os.path.join(context.odm_modules_src_path,
+                             'odm_slam/src/undistort_radial.py'),
+                '--output',
+                tree.odm_texturing_undistorted_image_path,
+                tree.opensfm,
+            ]))
+
+            system.run(
+                'PYTHONPATH=%s %s/bin/export_bundler %s' %
+                (context.pyopencv_path, context.opensfm_path, tree.opensfm))
+        else:
+            log.ODM_WARNING(
+                'Found a valid Bundler file in: %s' %
+                (tree.opensfm_reconstruction))
+
         if not io.file_exists(tree.odm_textured_model_obj) or rerun_cell:
             log.ODM_DEBUG('Writing ODM Textured file in: %s'
                           % tree.odm_textured_model_obj)
@@ -52,7 +76,7 @@ class ODMTexturingCell(ecto.Cell):
                 'bin': context.odm_modules_path,
                 'out_dir': tree.odm_texturing,
                 'bundle': tree.opensfm_bundle,
-                'imgs_path': tree.dataset_resize,
+                'imgs_path': tree.odm_texturing_undistorted_image_path,
                 'imgs_list': tree.opensfm_bundle_list,
                 'model': tree.odm_mesh,
                 'log': tree.odm_texuring_log,
