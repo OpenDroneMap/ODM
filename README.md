@@ -162,6 +162,10 @@ To pass in custom parameters to the run.py script, simply pass it as arguments t
 
 A web interface and API to OpenDroneMap is currently under active development in the [WebODM](https://github.com/OpenDroneMap/WebODM) repository.
 
+## Video Support
+
+Currently we have an experimental feature that uses ORB_SLAM to render a textured mesh from video. It is only supported on Ubuntu 14.04 on machines with X11 support. See the [wiki](https://github.com/OpenDroneMap/OpenDroneMap/wiki/Reconstruction-from-Video)for details on installation and use.
+
 ## Examples
 
 Coming soon...
