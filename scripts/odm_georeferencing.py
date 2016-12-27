@@ -98,7 +98,7 @@ class ODMGeoreferencingCell(ecto.Cell):
                 'verbose': verbose
 
             }
-            if args.use_opensfm_pointcloud:
+            if not args.use_pmvs:
                 kwargs['pc'] = tree.opensfm_model
             else:
                 kwargs['pc'] = tree.pmvs_model
