@@ -117,7 +117,7 @@ class ODMApp(ecto.BlackBox):
                         self.args[:] >> self.opensfm['args'],
                         self.resize['photos'] >> self.opensfm['photos']]
 
-        if _p.args.use_opensfm_pointcloud:
+        if not _p.args.use_pmvs:
             # create odm mesh from opensfm point cloud
             connections += [self.tree[:] >> self.meshing['tree'],
                             self.args[:] >> self.meshing['args'],

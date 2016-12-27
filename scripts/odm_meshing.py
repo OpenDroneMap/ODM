@@ -62,7 +62,7 @@ class ODMeshingCell(ecto.Cell):
                 'solver': self.params.solver,
                 'verbose': verbose
             }
-            if args.use_opensfm_pointcloud:
+            if not args.use_pmvs:
                 kwargs['infile'] = tree.opensfm_model
             else:
                 kwargs['infile'] = tree.pmvs_model
