@@ -1185,9 +1185,39 @@ void Georef::chooseBestGCPTriplet(size_t &gcp0, size_t &gcp1, size_t &gcp2)
 
 void Georef::chooseBestCameraTriplet(size_t &cam0, size_t &cam1, size_t &cam2)
 {
+    size_t numThreads = 2;
+    boost::thread_group threads;
+    std::vector<GeorefBestTriplet> triplets;
+    for(size_t t = 0; t < numThreads; ++t)
+    {
+        GeorefBestTriplet triplet;
+        triplets.push_back(triplet);
+        threads.create_thread(boost::bind(&Georef::findBestCameraTriplet, this, boost::ref(triplet.t_), boost::ref(triplet.s_), boost::ref(triplet.p_), t, numThreads, boost::ref(triplet.err_)));
+    }
+
+    threads.join_all();
+
     double minTotError = std::numeric_limits<double>::infinity();
+    for(size_t t = 0; t<numThreads; t++)
+    {
+        GeorefBestTriplet triplet = triplets[t];
+        if(minTotError > triplet.err_)
+        {
+            minTotError = triplet.err_;
+            cam0 = triplet.t_;
+            cam1 = triplet.s_;
+            cam2 = triplet.p_;
+        }
+    }
+
+    log_ << "Mean georeference error " << minTotError / static_cast<double>(cameras_.size()) << '\n';
+}
+
+void Georef::findBestCameraTriplet(size_t &cam0, size_t &cam1, size_t &cam2, size_t offset, size_t stride, double &minTotError)
+{
+    minTotError = std::numeric_limits<double>::infinity();
     
-    for(size_t t = 0; t < cameras_.size(); ++t)
+    for(size_t t = offset; t < cameras_.size(); t+=stride)
     {
         for(size_t s = t; s < cameras_.size(); ++s)
         {
@@ -1215,8 +1245,6 @@ void Georef::chooseBestCameraTriplet(size_t &cam0, size_t &cam1, size_t &cam2)
             }
         }
     }
-    
-    log_ << "Mean georeference error " << minTotError / static_cast<double>(cameras_.size()) << '\n';
 }
 
 void Georef::printGeorefSystem()
