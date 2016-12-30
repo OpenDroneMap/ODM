@@ -1185,14 +1185,14 @@ void Georef::chooseBestGCPTriplet(size_t &gcp0, size_t &gcp1, size_t &gcp2)
 
 void Georef::chooseBestCameraTriplet(size_t &cam0, size_t &cam1, size_t &cam2)
 {
-    size_t numThreads = 2;
+    size_t numThreads = boost::thread::hardware_concurrency();
     boost::thread_group threads;
-    std::vector<GeorefBestTriplet> triplets;
+    std::vector<GeorefBestTriplet*> triplets;
     for(size_t t = 0; t < numThreads; ++t)
     {
-        GeorefBestTriplet triplet;
+        GeorefBestTriplet* triplet = new GeorefBestTriplet();
         triplets.push_back(triplet);
-        threads.create_thread(boost::bind(&Georef::findBestCameraTriplet, this, boost::ref(triplet.t_), boost::ref(triplet.s_), boost::ref(triplet.p_), t, numThreads, boost::ref(triplet.err_)));
+        threads.create_thread(boost::bind(&Georef::findBestCameraTriplet, this, boost::ref(triplet->t_), boost::ref(triplet->s_), boost::ref(triplet->p_), t, numThreads, boost::ref(triplet->err_)));
     }
 
     threads.join_all();
@@ -1200,14 +1200,15 @@ void Georef::chooseBestCameraTriplet(size_t &cam0, size_t &cam1, size_t &cam2)
     double minTotError = std::numeric_limits<double>::infinity();
     for(size_t t = 0; t<numThreads; t++)
     {
-        GeorefBestTriplet triplet = triplets[t];
-        if(minTotError > triplet.err_)
+        GeorefBestTriplet* triplet = triplets[t];
+        if(minTotError > triplet->err_)
         {
-            minTotError = triplet.err_;
-            cam0 = triplet.t_;
-            cam1 = triplet.s_;
-            cam2 = triplet.p_;
+            minTotError = triplet->err_;
+            cam0 = triplet->t_;
+            cam1 = triplet->s_;
+            cam2 = triplet->p_;
         }
+        delete triplet;
     }
 
     log_ << "Mean georeference error " << minTotError / static_cast<double>(cameras_.size()) << '\n';
@@ -1245,6 +1246,9 @@ void Georef::findBestCameraTriplet(size_t &cam0, size_t &cam1, size_t &cam2, siz
             }
         }
     }
+
+    log_ << '[' << offset+1 << " of " << stride << "] Mean georeference error " << minTotError / static_cast<double>(cameras_.size());
+    log_ << " (" << cam0 << ", " << cam1 << ", " << cam2 << ")\n";
 }
 
 void Georef::printGeorefSystem()
