@@ -1141,9 +1141,40 @@ void Georef::createGeoreferencedModelFromExifData()
 
 void Georef::chooseBestGCPTriplet(size_t &gcp0, size_t &gcp1, size_t &gcp2)
 {
-    double minTotError = std::numeric_limits<double>::infinity();
+    size_t numThreads = boost::thread::hardware_concurrency();
+    boost::thread_group threads;
+    std::vector<GeorefBestTriplet*> triplets;
+    for(size_t t = 0; t < numThreads; ++t)
+    {
+        GeorefBestTriplet* triplet = new GeorefBestTriplet();
+        triplets.push_back(triplet);
+        threads.create_thread(boost::bind(&Georef::findBestGCPTriplet, this, boost::ref(triplet->t_), boost::ref(triplet->s_), boost::ref(triplet->p_), t, numThreads, boost::ref(triplet->err_)));
+    }
 
-    for(size_t t = 0; t < gcps_.size(); ++t)
+    threads.join_all();
+
+    double minTotError = std::numeric_limits<double>::infinity();
+    for(size_t t = 0; t<numThreads; t++)
+    {
+        GeorefBestTriplet* triplet = triplets[t];
+        if(minTotError > triplet->err_)
+        {
+            minTotError = triplet->err_;
+            gcp0 = triplet->t_;
+            gcp1 = triplet->s_;
+            gcp2 = triplet->p_;
+        }
+        delete triplet;
+    }
+
+    log_ << "Mean georeference error " << minTotError / static_cast<double>(gcps_.size()) << '\n';
+}
+
+void Georef::findBestGCPTriplet(size_t &gcp0, size_t &gcp1, size_t &gcp2, size_t offset, size_t stride, double &minTotError)
+{
+    minTotError = std::numeric_limits<double>::infinity();
+
+    for(size_t t = offset; t < gcps_.size(); t+=stride)
     {
         if (gcps_[t].use_)
         {
@@ -1180,7 +1211,9 @@ void Georef::chooseBestGCPTriplet(size_t &gcp0, size_t &gcp1, size_t &gcp2)
             }
         }
     }
-    log_ << "Mean georeference error " << minTotError / static_cast<double>(cameras_.size()) << '\n';
+
+    log_ << '[' << offset+1 << " of " << stride << "] Mean georeference error " << minTotError / static_cast<double>(gcps_.size());
+    log_ << " (" << gcp0 << ", " << gcp1 << ", " << gcp2 << ")\n";
 }
 
 void Georef::chooseBestCameraTriplet(size_t &cam0, size_t &cam1, size_t &cam2)
