@@ -208,12 +208,17 @@ private:
     void chooseBestGCPTriplet(size_t &gcp0, size_t &gcp1, size_t &gcp2);
 
     /*!
+     * \brief findBestGCPTriplet    Partitioned version of chooseBestGCPTriplet.
+     */
+    void findBestGCPTriplet(size_t &gcp0, size_t &gcp1, size_t &gcp2, size_t offset, size_t stride, double &minTotError);
+
+    /*!
      * \brief chooseBestCameraTriplet    Chooses the best triplet of cameras to use when making the model georeferenced.
      */
     void chooseBestCameraTriplet(size_t &cam0, size_t &cam1, size_t &cam2);
 
     /*!
-     * \brief chooseBestCameraTriplet    Partitioned version of chooseBestCameraTriplet.
+     * \brief findBestCameraTriplet    Partitioned version of chooseBestCameraTriplet.
      */
     void findBestCameraTriplet(size_t &cam0, size_t &cam1, size_t &cam2, size_t offset, size_t stride, double &minTotError);
     
