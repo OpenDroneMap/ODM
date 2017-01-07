@@ -2,7 +2,7 @@ import argparse
 import context
 
 # parse arguments
-processopts = ['resize', 'opensfm', 'cmvs', 'pmvs',
+processopts = ['resize', 'opensfm', 'slam', 'cmvs', 'pmvs',
                'odm_meshing', 'mvs_texturing', 'odm_georeferencing',
                'odm_orthophoto']
 
@@ -55,6 +55,14 @@ def config():
                        metavar='<string>',
                        choices=processopts,
                        help=('Can be one of:' + ' | '.join(processopts)))
+
+    parser.add_argument('--video',
+                        metavar='<string>',
+                        help='Path to the video file to process')
+
+    parser.add_argument('--slam-config',
+                        metavar='<string>',
+                        help='Path to config file for orb-slam')
 
     parser.add_argument('--force-focal',
                         metavar='<positive float>',
@@ -287,6 +295,12 @@ def config():
                         action='store_true',
                         default=False,
                         help='compress the results using gunzip')
+
+    parser.add_argument('--verbose', '-v',
+                        action='store_true',
+                        default=False,
+                        help='Print additional messages to the console\n'
+                             'Default: %(default)s')
 
     parser.add_argument('--time',
                         action='store_true',

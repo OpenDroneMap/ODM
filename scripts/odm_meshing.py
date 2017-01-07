@@ -19,6 +19,7 @@ class ODMeshingCell(ecto.Cell):
                                  'is solved in the surface reconstruction step. '
                                  'Increasing this value increases computation '
                                  'times slightly but helps reduce memory usage.', 9)
+        params.declare("verbose", 'print additional messages to console', False)
 
     def declare_io(self, params, inputs, outputs):
         inputs.declare("tree", "Struct with paths", [])
@@ -36,6 +37,7 @@ class ODMeshingCell(ecto.Cell):
         # get inputs
         args = self.inputs.args
         tree = self.inputs.tree
+        verbose = '-verbose' if self.params.verbose else ''
 
         # define paths and create working directories
         system.mkdir_p(tree.odm_meshing)
@@ -57,7 +59,8 @@ class ODMeshingCell(ecto.Cell):
                 'max_vertex': self.params.max_vertex,
                 'oct_tree': self.params.oct_tree,
                 'samples': self.params.samples,
-                'solver': self.params.solver
+                'solver': self.params.solver,
+                'verbose': verbose
             }
             if args.use_opensfm_pointcloud:
                 kwargs['infile'] = tree.opensfm_model
@@ -67,7 +70,7 @@ class ODMeshingCell(ecto.Cell):
             # run meshing binary
             system.run('{bin}/odm_meshing -inputFile {infile} '
                        '-outputFile {outfile} -logFile {log} '
-                       '-maxVertexCount {max_vertex} -octreeDepth {oct_tree} '
+                       '-maxVertexCount {max_vertex} -octreeDepth {oct_tree} {verbose} '
                        '-samplesPerNode {samples} -solverDivide {solver}'.format(**kwargs))
         else:
             log.ODM_WARNING('Found a valid ODM Mesh file in: %s' %
