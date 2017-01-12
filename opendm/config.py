@@ -118,6 +118,13 @@ def config():
                              'images based on GPS exif data. Set to 0 to skip '
                              'pre-matching. Default: %(default)s')
 
+    parser.add_argument('--opensfm-processes',
+                        metavar='<positive integer>',
+                        default=context.num_cores,
+                        type=int,
+                        help=('The maximum number of processes to use in dense '
+                              'reconstruction. Default: %(default)s'))
+
     parser.add_argument('--use-opensfm-pointcloud',
                         action='store_true',
                         default=False,
