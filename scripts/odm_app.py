@@ -45,7 +45,7 @@ class ODMApp(ecto.BlackBox):
                  'opensfm': ODMOpenSfMCell(use_exif_size=False,
                                            feature_process_size=p.args.resize_to,
                                            feature_min_frames=p.args.min_num_features,
-                                           processes=context.num_cores,
+                                           processes=p.args.opensfm_processes,
                                            matching_gps_neighbors=p.args.matcher_neighbors,
                                            matching_gps_distance=p.args.matcher_distance),
                  'slam': ODMSlamCell(),
