@@ -9,6 +9,7 @@ from opendm import system
 from dataset import ODMLoadDatasetCell
 from resize import ODMResizeCell
 from opensfm import ODMOpenSfMCell
+from odm_slam import ODMSlamCell
 from pmvs import ODMPmvsCell
 from cmvs import ODMCmvsCell
 from odm_meshing import ODMeshingCell
@@ -43,9 +44,10 @@ class ODMApp(ecto.BlackBox):
                  'opensfm': ODMOpenSfMCell(use_exif_size=False,
                                            feature_process_size=p.args.resize_to,
                                            feature_min_frames=p.args.min_num_features,
-                                           processes=context.num_cores,
+                                           processes=p.args.opensfm_processes,
                                            matching_gps_neighbors=p.args.matcher_neighbors,
                                            matching_gps_distance=p.args.matcher_distance),
+                 'slam': ODMSlamCell(),
                  'cmvs': ODMCmvsCell(max_images=p.args.cmvs_maxImages),
                  'pmvs': ODMPmvsCell(level=p.args.pmvs_level,
                                      csize=p.args.pmvs_csize,
@@ -87,13 +89,15 @@ class ODMApp(ecto.BlackBox):
                 b.write('ODM Benchmarking file created %s\nNumber of Cores: %s\n\n' % (system.now(), context.num_cores))
 
     def connections(self, _p):
+        if _p.args.video:
+            return self.slam_connections(_p)
+
         # define initial task
         # TODO: What is this?
         # initial_task = _p.args['start_with']
         # initial_task_id = config.processopts.index(initial_task)
 
         # define the connections like you would for the plasm
-        # connections = []
 
         # load the dataset
         connections = [self.tree[:] >> self.dataset['tree']]
@@ -144,5 +148,35 @@ class ODMApp(ecto.BlackBox):
         connections += [self.tree[:] >> self.orthophoto['tree'],
                         self.args[:] >> self.orthophoto['args'],
                         self.georeferencing['reconstruction'] >> self.orthophoto['reconstruction']]
+
+        return connections
+
+    def slam_connections(self, _p):
+        """Get connections used when running from video instead of images."""
+        connections = []
+
+        # run slam cell
+        connections += [self.tree[:] >> self.slam['tree'],
+                        self.args[:] >> self.slam['args']]
+
+        # run cmvs
+        connections += [self.tree[:] >> self.cmvs['tree'],
+                        self.args[:] >> self.cmvs['args'],
+                        self.slam['reconstruction'] >> self.cmvs['reconstruction']]
+
+        # run pmvs
+        connections += [self.tree[:] >> self.pmvs['tree'],
+                        self.args[:] >> self.pmvs['args'],
+                        self.cmvs['reconstruction'] >> self.pmvs['reconstruction']]
+
+        # create odm mesh
+        connections += [self.tree[:] >> self.meshing['tree'],
+                        self.args[:] >> self.meshing['args'],
+                        self.pmvs['reconstruction'] >> self.meshing['reconstruction']]
+
+        # create odm texture
+        connections += [self.tree[:] >> self.texturing['tree'],
+                        self.args[:] >> self.texturing['args'],
+                        self.meshing['reconstruction'] >> self.texturing['reconstruction']]
 
         return connections

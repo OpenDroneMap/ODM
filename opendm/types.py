@@ -378,6 +378,8 @@ class ODM_Tree(object):
         self.odm_meshing_log = io.join_paths(self.odm_meshing, 'odm_meshing_log.txt')
 
         # texturing
+        self.odm_texturing_undistorted_image_path = io.join_paths(
+            self.odm_texturing, 'undistorted')
         self.odm_textured_model_obj = io.join_paths(
             self.odm_texturing, 'odm_textured_model.obj')
         self.odm_textured_model_mtl = io.join_paths(
