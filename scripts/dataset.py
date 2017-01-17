@@ -7,6 +7,8 @@ from opendm import context
 from opendm import io
 from opendm import types
 from opendm import log
+from opendm import system
+from shutil import copyfile
 
 
 def make_odm_photo(force_focal, force_ccd, path_file):
@@ -28,32 +30,41 @@ class ODMLoadDatasetCell(ecto.Cell):
         outputs.declare("photos", "list of ODMPhotos", [])
 
     def process(self, inputs, outputs):
-        # check if the extension is sopported
+        # check if the extension is supported
         def supported_extension(file_name):
             (pathfn, ext) = os.path.splitext(file_name)
             return ext.lower() in context.supported_extensions
+
+        # Get supported images from dir
+        def get_images(in_dir):
+            # filter images for its extension type
+            log.ODM_DEBUG(in_dir)
+            return [f for f in io.get_files_list(in_dir) if supported_extension(f)]
 
         log.ODM_INFO('Running ODM Load Dataset Cell')
 
         # get inputs
         tree = self.inputs.tree
 
-        # set images directory
-        images_dir = tree.dataset_resize
+        # get images directory
+        input_dir = tree.input_images
+        images_dir = tree.dataset_raw
+        resize_dir = tree.dataset_resize
 
-        if not io.dir_exists(images_dir):
-            images_dir = tree.dataset_raw
+        # Check first if a project already exists. This is a mediocre way to check, by checking the resize dir
+        if io.dir_exists(resize_dir):
+            log.ODM_DEBUG("resize dir: %s" % resize_dir)
+            images_dir = resize_dir
+        # if first time running, create project directory and copy images over to project/images
+        else:
             if not io.dir_exists(images_dir):
-                log.ODM_ERROR("You must put your pictures into an <images> directory")
-                return ecto.QUIT
+                log.ODM_INFO("Project directory %s doesn't exist. Creating it now. " % images_dir)
+                system.mkdir_p(images_dir)
+                copied = [copyfile(io.join_paths(input_dir, f), io.join_paths(images_dir, f)) for f in get_images(input_dir)]
 
         log.ODM_DEBUG('Loading dataset from: %s' % images_dir)
 
-        # find files in the given directory
-        files = io.get_files_list(images_dir)
-
-        # filter images for its extension type
-        files = [f for f in files if supported_extension(f)]
+        files = get_images(images_dir)
 
         if files:
             # create ODMPhoto list

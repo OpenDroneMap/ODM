@@ -3,6 +3,7 @@
 from opendm import log
 from opendm import config
 from opendm import system
+from opendm import io
 
 import sys
 import ecto
@@ -26,8 +27,12 @@ if __name__ == '__main__':
     # Force to provide the images path
     if args.project_path is None:
         usage()
+    elif not io.dir_exists(args.project_path):
+        log.ODM_WARNING('Directory %s does not exist. Creating it now.' % args.project_path)
+        system.mkdir_p(os.path.abspath(args.project_path))
 
     #If user asks to rerun everything, delete all of the existing progress directories.
+    # TODO: Move this somewhere it's not hard-coded
     if args.rerun_all:
         os.system("rm -rf "
                   + args.project_path + "images_resize/ "

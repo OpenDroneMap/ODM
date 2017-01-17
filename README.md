@@ -65,22 +65,13 @@ Note that using `run.sh` sets these temporarily in the shell.
     
 ### Run OpenDroneMap
 
-First you need a set of images, taken from a drone or otherwise. 
-
-Create a project folder and places your images in an "images" directory:
-
-    |-- /path/to/project/
-        |-- images/
-            |-- img-1234.jpg
-            |-- ...
-
-Example data can be cloned from https://github.com/OpenDroneMap/odm_data
+First you need a set of images, taken from a drone or otherwise. Example data can be cloned from https://github.com/OpenDroneMap/odm_data
 
 Then run:
 
-    python run.py --project-path /path/to/project
-    
-There are many options for tuning your project. See the [wiki](https://github.com/OpenDroneMap/OpenDroneMap/wiki/Run-Time-Parameters) or run `python run.py -h`
+    python run.py --project-path /path/to/project -i /path/to/images
+
+The images will be copied over to the project path so you only need to specify the `-i /path/` once. There are many options for tuning your project. See the [wiki](https://github.com/OpenDroneMap/OpenDroneMap/wiki/Run-Time-Parameters) or run `python run.py -h`
 
 ### View Results
 
@@ -121,7 +112,7 @@ Any file ending in .obj or .ply can be opened and viewed in [MeshLab](http://mes
 
 ![](https://raw.githubusercontent.com/alexhagiopol/OpenDroneMap/feature-better-docker/toledo_dataset_example_mesh.jpg)
 
-You can also view the orthophoto GeoTIFF in QGIS or other mapping software:
+You can also view the orthophoto GeoTIFF in [QGIS](http://www.qgis.org/) or other mapping software:
 
 ![](https://raw.githubusercontent.com/OpenDroneMap/OpenDroneMap/master/img/bellus_map.png)
 
@@ -140,6 +131,7 @@ instructions through "Create a Docker group". Once Docker is installed, the fast
 If you want to build your own Docker image from sources, type:
 
     docker build -t packages -f packages.Dockerfile .
+
     docker build -t my_odm_image .
     docker run -it --rm -v $(pwd)/images:/code/images v $(pwd)/odm_orthophoto:/code/odm_orthophoto -v $(pwd)/odm_texturing:/code/odm_texturing my_odm_image
 
