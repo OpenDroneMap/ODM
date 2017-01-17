@@ -23,23 +23,28 @@ So far, it does Point Clouds, Digital Surface Models, Textured Digital Surface M
 
 ## QUICKSTART
 
-Requires Ubuntu 14.04 or later, see https://github.com/OpenDroneMap/odm_vagrant for running on Windows in a VM
+OpenDroneMap can run natively on Ubuntu 14.04 or later, see [Build and Run Using Docker](#build-and-run-using-docker) for running on Windows / MacOS. A Vagrant VM is also available: https://github.com/OpenDroneMap/odm_vagrant.
 
 *Support for Ubuntu 12.04 is currently BROKEN with the addition of OpenSfM and Ceres-Solver. It is likely to remain broken unless a champion is found to fix it.*
 
 **[Download the latest release here](https://github.com/OpenDroneMap/OpenDroneMap/releases)**
 
-Current version: 0.2 (beta)
+Current version: 0.2 (this software is in beta)
+
+1. Extract and enter the OpenDroneMap directory
+2. Run `bash configure.sh`
+3. Download and extract a sample dataset [here](https://github.com/OpenDroneMap/odm_data_aukerman/archive/master.zip)
+4. Run `./run.sh --project-path <PATH>`, replacing `<PATH>` with the dataset path. 
+5. Enter dataset directory to view results: 
+  - orthophoto: odm_orthophoto/odm_orthophoto.tif
+  - textured mesh model: odm_texturing/odm_textured_model_geo.obj
+  - point cloud (georeferenced): odm_georeferencing/odm_georeferenced_model.ply
+  
+See below for more detailed installation instructions. 
 
 ### Installation
-    
-Before installing you need to set your environment variables. Open the ~/.bashrc file on your machine and add the following 3 lines at the end. The file can be opened with ```gedit ~/.bashrc``` if you are using an Ubuntu desktop environment. Be sure to replace the "/your/path/" with the correct path to the location where you extracted OpenDroneMap:
 
-    export PYTHONPATH=$PYTHONPATH:/your/path/OpenDroneMap/SuperBuild/install/lib/python2.7/dist-packages
-    export PYTHONPATH=$PYTHONPATH:/your/path/OpenDroneMap/SuperBuild/src/opensfm
-    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/your/path/OpenDroneMap/SuperBuild/install/lib
-
-Now, enter the OpenDroneMap directory and compile all of the code by executing a single configuration script:
+Extract and enter the downloaded OpenDroneMap directory and compile all of the code by executing a single configuration script:
   
     bash configure.sh
 
@@ -48,24 +53,25 @@ For Ubuntu 15.10 users, this will help you get running:
     sudo apt-get install python-xmltodict
     sudo ln -s /usr/lib/x86_64-linux-gnu/libproj.so.9 /usr/lib/libproj.so
     
+### Environment Variables
+
+There are some environmental variables that need to be set. Open the ~/.bashrc file on your machine and add the following 3 lines at the end. The file can be opened with ```gedit ~/.bashrc``` if you are using an Ubuntu desktop environment. Be sure to replace the "/your/path/" with the correct path to the location where you extracted OpenDroneMap:
+
+    export PYTHONPATH=$PYTHONPATH:/your/path/OpenDroneMap/SuperBuild/install/lib/python2.7/dist-packages
+    export PYTHONPATH=$PYTHONPATH:/your/path/OpenDroneMap/SuperBuild/src/opensfm
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/your/path/OpenDroneMap/SuperBuild/install/lib
+    
+Note that using `run.sh` sets these temporarily in the shell. 
+    
 ### Run OpenDroneMap
 
-First you need a set of images, taken from a drone or otherwise. 
-
-Create a project folder and places your images in an "images" directory:
-
-    |-- /path/to/project/
-        |-- images/
-            |-- img-1234.jpg
-            |-- ...
-
-Example data can be cloned from https://github.com/OpenDroneMap/odm_data
+First you need a set of images, taken from a drone or otherwise. Example data can be cloned from https://github.com/OpenDroneMap/odm_data
 
 Then run:
 
-    python run.py --project-path /path/to/project
-    
-There are many options for tuning your project. See the [wiki](https://github.com/OpenDroneMap/OpenDroneMap/wiki/Run-Time-Parameters) or run `python run.py -h`
+    python run.py --project-path /path/to/project -i /path/to/images
+
+The images will be copied over to the project path so you only need to specify the `-i /path/` once. There are many options for tuning your project. See the [wiki](https://github.com/OpenDroneMap/OpenDroneMap/wiki/Run-Time-Parameters) or run `python run.py -h`
 
 ### View Results
 
@@ -106,7 +112,7 @@ Any file ending in .obj or .ply can be opened and viewed in [MeshLab](http://mes
 
 ![](https://raw.githubusercontent.com/alexhagiopol/OpenDroneMap/feature-better-docker/toledo_dataset_example_mesh.jpg)
 
-You can also view the orthophoto GeoTIFF in QGIS or other mapping software:
+You can also view the orthophoto GeoTIFF in [QGIS](http://www.qgis.org/) or other mapping software:
 
 ![](https://raw.githubusercontent.com/OpenDroneMap/OpenDroneMap/master/img/bellus_map.png)
 
@@ -118,18 +124,16 @@ has equivalent procedures for Mac OS X and Windows. See [docs.docker.com](docs.d
 OpenDroneMap is Dockerized, meaning you can use containerization to build and run it without tampering with the configuration of libraries and packages already
 installed on your machine. Docker software is free to install and use in this context. If you don't have it installed,
 see the [Docker Ubuntu installation tutorial](https://docs.docker.com/engine/installation/linux/ubuntulinux/) and follow the
-instructions up until "Create a Docker group" inclusive. Once Docker is installed, an OpenDroneMap Docker image can be created
-like so:
+instructions through "Create a Docker group". Once Docker is installed, the fastest way to use OpenDroneMap is to run a pre-built image by typing:
 
-    git clone https://github.com/OpenDroneMap/OpenDroneMap.git
-    cd OpenDroneMap
+    docker run -it --rm -v $(pwd)/images:/code/images v $(pwd)/odm_orthophoto:/code/odm_orthophoto -v $(pwd)/odm_texturing:/code/odm_texturing opendronemap/opendronemap
+
+If you want to build your own Docker image from sources, type:
+
     docker build -t packages -f packages.Dockerfile .
-    docker build -t odm_image .
-    docker run -it --user root\
-         -v $(pwd)/images:/code/images\
-         -v $(pwd)/odm_orthophoto:/code/odm_orthophoto\
-         -v $(pwd)/odm_texturing:/code/odm_texturing\
-         --rm odm_image 
+
+    docker build -t my_odm_image .
+    docker run -it --rm -v $(pwd)/images:/code/images v $(pwd)/odm_orthophoto:/code/odm_orthophoto -v $(pwd)/odm_texturing:/code/odm_texturing my_odm_image
 
 Using this method, the containerized ODM will process the images in the OpenDroneMap/images directory and output results
 to the OpenDroneMap/odm_orthophoto and OpenDroneMap/odm_texturing directories as described in the **Viewing Results** section. 
@@ -137,36 +141,27 @@ If you want to view other results outside the Docker image simply add which dire
 established above. For example, if you're interested in the dense cloud results generated by PMVS and in the orthophoto,
 simply use the following `docker run` command after building the image:
 
-    docker run -it --user root\
-         -v $(pwd)/images:/code/images\
-         -v $(pwd)/pmvs:/code/pmvs\
-         -v $(pwd)/odm_orthophoto:/code/odm_orthophoto\
-         --rm odm_image
+    docker run -it --rm -v $(pwd)/images:/code/images -v $(pwd)/pmvs:/code/pmvs -v $(pwd)/odm_orthophoto:/code/odm_orthophoto my_odm_image
 
-To pass in custom parameters to the run.py script, simply pass it as arguments to the `docker run` command.
+To pass in custom parameters to the run.py script, simply pass it as arguments to the `docker run` command. For example:
+
+    docker run -it --rm -v $(pwd)/images:/code/images v $(pwd)/odm_orthophoto:/code/odm_orthophoto -v $(pwd)/odm_texturing:/code/odm_texturing opendronemap/opendronemap --resize-to 1800 --force-ccd 6.16
 
 ## User Interface
 
 A web interface and API to OpenDroneMap is currently under active development in the [WebODM](https://github.com/OpenDroneMap/WebODM) repository.
 
+## Video Support
+
+Currently we have an experimental feature that uses ORB_SLAM to render a textured mesh from video. It is only supported on Ubuntu 14.04 on machines with X11 support. See the [wiki](https://github.com/OpenDroneMap/OpenDroneMap/wiki/Reconstruction-from-Video)for details on installation and use.
+
 ## Examples
 
-Here are some other videos, which may be outdated:
-
-- https://www.youtube.com/watch?v=7ZTufQkODLs (2015-01-30)
-- https://www.youtube.com/watch?v=m0i4GQdfl8A (2015-03-15)
-
-Now that texturing is in the code base, you can access the full textured meshes using MeshLab. 
-Open MeshLab, choose `File:Import Mesh` and choose your textured mesh from a location similar to the following: 
-`reconstruction-with-image-size-1200-results\odm_texturing\odm_textured_model.obj`. Long term, the aim is for 
-the toolchain to also be able to optionally push to a variety of online data repositories, pushing hi-resolution 
-aerials to [OpenAerialMap](https://openaerialmap.org/), point clouds to [OpenTopography](http://opentopography.org/), 
-and pushing digital elevation models to an emerging global repository (yet to be named...). That leaves only 
-digital surface model meshes and UV textured meshes with no global repository home.
+Coming soon...
 
 ## Documentation:
 
-For documentation, please take a look at our [wiki](https://github.com/OpenDroneMap/OpenDroneMap/wiki).Check here first if you are heaving problems. If you still need help, look through the issue queue or create one. There's also a general help chat [here](https://gitter.im/OpenDroneMap/generalhelp). 
+For documentation, please take a look at our [wiki](https://github.com/OpenDroneMap/OpenDroneMap/wiki).Check here first if you are having problems. If you still need help, look through the issue queue or create one. There's also a general help chat [here](https://gitter.im/OpenDroneMap/generalhelp). 
 
 ## Developers
 

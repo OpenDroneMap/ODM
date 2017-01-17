@@ -326,9 +326,13 @@ class ODM_GeoRef(object):
 
 
 class ODM_Tree(object):
-    def __init__(self, root_path):
+    def __init__(self, root_path, images_path):
         # root path to the project
         self.root_path = io.absolute_path_file(root_path)
+        if not images_path:
+            self.input_images = io.join_paths(self.root_path, 'images')
+        else:
+            self.input_images = io.absolute_path_file(images_path)
 
         # modules paths
 
@@ -361,6 +365,8 @@ class ODM_Tree(object):
         self.odm_meshing_log = io.join_paths(self.odm_meshing, 'odm_meshing_log.txt')
 
         # texturing
+        self.odm_texturing_undistorted_image_path = io.join_paths(
+            self.odm_texturing, 'undistorted')
         self.odm_textured_model_obj = io.join_paths(
             self.odm_texturing, 'odm_textured_model.obj')
         self.odm_textured_model_mtl = io.join_paths(

@@ -112,6 +112,17 @@ struct GeorefCamera
 };
 
 /*!
+ * \brief   The GeorefBestTriplet struct is used to store the best triplet found.
+ */
+struct GeorefBestTriplet
+{
+    size_t t_;          /**< First ordinate of the best triplet found. **/
+    size_t s_;          /**< Second ordinate of the best triplet found. **/
+    size_t p_;          /**< Third ordinate of the best triplet found. **/
+    double err_;        /**< Error of this triplet. **/
+};
+
+/*!
  * \brief   The Georef class is used to transform a mesh into a georeferenced system.
  *          The class reads camera positions from a bundle file.
  *          The class reads the georefenced camera positions from a coords file.
@@ -197,9 +208,19 @@ private:
     void chooseBestGCPTriplet(size_t &gcp0, size_t &gcp1, size_t &gcp2);
 
     /*!
+     * \brief findBestGCPTriplet    Partitioned version of chooseBestGCPTriplet.
+     */
+    void findBestGCPTriplet(size_t &gcp0, size_t &gcp1, size_t &gcp2, size_t offset, size_t stride, double &minTotError);
+
+    /*!
      * \brief chooseBestCameraTriplet    Chooses the best triplet of cameras to use when making the model georeferenced.
      */
     void chooseBestCameraTriplet(size_t &cam0, size_t &cam1, size_t &cam2);
+
+    /*!
+     * \brief findBestCameraTriplet    Partitioned version of chooseBestCameraTriplet.
+     */
+    void findBestCameraTriplet(size_t &cam0, size_t &cam1, size_t &cam2, size_t offset, size_t stride, double &minTotError);
     
     /*!
       * \brief printGeorefSystem        Prints a file containing information about the georeference system, next to the ouptut file.
