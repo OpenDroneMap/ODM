@@ -2,7 +2,7 @@ import argparse
 import context
 
 # parse arguments
-processopts = ['resize', 'opensfm', 'cmvs', 'pmvs',
+processopts = ['resize', 'opensfm', 'slam', 'cmvs', 'pmvs',
                'odm_meshing', 'mvs_texturing', 'odm_georeferencing',
                'odm_orthophoto']
 
@@ -60,6 +60,14 @@ def config():
                        choices=processopts,
                        help=('Can be one of:' + ' | '.join(processopts)))
 
+    parser.add_argument('--video',
+                        metavar='<string>',
+                        help='Path to the video file to process')
+
+    parser.add_argument('--slam-config',
+                        metavar='<string>',
+                        help='Path to config file for orb-slam')
+
     parser.add_argument('--force-focal',
                         metavar='<positive float>',
                         type=float,
@@ -113,6 +121,13 @@ def config():
                         help='Distance threshold in meters to find pre-matching '
                              'images based on GPS exif data. Set to 0 to skip '
                              'pre-matching. Default: %(default)s')
+
+    parser.add_argument('--opensfm-processes',
+                        metavar='<positive integer>',
+                        default=context.num_cores,
+                        type=int,
+                        help=('The maximum number of processes to use in dense '
+                              'reconstruction. Default: %(default)s'))
 
     parser.add_argument('--use-opensfm-pointcloud',
                         action='store_true',
