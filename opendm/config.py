@@ -281,13 +281,6 @@ def config():
                         help=('Use this tag if you have a gcp_list.txt but '
                               'want to use the exif geotags instead'))
 
-    # Depreciated
-    parser.add_argument('--odm_georeferencing-useGcp',
-                        action='store_true',
-                        default=False,
-                        help='Enabling GCPs from the file above. The GCP file '
-                             'is not used by default.')
-
     parser.add_argument('--orthophoto-resolution',
                         metavar='<float > 0.0>',
                         default=20.0,
