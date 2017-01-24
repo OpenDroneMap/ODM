@@ -40,7 +40,7 @@ Current version: 0.2 (this software is in beta)
   - textured mesh model: odm_texturing/odm_textured_model_geo.obj
   - point cloud (georeferenced): odm_georeferencing/odm_georeferenced_model.ply
   
-See below for more detailed installation instructions. 
+See [here](https://github.com/OpenDroneMap/OpenDroneMap/tree/ebaaf802a1fb50e335b3807a35d00cba1e106d11#installation) for more detailed installation instructions. 
 
 ### Installation
 
