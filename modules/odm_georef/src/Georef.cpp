@@ -1500,6 +1500,7 @@ bool Georef::loadObjFile(std::string inputFile, pcl::TextureMesh &mesh)
     if (vt_idx != v_idx)
     {
         std::vector<Eigen::Vector2f> texcoordinates = std::vector<Eigen::Vector2f>(0);
+        texcoordinates.reserve(3*f_idx);
 
         for (size_t faceIndex = 0; faceIndex < f_idx; ++faceIndex)
         {
