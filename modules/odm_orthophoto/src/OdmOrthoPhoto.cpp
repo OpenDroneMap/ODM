@@ -397,10 +397,7 @@ void OdmOrthoPhoto::createOrthoPhoto()
         size_t vertexIndexCount = 0;
         for(size_t t = 0; t < mesh.tex_polygons.size(); ++t)
         {
-            for(size_t faceIndex = 0; faceIndex < mesh.tex_polygons[t].size(); ++faceIndex)
-            {
-                vertexIndexCount += 3;
-            }
+            vertexIndexCount += 3 * mesh.tex_polygons[t].size();
         }
         textureCoordinates.reserve(vertexIndexCount);
 
