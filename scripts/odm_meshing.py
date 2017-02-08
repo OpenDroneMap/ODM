@@ -54,6 +54,7 @@ class ODMeshingCell(ecto.Cell):
 
             kwargs = {
                 'bin': context.odm_modules_path,
+                'infile': tree.opensfm_model,
                 'outfile': tree.odm_mesh,
                 'log': tree.odm_meshing_log,
                 'max_vertex': self.params.max_vertex,
@@ -62,10 +63,6 @@ class ODMeshingCell(ecto.Cell):
                 'solver': self.params.solver,
                 'verbose': verbose
             }
-            if args.use_opensfm_pointcloud:
-                kwargs['infile'] = tree.opensfm_model
-            else:
-                kwargs['infile'] = tree.pmvs_model
 
             # run meshing binary
             system.run('{bin}/odm_meshing -inputFile {infile} '

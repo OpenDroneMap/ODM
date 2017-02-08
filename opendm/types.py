@@ -172,11 +172,6 @@ class ODM_GeoRef(object):
                   'epsg': self.epsg,
                   'xml': pdalXML}
 
-        # call txt2las
-        # system.run('{bin}/txt2las -i {f_in} -o {f_out} -skip 30 -parse xyzRGBssss ' \
-        #           '-set_scale 0.01 0.01 0.01 -set_offset {east} {north} 0 '  \
-        #           '-translate_xyz 0 -epsg {epsg}'.format(**kwargs))
-        #           
         # create pipeline file transform.xml to enable transformation
         pipelineXml = '<?xml version=\"1.0\" encoding=\"utf-8\"?>'
         pipelineXml += '<Pipeline version=\"1.0\">'
@@ -347,7 +342,6 @@ class ODM_Tree(object):
         self.dataset_raw = io.join_paths(self.root_path, 'images')
         self.dataset_resize = io.join_paths(self.root_path, 'images_resize')
         self.opensfm = io.join_paths(self.root_path, 'opensfm')
-        self.pmvs = io.join_paths(self.root_path, 'pmvs')
         self.odm_meshing = io.join_paths(self.root_path, 'odm_meshing')
         self.odm_texturing = io.join_paths(self.root_path, 'odm_texturing')
         self.odm_georeferencing = io.join_paths(self.root_path, 'odm_georeferencing')
@@ -365,13 +359,6 @@ class ODM_Tree(object):
         self.opensfm_image_list = io.join_paths(self.opensfm, 'image_list.txt')
         self.opensfm_reconstruction = io.join_paths(self.opensfm, 'reconstruction.json')
         self.opensfm_model = io.join_paths(self.opensfm, 'depthmaps/merged.ply')
-
-        # pmvs
-        self.pmvs_rec_path = io.join_paths(self.pmvs, 'recon0')
-        self.pmvs_bundle = io.join_paths(self.pmvs_rec_path, 'bundle.rd.out')
-        self.pmvs_visdat = io.join_paths(self.pmvs_rec_path, 'vis.dat')
-        self.pmvs_options = io.join_paths(self.pmvs_rec_path, 'pmvs_options.txt')
-        self.pmvs_model = io.join_paths(self.pmvs_rec_path, 'models/option-0000.ply')
 
         # odm_meshing
         self.odm_mesh = io.join_paths(self.odm_meshing, 'odm_mesh.ply')

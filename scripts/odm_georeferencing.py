@@ -104,13 +104,9 @@ class ODMGeoreferencingCell(ecto.Cell):
                 'model_geo': tree.odm_georeferencing_model_obj_geo,
                 'size': self.params.img_size,
                 'gcp': gcpfile,
-                'verbose': verbose
-
+                'verbose': verbose,
+                'pc': tree.opensfm_model
             }
-            if args.use_opensfm_pointcloud:
-                kwargs['pc'] = tree.opensfm_model
-            else:
-                kwargs['pc'] = tree.pmvs_model
 
             # Check to see if the GCP file exists
 
