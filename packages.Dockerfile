@@ -1,4 +1,4 @@
-FROM ubuntu:16.04
+FROM pdal/pdal:6ae5a93e8852
 MAINTAINER Alex Hagiopol <alex.hagiopol@icloud.com>
 
 # Env variables
