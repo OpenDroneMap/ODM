@@ -13,7 +13,8 @@ from scripts.odm_app import ODMApp
 
 
 def usage():
-    log.ODM_ERROR('USAGE: %s --project-path [project_path]' % sys.argv[0])
+    log.ODM_ERROR('You must specify a project name:')
+    log.ODM_ERROR('USAGE: %s [project name]' % sys.argv[0])
     log.ODM_ERROR('OpenDroneMap app finished - %s' % system.now())
     sys.exit(0)
 
@@ -24,11 +25,15 @@ if __name__ == '__main__':
 
     args = config.config()
 
+    # Check that args.name is a valid string
+
+    proj_dir = io.join_paths(args.project_path, args.name)
+
     # Force to provide the images path
     if args.project_path is None:
         usage()
-    elif not io.dir_exists(args.project_path):
-        log.ODM_WARNING('Directory %s does not exist. Creating it now.' % args.project_path)
+    if not io.dir_exists(args.name):
+        log.ODM_WARNING('Directory %s does not exist. Creating it now.' % args.name)
         system.mkdir_p(os.path.abspath(args.project_path))
 
     #If user asks to rerun everything, delete all of the existing progress directories.
