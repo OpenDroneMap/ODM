@@ -1,10 +1,15 @@
 import argparse
-import context
+from opendm import context
 
 # parse arguments
 processopts = ['resize', 'opensfm', 'slam', 'cmvs', 'pmvs',
                'odm_meshing', 'mvs_texturing', 'odm_georeferencing',
                'odm_orthophoto']
+
+# Load global settings file
+with open(context.settings_path) as stream:
+    datamap = yaml.safe_load(stream)
+    defaultSettings = datamap['settings']
 
 
 class RerunFrom(argparse.Action):
@@ -22,7 +27,8 @@ def config():
 
     parser.add_argument('--project-path',
                         metavar='<string>',
-                        help='Path to the project to process')
+                        help='Path to the project to process',
+                        default=defaultSettings[0]['project_path'])
 
     parser.add_argument('--resize-to',  # currently doesn't support 'orig'
                         metavar='<integer>',
@@ -124,14 +130,14 @@ def config():
 
     parser.add_argument('--opensfm-processes',
                         metavar='<positive integer>',
-                        default=context.num_cores,
+                        default=defaultSettings[2]['opensfm_processes'],
                         type=int,
                         help=('The maximum number of processes to use in dense '
                               'reconstruction. Default: %(default)s'))
 
     parser.add_argument('--use-opensfm-pointcloud',
                         action='store_true',
-                        default=False,
+                        default=defaultSettings[1]['opensfm_pointcloud'],
                         help='Use OpenSfM to compute the point cloud instead '
                              'of PMVS')
 
