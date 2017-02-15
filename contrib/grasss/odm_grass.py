@@ -117,7 +117,7 @@ def relief(projectHome):
         '$shadedRelief.red = if(isnull($orthophoto.red), 0, r#$shadedRelief)',
         '$shadedRelief.green = if(isnull($orthophoto.green), 0, g#$shadedRelief)',
         '$shadedRelief.blue = if(isnull($orthophoto.blue), 0, b#$shadedRelief)',
-        '$shadedRelief.alpa = if(isnull($orthophoto.alpha), 0, 255)'
+        '$shadedRelief.alpha = if(isnull($orthophoto.alpha), 0, 255)'
     ])
     gscript.mapcalc(calc, shadedRelief=shadedReliefName, orthophoto=orthophotoName, overwrite=overwrite)
 
