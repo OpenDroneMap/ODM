@@ -103,7 +103,7 @@ def relief(projectHome):
     Creates a textured relief map in GeoTIFF format.
     NB: this is an RGBA raster and so is readable by image software.
     """
-    print 'Create relief map'
+    print 'Creating relief map'
 
     gscript.run_command('r.in.gdal', flags='e', input=projectHome+'/odm_orthophoto/odm_orthophoto.tif', output=orthophotoName, memory=2047, overwrite=overwrite)
 
