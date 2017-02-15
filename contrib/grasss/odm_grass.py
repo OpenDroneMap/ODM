@@ -81,7 +81,7 @@ def dem(projectHome):
 
     gscript.run_command('v.surf.bspline', input=vlidarName, raster_output=rsurfName, ew_step=step, ns_step=step, method='bicubic', memory=4096, overwrite=overwrite)
 
-    gscript.run_command('r.out.gdal', flags='cf', input=rsurfName, output=projectHome+'/odm_georeferencing/odm_dem.tif', format='GTiff', type='Float32', createopt='TILED=yes,COMPRESS=DEFLATE,PREDICTOR=2,BLOCKXSIZE=512,BLOCKYSIZE=512', nodata=0, overwrite=overwrite)
+    gscript.run_command('r.out.gdal', flags='cfm', input=rsurfName, output=projectHome+'/odm_georeferencing/odm_dem.tif', format='GTiff', type='Float32', createopt='TILED=yes,COMPRESS=DEFLATE,PREDICTOR=2,BLOCKXSIZE=512,BLOCKYSIZE=512', nodata=0, overwrite=overwrite)
 
 
 
@@ -123,7 +123,7 @@ def relief(projectHome):
 
     gscript.run_command('i.group', group=shadedReliefName+'.group', input=shadedReliefName+'.red,'+shadedReliefName+'.green,'+shadedReliefName+'.blue,'+shadedReliefName+'.alpha')
 
-    gscript.run_command('r.out.gdal', flags='c', input=shadedReliefName+'.group', output=projectHome+'/odm_orthophoto/odm_relief.tif', format='GTiff', type='Byte', createopt='TILED=yes,COMPRESS=DEFLATE,PREDICTOR=2,BLOCKXSIZE=512,BLOCKYSIZE=512', nodata=0, overwrite=overwrite)
+    gscript.run_command('r.out.gdal', flags='cm', input=shadedReliefName+'.group', output=projectHome+'/odm_orthophoto/odm_relief.tif', format='GTiff', type='Byte', createopt='TILED=yes,COMPRESS=DEFLATE,PREDICTOR=2,BLOCKXSIZE=512,BLOCKYSIZE=512', nodata=0, overwrite=overwrite)
 
 
 
