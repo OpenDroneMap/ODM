@@ -3,7 +3,6 @@ import os
 
 from opendm import context
 from opendm import types
-from opendm import config
 from opendm import io
 from opendm import system
 
@@ -45,7 +44,7 @@ class ODMApp(ecto.BlackBox):
                  'opensfm': ODMOpenSfMCell(use_exif_size=False,
                                            feature_process_size=p.args.resize_to,
                                            feature_min_frames=p.args.min_num_features,
-                                           processes=context.num_cores,
+                                           processes=p.args.opensfm_processes,
                                            matching_gps_neighbors=p.args.matcher_neighbors,
                                            matching_gps_distance=p.args.matcher_distance),
                  'slam': ODMSlamCell(),
@@ -54,36 +53,32 @@ class ODMApp(ecto.BlackBox):
                                      csize=p.args.pmvs_csize,
                                      thresh=p.args.pmvs_threshold,
                                      wsize=p.args.pmvs_wsize,
-                                     min_imgs=p.args.pmvs_minImageNum,
+                                     min_imgs=p.args.pmvs_min_images,
                                      cores=p.args.pmvs_num_cores),
-                 'meshing': ODMeshingCell(max_vertex=p.args.odm_meshing_maxVertexCount,
-                                          oct_tree=p.args.odm_meshing_octreeDepth,
-                                          samples=p.args.odm_meshing_samplesPerNode,
-                                          solver=p.args.odm_meshing_solverDivide,
+                 'meshing': ODMeshingCell(max_vertex=p.args.mesh_size,
+                                          oct_tree=p.args.mesh_octree_depth,
+                                          samples=p.args.mesh_samples,
+                                          solver=p.args.mesh_solver_divide,
                                           verbose=p.args.verbose),
-                 'texturing': ODMMvsTexCell(data_term=p.args.mvs_texturing_dataTerm,
-                                            outlier_rem_type=p.args.mvs_texturing_outlierRemovalType,
-                                            skip_vis_test=p.args.mvs_texturing_skipGeometricVisibilityTest,
-                                            skip_glob_seam_leveling=p.args.mvs_texturing_skipGlobalSeamLeveling,
-                                            skip_loc_seam_leveling=p.args.mvs_texturing_skipLocalSeamLeveling,
-                                            skip_hole_fill=p.args.mvs_texturing_skipHoleFilling,
-                                            keep_unseen_faces=p.args.mvs_texturing_keepUnseenFaces),
-# Old odm_texturing
-#                 'texturing': ODMTexturingCell(resize=p.args['resize_to'],
-#                                               resolution=p.args['odm_texturing_textureResolution'],
+                 'texturing': ODMMvsTexCell(data_term=p.args.texturing_data_term,
+                                            outlier_rem_type=p.args.texturing_outlier_removal_type,
+                                            skip_vis_test=p.args.texturing_skip_visibility_test,
+                                            skip_glob_seam_leveling=p.args.texturing_skip_global_seam_leveling,
+                                            skip_loc_seam_leveling=p.args.texturing_skip_local_seam_leveling,
+                                            skip_hole_fill=p.args.texturing_skip_hole_filling,
+                                            keep_unseen_faces=p.args.texturing_keep_unseen_faces),
                  'georeferencing': ODMGeoreferencingCell(img_size=p.args.resize_to,
-                                                         gcp_file=p.args.odm_georeferencing_gcpFile,
-                                                         use_gcp=p.args.odm_georeferencing_useGcp,
+                                                         gcp_file=p.args.gcp,
+                                                         use_exif=p.args.use_exif,
                                                          verbose=p.args.verbose),
-                 'orthophoto': ODMOrthoPhotoCell(resolution=p.args.odm_orthophoto_resolution,
-                                                         verbose=p.args.verbose)
-
-                }
+                 'orthophoto': ODMOrthoPhotoCell(resolution=p.args.orthophoto_resolution,
+                                                 verbose=p.args.verbose)
+                 }
 
         return cells
 
     def configure(self, p, _i, _o):
-        tree = types.ODM_Tree(p.args.project_path)
+        tree = types.ODM_Tree(p.args.project_path, p.args.images)
         self.tree = ecto.Constant(value=tree)
 
         # TODO(dakota) put this somewhere better maybe

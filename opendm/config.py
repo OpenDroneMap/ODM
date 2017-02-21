@@ -16,6 +16,10 @@ parser = argparse.ArgumentParser(description='OpenDroneMap')
 
 
 def config():
+    parser.add_argument('--images', '-i',
+                        metavar='<string>',
+                        help='Path to input images'),
+
     parser.add_argument('--project-path',
                         metavar='<string>',
                         help='Path to the project to process')
@@ -118,6 +122,13 @@ def config():
                              'images based on GPS exif data. Set to 0 to skip '
                              'pre-matching. Default: %(default)s')
 
+    parser.add_argument('--opensfm-processes',
+                        metavar='<positive integer>',
+                        default=context.num_cores,
+                        type=int,
+                        help=('The maximum number of processes to use in dense '
+                              'reconstruction. Default: %(default)s'))
+
     parser.add_argument('--use-pmvs',
                         action='store_true',
                         default=False,
@@ -166,7 +177,7 @@ def config():
                              'value leads to more stable reconstructions, but '
                              'the program becomes slower. Default: %(default)s')
 
-    parser.add_argument('--pmvs-minImageNum',
+    parser.add_argument('--pmvs-min-images',
                         metavar='<positive integer>',
                         default=3,
                         type=int,
@@ -181,14 +192,14 @@ def config():
                         help=('The maximum number of cores to use in dense '
                               'reconstruction. Default: %(default)s'))
 
-    parser.add_argument('--odm_meshing-maxVertexCount',
+    parser.add_argument('--mesh-size',
                         metavar='<positive integer>',
                         default=100000,
                         type=int,
                         help=('The maximum vertex count of the output mesh '
                               'Default: %(default)s'))
 
-    parser.add_argument('--odm_meshing-octreeDepth',
+    parser.add_argument('--mesh-octree-depth',
                         metavar='<positive integer>',
                         default=9,
                         type=int,
@@ -196,14 +207,14 @@ def config():
                               'increase to get more vertices, recommended '
                               'values are 8-12. Default: %(default)s'))
 
-    parser.add_argument('--odm_meshing-samplesPerNode',
+    parser.add_argument('--mesh-samples',
                         metavar='<float >= 1.0>',
                         default=1.0,
                         type=float,
                         help=('Number of points per octree node, recommended '
                               'and default value: %(default)s'))
 
-    parser.add_argument('--odm_meshing-solverDivide',
+    parser.add_argument('--mesh-solver-divide',
                         metavar='<positive integer>',
                         default=9,
                         type=int,
@@ -213,78 +224,64 @@ def config():
                               'times slightly but helps reduce memory usage. '
                               'Default: %(default)s'))
 
-    parser.add_argument('--mvs_texturing-dataTerm',
+    parser.add_argument('--texturing-data-term',
                         metavar='<string>',
                         default='gmi',
-                        help=('Data term: [area, gmi]. Default:  %(default)s'))
+                        help=('Data term: [area, gmi]. Default: '
+                              '%(default)s'))
 
-    parser.add_argument('--mvs_texturing-outlierRemovalType',
+    parser.add_argument('--texturing-outlier-removal-type',
                         metavar='<string>',
                         default='none',
                         help=('Type of photometric outlier removal method: ' 
                               '[none, gauss_damping, gauss_clamping]. Default: '  
                               '%(default)s'))
 
-    parser.add_argument('--mvs_texturing-skipGeometricVisibilityTest',
+    parser.add_argument('--texturing-skip-visibility-test',
                         action='store_true',
                         default=False,
-                        help=('Skip geometric visibility test. Default:  %(default)s'))
+                        help=('Skip geometric visibility test. Default: '
+                              ' %(default)s'))
 
-    parser.add_argument('--mvs_texturing-skipGlobalSeamLeveling',
+    parser.add_argument('--texturing-skip-global-seam-leveling',
                         action='store_true',
                         default=False,
-                        help=('Skip geometric visibility test. Default:  %(default)s'))
+                        help=('Skip global seam leveling. Useful for IR data.'
+                              'Default: %(default)s'))
 
-    parser.add_argument('--mvs_texturing-skipLocalSeamLeveling',
+    parser.add_argument('--texturing-skip-local-seam-leveling',
                         action='store_true',
                         default=False,
-                        help=('Skip local seam blending. Default:  %(default)s'))
+                        help='Skip local seam blending. Default:  %(default)s')
 
-    parser.add_argument('--mvs_texturing-skipHoleFilling',
+    parser.add_argument('--texturing-skip-hole-filling',
                         action='store_true',
                         default=False,
-                        help=('Skip filling of holes in the mesh. Default:  %(default)s'))
+                        help=('Skip filling of holes in the mesh. Default: '
+                              ' %(default)s'))
 
-    parser.add_argument('--mvs_texturing-keepUnseenFaces',
+    parser.add_argument('--texturing-keep-unseen-faces',
                         action='store_true',
                         default=False,
                         help=('Keep faces in the mesh that are not seen in any camera. ' 
                               'Default:  %(default)s'))
 
-    # Old odm_texturing arguments
-
-    parser.add_argument('--odm_texturing-textureResolution',
-                        metavar='<positive integer>',
-                        default=4096,
-                        type=int,
-                        help=('The resolution of the output textures. Must be '
-                              'greater than textureWithSize. Default: %(default)s'))
-
-    parser.add_argument('--odm_texturing-textureWithSize',
-                        metavar='<positive integer>',
-                        default=3600,
-                        type=int,
-                        help=('The resolution to rescale the images performing '
-                              'the texturing. Default: %(default)s'))
-
-    # End of old odm_texturing arguments
-
-    parser.add_argument('--odm_georeferencing-gcpFile',
+    parser.add_argument('--gcp',
                         metavar='<path string>',
-                        default='gcp_list.txt',
+                        default=None,
                         help=('path to the file containing the ground control '
                               'points used for georeferencing.  Default: '
                               '%(default)s. The file needs to '
                               'be on the following line format: \neasting '
                               'northing height pixelrow pixelcol imagename'))
 
-    parser.add_argument('--odm_georeferencing-useGcp',
+    parser.add_argument('--use-exif',
                         action='store_true',
                         default=False,
-                        help='Enabling GCPs from the file above. The GCP file '
-                             'is not used by default.')
+                        help=('Use this tag if you have a gcp_list.txt but '
+                              'want to use the exif geotags instead'))
 
-    parser.add_argument('--odm_orthophoto-resolution',
+    parser.add_argument('--orthophoto-resolution',
                         metavar='<float > 0.0>',
                         default=20.0,
                         type=float,
