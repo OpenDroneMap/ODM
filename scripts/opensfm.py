@@ -48,7 +48,7 @@ class ODMOpenSfMCell(ecto.Cell):
                      (args.rerun_from is not None and
                       'opensfm' in args.rerun_from)
 
-        if args.use_opensfm_pointcloud:
+        if not args.use_pmvs:
             output_file = tree.opensfm_model
         else:
             output_file = tree.opensfm_reconstruction
@@ -81,7 +81,7 @@ class ODMOpenSfMCell(ecto.Cell):
             # run OpenSfM reconstruction
             system.run('PYTHONPATH=%s %s/bin/run_all %s' %
                        (context.pyopencv_path, context.opensfm_path, tree.opensfm))
-            if args.use_opensfm_pointcloud:
+            if not args.use_pmvs:
                 system.run('PYTHONPATH=%s %s/bin/opensfm export_visualsfm %s' %
                            (context.pyopencv_path, context.opensfm_path, tree.opensfm))
                 system.run('PYTHONPATH=%s %s/bin/opensfm undistort %s' %
@@ -101,7 +101,7 @@ class ODMOpenSfMCell(ecto.Cell):
             log.ODM_WARNING('Found a valid Bundler file in: %s' %
                             tree.opensfm_reconstruction)
 
-        if not args.use_opensfm_pointcloud:
+        if args.use_pmvs:
             # check if reconstruction was exported to pmvs before
             if not io.file_exists(tree.pmvs_visdat) or rerun_cell:
                 # run PMVS converter
