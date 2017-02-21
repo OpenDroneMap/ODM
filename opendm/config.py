@@ -232,7 +232,7 @@ def config():
 
     parser.add_argument('--texturing-outlier-removal-type',
                         metavar='<string>',
-                        default='none',
+                        default='gauss_clamping',
                         help=('Type of photometric outlier removal method: ' 
                               '[none, gauss_damping, gauss_clamping]. Default: '  
                               '%(default)s'))
