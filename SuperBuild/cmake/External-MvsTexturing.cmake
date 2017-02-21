@@ -9,7 +9,7 @@ ExternalProject_Add(${_proj_name}
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
   URL               https://github.com/nmoehrle/mvs-texturing/archive/e695a29505c74be570b8bbb87cf42f5b1611cf60.zip
-  #URL_MD5           0b0466f5d1046699594ce7fc77bdad02
+  URL_MD5           D11FA3052CEBBF6D34D2072BED6C29FD
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   #--Configure step-------------
