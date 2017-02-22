@@ -266,6 +266,14 @@ def config():
                         help=('Keep faces in the mesh that are not seen in any camera. ' 
                               'Default:  %(default)s'))
 
+    parser.add_argument('--texturing-tone-mapping',
+                        metavar='<string>',
+                        choices=['none', 'gamma'],
+                        default='gamma',
+                        help='Turn on gamma tone mapping or none for no tone '
+                             'mapping. Choices are  \'gamma\' or \'none\'. '
+                             'Default: %(default)s ')
+
     parser.add_argument('--gcp',
                         metavar='<path string>',
                         default=None,
