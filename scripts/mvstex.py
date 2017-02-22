@@ -16,6 +16,7 @@ class ODMMvsTexCell(ecto.Cell):
         params.declare("skip_loc_seam_leveling", 'Skip local seam leveling (Poisson editing).', False)
         params.declare("skip_hole_fill", 'Skip hole filling.', False)
         params.declare("keep_unseen_faces", 'Keep unseen faces.', False)
+        params.declare("tone_mapping", 'Type of tone mapping: [none, gamma]. Default: gamma', "gamma")
 
     def declare_io(self, params, inputs, outputs):
         inputs.declare("tree", "Struct with paths", [])
@@ -68,7 +69,7 @@ class ODMMvsTexCell(ecto.Cell):
                 skipHoleFilling = "--skip_hole_filling"
             if (self.params.keep_unseen_faces):
                 keepUnseenFaces = "--keep_unseen_faces"
-            
+
             # mvstex definitions
             kwargs = {
                 'bin': context.mvstex_path,
@@ -82,7 +83,8 @@ class ODMMvsTexCell(ecto.Cell):
                 'skipGlobalSeamLeveling': skipGlobalSeamLeveling,
                 'skipLocalSeamLeveling': skipLocalSeamLeveling,
                 'skipHoleFilling': skipHoleFilling,
-                'keepUnseenFaces': keepUnseenFaces
+                'keepUnseenFaces': keepUnseenFaces,
+                'toneMapping': self.params.tone_mapping
             }
 
             if not args.use_pmvs:
@@ -99,6 +101,7 @@ class ODMMvsTexCell(ecto.Cell):
             # run texturing binary
             system.run('{bin} {nvm_file} {model} {out_dir} '
                        '-d {dataTerm} -o {outlierRemovalType} '
+                       '-t {toneMapping} '
                        '{skipGeometricVisibilityTest} '
                        '{skipGlobalSeamLeveling} '
                        '{skipLocalSeamLeveling} '
