@@ -1,0 +1,6 @@
+---
+# A list of global configuration variables
+settings:
+    - project_path: '/code/'
+    - opensfm_pointcloud: True
+    - opensfm_processes: 4
