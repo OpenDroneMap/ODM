@@ -85,7 +85,7 @@ class ODMMvsTexCell(ecto.Cell):
                 'keepUnseenFaces': keepUnseenFaces
             }
 
-            if args.use_opensfm_pointcloud:
+            if not args.use_pmvs:
                 kwargs['nvm_file'] = io.join_paths(tree.opensfm,
                                                    "reconstruction.nvm")
             else:

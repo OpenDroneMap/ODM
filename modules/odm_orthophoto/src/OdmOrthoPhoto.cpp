@@ -397,6 +397,12 @@ void OdmOrthoPhoto::createOrthoPhoto()
         size_t vertexIndexCount = 0;
         for(size_t t = 0; t < mesh.tex_polygons.size(); ++t)
         {
+            vertexIndexCount += 3 * mesh.tex_polygons[t].size();
+        }
+        textureCoordinates.reserve(vertexIndexCount);
+
+        for(size_t t = 0; t < mesh.tex_polygons.size(); ++t)
+        {
 
             for(size_t faceIndex = 0; faceIndex < mesh.tex_polygons[t].size(); ++faceIndex)
             {
@@ -419,17 +425,14 @@ void OdmOrthoPhoto::createOrthoPhoto()
                 meshCloudSplit->points.push_back(v1);
                 textureCoordinates.push_back(vt1);
                 mesh.tex_polygons[t][faceIndex].vertices[0] = vertexIndexCount;
-                ++vertexIndexCount;
 
                 meshCloudSplit->points.push_back(v2);
                 textureCoordinates.push_back(vt2);
                 mesh.tex_polygons[t][faceIndex].vertices[1] = vertexIndexCount;
-                ++vertexIndexCount;
 
                 meshCloudSplit->points.push_back(v3);
                 textureCoordinates.push_back(vt3);
                 mesh.tex_polygons[t][faceIndex].vertices[2] = vertexIndexCount;
-                ++vertexIndexCount;
             }
         }
 
@@ -450,6 +453,7 @@ void OdmOrthoPhoto::createOrthoPhoto()
 
     // Flatten texture coordinates.
     std::vector<Eigen::Vector2f> uvs;
+    uvs.reserve(mesh.tex_coordinates.size());
     for(size_t t = 0; t < mesh.tex_coordinates.size(); ++t)
     {
         uvs.insert(uvs.end(), mesh.tex_coordinates[t].begin(), mesh.tex_coordinates[t].end());
@@ -1240,6 +1244,7 @@ bool OdmOrthoPhoto::loadObjFile(std::string inputFile, pcl::TextureMesh &mesh)
     if (vt_idx != v_idx)
     {
         std::vector<Eigen::Vector2f> texcoordinates = std::vector<Eigen::Vector2f>(0);
+        texcoordinates.reserve(3*f_idx);
 
         for (size_t faceIndex = 0; faceIndex < f_idx; ++faceIndex)
         {

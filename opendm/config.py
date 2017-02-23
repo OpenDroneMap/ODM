@@ -129,7 +129,7 @@ def config():
                         help=('The maximum number of processes to use in dense '
                               'reconstruction. Default: %(default)s'))
 
-    parser.add_argument('--use-opensfm-pointcloud',
+    parser.add_argument('--use-pmvs',
                         action='store_true',
                         default=False,
                         help='Use OpenSfM to compute the point cloud instead '
@@ -232,7 +232,7 @@ def config():
 
     parser.add_argument('--texturing-outlier-removal-type',
                         metavar='<string>',
-                        default='none',
+                        default='gauss_clamping',
                         help=('Type of photometric outlier removal method: ' 
                               '[none, gauss_damping, gauss_clamping]. Default: '  
                               '%(default)s'))
