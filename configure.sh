@@ -9,11 +9,16 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$RUNPATH/SuperBuild/install/lib
 echo "Updating the system"
 sudo apt-get update
 
+sudo add-apt-repository -y ppa:ubuntugis/ppa
+sudo apt-get update
+
 echo "Installing Required Requisites"
 sudo apt-get install -y -qq build-essential \
                      git \
                      cmake \
                      python-pip \
+                     libgdal-dev \
+                     gdal-bin \
                      libgeotiff-dev \
                      pkg-config
 
