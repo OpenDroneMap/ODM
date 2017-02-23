@@ -14,8 +14,6 @@ sudo apt-get install -y -qq build-essential \
                      git \
                      cmake \
                      python-pip \
-                     libgdal-dev \
-                     gdal-bin \
                      libgeotiff-dev \
                      pkg-config
 
