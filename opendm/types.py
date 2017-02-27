@@ -184,6 +184,9 @@ class ODM_GeoRef(object):
         pipelineXml += '    <Option name=\"filename\">'
         pipelineXml += '      transformed.las'
         pipelineXml += '    </Option>'
+        pipelineXml += '    <Option name=\"a_srs\">'
+        pipelineXml += '      EPSG:{epsg}'.format(**kwargs)
+        pipelineXml += '    </Option>'
         pipelineXml += '    <Filter type=\"filters.transformation\">'
         pipelineXml += '      <Option name=\"matrix\">'
         pipelineXml += '        1  0  0  {east}'.format(**kwargs)
