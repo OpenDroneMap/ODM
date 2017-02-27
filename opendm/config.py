@@ -269,7 +269,7 @@ def config():
     parser.add_argument('--texturing-tone-mapping',
                         metavar='<string>',
                         choices=['none', 'gamma'],
-                        default='gamma',
+                        default='none',
                         help='Turn on gamma tone mapping or none for no tone '
                              'mapping. Choices are  \'gamma\' or \'none\'. '
                              'Default: %(default)s ')
