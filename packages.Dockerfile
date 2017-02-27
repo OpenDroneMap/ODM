@@ -4,6 +4,10 @@ MAINTAINER Alex Hagiopol <alex.hagiopol@icloud.com>
 # Env variables
 ENV DEBIAN_FRONTEND noninteractive
 
+# Add ubuntugis/ppa
+RUN add-apt-repository -y ppa:ubuntugis/ppa
+RUN apt-get update
+
 #Install dependencies
 #Required Requisites
 RUN apt-get update \
