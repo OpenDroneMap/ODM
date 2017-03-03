@@ -4,6 +4,10 @@ MAINTAINER Alex Hagiopol <alex.hagiopol@icloud.com>
 # Env variables
 ENV DEBIAN_FRONTEND noninteractive
 
+## Ubuntu apt-get update
+RUN apt-get update
+RUN apt-get install -y  software-properties-common
+
 # Add ubuntugis/ppa
 RUN add-apt-repository -y ppa:ubuntugis/ppa
 RUN apt-get update
