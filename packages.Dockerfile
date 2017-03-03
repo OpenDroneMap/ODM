@@ -4,10 +4,6 @@ MAINTAINER Alex Hagiopol <alex.hagiopol@icloud.com>
 # Env variables
 ENV DEBIAN_FRONTEND noninteractive
 
-# Add ubuntugis/ppa
-RUN add-apt-repository -y ppa:ubuntugis/ppa
-RUN apt-get update
-
 #Install dependencies
 #Required Requisites
 RUN apt-get update \
@@ -16,9 +12,6 @@ RUN apt-get update \
        cmake \
        git \
        python-pip \
-       libgdal-dev \
-       gdal-bin \
-       libgeotiff-dev \
        pkg-config
 
 #CMake 3.1 for MVS-Texturing
@@ -26,6 +19,17 @@ RUN apt-get install -y software-properties-common python-software-properties
 RUN add-apt-repository -y ppa:george-edison55/cmake-3.x
 RUN apt-get update -y
 RUN apt-get install -y --only-upgrade cmake
+
+# Install geo-related depends 
+# Add ubuntugis/ppa
+RUN add-apt-repository -y ppa:ubuntugis/ppa
+RUN apt-get update
+
+RUN apt-get update \
+    && apt-get install -y -qq \
+       libgdal-dev \
+       gdal-bin \
+       libgeotiff-dev 
 
 #Installing OpenCV Dependencies
 RUN apt-get install -y -qq libgtk2.0-dev \
