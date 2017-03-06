@@ -6,7 +6,8 @@ def loadMesh(file):
     bpy.utils.register_module('materials_utils')
 
     bpy.ops.import_scene.obj(filepath=file,
-                             axis_forward='Y', axis_up='Z')
+                             axis_forward='Y',
+                             axis_up='Z')
 
     bpy.ops.xps_tools.convert_to_cycles_all()
 
