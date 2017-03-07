@@ -19,3 +19,4 @@ ceres-solver.tar.gz
 *.pyc
 pcl.tar.gz
 opencv.zip
+settings.yaml

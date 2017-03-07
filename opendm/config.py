@@ -1,5 +1,6 @@
 import argparse
 from opendm import context
+import yaml
 
 # parse arguments
 processopts = ['resize', 'opensfm', 'slam', 'cmvs', 'pmvs',
@@ -11,12 +12,14 @@ with open(context.settings_path) as stream:
     datamap = yaml.safe_load(stream)
     defaultSettings = datamap['settings']
 
+
 def alphanumeric_string(string):
     import re
-    if re.match('^[a-zA-Z0-9]+$', str) is None:
+    if re.match('^[a-zA-Z0-9]+$', string) is None:
         msg = '{0} is not a valid name. Must use alphanumeric characters.'.format(string)
         raise argparse.ArgumentTypeError(msg)
     return string
+
 
 class RerunFrom(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
@@ -28,16 +31,16 @@ parser = argparse.ArgumentParser(description='OpenDroneMap')
 
 def config():
     parser.add_argument('--images', '-i',
-                        metavar='<string>',
+                        metavar='<path>',
                         help='Path to input images'),
 
     parser.add_argument('--project-path',
-                        metavar='<string>',
-                        help='Path to the project to process',
+                        metavar='<path>',
+                        help='Path to the project folder',
                         default=defaultSettings[0]['project_path'])
 
     parser.add_argument('name',
-                        metavar='<string>',
+                        metavar='<project name>',
                         type=alphanumeric_string,
                         help='Name of Project (i.e subdirectory of projects folder)')
 
