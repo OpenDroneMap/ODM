@@ -25,14 +25,12 @@ if __name__ == '__main__':
 
     args = config.config()
 
-    # Check that args.name is a valid string
-
-    proj_dir = io.join_paths(args.project_path, args.name)
 
     # Force to provide the images path
     if args.project_path is None:
         usage()
-    if not io.dir_exists(args.name):
+    args.project_path = io.join_paths(args.project_path, args.name)
+    if not io.dir_exists(args.project_path):
         log.ODM_WARNING('Directory %s does not exist. Creating it now.' % args.name)
         system.mkdir_p(os.path.abspath(args.project_path))
 

@@ -33,8 +33,9 @@ Current version: 0.2 (this software is in beta)
 
 1. Extract and enter the OpenDroneMap directory
 2. Run `bash configure.sh`
-3. Download and extract a sample dataset [here](https://github.com/OpenDroneMap/odm_data_aukerman/archive/master.zip)
-4. Run `./run.sh --project-path <PATH>`, replacing `<PATH>` with the dataset path. 
+4. Copy the default settings file and edit it: `cp default.settings.yaml settings.yaml`. Set the `project-path` value to an empty directory (you will place sub-directories containing individual projects inside). You can add many options to this file, [see here](https://github.com/OpenDroneMap/OpenDroneMap/wiki/Run-Time-Parameters)
+3. Download a sample dataset from [here](https://github.com/OpenDroneMap/odm_data_aukerman/archive/master.zip) (about 550MB) and extract it as a subdirectory in your project directory.
+4. Run `./run.sh odm_data_aukerman` 
 5. Enter dataset directory to view results: 
   - orthophoto: odm_orthophoto/odm_orthophoto.tif
   - textured mesh model: odm_texturing/odm_textured_model_geo.obj
@@ -65,13 +66,24 @@ Note that using `run.sh` sets these temporarily in the shell.
     
 ### Run OpenDroneMap
 
-First you need a set of images, taken from a drone or otherwise. Example data can be cloned from https://github.com/OpenDroneMap/odm_data
+First you need a set of images, taken from a drone or otherwise. Example data can be obtained from https://github.com/OpenDroneMap/odm_data
+
+Next, you need to copy over the settings file `default.settings.yaml` and edit it. The only setting you must edit is the `project-path` key. Set this to an empty directory within projects will be saved. There are many options for tuning your project. See the [wiki](https://github.com/OpenDroneMap/OpenDroneMap/wiki/Run-Time-Parameters) or run `python run.py -h`
+
 
 Then run:
 
-    python run.py --project-path /path/to/project -i /path/to/images
+    python run.py -i /path/to/images project-name
 
-The images will be copied over to the project path so you only need to specify the `-i /path/` once. There are many options for tuning your project. See the [wiki](https://github.com/OpenDroneMap/OpenDroneMap/wiki/Run-Time-Parameters) or run `python run.py -h`
+The images will be copied over to the project path so you only need to specify the `-i /path/` once. You can also override any variable from settings.yaml here using the command line arguments. If you want to rerun the whole thing, run
+
+    python run.py --rerun-all project-name
+    
+or
+
+    python run.py --rerun-from odm_meshing project-name
+
+The options for rerunning are: 'resize', 'opensfm', 'slam', 'cmvs', 'pmvs', 'odm_meshing', 'mvs_texturing', 'odm_georeferencing', 'odm_orthophoto'
 
 ### View Results
 
@@ -85,10 +97,8 @@ When the process finishes, the results will be organized as follows:
         |-- ...
     |-- opensfm/
         |-- see mapillary/opensfm repository for more info
-    |-- pmvs/
-        |-- recon0/
-            |-- models/
-                |-- option-0000.ply         # Dense point cloud (not georeferenced)
+        |-- depthmaps/
+            |-- merged.ply                  # Dense Point cloud (not georeferenced)
     |-- odm_meshing/
         |-- odm_mesh.ply                    # A 3D mesh
         |-- odm_meshing_log.txt             # Output of the meshing task. May point out errors.
@@ -102,13 +112,13 @@ When the process finishes, the results will be organized as follows:
         |-- odm_georeferenced_model.csv     # XYZ format point cloud
         |-- odm_georeferencing_log.txt      # Georeferencing log
         |-- odm_georeferencing_utm_log.txt  # Log for the extract_utm portion
-    |-- odm_georeferencing/
+    |-- odm_orthophoto/
         |-- odm_orthophoto.png              # Orthophoto image (no coordinates)
         |-- odm_orthophoto.tif              # Orthophoto GeoTiff
         |-- odm_orthophoto_log.txt          # Log file
         |-- gdal_translate_log.txt          # Log for georeferencing the png file
 
-Any file ending in .obj or .ply can be opened and viewed in [MeshLab](http://meshlab.sourceforge.net/) or similar software. That includes `pmvs/recon0/models/option-000.ply`, `odm_meshing/odm_mesh.ply`, `odm_texturing/odm_textured_model[_geo].obj`, or `odm_georeferencing/odm_georeferenced_model.ply`. Below is an example textured mesh:
+Any file ending in .obj or .ply can be opened and viewed in [MeshLab](http://meshlab.sourceforge.net/) or similar software. That includes `opensfm/depthmaps/merged.ply`, `odm_meshing/odm_mesh.ply`, `odm_texturing/odm_textured_model[_geo].obj`, or `odm_georeferencing/odm_georeferenced_model.ply`. Below is an example textured mesh:
 
 ![](https://raw.githubusercontent.com/alexhagiopol/OpenDroneMap/feature-better-docker/toledo_dataset_example_mesh.jpg)
 
