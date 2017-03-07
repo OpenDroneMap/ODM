@@ -66,7 +66,8 @@ class ODMApp(ecto.BlackBox):
                                             skip_glob_seam_leveling=p.args.texturing_skip_global_seam_leveling,
                                             skip_loc_seam_leveling=p.args.texturing_skip_local_seam_leveling,
                                             skip_hole_fill=p.args.texturing_skip_hole_filling,
-                                            keep_unseen_faces=p.args.texturing_keep_unseen_faces),
+                                            keep_unseen_faces=p.args.texturing_keep_unseen_faces,
+                                            tone_mapping=p.args.texturing_tone_mapping),
                  'georeferencing': ODMGeoreferencingCell(img_size=p.args.resize_to,
                                                          gcp_file=p.args.gcp,
                                                          use_exif=p.args.use_exif,
@@ -112,7 +113,7 @@ class ODMApp(ecto.BlackBox):
                         self.args[:] >> self.opensfm['args'],
                         self.resize['photos'] >> self.opensfm['photos']]
 
-        if _p.args.use_opensfm_pointcloud:
+        if not _p.args.use_pmvs:
             # create odm mesh from opensfm point cloud
             connections += [self.tree[:] >> self.meshing['tree'],
                             self.args[:] >> self.meshing['args'],
