@@ -1,0 +1,7 @@
+---
+# A list of global configuration variables
+# Copy this file and rename to settings.yaml to override. You can also place the a settings.yaml
+# file with the same format inside your project to more specific parameter needs.
+settings:
+    - project_path: '/project'
+    - opensfm_processes: 4  # Set this to nproc-2 for large datasets

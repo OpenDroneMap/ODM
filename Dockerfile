@@ -2,7 +2,7 @@
 FROM packages
 
 # Prepare directories
-RUN mkdir /code
+RUN mkdir /code && mkdir /project
 WORKDIR /code
 
 # Copy repository files
@@ -19,6 +19,7 @@ COPY run.py /code/run.py
 COPY /scripts/ /code/scripts/
 COPY /SuperBuild/cmake/ /code/SuperBuild/cmake/
 COPY /SuperBuild/CMakeLists.txt /code/SuperBuild/CMakeLists.txt
+COPY docker.settings.yaml /code/settings.yaml
 COPY /tests/ /code/tests/
 
 # Update submodules
