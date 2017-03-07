@@ -5,8 +5,9 @@
 # blender -b photo_360.blend --python odm_video.py -- <project-path> <camera-waypoints.xyz> <number-of-frames>
 
 import sys
-import bpy
 import subprocess
+import os
+import bpy
 from common import loadMesh
 
 
@@ -30,6 +31,7 @@ def main():
     # create path thru waypoints
     curve = bpy.data.curves.new(name='CameraPath', type='CURVE')
     curve.dimensions = '3D'
+    curve.twist_mode = 'Z_UP'
     nurbs = curve.splines.new('NURBS')
     nurbs.points.add(numWaypoints-1)
     weight = 1
@@ -52,18 +54,37 @@ def main():
     followPath.use_curve_follow = True
     animateContext = bpy.context.copy()
     animateContext['constraint'] = followPath
-    bpy.ops.constraint.followpath_path_animate(animateContext, constraint='CameraFollowPath')
+    bpy.ops.constraint.followpath_path_animate(animateContext,
+                                               constraint='CameraFollowPath',
+                                               frame_start=0,
+                                               length=numFrames)
 
     blendName = bpy.path.display_name_from_filepath(bpy.data.filepath)
     fileName = projectHome + '/odm_video/odm_' + blendName.replace('photo', 'video')
     scene.frame_start = 0
-    scene.frame_end = numFrames - 1
+    scene.frame_end = numFrames
     render = scene.render
-    render.filepath = fileName
+    render.filepath = fileName + '.mp4'
+    render.image_settings.file_format = 'FFMPEG'
+    if(render.use_multiview):
+        render.image_settings.stereo_3d_format.display_mode = 'TOPBOTTOM'
+        render.image_settings.views_format = 'STEREO_3D'
+        render.views[0].file_suffix = ''
+        format3d = 'top-bottom'
+    else:
+        width = render.resolution_x
+        height = render.resolution_y
+        format3d = 'none'
     render.resolution_x = 4096
     render.resolution_y = 2048
-    render.image_settings.file_format = 'FFMPEG'
-    #bpy.ops.render.render(animation=True)
+
+    render.ffmpeg.audio_codec = 'AAC'
+    render.ffmpeg.codec = 'H264'
+    render.ffmpeg.format = 'MPEG4'
+    render.ffmpeg.video_bitrate = 45000
+    bpy.ops.render.render(animation=True)
+
+    writeMetadata(fileName+'.mp4', format3d)
 
 
 def loadWaypoints(filename):
@@ -73,6 +94,19 @@ def loadWaypoints(filename):
            xyz = line.split()
            waypoints.append((float(xyz[0]), float(xyz[1]), float(xyz[2])))
     return waypoints
+
+
+def writeMetadata(filename, format3d):
+    subprocess.run(['python',
+                    'spatialmedia',
+                    '-i',
+                    '--stereo='+format3d,
+                    filename,
+                    filename+'.injected'])
+    # check metadata injector was succesful
+    if os.path.exists(filename+'.injected'):
+        os.remove(filename)
+        os.rename(filename+'.injected', filename)
 
 
 if __name__ == '__main__':
