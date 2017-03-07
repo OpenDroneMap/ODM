@@ -136,14 +136,14 @@ installed on your machine. Docker software is free to install and use in this co
 see the [Docker Ubuntu installation tutorial](https://docs.docker.com/engine/installation/linux/ubuntulinux/) and follow the
 instructions through "Create a Docker group". Once Docker is installed, the fastest way to use OpenDroneMap is to run a pre-built image by typing:
 
-    docker run -it --rm -v $(pwd)/images:/code/images v $(pwd)/odm_orthophoto:/code/odm_orthophoto -v $(pwd)/odm_texturing:/code/odm_texturing opendronemap/opendronemap
+    docker run -it --rm -v $(pwd)/images:/code/images -v $(pwd)/odm_orthophoto:/code/odm_orthophoto -v $(pwd)/odm_texturing:/code/odm_texturing opendronemap/opendronemap
 
 If you want to build your own Docker image from sources, type:
 
     docker build -t packages -f packages.Dockerfile .
 
     docker build -t my_odm_image .
-    docker run -it --rm -v $(pwd)/images:/code/images v $(pwd)/odm_orthophoto:/code/odm_orthophoto -v $(pwd)/odm_texturing:/code/odm_texturing my_odm_image
+    docker run -it --rm -v $(pwd)/images:/code/images -v $(pwd)/odm_orthophoto:/code/odm_orthophoto -v $(pwd)/odm_texturing:/code/odm_texturing my_odm_image
 
 Using this method, the containerized ODM will process the images in the OpenDroneMap/images directory and output results
 to the OpenDroneMap/odm_orthophoto and OpenDroneMap/odm_texturing directories as described in the **Viewing Results** section. 
