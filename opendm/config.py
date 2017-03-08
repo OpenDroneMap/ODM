@@ -15,7 +15,7 @@ with open(context.settings_path) as stream:
 
 def alphanumeric_string(string):
     import re
-    if re.match('^[a-zA-Z0-9]+$', string) is None:
+    if re.match('^[a-zA-Z0-9_-]+$', string) is None:
         msg = '{0} is not a valid name. Must use alphanumeric characters.'.format(string)
         raise argparse.ArgumentTypeError(msg)
     return string
@@ -37,7 +37,7 @@ def config():
     parser.add_argument('--project-path',
                         metavar='<path>',
                         help='Path to the project folder',
-                        default=defaultSettings[0]['project_path'])
+                        default=defaultSettings['project_path'])
 
     parser.add_argument('name',
                         metavar='<project name>',
@@ -144,16 +144,15 @@ def config():
 
     parser.add_argument('--opensfm-processes',
                         metavar='<positive integer>',
-                        default=defaultSettings[2]['opensfm_processes'],
+                        default=defaultSettings['opensfm_processes'],
                         type=int,
                         help=('The maximum number of processes to use in dense '
                               'reconstruction. Default: %(default)s'))
 
     parser.add_argument('--use-pmvs',
                         action='store_true',
-                        default=defaultSettings[1]['opensfm_pointcloud'],
-                        help='Use OpenSfM to compute the point cloud instead '
-                             'of PMVS')
+                        default=defaultSettings['use_pmvs'],
+                        help='Use pmvs to compute point cloud alternatively')
 
     parser.add_argument('--cmvs-maxImages',
                         metavar='<integer>',
