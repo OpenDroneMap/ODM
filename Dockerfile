@@ -2,7 +2,7 @@
 FROM packages
 
 # Prepare directories
-RUN mkdir /code && mkdir /project
+RUN mkdir /code
 WORKDIR /code
 
 # Copy repository files
@@ -30,4 +30,4 @@ RUN cd SuperBuild && mkdir build && cd build && cmake .. && make -j$(nproc) \
     && cd ../.. && mkdir build && cd build && cmake .. && make -j$(nproc)
 
 # Entry point
-ENTRYPOINT ["python", "/code/run.py", "--project-path", "/code/"]
+ENTRYPOINT ["python", "/code/run.py", "code"]
