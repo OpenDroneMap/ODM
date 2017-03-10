@@ -315,6 +315,29 @@ def config():
                         help=('Orthophoto ground resolution in pixels/meter'
                               'Default: %(default)s'))
 
+    parser.add_argument('--orthophoto-target-srs',
+                        metavar="<EPSG:XXXX>",
+                        type=str,
+                        default=None,
+                        help='Target spatial reference for orthophoto creation. '
+                             'Not implemented yet.\n'
+                             'Default: %(default)s')
+
+    parser.add_argument('--orthophoto-no-tiled',
+                        action='store_true',
+                        default=False,
+                        help='Set this parameter if you want a stripped geoTIFF.\n'
+                             'Default: %(default)s')
+
+    parser.add_argument('--orthophoto-compression',
+                        metavar='<STRING>',
+                        type=str,
+                        choices=['JPEG','LZW','PACKBITS','DEFLATE','LZMA','NONE'],
+                        default='DEFLATE',
+                        help='Set the compression to use. Note that this could '
+                             'break gdal_translate if you don\'t know what you '
+                             'are doing. Options: %(choices)s.\nDefault: %(default)s')
+
     parser.add_argument('--zip-results',
                         action='store_true',
                         default=defaultSettings['zip_results'],
