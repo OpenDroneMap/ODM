@@ -332,6 +332,10 @@ def config():
                         help='Generates a benchmark file with runtime info\n'
                              'Default: %(default)s')
 
-    #TODO: Add version, gdal options
+    #TODO: Add gdal options
+    parser.add_argument('--version',
+                        action='store_true',
+                        default=False,
+                        help='Displays version number and exits. ')
 
     return parser.parse_args()

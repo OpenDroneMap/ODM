@@ -4,12 +4,16 @@ from opendm import log
 from opendm import config
 from opendm import system
 from opendm import io
+from opendm import context
 
 import sys
 import ecto
 import os
 
 from scripts.odm_app import ODMApp
+
+with open(io.join_paths(context.root_path, 'VERSION')) as version_file:
+    __version__ = version_file.read().strip()
 
 
 def usage():
@@ -21,10 +25,13 @@ def usage():
 
 if __name__ == '__main__':
 
-    log.ODM_INFO('Initializing OpenDroneMap app - %s' % system.now())
-
     args = config.config()
 
+    if args.version:
+        log.ODM_INFO(__version__)
+        sys.exit(0)
+
+    log.ODM_INFO('Initializing OpenDroneMap app - %s' % system.now())
 
     # Force to provide the images path
     if args.project_path is None:
