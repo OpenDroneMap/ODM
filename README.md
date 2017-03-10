@@ -156,6 +156,11 @@ To pass in custom parameters to the run.py script, simply pass it as arguments t
 
     docker run -it --rm -v $(pwd)/images:/code/images v $(pwd)/odm_orthophoto:/code/odm_orthophoto -v $(pwd)/odm_texturing:/code/odm_texturing opendronemap/opendronemap --resize-to 1800 --force-ccd 6.16
 
+If you want to pass in custom parameters using the settings.yaml file, you can pass it as a -v volume binding:
+
+    docker run -it --rm -v $(pwd)/images:/code/images v $(pwd)/odm_orthophoto:/code/odm_orthophoto -v $(pwd)/odm_texturing:/code/odm_texturing -v $(pwd)/settings.yaml:/code/settings.yaml opendronemap/opendronemap
+
+
 ## User Interface
 
 A web interface and API to OpenDroneMap is currently under active development in the [WebODM](https://github.com/OpenDroneMap/WebODM) repository.

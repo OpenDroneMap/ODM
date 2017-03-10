@@ -46,19 +46,19 @@ def config():
 
     parser.add_argument('--resize-to',  # currently doesn't support 'orig'
                         metavar='<integer>',
-                        default=2400,
+                        default=defaultSettings['resize_to'],
                         type=int,
                         help='resizes images by the largest side')
 
     parser.add_argument('--start-with', '-s',
                         metavar='<string>',
-                        default='resize',
+                        default=defaultSettings['start_with'],
                         choices=processopts,
                         help=('Can be one of: ' + ' | '.join(processopts)))
 
     parser.add_argument('--end-with', '-e',
                         metavar='<string>',
-                        default='odm_orthophoto',
+                        default=defaultSettings['end_with'],
                         choices=processopts,
                         help=('Can be one of:' + ' | '.join(processopts)))
 
@@ -71,7 +71,7 @@ def config():
 
     rerun.add_argument('--rerun-all',
                        action='store_true',
-                       default=False,
+                       default=defaultSettings['rerun_all'],
                        help='force rerun of all tasks')
 
     rerun.add_argument('--rerun-from',
@@ -101,7 +101,7 @@ def config():
 
     parser.add_argument('--min-num-features',
                         metavar='<integer>',
-                        default=4000,
+                        default=defaultSettings['opensfm']['min_num_features'],
                         type=int,
                         help=('Minimum number of features to extract per image. '
                               'More features leads to better results but slower '
@@ -109,7 +109,7 @@ def config():
 
     parser.add_argument('--matcher-threshold',
                         metavar='<percent>',
-                        default=2.0,
+                        default=defaultSettings['opensfm']['matcher_threshold'],
                         type=float,
                         help=('Ignore matched keypoints if the two images share '
                               'less than <float> percent of keypoints. Default:'
@@ -117,7 +117,7 @@ def config():
 
     parser.add_argument('--matcher-ratio',
                         metavar='<float>',
-                        default=0.6,
+                        default=defaultSettings['opensfm']['matcher_ratio'],
                         type=float,
                         help=('Ratio of the distance to the next best matched '
                               'keypoint. Default: %(default)s'))
@@ -125,7 +125,7 @@ def config():
     parser.add_argument('--matcher-neighbors',
                         type=int,
                         metavar='<integer>',
-                        default=8,
+                        default=defaultSettings['opensfm']['matcher_neighbors'],
                         help='Number of nearest images to pre-match based on GPS '
                              'exif data. Set to 0 to skip pre-matching. '
                              'Neighbors works together with Distance parameter, '
@@ -136,7 +136,7 @@ def config():
 
     parser.add_argument('--matcher-distance',
                         metavar='<integer>',
-                        default=0,
+                        default=defaultSettings['opensfm']['matcher_distance'],
                         type=int,
                         help='Distance threshold in meters to find pre-matching '
                              'images based on GPS exif data. Set to 0 to skip '
@@ -144,26 +144,26 @@ def config():
 
     parser.add_argument('--opensfm-processes',
                         metavar='<positive integer>',
-                        default=defaultSettings['opensfm_processes'],
+                        default=defaultSettings['opensfm']['processes'],
                         type=int,
                         help=('The maximum number of processes to use in dense '
                               'reconstruction. Default: %(default)s'))
 
     parser.add_argument('--use-pmvs',
                         action='store_true',
-                        default=defaultSettings['use_pmvs'],
+                        default=defaultSettings['pmvs']['enabled'],
                         help='Use pmvs to compute point cloud alternatively')
 
     parser.add_argument('--cmvs-maxImages',
                         metavar='<integer>',
-                        default=500,
+                        default=defaultSettings['pmvs']['cmvs_max_images'],
                         type=int,
                         help='The maximum number of images per cluster. '
                              'Default: %(default)s')
 
     parser.add_argument('--pmvs-level',
                         metavar='<positive integer>',
-                        default=1,
+                        default=defaultSettings['pmvs']['level'],
                         type=int,
                         help=('The level in the image pyramid that is used '
                               'for the computation. see '
@@ -171,15 +171,15 @@ def config():
                               'more pmvs documentation. Default: %(default)s'))
 
     parser.add_argument('--pmvs-csize',
-                        metavar='< positive integer>',
-                        default=2,
+                        metavar='<positive integer>',
+                        default=defaultSettings['pmvs']['cell_size'],
                         type=int,
                         help='Cell size controls the density of reconstructions'
                              'Default: %(default)s')
 
     parser.add_argument('--pmvs-threshold',
                         metavar='<float: -1.0 <= x <= 1.0>',
-                        default=0.7,
+                        default=defaultSettings['pmvs']['threshold'],
                         type=float,
                         help=('A patch reconstruction is accepted as a success '
                               'and kept if its associated photometric consistency '
@@ -187,7 +187,7 @@ def config():
 
     parser.add_argument('--pmvs-wsize',
                         metavar='<positive integer>',
-                        default=7,
+                        default=defaultSettings['pmvs']['wsize'],
                         type=int,
                         help='pmvs samples wsize x wsize pixel colors from '
                              'each image to compute photometric consistency '
@@ -198,7 +198,7 @@ def config():
 
     parser.add_argument('--pmvs-min-images',
                         metavar='<positive integer>',
-                        default=3,
+                        default=defaultSettings['pmvs']['min_images'],
                         type=int,
                         help=('Each 3D point must be visible in at least '
                               'minImageNum images for being reconstructed. 3 is '
@@ -206,21 +206,21 @@ def config():
 
     parser.add_argument('--pmvs-num-cores',
                         metavar='<positive integer>',
-                        default=context.num_cores,
+                        default=defaultSettings['pmvs']['num_cores'],
                         type=int,
                         help=('The maximum number of cores to use in dense '
                               'reconstruction. Default: %(default)s'))
 
     parser.add_argument('--mesh-size',
                         metavar='<positive integer>',
-                        default=100000,
+                        default=defaultSettings['mesh']['size'],
                         type=int,
                         help=('The maximum vertex count of the output mesh '
                               'Default: %(default)s'))
 
     parser.add_argument('--mesh-octree-depth',
                         metavar='<positive integer>',
-                        default=9,
+                        default=defaultSettings['mesh']['octree_depth'],
                         type=int,
                         help=('Oct-tree depth used in the mesh reconstruction, '
                               'increase to get more vertices, recommended '
@@ -228,14 +228,14 @@ def config():
 
     parser.add_argument('--mesh-samples',
                         metavar='<float >= 1.0>',
-                        default=1.0,
+                        default=defaultSettings['mesh']['samples'],
                         type=float,
                         help=('Number of points per octree node, recommended '
                               'and default value: %(default)s'))
 
     parser.add_argument('--mesh-solver-divide',
                         metavar='<positive integer>',
-                        default=9,
+                        default=defaultSettings['mesh']['solver_divide'],
                         type=int,
                         help=('Oct-tree depth at which the Laplacian equation '
                               'is solved in the surface reconstruction step. '
@@ -245,57 +245,57 @@ def config():
 
     parser.add_argument('--texturing-data-term',
                         metavar='<string>',
-                        default='gmi',
+                        default=defaultSettings['texturing']['data_term'],
                         help=('Data term: [area, gmi]. Default: '
                               '%(default)s'))
 
     parser.add_argument('--texturing-outlier-removal-type',
                         metavar='<string>',
-                        default='gauss_clamping',
+                        default=defaultSettings['texturing']['outlier_removal_type'],
                         help=('Type of photometric outlier removal method: ' 
                               '[none, gauss_damping, gauss_clamping]. Default: '  
                               '%(default)s'))
 
     parser.add_argument('--texturing-skip-visibility-test',
                         action='store_true',
-                        default=False,
+                        default=defaultSettings['texturing']['skip_visibility_test'],
                         help=('Skip geometric visibility test. Default: '
                               ' %(default)s'))
 
     parser.add_argument('--texturing-skip-global-seam-leveling',
                         action='store_true',
-                        default=False,
+                        default=defaultSettings['texturing']['skip_global_seam_leveling'],
                         help=('Skip global seam leveling. Useful for IR data.'
                               'Default: %(default)s'))
 
     parser.add_argument('--texturing-skip-local-seam-leveling',
                         action='store_true',
-                        default=False,
+                        default=defaultSettings['texturing']['skip_local_seam_leveling'],
                         help='Skip local seam blending. Default:  %(default)s')
 
     parser.add_argument('--texturing-skip-hole-filling',
                         action='store_true',
-                        default=False,
+                        default=defaultSettings['texturing']['skip_hole_filling'],
                         help=('Skip filling of holes in the mesh. Default: '
                               ' %(default)s'))
 
     parser.add_argument('--texturing-keep-unseen-faces',
                         action='store_true',
-                        default=False,
+                        default=defaultSettings['texturing']['keep_unseen_faces'],
                         help=('Keep faces in the mesh that are not seen in any camera. ' 
                               'Default:  %(default)s'))
 
     parser.add_argument('--texturing-tone-mapping',
                         metavar='<string>',
                         choices=['none', 'gamma'],
-                        default='none',
+                        default=defaultSettings['texturing']['tone_mapping'],
                         help='Turn on gamma tone mapping or none for no tone '
                              'mapping. Choices are  \'gamma\' or \'none\'. '
                              'Default: %(default)s ')
 
     parser.add_argument('--gcp',
                         metavar='<path string>',
-                        default=None,
+                        default=defaultSettings['georeferencing']['gcp'],
                         help=('path to the file containing the ground control '
                               'points used for georeferencing.  Default: '
                               '%(default)s. The file needs to '
@@ -304,32 +304,34 @@ def config():
 
     parser.add_argument('--use-exif',
                         action='store_true',
-                        default=False,
+                        default=defaultSettings['georeferencing']['use_exif'],
                         help=('Use this tag if you have a gcp_list.txt but '
                               'want to use the exif geotags instead'))
 
     parser.add_argument('--orthophoto-resolution',
                         metavar='<float > 0.0>',
-                        default=20.0,
+                        default=defaultSettings['orthophoto']['resolution'],
                         type=float,
                         help=('Orthophoto ground resolution in pixels/meter'
                               'Default: %(default)s'))
 
     parser.add_argument('--zip-results',
                         action='store_true',
-                        default=False,
+                        default=defaultSettings['zip_results'],
                         help='compress the results using gunzip')
 
     parser.add_argument('--verbose', '-v',
                         action='store_true',
-                        default=False,
+                        default=defaultSettings['verbose'],
                         help='Print additional messages to the console\n'
                              'Default: %(default)s')
 
     parser.add_argument('--time',
                         action='store_true',
-                        default=False,
+                        default=defaultSettings['time'],
                         help='Generates a benchmark file with runtime info\n'
                              'Default: %(default)s')
+
+    #TODO: Add version, gdal options
 
     return parser.parse_args()
