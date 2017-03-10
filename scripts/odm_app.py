@@ -73,6 +73,9 @@ class ODMApp(ecto.BlackBox):
                                                          use_exif=p.args.use_exif,
                                                          verbose=p.args.verbose),
                  'orthophoto': ODMOrthoPhotoCell(resolution=p.args.orthophoto_resolution,
+                                                 t_srs=p.args.orthophoto_target_srs,
+                                                 no_tiled=p.args.orthophoto_no_tiled,
+                                                 compress=p.args.orthophoto_compression,
                                                  verbose=p.args.verbose)
                  }
 
