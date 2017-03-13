@@ -143,6 +143,10 @@ simply use the following `docker run` command after building the image:
 
     docker run -it --rm -v $(pwd)/images:/code/images -v $(pwd)/pmvs:/code/pmvs -v $(pwd)/odm_orthophoto:/code/odm_orthophoto my_odm_image
 
+If you want to get all intermediate outputs, run the following command:
+
+    docker run -it --rm -v $(pwd)/images:/code/images -v $(pwd)/odm_georeferencing:/code/odm_georeferencing -v $(pwd)/odm_meshing:/code/odm_meshing -v $(pwd)/odm_orthophoto:/code/odm_orthophoto -v $(pwd)/odm_texturing:/code/odm_texturing -v $(pwd)/opensfm:/code/opensfm -v $(pwd)/pmvs:/code/pmvs opendronemap/opendronemap
+
 To pass in custom parameters to the run.py script, simply pass it as arguments to the `docker run` command. For example:
 
     docker run -it --rm -v $(pwd)/images:/code/images v $(pwd)/odm_orthophoto:/code/odm_orthophoto -v $(pwd)/odm_texturing:/code/odm_texturing opendronemap/opendronemap --resize-to 1800 --force-ccd 6.16
