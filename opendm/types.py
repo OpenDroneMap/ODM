@@ -360,6 +360,7 @@ class ODM_Tree(object):
         self.benchmarking = io.join_paths(self.root_path, 'benchmark.txt')
 
         # opensfm
+        self.opensfm_tracks = io.join_paths(self.opensfm, 'tracks.csv')
         self.opensfm_bundle = io.join_paths(self.opensfm, 'bundle_r000.out')
         self.opensfm_bundle_list = io.join_paths(self.opensfm, 'list_r000.out')
         self.opensfm_image_list = io.join_paths(self.opensfm, 'image_list.txt')
