@@ -12,9 +12,6 @@ import os
 
 from scripts.odm_app import ODMApp
 
-with open(io.join_paths(context.root_path, 'VERSION')) as version_file:
-    __version__ = version_file.read().strip()
-
 
 def usage():
     log.ODM_ERROR('You must specify a project name:')
@@ -27,9 +24,9 @@ if __name__ == '__main__':
 
     args = config.config()
 
-    if args.version:
-        log.ODM_INFO(__version__)
-        sys.exit(0)
+    #if args.version:
+    #    log.ODM_INFO(__version__)
+    #    sys.exit(0)
 
     log.ODM_INFO('Initializing OpenDroneMap app - %s' % system.now())
 
