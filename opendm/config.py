@@ -1,5 +1,6 @@
 import argparse
 from opendm import context
+from opendm import io
 import yaml
 
 # parse arguments
@@ -12,6 +13,8 @@ with open(context.settings_path) as stream:
     datamap = yaml.safe_load(stream)
     defaultSettings = datamap['settings']
 
+with open(io.join_paths(context.root_path, 'VERSION')) as version_file:
+    __version__ = version_file.read().strip()
 
 def alphanumeric_string(string):
     import re
@@ -355,10 +358,9 @@ def config():
                         help='Generates a benchmark file with runtime info\n'
                              'Default: %(default)s')
 
-    #TODO: Add gdal options
     parser.add_argument('--version',
-                        action='store_true',
-                        default=False,
+                        action='version',
+                        version='OpenDroneMap {0}'.format(__version__),
                         help='Displays version number and exits. ')
 
     return parser.parse_args()
