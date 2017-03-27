@@ -39,9 +39,6 @@ odm_modules_path = os.path.join(root_path, "build/bin")
 odm_modules_src_path = os.path.join(root_path, "modules")
 
 settings_path = os.path.join(root_path, 'settings.yaml')
-if not io.file_exists(settings_path):
-    settings_path = os.path.join(root_path, 'default.settings.yaml')
-
 
 # Define supported image extensions
 supported_extensions = {'.jpg','.jpeg','.png'}

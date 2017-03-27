@@ -17,6 +17,6 @@ LAStools.zip
 pcl.tar.gz
 ceres-solver.tar.gz
 *.pyc
-pcl.tar.gz
 opencv.zip
 settings.yaml
+docker.settings.yaml
