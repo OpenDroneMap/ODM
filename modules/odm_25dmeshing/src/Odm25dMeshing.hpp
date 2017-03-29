@@ -11,6 +11,7 @@
 
 #include "Logger.hpp"
 #include "PlyInterpreter.hpp"
+#include "tinyply.hpp"
 
 class Odm25dMeshing {
 public:
@@ -43,9 +44,9 @@ private:
 	void loadPointCloud();
 
 	/*!
-	 * \brief writePlyFile  Writes the mesh to file in the Ply format.
+	 * \brief loadPointCloud    Builds a 2.5D mesh from loaded points
 	 */
-	void writeMeshToPly();
+	void buildMesh();
 
 	/*!
 	 * \brief printHelp     Prints help, explaining usage. Can be shown by calling the program with argument: "-help".
@@ -57,6 +58,9 @@ private:
 	std::string inputFile = "";
 	std::string outputFile = "odm_mesh.ply";
 	std::string logFilePath = "odm_25dmeshing_log.txt";
+
+	std::vector<Pwn> points; // store points with normals
+	std::vector<Color> point_colors; // store colors in separate container
 };
 
 class Odm25dMeshingException: public std::exception {

@@ -14,6 +14,8 @@ int Odm25dMeshing::run(int argc, char **argv) {
 
 		loadPointCloud();
 
+		buildMesh();
+
 		log << "Done!" << "\n";
 
 		// TODO
@@ -112,10 +114,7 @@ void Odm25dMeshing::parseArguments(int argc, char **argv) {
 }
 
 void Odm25dMeshing::loadPointCloud(){
-	  std::vector<Pwn> points; // store points with normals
-	  std::vector<Color> colors; // store colors in separate container
-
-	  PlyInterpreter interpreter(points, colors);
+	  PlyInterpreter interpreter(points, point_colors);
 
 	  std::ifstream in(inputFile);
 	  if (!in || !CGAL::read_ply_custom_points (in, interpreter, Kernel())){
@@ -123,11 +122,11 @@ void Odm25dMeshing::loadPointCloud(){
 		  				"Error when reading points and normals from:\n" + inputFile + "\n");
 	  }
 
-	  log << "Found " << points.size() << " points \n";
+	  log << "Successfully loaded " << points.size() << " points from file\n";
 
-	  for (std::size_t i = 0; i < points.size (); ++ i){
-		  std::cout << points[i].first << std::endl;
-	  }
+//	  for (std::size_t i = 0; i < points.size (); ++ i){
+//		  std::cout << points[i].first << std::endl;
+//	  }
 
 //	if (pcl::io::loadPLYFile < pcl::PointNormal
 //			> (inputFile_.c_str(), *points_.get()) == -1) {
@@ -138,6 +137,96 @@ void Odm25dMeshing::loadPointCloud(){
 //		log << "Successfully loaded " << points_->size()
 //				<< " points with corresponding normals from file.\n";
 //	}
+}
+
+void Odm25dMeshing::buildMesh(){
+	size_t pointCount = points.size();
+
+	if (pointCount < 3){
+		throw Odm25dMeshingException("Not enough points");
+	}
+
+	//CGAL boilerplate
+	//We define a vertex_base with info. The "info" (size_t) allow us to keep track of the original point index.
+	typedef CGAL::Triangulation_vertex_base_with_info_2<size_t, Kernel> Vb;
+	typedef CGAL::Triangulation_data_structure_2<Vb> Tds;
+	typedef CGAL::Delaunay_triangulation_2<Kernel, Tds> DT;
+	typedef DT::Point cgalPoint;
+
+	std::vector< std::pair<cgalPoint, size_t > > pts;
+
+	try{
+		pts.reserve(pointCount);
+	} catch (const std::bad_alloc&){
+		throw Odm25dMeshingException("Not enough memory");
+	}
+
+	for (size_t i = 0; i < pointCount; ++i){
+		pts.push_back(std::make_pair(cgalPoint(points[i].first.x(), points[i].first.y()), i));
+	}
+
+	log << "Computing delaunay triangulation\n";
+
+	//The delaunay triangulation is built according to the 2D point cloud
+	DT dt(pts.begin(), pts.end());
+
+	unsigned int numberOfTriangles = static_cast<unsigned >(dt.number_of_faces());
+	unsigned int triIndexes = dt.number_of_faces()*3;
+
+	if (numberOfTriangles == 0) throw Odm25dMeshingException("No triangles in resulting mesh");
+
+	log << "Getting ready to export\n";
+
+	// Convert to tinyply format
+	std::vector<float> vertices;
+	std::vector<uint8_t> colors;
+	std::vector<int> vertexIndicies;
+
+	try{
+		vertices.reserve(pointCount);
+		colors.reserve(pointCount);
+		vertexIndicies.reserve(triIndexes);
+	} catch (const std::bad_alloc&){
+		throw Odm25dMeshingException("Not enough memory");
+	}
+
+	for (size_t i = 0; i < pointCount; ++i){
+		vertices.push_back(points[i].first.x());
+		vertices.push_back(points[i].first.y());
+		vertices.push_back(points[i].first.z());
+
+		colors.push_back(point_colors[i][0]);
+		colors.push_back(point_colors[i][1]);
+		colors.push_back(point_colors[i][2]);
+	}
+
+//	for (DT::Vertex_iterator vertex = dt.vertices_begin(); vertex != dt.vertices_end(); ++vertex){
+//		vertices.push_back(static_cast<float>(points[vertex->info()].first.x()));
+//		vertices.push_back(static_cast<float>(points[vertex->info()].first.y()));
+//		vertices.push_back(static_cast<float>(points[vertex->info()].first.z()));
+//	}
+
+	for (DT::Face_iterator face = dt.faces_begin(); face != dt.faces_end(); ++face) {
+		vertexIndicies.push_back(static_cast<int>(face->vertex(0)->info()));
+		vertexIndicies.push_back(static_cast<int>(face->vertex(1)->info()));
+		vertexIndicies.push_back(static_cast<int>(face->vertex(2)->info()));
+	}
+
+	log << "Saving mesh to file.\n";
+
+	std::filebuf fb;
+	fb.open(outputFile, std::ios::out | std::ios::binary);
+	std::ostream outputStream(&fb);
+
+	tinyply::PlyFile plyFile;
+	plyFile.add_properties_to_element("vertex", {"x", "y", "z"}, vertices);
+	plyFile.add_properties_to_element("vertex", { "diffuse_red", "diffuse_green", "diffuse_blue"}, colors);
+	plyFile.add_properties_to_element("face", { "vertex_index" }, vertexIndicies, 3, tinyply::PlyProperty::Type::INT8);
+
+	plyFile.write(outputStream, false); // TODO add arg for binary/ascii?
+	fb.close();
+
+	log << "Successfully wrote mesh to:\n" << outputFile << "\n";
 }
 
 void Odm25dMeshing::printHelp() {
@@ -174,14 +263,3 @@ void Odm25dMeshing::printHelp() {
 	log.setIsPrintingInCout(printInCoutPop);
 }
 
-
-void Odm25dMeshing::writeMeshToPly() {
-	log << "Saving mesh to file.\n";
-//	if (pcl::io::savePLYFile(outputFile_.c_str(), *mesh_.get()) == -1) {
-//		throw Odm25dMeshingException(
-//				"Error when saving mesh to file:\n" + outputFile + "\n");
-//	} else {
-//		log << "Successfully wrote mesh to:\n" << outputFile << "\n";
-//	}
-	// TODO
-}
