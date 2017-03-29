@@ -13,6 +13,7 @@ class ODMOrthoPhotoCell(ecto.Cell):
         params.declare("t_srs", 'Target SRS', None)
         params.declare("no_tiled", 'Do not tile tiff', False)
         params.declare("compress", 'Compression type', 'DEFLATE')
+        params.declare("bigtiff", 'Make BigTIFF orthophoto', False)
         params.declare("verbose", 'print additional messages to console', False)
 
     def declare_io(self, params, inputs, outputs):
@@ -102,13 +103,14 @@ class ODMOrthoPhotoCell(ecto.Cell):
                                                            ['LZW', 'DEFLATE'] else '',
                         'epsg': georef.epsg,
                         't_srs': self.params.t_srs or "EPSG:{0}".format(georef.epsg),
+                        'bigtiff': '-co BIGTIFF=YES ' if self.params.bigtiff else '',
                         'png': tree.odm_orthophoto_file,
                         'tiff': tree.odm_orthophoto_tif,
                         'log': tree.odm_orthophoto_tif_log
                     }
 
                     system.run('gdal_translate -a_ullr {ulx} {uly} {lrx} {lry} '
-                               '{tiled} '
+                               '{tiled} {bigtiff} '
                                '-co COMPRESS={compress} '
                                '{predictor} '
                                '-co BLOCKXSIZE=512 '
