@@ -114,15 +114,15 @@ void Odm25dMeshing::parseArguments(int argc, char **argv) {
 }
 
 void Odm25dMeshing::loadPointCloud(){
-	  PlyInterpreter interpreter(points, point_colors);
-
-	  std::ifstream in(inputFile);
-	  if (!in || !CGAL::read_ply_custom_points (in, interpreter, Kernel())){
-		  throw Odm25dMeshingException(
-		  				"Error when reading points and normals from:\n" + inputFile + "\n");
-	  }
-
-	  log << "Successfully loaded " << points.size() << " points from file\n";
+//	  PlyInterpreter interpreter(points, point_colors);
+//
+//	  std::ifstream in(inputFile);
+//	  if (!in || !CGAL::read_ply_custom_points (in, interpreter, Kernel())){
+//		  throw Odm25dMeshingException(
+//		  				"Error when reading points and normals from:\n" + inputFile + "\n");
+//	  }
+//
+//	  log << "Successfully loaded " << points.size() << " points from file\n";
 
 //	  for (std::size_t i = 0; i < points.size (); ++ i){
 //		  std::cout << points[i].first << std::endl;
@@ -140,6 +140,17 @@ void Odm25dMeshing::loadPointCloud(){
 }
 
 void Odm25dMeshing::buildMesh(){
+	PlyInterpreter interpreter(points, point_colors);
+
+	  std::ifstream in(inputFile);
+	  if (!in || !CGAL::read_ply_custom_points (in, interpreter, Kernel())){
+		  throw Odm25dMeshingException(
+						"Error when reading points and normals from:\n" + inputFile + "\n");
+	  }
+
+	  log << "Successfully loaded " << points.size() << " points from file\n";
+
+
 	size_t pointCount = points.size();
 
 	if (pointCount < 3){
@@ -152,6 +163,7 @@ void Odm25dMeshing::buildMesh(){
 	typedef CGAL::Triangulation_data_structure_2<Vb> Tds;
 	typedef CGAL::Delaunay_triangulation_2<Kernel, Tds> DT;
 	typedef DT::Point cgalPoint;
+	typedef DT::Vertex_circulator Vertex_circulator;
 
 	std::vector< std::pair<cgalPoint, size_t > > pts;
 
@@ -175,7 +187,7 @@ void Odm25dMeshing::buildMesh(){
 
 	if (numberOfTriangles == 0) throw Odm25dMeshingException("No triangles in resulting mesh");
 
-	log << "Getting ready to export\n";
+	log << "Computed " << numberOfTriangles << " triangles\n";
 
 	// Convert to tinyply format
 	std::vector<float> vertices;
@@ -200,17 +212,65 @@ void Odm25dMeshing::buildMesh(){
 		colors.push_back(point_colors[i][2]);
 	}
 
-//	for (DT::Vertex_iterator vertex = dt.vertices_begin(); vertex != dt.vertices_end(); ++vertex){
-//		vertices.push_back(static_cast<float>(points[vertex->info()].first.x()));
-//		vertices.push_back(static_cast<float>(points[vertex->info()].first.y()));
-//		vertices.push_back(static_cast<float>(points[vertex->info()].first.z()));
-//	}
-
 	for (DT::Face_iterator face = dt.faces_begin(); face != dt.faces_end(); ++face) {
 		vertexIndicies.push_back(static_cast<int>(face->vertex(0)->info()));
 		vertexIndicies.push_back(static_cast<int>(face->vertex(1)->info()));
 		vertexIndicies.push_back(static_cast<int>(face->vertex(2)->info()));
 	}
+
+	// TODO: apply fairing algo http://doc.cgal.org/latest/Polygon_mesh_processing/group__PMP__meshing__grp.html#gaa091c8368920920eed87784107d68ecf
+
+	log << "Applying smoothing\n";
+
+
+//	const float threshold = 0.5;
+//	std::vector<float> heights;
+//	unsigned int spikesRemoved = 0;
+//
+//	for (DT::Vertex_iterator vertex = dt.vertices_begin(); vertex != dt.vertices_end(); ++vertex){
+//		// Check if the height between this vertex and its
+//		// incident vertices is greater than threshold
+//		Vertex_circulator vc = dt.incident_vertices(vertex), done(vc);
+//
+//		if (vc != 0){
+//			float height = points[vertex->info()].first.z();
+//			bool spike = false;
+//
+//			do{
+//				if (dt.is_infinite(vc)) continue;
+//
+//				float ivHeight = points[vc->info()].first.z();
+//				if (fabs(height - ivHeight) > threshold) spike = true;
+//
+//				heights.push_back(ivHeight);
+//			}while(++vc != done);
+//
+//			if (spike){
+//				// Replace the height of the vertex by the median height
+//				// of its incident vertices
+//				std::sort(heights.begin(), heights.end());
+//
+////				points[vertex->info()].first = Point3(points[vertex->info()].first.x(),
+////													points[vertex->info()].first.y(),
+////													heights[heights.size() / 2]);
+//
+//				vertices[vertex->info() * 3 + 2] = heights[heights.size() / 2];
+////
+////				colors[vertex->info() * 3] = 255;
+////				colors[vertex->info() * 3 + 1] = 0;
+////				colors[vertex->info() * 3 + 2] = 0;
+//
+//
+//				spikesRemoved++;
+//			}
+//
+//			heights.clear();
+//		}
+//	}
+
+	log << "Preparing to export\n";
+
+
 
 	log << "Saving mesh to file.\n";
 
@@ -223,7 +283,7 @@ void Odm25dMeshing::buildMesh(){
 	plyFile.add_properties_to_element("vertex", { "diffuse_red", "diffuse_green", "diffuse_blue"}, colors);
 	plyFile.add_properties_to_element("face", { "vertex_index" }, vertexIndicies, 3, tinyply::PlyProperty::Type::INT8);
 
-	plyFile.write(outputStream, false); // TODO add arg for binary/ascii?
+	plyFile.write(outputStream, false);
 	fb.close();
 
 	log << "Successfully wrote mesh to:\n" << outputFile << "\n";
@@ -262,4 +322,6 @@ void Odm25dMeshing::printHelp() {
 
 	log.setIsPrintingInCout(printInCoutPop);
 }
+
+
 

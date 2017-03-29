@@ -68,14 +68,14 @@ namespace tinyply
 			FLOAT64
 		};
 
+		Type listType, propertyType;
+		bool isList;
+		int listCount;
+		std::string name;
+
 		PlyProperty(std::istream & is);
 		PlyProperty(Type type, const std::string & name) : propertyType(type), isList(false), name(name) {}
 		PlyProperty(Type list_type, Type prop_type, const std::string & name, int listCount) : listType(list_type), propertyType(prop_type), isList(true), name(name), listCount(listCount) {}
-
-		Type listType, propertyType;
-		bool isList;
-		int listCount = 0;
-		std::string name = "";
 	};
 
 	inline std::string make_key(const std::string & a, const std::string & b)

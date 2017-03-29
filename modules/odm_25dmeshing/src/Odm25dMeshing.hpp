@@ -8,6 +8,7 @@
 #include <CGAL/Constrained_Delaunay_triangulation_2.h>
 #include <CGAL/Triangulation_vertex_base_with_info_2.h>
 #include <CGAL/Delaunay_triangulation_2.h>
+#include <CGAL/Triangulation_2.h>
 
 #include "Logger.hpp"
 #include "PlyInterpreter.hpp"
