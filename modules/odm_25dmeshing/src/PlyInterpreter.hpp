@@ -11,11 +11,11 @@
 // types
 typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
 typedef Kernel::FT FT;
-typedef Kernel::Point_3 Point;
-typedef Kernel::Vector_3 Vector;
+typedef Kernel::Point_3 Point3;
+typedef Kernel::Vector_3 Vector3;
 
 // Point with normal vector stored as a std::pair.
-typedef std::pair<Point, Vector> Pwn;
+typedef std::pair<Point3, Vector3> Pwn;
 // Color is red/green/blue array
 typedef CGAL::cpp11::array<unsigned char, 3> Color;
 

@@ -27,6 +27,6 @@ void PlyInterpreter::process_line(CGAL::Ply_reader& reader) {
 	reader.assign (c[0], "diffuse_red");
 	reader.assign (c[1], "diffuse_green");
 	reader.assign (c[2], "diffuse_blue");
-	points.push_back (std::make_pair (Point (x, y, z), Vector (nx, ny, nz)));
+	points.push_back (std::make_pair (Point3 (x, y, z), Vector3 (nx, ny, nz)));
 	colors.push_back (c);
 }
