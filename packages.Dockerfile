@@ -69,7 +69,8 @@ RUN pip install -U PyYAML \
                     exifread \
                     gpxpy \
                     xmltodict \
-                    catkin-pkg
+                    catkin-pkg \
+                    appsettings
 
 #Installing Ecto Dependencies
 RUN apt-get install -y -qq python-empy \

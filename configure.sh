@@ -67,7 +67,8 @@ sudo apt-get install -y -qq python-networkx \
 sudo pip install -U PyYAML \
                     exifread \
                     gpxpy \
-                    xmltodict
+                    xmltodict \
+                    appsettings
 
 echo "Installing Ecto Dependencies"
 sudo pip install -U catkin-pkg
