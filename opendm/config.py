@@ -344,6 +344,11 @@ def config():
                              'break gdal_translate if you don\'t know what you '
                              'are doing. Options: %(choices)s.\nDefault: %(default)s')
 
+    parser.add_argument('--orthophoto-bigtiff',
+                        action='store_true',
+                        default=False,
+                        help='Set this parameter if you expect a big orthophoto.')
+
     parser.add_argument('--zip-results',
                         action='store_true',
                         default=False,
