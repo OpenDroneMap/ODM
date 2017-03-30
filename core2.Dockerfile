@@ -19,7 +19,9 @@ COPY run.py /code/run.py
 COPY /scripts/ /code/scripts/
 COPY /SuperBuild/cmake/ /code/SuperBuild/cmake/
 COPY /SuperBuild/CMakeLists.txt /code/SuperBuild/CMakeLists.txt
+COPY docker.settings.yaml /code/settings.yaml
 COPY /tests/ /code/tests/
+COPY VERSION /code/VERSION
 
 # Update submodules
 RUN git submodule init && git submodule update
@@ -33,4 +35,4 @@ RUN cd SuperBuild && mkdir build && cd build && cmake .. && make -j$(nproc) \
     && cd ../.. && mkdir build && cd build && cmake .. && make -j$(nproc)
 
 # Entry point
-ENTRYPOINT ["python", "/code/run.py", "--project-path", "/code/"]
+ENTRYPOINT ["python", "/code/run.py", "code"]
