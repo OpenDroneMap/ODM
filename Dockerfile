@@ -21,6 +21,7 @@ COPY /SuperBuild/cmake/ /code/SuperBuild/cmake/
 COPY /SuperBuild/CMakeLists.txt /code/SuperBuild/CMakeLists.txt
 COPY docker.settings.yaml /code/settings.yaml
 COPY /tests/ /code/tests/
+COPY VERSION /code/VERSION
 
 # Update submodules
 RUN git submodule init && git submodule update
