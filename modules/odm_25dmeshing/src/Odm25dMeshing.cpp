@@ -223,50 +223,61 @@ void Odm25dMeshing::buildMesh(){
 	log << "Applying smoothing\n";
 
 
-//	const float threshold = 0.5;
-//	std::vector<float> heights;
-//	unsigned int spikesRemoved = 0;
+	const float THRESHOLD = 0.2;
+	const int PASSES = 5;
+
+	// TODO: check these...
+
+	std::vector<float> heights;
+	unsigned int spikesRemoved = 0;
+	float current_threshold = THRESHOLD;
+
+	for (int i = 1; i <= PASSES; i++){
+		log << "Pass " << i << " of " << PASSES << "\n";
+
+	for (DT::Vertex_iterator vertex = dt.vertices_begin(); vertex != dt.vertices_end(); ++vertex){
+		// Check if the height between this vertex and its
+		// incident vertices is greater than THRESHOLD
+		Vertex_circulator vc = dt.incident_vertices(vertex), done(vc);
+
+		if (vc != 0){
+			float height = vertices[vertex->info() * 3 + 2];
+			bool spike = false;
+
+			do{
+				if (dt.is_infinite(vc)) continue;
+
+				float ivHeight = vertices[vc->info() * 3 + 2];
+				if (fabs(height - ivHeight) > current_threshold) spike = true;
+
+				heights.push_back(ivHeight);
+			}while(++vc != done);
+
+			if (spike){
+				// Replace the height of the vertex by the median height
+				// of its incident vertices
+				std::sort(heights.begin(), heights.end());
+
+//				points[vertex->info()].first = Point3(points[vertex->info()].first.x(),
+//													points[vertex->info()].first.y(),
+//													heights[heights.size() / 2]);
+
+				vertices[vertex->info() * 3 + 2] = heights[heights.size() / 2];
 //
-//	for (DT::Vertex_iterator vertex = dt.vertices_begin(); vertex != dt.vertices_end(); ++vertex){
-//		// Check if the height between this vertex and its
-//		// incident vertices is greater than threshold
-//		Vertex_circulator vc = dt.incident_vertices(vertex), done(vc);
-//
-//		if (vc != 0){
-//			float height = points[vertex->info()].first.z();
-//			bool spike = false;
-//
-//			do{
-//				if (dt.is_infinite(vc)) continue;
-//
-//				float ivHeight = points[vc->info()].first.z();
-//				if (fabs(height - ivHeight) > threshold) spike = true;
-//
-//				heights.push_back(ivHeight);
-//			}while(++vc != done);
-//
-//			if (spike){
-//				// Replace the height of the vertex by the median height
-//				// of its incident vertices
-//				std::sort(heights.begin(), heights.end());
-//
-////				points[vertex->info()].first = Point3(points[vertex->info()].first.x(),
-////													points[vertex->info()].first.y(),
-////													heights[heights.size() / 2]);
-//
-//				vertices[vertex->info() * 3 + 2] = heights[heights.size() / 2];
-////
-////				colors[vertex->info() * 3] = 255;
-////				colors[vertex->info() * 3 + 1] = 0;
-////				colors[vertex->info() * 3 + 2] = 0;
-//
-//
-//				spikesRemoved++;
-//			}
-//
-//			heights.clear();
-//		}
-//	}
+//				colors[vertex->info() * 3] = 255;
+//				colors[vertex->info() * 3 + 1] = 0;
+//				colors[vertex->info() * 3 + 2] = 0;
+
+
+				spikesRemoved++;
+			}
+
+			heights.clear();
+		}
+	}
+
+		current_threshold /= 2;
+	}
 
 	log << "Preparing to export\n";
 
