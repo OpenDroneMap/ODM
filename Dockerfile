@@ -9,9 +9,6 @@ WORKDIR /code
 COPY ccd_defs_check.py /code/ccd_defs_check.py
 COPY CMakeLists.txt /code/CMakeLists.txt
 COPY configure.sh /code/configure.sh
-COPY /.git/ /code/.git/
-COPY .gitignore /code/.gitignore
-COPY .gitmodules /code/.gitmodules
 COPY /modules/ /code/modules/
 COPY /opendm/ /code/opendm/
 COPY /patched_files/ /code/patched_files/
@@ -20,11 +17,10 @@ COPY /scripts/ /code/scripts/
 COPY /SuperBuild/cmake/ /code/SuperBuild/cmake/
 COPY /SuperBuild/CMakeLists.txt /code/SuperBuild/CMakeLists.txt
 COPY docker.settings.yaml /code/settings.yaml
-COPY /tests/ /code/tests/
 COPY VERSION /code/VERSION
 
-# Update submodules
-RUN git submodule init && git submodule update
+# Update submodules 
+# RUN git submodule init && git submodule update
 
 #Compile code in SuperBuild and root directories
 RUN cd SuperBuild && mkdir build && cd build && cmake .. && make -j$(nproc) \
