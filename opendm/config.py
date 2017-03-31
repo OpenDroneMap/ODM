@@ -354,6 +354,11 @@ def config():
                              'https://www.gdal.org/frmt_gtiff.html for more info. '
                              '\nDefault: %(default)s')
 
+    parser.add_argument('--build-overviews',
+                        action='store_true',
+                        default=False,
+                        help='Build orthophoto overviews using gdaladdo.')
+
     parser.add_argument('--zip-results',
                         action='store_true',
                         default=False,
