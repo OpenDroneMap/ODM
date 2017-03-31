@@ -345,9 +345,14 @@ def config():
                              'are doing. Options: %(choices)s.\nDefault: %(default)s')
 
     parser.add_argument('--orthophoto-bigtiff',
-                        action='store_true',
-                        default=False,
-                        help='Set this parameter if you expect a big orthophoto.')
+                        type=str,
+                        choices=['YES', 'NO','IF_NEEDED','IF_SAFER'],
+                        default='IF_SAFER',
+                        help='Control whether the created orthophoto is a BigTIFF or '
+                             'classic TIFF. BigTIFF is a variant for files larger than '
+                             '4GiB of data. Options are %(choices)s. See GDAL specs: '
+                             'https://www.gdal.org/frmt_gtiff.html for more info. '
+                             '\nDefault: %(default)s')
 
     parser.add_argument('--zip-results',
                         action='store_true',
