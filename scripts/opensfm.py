@@ -79,7 +79,30 @@ class ODMOpenSfMCell(ecto.Cell):
                 fout.write("\n".join(config))
 
             # run OpenSfM reconstruction
-            system.run('PYTHONPATH=%s %s/bin/run_all %s' %
+            matched_done_file = io.join_paths(tree.opensfm, 'matching_done.txt')
+            if not io.file_exists(matched_done_file) or rerun_cell:
+                system.run('PYTHONPATH=%s %s/bin/opensfm extract_metadata %s' %
+                           (context.pyopencv_path, context.opensfm_path, tree.opensfm))
+                system.run('PYTHONPATH=%s %s/bin/opensfm detect_features %s' %
+                           (context.pyopencv_path, context.opensfm_path, tree.opensfm))
+                system.run('PYTHONPATH=%s %s/bin/opensfm match_features %s' %
+                           (context.pyopencv_path, context.opensfm_path, tree.opensfm))
+                with open(matched_done_file, 'w') as fout:
+                    fout.write("Matching done!\n")
+            else:
+                log.ODM_WARNING('Found a feature matching done progress file in: %s' %
+                                matched_done_file)
+
+            if not io.file_exists(tree.opensfm_tracks) or rerun_cell:
+                system.run('PYTHONPATH=%s %s/bin/opensfm create_tracks %s' %
+                           (context.pyopencv_path, context.opensfm_path, tree.opensfm))
+            else:
+                log.ODM_WARNING('Found a valid OpenSfM tracks file in: %s' %
+                                tree.opensfm_tracks)
+
+            system.run('PYTHONPATH=%s %s/bin/opensfm reconstruct %s' %
+                       (context.pyopencv_path, context.opensfm_path, tree.opensfm))
+            system.run('PYTHONPATH=%s %s/bin/opensfm mesh %s' %
                        (context.pyopencv_path, context.opensfm_path, tree.opensfm))
             if not args.use_pmvs:
                 system.run('PYTHONPATH=%s %s/bin/opensfm export_visualsfm %s' %
@@ -89,7 +112,7 @@ class ODMOpenSfMCell(ecto.Cell):
                 system.run('PYTHONPATH=%s %s/bin/opensfm compute_depthmaps %s' %
                            (context.pyopencv_path, context.opensfm_path, tree.opensfm))
         else:
-            log.ODM_WARNING('Found a valid OpenSfM file in: %s' %
+            log.ODM_WARNING('Found a valid OpenSfM reconstruction file in: %s' %
                             tree.opensfm_reconstruction)
 
         # check if reconstruction was exported to bundler before
