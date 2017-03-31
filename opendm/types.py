@@ -210,6 +210,41 @@ class ODM_GeoRef(object):
         system.run('{bin}/pdal pipeline -i {xml} --readers.ply.filename={f_in} '
                    '--writers.las.filename={f_out}'.format(**kwargs))
 
+    def convert_to_dem(self, _file, pdalJSON):
+
+        kwargs = {
+            'bin': context.pdal_path,
+            'f_in': _file,
+            'f_out': _file + '_dem.tif', #todo: add options
+            'json': pdalJSON
+        }
+
+        pipelineJSON = '{' \
+                       '    "pipeline":[' \
+                       '        "input.las",' \
+                       '    {' \
+                       '        "type":"filters.sample",' \
+                       '        "radius":"0.5"' \
+                       '    },' \
+                       '    {' \
+                       '        "type":"filters.pmf",' \
+                       '        "extract":"true"' \
+                       '    },' \
+                       '    {' \
+                       '        "resolution": 2,' \
+                       '        "radius": 5,' \
+                       '        "output_type":"idw",' \
+                       '        "filename":"outputfile.tif"' \
+                       '    }' \
+                       '    ]' \
+                       '}'
+        # Write to json file
+        with open(pdalJSON, 'w') as f:
+            f.write(pipelineJSON)
+
+        system.run('{bin}/pdal pipeline {json} --readers.las.filename={f_in} '
+                   '--writers.gdal.filename={f_out}'.format(**kwargs))
+
     def utm_to_latlon(self, _file, _photo, idx):
 
         gcp = self.gcps[idx]
