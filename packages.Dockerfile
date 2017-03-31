@@ -1,4 +1,4 @@
-FROM ubuntu:14.04
+FROM pdal/pdal:6ae5a93e8852
 MAINTAINER Alex Hagiopol <alex.hagiopol@icloud.com>
 
 # Env variables
@@ -92,7 +92,7 @@ RUN apt-get install -y python-empy \
                      liblas-bin \
                      python-matplotlib \
                      libatlas-base-dev \
-                     libatlas3gf-base
+                     libatlas3-base
 
 ENV PYTHONPATH="$PYTHONPATH:/code/SuperBuild/install/lib/python2.7/dist-packages"
 ENV PYTHONPATH="$PYTHONPATH:/code/SuperBuild/src/opensfm"
