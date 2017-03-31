@@ -14,6 +14,7 @@ class ODMOrthoPhotoCell(ecto.Cell):
         params.declare("no_tiled", 'Do not tile tiff', False)
         params.declare("compress", 'Compression type', 'DEFLATE')
         params.declare("bigtiff", 'Make BigTIFF orthophoto', 'IF_SAFER')
+        params.declare("build_overviews", 'Build overviews', False)
         params.declare("verbose", 'print additional messages to console', False)
 
     def declare_io(self, params, inputs, outputs):
@@ -119,6 +120,19 @@ class ODMOrthoPhotoCell(ecto.Cell):
                                '-co NUM_THREADS=ALL_CPUS '
                                '-a_srs \"EPSG:{epsg}\" '
                                '{png} {tiff} > {log}'.format(**kwargs))
+
+                    if self.params.build_overviews:
+                        log.ODM_DEBUG("Building Overviews")
+                        kwargs = {
+                            'orthophoto': tree.odm_orthophoto_tif,
+                            'log': tree.odm_orthophoto_gdaladdo_log
+                        }
+                        # Run gdaladdo
+                        system.run('gdaladdo -ro -r average '
+                                   '--config BIGTIFF_OVERVIEW IF_SAFER '
+                                   '--config COMPRESS_OVERVIEW JPEG '
+                                   '{orthophoto} 2 4 8 16 > {log}'.format(**kwargs))
+
                     geotiffcreated = True
                 if not geotiffcreated:
                     log.ODM_WARNING('No geo-referenced orthophoto created due '
