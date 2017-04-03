@@ -157,13 +157,12 @@ void Odm25dMeshing::buildMesh(){
 	log << "Removed " << (pointCountBeforeOutRemoval - pointCount) << " points\n";
 
 	size_t pointCountBeforeSimplify = pointCount;
-	log << "Simplifying points\n";
 
-	// simplification by clustering using erase-remove idiom
 	const double CELL_SIZE = 0.01;
 	points.erase(CGAL::grid_simplify_point_set(points.begin(), points.end(),
-			CGAL::Nth_of_tuple_property_map<0, PointNormalColor>(), CELL_SIZE),
-		   points.end());
+			CGAL::Nth_of_tuple_property_map<0, PointNormalColor>(),
+			CELL_SIZE),
+			points.end());
 	std::vector<PointNormalColor>(points).swap(points);
 
 	pointCount = points.size();
@@ -244,15 +243,12 @@ void Odm25dMeshing::buildMesh(){
 		vertexIndicies.push_back(static_cast<int>(face->vertex(2)->info()));
 	}
 
-	// TODO: apply fairing algo http://doc.cgal.org/latest/Polygon_mesh_processing/group__PMP__meshing__grp.html#gaa091c8368920920eed87784107d68ecf
-
 	log << "Removing spikes\n";
 
 	const float THRESHOLD = 0.2;
-	const int PASSES = 10;
+	const int PASSES = 5;
 
 	std::vector<float> heights;
-	unsigned int spikesRemoved = 0;
 	float current_threshold = THRESHOLD;
 
 	for (int i = 1; i <= PASSES; i++){
@@ -281,9 +277,7 @@ void Odm25dMeshing::buildMesh(){
 					// of its incident vertices
 					std::sort(heights.begin(), heights.end());
 
-					vertices[vertex->info() * 3 + 2] = heights[0];//heights[heights.size() / 2];
-
-					spikesRemoved++;
+					vertices[vertex->info() * 3 + 2] = heights[heights.size() / 2];
 				}
 
 				heights.clear();
@@ -292,8 +286,6 @@ void Odm25dMeshing::buildMesh(){
 
 		current_threshold /= 2;
 	}
-
-	log << "Removed " << spikesRemoved << " spikes\n";
 
 	log << "Saving mesh to file.\n";
 
