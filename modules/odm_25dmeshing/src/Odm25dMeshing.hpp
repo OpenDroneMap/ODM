@@ -4,11 +4,13 @@
 #include <string>
 #include <iostream>
 
-
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Constrained_Delaunay_triangulation_2.h>
 #include <CGAL/Triangulation_vertex_base_with_info_2.h>
 #include <CGAL/Delaunay_triangulation_2.h>
 #include <CGAL/Triangulation_2.h>
+#include <CGAL/remove_outliers.h>
+#include <CGAL/jet_smooth_point_set.h>
 
 #include "Logger.hpp"
 #include "PlyInterpreter.hpp"
@@ -60,8 +62,7 @@ private:
 	std::string outputFile = "odm_mesh.ply";
 	std::string logFilePath = "odm_25dmeshing_log.txt";
 
-	std::vector<Pwn> points; // store points with normals
-	std::vector<Color> point_colors; // store colors in separate container
+	std::vector<Pwc> points;
 };
 
 class Odm25dMeshingException: public std::exception {
