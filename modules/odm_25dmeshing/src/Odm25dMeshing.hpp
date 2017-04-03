@@ -10,7 +10,8 @@
 #include <CGAL/Delaunay_triangulation_2.h>
 #include <CGAL/Triangulation_2.h>
 #include <CGAL/remove_outliers.h>
-#include <CGAL/jet_smooth_point_set.h>
+#include <CGAL/grid_simplify_point_set.h>
+#include <CGAL/bilateral_smooth_point_set.h>
 
 #include "Logger.hpp"
 #include "PlyInterpreter.hpp"
@@ -62,7 +63,7 @@ private:
 	std::string outputFile = "odm_mesh.ply";
 	std::string logFilePath = "odm_25dmeshing_log.txt";
 
-	std::vector<Pwc> points;
+	std::vector<PointNormalColor> points;
 };
 
 class Odm25dMeshingException: public std::exception {
