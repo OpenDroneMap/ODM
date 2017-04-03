@@ -144,17 +144,31 @@ void Odm25dMeshing::buildMesh(){
 
 	log << "Removing outliers\n";
 
-	const unsigned int nb_neighbors = 24;
-	const double removed_percentage = 5;
+	const unsigned int NEIGHBORS = 24;
+	const double REMOVED_PERCENTAGE = 5;
 
 	points.erase(CGAL::remove_outliers(points.begin(), points.end(),
-			CGAL::First_of_pair_property_map<Pwc>(), nb_neighbors, removed_percentage),
+			CGAL::Nth_of_tuple_property_map<0, PointNormalColor>(), NEIGHBORS, REMOVED_PERCENTAGE),
 			points.end());
-	std::vector<Pwc>(points).swap(points);
+	std::vector<PointNormalColor>(points).swap(points);
 
 	size_t pointCount = points.size();
 
 	log << "Removed " << (pointCountBeforeOutRemoval - pointCount) << " points\n";
+
+	size_t pointCountBeforeSimplify = pointCount;
+	log << "Simplifying points\n";
+
+	// simplification by clustering using erase-remove idiom
+	const double CELL_SIZE = 0.01;
+	points.erase(CGAL::grid_simplify_point_set(points.begin(), points.end(),
+			CGAL::Nth_of_tuple_property_map<0, PointNormalColor>(), CELL_SIZE),
+		   points.end());
+	std::vector<PointNormalColor>(points).swap(points);
+
+	pointCount = points.size();
+
+	log << "Removed " << (pointCountBeforeSimplify - pointCount) << " points\n";
 
 	if (pointCount < 3){
 		throw Odm25dMeshingException("Not enough points");
@@ -162,15 +176,21 @@ void Odm25dMeshing::buildMesh(){
 
 	log << "Smoothing point set\n";
 
-	// jet_smooth_point_set does not seem to support pairs, so we need
-	// to copy the points over
-	std::vector<Point3> smoothPoints;
-	for (size_t i = 0; i < pointCount; i++){
-		smoothPoints.push_back(points[i].first);
-	}
-	CGAL::jet_smooth_point_set<Concurrency_tag>(smoothPoints.begin(), smoothPoints.end(), nb_neighbors);
+	const double SHARPNESS_ANGLE = 89; // control sharpness of the result. The bigger the smoother the result will be
+	const int SMOOTH_PASSES = 3;
 
-	log << "Smoothing completed\n";
+	for (int i = 0; i < SMOOTH_PASSES; ++i)
+	{
+		log << "Pass " << (i + 1) << " of " << SMOOTH_PASSES << "\n";
+
+		CGAL::bilateral_smooth_point_set <Concurrency_tag>(
+			  points.begin(),
+			  points.end(),
+			  CGAL::Nth_of_tuple_property_map<0, PointNormalColor>(),
+			  CGAL::Nth_of_tuple_property_map<1, PointNormalColor>(),
+			  NEIGHBORS,
+			  SHARPNESS_ANGLE);
+	}
 
 	std::vector< std::pair<cgalPoint, size_t > > pts;
 	try{
@@ -180,7 +200,7 @@ void Odm25dMeshing::buildMesh(){
 	}
 
 	for (size_t i = 0; i < pointCount; ++i){
-		pts.push_back(std::make_pair(cgalPoint(smoothPoints[i].x(), smoothPoints[i].y()), i));
+		pts.push_back(std::make_pair(cgalPoint(points[i].get<0>().x(), points[i].get<0>().y()), i));
 	}
 
 	log << "Computing delaunay triangulation\n";
@@ -209,13 +229,13 @@ void Odm25dMeshing::buildMesh(){
 	}
 
 	for (size_t i = 0; i < pointCount; ++i){
-		vertices.push_back(smoothPoints[i].x());
-		vertices.push_back(smoothPoints[i].y());
-		vertices.push_back(smoothPoints[i].z());
+		vertices.push_back(points[i].get<0>().x());
+		vertices.push_back(points[i].get<0>().y());
+		vertices.push_back(points[i].get<0>().z());
 
-		colors.push_back(points[i].second[0]);
-		colors.push_back(points[i].second[1]);
-		colors.push_back(points[i].second[2]);
+		colors.push_back(points[i].get<2>()[0]);
+		colors.push_back(points[i].get<2>()[1]);
+		colors.push_back(points[i].get<2>()[2]);
 	}
 
 	for (DT::Face_iterator face = dt.faces_begin(); face != dt.faces_end(); ++face) {
@@ -228,10 +248,8 @@ void Odm25dMeshing::buildMesh(){
 
 	log << "Removing spikes\n";
 
-	const float THRESHOLD = 0.1;
-	const int PASSES = 20;
-
-	// TODO: check these...
+	const float THRESHOLD = 0.2;
+	const int PASSES = 10;
 
 	std::vector<float> heights;
 	unsigned int spikesRemoved = 0;
@@ -240,49 +258,42 @@ void Odm25dMeshing::buildMesh(){
 	for (int i = 1; i <= PASSES; i++){
 		log << "Pass " << i << " of " << PASSES << "\n";
 
-	for (DT::Vertex_iterator vertex = dt.vertices_begin(); vertex != dt.vertices_end(); ++vertex){
-		// Check if the height between this vertex and its
-		// incident vertices is greater than THRESHOLD
-		Vertex_circulator vc = dt.incident_vertices(vertex), done(vc);
+		for (DT::Vertex_iterator vertex = dt.vertices_begin(); vertex != dt.vertices_end(); ++vertex){
+			// Check if the height between this vertex and its
+			// incident vertices is greater than THRESHOLD
+			Vertex_circulator vc = dt.incident_vertices(vertex), done(vc);
 
-		if (vc != 0){
-			float height = vertices[vertex->info() * 3 + 2];
-			bool spike = false;
+			if (vc != 0){
+				float height = vertices[vertex->info() * 3 + 2];
+				bool spike = false;
 
-			do{
-				if (dt.is_infinite(vc)) continue;
+				do{
+					if (dt.is_infinite(vc)) continue;
 
-				float ivHeight = vertices[vc->info() * 3 + 2];
-				if (fabs(height - ivHeight) > current_threshold) spike = true;
+					float ivHeight = vertices[vc->info() * 3 + 2];
+					if (fabs(height - ivHeight) > current_threshold) spike = true;
 
-				heights.push_back(ivHeight);
-			}while(++vc != done);
+					heights.push_back(ivHeight);
+				}while(++vc != done);
 
-			if (spike){
-				// Replace the height of the vertex by the median height
-				// of its incident vertices
-				std::sort(heights.begin(), heights.end());
+				if (spike){
+					// Replace the height of the vertex by the median height
+					// of its incident vertices
+					std::sort(heights.begin(), heights.end());
 
-//				points[vertex->info()].first = Point3(points[vertex->info()].first.x(),
-//													points[vertex->info()].first.y(),
-//													heights[heights.size() / 2]);
+					vertices[vertex->info() * 3 + 2] = heights[0];//heights[heights.size() / 2];
 
-				vertices[vertex->info() * 3 + 2] = heights[heights.size() / 2];
-//
-//				colors[vertex->info() * 3] = 255;
-//				colors[vertex->info() * 3 + 1] = 0;
-//				colors[vertex->info() * 3 + 2] = 0;
+					spikesRemoved++;
+				}
 
-
-				spikesRemoved++;
+				heights.clear();
 			}
-
-			heights.clear();
 		}
-	}
 
 		current_threshold /= 2;
 	}
+
+	log << "Removed " << spikesRemoved << " spikes\n";
 
 	log << "Saving mesh to file.\n";
 
