@@ -1,5 +1,19 @@
 #include "Odm25dMeshing.hpp"
 
+//We define a vertex_base with info. The "info" (size_t) allow us to keep track of the original point index.
+typedef CGAL::Triangulation_vertex_base_with_info_2<size_t, Kernel> Vb;
+typedef CGAL::Triangulation_data_structure_2<Vb> Tds;
+typedef CGAL::Delaunay_triangulation_2<Kernel, Tds> DT;
+typedef DT::Point cgalPoint;
+typedef DT::Vertex_circulator Vertex_circulator;
+
+// Concurrency
+#ifdef CGAL_LINKED_WITH_TBB
+typedef CGAL::Parallel_tag Concurrency_tag;
+#else
+typedef CGAL::Sequential_tag Concurrency_tag;
+#endif
+
 int Odm25dMeshing::run(int argc, char **argv) {
 	log << logFilePath << "\n";
 
@@ -114,59 +128,51 @@ void Odm25dMeshing::parseArguments(int argc, char **argv) {
 }
 
 void Odm25dMeshing::loadPointCloud(){
-//	  PlyInterpreter interpreter(points, point_colors);
-//
-//	  std::ifstream in(inputFile);
-//	  if (!in || !CGAL::read_ply_custom_points (in, interpreter, Kernel())){
-//		  throw Odm25dMeshingException(
-//		  				"Error when reading points and normals from:\n" + inputFile + "\n");
-//	  }
-//
-//	  log << "Successfully loaded " << points.size() << " points from file\n";
-
-//	  for (std::size_t i = 0; i < points.size (); ++ i){
-//		  std::cout << points[i].first << std::endl;
-//	  }
-
-//	if (pcl::io::loadPLYFile < pcl::PointNormal
-//			> (inputFile_.c_str(), *points_.get()) == -1) {
-//		throw OdmMeshingException(
-//				"Error when reading points and normals from:\n" + inputFile_
-//						+ "\n");
-//	} else {
-//		log << "Successfully loaded " << points_->size()
-//				<< " points with corresponding normals from file.\n";
-//	}
-}
-
-void Odm25dMeshing::buildMesh(){
-	PlyInterpreter interpreter(points, point_colors);
+	  PlyInterpreter interpreter(points);
 
 	  std::ifstream in(inputFile);
 	  if (!in || !CGAL::read_ply_custom_points (in, interpreter, Kernel())){
 		  throw Odm25dMeshingException(
-						"Error when reading points and normals from:\n" + inputFile + "\n");
+		  				"Error when reading points and normals from:\n" + inputFile + "\n");
 	  }
 
 	  log << "Successfully loaded " << points.size() << " points from file\n";
+}
 
+void Odm25dMeshing::buildMesh(){
+	size_t pointCountBeforeOutRemoval = points.size();
+
+	log << "Removing outliers\n";
+
+	const unsigned int nb_neighbors = 24;
+	const double removed_percentage = 5;
+
+	points.erase(CGAL::remove_outliers(points.begin(), points.end(),
+			CGAL::First_of_pair_property_map<Pwc>(), nb_neighbors, removed_percentage),
+			points.end());
+	std::vector<Pwc>(points).swap(points);
 
 	size_t pointCount = points.size();
+
+	log << "Removed " << (pointCountBeforeOutRemoval - pointCount) << " points\n";
 
 	if (pointCount < 3){
 		throw Odm25dMeshingException("Not enough points");
 	}
 
-	//CGAL boilerplate
-	//We define a vertex_base with info. The "info" (size_t) allow us to keep track of the original point index.
-	typedef CGAL::Triangulation_vertex_base_with_info_2<size_t, Kernel> Vb;
-	typedef CGAL::Triangulation_data_structure_2<Vb> Tds;
-	typedef CGAL::Delaunay_triangulation_2<Kernel, Tds> DT;
-	typedef DT::Point cgalPoint;
-	typedef DT::Vertex_circulator Vertex_circulator;
+	log << "Smoothing point set\n";
+
+	// jet_smooth_point_set does not seem to support pairs, so we need
+	// to copy the points over
+	std::vector<Point3> smoothPoints;
+	for (size_t i = 0; i < pointCount; i++){
+		smoothPoints.push_back(points[i].first);
+	}
+	CGAL::jet_smooth_point_set<Concurrency_tag>(smoothPoints.begin(), smoothPoints.end(), nb_neighbors);
+
+	log << "Smoothing completed\n";
 
 	std::vector< std::pair<cgalPoint, size_t > > pts;
-
 	try{
 		pts.reserve(pointCount);
 	} catch (const std::bad_alloc&){
@@ -174,7 +180,7 @@ void Odm25dMeshing::buildMesh(){
 	}
 
 	for (size_t i = 0; i < pointCount; ++i){
-		pts.push_back(std::make_pair(cgalPoint(points[i].first.x(), points[i].first.y()), i));
+		pts.push_back(std::make_pair(cgalPoint(smoothPoints[i].x(), smoothPoints[i].y()), i));
 	}
 
 	log << "Computing delaunay triangulation\n";
@@ -203,13 +209,13 @@ void Odm25dMeshing::buildMesh(){
 	}
 
 	for (size_t i = 0; i < pointCount; ++i){
-		vertices.push_back(points[i].first.x());
-		vertices.push_back(points[i].first.y());
-		vertices.push_back(points[i].first.z());
+		vertices.push_back(smoothPoints[i].x());
+		vertices.push_back(smoothPoints[i].y());
+		vertices.push_back(smoothPoints[i].z());
 
-		colors.push_back(point_colors[i][0]);
-		colors.push_back(point_colors[i][1]);
-		colors.push_back(point_colors[i][2]);
+		colors.push_back(points[i].second[0]);
+		colors.push_back(points[i].second[1]);
+		colors.push_back(points[i].second[2]);
 	}
 
 	for (DT::Face_iterator face = dt.faces_begin(); face != dt.faces_end(); ++face) {
@@ -220,11 +226,10 @@ void Odm25dMeshing::buildMesh(){
 
 	// TODO: apply fairing algo http://doc.cgal.org/latest/Polygon_mesh_processing/group__PMP__meshing__grp.html#gaa091c8368920920eed87784107d68ecf
 
-	log << "Applying smoothing\n";
+	log << "Removing spikes\n";
 
-
-	const float THRESHOLD = 0.2;
-	const int PASSES = 5;
+	const float THRESHOLD = 0.1;
+	const int PASSES = 20;
 
 	// TODO: check these...
 
@@ -278,10 +283,6 @@ void Odm25dMeshing::buildMesh(){
 
 		current_threshold /= 2;
 	}
-
-	log << "Preparing to export\n";
-
-
 
 	log << "Saving mesh to file.\n";
 

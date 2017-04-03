@@ -15,13 +15,12 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-
 #include "Odm25dMeshing.hpp"
 
 /*!
  * \mainpage main OpenDroneMap 2.5D Meshing Module
  *
- *  The OpenDroneMap 2.5D Meshing Module generates a 2.5D mesh using a constrained 
+ *  The OpenDroneMap 2.5D Meshing Module generates a 2.5D mesh using a constrained
  *  delaunay triangulation from any point cloud (points with corresponding normals).
  */
 
