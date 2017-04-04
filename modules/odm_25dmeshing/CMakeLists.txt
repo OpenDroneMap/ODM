@@ -1,12 +1,14 @@
 project(odm_25dmeshing)
 cmake_minimum_required(VERSION 2.8)
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR})
+
 # Link
-find_package(CGAL QUIET COMPONENTS Core )
+find_package(CGAL COMPONENTS Core )
 
 if ( CGAL_FOUND )
 
-  find_package( Eigen3 QUIET )
+  find_package( Eigen3 )
 
   if( EIGEN3_FOUND )
     include_directories(${EIGEN3_INCLUDE_DIR})

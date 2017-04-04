@@ -20,7 +20,8 @@ sudo apt-get install -y -qq build-essential \
                      libgdal-dev \
                      gdal-bin \
                      libgeotiff-dev \
-                     pkg-config
+                     pkg-config \
+                     libcgal-dev
 
 echo "Getting CMake 3.1 for MVS-Texturing"
 sudo apt-get install -y software-properties-common python-software-properties
