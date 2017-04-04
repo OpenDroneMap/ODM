@@ -363,6 +363,7 @@ class ODM_Tree(object):
         self.benchmarking = io.join_paths(self.root_path, 'benchmark.txt')
 
         # opensfm
+        self.opensfm_tracks = io.join_paths(self.opensfm, 'tracks.csv')
         self.opensfm_bundle = io.join_paths(self.opensfm, 'bundle_r000.out')
         self.opensfm_bundle_list = io.join_paths(self.opensfm, 'list_r000.out')
         self.opensfm_image_list = io.join_paths(self.opensfm, 'image_list.txt')
@@ -421,3 +422,4 @@ class ODM_Tree(object):
         self.odm_orthophoto_corners = io.join_paths(self.odm_orthophoto, 'odm_orthophoto_corners.txt')
         self.odm_orthophoto_log = io.join_paths(self.odm_orthophoto, 'odm_orthophoto_log.txt')
         self.odm_orthophoto_tif_log = io.join_paths(self.odm_orthophoto, 'gdal_translate_log.txt')
+        self.odm_orthophoto_gdaladdo_log = io.join_paths(self.odm_orthophoto, 'gdaladdo_log.txt')

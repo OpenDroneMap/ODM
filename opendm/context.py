@@ -1,5 +1,6 @@
 import os
 import sys
+from opendm import io
 import multiprocessing
 
 # Define some needed locations
@@ -36,6 +37,8 @@ pdal_path = os.path.join(superbuild_path, 'build/pdal/bin')
 # define odm modules path
 odm_modules_path = os.path.join(root_path, "build/bin")
 odm_modules_src_path = os.path.join(root_path, "modules")
+
+settings_path = os.path.join(root_path, 'settings.yaml')
 
 # Define supported image extensions
 supported_extensions = {'.jpg','.jpeg','.png'}
