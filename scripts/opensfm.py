@@ -99,8 +99,6 @@ class ODMOpenSfMCell(ecto.Cell):
             else:
                 log.ODM_WARNING('Found a valid OpenSfM tracks file in: %s' %
                                 tree.opensfm_tracks)
-                log.ODM_WARNING('Found a valid OpenSfM tracks file in: %s' %
-                                tree.opensfm_tracks)
 
             if not io.file_exists(tree.opensfm_reconstruction) or rerun_cell:
                 system.run('PYTHONPATH=%s %s/bin/opensfm reconstruct %s' %
