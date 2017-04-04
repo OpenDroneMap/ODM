@@ -344,6 +344,21 @@ def config():
                              'break gdal_translate if you don\'t know what you '
                              'are doing. Options: %(choices)s.\nDefault: %(default)s')
 
+    parser.add_argument('--orthophoto-bigtiff',
+                        type=str,
+                        choices=['YES', 'NO','IF_NEEDED','IF_SAFER'],
+                        default='IF_SAFER',
+                        help='Control whether the created orthophoto is a BigTIFF or '
+                             'classic TIFF. BigTIFF is a variant for files larger than '
+                             '4GiB of data. Options are %(choices)s. See GDAL specs: '
+                             'https://www.gdal.org/frmt_gtiff.html for more info. '
+                             '\nDefault: %(default)s')
+
+    parser.add_argument('--build-overviews',
+                        action='store_true',
+                        default=False,
+                        help='Build orthophoto overviews using gdaladdo.')
+
     parser.add_argument('--zip-results',
                         action='store_true',
                         default=False,

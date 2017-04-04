@@ -76,6 +76,8 @@ class ODMApp(ecto.BlackBox):
                                                  t_srs=p.args.orthophoto_target_srs,
                                                  no_tiled=p.args.orthophoto_no_tiled,
                                                  compress=p.args.orthophoto_compression,
+                                                 bigtiff=p.args.orthophoto_bigtiff,
+                                                 build_overviews=p.args.build_overviews,
                                                  verbose=p.args.verbose)
                  }
 
