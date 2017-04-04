@@ -1,10 +1,27 @@
 import argparse
-import context
+from opendm import context
+from opendm import io
+from opendm import log
+from yaml import safe_load
+from appsettings import SettingsParser
+
+import sys
 
 # parse arguments
 processopts = ['resize', 'opensfm', 'slam', 'cmvs', 'pmvs',
                'odm_meshing', 'mvs_texturing', 'odm_georeferencing',
                'odm_orthophoto']
+
+with open(io.join_paths(context.root_path, 'VERSION')) as version_file:
+    __version__ = version_file.read().strip()
+
+
+def alphanumeric_string(string):
+    import re
+    if re.match('^[a-zA-Z0-9_-]+$', string) is None:
+        msg = '{0} is not a valid name. Must use alphanumeric characters.'.format(string)
+        raise argparse.ArgumentTypeError(msg)
+    return string
 
 
 class RerunFrom(argparse.Action):
@@ -12,17 +29,23 @@ class RerunFrom(argparse.Action):
         setattr(namespace, self.dest, processopts[processopts.index(values):])
 
 
-parser = argparse.ArgumentParser(description='OpenDroneMap')
-
+parser = SettingsParser(description='OpenDroneMap',
+                        usage='%(prog)s [options] <project name>',
+                        yaml_file=open(context.settings_path))
 
 def config():
     parser.add_argument('--images', '-i',
-                        metavar='<string>',
+                        metavar='<path>',
                         help='Path to input images'),
 
     parser.add_argument('--project-path',
-                        metavar='<string>',
-                        help='Path to the project to process')
+                        metavar='<path>',
+                        help='Path to the project folder')
+
+    parser.add_argument('name',
+                        metavar='<project name>',
+                        type=alphanumeric_string,
+                        help='Name of Project (i.e subdirectory of projects folder)')
 
     parser.add_argument('--resize-to',  # currently doesn't support 'orig'
                         metavar='<integer>',
@@ -119,7 +142,8 @@ def config():
                         default=0,
                         type=int,
                         help='Distance threshold in meters to find pre-matching '
-                             'images based on GPS exif data. Set to 0 to skip '
+                             'images based on GPS exif data. Set both '
+                             'matcher-neighbors and this to 0 to skip '
                              'pre-matching. Default: %(default)s')
 
     parser.add_argument('--opensfm-processes',
@@ -132,8 +156,7 @@ def config():
     parser.add_argument('--use-pmvs',
                         action='store_true',
                         default=False,
-                        help='Use OpenSfM to compute the point cloud instead '
-                             'of PMVS')
+                        help='Use pmvs to compute point cloud alternatively')
 
     parser.add_argument('--cmvs-maxImages',
                         metavar='<integer>',
@@ -152,7 +175,7 @@ def config():
                               'more pmvs documentation. Default: %(default)s'))
 
     parser.add_argument('--pmvs-csize',
-                        metavar='< positive integer>',
+                        metavar='<positive integer>',
                         default=2,
                         type=int,
                         help='Cell size controls the density of reconstructions'
@@ -227,12 +250,14 @@ def config():
     parser.add_argument('--texturing-data-term',
                         metavar='<string>',
                         default='gmi',
+                        choices=['gmi', 'area'],
                         help=('Data term: [area, gmi]. Default: '
                               '%(default)s'))
 
     parser.add_argument('--texturing-outlier-removal-type',
                         metavar='<string>',
                         default='gauss_clamping',
+                        choices=['none', 'gauss_clamping', 'gauss_damping'],
                         help=('Type of photometric outlier removal method: ' 
                               '[none, gauss_damping, gauss_clamping]. Default: '  
                               '%(default)s'))
@@ -296,6 +321,44 @@ def config():
                         help=('Orthophoto ground resolution in pixels/meter'
                               'Default: %(default)s'))
 
+    parser.add_argument('--orthophoto-target-srs',
+                        metavar="<EPSG:XXXX>",
+                        type=str,
+                        default=None,
+                        help='Target spatial reference for orthophoto creation. '
+                             'Not implemented yet.\n'
+                             'Default: %(default)s')
+
+    parser.add_argument('--orthophoto-no-tiled',
+                        action='store_true',
+                        default=False,
+                        help='Set this parameter if you want a stripped geoTIFF.\n'
+                             'Default: %(default)s')
+
+    parser.add_argument('--orthophoto-compression',
+                        metavar='<string>',
+                        type=str,
+                        choices=['JPEG', 'LZW', 'PACKBITS', 'DEFLATE', 'LZMA', 'NONE'],
+                        default='DEFLATE',
+                        help='Set the compression to use. Note that this could '
+                             'break gdal_translate if you don\'t know what you '
+                             'are doing. Options: %(choices)s.\nDefault: %(default)s')
+
+    parser.add_argument('--orthophoto-bigtiff',
+                        type=str,
+                        choices=['YES', 'NO','IF_NEEDED','IF_SAFER'],
+                        default='IF_SAFER',
+                        help='Control whether the created orthophoto is a BigTIFF or '
+                             'classic TIFF. BigTIFF is a variant for files larger than '
+                             '4GiB of data. Options are %(choices)s. See GDAL specs: '
+                             'https://www.gdal.org/frmt_gtiff.html for more info. '
+                             '\nDefault: %(default)s')
+
+    parser.add_argument('--build-overviews',
+                        action='store_true',
+                        default=False,
+                        help='Build orthophoto overviews using gdaladdo.')
+
     parser.add_argument('--zip-results',
                         action='store_true',
                         default=False,
@@ -313,4 +376,19 @@ def config():
                         help='Generates a benchmark file with runtime info\n'
                              'Default: %(default)s')
 
-    return parser.parse_args()
+    parser.add_argument('--version',
+                        action='version',
+                        version='OpenDroneMap {0}'.format(__version__),
+                        help='Displays version number and exits. ')
+
+    args = parser.parse_args()
+
+    # check that the project path setting has been set properly
+    if not args.project_path:
+        log.ODM_ERROR('You need to set the project path in the '
+                      'settings.yaml file before you can run ODM, '
+                      'or use `--project-path <path>`. Run `python '
+                      'run.py --help` for more information. ')
+        sys.exit(1)
+
+    return args
