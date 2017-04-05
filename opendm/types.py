@@ -353,7 +353,9 @@ class ODM_Tree(object):
         self.pmvs = io.join_paths(self.root_path, 'pmvs')
         self.odm_meshing = io.join_paths(self.root_path, 'odm_meshing')
         self.odm_texturing = io.join_paths(self.root_path, 'odm_texturing')
+        self.odm_25dtexturing = io.join_paths(self.root_path, 'odm_texturing_25d')
         self.odm_georeferencing = io.join_paths(self.root_path, 'odm_georeferencing')
+        self.odm_25dgeoreferencing = io.join_paths(self.root_path, 'odm_25dgeoreferencing')
         self.odm_orthophoto = io.join_paths(self.root_path, 'odm_orthophoto')
         self.odm_pdal = io.join_paths(self.root_path, 'pdal')
 
@@ -380,17 +382,16 @@ class ODM_Tree(object):
         # odm_meshing
         self.odm_mesh = io.join_paths(self.odm_meshing, 'odm_mesh.ply')
         self.odm_meshing_log = io.join_paths(self.odm_meshing, 'odm_meshing_log.txt')
+        self.odm_25dmesh = io.join_paths(self.odm_meshing, 'odm_25dmesh.ply')
+        self.odm_25dmeshing_log = io.join_paths(self.odm_meshing, 'odm_25dmeshing_log.txt')
 
         # texturing
         self.odm_texturing_undistorted_image_path = io.join_paths(
             self.odm_texturing, 'undistorted')
-        self.odm_textured_model_obj = io.join_paths(
-            self.odm_texturing, 'odm_textured_model.obj')
-        self.odm_textured_model_mtl = io.join_paths(
-            self.odm_texturing, 'odm_textured_model.mtl')
-# Log is only used by old odm_texturing
-        self.odm_texuring_log = io.join_paths(
-            self.odm_texturing, 'odm_texturing_log.txt')
+        self.odm_textured_model_obj = 'odm_textured_model.obj'
+        self.odm_textured_model_mtl = 'odm_textured_model.mtl'
+        # Log is only used by old odm_texturing
+        self.odm_texuring_log = 'odm_texturing_log.txt'
 
         # odm_georeferencing
         self.odm_georeferencing_latlon = io.join_paths(
@@ -401,14 +402,10 @@ class ODM_Tree(object):
             self.odm_georeferencing, 'gcp_list.txt')
         self.odm_georeferencing_utm_log = io.join_paths(
             self.odm_georeferencing, 'odm_georeferencing_utm_log.txt')
-        self.odm_georeferencing_log = io.join_paths(
-            self.odm_georeferencing, 'odm_georeferencing_log.txt')
-        self.odm_georeferencing_model_txt_geo = io.join_paths(
-            self.odm_georeferencing, 'odm_georeferencing_model_geo.txt')
-        self.odm_georeferencing_model_ply_geo = io.join_paths(
-            self.odm_georeferencing, 'odm_georeferenced_model.ply')
-        self.odm_georeferencing_model_obj_geo = io.join_paths(
-            self.odm_texturing, 'odm_textured_model_geo.obj')  # these files will be kept in odm_texturing/
+        self.odm_georeferencing_log = 'odm_georeferencing_log.txt'
+        self.odm_georeferencing_model_txt_geo = 'odm_georeferencing_model_geo.txt'
+        self.odm_georeferencing_model_ply_geo = 'odm_georeferenced_model.ply'
+        self.odm_georeferencing_model_obj_geo = 'odm_textured_model_geo.obj'
         self.odm_georeferencing_model_mtl_geo = io.join_paths(
             self.odm_texturing, 'odm_textured_model_geo.mtl')  # these files will be kept in odm_texturing/
         self.odm_georeferencing_xyz_file = io.join_paths(

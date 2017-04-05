@@ -94,13 +94,13 @@ class ODMApp(ecto.BlackBox):
             with open(tree.benchmarking, 'a') as b:
                 b.write('ODM Benchmarking file created %s\nNumber of Cores: %s\n\n' % (system.now(), context.num_cores))
 
-    def connections(self, _p):
-        if _p.args.video:
+    def connections(self, p):
+        if p.args.video:
             return self.slam_connections(_p)
 
         # define initial task
         # TODO: What is this?
-        # initial_task = _p.args['start_with']
+        # initial_task = p.args['start_with']
         # initial_task_id = config.processopts.index(initial_task)
 
         # define the connections like you would for the plasm
@@ -118,7 +118,7 @@ class ODMApp(ecto.BlackBox):
                         self.args[:] >> self.opensfm['args'],
                         self.resize['photos'] >> self.opensfm['photos']]
 
-        if not _p.args.use_pmvs:
+        if not p.args.use_pmvs:
             # create odm mesh from opensfm point cloud
             connections += [self.tree[:] >> self.meshing['tree'],
                             self.args[:] >> self.meshing['args'],
@@ -138,7 +138,7 @@ class ODMApp(ecto.BlackBox):
             connections += [self.tree[:] >> self.meshing['tree'],
                             self.args[:] >> self.meshing['args'],
                             self.pmvs['reconstruction'] >> self.meshing['reconstruction']]
-
+        
         # create odm texture
         connections += [self.tree[:] >> self.texturing['tree'],
                         self.args[:] >> self.texturing['args'],
@@ -154,10 +154,9 @@ class ODMApp(ecto.BlackBox):
         connections += [self.tree[:] >> self.orthophoto['tree'],
                         self.args[:] >> self.orthophoto['args'],
                         self.georeferencing['reconstruction'] >> self.orthophoto['reconstruction']]
-
         return connections
 
-    def slam_connections(self, _p):
+    def slam_connections(self, p):
         """Get connections used when running from video instead of images."""
         connections = []
 

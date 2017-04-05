@@ -9,7 +9,7 @@ import sys
 
 # parse arguments
 processopts = ['resize', 'opensfm', 'slam', 'cmvs', 'pmvs',
-               'odm_meshing', 'mvs_texturing', 'odm_georeferencing',
+               'odm_meshing', 'odm_25dmeshing', 'mvs_texturing', 'odm_georeferencing',
                'odm_orthophoto']
 
 with open(io.join_paths(context.root_path, 'VERSION')) as version_file:
@@ -152,6 +152,12 @@ def config():
                         type=int,
                         help=('The maximum number of processes to use in dense '
                               'reconstruction. Default: %(default)s'))
+    
+    parser.add_argument('--use-25dmesh',
+                    action='store_true',
+                    default=False,
+                    help='Use 2.5D mesh to compute the orthophoto')
+
 
     parser.add_argument('--use-pmvs',
                         action='store_true',
