@@ -89,19 +89,21 @@ class ODMGeoreferencingCell(ecto.Cell):
                       'odm_georeferencing' in args.rerun_from)
 
         runs = [{
-            'out_dir': tree.odm_georeferencing,
+            'georeferencing_dir': tree.odm_georeferencing,
+            'texturing_dir': tree.odm_texturing,
             'model': os.path.join(tree.odm_texturing, tree.odm_textured_model_obj)
         }]
         if args.use_25dmesh:
             runs += [{
-                    'out_dir': tree.odm_25dgeoreferencing,
+                    'georeferencing_dir': tree.odm_25dgeoreferencing,
+                    'texturing_dir': tree.odm_25dtexturing,
                     'model': os.path.join(tree.odm_25dtexturing, tree.odm_textured_model_obj)
                 }]
 
         for r in runs:
-            odm_georeferencing_model_obj_geo = os.path.join(r['out_dir'], tree.odm_georeferencing_model_obj_geo)
-            odm_georeferencing_model_ply_geo = os.path.join(r['out_dir'], tree.odm_georeferencing_model_ply_geo)
-            odm_georeferencing_log = os.path.join(r['out_dir'], tree.odm_georeferencing_log)
+            odm_georeferencing_model_obj_geo = os.path.join(r['texturing_dir'], tree.odm_georeferencing_model_obj_geo)
+            odm_georeferencing_model_ply_geo = os.path.join(r['georeferencing_dir'], tree.odm_georeferencing_model_ply_geo)
+            odm_georeferencing_log = os.path.join(r['georeferencing_dir'], tree.odm_georeferencing_log)
 
             if not io.file_exists(odm_georeferencing_model_obj_geo) or \
                not io.file_exists(odm_georeferencing_model_ply_geo) or rerun_cell:
@@ -116,7 +118,7 @@ class ODMGeoreferencingCell(ecto.Cell):
                     'log': odm_georeferencing_log,
                     'coords': tree.odm_georeferencing_coords,
                     'pc_geo': odm_georeferencing_model_ply_geo,
-                    'geo_sys': os.path.join(r['out_dir'], tree.odm_georeferencing_model_txt_geo),
+                    'geo_sys': os.path.join(r['georeferencing_dir'], tree.odm_georeferencing_model_txt_geo),
                     'model_geo': odm_georeferencing_model_obj_geo,
                     'size': self.params.img_size,
                     'gcp': gcpfile,
