@@ -1,4 +1,4 @@
-import ecto
+import ecto, os
 
 from opendm import log
 from opendm import io
@@ -39,6 +39,7 @@ class ODMMvsTexCell(ecto.Cell):
 
         # define paths and create working directories
         system.mkdir_p(tree.odm_texturing)
+        if args.use_25dmesh: system.mkdir_p(tree.odm_25dtexturing) 
 
         # check if we rerun cell or not
         rerun_cell = (args.rerun is not None and
@@ -47,69 +48,83 @@ class ODMMvsTexCell(ecto.Cell):
                      (args.rerun_from is not None and
                       'mvs_texturing' in args.rerun_from)
 
-        if not io.file_exists(tree.odm_textured_model_obj) or rerun_cell:
-            log.ODM_DEBUG('Writing MVS Textured file in: %s'
-                          % tree.odm_textured_model_obj)
-            
-            
-            # Format arguments to fit Mvs-Texturing app
-            skipGeometricVisibilityTest = ""
-            skipGlobalSeamLeveling = ""
-            skipLocalSeamLeveling = ""
-            skipHoleFilling = ""
-            keepUnseenFaces = ""
-            
-            if (self.params.skip_vis_test):
-                skipGeometricVisibilityTest = "--skip_geometric_visibility_test"
-            if (self.params.skip_glob_seam_leveling):
-                skipGlobalSeamLeveling = "--skip_global_seam_leveling"
-            if (self.params.skip_loc_seam_leveling):
-                skipLocalSeamLeveling = "--skip_local_seam_leveling"
-            if (self.params.skip_hole_fill):
-                skipHoleFilling = "--skip_hole_filling"
-            if (self.params.keep_unseen_faces):
-                keepUnseenFaces = "--keep_unseen_faces"
+        runs = [{
+            'out_dir': tree.odm_texturing,
+            'model': tree.odm_mesh
+        }]
 
-            # mvstex definitions
-            kwargs = {
-                'bin': context.mvstex_path,
-                'out_dir': io.join_paths(tree.odm_texturing, "odm_textured_model"),
-                'pmvs_folder': tree.pmvs_rec_path,
-                'nvm_file': io.join_paths(tree.pmvs_rec_path, "nvmCams.nvm"),
-                'model': tree.odm_mesh,
-                'dataTerm': self.params.data_term,
-                'outlierRemovalType': self.params.outlier_rem_type,
-                'skipGeometricVisibilityTest': skipGeometricVisibilityTest,
-                'skipGlobalSeamLeveling': skipGlobalSeamLeveling,
-                'skipLocalSeamLeveling': skipLocalSeamLeveling,
-                'skipHoleFilling': skipHoleFilling,
-                'keepUnseenFaces': keepUnseenFaces,
-                'toneMapping': self.params.tone_mapping
-            }
+        if args.use_25dmesh:
+            runs += [{
+                    'out_dir': tree.odm_25dtexturing,
+                    'model': tree.odm_25dmesh
+                }]
 
-            if not args.use_pmvs:
-                kwargs['nvm_file'] = io.join_paths(tree.opensfm,
-                                                   "reconstruction.nvm")
+        for r in runs:
+            odm_textured_model_obj = os.path.join(r['out_dir'], tree.odm_textured_model_obj)
+
+            if not io.file_exists(odm_textured_model_obj) or rerun_cell:
+                log.ODM_DEBUG('Writing MVS Textured file in: %s'
+                              % odm_textured_model_obj)
+                
+                
+                # Format arguments to fit Mvs-Texturing app
+                skipGeometricVisibilityTest = ""
+                skipGlobalSeamLeveling = ""
+                skipLocalSeamLeveling = ""
+                skipHoleFilling = ""
+                keepUnseenFaces = ""
+                
+                if (self.params.skip_vis_test):
+                    skipGeometricVisibilityTest = "--skip_geometric_visibility_test"
+                if (self.params.skip_glob_seam_leveling):
+                    skipGlobalSeamLeveling = "--skip_global_seam_leveling"
+                if (self.params.skip_loc_seam_leveling):
+                    skipLocalSeamLeveling = "--skip_local_seam_leveling"
+                if (self.params.skip_hole_fill):
+                    skipHoleFilling = "--skip_hole_filling"
+                if (self.params.keep_unseen_faces):
+                    keepUnseenFaces = "--keep_unseen_faces"
+
+                # mvstex definitions
+                kwargs = {
+                    'bin': context.mvstex_path,
+                    'out_dir': io.join_paths(r['out_dir'], "odm_textured_model"),
+                    'pmvs_folder': tree.pmvs_rec_path,
+                    'nvm_file': io.join_paths(tree.pmvs_rec_path, "nvmCams.nvm"),
+                    'model': r['model'],
+                    'dataTerm': self.params.data_term,
+                    'outlierRemovalType': self.params.outlier_rem_type,
+                    'skipGeometricVisibilityTest': skipGeometricVisibilityTest,
+                    'skipGlobalSeamLeveling': skipGlobalSeamLeveling,
+                    'skipLocalSeamLeveling': skipLocalSeamLeveling,
+                    'skipHoleFilling': skipHoleFilling,
+                    'keepUnseenFaces': keepUnseenFaces,
+                    'toneMapping': self.params.tone_mapping
+                }
+
+                if not args.use_pmvs:
+                    kwargs['nvm_file'] = io.join_paths(tree.opensfm,
+                                                       "reconstruction.nvm")
+                else:
+                    log.ODM_DEBUG('Generating .nvm file from pmvs output: %s'
+                                  % '{nvm_file}'.format(**kwargs))
+
+                    # Create .nvm camera file.
+                    pmvs2nvmcams.run('{pmvs_folder}'.format(**kwargs),
+                                     '{nvm_file}'.format(**kwargs))
+
+                # run texturing binary
+                system.run('{bin} {nvm_file} {model} {out_dir} '
+                           '-d {dataTerm} -o {outlierRemovalType} '
+                           '-t {toneMapping} '
+                           '{skipGeometricVisibilityTest} '
+                           '{skipGlobalSeamLeveling} '
+                           '{skipLocalSeamLeveling} '
+                           '{skipHoleFilling} '
+                           '{keepUnseenFaces}'.format(**kwargs))
             else:
-                log.ODM_DEBUG('Generating .nvm file from pmvs output: %s'
-                              % '{nvm_file}'.format(**kwargs))
-
-                # Create .nvm camera file.
-                pmvs2nvmcams.run('{pmvs_folder}'.format(**kwargs),
-                                 '{nvm_file}'.format(**kwargs))
-
-            # run texturing binary
-            system.run('{bin} {nvm_file} {model} {out_dir} '
-                       '-d {dataTerm} -o {outlierRemovalType} '
-                       '-t {toneMapping} '
-                       '{skipGeometricVisibilityTest} '
-                       '{skipGlobalSeamLeveling} '
-                       '{skipLocalSeamLeveling} '
-                       '{skipHoleFilling} '
-                       '{keepUnseenFaces}'.format(**kwargs))
-        else:
-            log.ODM_WARNING('Found a valid ODM Texture file in: %s'
-                            % tree.odm_textured_model_obj)
+                log.ODM_WARNING('Found a valid ODM Texture file in: %s'
+                                % odm_textured_model_obj)
 
         if args.time:
             system.benchmark(start_time, tree.benchmarking, 'Texturing')
