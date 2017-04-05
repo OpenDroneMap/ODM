@@ -3,8 +3,11 @@ cmake_minimum_required(VERSION 2.8)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR})
 
+# Set pcl dir to the input spedified with option -DCGAL_DIR="path"
+set(CGAL_DIR "CGAL_DIR-NOTFOUND" CACHE "CGAL_DIR" "Path to the CGAL installation directory")
+
 # Link
-find_package(CGAL COMPONENTS Core )
+find_package(CGAL COMPONENTS Core HINTS "${CGAL_DIR}")
 
 if ( CGAL_FOUND )
 
@@ -20,7 +23,7 @@ if ( CGAL_FOUND )
   include( ${CGAL_USE_FILE} )
 
   # Add compiler options.
-  add_definitions(-Wall -Wextra)
+  add_definitions(-Wall -Wextra -std=c++11)
 	
   # Add source directory
   aux_source_directory("./src" SRC_LIST)

@@ -91,6 +91,15 @@ SETUP_EXTERNAL_PROJECT(Ceres ${ODM_Ceres_Version} ${ODM_BUILD_Ceres})
 
 
 # ---------------------------------------------------------------------------------------------
+# CGAL
+#
+set(ODM_CGAL_Version 4.9)
+option(ODM_BUILD_CGAL "Force to build CGAL library" OFF)
+
+SETUP_EXTERNAL_PROJECT(CGAL ${ODM_CGAL_Version} ${ODM_BUILD_CGAL})
+
+
+# ---------------------------------------------------------------------------------------------
 # Open Geometric Vision (OpenGV)
 # Open Structure from Motion (OpenSfM)
 # Clustering Views for Multi-view Stereo (CMVS)
