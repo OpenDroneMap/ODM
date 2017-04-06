@@ -10,8 +10,7 @@
 #include <CGAL/Delaunay_triangulation_2.h>
 #include <CGAL/Triangulation_2.h>
 #include <CGAL/remove_outliers.h>
-#include <CGAL/grid_simplify_point_set.h>
-#include <CGAL/bilateral_smooth_point_set.h>
+#include <CGAL/wlop_simplify_and_regularize_point_set.h>
 
 #include "Logger.hpp"
 #include "PlyInterpreter.hpp"
@@ -60,10 +59,12 @@ private:
 	Logger log;
 
 	std::string inputFile = "";
-	std::string outputFile = "odm_mesh.ply";
+	std::string outputFile = "odm_25dmesh.ply";
 	std::string logFilePath = "odm_25dmeshing_log.txt";
-
-	std::vector<PointNormalColor> points;
+	unsigned int maxVertexCount = 100000;
+	double outliersRemovalPercentage = 2;
+	unsigned int wlopIterations = 35;
+	std::vector<Pwn> points;
 };
 
 class Odm25dMeshingException: public std::exception {
