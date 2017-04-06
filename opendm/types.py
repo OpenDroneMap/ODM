@@ -194,7 +194,7 @@ class ODM_GeoRef(object):
         system.run('{bin}/pdal pipeline -i {json} --readers.ply.filename={f_in} '
                    '--writers.las.filename={f_out}'.format(**kwargs))
 
-    def convert_to_dem(self, _file, _file_out, pdalJSON):
+    def convert_to_dem(self, _file, _file_out, pdalJSON, sample_radius, gdal_res, gdal_radius):
         # Check if exists f_in
         if not io.file_exists(_file):
             log.ODM_ERROR('LAS file does not exist')
@@ -203,29 +203,32 @@ class ODM_GeoRef(object):
         kwargs = {
             'bin': context.pdal_path,
             'f_in': _file,
-            'f_out': _file_out,  # todo: add options
+            'sample_radius': sample_radius,
+            'gdal_res': gdal_res,
+            'gdal_radius': gdal_radius,
+            'f_out': _file_out,
             'json': pdalJSON
         }
 
-        pipelineJSON = '{' \
+        pipelineJSON = '{{' \
                        '    "pipeline":[' \
                        '        "input.las",' \
-                       '    {' \
+                       '    {{' \
                        '        "type":"filters.sample",' \
-                       '        "radius":"0.5"' \
-                       '    },' \
-                       '    {' \
+                       '        "radius":"{sample_radius}"' \
+                       '    }},' \
+                       '    {{' \
                        '        "type":"filters.pmf",' \
                        '        "extract":"true"' \
-                       '    },' \
-                       '    {' \
-                       '        "resolution": 2,' \
-                       '        "radius": 5,' \
+                       '    }},' \
+                       '    {{' \
+                       '        "resolution": {gdal_res},' \
+                       '        "radius": {gdal_radius},' \
                        '        "output_type":"idw",' \
                        '        "filename":"outputfile.tif"' \
-                       '    }' \
+                       '    }}' \
                        '    ]' \
-                       '}'
+                       '}}'.format(**kwargs)
 
         with open(pdalJSON, 'w') as f:
             f.write(pipelineJSON)
