@@ -158,7 +158,7 @@ class ODM_GeoRef(object):
         output = str(deg) + '/1 ' + str(minute) + '/1 ' + str(sec_numerator) + '/' + str(sec_denominator)
         return output, latRef
 
-    def convert_to_las(self, _file, pdalXML):
+    def convert_to_las(self, _file, _file_out, pdalXML):
 
         if not self.epsg:
             log.ODM_ERROR('Empty EPSG: Could not convert to LAS')
@@ -166,7 +166,7 @@ class ODM_GeoRef(object):
 
         kwargs = {'bin': context.pdal_path,
                   'f_in': _file,
-                  'f_out': _file + '.las',
+                  'f_out': _file_out,
                   'east': self.utm_east_offset,
                   'north': self.utm_north_offset,
                   'epsg': self.epsg,
@@ -210,12 +210,16 @@ class ODM_GeoRef(object):
         system.run('{bin}/pdal pipeline -i {xml} --readers.ply.filename={f_in} '
                    '--writers.las.filename={f_out}'.format(**kwargs))
 
-    def convert_to_dem(self, _file, pdalJSON):
+    def convert_to_dem(self, _file, _file_out, pdalJSON):
+        # Check if exists f_in
+        if not io.file_exists(_file):
+            log.ODM_ERROR('LAS file does not exist')
+            return False
 
         kwargs = {
             'bin': context.pdal_path,
             'f_in': _file,
-            'f_out': _file + '_dem.tif', #todo: add options
+            'f_out': _file_out, #todo: add options
             'json': pdalJSON
         }
 
@@ -238,12 +242,17 @@ class ODM_GeoRef(object):
                        '    }' \
                        '    ]' \
                        '}'
-        # Write to json file
+
         with open(pdalJSON, 'w') as f:
-            f.write(pipelineJSON)
+           f.write(pipelineJSON)
 
         system.run('{bin}/pdal pipeline {json} --readers.las.filename={f_in} '
                    '--writers.gdal.filename={f_out}'.format(**kwargs))
+
+        if io.file_exists(kwargs['f_out']):
+            return True
+        else:
+            return False
 
     def utm_to_latlon(self, _file, _photo, idx):
 
@@ -366,6 +375,7 @@ class ODM_GeoRef(object):
                     x, y = xyz[:2]
                     z = 0
                 self.gcps.append(ODM_GCPoint(float(x), float(y), float(z)))
+    # Write to json file
 
 
 class ODM_Tree(object):
@@ -449,6 +459,12 @@ class ODM_Tree(object):
             self.odm_georeferencing, 'odm_georeferenced_model.csv')
         self.odm_georeferencing_pdal = io.join_paths(
             self.odm_georeferencing, 'pipeline.xml')
+        self.odm_georeferencing_model_las = io.join_paths(
+            self.odm_georeferencing, 'odm_georeferenced_model.las')
+        self.odm_georeferencing_dem = io.join_paths(
+            self.odm_georeferencing, 'odm_georeferencing_model_dem.tif')
+        self.odm_georeferencing_dem_json = io.join_paths(
+            self.odm_georeferencing, 'dem.json')
 
         # odm_orthophoto
         self.odm_orthophoto_file = io.join_paths(self.odm_orthophoto, 'odm_orthophoto.png')

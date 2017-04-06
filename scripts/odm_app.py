@@ -71,6 +71,7 @@ class ODMApp(ecto.BlackBox):
                  'georeferencing': ODMGeoreferencingCell(img_size=p.args.resize_to,
                                                          gcp_file=p.args.gcp,
                                                          use_exif=p.args.use_exif,
+                                                         dem=p.args.dem,
                                                          verbose=p.args.verbose),
                  'orthophoto': ODMOrthoPhotoCell(resolution=p.args.orthophoto_resolution,
                                                  t_srs=p.args.orthophoto_target_srs,

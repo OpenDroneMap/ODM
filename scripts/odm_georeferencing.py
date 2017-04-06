@@ -17,6 +17,7 @@ class ODMGeoreferencingCell(ecto.Cell):
                             'northing height pixelrow pixelcol imagename', 'gcp_list.txt')
         params.declare("img_size", 'image size used in calibration', 2400)
         params.declare("use_exif", 'use exif', False)
+        params.declare("dem", 'Generate a dem', False)
         params.declare("verbose", 'print additional messages to console', False)
 
     def declare_io(self, params, inputs, outputs):
@@ -147,7 +148,16 @@ class ODMGeoreferencingCell(ecto.Cell):
 
                 # convert ply model to LAS reference system
                 geo_ref.convert_to_las(tree.odm_georeferencing_model_ply_geo,
+                                       tree.odm_georeferencing_model_las,
                                        tree.odm_georeferencing_pdal)
+
+                # If --dem, create a DEM
+                if args.dem:
+                    demcreated = geo_ref.convert_to_dem(tree.odm_georeferencing_model_las, tree.odm_georeferencing_dem, tree.odm_georeferencing_dem_json)
+                    if not demcreated:
+                        log.ODM_WARNING('Something went wrong. Check the logs in odm_georeferencing.')
+                    else:
+                        log.ODM_INFO('DEM created at {0}'.format(tree.odm_georeferencing_dem))
 
                 # XYZ point cloud output
                 log.ODM_INFO("Creating geo-referenced CSV file (XYZ format, can be used with GRASS to create DEM)")
