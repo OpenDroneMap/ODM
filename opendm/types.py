@@ -369,7 +369,7 @@ class ODM_Tree(object):
         self.opensfm_image_list = io.join_paths(self.opensfm, 'image_list.txt')
         self.opensfm_reconstruction = io.join_paths(self.opensfm, 'reconstruction.json')
         self.opensfm_reconstruction_meshed = io.join_paths(self.opensfm, 'reconstruction.meshed.json')
-        self.opensfm_reconstruction_nvm = io.join_paths(self.opensfm, 'reconstruction.nvm.json')
+        self.opensfm_reconstruction_nvm = io.join_paths(self.opensfm, 'reconstruction.nvm')
         self.opensfm_model = io.join_paths(self.opensfm, 'depthmaps/merged.ply')
 
         # pmvs
