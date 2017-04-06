@@ -149,7 +149,7 @@ class ODMGeoreferencingCell(ecto.Cell):
                 # convert ply model to LAS reference system
                 geo_ref.convert_to_las(tree.odm_georeferencing_model_ply_geo,
                                        tree.odm_georeferencing_model_las,
-                                       tree.odm_georeferencing_pdal)
+                                       tree.odm_georeferencing_las_json)
 
                 # If --dem, create a DEM
                 if args.dem:
