@@ -48,6 +48,12 @@ See [here](https://github.com/OpenDroneMap/OpenDroneMap/tree/ebaaf802a1fb50e335b
 Extract and enter the downloaded OpenDroneMap directory and compile all of the code by executing a single configuration script:
   
     bash configure.sh install
+    
+When updating to a newer version of ODM, it is recommended that you run 
+
+    bash configure.sh reinstall
+    
+to ensure all the dependent packages and modules get updated.  
 
 For Ubuntu 15.10 users, this will help you get running:
 
