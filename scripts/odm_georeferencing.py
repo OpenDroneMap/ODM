@@ -18,6 +18,9 @@ class ODMGeoreferencingCell(ecto.Cell):
         params.declare("img_size", 'image size used in calibration', 2400)
         params.declare("use_exif", 'use exif', False)
         params.declare("dem", 'Generate a dem', False)
+        params.declare("sample_radius", "Minimum distance between samples for DEM gen", 3)
+        params.declare("gdal_res", "Length of raster cell edges in X/Y units ", 2)
+        params.declare("gdal_radius", "Radius about cell center bounding points to use to calculate a cell value", 0.5)
         params.declare("verbose", 'print additional messages to console', False)
 
     def declare_io(self, params, inputs, outputs):
@@ -153,14 +156,19 @@ class ODMGeoreferencingCell(ecto.Cell):
 
                 # If --dem, create a DEM
                 if args.dem:
-                    demcreated = geo_ref.convert_to_dem(tree.odm_georeferencing_model_las, tree.odm_georeferencing_dem, tree.odm_georeferencing_dem_json)
+                    demcreated = geo_ref.convert_to_dem(tree.odm_georeferencing_model_las,
+                                                        tree.odm_georeferencing_dem,
+                                                        tree.odm_georeferencing_dem_json,
+                                                        self.params.sample_radius,
+                                                        self.params.gdal_res,
+                                                        self.params.gdal_radius)
                     if not demcreated:
                         log.ODM_WARNING('Something went wrong. Check the logs in odm_georeferencing.')
                     else:
                         log.ODM_INFO('DEM created at {0}'.format(tree.odm_georeferencing_dem))
 
                 # XYZ point cloud output
-                log.ODM_INFO("Creating geo-referenced CSV file (XYZ format, can be used with GRASS to create DEM)")
+                log.ODM_INFO("Creating geo-referenced CSV file (XYZ format)")
                 with open(tree.odm_georeferencing_xyz_file, "wb") as csvfile:
                     csvfile_writer = csv.writer(csvfile, delimiter=",")
                     reachedpoints = False
