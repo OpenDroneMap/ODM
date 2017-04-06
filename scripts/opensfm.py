@@ -100,13 +100,28 @@ class ODMOpenSfMCell(ecto.Cell):
                 log.ODM_WARNING('Found a valid OpenSfM tracks file in: %s' %
                                 tree.opensfm_tracks)
 
-            system.run('PYTHONPATH=%s %s/bin/opensfm reconstruct %s' %
-                       (context.pyopencv_path, context.opensfm_path, tree.opensfm))
-            system.run('PYTHONPATH=%s %s/bin/opensfm mesh %s' %
-                       (context.pyopencv_path, context.opensfm_path, tree.opensfm))
-            if not args.use_pmvs:
-                system.run('PYTHONPATH=%s %s/bin/opensfm export_visualsfm %s' %
+            if not io.file_exists(tree.opensfm_reconstruction) or rerun_cell:
+                system.run('PYTHONPATH=%s %s/bin/opensfm reconstruct %s' %
                            (context.pyopencv_path, context.opensfm_path, tree.opensfm))
+            else:
+                log.ODM_WARNING('Found a valid OpenSfM reconstruction file in: %s' %
+                                tree.opensfm_reconstruction)
+
+            if not io.file_exists(tree.opensfm_reconstruction_meshed) or rerun_cell:
+                system.run('PYTHONPATH=%s %s/bin/opensfm mesh %s' %
+                           (context.pyopencv_path, context.opensfm_path, tree.opensfm))
+            else:
+                log.ODM_WARNING('Found a valid OpenSfM meshed reconstruction file in: %s' %
+                                tree.opensfm_reconstruction_meshed)
+
+            if not args.use_pmvs:
+                if not io.file_exists(tree.opensfm_reconstruction_nvm) or rerun_cell:
+                    system.run('PYTHONPATH=%s %s/bin/opensfm export_visualsfm %s' %
+                               (context.pyopencv_path, context.opensfm_path, tree.opensfm))
+                else:
+                    log.ODM_WARNING('Found a valid OpenSfM NVM reconstruction file in: %s' %
+                                    tree.opensfm_reconstruction_nvm)
+
                 system.run('PYTHONPATH=%s %s/bin/opensfm undistort %s' %
                            (context.pyopencv_path, context.opensfm_path, tree.opensfm))
                 system.run('PYTHONPATH=%s %s/bin/opensfm compute_depthmaps %s' %
