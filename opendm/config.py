@@ -314,6 +314,12 @@ def config():
                         help=('Use this tag if you have a gcp_list.txt but '
                               'want to use the exif geotags instead'))
 
+    parser.add_argument('--dem',
+                        action='store_true',
+                        default=False,
+                        help='Use this tag to build a DEM using a progressive '
+                             'morphological filter in PDAL.')
+
     parser.add_argument('--orthophoto-resolution',
                         metavar='<float > 0.0>',
                         default=20.0,
