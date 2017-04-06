@@ -158,7 +158,6 @@ def config():
                     default=False,
                     help='Use 2.5D mesh to compute the orthophoto')
 
-
     parser.add_argument('--use-pmvs',
                         action='store_true',
                         default=False,
@@ -251,6 +250,23 @@ def config():
                               'is solved in the surface reconstruction step. '
                               'Increasing this value increases computation '
                               'times slightly but helps reduce memory usage. '
+                              'Default: %(default)s'))
+
+    parser.add_argument('--mesh-remove-outliers',
+                        metavar='<percent>',
+                        default=2,
+                        type=float,
+                        help=('Percentage of outliers to remove from the point set. Set to 0 to disable. '
+                              'Applies to 2.5D mesh only. '
+                              'Default: %(default)s'))
+
+    parser.add_argument('--mesh-wlop-iterations',
+                        metavar='<positive integer>',
+                        default=35,
+                        type=int,
+                        help=('Iterations of the Weighted Locally Optimal Projection (WLOP) simplification algorithm. '
+                              'Higher values take longer but produce a smoother mesh. '
+                              'Applies to 2.5D mesh only. '
                               'Default: %(default)s'))
 
     parser.add_argument('--texturing-data-term',

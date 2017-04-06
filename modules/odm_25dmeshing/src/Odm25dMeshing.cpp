@@ -64,18 +64,31 @@ void Odm25dMeshing::parseArguments(int argc, char **argv) {
 		} else if (argument == "-verbose") {
 			log.setIsPrintingInCout(true);
 		} else if (argument == "-maxVertexCount" && argIndex < argc) {
-//            ++argIndex;
-//            if (argIndex >= argc)
-//            {
-//                throw OdmMeshingException("Argument '" + argument + "' expects 1 more input following it, but no more inputs were provided.");
-//            }
-//            std::stringstream ss(argv[argIndex]);
-//            ss >> maxVertexCount_;
-//            if (ss.bad())
-//            {
-//                throw OdmMeshingException("Argument '" + argument + "' has a bad value (wrong type).");
-//            }
-//            log << "Vertex count was manually set to: " << maxVertexCount_ << "\n";
+            ++argIndex;
+            if (argIndex >= argc) throw Odm25dMeshingException("Argument '" + argument + "' expects 1 more input following it, but no more inputs were provided.");
+            std::stringstream ss(argv[argIndex]);
+            ss >> maxVertexCount;
+            if (ss.bad()) throw Odm25dMeshingException("Argument '" + argument + "' has a bad value (wrong type).");
+            maxVertexCount = std::max<unsigned int>(maxVertexCount, 0);
+            log << "Vertex count was manually set to: " << maxVertexCount << "\n";
+		} else if (argument == "-outliersRemovalPercentage" && argIndex < argc) {
+			++argIndex;
+			if (argIndex >= argc) throw Odm25dMeshingException("Argument '" + argument + "' expects 1 more input following it, but no more inputs were provided.");
+			std::stringstream ss(argv[argIndex]);
+			ss >> outliersRemovalPercentage;
+			if (ss.bad()) throw Odm25dMeshingException("Argument '" + argument + "' has a bad value (wrong type).");
+
+			outliersRemovalPercentage = std::min<double>(99.99, std::max<double>(outliersRemovalPercentage, 0));
+			log << "Outliers removal was manually set to: " << outliersRemovalPercentage << "\n";
+		} else if (argument == "-wlopIterations" && argIndex < argc) {
+			++argIndex;
+			if (argIndex >= argc) throw Odm25dMeshingException("Argument '" + argument + "' expects 1 more input following it, but no more inputs were provided.");
+			std::stringstream ss(argv[argIndex]);
+			ss >> wlopIterations;
+			if (ss.bad()) throw Odm25dMeshingException("Argument '" + argument + "' has a bad value (wrong type).");
+
+			wlopIterations = std::min<unsigned int>(1000, std::max<unsigned int>(wlopIterations, 1));
+			log << "WLOP iterations was manually set to: " << wlopIterations << "\n";
 		} else if (argument == "-inputFile" && argIndex < argc) {
 			++argIndex;
 			if (argIndex >= argc) {
@@ -141,55 +154,41 @@ void Odm25dMeshing::loadPointCloud(){
 
 void Odm25dMeshing::buildMesh(){
 	size_t pointCountBeforeOutRemoval = points.size();
-
+	if (outliersRemovalPercentage > 0)
 	log << "Removing outliers\n";
 
 	const unsigned int NEIGHBORS = 24;
-	const double REMOVED_PERCENTAGE = 5;
-
 	points.erase(CGAL::remove_outliers(points.begin(), points.end(),
-			CGAL::Nth_of_tuple_property_map<0, PointNormalColor>(), NEIGHBORS, REMOVED_PERCENTAGE),
+			 CGAL::First_of_pair_property_map<Pwn>(), NEIGHBORS, outliersRemovalPercentage),
 			points.end());
-	std::vector<PointNormalColor>(points).swap(points);
+	std::vector<Pwn>(points).swap(points);
 
 	size_t pointCount = points.size();
 
 	log << "Removed " << (pointCountBeforeOutRemoval - pointCount) << " points\n";
 
-	size_t pointCountBeforeSimplify = pointCount;
+	const double RETAIN_PERCENTAGE = std::min<double>(((100. * (double)maxVertexCount) / (double)pointCount), 10.);   // percentage of points to retain.
+	std::vector<Point3> simplifiedPoints;
 
-	const double CELL_SIZE = 0.01;
-	points.erase(CGAL::grid_simplify_point_set(points.begin(), points.end(),
-			CGAL::Nth_of_tuple_property_map<0, PointNormalColor>(),
-			CELL_SIZE),
-			points.end());
-	std::vector<PointNormalColor>(points).swap(points);
+	log << "Performing weighted locally optimal projection simplification and regularization (retain: " << RETAIN_PERCENTAGE << "%, iterate: " << wlopIterations << ")" << "\n";
 
-	pointCount = points.size();
+	CGAL::wlop_simplify_and_regularize_point_set<Concurrency_tag>(
+		 	points.begin(),
+			points.end(),
+			std::back_inserter(simplifiedPoints),
+			CGAL::First_of_pair_property_map<Pwn>(),
+			RETAIN_PERCENTAGE,
+			-1.0, // auto radius = 8 times the average spacing of the point set.
+			wlopIterations,
+			false); // require_uniform_sampling
 
-	log << "Removed " << (pointCountBeforeSimplify - pointCount) << " points\n";
+	pointCount = simplifiedPoints.size();
 
 	if (pointCount < 3){
 		throw Odm25dMeshingException("Not enough points");
 	}
 
-	log << "Smoothing point set\n";
-
-	const double SHARPNESS_ANGLE = 89; // control sharpness of the result. The bigger the smoother the result will be
-	const int SMOOTH_PASSES = 3;
-
-	for (int i = 0; i < SMOOTH_PASSES; ++i)
-	{
-		log << "Pass " << (i + 1) << " of " << SMOOTH_PASSES << "\n";
-
-		CGAL::bilateral_smooth_point_set <Concurrency_tag>(
-			  points.begin(),
-			  points.end(),
-			  CGAL::Nth_of_tuple_property_map<0, PointNormalColor>(),
-			  CGAL::Nth_of_tuple_property_map<1, PointNormalColor>(),
-			  NEIGHBORS,
-			  SHARPNESS_ANGLE);
-	}
+	log << "Final vertex count is " << pointCount << "\n";
 
 	std::vector< std::pair<cgalPoint, size_t > > pts;
 	try{
@@ -199,7 +198,7 @@ void Odm25dMeshing::buildMesh(){
 	}
 
 	for (size_t i = 0; i < pointCount; ++i){
-		pts.push_back(std::make_pair(cgalPoint(points[i].get<0>().x(), points[i].get<0>().y()), i));
+		pts.push_back(std::make_pair(cgalPoint(simplifiedPoints[i].x(), simplifiedPoints[i].y()), i));
 	}
 
 	log << "Computing delaunay triangulation\n";
@@ -216,75 +215,26 @@ void Odm25dMeshing::buildMesh(){
 
 	// Convert to tinyply format
 	std::vector<float> vertices;
-	std::vector<uint8_t> colors;
 	std::vector<int> vertexIndicies;
 
 	try{
 		vertices.reserve(pointCount);
-		colors.reserve(pointCount);
 		vertexIndicies.reserve(triIndexes);
 	} catch (const std::bad_alloc&){
 		throw Odm25dMeshingException("Not enough memory");
 	}
 
-	for (size_t i = 0; i < pointCount; ++i){
-		vertices.push_back(points[i].get<0>().x());
-		vertices.push_back(points[i].get<0>().y());
-		vertices.push_back(points[i].get<0>().z());
 
-		colors.push_back(points[i].get<2>()[0]);
-		colors.push_back(points[i].get<2>()[1]);
-		colors.push_back(points[i].get<2>()[2]);
+	for (size_t i = 0; i < pointCount; ++i){
+		vertices.push_back(simplifiedPoints[i].x());
+		vertices.push_back(simplifiedPoints[i].y());
+		vertices.push_back(simplifiedPoints[i].z());
 	}
 
 	for (DT::Face_iterator face = dt.faces_begin(); face != dt.faces_end(); ++face) {
-		vertexIndicies.push_back(static_cast<int>(face->vertex(0)->info()));
-		vertexIndicies.push_back(static_cast<int>(face->vertex(1)->info()));
-		vertexIndicies.push_back(static_cast<int>(face->vertex(2)->info()));
-	}
-
-	log << "Removing spikes\n";
-
-	const float THRESHOLD = 0.2;
-	const int PASSES = 5;
-
-	std::vector<float> heights;
-	float current_threshold = THRESHOLD;
-
-	for (int i = 1; i <= PASSES; i++){
-		log << "Pass " << i << " of " << PASSES << "\n";
-
-		for (DT::Vertex_iterator vertex = dt.vertices_begin(); vertex != dt.vertices_end(); ++vertex){
-			// Check if the height between this vertex and its
-			// incident vertices is greater than THRESHOLD
-			Vertex_circulator vc = dt.incident_vertices(vertex), done(vc);
-
-			if (vc != 0){
-				float height = vertices[vertex->info() * 3 + 2];
-				bool spike = false;
-
-				do{
-					if (dt.is_infinite(vc)) continue;
-
-					float ivHeight = vertices[vc->info() * 3 + 2];
-					if (fabs(height - ivHeight) > current_threshold) spike = true;
-
-					heights.push_back(ivHeight);
-				}while(++vc != done);
-
-				if (spike){
-					// Replace the height of the vertex by the median height
-					// of its incident vertices
-					std::sort(heights.begin(), heights.end());
-
-					vertices[vertex->info() * 3 + 2] = heights[heights.size() / 2];
-				}
-
-				heights.clear();
-			}
-		}
-
-		current_threshold /= 2;
+		vertexIndicies.push_back(face->vertex(0)->info());
+		vertexIndicies.push_back(face->vertex(1)->info());
+		vertexIndicies.push_back(face->vertex(2)->info());
 	}
 
 	log << "Saving mesh to file.\n";
@@ -295,7 +245,6 @@ void Odm25dMeshing::buildMesh(){
 
 	tinyply::PlyFile plyFile;
 	plyFile.add_properties_to_element("vertex", {"x", "y", "z"}, vertices);
-	plyFile.add_properties_to_element("vertex", { "diffuse_red", "diffuse_green", "diffuse_blue"}, colors);
 	plyFile.add_properties_to_element("face", { "vertex_index" }, vertexIndicies, 3, tinyply::PlyProperty::Type::INT8);
 
 	plyFile.write(outputStream, false);
@@ -308,32 +257,19 @@ void Odm25dMeshing::printHelp() {
 	bool printInCoutPop = log.isPrintingInCout();
 	log.setIsPrintingInCout(true);
 
-	log << "odm_25dmeshing\n\n";
+	log << "Usage: odm_25dmeshing -inputFile [plyFile] [optional-parameters]\n";
+	log << "Create a 2.5D mesh from an oriented point cloud (points with normals) using a constrained delaunay triangulation. "
+		<< "The program requires a path to an input PLY point cloud file, all other input parameters are optional.\n\n";
 
-	log << "Purpose:" << "\n";
-	log
-			<< "Create a 2.5D mesh from an oriented point cloud (points with normals) using a constrained delaunay triangulation"
-			<< "\n";
+	log << "	-inputFile	<path>	to PLY point cloud\n"
+		<< "	-outputFile	<path>	where the output PLY 2.5D mesh should be saved (default: " << outputFile << ")\n"
+		<< "	-logFile	<path>	log file path (default: " << logFilePath << ")\n"
+		<< "	-verbose	whether to print verbose output (default: " << (printInCoutPop ? "true" : "false") << ")\n"
+		<< "	-outliersRemovalPercentage	<0 - 99.99>	percentage of outliers to remove. Set to 0 to disable. (default: " << outliersRemovalPercentage << ")\n"
+		<< "	-maxVertexCount	<0 - N>	Maximum number of vertices in the output mesh. The mesh might have fewer vertices, but will not exceed this limit. (default: " << maxVertexCount << ")\n"
+		<< "	-wlopIterations	<1 - 1000>	Iterations of the Weighted Locally Optimal Projection (WLOP) simplification algorithm. Higher values take longer but produce a smoother mesh. (default: " << wlopIterations << ")\n"
 
-	log << "Usage:" << "\n";
-	log	<< "The program requires a path to an input PLY point cloud file, all other input parameters are optional."
-			<< "\n\n";
-
-	log << "The following flags are available\n";
-	log	<< "Call the program with flag \"-help\", or without parameters to print this message, or check any generated log file.\n";
-	log
-			<< "Call the program with flag \"-verbose\", to print log messages in the standard output stream as well as in the log file.\n\n";
-
-	log	<< "Parameters are specified as: \"-<argument name> <argument>\", (without <>), and the following parameters are configureable: "
-			<< "\n";
-	log << "\"-inputFile <path>\" (mandatory)" << "\n";
-	log	<< "\"Input ply file that must contain a point cloud with normals.\n\n";
-
-	log << "\"-outputFile <path>\" (optional, default: odm_mesh.ply)" << "\n";
-	log << "\"Target file in which the mesh is saved.\n\n";
-
-	log << "\"-logFile <path>\" (optional, default: odm_25dmeshing_log.txt)"
-			<< "\n";
+		<< "\n";
 
 	log.setIsPrintingInCout(printInCoutPop);
 }
