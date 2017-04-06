@@ -32,7 +32,7 @@ OpenDroneMap can run natively on Ubuntu 14.04 or later, see [Build and Run Using
 Current version: 0.2 (this software is in beta)
 
 1. Extract and enter the OpenDroneMap directory
-2. Run `bash configure.sh`
+2. Run `bash configure.sh install`
 4. Copy the default settings file and edit it: `cp default.settings.yaml settings.yaml`. Set the `project-path` value to an empty directory (you will place sub-directories containing individual projects inside). You can add many options to this file, [see here](https://github.com/OpenDroneMap/OpenDroneMap/wiki/Run-Time-Parameters)
 3. Download a sample dataset from [here](https://github.com/OpenDroneMap/odm_data_aukerman/archive/master.zip) (about 550MB) and extract it as a subdirectory in your project directory.
 4. Run `./run.sh odm_data_aukerman` 
@@ -47,7 +47,7 @@ See [here](https://github.com/OpenDroneMap/OpenDroneMap/tree/ebaaf802a1fb50e335b
 
 Extract and enter the downloaded OpenDroneMap directory and compile all of the code by executing a single configuration script:
   
-    bash configure.sh
+    bash configure.sh install
 
 For Ubuntu 15.10 users, this will help you get running:
 
