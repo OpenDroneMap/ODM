@@ -24,15 +24,12 @@ int Odm25dMeshing::run(int argc, char **argv) {
 	}
 
 	try {
+
 		parseArguments(argc, argv);
 
 		loadPointCloud();
 
 		buildMesh();
-
-		log << "Done!" << "\n";
-
-		// TODO
 
 	} catch (const Odm25dMeshingException& e) {
 		log.setIsPrintingInCout(true);
@@ -61,6 +58,7 @@ void Odm25dMeshing::parseArguments(int argc, char **argv) {
 
 		if (argument == "-help") {
 			printHelp();
+			exit(0);
 		} else if (argument == "-verbose") {
 			log.setIsPrintingInCout(true);
 		} else if (argument == "-maxVertexCount" && argIndex < argc) {
@@ -149,11 +147,14 @@ void Odm25dMeshing::loadPointCloud(){
 		  				"Error when reading points and normals from:\n" + inputFile + "\n");
 	  }
 
+	  flipFaces = interpreter.flip_faces();
+
 	  log << "Successfully loaded " << points.size() << " points from file\n";
 }
 
 void Odm25dMeshing::buildMesh(){
 	size_t pointCountBeforeOutRemoval = points.size();
+
 	if (outliersRemovalPercentage > 0)
 	log << "Removing outliers\n";
 
@@ -232,9 +233,15 @@ void Odm25dMeshing::buildMesh(){
 	}
 
 	for (DT::Face_iterator face = dt.faces_begin(); face != dt.faces_end(); ++face) {
-		vertexIndicies.push_back(face->vertex(0)->info());
-		vertexIndicies.push_back(face->vertex(1)->info());
-		vertexIndicies.push_back(face->vertex(2)->info());
+		if (flipFaces){
+			vertexIndicies.push_back(face->vertex(2)->info());
+			vertexIndicies.push_back(face->vertex(1)->info());
+			vertexIndicies.push_back(face->vertex(0)->info());
+		}else{
+			vertexIndicies.push_back(face->vertex(0)->info());
+			vertexIndicies.push_back(face->vertex(1)->info());
+			vertexIndicies.push_back(face->vertex(2)->info());
+		}
 	}
 
 	log << "Saving mesh to file.\n";
@@ -245,7 +252,7 @@ void Odm25dMeshing::buildMesh(){
 
 	tinyply::PlyFile plyFile;
 	plyFile.add_properties_to_element("vertex", {"x", "y", "z"}, vertices);
-	plyFile.add_properties_to_element("face", { "vertex_index" }, vertexIndicies, 3, tinyply::PlyProperty::Type::INT8);
+	plyFile.add_properties_to_element("face", { "vertex_index" }, vertexIndicies, 3, tinyply::PlyProperty::Type::UINT8);
 
 	plyFile.write(outputStream, false);
 	fb.close();

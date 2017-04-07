@@ -65,6 +65,7 @@ private:
 	double outliersRemovalPercentage = 2;
 	unsigned int wlopIterations = 35;
 	std::vector<Pwn> points;
+	bool flipFaces = false;
 };
 
 class Odm25dMeshingException: public std::exception {

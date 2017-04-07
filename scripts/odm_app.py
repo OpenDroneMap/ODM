@@ -13,7 +13,6 @@ from odm_slam import ODMSlamCell
 from pmvs import ODMPmvsCell
 from cmvs import ODMCmvsCell
 from odm_meshing import ODMeshingCell
-#from odm_texturing import ODMTexturingCell
 from mvstex import ODMMvsTexCell
 from odm_georeferencing import ODMGeoreferencingCell
 from odm_orthophoto import ODMOrthoPhotoCell
@@ -59,6 +58,7 @@ class ODMApp(ecto.BlackBox):
                                           oct_tree=p.args.mesh_octree_depth,
                                           samples=p.args.mesh_samples,
                                           solver=p.args.mesh_solver_divide,
+                                          max_vertex_25d=getattr(p.args, '25d_mesh_size'),
                                           remove_outliers=p.args.mesh_remove_outliers,
                                           wlop_iterations=p.args.mesh_wlop_iterations,
                                           verbose=p.args.verbose),

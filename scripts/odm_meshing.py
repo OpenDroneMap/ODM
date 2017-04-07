@@ -20,6 +20,7 @@ class ODMeshingCell(ecto.Cell):
                                  'Increasing this value increases computation '
                                  'times slightly but helps reduce memory usage.', 9)
 
+        params.declare("max_vertex_25d", 'The maximum vertex count of the 2.5D output mesh.', 50000)
         params.declare("remove_outliers", 'Percentage of outliers to remove from the point set. Set to 0 to disable. '
                                           'Applies to 2.5D mesh only.', 2)
         
@@ -96,7 +97,7 @@ class ODMeshingCell(ecto.Cell):
                   'infile': infile,
                   'log': tree.odm_25dmeshing_log,
                   'verbose': verbose,
-                  'max_vertex': self.params.max_vertex,
+                  'max_vertex': self.params.max_vertex_25d,
                   'remove_outliers': self.params.remove_outliers,
                   'wlop_iterations': self.params.wlop_iterations
               }

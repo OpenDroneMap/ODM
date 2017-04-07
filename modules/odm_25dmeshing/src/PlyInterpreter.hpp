@@ -19,11 +19,13 @@ typedef std::pair<Point3, Vector3> Pwn;
 
 class PlyInterpreter {
 	std::vector<Pwn>& points;
+	int zNormalsDirectionCount;
 
 	public:
 	 PlyInterpreter (std::vector<Pwn>& points)
-	    : points (points)
+	    : points (points), zNormalsDirectionCount(0)
 	  { }
 	  bool is_applicable (CGAL::Ply_reader& reader);
 	  void process_line (CGAL::Ply_reader& reader);
+	  bool flip_faces();
 };
