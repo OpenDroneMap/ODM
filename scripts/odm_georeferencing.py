@@ -48,7 +48,7 @@ class ODMGeoreferencingCell(ecto.Cell):
 
         # define paths and create working directories
         system.mkdir_p(tree.odm_georeferencing)
-        if args.use_25dmesh: system.mkdir_p(tree.odm_25dgeoreferencing) 
+        if not args.skip_25dmesh: system.mkdir_p(tree.odm_25dgeoreferencing) 
         
         # in case a gcp file it's not provided, let's try to generate it using
         # images metadata. Internally calls jhead.
@@ -93,7 +93,7 @@ class ODMGeoreferencingCell(ecto.Cell):
             'texturing_dir': tree.odm_texturing,
             'model': os.path.join(tree.odm_texturing, tree.odm_textured_model_obj)
         }]
-        if args.use_25dmesh:
+        if not args.skip_25dmesh:
             runs += [{
                     'georeferencing_dir': tree.odm_25dgeoreferencing,
                     'texturing_dir': tree.odm_25dtexturing,

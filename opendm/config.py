@@ -153,10 +153,10 @@ def config():
                         help=('The maximum number of processes to use in dense '
                               'reconstruction. Default: %(default)s'))
     
-    parser.add_argument('--use-25dmesh',
+    parser.add_argument('--skip-25dmesh',
                     action='store_true',
                     default=False,
-                    help='Use 2.5D mesh to compute the orthophoto')
+                    help='Do not build a 2.5D mesh and use the poisson mesh to compute the orthophoto')
 
     parser.add_argument('--use-pmvs',
                         action='store_true',
