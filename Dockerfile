@@ -1,6 +1,4 @@
-#Pull in previously built packages image with lots of libraries.
 FROM phusion/baseimage
-
 
 # Env variables
 ENV DEBIAN_FRONTEND noninteractive
@@ -27,13 +25,10 @@ ENV PYTHONPATH="$PYTHONPATH:/code/SuperBuild/install/lib/python2.7/dist-packages
 ENV PYTHONPATH="$PYTHONPATH:/code/SuperBuild/src/opensfm"
 ENV LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/code/SuperBuild/install/lib"
 
-
 # Prepare directories
 
 RUN mkdir /code
 WORKDIR /code
-
-
 
 # Copy repository files
 COPY ccd_defs_check.py /code/ccd_defs_check.py
@@ -53,7 +48,6 @@ COPY VERSION /code/VERSION
 
 RUN cd SuperBuild && mkdir build && cd build && cmake  .. && make -j$(nproc)     && cd ../.. && mkdir build && cd build && cmake .. && make -j$(nproc)
 
-
 RUN apt-get -y remove libgl1-mesa-dri git cmake python-pip build-essential
 RUN apt-get install -y libvtk5-dev
 
@@ -64,7 +58,6 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 RUN rm -rf /code/SuperBuild/download 
 RUN rm -rf /code/SuperBuild/src/opencv/samples /code/SuperBuild/src/pcl/test /code/SuperBuild/src/pcl/doc /code/SuperBuild/src/pdal/test /code/SuperBuild/src/pdal/doc
-
 
 # Entry point
 ENTRYPOINT ["python", "/code/run.py", "code"]
