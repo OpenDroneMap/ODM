@@ -22,6 +22,13 @@ if ( CGAL_FOUND )
 
   include( ${CGAL_USE_FILE} )
 
+  find_package( TBB )
+  if( TBB_FOUND )
+    include(${TBB_USE_FILE})
+  else()
+    message(WARNING "TBB not found, parallel processing will be disabled.")
+  endif()
+
   # Add compiler options.
   add_definitions(-Wall -Wextra -std=c++11)
 	
@@ -31,7 +38,7 @@ if ( CGAL_FOUND )
   # Add exectuteable
   add_executable(${PROJECT_NAME} ${SRC_LIST})
 	
-  target_link_libraries(odm_25dmeshing ${CGAL_LIBRARIES})
+  target_link_libraries(odm_25dmeshing ${CGAL_LIBRARIES} ${TBB_LIBRARIES})
 else()
   
     message(FATAL_ERROR "This program requires the CGAL library, and will not be compiled.")
