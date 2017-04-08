@@ -26,7 +26,7 @@ class ODMeshingCell(ecto.Cell):
         
         params.declare("wlop_iterations", 'Iterations of the Weighted Locally Optimal Projection (WLOP) simplification algorithm. '
                                           'Higher values take longer but produce a smoother mesh. '
-                                          'Applies to 2.5D mesh only. ', 35)
+                                          'Applies to 2.5D mesh only. ', 70)
 
         params.declare("verbose", 'print additional messages to console', False)
 
