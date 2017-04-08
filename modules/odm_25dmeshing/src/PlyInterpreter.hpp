@@ -3,6 +3,7 @@
 #include <utility>
 #include <vector>
 #include <fstream>
+#include <limits>
 
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/property_map.h>
@@ -19,7 +20,7 @@ typedef std::pair<Point3, Vector3> Pwn;
 
 class PlyInterpreter {
 	std::vector<Pwn>& points;
-	int zNormalsDirectionCount;
+	long zNormalsDirectionCount;
 
 	public:
 	 PlyInterpreter (std::vector<Pwn>& points)
