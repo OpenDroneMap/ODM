@@ -25,7 +25,11 @@ void PlyInterpreter::process_line(CGAL::Ply_reader& reader) {
 	Point3 p(x, y, z);
 	Vector3 n(nx, ny, nz);
 
-	zNormalsDirectionCount += nz >= 0 ? 1 : -1;
+	if (nz >= 0 && zNormalsDirectionCount < std::numeric_limits<long>::max()){
+		zNormalsDirectionCount++;
+	}else if (nz < 0 && zNormalsDirectionCount > std::numeric_limits<long>::min()){
+		zNormalsDirectionCount--;
+	}
 
 	points.push_back(std::make_pair(p, n));
 }
