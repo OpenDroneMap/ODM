@@ -168,7 +168,7 @@ void Odm25dMeshing::buildMesh(){
 
 	log << "Removed " << (pointCountBeforeOutRemoval - pointCount) << " points\n";
 
-	const double RETAIN_PERCENTAGE = std::min<double>(((100. * (double)maxVertexCount) / (double)pointCount), 10.);   // percentage of points to retain.
+	const double RETAIN_PERCENTAGE = std::min<double>(((100. * (double)maxVertexCount) / (double)pointCount), 80.);   // percentage of points to retain.
 	std::vector<Point3> simplifiedPoints;
 
 	log << "Performing weighted locally optimal projection simplification and regularization (retain: " << RETAIN_PERCENTAGE << "%, iterate: " << wlopIterations << ")" << "\n";
