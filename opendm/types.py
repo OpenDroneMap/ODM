@@ -182,6 +182,7 @@ class ODM_GeoRef(object):
                    '    }},' \
                    '    {{' \
                    '      "a_srs":"EPSG:{epsg}",' \
+                   '      "forward":"scale",' \
                    '      "filename":"transformed.las"' \
                    '    }}' \
                    '  ]' \
