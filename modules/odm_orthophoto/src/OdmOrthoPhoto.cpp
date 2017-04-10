@@ -392,7 +392,7 @@ void OdmOrthoPhoto::createOrthoPhoto()
     if (splitModel)
     {
         pcl::PointCloud<pcl::PointXYZ>::Ptr meshCloudSplit (new pcl::PointCloud<pcl::PointXYZ>);
-        std::vector<Eigen::Vector2f> textureCoordinates = std::vector<Eigen::Vector2f>(0);
+        std::vector<Eigen::Vector2f, Eigen::aligned_allocator<Eigen::Vector2f> > textureCoordinates(0);
 
         size_t vertexIndexCount = 0;
         for(size_t t = 0; t < mesh.tex_polygons.size(); ++t)
@@ -1103,7 +1103,7 @@ bool OdmOrthoPhoto::loadObjFile(std::string inputFile, pcl::TextureMesh &mesh)
     std::size_t f_idx = 0;
     std::string line;
     std::vector<std::string> st;
-    std::vector<Eigen::Vector2f> coordinates;
+    std::vector<Eigen::Vector2f, Eigen::aligned_allocator<Eigen::Vector2f> > coordinates;
     std::vector<Eigen::Vector2f> allTexCoords;
 
     std::map<int, int> f2vt;
@@ -1243,7 +1243,7 @@ bool OdmOrthoPhoto::loadObjFile(std::string inputFile, pcl::TextureMesh &mesh)
 
     if (vt_idx != v_idx)
     {
-        std::vector<Eigen::Vector2f> texcoordinates = std::vector<Eigen::Vector2f>(0);
+        std::vector<Eigen::Vector2f, Eigen::aligned_allocator<Eigen::Vector2f> > texcoordinates(0);
         texcoordinates.reserve(3*f_idx);
 
         for (size_t faceIndex = 0; faceIndex < f_idx; ++faceIndex)
