@@ -51,6 +51,9 @@ sudo apt-get install -y -qq libgtk2.0-dev \
 echo "Removing libdc1394-22-dev due to python opencv issue"
 sudo apt-get remove libdc1394-22-dev
 
+# Installing CGAL dependencies
+sudo apt-get install libgmp-dev libmpfr-dev
+
 ## Installing OpenSfM Requisites
 echo "Installing OpenSfM Dependencies"
 sudo apt-get install -y -qq python-networkx \
