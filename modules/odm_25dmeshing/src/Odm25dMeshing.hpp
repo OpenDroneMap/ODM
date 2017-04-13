@@ -9,8 +9,11 @@
 #include <CGAL/Triangulation_vertex_base_with_info_2.h>
 #include <CGAL/Delaunay_triangulation_2.h>
 #include <CGAL/Triangulation_2.h>
+#include <CGAL/Projection_traits_xy_3.h>
 #include <CGAL/remove_outliers.h>
 #include <CGAL/wlop_simplify_and_regularize_point_set.h>
+#include <CGAL/nearest_neighbor_delaunay_2.h>
+#include <CGAL/compute_average_spacing.h>
 
 #include "Logger.hpp"
 #include "PlyInterpreter.hpp"
