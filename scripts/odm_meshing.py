@@ -21,9 +21,6 @@ class ODMeshingCell(ecto.Cell):
                                  'times slightly but helps reduce memory usage.', 9)
 
         params.declare("max_vertex_25d", 'The maximum vertex count of the 2.5D output mesh.', 50000)
-        params.declare("remove_outliers", 'Percentage of outliers to remove from the point set. Set to 0 to disable. '
-                                          'Applies to 2.5D mesh only.', 2)
-        
         params.declare("wlop_iterations", 'Iterations of the Weighted Locally Optimal Projection (WLOP) simplification algorithm. '
                                           'Higher values take longer but produce a smoother mesh. '
                                           'Applies to 2.5D mesh only. ', 70)
@@ -98,14 +95,13 @@ class ODMeshingCell(ecto.Cell):
                   'log': tree.odm_25dmeshing_log,
                   'verbose': verbose,
                   'max_vertex': self.params.max_vertex_25d,
-                  'remove_outliers': self.params.remove_outliers,
                   'wlop_iterations': self.params.wlop_iterations
               }
 
               # run 2.5D meshing binary
               system.run('{bin}/odm_25dmeshing -inputFile {infile} '
                          '-outputFile {outfile} -logFile {log} '
-                         '-maxVertexCount {max_vertex} -outliersRemovalPercentage {remove_outliers} '
+                         '-maxVertexCount {max_vertex} '
                          '-wlopIterations {wlop_iterations} {verbose}'.format(**kwargs))
           else:
               log.ODM_WARNING('Found a valid ODM 2.5D Mesh file in: %s' %

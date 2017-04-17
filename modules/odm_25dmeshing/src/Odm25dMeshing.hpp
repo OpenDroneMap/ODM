@@ -3,17 +3,16 @@
 // STL
 #include <string>
 #include <iostream>
+#include <unordered_map>
 
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Constrained_Delaunay_triangulation_2.h>
 #include <CGAL/Triangulation_vertex_base_with_info_2.h>
 #include <CGAL/Delaunay_triangulation_2.h>
 #include <CGAL/Triangulation_2.h>
-#include <CGAL/Projection_traits_xy_3.h>
-#include <CGAL/remove_outliers.h>
 #include <CGAL/wlop_simplify_and_regularize_point_set.h>
-#include <CGAL/nearest_neighbor_delaunay_2.h>
-#include <CGAL/compute_average_spacing.h>
+#include <CGAL/bilateral_smooth_point_set.h>
+#include <CGAL/bounding_box.h>
 
 #include "Logger.hpp"
 #include "PlyInterpreter.hpp"
@@ -65,7 +64,6 @@ private:
 	std::string outputFile = "odm_25dmesh.ply";
 	std::string logFilePath = "odm_25dmeshing_log.txt";
 	unsigned int maxVertexCount = 100000;
-	double outliersRemovalPercentage = 2;
 	unsigned int wlopIterations = 35;
 	std::vector<Pwn> points;
 	bool flipFaces = false;

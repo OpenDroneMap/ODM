@@ -59,7 +59,6 @@ class ODMApp(ecto.BlackBox):
                                           samples=p.args.mesh_samples,
                                           solver=p.args.mesh_solver_divide,
                                           max_vertex_25d=getattr(p.args, '25d_mesh_size'),
-                                          remove_outliers=p.args.mesh_remove_outliers,
                                           wlop_iterations=p.args.mesh_wlop_iterations,
                                           verbose=p.args.verbose),
                  'texturing': ODMMvsTexCell(data_term=p.args.texturing_data_term,
