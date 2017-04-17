@@ -252,16 +252,6 @@ def config():
                               'times slightly but helps reduce memory usage. '
                               'Default: %(default)s'))
 
-    parser.add_argument('--25d-mesh-size',
-                        metavar='<positive integer>',
-                        default=50000,
-                        type=int,
-                        help=('The maximum vertex count of the 2.5D output mesh '
-                              'Smaller values produce smoother orthophotos but '
-                              'could introduce distortion '
-                              'Applies to 2.5D mesh only. '
-                              'Default: %(default)s'))
-
     parser.add_argument('--mesh-wlop-iterations',
                         metavar='<positive integer>',
                         default=70,
