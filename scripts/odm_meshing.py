@@ -20,7 +20,6 @@ class ODMeshingCell(ecto.Cell):
                                  'Increasing this value increases computation '
                                  'times slightly but helps reduce memory usage.', 9)
 
-        params.declare("max_vertex_25d", 'The maximum vertex count of the 2.5D output mesh.', 50000)
         params.declare("wlop_iterations", 'Iterations of the Weighted Locally Optimal Projection (WLOP) simplification algorithm. '
                                           'Higher values take longer but produce a smoother mesh. '
                                           'Applies to 2.5D mesh only. ', 70)
@@ -94,7 +93,7 @@ class ODMeshingCell(ecto.Cell):
                   'infile': infile,
                   'log': tree.odm_25dmeshing_log,
                   'verbose': verbose,
-                  'max_vertex': self.params.max_vertex_25d,
+                  'max_vertex': self.params.max_vertex,
                   'wlop_iterations': self.params.wlop_iterations
               }
 
