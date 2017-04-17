@@ -1,25 +1,14 @@
 #include "Odm25dMeshing.hpp"
 
 //We define a vertex_base with info. The "info" (size_t) allow us to keep track of the original point index.
-//typedef CGAL::Triangulation_vertex_base_with_info_2<size_t, Kernel> Vb;
-//typedef CGAL::Triangulation_data_structure_2<Vb> Tds;
-//typedef CGAL::Delaunay_triangulation_2<Kernel, Tds> DT;
-//typedef DT::Point cgalPoint;
-//typedef DT::Vertex_circulator Vertex_circulator;
+typedef CGAL::Triangulation_vertex_base_with_info_2<size_t, Kernel> Vb;
+typedef CGAL::Triangulation_data_structure_2<Vb> Tds;
+typedef CGAL::Delaunay_triangulation_2<Kernel, Tds> DT;
+typedef DT::Point cgalPoint;
+typedef DT::Vertex_circulator Vertex_circulator;
 
-typedef CGAL::Projection_traits_xy_3<Kernel> Gt;
-typedef CGAL::Triangulation_vertex_base_2<Gt> Vb;
-typedef CGAL::Delaunay_mesh_face_base_2<Gt> Fb;
-typedef CGAL::Triangulation_data_structure_2<Vb, Fb> Tds;
-
-typedef CGAL::Constrained_Delaunay_triangulation_2<Gt, Tds> CDT;
-
-typedef CGAL::Delaunay_mesh_size_criteria_2<CDT> Criteria;
-typedef CGAL::Delaunay_mesher_2<CDT, Criteria> Mesher;
-
-typedef CDT::Vertex_handle Vertex_handle;
-typedef CDT::Vertex_circulator Vertex_circulator;
-typedef CDT::Point cgalPoint;
+typedef CGAL::First_of_pair_property_map<Pwn> Point_map;
+typedef CGAL::Second_of_pair_property_map<Pwn> Normal_map;
 
 // Concurrency
 #ifdef CGAL_LINKED_WITH_TBB
@@ -41,7 +30,7 @@ int Odm25dMeshing::run(int argc, char **argv) {
 
 		parseArguments(argc, argv);
 
-//		loadPointCloud();
+		loadPointCloud();
 
 		buildMesh();
 
@@ -83,15 +72,6 @@ void Odm25dMeshing::parseArguments(int argc, char **argv) {
             if (ss.bad()) throw Odm25dMeshingException("Argument '" + argument + "' has a bad value (wrong type).");
             maxVertexCount = std::max<unsigned int>(maxVertexCount, 0);
             log << "Vertex count was manually set to: " << maxVertexCount << "\n";
-		} else if (argument == "-outliersRemovalPercentage" && argIndex < argc) {
-			++argIndex;
-			if (argIndex >= argc) throw Odm25dMeshingException("Argument '" + argument + "' expects 1 more input following it, but no more inputs were provided.");
-			std::stringstream ss(argv[argIndex]);
-			ss >> outliersRemovalPercentage;
-			if (ss.bad()) throw Odm25dMeshingException("Argument '" + argument + "' has a bad value (wrong type).");
-
-			outliersRemovalPercentage = std::min<double>(99.99, std::max<double>(outliersRemovalPercentage, 0));
-			log << "Outliers removal was manually set to: " << outliersRemovalPercentage << "\n";
 		} else if (argument == "-wlopIterations" && argIndex < argc) {
 			++argIndex;
 			if (argIndex >= argc) throw Odm25dMeshingException("Argument '" + argument + "' expects 1 more input following it, but no more inputs were provided.");
@@ -167,89 +147,52 @@ void Odm25dMeshing::loadPointCloud(){
 }
 
 void Odm25dMeshing::buildMesh(){
-//	const unsigned int NEIGHBORS = 24;
-//
-//	if (outliersRemovalPercentage > 0){
-//		size_t pointCountBeforeOutRemoval = points.size();
-//		log << "Removing outliers\n";
-//
-//		points.erase(CGAL::remove_outliers(points.begin(), points.end(),
-//				 CGAL::First_of_pair_property_map<Pwn>(), NEIGHBORS, outliersRemovalPercentage),
-//				points.end());
-//		std::vector<Pwn>(points).swap(points);
-//
-//		log << "Removed " << (pointCountBeforeOutRemoval - points.size()) << " points\n";
-//	}
-//
-//	// Filter points by normal orientation
-//	log << "Applying normal filtering\n";
-//
-//	double COSINE_LIMIT = std::cos(M_PI / 4); // ~ 45 degrees
-//
-//	Vector3 up(0, 0, 1);
-//	if (flipFaces) up = Vector3(0, 0, -1);
-//
-//	size_t pointCountBeforeNormalFilter = points.size();
-//
-//	points.erase(std::remove_if(points.begin(), points.end(),[&](Pwn pointWithNormal){
-//		double cosine = pointWithNormal.second * up / CGAL::sqrt(pointWithNormal.second*pointWithNormal.second) / CGAL::sqrt(up * up);
-//		return cosine <= COSINE_LIMIT;
-//	}), points.end());
-//
+	const unsigned int NEIGHBORS = 16;
+
 	size_t pointCount = points.size();
-//
-//	log << "Removed " << (pointCountBeforeNormalFilter - pointCount) << " points\n";
-//
-//	const double RETAIN_PERCENTAGE = std::min<double>(((100. * (double)maxVertexCount) / (double)pointCount), 80.);   // percentage of points to retain.
-	std::vector<Point3> simplifiedPoints;
-//
-//	log << "Computing average spacing... ";
-//
-//	FT avgSpacing = CGAL::compute_average_spacing<Concurrency_tag>(
-//			points.begin(),
-//			points.end(),
-//			CGAL::First_of_pair_property_map<Pwn>(),
-//			NEIGHBORS);
-//
-//	log << avgSpacing << "\n";
-//
-//	log << "Performing weighted locally optimal projection simplification and regularization (retain: " << RETAIN_PERCENTAGE << "%, iterate: " << wlopIterations << ")" << "\n";
-//
-//	CGAL::wlop_simplify_and_regularize_point_set<Concurrency_tag>(
-//		 	points.begin(),
-//			points.end(),
-//			std::back_inserter(simplifiedPoints),
-//			CGAL::First_of_pair_property_map<Pwn>(),
-//			RETAIN_PERCENTAGE,
-//			8 * avgSpacing,
-//			wlopIterations,
-//			false); // require_uniform_sampling
 
-//	for (size_t c = 0; c < pointCount; c++){
-//		simplifiedPoints.push_back(points[c].first);
-//	}
-
-//	std::ofstream f("out.bin");
-//	f << simplifiedPoints.size() * 3 << " ";
-//
-//	for (size_t i = 0; i < simplifiedPoints.size(); i++){
-//		f << simplifiedPoints[i].x() << " ";
-//		f << simplifiedPoints[i].y() << " ";
-//		f << simplifiedPoints[i].z() << " ";
-//	}
-//	f.close();
-//	exit(1);
-
-	std::ifstream fin("out.bin");
-	pointCount = 0;
-	fin >> pointCount;
-	for (size_t i = 0; i < pointCount / 3; i++){
-		float x, y, z;
-		fin >> x;
-		fin >> y;
-		fin >> z;
-		simplifiedPoints.push_back(Point3(x, y, z));
+	log << "Performing bilateral smoothing... ";
+	for (int i = 0; i < 3; i++){
+		double err = CGAL::bilateral_smooth_point_set<Concurrency_tag>(
+				points.begin(),
+				points.end(),
+				Point_map(),
+				Normal_map(),
+				NEIGHBORS,
+				45.0,
+				Kernel());
+		log << err << " ";
+		if (err < 0.001){
+			log << "stopping early\n";
+		}else if (i >= 2){
+			log << "iteration limit reached\n";
+		}
 	}
+
+	const double RETAIN_PERCENTAGE = std::min<double>(((100. * (double)maxVertexCount) / (double)pointCount), 80.);   // percentage of points to retain.
+	std::vector<Point3> simplifiedPoints;
+
+	log << "Computing average spacing... ";
+
+	FT avgSpacing = CGAL::compute_average_spacing<Concurrency_tag>(
+			points.begin(),
+			points.end(),
+			Point_map(),
+			NEIGHBORS);
+
+	log << avgSpacing << "\n";
+
+	log << "Performing weighted locally optimal projection simplification and regularization (retain: " << RETAIN_PERCENTAGE << "%, iterate: " << wlopIterations << ")" << "\n";
+
+	CGAL::wlop_simplify_and_regularize_point_set<Concurrency_tag>(
+		 	points.begin(),
+			points.end(),
+			std::back_inserter(simplifiedPoints),
+			Point_map(),
+			RETAIN_PERCENTAGE,
+			8 * avgSpacing,
+			wlopIterations,
+			true);
 
 	pointCount = simplifiedPoints.size();
 
@@ -259,21 +202,74 @@ void Odm25dMeshing::buildMesh(){
 
 	log << "Vertex count is " << pointCount << "\n";
 
-//	std::vector< std::pair<cgalPoint, size_t > > pts;
-//	try{
-//		pts.reserve(pointCount);
-//	} catch (const std::bad_alloc&){
-//		throw Odm25dMeshingException("Not enough memory");
-//	}
+	log << "Z-occlusion filtering\n";
+
+	size_t pointCountBeforeOcclusionFiltering = pointCount;
+
+	const double gridStep = 0.05;
+	Kernel::Iso_cuboid_3 bbox = CGAL::bounding_box(simplifiedPoints.begin(), simplifiedPoints.end());
+	Vector3 boxDiag = bbox.max() - bbox.min();
+
+	int gridWidth = 1 + static_cast<unsigned>(boxDiag.x() / gridStep + 0.5);
+	int gridHeight = 1 + static_cast<unsigned>(boxDiag.y() / gridStep + 0.5);
+
+	std::unordered_map<int, Point3> grid;
+
+	for (size_t c = 0; c < pointCount; c++){
+		const Point3 &p = simplifiedPoints[c];
+		Vector3 relativePos = p - bbox.min();
+		int i = static_cast<int>((relativePos.x() / gridStep + 0.5));
+		int j = static_cast<int>((relativePos.y() / gridStep + 0.5));
+
+		if ((i >= 0 && i < gridWidth) && (j >= 0 && j < gridHeight)){
+			int key = i * gridWidth + j;
+
+			if (grid.find(key) == grid.end()){
+				grid[key] = p;
+			}else if (p.z() > grid[key].z()){
+				grid[key] = p;
+			}
 //
-//	for (size_t i = 0; i < pointCount; ++i){
-//		pts.push_back(std::make_pair(cgalPoint(simplifiedPoints[i].x(), simplifiedPoints[i].y()), i));
+//			if (grid[i][j] == NULL){
+//				grid[i][j] = static_cast<Point3*>(&p);
+//			}else if (p.z() > grid[i][j]->z()){
+//				grid[i][j] = static_cast<Point3*>(&p);
+//			}
+		}
+	}
+
+	std::vector<Point3> gridPoints;
+	for ( auto it = grid.begin(); it != grid.end(); ++it ){
+		gridPoints.push_back(it->second);
+	}
+
+//	for (int i = 0; i < gridWidth; i++){
+//		for (int j = 0; j < gridHeight; j++){
+//			if (grid[i][j] != NULL){
+//				gridPoints.push_back(*grid[i][j]);
+//			}
+//		}
 //	}
+
+	pointCount = gridPoints.size();
+	log << "Removed " << (pointCountBeforeOcclusionFiltering - pointCount) << " points\n";
+
+
+	std::vector< std::pair<cgalPoint, size_t > > pts;
+	try{
+		pts.reserve(pointCount);
+	} catch (const std::bad_alloc&){
+		throw Odm25dMeshingException("Not enough memory");
+	}
+
+	for (size_t i = 0; i < pointCount; ++i){
+		pts.push_back(std::make_pair(cgalPoint(gridPoints[i].x(), gridPoints[i].y()), i));
+	}
 
 	log << "Computing delaunay triangulation\n";
 
 	//The delaunay triangulation is built according to the 2D point cloud
-//	DT dt(pts.begin(), pts.end());
+	DT dt(pts.begin(), pts.end());
 
 	unsigned int numberOfTriangles = static_cast<unsigned >(dt.number_of_faces());
 	unsigned int triIndexes = dt.number_of_faces()*3;
@@ -295,9 +291,9 @@ void Odm25dMeshing::buildMesh(){
 
 
 	for (size_t i = 0; i < pointCount; ++i){
-		vertices.push_back(simplifiedPoints[i].x());
-		vertices.push_back(simplifiedPoints[i].y());
-		vertices.push_back(simplifiedPoints[i].z());
+		vertices.push_back(gridPoints[i].x());
+		vertices.push_back(gridPoints[i].y());
+		vertices.push_back(gridPoints[i].z());
 	}
 
 	for (DT::Face_iterator face = dt.faces_begin(); face != dt.faces_end(); ++face) {
@@ -314,11 +310,10 @@ void Odm25dMeshing::buildMesh(){
 
 	log << "Removing spikes\n";
 
-	const float THRESHOLD = 0.1;
+	const float THRESHOLD = 0.05;
 
 	std::vector<float> heights;
 	unsigned int spikesRemoved = 0;
-
 
 	for (DT::Vertex_iterator vertex = dt.vertices_begin(); vertex != dt.vertices_end(); ++vertex){
 		// Check if the height between this vertex and its
@@ -387,7 +382,6 @@ void Odm25dMeshing::printHelp() {
 		<< "	-outputFile	<path>	where the output PLY 2.5D mesh should be saved (default: " << outputFile << ")\n"
 		<< "	-logFile	<path>	log file path (default: " << logFilePath << ")\n"
 		<< "	-verbose	whether to print verbose output (default: " << (printInCoutPop ? "true" : "false") << ")\n"
-		<< "	-outliersRemovalPercentage	<0 - 99.99>	percentage of outliers to remove. Set to 0 to disable. (default: " << outliersRemovalPercentage << ")\n"
 		<< "	-maxVertexCount	<0 - N>	Maximum number of vertices in the output mesh. The mesh might have fewer vertices, but will not exceed this limit. (default: " << maxVertexCount << ")\n"
 		<< "	-wlopIterations	<1 - 1000>	Iterations of the Weighted Locally Optimal Projection (WLOP) simplification algorithm. Higher values take longer but produce a smoother mesh. (default: " << wlopIterations << ")\n"
 
