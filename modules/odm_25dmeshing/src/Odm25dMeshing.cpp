@@ -1,22 +1,5 @@
 #include "Odm25dMeshing.hpp"
 
-//We define a vertex_base with info. The "info" (size_t) allow us to keep track of the original point index.
-typedef CGAL::Triangulation_vertex_base_with_info_2<size_t, Kernel> Vb;
-typedef CGAL::Triangulation_data_structure_2<Vb> Tds;
-typedef CGAL::Delaunay_triangulation_2<Kernel, Tds> DT;
-typedef DT::Point cgalPoint;
-typedef DT::Vertex_circulator Vertex_circulator;
-
-//typedef CGAL::First_of_pair_property_map<Pwn> Point_map;
-//typedef CGAL::Second_of_pair_property_map<Pwn> Normal_map;
-
-// Concurrency
-#ifdef CGAL_LINKED_WITH_TBB
-typedef CGAL::Parallel_tag Concurrency_tag;
-#else
-typedef CGAL::Sequential_tag Concurrency_tag;
-#endif
-
 int Odm25dMeshing::run(int argc, char **argv) {
 	log << logFilePath << "\n";
 
@@ -245,6 +228,8 @@ void Odm25dMeshing::buildMesh(){
 
 	log << "Vertex count is " << pointCount << "\n";
 
+	typedef CDT::Point cgalPoint;
+	typedef CDT::Vertex_circulator Vertex_circulator;
 
 	std::vector< std::pair<cgalPoint, size_t > > pts;
 	try{
@@ -259,11 +244,11 @@ void Odm25dMeshing::buildMesh(){
 
 	log << "Computing delaunay triangulation... ";
 
-	//The delaunay triangulation is built according to the 2D point cloud
-	DT dt(pts.begin(), pts.end());
+	CDT cdt;
+	cdt.insert(pts.begin(), pts.end());
 
-	unsigned int numberOfTriangles = static_cast<unsigned >(dt.number_of_faces());
-	unsigned int triIndexes = dt.number_of_faces()*3;
+	unsigned int numberOfTriangles = static_cast<unsigned >(cdt.number_of_faces());
+	unsigned int triIndexes = cdt.number_of_faces()*3;
 
 	if (numberOfTriangles == 0) throw Odm25dMeshingException("No triangles in resulting mesh");
 
@@ -271,11 +256,11 @@ void Odm25dMeshing::buildMesh(){
 
 	// Convert to tinyply format
 	std::vector<float> vertices;
-	std::vector<int> vertexIndicies;
+	std::vector<int> vertexIndices;
 
 	try{
 		vertices.reserve(pointCount);
-		vertexIndicies.reserve(triIndexes);
+		vertexIndices.reserve(triIndexes);
 	} catch (const std::bad_alloc&){
 		throw Odm25dMeshingException("Not enough memory");
 	}
@@ -287,28 +272,28 @@ void Odm25dMeshing::buildMesh(){
 		vertices.push_back(simplifiedPoints[i].z());
 	}
 
-	for (DT::Face_iterator face = dt.faces_begin(); face != dt.faces_end(); ++face) {
+	for (CDT::Face_iterator face = cdt.faces_begin(); face != cdt.faces_end(); ++face) {
 		if (flipFaces){
-			vertexIndicies.push_back(face->vertex(2)->info());
-			vertexIndicies.push_back(face->vertex(1)->info());
-			vertexIndicies.push_back(face->vertex(0)->info());
+			vertexIndices.push_back(face->vertex(2)->info());
+			vertexIndices.push_back(face->vertex(1)->info());
+			vertexIndices.push_back(face->vertex(0)->info());
 		}else{
-			vertexIndicies.push_back(face->vertex(0)->info());
-			vertexIndicies.push_back(face->vertex(1)->info());
-			vertexIndicies.push_back(face->vertex(2)->info());
+			vertexIndices.push_back(face->vertex(0)->info());
+			vertexIndices.push_back(face->vertex(1)->info());
+			vertexIndices.push_back(face->vertex(2)->info());
 		}
 	}
 
 	log << "Removing spikes... ";
 
-	const float THRESHOLD = 0.05;
+	const float THRESHOLD = avgSpacing*2;
 	std::vector<float> heights;
 	unsigned int spikesRemoved = 0;
 
-	for (DT::Vertex_iterator vertex = dt.vertices_begin(); vertex != dt.vertices_end(); ++vertex){
+	for (CDT::Vertex_iterator vertex = cdt.vertices_begin(); vertex != cdt.vertices_end(); ++vertex){
 		// Check if the height between this vertex and its
 		// incident vertices is greater than THRESHOLD
-		Vertex_circulator vc = dt.incident_vertices(vertex), done(vc);
+		Vertex_circulator vc = cdt.incident_vertices(vertex), done(vc);
 
 		if (vc != 0){
 			float height = vertices[vertex->info() * 3 + 2];
@@ -316,7 +301,7 @@ void Odm25dMeshing::buildMesh(){
 			int vertexCount = 0;
 
 			do{
-				if (dt.is_infinite(vc)) continue;
+				if (cdt.is_infinite(vc)) continue;
 
 				float ivHeight = vertices[vc->info() * 3 + 2];
 
@@ -344,7 +329,63 @@ void Odm25dMeshing::buildMesh(){
 
 	log << "removed " << spikesRemoved << " spikes\n";
 
+	log << "Building polyhedron... ";
+
+	Polyhedron poly;
+	PolyhedronBuilder<HalfedgeDS> builder(vertices, vertexIndices);
+	poly.delegate( builder );
+
+	log << "done\n";
+
+	log << "Refining... ";
+
+	typedef Polyhedron::Vertex_handle   Vertex_handle;
+	std::vector<Polyhedron::Facet_handle>  new_facets;
+	std::vector<Vertex_handle> new_vertices;
+	CGAL::Polygon_mesh_processing::refine(poly,
+				  faces(poly),
+				  std::back_inserter(new_facets),
+				  std::back_inserter(new_vertices),
+				  CGAL::Polygon_mesh_processing::parameters::density_control_factor(2.));
+
+	log << "added " << new_vertices.size() << " new vertices\n";
+
+	SMS::Count_stop_predicate<Polyhedron> stop(maxVertexCount * 3);
+	int redgesRemoved = SMS::edge_collapse(poly, stop,
+				  CGAL::parameters::vertex_index_map(get(CGAL::vertex_external_index, poly))
+								 .halfedge_index_map  (get(CGAL::halfedge_external_index, poly))
+								 .get_cost (SMS::Edge_length_cost <Polyhedron>())
+								 .get_placement(SMS::Midpoint_placement<Polyhedron>())
+			  );
+
+	log << redgesRemoved << " edges removed.\n";
+
+	log << "Final vertex count is " << poly.size_of_vertices() << "\n";
+
 	log << "Saving mesh to file.\n";
+
+	typedef Polyhedron::Facet_iterator                   Facet_iterator;
+	typedef Polyhedron::Halfedge_around_facet_circulator Halfedge_facet_circulator;
+
+	vertices.clear();
+	vertexIndices.clear();
+
+	for (auto it = poly.points_begin(); it != poly.points_end(); it++){
+		vertices.push_back(it->x());
+		vertices.push_back(it->y());
+		vertices.push_back(it->z());
+	}
+
+	log << "HERE 1!\n";
+
+	for (Facet_iterator i = poly.facets_begin(); i != poly.facets_end(); ++i) {
+		Halfedge_facet_circulator j = i->facet_begin();
+		do {
+			vertexIndices.push_back(std::distance(poly.vertices_begin(), j->vertex()));
+		} while (++j != i->facet_begin());
+	}
+
+	log << "HERE!\n";
 
 	std::filebuf fb;
 	fb.open(outputFile, std::ios::out | std::ios::binary);
@@ -352,7 +393,7 @@ void Odm25dMeshing::buildMesh(){
 
 	tinyply::PlyFile plyFile;
 	plyFile.add_properties_to_element("vertex", {"x", "y", "z"}, vertices);
-	plyFile.add_properties_to_element("face", { "vertex_index" }, vertexIndicies, 3, tinyply::PlyProperty::Type::UINT8);
+	plyFile.add_properties_to_element("face", { "vertex_index" }, vertexIndices, 3, tinyply::PlyProperty::Type::UINT8);
 
 	plyFile.write(outputStream, false);
 	fb.close();
