@@ -254,7 +254,7 @@ def config():
 
     parser.add_argument('--mesh-wlop-iterations',
                         metavar='<positive integer>',
-                        default=70,
+                        default=35,
                         type=int,
                         help=('Iterations of the Weighted Locally Optimal Projection (WLOP) simplification algorithm. '
                               'Higher values take longer but produce a smoother mesh. '
