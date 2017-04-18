@@ -150,6 +150,18 @@ void Odm25dMeshing::buildMesh(){
 	const unsigned int NEIGHBORS = 24;
 
 	size_t pointCount = points.size();
+	size_t pointCountBeforeOutlierRemoval = pointCount;
+
+	log << "Removing outliers... ";
+
+	points.erase(CGAL::remove_outliers(points.begin(), points.end(),
+				 NEIGHBORS,
+				 2),
+	 			points.end());
+	std::vector<Point3>(points).swap(points);
+	pointCount = points.size();
+
+	log << "removed " << pointCountBeforeOutlierRemoval - pointCount << " points\n";
 
 	log << "Computing average spacing... ";
 
@@ -160,7 +172,7 @@ void Odm25dMeshing::buildMesh(){
 
 	log << avgSpacing << "\n";
 
-	log << "Grid Z sampling\n";
+	log << "Grid Z sampling... ";
 
 	size_t pointCountBeforeGridSampling = pointCount;
 
@@ -198,40 +210,18 @@ void Odm25dMeshing::buildMesh(){
 	}
 
 	pointCount = gridPoints.size();
-	log << "Sampled " << (pointCountBeforeGridSampling - pointCount) << " points\n";
+	log << "sampled " << (pointCountBeforeGridSampling - pointCount) << " points\n";
 
-	log << "Hole filling\n";
-
-	std::unordered_map<int, Point3>::iterator it;
-	for (int i = 1; i < gridWidth - 1; i++){
-		for (int j = 1; j < gridHeight - 1; j++){
-			if (grid.find(KEY(i, j)) == grid.end()){
-				int neighbors = 0;
-				FT avgZ = 0;
-
-				for (int k = i - 1; k < i + 1; k++){
-					for (int l = j - 1; l < j + 1; l++){
-						// Search for immediate neighbors
-						if ((it = grid.find(KEY(k, l))) != grid.end()){
-							avgZ += it->second.z();
-							neighbors++;
-						}
-					}
-				}
-
-				// Found?
-				if (neighbors > 0){
-					gridPoints.push_back(Point3(
-							(i - 0.5) * gridStep + bbox.min().x(),
-							(j - 0.5) * gridStep + bbox.min().y(),
-							avgZ / static_cast<FT>(neighbors)));
-				}
-			}
-		}
-	}
-
-	log << "Filled grid with " << (gridPoints.size() - pointCount) << " points\n";
-	pointCount = gridPoints.size();
+//	log << "Removing outliers... ";
+//
+//	points.erase(CGAL::remove_outliers(points.begin(), points.end(),
+//				 NEIGHBORS,
+//				 2),
+//	 			points.end());
+//	std::vector<Point3>(points).swap(points);
+//	pointCount = points.size();
+//
+//	log << "removed " << pointCountBeforeOutlierRemoval - pointCount << " points\n";
 
 	const double RETAIN_PERCENTAGE = std::min<double>(100., 100. * static_cast<double>(maxVertexCount) / static_cast<double>(pointCount));   // percentage of points to retain.
 	std::vector<Point3> simplifiedPoints;
@@ -255,6 +245,7 @@ void Odm25dMeshing::buildMesh(){
 
 	log << "Vertex count is " << pointCount << "\n";
 
+
 	std::vector< std::pair<cgalPoint, size_t > > pts;
 	try{
 		pts.reserve(pointCount);
@@ -266,7 +257,7 @@ void Odm25dMeshing::buildMesh(){
 		pts.push_back(std::make_pair(cgalPoint(simplifiedPoints[i].x(), simplifiedPoints[i].y()), i));
 	}
 
-	log << "Computing delaunay triangulation\n";
+	log << "Computing delaunay triangulation... ";
 
 	//The delaunay triangulation is built according to the 2D point cloud
 	DT dt(pts.begin(), pts.end());
@@ -276,7 +267,7 @@ void Odm25dMeshing::buildMesh(){
 
 	if (numberOfTriangles == 0) throw Odm25dMeshingException("No triangles in resulting mesh");
 
-	log << "Computed " << numberOfTriangles << " triangles\n";
+	log << numberOfTriangles << " triangles\n";
 
 	// Convert to tinyply format
 	std::vector<float> vertices;
@@ -308,10 +299,9 @@ void Odm25dMeshing::buildMesh(){
 		}
 	}
 
-	log << "Removing spikes\n";
+	log << "Removing spikes... ";
 
 	const float THRESHOLD = 0.05;
-
 	std::vector<float> heights;
 	unsigned int spikesRemoved = 0;
 
@@ -352,7 +342,7 @@ void Odm25dMeshing::buildMesh(){
 		}
 	}
 
-	log << "Removed " << spikesRemoved << " spikes\n";
+	log << "removed " << spikesRemoved << " spikes\n";
 
 	log << "Saving mesh to file.\n";
 

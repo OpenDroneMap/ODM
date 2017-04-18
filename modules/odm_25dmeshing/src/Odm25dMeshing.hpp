@@ -4,6 +4,7 @@
 #include <string>
 #include <iostream>
 #include <unordered_map>
+#include <queue>
 
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Constrained_Delaunay_triangulation_2.h>
@@ -13,6 +14,7 @@
 #include <CGAL/wlop_simplify_and_regularize_point_set.h>
 #include <CGAL/bilateral_smooth_point_set.h>
 #include <CGAL/bounding_box.h>
+#include <CGAL/remove_outliers.h>
 
 #include "Logger.hpp"
 #include "PlyInterpreter.hpp"
