@@ -14,11 +14,11 @@
 #include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Count_stop_predicate.h>
 #include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Edge_length_cost.h>
 #include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Midpoint_placement.h>
+#include <CGAL/Inverse_index.h>
 
 #include "CGAL.hpp"
 #include "Logger.hpp"
 #include "PlyInterpreter.hpp"
-#include "tinyply.hpp"
 #include "PolyhedronBuilder.hpp"
 
 class Odm25dMeshing {
@@ -67,6 +67,7 @@ private:
 	std::string outputFile = "odm_25dmesh.ply";
 	std::string logFilePath = "odm_25dmeshing_log.txt";
 	unsigned int maxVertexCount = 100000;
+	double outliersRemovalPercentage = 2;
 	unsigned int wlopIterations = 35;
 	std::vector<Point3> points;
 	bool flipFaces = false;
