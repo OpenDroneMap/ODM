@@ -6,19 +6,20 @@
 #include <unordered_map>
 #include <queue>
 
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-#include <CGAL/Constrained_Delaunay_triangulation_2.h>
-#include <CGAL/Triangulation_vertex_base_with_info_2.h>
-#include <CGAL/Delaunay_triangulation_2.h>
-#include <CGAL/Triangulation_2.h>
 #include <CGAL/wlop_simplify_and_regularize_point_set.h>
-#include <CGAL/bilateral_smooth_point_set.h>
 #include <CGAL/bounding_box.h>
 #include <CGAL/remove_outliers.h>
+#include <CGAL/Polygon_mesh_processing/refine.h>
+#include <CGAL/Polygon_mesh_processing/fair.h>
+#include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Count_stop_predicate.h>
+#include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Edge_length_cost.h>
+#include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Midpoint_placement.h>
 
+#include "CGAL.hpp"
 #include "Logger.hpp"
 #include "PlyInterpreter.hpp"
 #include "tinyply.hpp"
+#include "PolyhedronBuilder.hpp"
 
 class Odm25dMeshing {
 public:

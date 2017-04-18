@@ -5,15 +5,10 @@
 #include <fstream>
 #include <limits>
 
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/property_map.h>
 #include <CGAL/IO/read_ply_points.h>
 
-// types
-typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
-typedef Kernel::FT FT;
-typedef Kernel::Point_3 Point3;
-typedef Kernel::Vector_3 Vector3;
+#include "CGAL.hpp"
 
 // points, normals
 //typedef std::pair<Point3, Vector3> Pwn;
