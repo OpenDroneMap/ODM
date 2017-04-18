@@ -55,6 +55,15 @@ void Odm25dMeshing::parseArguments(int argc, char **argv) {
             if (ss.bad()) throw Odm25dMeshingException("Argument '" + argument + "' has a bad value (wrong type).");
             maxVertexCount = std::max<unsigned int>(maxVertexCount, 0);
             log << "Vertex count was manually set to: " << maxVertexCount << "\n";
+		} else if (argument == "-outliersRemovalPercentage" && argIndex < argc) {
+			++argIndex;
+			if (argIndex >= argc) throw Odm25dMeshingException("Argument '" + argument + "' expects 1 more input following it, but no more inputs were provided.");
+			std::stringstream ss(argv[argIndex]);
+			ss >> outliersRemovalPercentage;
+			if (ss.bad()) throw Odm25dMeshingException("Argument '" + argument + "' has a bad value (wrong type).");
+
+			outliersRemovalPercentage = std::min<double>(99.99, std::max<double>(outliersRemovalPercentage, 0));
+			log << "Outliers removal was manually set to: " << outliersRemovalPercentage << "\n";
 		} else if (argument == "-wlopIterations" && argIndex < argc) {
 			++argIndex;
 			if (argIndex >= argc) throw Odm25dMeshingException("Argument '" + argument + "' expects 1 more input following it, but no more inputs were provided.");
@@ -139,7 +148,7 @@ void Odm25dMeshing::buildMesh(){
 
 	points.erase(CGAL::remove_outliers(points.begin(), points.end(),
 				 NEIGHBORS,
-				 2),
+				 outliersRemovalPercentage),
 	 			points.end());
 	std::vector<Point3>(points).swap(points);
 	pointCount = points.size();
@@ -195,17 +204,6 @@ void Odm25dMeshing::buildMesh(){
 	pointCount = gridPoints.size();
 	log << "sampled " << (pointCountBeforeGridSampling - pointCount) << " points\n";
 
-//	log << "Removing outliers... ";
-//
-//	points.erase(CGAL::remove_outliers(points.begin(), points.end(),
-//				 NEIGHBORS,
-//				 2),
-//	 			points.end());
-//	std::vector<Point3>(points).swap(points);
-//	pointCount = points.size();
-//
-//	log << "removed " << pointCountBeforeOutlierRemoval - pointCount << " points\n";
-
 	const double RETAIN_PERCENTAGE = std::min<double>(100., 100. * static_cast<double>(maxVertexCount) / static_cast<double>(pointCount));   // percentage of points to retain.
 	std::vector<Point3> simplifiedPoints;
 
@@ -254,7 +252,6 @@ void Odm25dMeshing::buildMesh(){
 
 	log << numberOfTriangles << " triangles\n";
 
-	// Convert to tinyply format
 	std::vector<float> vertices;
 	std::vector<int> vertexIndices;
 
@@ -286,7 +283,7 @@ void Odm25dMeshing::buildMesh(){
 
 	log << "Removing spikes... ";
 
-	const float THRESHOLD = avgSpacing*2;
+	const float THRESHOLD = avgSpacing;
 	std::vector<float> heights;
 	unsigned int spikesRemoved = 0;
 
@@ -350,6 +347,8 @@ void Odm25dMeshing::buildMesh(){
 
 	log << "added " << new_vertices.size() << " new vertices\n";
 
+	log << "Edge collapsing... ";
+
 	SMS::Count_stop_predicate<Polyhedron> stop(maxVertexCount * 3);
 	int redgesRemoved = SMS::edge_collapse(poly, stop,
 				  CGAL::parameters::vertex_index_map(get(CGAL::vertex_external_index, poly))
@@ -364,41 +363,47 @@ void Odm25dMeshing::buildMesh(){
 
 	log << "Saving mesh to file.\n";
 
-	typedef Polyhedron::Facet_iterator                   Facet_iterator;
-	typedef Polyhedron::Halfedge_around_facet_circulator Halfedge_facet_circulator;
-
-	vertices.clear();
-	vertexIndices.clear();
-
-	for (auto it = poly.points_begin(); it != poly.points_end(); it++){
-		vertices.push_back(it->x());
-		vertices.push_back(it->y());
-		vertices.push_back(it->z());
-	}
-
-	log << "HERE 1!\n";
-
-	for (Facet_iterator i = poly.facets_begin(); i != poly.facets_end(); ++i) {
-		Halfedge_facet_circulator j = i->facet_begin();
-		do {
-			vertexIndices.push_back(std::distance(poly.vertices_begin(), j->vertex()));
-		} while (++j != i->facet_begin());
-	}
-
-	log << "HERE!\n";
+    typedef typename Polyhedron::Vertex_const_iterator VCI;
+    typedef typename Polyhedron::Facet_const_iterator FCI;
+    typedef typename Polyhedron::Halfedge_around_facet_const_circulator HFCC;
 
 	std::filebuf fb;
-	fb.open(outputFile, std::ios::out | std::ios::binary);
-	std::ostream outputStream(&fb);
+	fb.open(outputFile, std::ios::out);
+	std::ostream os(&fb);
 
-	tinyply::PlyFile plyFile;
-	plyFile.add_properties_to_element("vertex", {"x", "y", "z"}, vertices);
-	plyFile.add_properties_to_element("face", { "vertex_index" }, vertexIndices, 3, tinyply::PlyProperty::Type::UINT8);
+	os << "ply\n"
+	   << "format ascii 1.0\n"
+	   << "element vertex " << poly.size_of_vertices() << "\n"
+	   << "property float x\n"
+	   << "property float y\n"
+	   << "property float z\n"
+	   << "element face " << poly.size_of_facets() << "\n"
+	   << "property list uchar int vertex_index\n"
+	   << "end_header\n";
 
-	plyFile.write(outputStream, false);
+	for (auto it = poly.vertices_begin(); it != poly.vertices_end(); it++){
+		os << it->point().x() << " " << it->point().y() << " " << it->point().z() << std::endl;
+	}
+
+	typedef CGAL::Inverse_index<VCI> Index;
+	Index index(poly.vertices_begin(), poly.vertices_end());
+
+	for( FCI fi = poly.facets_begin(); fi != poly.facets_end(); ++fi) {
+		HFCC hc = fi->facet_begin();
+		HFCC hc_end = hc;
+
+		os << circulator_size(hc) << " ";
+		do {
+			os << index[VCI(hc->vertex())] << " ";
+			++hc;
+		} while( hc != hc_end);
+
+		os << "\n";
+	}
+
 	fb.close();
 
-	log << "Successfully wrote mesh to:\n" << outputFile << "\n";
+	log << "Successfully wrote mesh to: " << outputFile << "\n";
 }
 
 void Odm25dMeshing::printHelp() {
