@@ -19,11 +19,11 @@ void PlyInterpreter::process_line(CGAL::Ply_reader& reader) {
 	reader.assign (y, "y");
 	reader.assign (z, "z");
 	reader.assign (nx, "nx");
-    reader.assign (ny, "ny");
-    reader.assign (nz, "nz");
+	reader.assign (ny, "ny");
+	reader.assign (nz, "nz");
 
 	Point3 p(x, y, z);
-	Vector3 n(nx, ny, nz);
+//	Vector3 n(nx, ny, nz);
 
 	if (nz >= 0 && zNormalsDirectionCount < std::numeric_limits<long>::max()){
 		zNormalsDirectionCount++;
@@ -31,7 +31,8 @@ void PlyInterpreter::process_line(CGAL::Ply_reader& reader) {
 		zNormalsDirectionCount--;
 	}
 
-	points.push_back(std::make_pair(p, n));
+//	points.push_back(std::make_pair(p, n));
+	points.push_back(p);
 }
 
 bool PlyInterpreter::flip_faces(){

@@ -7,8 +7,8 @@ typedef CGAL::Delaunay_triangulation_2<Kernel, Tds> DT;
 typedef DT::Point cgalPoint;
 typedef DT::Vertex_circulator Vertex_circulator;
 
-typedef CGAL::First_of_pair_property_map<Pwn> Point_map;
-typedef CGAL::Second_of_pair_property_map<Pwn> Normal_map;
+//typedef CGAL::First_of_pair_property_map<Pwn> Point_map;
+//typedef CGAL::Second_of_pair_property_map<Pwn> Normal_map;
 
 // Concurrency
 #ifdef CGAL_LINKED_WITH_TBB
@@ -147,48 +147,101 @@ void Odm25dMeshing::loadPointCloud(){
 }
 
 void Odm25dMeshing::buildMesh(){
-	const unsigned int NEIGHBORS = 16;
+	const unsigned int NEIGHBORS = 24;
 
 	size_t pointCount = points.size();
-
-	log << "Performing bilateral smoothing... ";
-	for (int i = 0; i < 3; i++){
-		double err = CGAL::bilateral_smooth_point_set<Concurrency_tag>(
-				points.begin(),
-				points.end(),
-				Point_map(),
-				Normal_map(),
-				NEIGHBORS,
-				45.0,
-				Kernel());
-		log << err << " ";
-		if (err < 0.001){
-			log << "stopping early\n";
-		}else if (i >= 2){
-			log << "iteration limit reached\n";
-		}
-	}
-
-	const double RETAIN_PERCENTAGE = std::min<double>(((100. * (double)maxVertexCount) / (double)pointCount), 80.);   // percentage of points to retain.
-	std::vector<Point3> simplifiedPoints;
 
 	log << "Computing average spacing... ";
 
 	FT avgSpacing = CGAL::compute_average_spacing<Concurrency_tag>(
 			points.begin(),
 			points.end(),
-			Point_map(),
 			NEIGHBORS);
 
 	log << avgSpacing << "\n";
 
+	log << "Grid Z sampling\n";
+
+	size_t pointCountBeforeGridSampling = pointCount;
+
+	double gridStep = avgSpacing;
+	Kernel::Iso_cuboid_3 bbox = CGAL::bounding_box(points.begin(), points.end());
+	Vector3 boxDiag = bbox.max() - bbox.min();
+
+	int gridWidth = 1 + static_cast<unsigned>(boxDiag.x() / gridStep + 0.5);
+	int gridHeight = 1 + static_cast<unsigned>(boxDiag.y() / gridStep + 0.5);
+
+	#define KEY(i, j) (i * gridWidth + j)
+
+	std::unordered_map<int, Point3> grid;
+
+	for (size_t c = 0; c < pointCount; c++){
+		const Point3 &p = points[c];
+		Vector3 relativePos = p - bbox.min();
+		int i = static_cast<int>((relativePos.x() / gridStep + 0.5));
+		int j = static_cast<int>((relativePos.y() / gridStep + 0.5));
+
+		if ((i >= 0 && i < gridWidth) && (j >= 0 && j < gridHeight)){
+			int key = KEY(i, j);
+
+			if (grid.find(key) == grid.end()){
+				grid[key] = p;
+			}else if ((!flipFaces && p.z() > grid[key].z()) || (flipFaces && p.z() < grid[key].z())){
+				grid[key] = p;
+			}
+		}
+	}
+
+	std::vector<Point3> gridPoints;
+	for ( auto it = grid.begin(); it != grid.end(); ++it ){
+		gridPoints.push_back(it->second);
+	}
+
+	pointCount = gridPoints.size();
+	log << "Sampled " << (pointCountBeforeGridSampling - pointCount) << " points\n";
+
+	log << "Hole filling\n";
+
+	std::unordered_map<int, Point3>::iterator it;
+	for (int i = 1; i < gridWidth - 1; i++){
+		for (int j = 1; j < gridHeight - 1; j++){
+			if (grid.find(KEY(i, j)) == grid.end()){
+				int neighbors = 0;
+				FT avgZ = 0;
+
+				for (int k = i - 1; k < i + 1; k++){
+					for (int l = j - 1; l < j + 1; l++){
+						// Search for immediate neighbors
+						if ((it = grid.find(KEY(k, l))) != grid.end()){
+							avgZ += it->second.z();
+							neighbors++;
+						}
+					}
+				}
+
+				// Found?
+				if (neighbors > 0){
+					gridPoints.push_back(Point3(
+							(i - 0.5) * gridStep + bbox.min().x(),
+							(j - 0.5) * gridStep + bbox.min().y(),
+							avgZ / static_cast<FT>(neighbors)));
+				}
+			}
+		}
+	}
+
+	log << "Filled grid with " << (gridPoints.size() - pointCount) << " points\n";
+	pointCount = gridPoints.size();
+
+	const double RETAIN_PERCENTAGE = std::min<double>(100., 100. * static_cast<double>(maxVertexCount) / static_cast<double>(pointCount));   // percentage of points to retain.
+	std::vector<Point3> simplifiedPoints;
+
 	log << "Performing weighted locally optimal projection simplification and regularization (retain: " << RETAIN_PERCENTAGE << "%, iterate: " << wlopIterations << ")" << "\n";
 
 	CGAL::wlop_simplify_and_regularize_point_set<Concurrency_tag>(
-		 	points.begin(),
-			points.end(),
+		 	gridPoints.begin(),
+			gridPoints.end(),
 			std::back_inserter(simplifiedPoints),
-			Point_map(),
 			RETAIN_PERCENTAGE,
 			8 * avgSpacing,
 			wlopIterations,
@@ -202,59 +255,6 @@ void Odm25dMeshing::buildMesh(){
 
 	log << "Vertex count is " << pointCount << "\n";
 
-	log << "Z-occlusion filtering\n";
-
-	size_t pointCountBeforeOcclusionFiltering = pointCount;
-
-	const double gridStep = 0.05;
-	Kernel::Iso_cuboid_3 bbox = CGAL::bounding_box(simplifiedPoints.begin(), simplifiedPoints.end());
-	Vector3 boxDiag = bbox.max() - bbox.min();
-
-	int gridWidth = 1 + static_cast<unsigned>(boxDiag.x() / gridStep + 0.5);
-	int gridHeight = 1 + static_cast<unsigned>(boxDiag.y() / gridStep + 0.5);
-
-	std::unordered_map<int, Point3> grid;
-
-	for (size_t c = 0; c < pointCount; c++){
-		const Point3 &p = simplifiedPoints[c];
-		Vector3 relativePos = p - bbox.min();
-		int i = static_cast<int>((relativePos.x() / gridStep + 0.5));
-		int j = static_cast<int>((relativePos.y() / gridStep + 0.5));
-
-		if ((i >= 0 && i < gridWidth) && (j >= 0 && j < gridHeight)){
-			int key = i * gridWidth + j;
-
-			if (grid.find(key) == grid.end()){
-				grid[key] = p;
-			}else if (p.z() > grid[key].z()){
-				grid[key] = p;
-			}
-//
-//			if (grid[i][j] == NULL){
-//				grid[i][j] = static_cast<Point3*>(&p);
-//			}else if (p.z() > grid[i][j]->z()){
-//				grid[i][j] = static_cast<Point3*>(&p);
-//			}
-		}
-	}
-
-	std::vector<Point3> gridPoints;
-	for ( auto it = grid.begin(); it != grid.end(); ++it ){
-		gridPoints.push_back(it->second);
-	}
-
-//	for (int i = 0; i < gridWidth; i++){
-//		for (int j = 0; j < gridHeight; j++){
-//			if (grid[i][j] != NULL){
-//				gridPoints.push_back(*grid[i][j]);
-//			}
-//		}
-//	}
-
-	pointCount = gridPoints.size();
-	log << "Removed " << (pointCountBeforeOcclusionFiltering - pointCount) << " points\n";
-
-
 	std::vector< std::pair<cgalPoint, size_t > > pts;
 	try{
 		pts.reserve(pointCount);
@@ -263,7 +263,7 @@ void Odm25dMeshing::buildMesh(){
 	}
 
 	for (size_t i = 0; i < pointCount; ++i){
-		pts.push_back(std::make_pair(cgalPoint(gridPoints[i].x(), gridPoints[i].y()), i));
+		pts.push_back(std::make_pair(cgalPoint(simplifiedPoints[i].x(), simplifiedPoints[i].y()), i));
 	}
 
 	log << "Computing delaunay triangulation\n";
@@ -291,9 +291,9 @@ void Odm25dMeshing::buildMesh(){
 
 
 	for (size_t i = 0; i < pointCount; ++i){
-		vertices.push_back(gridPoints[i].x());
-		vertices.push_back(gridPoints[i].y());
-		vertices.push_back(gridPoints[i].z());
+		vertices.push_back(simplifiedPoints[i].x());
+		vertices.push_back(simplifiedPoints[i].y());
+		vertices.push_back(simplifiedPoints[i].z());
 	}
 
 	for (DT::Face_iterator face = dt.faces_begin(); face != dt.faces_end(); ++face) {

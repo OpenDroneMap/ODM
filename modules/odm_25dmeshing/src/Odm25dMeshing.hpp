@@ -65,7 +65,7 @@ private:
 	std::string logFilePath = "odm_25dmeshing_log.txt";
 	unsigned int maxVertexCount = 100000;
 	unsigned int wlopIterations = 35;
-	std::vector<Pwn> points;
+	std::vector<Point3> points;
 	bool flipFaces = false;
 };
 

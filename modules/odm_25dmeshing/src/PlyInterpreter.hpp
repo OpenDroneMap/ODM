@@ -16,14 +16,14 @@ typedef Kernel::Point_3 Point3;
 typedef Kernel::Vector_3 Vector3;
 
 // points, normals
-typedef std::pair<Point3, Vector3> Pwn;
+//typedef std::pair<Point3, Vector3> Pwn;
 
 class PlyInterpreter {
-	std::vector<Pwn>& points;
+	std::vector<Point3>& points;
 	long zNormalsDirectionCount;
 
 	public:
-	 PlyInterpreter (std::vector<Pwn>& points)
+	 PlyInterpreter (std::vector<Point3>& points)
 	    : points (points), zNormalsDirectionCount(0)
 	  { }
 	  bool is_applicable (CGAL::Ply_reader& reader);
