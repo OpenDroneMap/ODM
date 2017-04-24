@@ -14,16 +14,16 @@ In a word, OpenDroneMap is a toolchain for processing raw civilian UAS imagery t
 2. Digital Surface Models
 3. Textured Digital Surface Models
 4. Orthorectified Imagery
-5. Classified Point Clouds
+5. Classified Point Clouds (coming soon)
 6. Digital Elevation Models
 7. etc.
 
-So far, it does Point Clouds, Digital Surface Models, Textured Digital Surface Models, and Orthorectified Imagery. Open Drone Map now includes state-of-the-art 3D reconstruction work by Michael Waechter, Nils Moehrle, and Michael Goesele. See their publication at http://www.gcc.tu-darmstadt.de/media/gcc/papers/Waechter-2014-LTB.pdf.
+Open Drone Map now includes state-of-the-art 3D reconstruction work by Michael Waechter, Nils Moehrle, and Michael Goesele. See their publication at http://www.gcc.tu-darmstadt.de/media/gcc/papers/Waechter-2014-LTB.pdf.
 
 
 ## QUICKSTART
 
-OpenDroneMap can run natively on Ubuntu 14.04 or later, see [Build and Run Using Docker](#build-and-run-using-docker) for running on Windows / MacOS. A Vagrant VM is also available: https://github.com/OpenDroneMap/odm_vagrant.
+OpenDroneMap can run natively on Ubuntu 14.04 or later, see [Build and Run Using Docker](#build-and-run-using-docker) for running on Windows / MacOS. A [Vagrant VM](https://github.com/OpenDroneMap/odm_vagrant) is also available.
 
 *Support for Ubuntu 12.04 is currently BROKEN with the addition of OpenSfM and Ceres-Solver. It is likely to remain broken unless a champion is found to fix it.*
 
@@ -32,7 +32,7 @@ OpenDroneMap can run natively on Ubuntu 14.04 or later, see [Build and Run Using
 Current version: 0.3 (this software is in beta)
 
 1. Extract and enter the OpenDroneMap directory
-2. Run `bash configure.sh`
+2. Run `bash configure.sh install`
 4. Copy the default settings file and edit it: `cp default.settings.yaml settings.yaml`. Set the `project-path` value to an empty directory (you will place sub-directories containing individual projects inside). You can add many options to this file, [see here](https://github.com/OpenDroneMap/OpenDroneMap/wiki/Run-Time-Parameters)
 3. Download a sample dataset from [here](https://github.com/OpenDroneMap/odm_data_aukerman/archive/master.zip) (about 550MB) and extract it as a subdirectory in your project directory.
 4. Run `./run.sh odm_data_aukerman` 
@@ -47,7 +47,13 @@ See [here](https://github.com/OpenDroneMap/OpenDroneMap/tree/ebaaf802a1fb50e335b
 
 Extract and enter the downloaded OpenDroneMap directory and compile all of the code by executing a single configuration script:
   
-    bash configure.sh
+    bash configure.sh install
+    
+When updating to a newer version of ODM, it is recommended that you run 
+
+    bash configure.sh reinstall
+    
+to ensure all the dependent packages and modules get updated.  
 
 For Ubuntu 15.10 users, this will help you get running:
 
@@ -68,7 +74,7 @@ Note that using `run.sh` sets these temporarily in the shell.
 
 First you need a set of images, taken from a drone or otherwise. Example data can be obtained from https://github.com/OpenDroneMap/odm_data
 
-Next, you need to copy over the settings file `default.settings.yaml` and edit it. The only setting you must edit is the `project-path` key. Set this to an empty directory within projects will be saved. There are many options for tuning your project. See the [wiki](https://github.com/OpenDroneMap/OpenDroneMap/wiki/Run-Time-Parameters) or run `python run.py -h`
+Next, you need to edit the `settings.yaml` file. The only setting you must edit is the `project-path` key. Set this to an empty directory within projects will be saved. There are many options for tuning your project. See the [wiki](https://github.com/OpenDroneMap/OpenDroneMap/wiki/Run-Time-Parameters) or run `python run.py -h`
 
 
 Then run:
