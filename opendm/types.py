@@ -143,13 +143,13 @@ class ODM_GeoRef(object):
     def coord_to_fractions(self, coord, refs):
         deg_dec = abs(float(coord))
         deg = int(deg_dec)
-        minute_dec = (deg_dec-deg)*60
+        minute_dec = (deg_dec - deg) * 60
         minute = int(minute_dec)
 
-        sec_dec = (minute_dec-minute)*60
-        sec_dec = round(sec_dec,3)
+        sec_dec = (minute_dec - minute) * 60
+        sec_dec = round(sec_dec, 3)
         sec_denominator = 1000
-        sec_numerator = int(sec_dec*sec_denominator)
+        sec_numerator = int(sec_dec * sec_denominator)
         if float(coord) >= 0:
             latRef = refs[0]
         else:
@@ -158,7 +158,7 @@ class ODM_GeoRef(object):
         output = str(deg) + '/1 ' + str(minute) + '/1 ' + str(sec_numerator) + '/' + str(sec_denominator)
         return output, latRef
 
-    def convert_to_las(self, _file, pdalXML):
+    def convert_to_las(self, _file, _file_out, json_file):
 
         if not self.epsg:
             log.ODM_ERROR('Empty EPSG: Could not convert to LAS')
@@ -166,49 +166,81 @@ class ODM_GeoRef(object):
 
         kwargs = {'bin': context.pdal_path,
                   'f_in': _file,
-                  'f_out': _file + '.las',
+                  'f_out': _file_out,
                   'east': self.utm_east_offset,
                   'north': self.utm_north_offset,
                   'epsg': self.epsg,
-                  'xml': pdalXML}
+                  'json': json_file}
 
-        # call txt2las
-        # system.run('{bin}/txt2las -i {f_in} -o {f_out} -skip 30 -parse xyzRGBssss ' \
-        #           '-set_scale 0.01 0.01 0.01 -set_offset {east} {north} 0 '  \
-        #           '-translate_xyz 0 -epsg {epsg}'.format(**kwargs))
-        #           
         # create pipeline file transform.xml to enable transformation
-        pipelineXml = '<?xml version=\"1.0\" encoding=\"utf-8\"?>'
-        pipelineXml += '<Pipeline version=\"1.0\">'
-        pipelineXml += '  <Writer type=\"writers.las\">'
-        pipelineXml += '    <Option name=\"filename\">'
-        pipelineXml += '      transformed.las'
-        pipelineXml += '    </Option>'
-        pipelineXml += '    <Option name=\"a_srs\">'
-        pipelineXml += '      EPSG:{epsg}'.format(**kwargs)
-        pipelineXml += '    </Option>'
-        pipelineXml += '    <Filter type=\"filters.transformation\">'
-        pipelineXml += '      <Option name=\"matrix\">'
-        pipelineXml += '        1  0  0  {east}'.format(**kwargs)
-        pipelineXml += '        0  1  0  {north}'.format(**kwargs)
-        pipelineXml += '        0  0  1  0'
-        pipelineXml += '        0  0  0  1'
-        pipelineXml += '      </Option>'
-        pipelineXml += '      <Reader type=\"readers.ply\">'
-        pipelineXml += '        <Option name=\"filename\">'
-        pipelineXml += '          untransformed.ply'
-        pipelineXml += '        </Option>'
-        pipelineXml += '      </Reader>'
-        pipelineXml += '    </Filter>'
-        pipelineXml += '  </Writer>'
-        pipelineXml += '</Pipeline>'
+        pipeline = '{{' \
+                   '  "pipeline":[' \
+                   '    "untransformed.ply",' \
+                   '    {{' \
+                   '      "type":"filters.transformation",' \
+                   '      "matrix":"1 0 0 {east} 0 1 0 {north} 0 0 1 0 0 0 0 1"' \
+                   '    }},' \
+                   '    {{' \
+                   '      "a_srs":"EPSG:{epsg}",' \
+                   '      "forward":"scale",' \
+                   '      "filename":"transformed.las"' \
+                   '    }}' \
+                   '  ]' \
+                   '}}'.format(**kwargs)
 
-        with open(pdalXML, 'w') as f:
-            f.write(pipelineXml)
+        with open(json_file, 'w') as f:
+            f.write(pipeline)
 
         # call pdal 
-        system.run('{bin}/pdal pipeline -i {xml} --readers.ply.filename={f_in} '
+        system.run('{bin}/pdal pipeline -i {json} --readers.ply.filename={f_in} '
                    '--writers.las.filename={f_out}'.format(**kwargs))
+
+    def convert_to_dem(self, _file, _file_out, pdalJSON, sample_radius, gdal_res, gdal_radius):
+        # Check if exists f_in
+        if not io.file_exists(_file):
+            log.ODM_ERROR('LAS file does not exist')
+            return False
+
+        kwargs = {
+            'bin': context.pdal_path,
+            'f_in': _file,
+            'sample_radius': sample_radius,
+            'gdal_res': gdal_res,
+            'gdal_radius': gdal_radius,
+            'f_out': _file_out,
+            'json': pdalJSON
+        }
+
+        pipelineJSON = '{{' \
+                       '    "pipeline":[' \
+                       '        "input.las",' \
+                       '    {{' \
+                       '        "type":"filters.sample",' \
+                       '        "radius":"{sample_radius}"' \
+                       '    }},' \
+                       '    {{' \
+                       '        "type":"filters.pmf",' \
+                       '        "extract":"true"' \
+                       '    }},' \
+                       '    {{' \
+                       '        "resolution": {gdal_res},' \
+                       '        "radius": {gdal_radius},' \
+                       '        "output_type":"idw",' \
+                       '        "filename":"outputfile.tif"' \
+                       '    }}' \
+                       '    ]' \
+                       '}}'.format(**kwargs)
+
+        with open(pdalJSON, 'w') as f:
+            f.write(pipelineJSON)
+
+        system.run('{bin}/pdal pipeline {json} --readers.las.filename={f_in} '
+                   '--writers.gdal.filename={f_out}'.format(**kwargs))
+
+        if io.file_exists(kwargs['f_out']):
+            return True
+        else:
+            return False
 
     def utm_to_latlon(self, _file, _photo, idx):
 
@@ -271,7 +303,7 @@ class ODM_GeoRef(object):
         metadata[key] = pyexiv2.ExifTag(key, value)
 
         # GPS altitude
-        altitude = abs(int(float(latlon[2])*100))
+        altitude = abs(int(float(latlon[2]) * 100))
         key = 'Exif.GPSInfo.GPSAltitude'
         value = Fraction(altitude, 1)
         metadata[key] = pyexiv2.ExifTag(key, value)
@@ -301,7 +333,7 @@ class ODM_GeoRef(object):
             log.ODM_DEBUG('Line: %s' % line)
             ref = line.split(' ')
             # match_wgs_utm = re.search('WGS84 UTM (\d{1,2})(N|S)', line, re.I)
-            if ref[0] == 'WGS84' and ref[1] == 'UTM': # match_wgs_utm:
+            if ref[0] == 'WGS84' and ref[1] == 'UTM':  # match_wgs_utm:
                 self.datum = ref[0]
                 self.utm_pole = ref[2][len(ref) - 1]
                 self.utm_zone = int(ref[2][:len(ref) - 1])
@@ -331,6 +363,7 @@ class ODM_GeoRef(object):
                     x, y = xyz[:2]
                     z = 0
                 self.gcps.append(ODM_GCPoint(float(x), float(y), float(z)))
+                # Write to json file
 
 
 class ODM_Tree(object):
@@ -368,6 +401,8 @@ class ODM_Tree(object):
         self.opensfm_bundle_list = io.join_paths(self.opensfm, 'list_r000.out')
         self.opensfm_image_list = io.join_paths(self.opensfm, 'image_list.txt')
         self.opensfm_reconstruction = io.join_paths(self.opensfm, 'reconstruction.json')
+        self.opensfm_reconstruction_meshed = io.join_paths(self.opensfm, 'reconstruction.meshed.json')
+        self.opensfm_reconstruction_nvm = io.join_paths(self.opensfm, 'reconstruction.nvm')
         self.opensfm_model = io.join_paths(self.opensfm, 'depthmaps/merged.ply')
 
         # pmvs
@@ -388,7 +423,7 @@ class ODM_Tree(object):
             self.odm_texturing, 'odm_textured_model.obj')
         self.odm_textured_model_mtl = io.join_paths(
             self.odm_texturing, 'odm_textured_model.mtl')
-# Log is only used by old odm_texturing
+        # Log is only used by old odm_texturing
         self.odm_texuring_log = io.join_paths(
             self.odm_texturing, 'odm_texturing_log.txt')
 
@@ -413,8 +448,14 @@ class ODM_Tree(object):
             self.odm_texturing, 'odm_textured_model_geo.mtl')  # these files will be kept in odm_texturing/
         self.odm_georeferencing_xyz_file = io.join_paths(
             self.odm_georeferencing, 'odm_georeferenced_model.csv')
-        self.odm_georeferencing_pdal = io.join_paths(
-            self.odm_georeferencing, 'pipeline.xml')
+        self.odm_georeferencing_las_json = io.join_paths(
+            self.odm_georeferencing, 'las.json')
+        self.odm_georeferencing_model_las = io.join_paths(
+            self.odm_georeferencing, 'odm_georeferenced_model.las')
+        self.odm_georeferencing_dem = io.join_paths(
+            self.odm_georeferencing, 'odm_georeferencing_model_dem.tif')
+        self.odm_georeferencing_dem_json = io.join_paths(
+            self.odm_georeferencing, 'dem.json')
 
         # odm_orthophoto
         self.odm_orthophoto_file = io.join_paths(self.odm_orthophoto, 'odm_orthophoto.png')
