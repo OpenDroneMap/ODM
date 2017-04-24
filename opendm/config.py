@@ -314,6 +314,34 @@ def config():
                         help=('Use this tag if you have a gcp_list.txt but '
                               'want to use the exif geotags instead'))
 
+    parser.add_argument('--dem',
+                        action='store_true',
+                        default=False,
+                        help='Use this tag to build a DEM using a progressive '
+                             'morphological filter in PDAL.')
+
+    parser.add_argument('--dem-sample-radius',
+                        metavar='<float>',
+                        default=1.0,
+                        type=float,
+                        help='Minimum distance between samples for DEM '
+                             'generation.\nDefault=%(default)s')
+
+    parser.add_argument('--dem-resolution',
+                        metavar='<float>',
+                        type=float,
+                        default=2,
+                        help='Length of raster cell edges in X/Y units.'
+                             '\nDefault: %(default)s')
+
+    parser.add_argument('--dem-radius',
+                        metavar='<float>',
+                        type=float,
+                        default=0.5,
+                        help='Radius about cell center bounding points to '
+                             'use to calculate a cell value.\nDefault: '
+                             '%(default)s')
+
     parser.add_argument('--orthophoto-resolution',
                         metavar='<float > 0.0>',
                         default=20.0,
