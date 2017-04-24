@@ -29,7 +29,7 @@ OpenDroneMap can run natively on Ubuntu 14.04 or later, see [Build and Run Using
 
 **[Download the latest release here](https://github.com/OpenDroneMap/OpenDroneMap/releases)**
 
-Current version: 0.2 (this software is in beta)
+Current version: 0.3 (this software is in beta)
 
 1. Extract and enter the OpenDroneMap directory
 2. Run `bash configure.sh`
