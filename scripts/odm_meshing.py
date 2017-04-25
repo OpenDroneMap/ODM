@@ -85,7 +85,7 @@ class ODMeshingCell(ecto.Cell):
                             tree.odm_mesh)
 
         # Do we need to generate a 2.5D mesh also?
-        if not args.skip_25dmesh:
+        if args.use_25dmesh:
           if not io.file_exists(tree.odm_25dmesh) or rerun_cell:
               log.ODM_DEBUG('Writing ODM 2.5D Mesh file in: %s' % tree.odm_25dmesh)
 

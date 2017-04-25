@@ -204,7 +204,7 @@ void Odm25dMeshing::buildMesh(){
 	pointCount = gridPoints.size();
 	log << "sampled " << (pointCountBeforeGridSampling - pointCount) << " points\n";
 
-	const double RETAIN_PERCENTAGE = std::min<double>(100., 100. * static_cast<double>(maxVertexCount) / static_cast<double>(pointCount));   // percentage of points to retain.
+	const double RETAIN_PERCENTAGE = std::min<double>(100., 100. * static_cast<double>(maxVertexCount / 4) / static_cast<double>(pointCount));   // percentage of points to retain.
 	std::vector<Point3> simplifiedPoints;
 
 	log << "Performing weighted locally optimal projection simplification and regularization (retain: " << RETAIN_PERCENTAGE << "%, iterate: " << wlopIterations << ")" << "\n";

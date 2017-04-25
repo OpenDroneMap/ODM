@@ -58,12 +58,12 @@ class ODMOrthoPhotoCell(ecto.Cell):
 
             # Have geo coordinates?
             if io.file_exists(tree.odm_georeferencing_coords):
-                if not args.skip_25dmesh:
+                if args.use_25dmesh:
                     kwargs['model_geo'] = os.path.join(tree.odm_25dtexturing, tree.odm_georeferencing_model_obj_geo)
                 else:
                     kwargs['model_geo'] = os.path.join(tree.odm_texturing, tree.odm_georeferencing_model_obj_geo)
             else:
-                if not args.skip_25dmesh:
+                if args.use_25dmesh:
                     kwargs['model_geo'] = os.path.join(tree.odm_25dtexturing, tree.odm_textured_model_obj)
                 else:
                     kwargs['model_geo'] = os.path.join(tree.odm_texturing, tree.odm_textured_model_obj)

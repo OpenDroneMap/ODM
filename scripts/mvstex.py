@@ -39,7 +39,7 @@ class ODMMvsTexCell(ecto.Cell):
 
         # define paths and create working directories
         system.mkdir_p(tree.odm_texturing)
-        if not args.skip_25dmesh: system.mkdir_p(tree.odm_25dtexturing) 
+        if args.use_25dmesh: system.mkdir_p(tree.odm_25dtexturing) 
 
         # check if we rerun cell or not
         rerun_cell = (args.rerun is not None and
@@ -53,7 +53,7 @@ class ODMMvsTexCell(ecto.Cell):
             'model': tree.odm_mesh
         }]
 
-        if not args.skip_25dmesh:
+        if args.use_25dmesh:
             runs += [{
                     'out_dir': tree.odm_25dtexturing,
                     'model': tree.odm_25dmesh
