@@ -168,7 +168,7 @@ void Odm25dMeshing::buildMesh(){
 
 	size_t pointCountBeforeGridSampling = pointCount;
 
-	double gridStep = avgSpacing;
+	double gridStep = avgSpacing / 2;
 	Kernel::Iso_cuboid_3 bbox = CGAL::bounding_box(points.begin(), points.end());
 	Vector3 boxDiag = bbox.max() - bbox.min();
 
@@ -204,7 +204,7 @@ void Odm25dMeshing::buildMesh(){
 	pointCount = gridPoints.size();
 	log << "sampled " << (pointCountBeforeGridSampling - pointCount) << " points\n";
 
-	const double RETAIN_PERCENTAGE = std::min<double>(100., 100. * static_cast<double>(maxVertexCount / 4) / static_cast<double>(pointCount));   // percentage of points to retain.
+	const double RETAIN_PERCENTAGE = std::min<double>(80., 100. * static_cast<double>(maxVertexCount) / static_cast<double>(pointCount));   // percentage of points to retain.
 	std::vector<Point3> simplifiedPoints;
 
 	log << "Performing weighted locally optimal projection simplification and regularization (retain: " << RETAIN_PERCENTAGE << "%, iterate: " << wlopIterations << ")" << "\n";
@@ -347,17 +347,17 @@ void Odm25dMeshing::buildMesh(){
 
 	log << "added " << new_vertices.size() << " new vertices\n";
 
-	log << "Edge collapsing... ";
-
-	SMS::Count_stop_predicate<Polyhedron> stop(maxVertexCount * 3);
-	int redgesRemoved = SMS::edge_collapse(poly, stop,
-				  CGAL::parameters::vertex_index_map(get(CGAL::vertex_external_index, poly))
-								 .halfedge_index_map  (get(CGAL::halfedge_external_index, poly))
-								 .get_cost (SMS::Edge_length_cost <Polyhedron>())
-								 .get_placement(SMS::Midpoint_placement<Polyhedron>())
-			  );
-
-	log << redgesRemoved << " edges removed.\n";
+//	log << "Edge collapsing... ";
+//
+//	SMS::Count_stop_predicate<Polyhedron> stop(maxVertexCount * 3);
+//	int redgesRemoved = SMS::edge_collapse(poly, stop,
+//				  CGAL::parameters::vertex_index_map(get(CGAL::vertex_external_index, poly))
+//								 .halfedge_index_map  (get(CGAL::halfedge_external_index, poly))
+//								 .get_cost (SMS::Edge_length_cost <Polyhedron>())
+//								 .get_placement(SMS::Midpoint_placement<Polyhedron>())
+//			  );
+//
+//	log << redgesRemoved << " edges removed.\n";
 
 	log << "Final vertex count is " << poly.size_of_vertices() << "\n";
 
