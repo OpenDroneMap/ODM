@@ -43,6 +43,10 @@ project_path: '' # Example: '/home/user/ODMProjects
 #texturing_tone_mapping: 'none'
 #gcp: !!null  # YAML tag for None
 #use_exif: False # Set to True if you have a GCP file (it auto-detects) and want to use EXIF
+#dem: False
+#dem_sample_radius: 1.0
+#dem_resolution: 2
+#dem_radius: 0.5
 #orthophoto_resolution: 20.0 # Pixels/meter
 #orthophoto_target_srs: !!null # Currently does nothing
 #orthophoto_no_tiled: False

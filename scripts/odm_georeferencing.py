@@ -17,6 +17,10 @@ class ODMGeoreferencingCell(ecto.Cell):
                             'northing height pixelrow pixelcol imagename', 'gcp_list.txt')
         params.declare("img_size", 'image size used in calibration', 2400)
         params.declare("use_exif", 'use exif', False)
+        params.declare("dem", 'Generate a dem', False)
+        params.declare("sample_radius", "Minimum distance between samples for DEM gen", 3)
+        params.declare("gdal_res", "Length of raster cell edges in X/Y units ", 2)
+        params.declare("gdal_radius", "Radius about cell center bounding points to use to calculate a cell value", 0.5)
         params.declare("verbose", 'print additional messages to console', False)
 
     def declare_io(self, params, inputs, outputs):
@@ -48,7 +52,7 @@ class ODMGeoreferencingCell(ecto.Cell):
 
         # define paths and create working directories
         system.mkdir_p(tree.odm_georeferencing)
-        if not args.skip_25dmesh: system.mkdir_p(tree.odm_25dgeoreferencing) 
+        if args.use_25dmesh: system.mkdir_p(tree.odm_25dgeoreferencing) 
         
         # in case a gcp file it's not provided, let's try to generate it using
         # images metadata. Internally calls jhead.
@@ -93,7 +97,7 @@ class ODMGeoreferencingCell(ecto.Cell):
             'texturing_dir': tree.odm_texturing,
             'model': os.path.join(tree.odm_texturing, tree.odm_textured_model_obj)
         }]
-        if not args.skip_25dmesh:
+        if args.use_25dmesh:
             runs += [{
                     'georeferencing_dir': tree.odm_25dgeoreferencing,
                     'texturing_dir': tree.odm_25dtexturing,
@@ -166,10 +170,24 @@ class ODMGeoreferencingCell(ecto.Cell):
 
                 # convert ply model to LAS reference system
                 geo_ref.convert_to_las(odm_georeferencing_model_ply_geo,
-                                       tree.odm_georeferencing_pdal)
+                                       tree.odm_georeferencing_model_las,
+                                       tree.odm_georeferencing_las_json)
+
+                # If --dem, create a DEM
+                if args.dem:
+                    demcreated = geo_ref.convert_to_dem(tree.odm_georeferencing_model_las,
+                                                        tree.odm_georeferencing_dem,
+                                                        tree.odm_georeferencing_dem_json,
+                                                        self.params.sample_radius,
+                                                        self.params.gdal_res,
+                                                        self.params.gdal_radius)
+                    if not demcreated:
+                        log.ODM_WARNING('Something went wrong. Check the logs in odm_georeferencing.')
+                    else:
+                        log.ODM_INFO('DEM created at {0}'.format(tree.odm_georeferencing_dem))
 
                 # XYZ point cloud output
-                log.ODM_INFO("Creating geo-referenced CSV file (XYZ format, can be used with GRASS to create DEM)")
+                log.ODM_INFO("Creating geo-referenced CSV file (XYZ format)")
                 with open(tree.odm_georeferencing_xyz_file, "wb") as csvfile:
                     csvfile_writer = csv.writer(csvfile, delimiter=",")
                     reachedpoints = False
