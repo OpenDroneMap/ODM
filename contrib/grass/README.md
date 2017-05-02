@@ -3,7 +3,7 @@
 Generates DEM, contour and textured relief maps.
 
 ## Requirements
-* GRASS
+* Compile and install GRASS 7 version or higher, https://grasswiki.osgeo.org/wiki/Compile_and_Install
 * Environment variables:
   * PYTHONHOME set to the location of Python
   * PYTHONPATH set to the location of GRASS Python libs
