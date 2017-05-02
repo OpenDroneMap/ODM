@@ -12,7 +12,6 @@ import grass.script as gscript
 import grass.script.core
 import grass.script.setup
 
-vlidarName = 'odm_vlidar'
 rsurfName = 'odm_rsurf'
 contourName = 'odm_contour'
 orthophotoName = 'odm_orthophoto'
@@ -65,47 +64,25 @@ def main():
     gscript.run_command('g.region', flags='s', n=n, s=s, e=e, w=w, res=0.01,
                         res3=0.01, overwrite=overwrite)
 
-    dem(projectHome)
     contour(projectHome)
     relief(projectHome)
 
     os.remove(gisrc)
 
 
-def dem(projectHome):
-    """
-    Creates a DEM in GeoTIFF format.
-    NB: this is a data raster, not an RGBA raster
-    and so is normally only readable by GIS and not image software.
-    """
-    print 'Creating DEM'
-
-    step = 0.5
-    gscript.run_command('v.in.lidar', flags='beo',
-                        input=projectHome +
-                        '/odm_georeferencing/odm_georeferenced_model.ply.las',
-                        output=vlidarName, overwrite=overwrite)
-
-    gscript.run_command('v.surf.bspline', input=vlidarName,
-                        raster_output=rsurfName,
-                        ew_step=step, ns_step=step, method='bicubic',
-                        memory=4096, overwrite=overwrite)
-
-    gscript.run_command('r.out.gdal', flags='cfm', input=rsurfName,
-                        output=projectHome+'/odm_georeferencing/odm_dem.tif',
-                        format='GTiff', type='Float32',
-                        createopt='TILED=yes,COMPRESS=DEFLATE,PREDICTOR=2,' +
-                        'BLOCKXSIZE=512,BLOCKYSIZE=512', nodata=0,
-                        overwrite=overwrite)
-
-
 def contour(projectHome):
     """
-    Creates a contour map.
+    Creates a contour map based on the ODM project DEM model.
     """
     print 'Creating contour map'
 
     step = 0.25
+    
+    gscript.run_command('r.in.gdal', flags='o',
+                        input=projectHome+'/odm_georeferencing/odm_georeferencing_model_dem.tif',
+                        output=rsurfName, memory=2047,
+                        overwrite=overwrite)
+
     gscript.run_command('r.contour', input=rsurfName, output=contourName,
                         step=step, overwrite=overwrite)
 
@@ -122,7 +99,7 @@ def relief(projectHome):
     """
     print 'Creating relief map'
 
-    gscript.run_command('r.in.gdal', flags='e',
+    gscript.run_command('r.in.gdal', flags='o',
                         input=projectHome+'/odm_orthophoto/odm_orthophoto.tif',
                         output=orthophotoName, memory=2047,
                         overwrite=overwrite)
