@@ -1,6 +1,6 @@
 # GRASS scripts
 # odm_grass
-Generates DEM, contour and textured relief maps.
+Generates contour and textured relief maps.
 
 ## Requirements
 * Compile and install GRASS 7 version or higher, https://grasswiki.osgeo.org/wiki/Compile_and_Install
@@ -13,4 +13,4 @@ Generates DEM, contour and textured relief maps.
 ## Usage
     python odm_grass.py <project-path>
 
-Output is `<project-path>/odm_georeferencing/odm_dem.tif`, `<project-path>/odm_georeferencing/odm_contour.shp` and `<project-path>/odm_orthophoto/odm_relief.tif`.
+Output is `<project-path>/odm_georeferencing/odm_contour.shp` and `<project-path>/odm_orthophoto/odm_relief.tif`.
