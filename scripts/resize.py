@@ -24,7 +24,7 @@ def resize(src_dir, target_dir, resize_to, rerun_cell, photo):
         # compute new size
         max_side = max(img.shape[0], img.shape[1])
         if max_side <= resize_to:
-            log.ODM_WARNING('Resize Parameter is greater than the largest side of the image')
+            log.ODM_WARNING('Resize parameter is greater than or equal to the largest side of the image')
         ratio = float(resize_to) / float(max_side)
         img_r = cv2.resize(img, None, fx=ratio, fy=ratio)
         # write image with opencv
