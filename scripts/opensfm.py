@@ -148,8 +148,8 @@ class ODMOpenSfMCell(ecto.Cell):
             else:
                 log.ODM_WARNING('Found a valid CMVS file in: %s' % tree.pmvs_visdat)
 
-            if args.time:
-                system.benchmark(start_time, tree.benchmarking, 'OpenSfM')
+        if args.time:
+            system.benchmark(start_time, tree.benchmarking, 'OpenSfM')
 
         log.ODM_INFO('Running ODM OpenSfM Cell - Finished')
         return ecto.OK if args.end_with != 'opensfm' else ecto.QUIT
