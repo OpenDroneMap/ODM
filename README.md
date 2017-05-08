@@ -33,7 +33,7 @@ Current version: 0.3 (this software is in beta)
 
 1. Extract and enter the OpenDroneMap directory
 2. Run `bash configure.sh install`
-4. Copy the default settings file and edit it: `cp default.settings.yaml settings.yaml`. Set the `project-path` value to an empty directory (you will place sub-directories containing individual projects inside). You can add many options to this file, [see here](https://github.com/OpenDroneMap/OpenDroneMap/wiki/Run-Time-Parameters)
+4. Edit the `settings.yaml` file in your favorite text editor. Set the `project-path` value to an empty directory (you will place sub-directories containing individual projects inside). You can add many options to this file, [see here](https://github.com/OpenDroneMap/OpenDroneMap/wiki/Run-Time-Parameters)
 3. Download a sample dataset from [here](https://github.com/OpenDroneMap/odm_data_aukerman/archive/master.zip) (about 550MB) and extract it as a subdirectory in your project directory.
 4. Run `./run.sh odm_data_aukerman` 
 5. Enter dataset directory to view results: 
@@ -41,7 +41,7 @@ Current version: 0.3 (this software is in beta)
   - textured mesh model: odm_texturing/odm_textured_model_geo.obj
   - point cloud (georeferenced): odm_georeferencing/odm_georeferenced_model.ply
   
-See [here](https://github.com/OpenDroneMap/OpenDroneMap/tree/ebaaf802a1fb50e335b3807a35d00cba1e106d11#installation) for more detailed installation instructions. 
+See [here](https://github.com/OpenDroneMap/OpenDroneMap/blob/3964f21377e27c261c305b30537f699853ac2004/README.md#installation) for more detailed installation instructions. 
 
 ### Installation
 
