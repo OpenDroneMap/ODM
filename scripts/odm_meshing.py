@@ -19,6 +19,13 @@ class ODMeshingCell(ecto.Cell):
                                  'is solved in the surface reconstruction step. '
                                  'Increasing this value increases computation '
                                  'times slightly but helps reduce memory usage.', 9)
+
+        params.declare("remove_outliers", 'Percentage of outliers to remove from the point set. Set to 0 to disable. '
+                                          'Applies to 2.5D mesh only.', 2)
+        params.declare("wlop_iterations", 'Iterations of the Weighted Locally Optimal Projection (WLOP) simplification algorithm. '
+                                          'Higher values take longer but produce a smoother mesh. '
+                                          'Applies to 2.5D mesh only. ', 70)
+
         params.declare("verbose", 'print additional messages to console', False)
 
     def declare_io(self, params, inputs, outputs):
@@ -49,12 +56,17 @@ class ODMeshingCell(ecto.Cell):
                      (args.rerun_from is not None and
                       'odm_meshing' in args.rerun_from)
 
+        infile = tree.opensfm_model
+        if args.use_pmvs:
+          infile = tree.pmvs_model
+
         if not io.file_exists(tree.odm_mesh) or rerun_cell:
             log.ODM_DEBUG('Writing ODM Mesh file in: %s' % tree.odm_mesh)
 
             kwargs = {
                 'bin': context.odm_modules_path,
                 'outfile': tree.odm_mesh,
+                'infile': infile,
                 'log': tree.odm_meshing_log,
                 'max_vertex': self.params.max_vertex,
                 'oct_tree': self.params.oct_tree,
@@ -62,10 +74,6 @@ class ODMeshingCell(ecto.Cell):
                 'solver': self.params.solver,
                 'verbose': verbose
             }
-            if not args.use_pmvs:
-                kwargs['infile'] = tree.opensfm_model
-            else:
-                kwargs['infile'] = tree.pmvs_model
 
             # run meshing binary
             system.run('{bin}/odm_meshing -inputFile {infile} '
@@ -75,6 +83,31 @@ class ODMeshingCell(ecto.Cell):
         else:
             log.ODM_WARNING('Found a valid ODM Mesh file in: %s' %
                             tree.odm_mesh)
+
+        # Do we need to generate a 2.5D mesh also?
+        if args.use_25dmesh:
+          if not io.file_exists(tree.odm_25dmesh) or rerun_cell:
+              log.ODM_DEBUG('Writing ODM 2.5D Mesh file in: %s' % tree.odm_25dmesh)
+
+              kwargs = {
+                  'bin': context.odm_modules_path,
+                  'outfile': tree.odm_25dmesh,
+                  'infile': infile,
+                  'log': tree.odm_25dmeshing_log,
+                  'verbose': verbose,
+                  'max_vertex': self.params.max_vertex,
+                  'remove_outliers': self.params.remove_outliers,
+                  'wlop_iterations': self.params.wlop_iterations
+              }
+
+              # run 2.5D meshing binary
+              system.run('{bin}/odm_25dmeshing -inputFile {infile} '
+                         '-outputFile {outfile} -logFile {log} '
+                         '-maxVertexCount {max_vertex} -outliersRemovalPercentage {remove_outliers} '
+                         '-wlopIterations {wlop_iterations} {verbose}'.format(**kwargs))
+          else:
+              log.ODM_WARNING('Found a valid ODM 2.5D Mesh file in: %s' %
+                              tree.odm_25dmesh)
 
         if args.time:
             system.benchmark(start_time, tree.benchmarking, 'Meshing')

@@ -9,7 +9,7 @@ import sys
 
 # parse arguments
 processopts = ['resize', 'opensfm', 'slam', 'cmvs', 'pmvs',
-               'odm_meshing', 'mvs_texturing', 'odm_georeferencing',
+               'odm_meshing', 'odm_25dmeshing', 'mvs_texturing', 'odm_georeferencing',
                'odm_orthophoto']
 
 with open(io.join_paths(context.root_path, 'VERSION')) as version_file:
@@ -152,6 +152,11 @@ def config():
                         type=int,
                         help=('The maximum number of processes to use in dense '
                               'reconstruction. Default: %(default)s'))
+    
+    parser.add_argument('--use-25dmesh',
+                    action='store_true',
+                    default=False,
+                    help='Use a 2.5D mesh to compute the orthophoto. This option tends to provide better results for planar surfaces. Experimental.')
 
     parser.add_argument('--use-pmvs',
                         action='store_true',
@@ -245,6 +250,23 @@ def config():
                               'is solved in the surface reconstruction step. '
                               'Increasing this value increases computation '
                               'times slightly but helps reduce memory usage. '
+                              'Default: %(default)s'))
+    
+    parser.add_argument('--mesh-remove-outliers',
+                        metavar='<percent>',
+                        default=2,
+                        type=float,
+                        help=('Percentage of outliers to remove from the point set. Set to 0 to disable. '
+                              'Applies to 2.5D mesh only. '
+                              'Default: %(default)s'))
+
+    parser.add_argument('--mesh-wlop-iterations',
+                        metavar='<positive integer>',
+                        default=35,
+                        type=int,
+                        help=('Iterations of the Weighted Locally Optimal Projection (WLOP) simplification algorithm. '
+                              'Higher values take longer but produce a smoother mesh. '
+                              'Applies to 2.5D mesh only. '
                               'Default: %(default)s'))
 
     parser.add_argument('--texturing-data-term',
