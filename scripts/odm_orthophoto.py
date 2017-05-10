@@ -1,4 +1,4 @@
-import ecto
+import ecto, os
 
 from opendm import io
 from opendm import log
@@ -56,10 +56,17 @@ class ODMOrthoPhotoCell(ecto.Cell):
                 'verbose': verbose
             }
 
-            kwargs['model_geo'] = tree.odm_georeferencing_model_obj_geo \
-                if io.file_exists(tree.odm_georeferencing_coords) \
-                else tree.odm_textured_model_obj
-
+            # Have geo coordinates?
+            if io.file_exists(tree.odm_georeferencing_coords):
+                if args.use_25dmesh:
+                    kwargs['model_geo'] = os.path.join(tree.odm_25dtexturing, tree.odm_georeferencing_model_obj_geo)
+                else:
+                    kwargs['model_geo'] = os.path.join(tree.odm_texturing, tree.odm_georeferencing_model_obj_geo)
+            else:
+                if args.use_25dmesh:
+                    kwargs['model_geo'] = os.path.join(tree.odm_25dtexturing, tree.odm_textured_model_obj)
+                else:
+                    kwargs['model_geo'] = os.path.join(tree.odm_texturing, tree.odm_textured_model_obj)
 
             # run odm_orthophoto
             system.run('{bin}/odm_orthophoto -inputFile {model_geo} '
