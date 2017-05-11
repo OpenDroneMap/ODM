@@ -52,6 +52,11 @@ def config():
                         default=2400,
                         type=int,
                         help='resizes images by the largest side')
+                        
+    parser.add_argument('--skip-resize',
+                       action='store_true',
+                       default=False,
+                       help='Skips resizing of images')
 
     parser.add_argument('--start-with', '-s',
                         metavar='<string>',
