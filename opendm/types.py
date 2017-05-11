@@ -182,7 +182,9 @@ class ODM_GeoRef(object):
                    '    }},' \
                    '    {{' \
                    '      "a_srs":"EPSG:{epsg}",' \
-                   '      "forward":"scale",' \
+                   '      "offset_x":"{east}",' \
+                   '      "offset_y":"{north}",' \
+                   '      "offset_z":"0",' \
                    '      "filename":"transformed.las"' \
                    '    }}' \
                    '  ]' \
@@ -219,8 +221,11 @@ class ODM_GeoRef(object):
                        '        "radius":"{sample_radius}"' \
                        '    }},' \
                        '    {{' \
-                       '        "type":"filters.pmf",' \
-                       '        "extract":"true"' \
+                       '        "type":"filters.pmf"' \
+                       '    }},' \
+                       '    {{' \
+                       '      "type":"filters.range",' \
+                       '      "limits":"Classification[2:2]"' \
                        '    }},' \
                        '    {{' \
                        '        "resolution": {gdal_res},' \
