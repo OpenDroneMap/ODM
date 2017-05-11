@@ -8,6 +8,7 @@ from opendm import log
 from opendm import system
 from opendm import io
 from opendm import types
+from shutil import copyfile
 
 
 def resize(src_dir, target_dir, resize_to, rerun_cell, photo):
@@ -55,11 +56,39 @@ def resize(src_dir, target_dir, resize_to, rerun_cell, photo):
                         (photo.filename, photo.width, photo.height))
 
     return photo
+    
+
+def no_resize(src_dir,target_dir,rerun_cell,photo):
+    # define image paths
+    path_file = photo.path_file
+    new_path_file = io.join_paths(target_dir, photo.filename)
+    # set raw image path in case we want to rerun cell
+    if io.file_exists(new_path_file) and rerun_cell:
+        path_file = io.join_paths(src_dir, photo.filename)
+
+    if not io.file_exists(new_path_file) or rerun_cell:
+        img = cv2.imread(path_file)
+        copyfile(path_file, new_path_file)
+        photo.path_file = new_path_file
+        photo.width = img.shape[0]
+        photo.height = img.shape[1]
+        photo.update_focal()
+        
+        # log message
+        log.ODM_DEBUG('Copied %s | dimensions: %s' %
+                      (photo.filename, img.shape))
+    else:
+        # log message
+        log.ODM_WARNING('Already copied %s | dimensions: %s x %s' %
+                        (photo.filename, photo.width, photo.height))
+                        
+    return photo
 
 
 class ODMResizeCell(ecto.Cell):
     def declare_params(self, params):
         params.declare("resize_to", "resizes images by the largest side", 2400)
+        params.declare("skip_resize", "tells if resize should be skipped", False)
 
     def declare_io(self, params, inputs, outputs):
         inputs.declare("tree", "Struct with paths", [])
@@ -100,16 +129,25 @@ class ODMResizeCell(ecto.Cell):
                       'resize' in args.rerun_from)
 
         # loop over photos
-        photos = Pool().map(
-            partial(resize,
-                    tree.dataset_raw,
-                    tree.dataset_resize,
-                    self.params.resize_to,
-                    rerun_cell),
-            photos
-        )
-
-        log.ODM_INFO('Resized %s images' % len(photos))
+        if params.skip_resize:
+            photos = Pool().map(
+                partial(no_resize,
+                        tree.dataset_raw,
+                        tree.dataset_resize,
+                        rerun_cell),
+                photos
+            )
+            log.ODM_INFO('Copied %s images' % len(photos))
+        else:
+            photos = Pool().map(
+                partial(resize,
+                        tree.dataset_raw,
+                        tree.dataset_resize,
+                        self.params.resize_to,
+                        rerun_cell),
+                photos
+            )
+            log.ODM_INFO('Resized %s images' % len(photos))
 
         # append photos to cell output
         self.outputs.photos = photos
