@@ -221,8 +221,11 @@ class ODM_GeoRef(object):
                        '        "radius":"{sample_radius}"' \
                        '    }},' \
                        '    {{' \
-                       '        "type":"filters.pmf",' \
-                       '        "extract":"true"' \
+                       '        "type":"filters.pmf"' \
+                       '    }},' \
+                       '    {{' \
+                       '      "type":"filters.range",' \
+                       '      "limits":"Classification[2:2]"' \
                        '    }},' \
                        '    {{' \
                        '        "resolution": {gdal_res},' \
