@@ -8,7 +8,6 @@ from opendm import log
 from opendm import system
 from opendm import io
 from opendm import types
-from shutil import copyfile
 
 
 def resize(src_dir, target_dir, resize_to, rerun_cell, photo):
@@ -68,7 +67,7 @@ def no_resize(src_dir,target_dir,rerun_cell,photo):
 
     if not io.file_exists(new_path_file) or rerun_cell:
         img = cv2.imread(path_file)
-        copyfile(path_file, new_path_file)
+        io.copy(path_file, new_path_file)
         photo.path_file = new_path_file
         photo.width = img.shape[0]
         photo.height = img.shape[1]
