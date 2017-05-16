@@ -37,6 +37,7 @@ def create_config(opensfm_path, args):
     config = {
         "submodels_relpath": "../submodels/opensfm",
         "submodel_relpath_template": "../submodels/submodel_%04d/opensfm",
+        "submodel_images_relpath_template": "../submodels/submodel_%04d/images",
 
         "feature_process_size": args.resize_to,
         "feature_min_frames": args.min_num_features,
