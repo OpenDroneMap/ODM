@@ -36,12 +36,20 @@ class Reconstructor:
             run_command([self.command, 'detect_features', submodel_path])
             run_command([self.command, 'match_features', submodel_path])
 
+        self._set_matching_done(submodel_path)
+
         run_command([self.command, 'create_tracks', submodel_path])
         run_command([self.command, 'reconstruct', submodel_path])
 
         logger.info("=======================================================")
         logger.info("Submodel {} reconstructed".format(submodel_path))
         logger.info("=======================================================")
+
+    def _set_matching_done(self, submodel_path):
+        """Tell ODM's opensfm not to rerun matching."""
+        matching_done_file = os.path.join(submodel_path, 'matching_done.txt')
+        with open(matching_done_file, 'w') as fout:
+            fout.write("Matching done!\n")
 
 
 if __name__ == "__main__":
