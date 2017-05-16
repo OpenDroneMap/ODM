@@ -57,9 +57,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Reconstruct all submodels')
     parser.add_argument('dataset',
                         help='path to the dataset to be processed')
-    parser.add_argument('--run-matching',
-                        help='Run matching for each submodel',
-                        action='store_true')
     args = parser.parse_args()
 
     path = os.path.join(args.dataset, 'opensfm')
@@ -69,7 +66,7 @@ if __name__ == "__main__":
     submodel_paths = meta_data.get_submodel_paths()
     reconstructor = DenseReconstructor(command)
 
-    processes = meta_data.config['processes']
+    processes = 1
     if processes == 1:
         for submodel_path in submodel_paths:
             reconstructor(submodel_path)
