@@ -14,7 +14,7 @@ RUN apt-get install --no-install-recommends -y git cmake python-pip build-essent
 libgtk2.0-dev libavcodec-dev libavformat-dev libswscale-dev python-dev python-numpy libtbb2 libtbb-dev libjpeg-dev libpng-dev libtiff-dev libjasper-dev libflann-dev \
 libproj-dev libxext-dev liblapack-dev libeigen3-dev libvtk5-dev python-networkx libgoogle-glog-dev libsuitesparse-dev libboost-filesystem-dev libboost-iostreams-dev \
 libboost-regex-dev libboost-python-dev libboost-date-time-dev libboost-thread-dev python-pyproj python-empy python-nose python-pyside python-pyexiv2 python-scipy \
-jhead liblas-bin python-matplotlib libatlas-base-dev
+jhead liblas-bin python-matplotlib libatlas-base-dev libgmp-dev libmpfr-dev
 
 RUN apt-get remove libdc1394-22-dev
 RUN pip install --upgrade pip
