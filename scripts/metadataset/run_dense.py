@@ -36,6 +36,12 @@ class DenseReconstructor:
         unaligned = os.path.join(opensfm_submodel_path, 'reconstruction.unaligned.json')
         aligned = os.path.join(opensfm_submodel_path, 'reconstruction.aligned.json')
         main = os.path.join(opensfm_submodel_path, 'reconstruction.json')
+
+        if not os.path.isfile(aligned):
+            logger.warning("No SfM reconstruction for submodel {}."
+                           " Skipping submodel.".format(submodel_path))
+            return
+
         if not os.path.isfile(unaligned):
             os.rename(main, unaligned)
         if not os.path.islink(main):
