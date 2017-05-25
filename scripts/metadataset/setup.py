@@ -10,10 +10,31 @@ other.
 
 import argparse
 import os
+import subprocess
 
 import yaml
 
 from opensfm.io import mkdir_p
+
+from opendm import context
+
+
+def run_command(args):
+    result = subprocess.Popen(args).wait()
+    if result != 0:
+        raise RuntimeError(result)
+
+
+def resize_images(data_path, args):
+    command = os.path.join(context.root_path, 'run.py')
+    path, name = os.path.split(data_path)
+    run_command(['python',
+                 command,
+                 '--project-path', path,
+                 name,
+                 '--resize-to', str(args.resize_to),
+                 '--end-with', 'resize',
+                 ])
 
 
 def is_image_file(filename):
@@ -37,7 +58,7 @@ def create_config(opensfm_path, args):
     config = {
         "submodels_relpath": "../submodels/opensfm",
         "submodel_relpath_template": "../submodels/submodel_%04d/opensfm",
-        "submodel_images_relpath_template": "../submodels/submodel_%04d/images",
+        "submodel_images_relpath_template": "../submodels/submodel_%04d/images_resize",
 
         "feature_process_size": args.resize_to,
         "feature_min_frames": args.min_num_features,
@@ -94,7 +115,10 @@ def parse_command_line():
 if __name__ == '__main__':
     args = parse_command_line()
     data_path = args.dataset
-    image_path = os.path.join(data_path, 'images')
+
+    resize_images(data_path, args)
+
+    image_path = os.path.join(data_path, 'images_resize')
     opensfm_path = os.path.join(data_path, 'opensfm')
 
     mkdir_p(opensfm_path)

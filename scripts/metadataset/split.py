@@ -22,4 +22,4 @@ if __name__ == "__main__":
     command = os.path.join(context.opensfm_path, 'bin', 'opensfm')
     path = os.path.join(args.dataset, 'opensfm')
 
-    run_command([command, 'create_submodels', path])
+    run_command([command, 'create_submodels', path, '--dist', '150'])
