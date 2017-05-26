@@ -153,7 +153,7 @@ def config():
 
     parser.add_argument('--opensfm-processes',
                         metavar='<positive integer>',
-                        default=context.num_cores,
+                        default=1,
                         type=int,
                         help=('The maximum number of processes to use in dense '
                               'reconstruction. Default: %(default)s'))
