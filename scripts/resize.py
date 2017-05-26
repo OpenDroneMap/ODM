@@ -128,7 +128,7 @@ class ODMResizeCell(ecto.Cell):
                       'resize' in args.rerun_from)
 
         # loop over photos
-        if params.skip_resize:
+        if self.params.skip_resize:
             photos = Pool().map(
                 partial(no_resize,
                         tree.dataset_raw,
