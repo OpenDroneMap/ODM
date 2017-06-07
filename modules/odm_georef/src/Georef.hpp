@@ -228,6 +228,11 @@ private:
     void printGeorefSystem();
     
     /*!
+      * \brief printFinalTransform      Prints a file containing the final transform, next to the output file.
+      **/
+    void printFinalTransform(Mat4 transform);
+    
+    /*!
       * \brief Loads a model from an .obj file (replacement for the pcl obj loader).
       *
       * \param inputFile Path to the .obj file.
@@ -247,6 +252,8 @@ private:
 
     Logger          log_;                       /**< Logging object. */
     std::string     logFile_;                   /**< The path to the output log file. */
+    
+    std::string     finalTransformFile_;        /**< The path to the file for the final transform. */
     
     std::string     bundleFilename_;            /**< The path to the cameras bundle file. **/
     std::string     inputCoordFilename_;        /**< The path to the cameras exif gps positions file. **/
