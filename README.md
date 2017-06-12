@@ -117,6 +117,7 @@ When the process finishes, the results will be organized as follows:
         |-- odm_georeferenced_model.ply.laz # LAZ format point cloud
         |-- odm_georeferenced_model.csv     # XYZ format point cloud
         |-- odm_georeferencing_log.txt      # Georeferencing log
+        |-- odm_georeferencing_transform.txt# Transform used for georeferencing
         |-- odm_georeferencing_utm_log.txt  # Log for the extract_utm portion
     |-- odm_orthophoto/
         |-- odm_orthophoto.png              # Orthophoto image (no coordinates)

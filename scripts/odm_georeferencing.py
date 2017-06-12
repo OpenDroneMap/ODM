@@ -108,6 +108,7 @@ class ODMGeoreferencingCell(ecto.Cell):
             odm_georeferencing_model_obj_geo = os.path.join(r['texturing_dir'], tree.odm_georeferencing_model_obj_geo)
             odm_georeferencing_model_ply_geo = os.path.join(r['georeferencing_dir'], tree.odm_georeferencing_model_ply_geo)
             odm_georeferencing_log = os.path.join(r['georeferencing_dir'], tree.odm_georeferencing_log)
+            odm_georeferencing_transform_file = os.path.join(r['georeferencing_dir'], tree.odm_georeferencing_transform_file)
 
             if not io.file_exists(odm_georeferencing_model_obj_geo) or \
                not io.file_exists(odm_georeferencing_model_ply_geo) or rerun_cell:
@@ -120,6 +121,7 @@ class ODMGeoreferencingCell(ecto.Cell):
                     'imgs_list': tree.opensfm_bundle_list,
                     'model': r['model'],
                     'log': odm_georeferencing_log,
+                    'transform_file': odm_georeferencing_transform_file,
                     'coords': tree.odm_georeferencing_coords,
                     'pc_geo': odm_georeferencing_model_ply_geo,
                     'geo_sys': os.path.join(r['georeferencing_dir'], tree.odm_georeferencing_model_txt_geo),
@@ -142,7 +144,7 @@ class ODMGeoreferencingCell(ecto.Cell):
                         system.run('{bin}/odm_georef -bundleFile {bundle} -imagesPath {imgs} -imagesListPath {imgs_list} '
                                    '-bundleResizedTo {size} -inputFile {model} -outputFile {model_geo} '
                                    '-inputPointCloudFile {pc} -outputPointCloudFile {pc_geo} {verbose} '
-                                   '-logFile {log} -georefFileOutputPath {geo_sys} -gcpFile {gcp} '
+                                   '-logFile {log} -outputTransformFile {transform_file} -georefFileOutputPath {geo_sys} -gcpFile {gcp} '
                                    '-outputCoordFile {coords}'.format(**kwargs))
                     except Exception:
                         log.ODM_EXCEPTION('Georeferencing failed. ')
