@@ -154,7 +154,7 @@ class ODMGeoreferencingCell(ecto.Cell):
                     system.run('{bin}/odm_georef -bundleFile {bundle} -inputCoordFile {coords} '
                                '-inputFile {model} -outputFile {model_geo} '
                                '-inputPointCloudFile {pc} -outputPointCloudFile {pc_geo} {verbose} '
-                               '-logFile {log} -georefFileOutputPath {geo_sys}'.format(**kwargs))
+                               '-logFile {log} -outputTransformFile {transform_file} -georefFileOutputPath {geo_sys}'.format(**kwargs))
                 else:
                     log.ODM_WARNING('Georeferencing failed. Make sure your '
                                     'photos have geotags in the EXIF or you have '
