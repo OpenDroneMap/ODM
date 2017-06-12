@@ -59,14 +59,13 @@ class ODM_Photo:
             # try/catch tag value due to weird bug in pyexiv2 
             # ValueError: invalid literal for int() with base 10: ''
             try:
-                val = metadata[key].value
                 # parse tag names
                 if key == 'Exif.Image.Make':
-                    self.camera_make = val
+                    self.camera_make = metadata[key].value
                 elif key == 'Exif.Image.Model':
-                    self.camera_model = val
+                    self.camera_model = metadata[key].value
                 elif key == 'Exif.Photo.FocalLength':
-                    self.focal_length = float(val)
+                    self.focal_length = float(metadata[key].value)
             except (pyexiv2.ExifValueError, ValueError) as e:
                 pass
             except NotImplementedError as e:
