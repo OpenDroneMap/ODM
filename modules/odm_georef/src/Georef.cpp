@@ -322,6 +322,21 @@ void Georef::parseArguments(int argc, char *argv[])
             }
             log_ << "Log file path was set to: " << logFile_ << "\n";
         }
+        else if (argument == "-outputTransformFile")
+        {
+            ++argIndex;
+            if (argIndex >= argc)
+            {
+                throw GeorefException("Missing argument for '" + argument + "'.");
+            }
+            finalTransformFile_ = std::string(argv[argIndex]);
+            std::ofstream testFile(logFile_.c_str());
+            if (!testFile.is_open())
+            {
+                throw GeorefException("Argument '" + argument + "' has a bad value.");
+            }
+            log_ << "Transform file path was set to: " << finalTransformFile_ << "\n";
+        }
         else if(argument == "-bundleFile" && argIndex < argc)
         {
             argIndex++;
