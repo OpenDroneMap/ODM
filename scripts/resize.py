@@ -37,13 +37,13 @@ def resize(src_dir, target_dir, resize_to, rerun_cell, photo):
         # copy metadata
         old_meta.copy(new_meta)
         # update metadata size
-        new_meta['Exif.Photo.PixelXDimension'] = img_r.shape[0]
-        new_meta['Exif.Photo.PixelYDimension'] = img_r.shape[1]
+        new_meta['Exif.Photo.PixelXDimension'] = img_r.shape[1]
+        new_meta['Exif.Photo.PixelYDimension'] = img_r.shape[0]
         new_meta.write()
         # update photos array with new values
         photo.path_file = new_path_file
-        photo.width = img_r.shape[0]
-        photo.height = img_r.shape[1]
+        photo.width = img_r.shape[1]
+        photo.height = img_r.shape[0]
         photo.update_focal()
 
         # log message
@@ -69,8 +69,8 @@ def no_resize(src_dir,target_dir,rerun_cell,photo):
         img = cv2.imread(path_file)
         io.copy(path_file, new_path_file)
         photo.path_file = new_path_file
-        photo.width = img.shape[0]
-        photo.height = img.shape[1]
+        photo.width = img.shape[1]
+        photo.height = img.shape[0]
         photo.update_focal()
         
         # log message
