@@ -86,6 +86,23 @@ install() {
                          jhead \
                          liblas-bin
 
+    echo "Installing lidar2dems Dependencies"
+    sudo apt-get install -y -qq swig2.0 \
+                         python-wheel \
+                         libboost-log-dev  \
+                         libxslt-dev
+
+    echo "Updating and initializing git submodules"
+    git submodule update --init
+
+    echo "Installing lidar2dems"
+    cd ${RUNPATH}/modules/lidar2dems
+    CPLUS_INCLUDE_PATH=/usr/include/gdal C_INCLUDE_PATH=/usr/include/gdal ./setup.py install
+
+    if [ ! -f /usr/bin/pdal ]; then
+        ln -s ${RUNPATH}/SuperBuild/build/pdal/bin/pdal /usr/bin/pdal
+    fi
+    
     echo "Compiling SuperBuild"
     cd ${RUNPATH}/SuperBuild
     mkdir -p build && cd build
