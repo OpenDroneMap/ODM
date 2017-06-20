@@ -19,7 +19,7 @@ jhead liblas-bin python-matplotlib libatlas-base-dev libgmp-dev libmpfr-dev swig
 RUN apt-get remove libdc1394-22-dev
 RUN pip install --upgrade pip
 RUN pip install setuptools
-RUN pip install -U PyYAML exifread gpxpy xmltodict catkin-pkg appsettings https://github.com/Applied-GeoSolutions/gippy/archive/v0.3.9.tar.gz
+RUN pip install -U PyYAML exifread gpxpy xmltodict catkin-pkg appsettings https://github.com/pierotofy/gippy/archive/v0.3.9.tar.gz
 
 ENV PYTHONPATH="$PYTHONPATH:/code/SuperBuild/install/lib/python2.7/dist-packages"
 ENV PYTHONPATH="$PYTHONPATH:/code/SuperBuild/src/opensfm"
@@ -48,12 +48,6 @@ COPY VERSION /code/VERSION
 #Compile code in SuperBuild and root directories
 
 RUN cd SuperBuild && mkdir build && cd build && cmake  .. && make -j$(nproc)     && cd ../.. && mkdir build && cd build && cmake .. && make -j$(nproc)
-
-# Update and initialize git submodules
-RUN git submodule update --init
-
-# Setup lidar2dems
-RUN CPLUS_INCLUDE_PATH=/usr/include/gdal C_INCLUDE_PATH=/usr/include/gdal /code/modules/lidar2dems/setup.py install && ln -s /code/SuperBuild/build/pdal/bin/pdal /usr/bin/pdal
 
 RUN apt-get -y remove libgl1-mesa-dri git cmake python-pip build-essential
 RUN apt-get install -y libvtk5-dev

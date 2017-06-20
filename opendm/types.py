@@ -196,7 +196,7 @@ class ODM_GeoRef(object):
         system.run('{bin}/pdal pipeline -i {json} --readers.ply.filename={f_in} '
                    '--writers.las.filename={f_out}'.format(**kwargs))
 
-    def convert_to_dem(self, _file, _file_out, pdalJSON, sample_radius, gdal_res, gdal_radius):
+    def convert_to_dem(self, _file, _file_out, sample_radius, gdal_res, gdal_radius):
         # Check if exists f_in
         if not io.file_exists(_file):
             log.ODM_ERROR('LAS file does not exist')
@@ -208,35 +208,8 @@ class ODM_GeoRef(object):
             'sample_radius': sample_radius,
             'gdal_res': gdal_res,
             'gdal_radius': gdal_radius,
-            'f_out': _file_out,
-            'json': pdalJSON
+            'f_out': _file_out
         }
-
-        pipelineJSON = '{{' \
-                       '    "pipeline":[' \
-                       '        "input.las",' \
-                       '    {{' \
-                       '        "type":"filters.sample",' \
-                       '        "radius":"{sample_radius}"' \
-                       '    }},' \
-                       '    {{' \
-                       '        "type":"filters.pmf"' \
-                       '    }},' \
-                       '    {{' \
-                       '      "type":"filters.range",' \
-                       '      "limits":"Classification[2:2]"' \
-                       '    }},' \
-                       '    {{' \
-                       '        "resolution": {gdal_res},' \
-                       '        "radius": {gdal_radius},' \
-                       '        "output_type":"idw",' \
-                       '        "filename":"outputfile.tif"' \
-                       '    }}' \
-                       '    ]' \
-                       '}}'.format(**kwargs)
-
-        with open(pdalJSON, 'w') as f:
-            f.write(pipelineJSON)
 
         system.run('{bin}/pdal pipeline {json} --readers.las.filename={f_in} '
                    '--writers.gdal.filename={f_out}'.format(**kwargs))
@@ -454,8 +427,6 @@ class ODM_Tree(object):
             self.odm_georeferencing, 'odm_georeferenced_model.las')
         self.odm_georeferencing_dem = io.join_paths(
             self.odm_georeferencing, 'odm_georeferencing_model_dem.tif')
-        self.odm_georeferencing_dem_json = io.join_paths(
-            self.odm_georeferencing, 'dem.json')
 
         # odm_orthophoto
         self.odm_orthophoto_file = io.join_paths(self.odm_orthophoto, 'odm_orthophoto.png')

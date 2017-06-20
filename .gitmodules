@@ -1,3 +1,0 @@
-[submodule "modules/lidar2dems"]
-	path = modules/lidar2dems
-	url = https://github.com/pierotofy/lidar2dems
