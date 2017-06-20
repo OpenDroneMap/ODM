@@ -72,7 +72,7 @@ install() {
                         appsettings
 
     echo "Installing CGAL dependencies"
-    sudo apt-get install libgmp-dev libmpfr-dev
+    sudo apt-get install -y -qq libgmp-dev libmpfr-dev
 
     echo "Installing Ecto Dependencies"
     sudo pip install -U catkin-pkg
@@ -92,17 +92,8 @@ install() {
                          libboost-log-dev  \
                          libxslt-dev
 
-    echo "Updating and initializing git submodules"
-    git submodule update --init
+    sudo pip install -U https://github.com/pierotofy/gippy/archive/v0.3.9.tar.gz
 
-    echo "Installing lidar2dems"
-    cd ${RUNPATH}/modules/lidar2dems
-    CPLUS_INCLUDE_PATH=/usr/include/gdal C_INCLUDE_PATH=/usr/include/gdal ./setup.py install
-
-    if [ ! -f /usr/bin/pdal ]; then
-        ln -s ${RUNPATH}/SuperBuild/build/pdal/bin/pdal /usr/bin/pdal
-    fi
-    
     echo "Compiling SuperBuild"
     cd ${RUNPATH}/SuperBuild
     mkdir -p build && cd build

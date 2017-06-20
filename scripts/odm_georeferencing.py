@@ -179,7 +179,6 @@ class ODMGeoreferencingCell(ecto.Cell):
                 if args.dem:
                     demcreated = geo_ref.convert_to_dem(tree.odm_georeferencing_model_las,
                                                         tree.odm_georeferencing_dem,
-                                                        tree.odm_georeferencing_dem_json,
                                                         self.params.sample_radius,
                                                         self.params.gdal_res,
                                                         self.params.gdal_radius)
