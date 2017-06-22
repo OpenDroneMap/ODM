@@ -1404,8 +1404,8 @@ bool Georef::loadObjFile(std::string inputFile, pcl::TextureMesh &mesh)
     std::size_t f_idx = 0;
     std::string line;
     std::vector<std::string> st;
-    std::vector<Eigen::Vector2f> coordinates;
-    std::vector<Eigen::Vector2f> allTexCoords;
+    std::vector<Eigen::Vector2f, Eigen::aligned_allocator<Eigen::Vector2f> > coordinates;
+    std::vector<Eigen::Vector2f, Eigen::aligned_allocator<Eigen::Vector2f> > allTexCoords;
 
     std::map<int, int> f2vt;
 
@@ -1544,7 +1544,7 @@ bool Georef::loadObjFile(std::string inputFile, pcl::TextureMesh &mesh)
 
     if (vt_idx != v_idx)
     {
-        std::vector<Eigen::Vector2f> texcoordinates = std::vector<Eigen::Vector2f>(0);
+        std::vector<Eigen::Vector2f, Eigen::aligned_allocator<Eigen::Vector2f> > texcoordinates = std::vector<Eigen::Vector2f, Eigen::aligned_allocator<Eigen::Vector2f> >(0);
         texcoordinates.reserve(3*f_idx);
 
         for (size_t faceIndex = 0; faceIndex < f_idx; ++faceIndex)
