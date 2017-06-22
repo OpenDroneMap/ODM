@@ -8,7 +8,7 @@ set(OPENCV_DIR "OPENCV_DIR-NOTFOUND" CACHE "OPENCV_DIR" "Path to the opencv inst
 add_definitions(-Wall -Wextra)
 
 # Find pcl at the location specified by PCL_DIR
-find_package(PCL 1.7 HINTS "${PCL_DIR}/share/pcl-1.7" REQUIRED)
+find_package(PCL 1.8 HINTS "${PCL_DIR}/share/pcl-1.8" REQUIRED)
 
 # Find OpenCV at the default location
 find_package(OpenCV HINTS "${OPENCV_DIR}" REQUIRED)

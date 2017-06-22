@@ -7,8 +7,8 @@ ExternalProject_Add(${_proj_name}
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
-  URL               https://github.com/PointCloudLibrary/pcl/archive/pcl-1.7.2.tar.gz
-  URL_MD5           02c72eb6760fcb1f2e359ad8871b9968
+  URL               https://github.com/PointCloudLibrary/pcl/archive/pcl-1.8.0.tar.gz
+  URL_MD5           8c1308be2c13106e237e4a4204a32cca
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   #--Configure step-------------
