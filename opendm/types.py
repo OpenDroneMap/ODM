@@ -28,14 +28,18 @@ class ODM_Photo:
         self.camera_make = ''
         self.camera_model = ''
         self.make_model = ''
+        self.latitude = None
+        self.longitude = None
+        self.altitude = None
         # parse values from metadata
         self.parse_pyexiv2_values(self.path_file, force_focal, force_ccd)
         # compute focal length into pixels
         self.update_focal()
 
         # print log message
-        log.ODM_DEBUG('Loaded %s | camera: %s | dimensions: %s x %s | focal: %s | ccd: %s' %
-                      (self.filename, self.make_model, self.width, self.height, self.focal_length, self.ccd_width))
+        log.ODM_DEBUG('Loaded {} | camera: {} | dimensions: {} x {} | focal: {} | ccd: {} | lat: {} | lon: {} | alt: {}'
+                      .format(self.filename, self.make_model, self.width, self.height, self.focal_length,
+                              self.ccd_width, self.latitude, self.longitude, self.altitude))
 
     def update_focal(self):
         # compute focal length in pixels
@@ -58,6 +62,7 @@ class ODM_Photo:
         for key in metadata:
             # try/catch tag value due to weird bug in pyexiv2 
             # ValueError: invalid literal for int() with base 10: ''
+            GPS = 'Exif.GPSInfo.GPS'
             try:
                 # parse tag names
                 if key == 'Exif.Image.Make':
@@ -66,6 +71,16 @@ class ODM_Photo:
                     self.camera_model = metadata[key].value
                 elif key == 'Exif.Photo.FocalLength':
                     self.focal_length = float(metadata[key].value)
+                elif key == GPS + 'Latitude':
+                    self.latitude = self.dms_to_decimal(*metadata[key].value +
+                                                        [metadata[GPS + 'LatitudeRef'].value])
+                elif key == GPS + 'Longitude':
+                    self.longitude = self.dms_to_decimal(*metadata[key].value +
+                                                         [metadata[GPS + 'LongitudeRef'].value])
+                elif key == GPS + 'Altitude':
+                    self.altitude = float(metadata[key].value)
+                    if int(metadata[GPS + 'AltitudeRef'].value) > 0:
+                        self.altitude *= -1
             except (pyexiv2.ExifValueError, ValueError) as e:
                 pass
             except NotImplementedError as e:
@@ -97,6 +112,14 @@ class ODM_Photo:
             else:
                 log.ODM_WARNING('Could not find ccd_width in file. Use --force-ccd or edit the sensor_data.json '
                                 'file to manually input ccd width')
+
+    def dms_to_decimal(self, degrees, minutes, seconds, sign=' '):
+        """Converts dms coords to decimal degrees"""
+        return (-1 if sign[0] in 'SWsw' else 1) * (
+            float(degrees) +
+            float(minutes) / 60 +
+            float(seconds) / 3600
+        )
 
 
 # TODO: finish this class
