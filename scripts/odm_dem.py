@@ -1,4 +1,4 @@
-import ecto, os
+import ecto, os, math
 
 from opendm import io
 from opendm import log
@@ -13,6 +13,7 @@ class ODMDemCell(ecto.Cell):
 
     def declare_io(self, params, inputs, outputs):
         inputs.declare("args", "The application arguments.", {})
+        inputs.declare("reconstruction", "list of ODMReconstructions", [])
 
     def process(self, inputs, outputs):
         # Benchmarking
@@ -22,127 +23,98 @@ class ODMDemCell(ecto.Cell):
 
         # get inputs
         args = self.inputs.args
-        verbose = '-v' if self.params.verbose else ''
+        las_model_exists = io.file_exists(tree.odm_georeferencing_model_las)
 
-        # define paths and create working directories
-        odm_dem_root = tree.path('odm_dem')
-        system.mkdir_p(odm_dem_root)
+        # Just to make sure
+        l2d_module_installed = True
+        try:
+            system.run('l2d_classify --help')
+        except:
+            log.ODM_WARNING('lidar2dems is not installed properly')
+            l2d_module_installed = False
 
-        dsm_output_filename = os.path.join(odm_dem_root, )
+        log.ODM_INFO('Create DSM: ' + str(args.dsm))
+        log.ODM_INFO('Create DTM: ' + str(args.dtm))
+        log.ODM_INFO('{0} exists: {1}'.format(tree.odm_georeferencing_model_las, str(las_model_exists)))
 
-        # check if we rerun cell or not
-        rerun_cell = (args.rerun is not None and
-                      args.rerun == 'odm_dem') or \
-                     (args.rerun_all) or \
-                     (args.rerun_from is not None and
-                      'odm_dem' in args.rerun_from)
+        # Do we need to process anything here?
+        if (args.dsm or args.dtm) and las_model_exists and l2d_module_installed:
 
-        if not io.file_exists(tree.odm_orthophoto_file) or rerun_cell:
+            # define paths and create working directories
+            odm_dem_root = tree.path('odm_dem')
+            system.mkdir_p(odm_dem_root)
 
-            # odm_orthophoto definitions
-            kwargs = {
-                'bin': context.odm_modules_path,
-                'log': tree.odm_orthophoto_log,
-                'ortho': tree.odm_orthophoto_file,
-                'corners': tree.odm_orthophoto_corners,
-                'res': self.params.resolution,
-                'verbose': verbose
-            }
+            dsm_output_filename = os.path.join(odm_dem_root, 'dsm.idw.tif')
+            dtm_output_filename = os.path.join(odm_dem_root, 'dtm.idw.tif')
 
-            # Have geo coordinates?
-            if io.file_exists(tree.odm_georeferencing_coords):
-                if args.use_25dmesh:
-                    kwargs['model_geo'] = os.path.join(tree.odm_25dtexturing, tree.odm_georeferencing_model_obj_geo)
-                else:
-                    kwargs['model_geo'] = os.path.join(tree.odm_texturing, tree.odm_georeferencing_model_obj_geo)
-            else:
-                if args.use_25dmesh:
-                    kwargs['model_geo'] = os.path.join(tree.odm_25dtexturing, tree.odm_textured_model_obj)
-                else:
-                    kwargs['model_geo'] = os.path.join(tree.odm_texturing, tree.odm_textured_model_obj)
+            # check if we rerun cell or not
+            rerun_cell = (args.rerun is not None and
+                          args.rerun == 'odm_dem') or \
+                         (args.rerun_all) or \
+                         (args.rerun_from is not None and
+                          'odm_dem' in args.rerun_from)
 
-            # run odm_orthophoto
-            system.run('{bin}/odm_orthophoto -inputFile {model_geo} '
-                       '-logFile {log} -outputFile {ortho} -resolution {res} {verbose} '
-                       '-outputCornerFile {corners}'.format(**kwargs))
+            if (args.dtm and not io.file_exists(dtm_output_filename)) or \
+                (args.dsm and not io.file_exists(dsm_output_filename)) or \
+                rerun_cell:
 
-            if not io.file_exists(tree.odm_georeferencing_coords):
-                log.ODM_WARNING('No coordinates file. A georeferenced raster '
-                                'will not be created')
-            else:
-                # Create georeferenced GeoTiff
-                geotiffcreated = False
-                georef = types.ODM_GeoRef()
-                # creates the coord refs # TODO I don't want to have to do this twice- after odm_georef
-                georef.parse_coordinate_system(tree.odm_georeferencing_coords)
+                terrain_params_map = {
+                    'flatnonforest': (1, 3), 
+                    'flatforest': (1, 2), 
+                    'complexnonforest': (5, 2), 
+                    'complexforest': (10, 2)
+                }
+                terrain_params = terrain_params_map[args.dem_terrain_type.lower()]             
 
-                if georef.epsg and georef.utm_east_offset and georef.utm_north_offset:
-                    ulx = uly = lrx = lry = 0.0
-                    with open(tree.odm_orthophoto_corners) as f:
-                        for lineNumber, line in enumerate(f):
-                            if lineNumber == 0:
-                                tokens = line.split(' ')
-                                if len(tokens) == 4:
-                                    ulx = float(tokens[0]) + \
-                                        float(georef.utm_east_offset)
-                                    lry = float(tokens[1]) + \
-                                        float(georef.utm_north_offset)
-                                    lrx = float(tokens[2]) + \
-                                        float(georef.utm_east_offset)
-                                    uly = float(tokens[3]) + \
-                                        float(georef.utm_north_offset)
-                    log.ODM_INFO('Creating GeoTIFF')
+                kwargs = {
+                    'verbose': '-v' if self.params.verbose else '',
+                    'slope': terrain_params[0],
+                    'cellsize': terrain_params[1],
+                    'outdir': odm_dem_root,
+                    'approximate': '-a' if args.dem_approximate else '',
+                    'decimation': args.dem_decimation,
+                }
 
-                    kwargs = {
-                        'ulx': ulx,
-                        'uly': uly,
-                        'lrx': lrx,
-                        'lry': lry,
-                        'tiled': '' if self.params.no_tiled else '-co TILED=yes ',
-                        'compress': self.params.compress,
-                        'predictor': '-co PREDICTOR=2 ' if self.params.compress in
-                                                           ['LZW', 'DEFLATE'] else '',
-                        'epsg': georef.epsg,
-                        't_srs': self.params.t_srs or "EPSG:{0}".format(georef.epsg),
-                        'bigtiff': self.params.bigtiff,
-                        'png': tree.odm_orthophoto_file,
-                        'tiff': tree.odm_orthophoto_tif,
-                        'log': tree.odm_orthophoto_tif_log
+                l2d_params = '--slope {slope} --cellsize {cellsize} ' \
+                             '{verbose} {approximate} --decimation {decimation} ' \
+                             '-o ' \
+                             '--outdir {outdir}'.format(**kwargs)
+
+                system.run('l2d_classify {0} {1}'.format(l2d_params, tree.odm_georeferencing))
+
+                products = []
+                if args.dsm: products.append('dsm') 
+                if args.dtm: products.append('dtm')
+
+                radius_steps = [args.dem_resolution]
+                for _ in range(args.dem_gapfill_steps - 1):
+                    radius_steps.append(radius_steps[-1] * math.sqrt(2))
+
+                for product in products:
+                    demargs = {
+                        'product': product,
+                        'indir': odm_dem_root,
+                        'l2d_params': l2d_params,
+                        'maxsd': args.dem_maxsd,
+                        'maxangle': args.dem_maxangle,
+                        'resolution': args.dem_resolution,
+                        'radius_steps': ' '.join(map(str, radius_steps))
+                        'gapfill': '--gapfill' if len(args.dem_gapfill_steps) > 0 else ''
                     }
 
-                    system.run('gdal_translate -a_ullr {ulx} {uly} {lrx} {lry} '
-                               '{tiled} '
-                               '-co BIGTIFF={bigtiff} '
-                               '-co COMPRESS={compress} '
-                               '{predictor} '
-                               '-co BLOCKXSIZE=512 '
-                               '-co BLOCKYSIZE=512 '
-                               '-co NUM_THREADS=ALL_CPUS '
-                               '-a_srs \"EPSG:{epsg}\" '
-                               '{png} {tiff} > {log}'.format(**kwargs))
+                    system.run('l2d_dems {product} {indir} {l2d_params} '
+                               '--maxsd {maxsd} --maxangle {maxangle} '
+                               '--resolution {resolution} --radius {radius_steps} '
+                               '{gapfill} '.format(**demargs))
 
-                    if self.params.build_overviews:
-                        log.ODM_DEBUG("Building Overviews")
-                        kwargs = {
-                            'orthophoto': tree.odm_orthophoto_tif,
-                            'log': tree.odm_orthophoto_gdaladdo_log
-                        }
-                        # Run gdaladdo
-                        system.run('gdaladdo -ro -r average '
-                                   '--config BIGTIFF_OVERVIEW IF_SAFER '
-                                   '--config COMPRESS_OVERVIEW JPEG '
-                                   '{orthophoto} 2 4 8 16 > {log}'.format(**kwargs))
 
-                    geotiffcreated = True
-                if not geotiffcreated:
-                    log.ODM_WARNING('No geo-referenced orthophoto created due '
-                                    'to missing geo-referencing or corner coordinates.')
-
+            else:
+                log.ODM_WARNING('Found existing outputs in: %s' % odm_dem_root)
         else:
-            log.ODM_WARNING('Found a valid orthophoto in: %s' % tree.odm_orthophoto_file)
+            log.ODM_WARNING('DEM will not be generated')
 
         if args.time:
-            system.benchmark(start_time, tree.benchmarking, 'Orthophoto')
+            system.benchmark(start_time, tree.benchmarking, 'Dem')
 
-        log.ODM_INFO('Running ODM OrthoPhoto Cell - Finished')
-        return ecto.OK if args.end_with != 'odm_orthophoto' else ecto.QUIT
+        log.ODM_INFO('Running ODM DEM Cell - Finished')
+        return ecto.OK if args.end_with != 'odm_dem' else ecto.QUIT
