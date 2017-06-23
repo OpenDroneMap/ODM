@@ -1,0 +1,148 @@
+import ecto, os
+
+from opendm import io
+from opendm import log
+from opendm import system
+from opendm import context
+from opendm import types
+
+
+class ODMDemCell(ecto.Cell):
+    def declare_params(self, params):
+        params.declare("verbose", 'print additional messages to console', False)
+
+    def declare_io(self, params, inputs, outputs):
+        inputs.declare("args", "The application arguments.", {})
+
+    def process(self, inputs, outputs):
+        # Benchmarking
+        start_time = system.now_raw()
+
+        log.ODM_INFO('Running ODM DEM Cell')
+
+        # get inputs
+        args = self.inputs.args
+        verbose = '-v' if self.params.verbose else ''
+
+        # define paths and create working directories
+        odm_dem_root = tree.path('odm_dem')
+        system.mkdir_p(odm_dem_root)
+
+        dsm_output_filename = os.path.join(odm_dem_root, )
+
+        # check if we rerun cell or not
+        rerun_cell = (args.rerun is not None and
+                      args.rerun == 'odm_dem') or \
+                     (args.rerun_all) or \
+                     (args.rerun_from is not None and
+                      'odm_dem' in args.rerun_from)
+
+        if not io.file_exists(tree.odm_orthophoto_file) or rerun_cell:
+
+            # odm_orthophoto definitions
+            kwargs = {
+                'bin': context.odm_modules_path,
+                'log': tree.odm_orthophoto_log,
+                'ortho': tree.odm_orthophoto_file,
+                'corners': tree.odm_orthophoto_corners,
+                'res': self.params.resolution,
+                'verbose': verbose
+            }
+
+            # Have geo coordinates?
+            if io.file_exists(tree.odm_georeferencing_coords):
+                if args.use_25dmesh:
+                    kwargs['model_geo'] = os.path.join(tree.odm_25dtexturing, tree.odm_georeferencing_model_obj_geo)
+                else:
+                    kwargs['model_geo'] = os.path.join(tree.odm_texturing, tree.odm_georeferencing_model_obj_geo)
+            else:
+                if args.use_25dmesh:
+                    kwargs['model_geo'] = os.path.join(tree.odm_25dtexturing, tree.odm_textured_model_obj)
+                else:
+                    kwargs['model_geo'] = os.path.join(tree.odm_texturing, tree.odm_textured_model_obj)
+
+            # run odm_orthophoto
+            system.run('{bin}/odm_orthophoto -inputFile {model_geo} '
+                       '-logFile {log} -outputFile {ortho} -resolution {res} {verbose} '
+                       '-outputCornerFile {corners}'.format(**kwargs))
+
+            if not io.file_exists(tree.odm_georeferencing_coords):
+                log.ODM_WARNING('No coordinates file. A georeferenced raster '
+                                'will not be created')
+            else:
+                # Create georeferenced GeoTiff
+                geotiffcreated = False
+                georef = types.ODM_GeoRef()
+                # creates the coord refs # TODO I don't want to have to do this twice- after odm_georef
+                georef.parse_coordinate_system(tree.odm_georeferencing_coords)
+
+                if georef.epsg and georef.utm_east_offset and georef.utm_north_offset:
+                    ulx = uly = lrx = lry = 0.0
+                    with open(tree.odm_orthophoto_corners) as f:
+                        for lineNumber, line in enumerate(f):
+                            if lineNumber == 0:
+                                tokens = line.split(' ')
+                                if len(tokens) == 4:
+                                    ulx = float(tokens[0]) + \
+                                        float(georef.utm_east_offset)
+                                    lry = float(tokens[1]) + \
+                                        float(georef.utm_north_offset)
+                                    lrx = float(tokens[2]) + \
+                                        float(georef.utm_east_offset)
+                                    uly = float(tokens[3]) + \
+                                        float(georef.utm_north_offset)
+                    log.ODM_INFO('Creating GeoTIFF')
+
+                    kwargs = {
+                        'ulx': ulx,
+                        'uly': uly,
+                        'lrx': lrx,
+                        'lry': lry,
+                        'tiled': '' if self.params.no_tiled else '-co TILED=yes ',
+                        'compress': self.params.compress,
+                        'predictor': '-co PREDICTOR=2 ' if self.params.compress in
+                                                           ['LZW', 'DEFLATE'] else '',
+                        'epsg': georef.epsg,
+                        't_srs': self.params.t_srs or "EPSG:{0}".format(georef.epsg),
+                        'bigtiff': self.params.bigtiff,
+                        'png': tree.odm_orthophoto_file,
+                        'tiff': tree.odm_orthophoto_tif,
+                        'log': tree.odm_orthophoto_tif_log
+                    }
+
+                    system.run('gdal_translate -a_ullr {ulx} {uly} {lrx} {lry} '
+                               '{tiled} '
+                               '-co BIGTIFF={bigtiff} '
+                               '-co COMPRESS={compress} '
+                               '{predictor} '
+                               '-co BLOCKXSIZE=512 '
+                               '-co BLOCKYSIZE=512 '
+                               '-co NUM_THREADS=ALL_CPUS '
+                               '-a_srs \"EPSG:{epsg}\" '
+                               '{png} {tiff} > {log}'.format(**kwargs))
+
+                    if self.params.build_overviews:
+                        log.ODM_DEBUG("Building Overviews")
+                        kwargs = {
+                            'orthophoto': tree.odm_orthophoto_tif,
+                            'log': tree.odm_orthophoto_gdaladdo_log
+                        }
+                        # Run gdaladdo
+                        system.run('gdaladdo -ro -r average '
+                                   '--config BIGTIFF_OVERVIEW IF_SAFER '
+                                   '--config COMPRESS_OVERVIEW JPEG '
+                                   '{orthophoto} 2 4 8 16 > {log}'.format(**kwargs))
+
+                    geotiffcreated = True
+                if not geotiffcreated:
+                    log.ODM_WARNING('No geo-referenced orthophoto created due '
+                                    'to missing geo-referencing or corner coordinates.')
+
+        else:
+            log.ODM_WARNING('Found a valid orthophoto in: %s' % tree.odm_orthophoto_file)
+
+        if args.time:
+            system.benchmark(start_time, tree.benchmarking, 'Orthophoto')
+
+        log.ODM_INFO('Running ODM OrthoPhoto Cell - Finished')
+        return ecto.OK if args.end_with != 'odm_orthophoto' else ecto.QUIT

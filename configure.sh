@@ -89,8 +89,7 @@ install() {
     echo "Installing lidar2dems Dependencies"
     sudo apt-get install -y -qq swig2.0 \
                          python-wheel \
-                         libboost-log-dev  \
-                         libxslt-dev
+                         libboost-log-dev
 
     sudo pip install -U https://github.com/pierotofy/gippy/archive/v0.3.9.tar.gz
 
