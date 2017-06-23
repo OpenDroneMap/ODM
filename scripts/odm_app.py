@@ -155,7 +155,8 @@ class ODMApp(ecto.BlackBox):
                         self.texturing['reconstruction'] >> self.georeferencing['reconstruction']]
         
         # create odm dem
-        connections += [self.args[:] >> self.dem['args'],
+        connections += [self.tree[:] >> self.dem['tree'],
+                        self.args[:] >> self.dem['args'],
                         self.georeferencing['reconstruction'] >> self.dem['reconstruction']]
         
         # create odm orthophoto
