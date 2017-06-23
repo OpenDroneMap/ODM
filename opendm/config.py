@@ -360,7 +360,7 @@ def config():
                         help='Number of steps used to fill areas with gaps. Set to 0 to disable gap filling. '
                              'Starting with a radius equal to the output resolution, N different DEMs are generated with '
                              'progressively bigger radius using the inverse distance weighted (IDW) algorithm '
-                             'and merged together. Remaining gaps are then merged using linear interpolation. '
+                             'and merged together. Remaining gaps are then merged using nearest neighbor interpolation. '
                              'generation.\nDefault=%(default)s')
 
     parser.add_argument('--dem-resolution',
@@ -403,6 +403,7 @@ def config():
 
     parser.add_argument('--dem-terrain-type',
                         metavar='<string>',
+                        type=str.lower, # make case insensitive
                         choices=['FlatNonForest', 'FlatForest', 'ComplexNonForest', 'ComplexForest'],
                         default='ComplexForest',
                         help='Specifies the type of terrain. This mainly helps reduce processing time. '
