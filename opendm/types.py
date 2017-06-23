@@ -196,29 +196,6 @@ class ODM_GeoRef(object):
         system.run('{bin}/pdal pipeline -i {json} --readers.ply.filename={f_in} '
                    '--writers.las.filename={f_out}'.format(**kwargs))
 
-    def convert_to_dem(self, _file, _file_out, sample_radius, gdal_res, gdal_radius):
-        # Check if exists f_in
-        if not io.file_exists(_file):
-            log.ODM_ERROR('LAS file does not exist')
-            return False
-
-        kwargs = {
-            'bin': context.pdal_path,
-            'f_in': _file,
-            'sample_radius': sample_radius,
-            'gdal_res': gdal_res,
-            'gdal_radius': gdal_radius,
-            'f_out': _file_out
-        }
-
-        system.run('{bin}/pdal pipeline {json} --readers.las.filename={f_in} '
-                   '--writers.gdal.filename={f_out}'.format(**kwargs))
-
-        if io.file_exists(kwargs['f_out']):
-            return True
-        else:
-            return False
-
     def utm_to_latlon(self, _file, _photo, idx):
 
         gcp = self.gcps[idx]
