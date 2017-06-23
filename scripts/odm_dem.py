@@ -1,4 +1,4 @@
-import ecto, os, math
+import ecto, os
 
 from opendm import io
 from opendm import log
@@ -7,11 +7,12 @@ from opendm import context
 from opendm import types
 
 
-class ODMDemCell(ecto.Cell):
+class ODMDEMCell(ecto.Cell):
     def declare_params(self, params):
         params.declare("verbose", 'print additional messages to console', False)
 
     def declare_io(self, params, inputs, outputs):
+        inputs.declare("tree", "Struct with paths", [])
         inputs.declare("args", "The application arguments.", {})
         inputs.declare("reconstruction", "list of ODMReconstructions", [])
 
@@ -23,22 +24,23 @@ class ODMDemCell(ecto.Cell):
 
         # get inputs
         args = self.inputs.args
-        las_model_exists = io.file_exists(tree.odm_georeferencing_model_las)
+        tree = self.inputs.tree
+        las_model_found = io.file_exists(tree.odm_georeferencing_model_las)
 
         # Just to make sure
         l2d_module_installed = True
         try:
-            system.run('l2d_classify --help')
+            system.run('l2d_classify --help > /dev/null')
         except:
             log.ODM_WARNING('lidar2dems is not installed properly')
             l2d_module_installed = False
 
         log.ODM_INFO('Create DSM: ' + str(args.dsm))
         log.ODM_INFO('Create DTM: ' + str(args.dtm))
-        log.ODM_INFO('{0} exists: {1}'.format(tree.odm_georeferencing_model_las, str(las_model_exists)))
+        log.ODM_INFO('DEM input file {0} found: {1}'.format(tree.odm_georeferencing_model_las, str(las_model_found)))
 
         # Do we need to process anything here?
-        if (args.dsm or args.dtm) and las_model_exists and l2d_module_installed:
+        if (args.dsm or args.dtm) and las_model_found and l2d_module_installed:
 
             # define paths and create working directories
             odm_dem_root = tree.path('odm_dem')
@@ -70,17 +72,20 @@ class ODMDemCell(ecto.Cell):
                     'verbose': '-v' if self.params.verbose else '',
                     'slope': terrain_params[0],
                     'cellsize': terrain_params[1],
-                    'outdir': odm_dem_root,
-                    'approximate': '-a' if args.dem_approximate else '',
-                    'decimation': args.dem_decimation,
+                    'outdir': odm_dem_root
                 }
 
                 l2d_params = '--slope {slope} --cellsize {cellsize} ' \
-                             '{verbose} {approximate} --decimation {decimation} ' \
+                             '{verbose} ' \
                              '-o ' \
                              '--outdir {outdir}'.format(**kwargs)
 
-                system.run('l2d_classify {0} {1}'.format(l2d_params, tree.odm_georeferencing))
+                approximate = '--approximate' if args.dem_approximate else ''
+
+                system.run('l2d_classify {0} --decimation {1} '
+                           '{2} {3}'.format(
+                    l2d_params, args.dem_decimation,
+                    approximate, tree.odm_georeferencing))
 
                 products = []
                 if args.dsm: products.append('dsm') 
@@ -88,7 +93,7 @@ class ODMDemCell(ecto.Cell):
 
                 radius_steps = [args.dem_resolution]
                 for _ in range(args.dem_gapfill_steps - 1):
-                    radius_steps.append(radius_steps[-1] * math.sqrt(2))
+                    radius_steps.append(radius_steps[-1] * 3) # 3 is arbitrary, maybe there's a better value?
 
                 for product in products:
                     demargs = {
@@ -98,8 +103,8 @@ class ODMDemCell(ecto.Cell):
                         'maxsd': args.dem_maxsd,
                         'maxangle': args.dem_maxangle,
                         'resolution': args.dem_resolution,
-                        'radius_steps': ' '.join(map(str, radius_steps))
-                        'gapfill': '--gapfill' if len(args.dem_gapfill_steps) > 0 else ''
+                        'radius_steps': ' '.join(map(str, radius_steps)),
+                        'gapfill': '--gapfill' if args.dem_gapfill_steps > 0 else ''
                     }
 
                     system.run('l2d_dems {product} {indir} {l2d_params} '

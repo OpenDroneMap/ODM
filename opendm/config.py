@@ -345,13 +345,13 @@ def config():
                         action='store_true',
                         default=False,
                         help='Use this tag to build a DTM (Digital Terrain Model, ground only) using a progressive '
-                             'morphological filter in PDAL. Check the --dem* parameters for fine tuning.')
+                             'morphological filter. Check the --dem* parameters for fine tuning.')
     
     parser.add_argument('--dsm',
                         action='store_true',
                         default=False,
                         help='Use this tag to build a DSM (Digital Surface Model, ground + objects) using a progressive '
-                             'morphological filter in PDAL. Check the --dem* parameters for fine tuning.')
+                             'morphological filter. Check the --dem* parameters for fine tuning.')
 
     parser.add_argument('--dem-gapfill-steps',
                         metavar='<positive integer>',
@@ -390,7 +390,7 @@ def config():
                         action='store_true',
                         default=False,
                         help='Use this tag use the approximate progressive  '
-                             'morphological filter in PDAL, which computes DEMs faster '
+                             'morphological filter, which computes DEMs faster '
                              'but is not as accurate.')
 
     parser.add_argument('--dem-decimation',
@@ -398,19 +398,18 @@ def config():
                         default=1,
                         type=int,
                         help='Decimate the points before generating the DEM. 1 is no decimation (full quality). '
-                             '100 decimates ~99% of the points. Useful for speeding up '
+                             '100 decimates ~99%% of the points. Useful for speeding up '
                              'generation.\nDefault=%(default)s')
 
     parser.add_argument('--dem-terrain-type',
                         metavar='<string>',
-                        type=str.lower, # make case insensitive
                         choices=['FlatNonForest', 'FlatForest', 'ComplexNonForest', 'ComplexForest'],
                         default='ComplexForest',
-                        help='Specifies the type of terrain. This mainly helps reduce processing time. '
-                             'FlatNonForest: Relatively flat region with little to no vegetation (slope 1, cell size 3)'
-                             'FlatForest: Relatively flat region that is forested (slope 1, cell size 2)'
-                             'ComplexNonForest: Varied terrain with little to no vegetation (slope 5, cell size 2)'
-                             'ComplexForest: Varied terrain that is forested (slope 10, cell size 2)'
+                        help='One of: %(choices)s. Specifies the type of terrain. This mainly helps reduce processing time. '
+                             '\nFlatNonForest: Relatively flat region with little to no vegetation'
+                             '\nFlatForest: Relatively flat region that is forested'
+                             '\nComplexNonForest: Varied terrain with little to no vegetation'
+                             '\nComplexForest: Varied terrain that is forested'
                              '\nDefault=%(default)s')
 
     parser.add_argument('--orthophoto-resolution',
