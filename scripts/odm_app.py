@@ -16,6 +16,7 @@ from odm_meshing import ODMeshingCell
 from mvstex import ODMMvsTexCell
 from odm_georeferencing import ODMGeoreferencingCell
 from odm_orthophoto import ODMOrthoPhotoCell
+from odm_dem import ODMDEMCell
 
 
 class ODMApp(ecto.BlackBox):
@@ -73,11 +74,8 @@ class ODMApp(ecto.BlackBox):
                  'georeferencing': ODMGeoreferencingCell(img_size=p.args.resize_to,
                                                          gcp_file=p.args.gcp,
                                                          use_exif=p.args.use_exif,
-                                                         dem=p.args.dem,
-                                                         sample_radius=p.args.dem_sample_radius,
-                                                         gdal_res=p.args.dem_resolution,
-                                                         gdal_radius=p.args.dem_radius,
                                                          verbose=p.args.verbose),
+                 'dem': ODMDEMCell(verbose=p.args.verbose),
                  'orthophoto': ODMOrthoPhotoCell(resolution=p.args.orthophoto_resolution,
                                                  t_srs=p.args.orthophoto_target_srs,
                                                  no_tiled=p.args.orthophoto_no_tiled,
