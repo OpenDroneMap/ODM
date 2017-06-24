@@ -367,7 +367,7 @@ def config():
                         metavar='<float>',
                         type=float,
                         default=0.1,
-                        help='Length of raster cell edges in X/Y units.'
+                        help='Length of raster cell edges in meters.'
                              '\nDefault: %(default)s')
 
     parser.add_argument('--dem-maxangle',
