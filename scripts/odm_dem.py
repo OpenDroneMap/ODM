@@ -1,4 +1,5 @@
 import ecto, os, json
+from shutil import copyfile
 
 from opendm import io
 from opendm import log
@@ -123,10 +124,17 @@ class ODMDEMCell(ecto.Cell):
 
                 approximate = '--approximate' if args.dem_approximate else ''
 
-                system.run('l2d_classify {0} --decimation {1} '
-                           '{2} {3}'.format(
-                    l2d_params, args.dem_decimation,
-                    approximate, tree.odm_georeferencing))
+                # Classify only if we need a DTM
+                run_classification = args.dtm
+
+                if run_classification:
+                    system.run('l2d_classify {0} --decimation {1} '
+                               '{2} {3}'.format(
+                        l2d_params, args.dem_decimation,
+                        approximate, tree.odm_georeferencing))
+                else:
+                    log.ODM_INFO("Will skip classification, only DSM is needed")
+                    copyfile(tree.odm_georeferencing_model_las, os.path.join(odm_dem_root, 'bounds-0_l2d_s{slope}c{cellsize}.las'.format(**kwargs)))
 
                 products = []
                 if args.dsm: products.append('dsm') 
@@ -145,12 +153,16 @@ class ODMDEMCell(ecto.Cell):
                         'maxangle': args.dem_maxangle,
                         'resolution': args.dem_resolution,
                         'radius_steps': ' '.join(map(str, radius_steps)),
-                        'gapfill': '--gapfill' if args.dem_gapfill_steps > 0 else ''
+                        'gapfill': '--gapfill' if args.dem_gapfill_steps > 0 else '',
+                        
+                        # If we didn't run a classification, we should pass the decimate parameter here
+                        'decimation': '--decimation {0}'.format(args.dem_decimation) if not run_classification else ''
                     }
 
                     system.run('l2d_dems {product} {indir} {l2d_params} '
                                '--maxsd {maxsd} --maxangle {maxangle} '
                                '--resolution {resolution} --radius {radius_steps} '
+                               '{decimation} '
                                '{gapfill} '.format(**demargs))
 
                     # Rename final output
