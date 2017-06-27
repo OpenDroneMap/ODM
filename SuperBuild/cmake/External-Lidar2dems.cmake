@@ -8,7 +8,7 @@ ExternalProject_Add(${_proj_name}
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}/${_proj_name}
   URL               https://github.com/pierotofy/lidar2dems/archive/master.zip
-  URL_MD5           cece43dcf578ad47f169ee9078e17e8c
+  URL_MD5           dc1ac68bd05d1a5dde45ee079e0765ac
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   #--Configure step-------------
