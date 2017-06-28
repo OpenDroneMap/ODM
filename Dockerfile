@@ -19,7 +19,7 @@ jhead liblas-bin python-matplotlib libatlas-base-dev libgmp-dev libmpfr-dev swig
 RUN apt-get remove libdc1394-22-dev
 RUN pip install --upgrade pip
 RUN pip install setuptools
-RUN pip install -U PyYAML exifread gpxpy xmltodict catkin-pkg appsettings https://github.com/pierotofy/gippy/archive/v0.3.9.tar.gz
+RUN pip install -U PyYAML exifread gpxpy xmltodict catkin-pkg appsettings https://github.com/OpenDroneMap/gippy/archive/v0.3.9.tar.gz
 
 ENV PYTHONPATH="$PYTHONPATH:/code/SuperBuild/install/lib/python2.7/dist-packages"
 ENV PYTHONPATH="$PYTHONPATH:/code/SuperBuild/src/opensfm"
