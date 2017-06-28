@@ -13,7 +13,7 @@ vegind.py <orthophoto.tif> index
 positional arguments:
   <orthophoto.tif>  The RGB orthophoto. Must be a GeoTiff.
   index     Index identifier. Allowed values: ngrdi, tgi, vari
-
+```
 Output will be generated with index suffix in the same directory as input.
 
 ## Examples
