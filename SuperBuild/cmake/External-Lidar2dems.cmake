@@ -7,7 +7,7 @@ ExternalProject_Add(${_proj_name}
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}/${_proj_name}
-  URL               https://github.com/pierotofy/lidar2dems/archive/master.zip
+  URL               https://github.com/OpenDroneMap/lidar2dems/archive/master.zip
   URL_MD5           ba3f7da85ae569fe2610646f540d2828
   #--Update/Patch step----------
   UPDATE_COMMAND    ""

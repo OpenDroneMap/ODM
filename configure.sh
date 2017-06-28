@@ -92,7 +92,7 @@ install() {
                          python-wheel \
                          libboost-log-dev
 
-    sudo pip install -U https://github.com/pierotofy/gippy/archive/v0.3.9.tar.gz
+    sudo pip install -U https://github.com/OpenDroneMap/gippy/archive/v0.3.9.tar.gz
 
     echo "Compiling SuperBuild"
     cd ${RUNPATH}/SuperBuild
