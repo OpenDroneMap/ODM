@@ -8,7 +8,7 @@ ExternalProject_Add(${_proj_name}
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}/${_proj_name}
   URL               https://github.com/OpenDroneMap/lidar2dems/archive/master.zip
-  URL_MD5           ba3f7da85ae569fe2610646f540d2828
+  URL_MD5           76ae5d0182f280bec890bdfd156aa538
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   #--Configure step-------------
@@ -17,7 +17,7 @@ ExternalProject_Add(${_proj_name}
   #--Build step-----------------
   BUILD_COMMAND     ""
   #--Install step---------------
-  INSTALL_COMMAND   "${SB_SOURCE_DIR}/${_proj_name}/install.sh" 
+  INSTALL_COMMAND   "${SB_SOURCE_DIR}/${_proj_name}/install.sh" "${SB_INSTALL_DIR}"
   #--Output logging-------------
   LOG_DOWNLOAD      OFF
   LOG_CONFIGURE     OFF

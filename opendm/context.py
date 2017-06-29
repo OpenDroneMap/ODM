@@ -8,6 +8,7 @@ scripts_path = os.path.abspath(os.path.dirname(__file__))
 root_path, _ = os.path.split(scripts_path)
 
 superbuild_path = os.path.join(root_path, 'SuperBuild')
+superbuild_bin_path = os.path.join(superbuild_path, 'install', 'bin')
 tests_path = os.path.join(root_path, 'tests')
 tests_data_path = os.path.join(root_path, 'tests/test_data')
 
