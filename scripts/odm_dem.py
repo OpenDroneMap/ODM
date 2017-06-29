@@ -27,11 +27,12 @@ class ODMDEMCell(ecto.Cell):
         args = self.inputs.args
         tree = self.inputs.tree
         las_model_found = io.file_exists(tree.odm_georeferencing_model_las)
+        env_paths = [tree.superbuild_bin_path]
 
         # Just to make sure
         l2d_module_installed = True
         try:
-            system.run('l2d_classify --help > /dev/null')
+            system.run('l2d_classify --help > /dev/null', env_paths)
         except:
             log.ODM_WARNING('lidar2dems is not installed properly')
             l2d_module_installed = False
@@ -65,8 +66,8 @@ class ODMDEMCell(ecto.Cell):
                 summary_file_path = os.path.join(odm_dem_root, 'odm_georeferenced_model.summary.json')
                 boundary_file_path = os.path.join(odm_dem_root, 'odm_georeferenced_model.boundary.json')
 
-                system.run('pdal info --summary {0} > {1}'.format(tree.odm_georeferencing_model_las, summary_file_path))
-                system.run('pdal info --boundary {0} > {1}'.format(tree.odm_georeferencing_model_las,  boundary_file_path))
+                system.run('pdal info --summary {0} > {1}'.format(tree.odm_georeferencing_model_las, summary_file_path), env_paths)
+                system.run('pdal info --boundary {0} > {1}'.format(tree.odm_georeferencing_model_las,  boundary_file_path), env_paths)
 
                 pc_proj4 = ""
                 pc_geojson_bounds_feature = None
@@ -131,7 +132,7 @@ class ODMDEMCell(ecto.Cell):
                     system.run('l2d_classify {0} --decimation {1} '
                                '{2} {3}'.format(
                         l2d_params, args.dem_decimation,
-                        approximate, tree.odm_georeferencing))
+                        approximate, tree.odm_georeferencing), env_paths)
                 else:
                     log.ODM_INFO("Will skip classification, only DSM is needed")
                     copyfile(tree.odm_georeferencing_model_las, os.path.join(odm_dem_root, 'bounds-0_l2d_s{slope}c{cellsize}.las'.format(**kwargs)))
@@ -163,7 +164,7 @@ class ODMDEMCell(ecto.Cell):
                                '--maxsd {maxsd} --maxangle {maxangle} '
                                '--resolution {resolution} --radius {radius_steps} '
                                '{decimation} '
-                               '{gapfill} '.format(**demargs))
+                               '{gapfill} '.format(**demargs), env_paths)
 
                     # Rename final output
                     if product == 'dsm':
