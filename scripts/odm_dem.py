@@ -27,7 +27,7 @@ class ODMDEMCell(ecto.Cell):
         args = self.inputs.args
         tree = self.inputs.tree
         las_model_found = io.file_exists(tree.odm_georeferencing_model_las)
-        env_paths = [tree.superbuild_bin_path]
+        env_paths = [context.superbuild_bin_path]
 
         # Just to make sure
         l2d_module_installed = True
