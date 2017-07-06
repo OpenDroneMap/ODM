@@ -386,6 +386,16 @@ def config():
                              'are discarded. \nDefault: '
                              '%(default)s')
 
+    parser.add_argument('--dem-initial-distance',
+                        metavar='<positive float>',
+                        type=float,
+                        default=0.5,
+                        help='Used to classify ground vs non-ground points. Set this value to account for Z noise in meters. '
+                             'If you have an uncertainty of around 50 cm, set this value large enough to not exclude these points. '
+                             'Too small of a value will exclude valid ground points, while too large of a value will misclassify non-ground points for ground ones. '
+                             '\nDefault: '
+                             '%(default)s')
+
     parser.add_argument('--dem-approximate',
                         action='store_true',
                         default=False,
