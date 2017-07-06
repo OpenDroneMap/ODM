@@ -130,8 +130,8 @@ class ODMDEMCell(ecto.Cell):
 
                 if run_classification:
                     system.run('l2d_classify {0} --decimation {1} '
-                               '{2} {3}'.format(
-                        l2d_params, args.dem_decimation,
+                               '{2} --initialDistance {3} {4}'.format(
+                        l2d_params, args.dem_decimation, args.dem_initial_distance,
                         approximate, tree.odm_georeferencing), env_paths)
                 else:
                     log.ODM_INFO("Will skip classification, only DSM is needed")
