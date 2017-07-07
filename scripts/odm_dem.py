@@ -131,8 +131,8 @@ class ODMDEMCell(ecto.Cell):
                 if run_classification:
                     system.run('l2d_classify {0} --decimation {1} '
                                '{2} --initialDistance {3} {4}'.format(
-                        l2d_params, args.dem_decimation, args.dem_initial_distance,
-                        approximate, tree.odm_georeferencing), env_paths)
+                        l2d_params, args.dem_decimation, approximate, 
+                        args.dem_initial_distance, tree.odm_georeferencing), env_paths)
                 else:
                     log.ODM_INFO("Will skip classification, only DSM is needed")
                     copyfile(tree.odm_georeferencing_model_las, os.path.join(odm_dem_root, 'bounds-0_l2d_s{slope}c{cellsize}.las'.format(**kwargs)))
