@@ -10,7 +10,7 @@ import sys
 # parse arguments
 processopts = ['resize', 'opensfm', 'slam', 'cmvs', 'pmvs',
                'odm_meshing', 'odm_25dmeshing', 'mvs_texturing', 'odm_georeferencing',
-               'odm_orthophoto']
+               'odm_dem', 'odm_orthophoto']
 
 with open(io.join_paths(context.root_path, 'VERSION')) as version_file:
     __version__ = version_file.read().strip()
@@ -341,33 +341,86 @@ def config():
                         help=('Use this tag if you have a gcp_list.txt but '
                               'want to use the exif geotags instead'))
 
-    parser.add_argument('--dem',
+    parser.add_argument('--dtm',
                         action='store_true',
                         default=False,
-                        help='Use this tag to build a DEM using a progressive '
-                             'morphological filter in PDAL.')
+                        help='Use this tag to build a DTM (Digital Terrain Model, ground only) using a progressive '
+                             'morphological filter. Check the --dem* parameters for fine tuning.')
+    
+    parser.add_argument('--dsm',
+                        action='store_true',
+                        default=False,
+                        help='Use this tag to build a DSM (Digital Surface Model, ground + objects) using a progressive '
+                             'morphological filter. Check the --dem* parameters for fine tuning.')
 
-    parser.add_argument('--dem-sample-radius',
-                        metavar='<float>',
-                        default=1.0,
-                        type=float,
-                        help='Minimum distance between samples for DEM '
-                             'generation.\nDefault=%(default)s')
+    parser.add_argument('--dem-gapfill-steps',
+                        metavar='<positive integer>',
+                        default=4,
+                        type=int,
+                        help='Number of steps used to fill areas with gaps. Set to 0 to disable gap filling. '
+                             'Starting with a radius equal to the output resolution, N different DEMs are generated with '
+                             'progressively bigger radius using the inverse distance weighted (IDW) algorithm '
+                             'and merged together. Remaining gaps are then merged using nearest neighbor interpolation. '
+                             '\nDefault=%(default)s')
 
     parser.add_argument('--dem-resolution',
                         metavar='<float>',
                         type=float,
-                        default=2,
-                        help='Length of raster cell edges in X/Y units.'
+                        default=0.1,
+                        help='Length of raster cell edges in meters.'
                              '\nDefault: %(default)s')
 
-    parser.add_argument('--dem-radius',
-                        metavar='<float>',
+    parser.add_argument('--dem-maxangle',
+                        metavar='<positive float>',
                         type=float,
-                        default=0.5,
-                        help='Radius about cell center bounding points to '
-                             'use to calculate a cell value.\nDefault: '
+                        default=20,
+                        help='Points that are more than maxangle degrees off-nadir are discarded. '
+                             '\nDefault: '
                              '%(default)s')
+
+    parser.add_argument('--dem-maxsd',
+                        metavar='<positive float>',
+                        type=float,
+                        default=2.5,
+                        help='Points that deviate more than maxsd standard deviations from the local mean '
+                             'are discarded. \nDefault: '
+                             '%(default)s')
+
+    parser.add_argument('--dem-initial-distance',
+                        metavar='<positive float>',
+                        type=float,
+                        default=0.15,
+                        help='Used to classify ground vs non-ground points. Set this value to account for Z noise in meters. '
+                             'If you have an uncertainty of around 15 cm, set this value large enough to not exclude these points. '
+                             'Too small of a value will exclude valid ground points, while too large of a value will misclassify non-ground points for ground ones. '
+                             '\nDefault: '
+                             '%(default)s')
+
+    parser.add_argument('--dem-approximate',
+                        action='store_true',
+                        default=False,
+                        help='Use this tag use the approximate progressive  '
+                             'morphological filter, which computes DEMs faster '
+                             'but is not as accurate.')
+
+    parser.add_argument('--dem-decimation',
+                        metavar='<positive integer>',
+                        default=1,
+                        type=int,
+                        help='Decimate the points before generating the DEM. 1 is no decimation (full quality). '
+                             '100 decimates ~99%% of the points. Useful for speeding up '
+                             'generation.\nDefault=%(default)s')
+
+    parser.add_argument('--dem-terrain-type',
+                        metavar='<string>',
+                        choices=['FlatNonForest', 'FlatForest', 'ComplexNonForest', 'ComplexForest'],
+                        default='ComplexForest',
+                        help='One of: %(choices)s. Specifies the type of terrain. This mainly helps reduce processing time. '
+                             '\nFlatNonForest: Relatively flat region with little to no vegetation'
+                             '\nFlatForest: Relatively flat region that is forested'
+                             '\nComplexNonForest: Varied terrain with little to no vegetation'
+                             '\nComplexForest: Varied terrain that is forested'
+                             '\nDefault=%(default)s')
 
     parser.add_argument('--orthophoto-resolution',
                         metavar='<float > 0.0>',

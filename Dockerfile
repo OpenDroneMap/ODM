@@ -14,12 +14,12 @@ RUN apt-get install --no-install-recommends -y git cmake python-pip build-essent
 libgtk2.0-dev libavcodec-dev libavformat-dev libswscale-dev python-dev python-numpy libtbb2 libtbb-dev libjpeg-dev libpng-dev libtiff-dev libjasper-dev libflann-dev \
 libproj-dev libxext-dev liblapack-dev libeigen3-dev libvtk5-dev python-networkx libgoogle-glog-dev libsuitesparse-dev libboost-filesystem-dev libboost-iostreams-dev \
 libboost-regex-dev libboost-python-dev libboost-date-time-dev libboost-thread-dev python-pyproj python-empy python-nose python-pyside python-pyexiv2 python-scipy \
-jhead liblas-bin python-matplotlib libatlas-base-dev libgmp-dev libmpfr-dev
+jhead liblas-bin python-matplotlib libatlas-base-dev libgmp-dev libmpfr-dev swig2.0 python-wheel libboost-log-dev libjsoncpp-dev
 
 RUN apt-get remove libdc1394-22-dev
 RUN pip install --upgrade pip
 RUN pip install setuptools
-RUN pip install -U PyYAML exifread gpxpy xmltodict catkin-pkg appsettings
+RUN pip install -U PyYAML exifread gpxpy xmltodict catkin-pkg appsettings https://github.com/OpenDroneMap/gippy/archive/v0.3.9.tar.gz
 
 ENV PYTHONPATH="$PYTHONPATH:/code/SuperBuild/install/lib/python2.7/dist-packages"
 ENV PYTHONPATH="$PYTHONPATH:/code/SuperBuild/src/opensfm"
@@ -43,6 +43,7 @@ COPY /SuperBuild/cmake/ /code/SuperBuild/cmake/
 COPY /SuperBuild/CMakeLists.txt /code/SuperBuild/CMakeLists.txt
 COPY docker.settings.yaml /code/settings.yaml
 COPY VERSION /code/VERSION
+
 
 #Compile code in SuperBuild and root directories
 
