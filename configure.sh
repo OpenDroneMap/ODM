@@ -21,7 +21,8 @@ install() {
                          libgdal-dev \
                          gdal-bin \
                          libgeotiff-dev \
-                         pkg-config
+                         pkg-config \
+                         libjsoncpp-dev
 
     echo "Getting CMake 3.1 for MVS-Texturing"
     sudo apt-get install -y software-properties-common python-software-properties
@@ -72,7 +73,7 @@ install() {
                         appsettings
 
     echo "Installing CGAL dependencies"
-    sudo apt-get install -y libgmp-dev libmpfr-dev
+    sudo apt-get install -y -qq libgmp-dev libmpfr-dev
 
     echo "Installing Ecto Dependencies"
     sudo pip install -U catkin-pkg
@@ -85,6 +86,13 @@ install() {
                          python-scipy \
                          jhead \
                          liblas-bin
+
+    echo "Installing lidar2dems Dependencies"
+    sudo apt-get install -y -qq swig2.0 \
+                         python-wheel \
+                         libboost-log-dev
+
+    sudo pip install -U https://github.com/OpenDroneMap/gippy/archive/v0.3.9.tar.gz
 
     echo "Compiling SuperBuild"
     cd ${RUNPATH}/SuperBuild
