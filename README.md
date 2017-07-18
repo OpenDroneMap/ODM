@@ -31,17 +31,30 @@ OpenDroneMap can run natively on Ubuntu 14.04 or later, see [Build and Run Using
 
 Current version: 0.3.1 (this software is in beta)
 
+### Docker
+The easiest way to run ODM is through Docker. If you don't have it installed,
+see the [Docker Ubuntu installation tutorial](https://docs.docker.com/engine/installation/linux/ubuntulinux/) and follow the
+instructions through "Create a Docker group". The Docker image workflow 
+has equivalent procedures for Mac OS X and Windows found at [docs.docker.com](docs.docker.com). Then run the following command which will build a pre-built image and run on images found in `$(pwd)/images` (you can change this if you need to, see the [wiki](https://github.com/OpenDroneMap/OpenDroneMap/wiki/Docker) for more detailed instructions. 
+```
+docker run -it --rm -v $(pwd)/images:/code/images -v $(pwd)/odm_orthophoto:/code/odm_orthophoto -v $(pwd)/odm_texturing:/code/odm_texturing opendronemap/opendronemap
+```
+
+### Native Install
+
 1. Extract and enter the OpenDroneMap directory
 2. Run `bash configure.sh install`
 4. Edit the `settings.yaml` file in your favorite text editor. Set the `project-path` value to an empty directory (you will place sub-directories containing individual projects inside). You can add many options to this file, [see here](https://github.com/OpenDroneMap/OpenDroneMap/wiki/Run-Time-Parameters)
 3. Download a sample dataset from [here](https://github.com/OpenDroneMap/odm_data_aukerman/archive/master.zip) (about 550MB) and extract it as a subdirectory in your project directory.
 4. Run `./run.sh odm_data_aukerman` 
 5. Enter dataset directory to view results: 
-  - orthophoto: odm_orthophoto/odm_orthophoto.tif
-  - textured mesh model: odm_texturing/odm_textured_model_geo.obj
-  - point cloud (georeferenced): odm_georeferencing/odm_georeferenced_model.ply
+    - orthophoto: odm_orthophoto/odm_orthophoto.tif
+    - textured mesh model: odm_texturing/odm_textured_model_geo.obj
+    - point cloud (georeferenced): odm_georeferencing/odm_georeferenced_model.ply
   
-See [here](https://github.com/OpenDroneMap/OpenDroneMap/blob/3964f21377e27c261c305b30537f699853ac2004/README.md#installation) for more detailed installation instructions. 
+See below for more detailed installation instructions. 
+
+## Diving Deeper
 
 ### Installation
 
