@@ -17,6 +17,7 @@ try:
     typ = sys.argv[2]
     (fileRoot, fileExt) = os.path.splitext(file)
     outFileName = fileRoot + "_" + typ + fileExt
+    isinstance(typ, ['vari', 'tgi', 'ngrdi'])
 except (TypeError, IndexError, NameError):
     print bcolors.FAIL + 'Arguments messed up. Check arguments order and index name' + bcolors.ENDC
     print 'Usage: ./vegind.py orto index'
