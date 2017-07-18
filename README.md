@@ -20,27 +20,23 @@ In a word, OpenDroneMap is a toolchain for processing raw civilian UAS imagery t
 
 Open Drone Map now includes state-of-the-art 3D reconstruction work by Michael Waechter, Nils Moehrle, and Michael Goesele. See their publication at http://www.gcc.tu-darmstadt.de/media/gcc/papers/Waechter-2014-LTB.pdf.
 
-
 ## QUICKSTART
 
-OpenDroneMap can run natively on Ubuntu 14.04 or later, see [Build and Run Using Docker](#build-and-run-using-docker) for running on Windows / MacOS. A [Vagrant VM](https://github.com/OpenDroneMap/odm_vagrant) is also available.
+### Docker (All platforms)
 
-*Support for Ubuntu 12.04 is currently BROKEN with the addition of OpenSfM and Ceres-Solver. It is likely to remain broken unless a champion is found to fix it.*
-
-**[Download the latest release here](https://github.com/OpenDroneMap/OpenDroneMap/releases)**
-
-Current version: 0.3.1 (this software is in beta)
-
-### Docker
 The easiest way to run ODM is through Docker. If you don't have it installed,
 see the [Docker Ubuntu installation tutorial](https://docs.docker.com/engine/installation/linux/ubuntulinux/) and follow the
 instructions through "Create a Docker group". The Docker image workflow 
 has equivalent procedures for Mac OS X and Windows found at [docs.docker.com](docs.docker.com). Then run the following command which will build a pre-built image and run on images found in `$(pwd)/images` (you can change this if you need to, see the [wiki](https://github.com/OpenDroneMap/OpenDroneMap/wiki/Docker) for more detailed instructions. 
+
 ```
 docker run -it --rm -v $(pwd)/images:/code/images -v $(pwd)/odm_orthophoto:/code/odm_orthophoto -v $(pwd)/odm_texturing:/code/odm_texturing opendronemap/opendronemap
 ```
 
-### Native Install
+### Native Install (Ubuntu 14.04 or later)
+
+**[Download the latest release here](https://github.com/OpenDroneMap/OpenDroneMap/releases)**  
+Current version: 0.3.1 (this software is in beta)
 
 1. Extract and enter the OpenDroneMap directory
 2. Run `bash configure.sh install`
