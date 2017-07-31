@@ -57,8 +57,11 @@ class ODMOpenSfMCell(ecto.Cell):
         if not io.file_exists(output_file) or rerun_cell:
             # create file list
             list_path = io.join_paths(tree.opensfm, 'image_list.txt')
+            has_alt = True
             with open(list_path, 'w') as fout:
                 for photo in photos:
+                    if not photo.altitude:
+                        has_alt = False
                     fout.write('%s\n' % photo.path_file)
 
             # create config file for OpenSfM
@@ -69,6 +72,10 @@ class ODMOpenSfMCell(ecto.Cell):
                 "processes: %s" % self.params.processes,
                 "matching_gps_neighbors: %s" % self.params.matching_gps_neighbors
             ]
+
+            if has_alt:
+                config.append("use_altitude_tag: True")
+                config.append("align_method: naive")
 
             if args.matcher_distance > 0:
                 config.append("matching_gps_distance: %s" % self.params.matching_gps_distance)
