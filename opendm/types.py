@@ -79,8 +79,8 @@ class ODM_Photo:
                                                          [metadata[GPS + 'LongitudeRef'].value])
                 elif key == GPS + 'Altitude':
                     self.altitude = float(metadata[key].value)
-                    if int(metadata[GPS + 'AltitudeRef'].value) > 0:
-                        self.altitude *= -1
+                    if metadata[GPS + 'AltitudeRef'] and int(metadata[GPS + 'AltitudeRef'].value) > 0:
+                        self.altitude *= -1.
             except (pyexiv2.ExifValueError, ValueError) as e:
                 pass
             except NotImplementedError as e:

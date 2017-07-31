@@ -69,10 +69,14 @@ class ODMLoadDatasetCell(ecto.Cell):
         if files:
             # create ODMPhoto list
             path_files = [io.join_paths(images_dir, f) for f in files]
-            photos = Pool().map(
-                partial(make_odm_photo, self.params.force_focal, self.params.force_ccd),
-                path_files
-            )
+            # photos = Pool().map(
+            #     partial(make_odm_photo, self.params.force_focal, self.params.force_ccd),
+            #     path_files
+            # )
+
+            photos = []
+            for files in path_files:
+                photos += [make_odm_photo(self.params.force_focal, self.params.force_ccd, files)]
             
             log.ODM_INFO('Found %s usable images' % len(photos))            
         else:
