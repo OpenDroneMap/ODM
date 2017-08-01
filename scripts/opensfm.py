@@ -14,6 +14,7 @@ class ODMOpenSfMCell(ecto.Cell):
         params.declare("processes", "The application arguments.", context.num_cores)
         params.declare("matching_gps_neighbors", "The application arguments.", 8)
         params.declare("matching_gps_distance", "The application arguments.", 0)
+        params.declare("fixed_camera_params", "Optimize internal camera parameters", True)
 
     def declare_io(self, params, inputs, outputs):
         inputs.declare("tree", "Struct with paths", [])
@@ -70,7 +71,8 @@ class ODMOpenSfMCell(ecto.Cell):
                 "feature_process_size: %s" % self.params.feature_process_size,
                 "feature_min_frames: %s" % self.params.feature_min_frames,
                 "processes: %s" % self.params.processes,
-                "matching_gps_neighbors: %s" % self.params.matching_gps_neighbors
+                "matching_gps_neighbors: %s" % self.params.matching_gps_neighbors,
+                "optimize_camera_parameters: %s" % ('no' if self.params.fixed_camera_params else 'yes')
             ]
 
             if has_alt:
