@@ -8,8 +8,8 @@ ExternalProject_Add(${_proj_name}
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
-  URL               https://github.com/mapillary/OpenSfM/archive/v0.0.0.tar.gz
-  URL_MD5           E72ED91628520F6DD639F6049A332FAE
+  URL               https://github.com/mapillary/OpenSfM/archive/v0.1.0.tar.gz
+  URL_MD5           0C46922C61F7CA54D272FBB4CC7FFBBB
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   #--Configure step-------------
