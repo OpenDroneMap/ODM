@@ -115,21 +115,6 @@ def config():
                               'More features leads to better results but slower '
                               'execution. Default: %(default)s'))
 
-    parser.add_argument('--matcher-threshold',
-                        metavar='<percent>',
-                        default=2.0,
-                        type=float,
-                        help=('Ignore matched keypoints if the two images share '
-                              'less than <float> percent of keypoints. Default:'
-                              ' %(default)s'))
-
-    parser.add_argument('--matcher-ratio',
-                        metavar='<float>',
-                        default=0.6,
-                        type=float,
-                        help=('Ratio of the distance to the next best matched '
-                              'keypoint. Default: %(default)s'))
-
     parser.add_argument('--matcher-neighbors',
                         type=int,
                         metavar='<integer>',
