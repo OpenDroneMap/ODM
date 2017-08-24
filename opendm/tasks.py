@@ -13,8 +13,9 @@ tasks_dict = {'1': 'opensfm',
               '4': 'odm_meshing',
               '5': 'mvs_texturing',
               '6': 'odm_georeferencing',
-              '7': 'odm_orthophoto',
-              '8': 'zip_results'}
+              '7': 'odm_dem',
+              '8': 'odm_orthophoto',
+              '9': 'zip_results'}
 
 
 class ODMTaskManager(object):
