@@ -4,19 +4,17 @@ import system
 import dataset
 import types
 
-from scripts.resize import resize
 from scripts.opensfm import opensfm
 
 # Define pipeline tasks
-tasks_dict = {'1': 'resize',
-              '2': 'opensfm',
-              '3': 'cmvs',
-              '4': 'pmvs',
-              '5': 'odm_meshing',
-              '6': 'mvs_texturing',
-              '7': 'odm_georeferencing',
-              '8': 'odm_orthophoto',
-              '9': 'zip_results'}
+tasks_dict = {'1': 'opensfm',
+              '2': 'cmvs',
+              '3': 'pmvs',
+              '4': 'odm_meshing',
+              '5': 'mvs_texturing',
+              '6': 'odm_georeferencing',
+              '7': 'odm_orthophoto',
+              '8': 'zip_results'}
 
 
 class ODMTaskManager(object):
