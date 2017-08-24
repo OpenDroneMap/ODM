@@ -83,6 +83,8 @@ class ODM_Photo:
                         self.altitude *= -1.
             except (pyexiv2.ExifValueError, ValueError) as e:
                 pass
+            except KeyError as e:
+                log.ODM_DEBUG('Tag not set')
             except NotImplementedError as e:
                 pass
 
@@ -408,7 +410,6 @@ class ODM_Tree(object):
         # order to keep track all files al directories during the
         # whole reconstruction process.
         self.dataset_raw = io.join_paths(self.root_path, 'images')
-        self.dataset_resize = io.join_paths(self.root_path, 'images_resize')
         self.opensfm = io.join_paths(self.root_path, 'opensfm')
         self.pmvs = io.join_paths(self.root_path, 'pmvs')
         self.odm_meshing = io.join_paths(self.root_path, 'odm_meshing')

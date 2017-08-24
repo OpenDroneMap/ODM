@@ -47,16 +47,12 @@ def config():
                         type=alphanumeric_string,
                         help='Name of Project (i.e subdirectory of projects folder)')
 
-    parser.add_argument('--resize-to',  # currently doesn't support 'orig'
+    parser.add_argument('--resize-to',
                         metavar='<integer>',
-                        default=2400,
+                        default=2048,
                         type=int,
-                        help='resizes images by the largest side')
-                        
-    parser.add_argument('--skip-resize',
-                       action='store_true',
-                       default=False,
-                       help='Skips resizing of images')
+                        help='resizes images by the largest side for opensfm. '
+                             'Set to -1 to disable. Default:  %(default)s')
 
     parser.add_argument('--start-with', '-s',
                         metavar='<string>',

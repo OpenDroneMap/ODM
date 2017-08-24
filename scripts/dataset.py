@@ -49,18 +49,11 @@ class ODMLoadDatasetCell(ecto.Cell):
         # get images directory
         input_dir = tree.input_images
         images_dir = tree.dataset_raw
-        resize_dir = tree.dataset_resize
 
-        # Check first if a project already exists. This is a mediocre way to check, by checking the resize dir
-        if io.dir_exists(resize_dir):
-            log.ODM_DEBUG("resize dir: %s" % resize_dir)
-            images_dir = resize_dir
-        # if first time running, create project directory and copy images over to project/images
-        else:
-            if not io.dir_exists(images_dir):
-                log.ODM_INFO("Project directory %s doesn't exist. Creating it now. " % images_dir)
-                system.mkdir_p(images_dir)
-                copied = [copyfile(io.join_paths(input_dir, f), io.join_paths(images_dir, f)) for f in get_images(input_dir)]
+        if not io.dir_exists(images_dir):
+            log.ODM_INFO("Project directory %s doesn't exist. Creating it now. " % images_dir)
+            system.mkdir_p(images_dir)
+            copied = [copyfile(io.join_paths(input_dir, f), io.join_paths(images_dir, f)) for f in get_images(input_dir)]
 
         log.ODM_DEBUG('Loading dataset from: %s' % images_dir)
 

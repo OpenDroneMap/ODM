@@ -8,7 +8,7 @@
 project_path: '' # Example: '/home/user/ODMProjects
 
 # The rest of the settings will default to the values set unless you uncomment and change them
-#resize_to: 2400
+#resize_to: 2048
 #start_with: 'resize'
 #end_with: 'odm_orthophoto'
 #rerun_all: False

@@ -7,7 +7,6 @@ from opendm import io
 from opendm import system
 
 from dataset import ODMLoadDatasetCell
-from resize import ODMResizeCell
 from opensfm import ODMOpenSfMCell
 from odm_slam import ODMSlamCell
 from pmvs import ODMPmvsCell
@@ -39,8 +38,6 @@ class ODMApp(ecto.BlackBox):
         cells = {'args': ecto.Constant(value=p.args),
                  'dataset': ODMLoadDatasetCell(force_focal=p.args.force_focal,
                                                force_ccd=p.args.force_ccd),
-                 'resize': ODMResizeCell(resize_to=p.args.resize_to,
-                                         skip_resize=p.args.skip_resize),
                  'opensfm': ODMOpenSfMCell(use_exif_size=False,
                                            feature_process_size=p.args.resize_to,
                                            feature_min_frames=p.args.min_num_features,
@@ -115,15 +112,10 @@ class ODMApp(ecto.BlackBox):
         # load the dataset
         connections = [self.tree[:] >> self.dataset['tree']]
 
-        # run resize cell
-        connections += [self.tree[:] >> self.resize['tree'],
-                        self.args[:] >> self.resize['args'],
-                        self.dataset['photos'] >> self.resize['photos']]
-
         # run opensfm with images from load dataset
         connections += [self.tree[:] >> self.opensfm['tree'],
                         self.args[:] >> self.opensfm['args'],
-                        self.resize['photos'] >> self.opensfm['photos']]
+                        self.dataset['photos'] >> self.opensfm['photos']]
 
         if not p.args.use_pmvs:
             # create odm mesh from opensfm point cloud
@@ -154,7 +146,7 @@ class ODMApp(ecto.BlackBox):
         # create odm georeference
         connections += [self.tree[:] >> self.georeferencing['tree'],
                         self.args[:] >> self.georeferencing['args'],
-                        self.resize['photos'] >> self.georeferencing['photos'],
+                        self.dataset['photos'] >> self.georeferencing['photos'],
                         self.texturing['reconstruction'] >> self.georeferencing['reconstruction']]
 
         # create odm orthophoto
