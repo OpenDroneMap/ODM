@@ -304,48 +304,48 @@ class ODM_GeoRef(object):
         metadata = pyexiv2.ImageMetadata(_photo.path_file)
         metadata.read()
 
-        # set values
-
-        # GPS latitude
-        key = 'Exif.GPSInfo.GPSLatitude'
-        value = lat_frac[0].split(' ')
-        log.ODM_DEBUG('lat_frac: %s %s %s' % (value[0], value[1], value[2]))
-        metadata[key] = pyexiv2.ExifTag(key,
-                                        [Fraction(value[0]),
-                                         Fraction(value[1]),
-                                         Fraction(value[2])])
-
-        key = 'Exif.GPSInfo.GPSLatitudeRef'
-        value = lat_frac[1]
-        metadata[key] = pyexiv2.ExifTag(key, value)
-
-        # GPS longitude
-        key = 'Exif.GPSInfo.GPSLongitude'
-        value = lon_frac[0].split(' ')
-        metadata[key] = pyexiv2.ExifTag(key,
-                                        [Fraction(value[0]),
-                                         Fraction(value[1]),
-                                         Fraction(value[2])])
-
-        key = 'Exif.GPSInfo.GPSLongitudeRef'
-        value = lon_frac[1]
-        metadata[key] = pyexiv2.ExifTag(key, value)
-
-        # GPS altitude
-        altitude = abs(int(float(latlon[2]) * 100))
-        key = 'Exif.GPSInfo.GPSAltitude'
-        value = Fraction(altitude, 1)
-        metadata[key] = pyexiv2.ExifTag(key, value)
-
-        if latlon[2] >= 0:
-            altref = '0'
-        else:
-            altref = '1'
-        key = 'Exif.GPSInfo.GPSAltitudeRef'
-        metadata[key] = pyexiv2.ExifTag(key, altref)
-
-        # write values
-        metadata.write()
+        # #set values
+        #
+        # # GPS latitude
+        # key = 'Exif.GPSInfo.GPSLatitude'
+        # value = lat_frac[0].split(' ')
+        # log.ODM_DEBUG('lat_frac: %s %s %s' % (value[0], value[1], value[2]))
+        # metadata[key] = pyexiv2.ExifTag(key,
+        #                                 [Fraction(value[0]),
+        #                                  Fraction(value[1]),
+        #                                  Fraction(value[2])])
+        #
+        # key = 'Exif.GPSInfo.GPSLatitudeRef'
+        # value = lat_frac[1]
+        # metadata[key] = pyexiv2.ExifTag(key, value)
+        #
+        # # GPS longitude
+        # key = 'Exif.GPSInfo.GPSLongitude'
+        # value = lon_frac[0].split(' ')
+        # metadata[key] = pyexiv2.ExifTag(key,
+        #                                 [Fraction(value[0]),
+        #                                  Fraction(value[1]),
+        #                                  Fraction(value[2])])
+        #
+        # key = 'Exif.GPSInfo.GPSLongitudeRef'
+        # value = lon_frac[1]
+        # metadata[key] = pyexiv2.ExifTag(key, value)
+        #
+        # # GPS altitude
+        # altitude = abs(int(float(latlon[2]) * 100))
+        # key = 'Exif.GPSInfo.GPSAltitude'
+        # value = Fraction(altitude, 1)
+        # metadata[key] = pyexiv2.ExifTag(key, value)
+        #
+        # if latlon[2] >= 0:
+        #     altref = '0'
+        # else:
+        #     altref = '1'
+        # key = 'Exif.GPSInfo.GPSAltitudeRef'
+        # metadata[key] = pyexiv2.ExifTag(key, altref)
+        #
+        # # write values
+        # metadata.write()
 
     def parse_coordinate_system(self, _file):
         """Write attributes to jobOptions from coord file"""
