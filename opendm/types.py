@@ -221,56 +221,6 @@ class ODM_GeoRef(object):
         system.run('{bin}/pdal pipeline -i {json} --readers.ply.filename={f_in} '
                    '--writers.las.filename={f_out}'.format(**kwargs))
 
-    def convert_to_dem(self, _file, _file_out, pdalJSON, sample_radius, gdal_res, gdal_radius):
-        # Check if exists f_in
-        if not io.file_exists(_file):
-            log.ODM_ERROR('LAS file does not exist')
-            return False
-
-        kwargs = {
-            'bin': context.pdal_path,
-            'f_in': _file,
-            'sample_radius': sample_radius,
-            'gdal_res': gdal_res,
-            'gdal_radius': gdal_radius,
-            'f_out': _file_out,
-            'json': pdalJSON
-        }
-
-        pipelineJSON = '{{' \
-                       '    "pipeline":[' \
-                       '        "input.las",' \
-                       '    {{' \
-                       '        "type":"filters.sample",' \
-                       '        "radius":"{sample_radius}"' \
-                       '    }},' \
-                       '    {{' \
-                       '        "type":"filters.pmf"' \
-                       '    }},' \
-                       '    {{' \
-                       '      "type":"filters.range",' \
-                       '      "limits":"Classification[2:2]"' \
-                       '    }},' \
-                       '    {{' \
-                       '        "resolution": {gdal_res},' \
-                       '        "radius": {gdal_radius},' \
-                       '        "output_type":"idw",' \
-                       '        "filename":"outputfile.tif"' \
-                       '    }}' \
-                       '    ]' \
-                       '}}'.format(**kwargs)
-
-        with open(pdalJSON, 'w') as f:
-            f.write(pipelineJSON)
-
-        system.run('{bin}/pdal pipeline {json} --readers.las.filename={f_in} '
-                   '--writers.gdal.filename={f_out}'.format(**kwargs))
-
-        if io.file_exists(kwargs['f_out']):
-            return True
-        else:
-            return False
-
     def utm_to_latlon(self, _file, _photo, idx):
 
         gcp = self.gcps[idx]
@@ -478,8 +428,6 @@ class ODM_Tree(object):
             self.odm_georeferencing, 'odm_georeferenced_model.las')
         self.odm_georeferencing_dem = io.join_paths(
             self.odm_georeferencing, 'odm_georeferencing_model_dem.tif')
-        self.odm_georeferencing_dem_json = io.join_paths(
-            self.odm_georeferencing, 'dem.json')
 
         # odm_orthophoto
         self.odm_orthophoto_file = io.join_paths(self.odm_orthophoto, 'odm_orthophoto.png')
@@ -488,3 +436,6 @@ class ODM_Tree(object):
         self.odm_orthophoto_log = io.join_paths(self.odm_orthophoto, 'odm_orthophoto_log.txt')
         self.odm_orthophoto_tif_log = io.join_paths(self.odm_orthophoto, 'gdal_translate_log.txt')
         self.odm_orthophoto_gdaladdo_log = io.join_paths(self.odm_orthophoto, 'gdaladdo_log.txt')
+
+    def path(self, *args):
+        return io.join_paths(self.root_path, *args)

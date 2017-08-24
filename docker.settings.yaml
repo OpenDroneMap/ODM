@@ -43,10 +43,15 @@ project_path: '/' #DO NOT CHANGE THIS OR DOCKER WILL NOT WORK. It should be '/'
 #texturing_keep_unseen_faces: False
 #texturing_tone_mapping: 'none'
 #gcp: !!null  # YAML tag for None
-#dem: False
-#dem_sample_radius: 1.0
-#dem_resolution: 2
-#dem_radius: 0.5
+#dtm: False      # Use this tag to build a DTM (Digital Terrain Model
+#dsm: False      # Use this tag to build a DSM (Digital Surface Model
+#dem-gapfill-steps: 4
+#dem-resolution: 0.1
+#dem-maxangle:20
+#dem-maxsd: 2.5
+#dem-approximate: False
+#dem-decimation: 1
+#dem-terrain-type: ComplexForest
 #use_exif: False # Set to True if you have a GCP file (it auto-detects) and want to use EXIF
 #orthophoto_resolution: 20.0 # Pixels/meter
 #orthophoto_target_srs: !!null # Currently does nothing
