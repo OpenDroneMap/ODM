@@ -6,12 +6,20 @@ install() {
     export PYTHONPATH=$RUNPATH/SuperBuild/install/lib/python2.7/dist-packages:$RUNPATH/SuperBuild/src/opensfm:$PYTHONPATH
     export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$RUNPATH/SuperBuild/install/lib
 
+    os_version= echo $(lsb_release -sr)
+
     ## Before installing
     echo "Updating the system"
     sudo apt-get update
 
+    if [["$os_version" == *1[46].04* ]]; then
     sudo add-apt-repository -y ppa:ubuntugis/ppa
-    sudo apt-get update
+    echo "Getting CMake 3.1 for MVS-Texturing"
+    sudo apt-get install -y software-properties-common python-software-properties
+    sudo add-apt-repository -y ppa:george-edison55/cmake-3.x
+    sudo apt-get update -y
+    sudo apt-get install -y --only-upgrade cmake
+    fi
 
     echo "Installing Required Requisites"
     sudo apt-get install -y -qq build-essential \
@@ -24,11 +32,6 @@ install() {
                          pkg-config \
                          libjsoncpp-dev
 
-    echo "Getting CMake 3.1 for MVS-Texturing"
-    sudo apt-get install -y software-properties-common python-software-properties
-    sudo add-apt-repository -y ppa:george-edison55/cmake-3.x
-    sudo apt-get update -y
-    sudo apt-get install -y --only-upgrade cmake
 
     echo "Installing OpenCV Dependencies"
     sudo apt-get install -y -qq libgtk2.0-dev \
