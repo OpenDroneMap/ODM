@@ -76,6 +76,7 @@ class ODMOpenSfMCell(ecto.Cell):
             ]
 
             if has_alt:
+                log.ODM_DEBUG("Altitude data detected, enabling it for GPS alignment")
                 config.append("use_altitude_tag: True")
                 config.append("align_method: naive")
 
