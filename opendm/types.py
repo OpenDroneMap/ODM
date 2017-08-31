@@ -290,7 +290,7 @@ class ODM_GeoRef(object):
             if ref[0] == 'WGS84' and ref[1] == 'UTM':  # match_wgs_utm:
                 self.datum = ref[0]
                 self.utm_pole = ref[2][len(ref) - 1]
-                self.utm_zone = int(ref[2][:len(ref) - 1])
+                self.utm_zone = int(ref[2][:len(ref[2]) - 1])
                 # extract east and west offsets from second line.
                 # We will assume the following format:
                 # '440143 4588391'
