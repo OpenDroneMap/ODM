@@ -63,7 +63,7 @@ class ODMGeoreferencingCell(ecto.Cell):
             # odm_georeference definitions
             kwargs = {
                 'bin': context.odm_modules_path,
-                'imgs': tree.dataset_resize,
+                'imgs': tree.dataset_raw,
                 'imgs_list': tree.opensfm_bundle_list,
                 'coords': tree.odm_georeferencing_coords,
                 'log': tree.odm_georeferencing_utm_log,
@@ -113,7 +113,7 @@ class ODMGeoreferencingCell(ecto.Cell):
                 kwargs = {
                     'bin': context.odm_modules_path,
                     'bundle': tree.opensfm_bundle,
-                    'imgs': tree.dataset_resize,
+                    'imgs': tree.dataset_raw,
                     'imgs_list': tree.opensfm_bundle_list,
                     'model': r['model'],
                     'log': odm_georeferencing_log,

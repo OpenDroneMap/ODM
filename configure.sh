@@ -48,7 +48,7 @@ install() {
                          libxext-dev \
                          liblapack-dev \
                          libeigen3-dev \
-                         libvtk5-dev
+                         libvtk6-dev
 
     echo "Removing libdc1394-22-dev due to python opencv issue"
     sudo apt-get remove libdc1394-22-dev

@@ -28,14 +28,18 @@ class ODM_Photo:
         self.camera_make = ''
         self.camera_model = ''
         self.make_model = ''
+        self.latitude = None
+        self.longitude = None
+        self.altitude = None
         # parse values from metadata
         self.parse_pyexiv2_values(self.path_file, force_focal, force_ccd)
         # compute focal length into pixels
         self.update_focal()
 
         # print log message
-        log.ODM_DEBUG('Loaded %s | camera: %s | dimensions: %s x %s | focal: %s | ccd: %s' %
-                      (self.filename, self.make_model, self.width, self.height, self.focal_length, self.ccd_width))
+        log.ODM_DEBUG('Loaded {} | camera: {} | dimensions: {} x {} | focal: {} | ccd: {} | lat: {} | lon: {} | alt: {}'
+                      .format(self.filename, self.make_model, self.width, self.height, self.focal_length,
+                              self.ccd_width, self.latitude, self.longitude, self.altitude))
 
     def update_focal(self):
         # compute focal length in pixels
@@ -58,6 +62,7 @@ class ODM_Photo:
         for key in metadata:
             # try/catch tag value due to weird bug in pyexiv2 
             # ValueError: invalid literal for int() with base 10: ''
+            GPS = 'Exif.GPSInfo.GPS'
             try:
                 # parse tag names
                 if key == 'Exif.Image.Make':
@@ -66,8 +71,20 @@ class ODM_Photo:
                     self.camera_model = metadata[key].value
                 elif key == 'Exif.Photo.FocalLength':
                     self.focal_length = float(metadata[key].value)
+                elif key == GPS + 'Latitude':
+                    self.latitude = self.dms_to_decimal(*metadata[key].value +
+                                                        [metadata[GPS + 'LatitudeRef'].value])
+                elif key == GPS + 'Longitude':
+                    self.longitude = self.dms_to_decimal(*metadata[key].value +
+                                                         [metadata[GPS + 'LongitudeRef'].value])
+                elif key == GPS + 'Altitude':
+                    self.altitude = float(metadata[key].value)
+                    if metadata[GPS + 'AltitudeRef'] and int(metadata[GPS + 'AltitudeRef'].value) > 0:
+                        self.altitude *= -1.
             except (pyexiv2.ExifValueError, ValueError) as e:
                 pass
+            except KeyError as e:
+                log.ODM_DEBUG('Tag not set')
             except NotImplementedError as e:
                 pass
 
@@ -97,6 +114,14 @@ class ODM_Photo:
             else:
                 log.ODM_WARNING('Could not find ccd_width in file. Use --force-ccd or edit the sensor_data.json '
                                 'file to manually input ccd width')
+
+    def dms_to_decimal(self, degrees, minutes, seconds, sign=' '):
+        """Converts dms coords to decimal degrees"""
+        return (-1 if sign[0] in 'SWsw' else 1) * (
+            float(degrees) +
+            float(minutes) / 60 +
+            float(seconds) / 3600
+        )
 
 
 # TODO: finish this class
@@ -229,48 +254,48 @@ class ODM_GeoRef(object):
         metadata = pyexiv2.ImageMetadata(_photo.path_file)
         metadata.read()
 
-        # set values
-
-        # GPS latitude
-        key = 'Exif.GPSInfo.GPSLatitude'
-        value = lat_frac[0].split(' ')
-        log.ODM_DEBUG('lat_frac: %s %s %s' % (value[0], value[1], value[2]))
-        metadata[key] = pyexiv2.ExifTag(key,
-                                        [Fraction(value[0]),
-                                         Fraction(value[1]),
-                                         Fraction(value[2])])
-
-        key = 'Exif.GPSInfo.GPSLatitudeRef'
-        value = lat_frac[1]
-        metadata[key] = pyexiv2.ExifTag(key, value)
-
-        # GPS longitude
-        key = 'Exif.GPSInfo.GPSLongitude'
-        value = lon_frac[0].split(' ')
-        metadata[key] = pyexiv2.ExifTag(key,
-                                        [Fraction(value[0]),
-                                         Fraction(value[1]),
-                                         Fraction(value[2])])
-
-        key = 'Exif.GPSInfo.GPSLongitudeRef'
-        value = lon_frac[1]
-        metadata[key] = pyexiv2.ExifTag(key, value)
-
-        # GPS altitude
-        altitude = abs(int(float(latlon[2]) * 100))
-        key = 'Exif.GPSInfo.GPSAltitude'
-        value = Fraction(altitude, 1)
-        metadata[key] = pyexiv2.ExifTag(key, value)
-
-        if latlon[2] >= 0:
-            altref = '0'
-        else:
-            altref = '1'
-        key = 'Exif.GPSInfo.GPSAltitudeRef'
-        metadata[key] = pyexiv2.ExifTag(key, altref)
-
-        # write values
-        metadata.write()
+        # #set values
+        #
+        # # GPS latitude
+        # key = 'Exif.GPSInfo.GPSLatitude'
+        # value = lat_frac[0].split(' ')
+        # log.ODM_DEBUG('lat_frac: %s %s %s' % (value[0], value[1], value[2]))
+        # metadata[key] = pyexiv2.ExifTag(key,
+        #                                 [Fraction(value[0]),
+        #                                  Fraction(value[1]),
+        #                                  Fraction(value[2])])
+        #
+        # key = 'Exif.GPSInfo.GPSLatitudeRef'
+        # value = lat_frac[1]
+        # metadata[key] = pyexiv2.ExifTag(key, value)
+        #
+        # # GPS longitude
+        # key = 'Exif.GPSInfo.GPSLongitude'
+        # value = lon_frac[0].split(' ')
+        # metadata[key] = pyexiv2.ExifTag(key,
+        #                                 [Fraction(value[0]),
+        #                                  Fraction(value[1]),
+        #                                  Fraction(value[2])])
+        #
+        # key = 'Exif.GPSInfo.GPSLongitudeRef'
+        # value = lon_frac[1]
+        # metadata[key] = pyexiv2.ExifTag(key, value)
+        #
+        # # GPS altitude
+        # altitude = abs(int(float(latlon[2]) * 100))
+        # key = 'Exif.GPSInfo.GPSAltitude'
+        # value = Fraction(altitude, 1)
+        # metadata[key] = pyexiv2.ExifTag(key, value)
+        #
+        # if latlon[2] >= 0:
+        #     altref = '0'
+        # else:
+        #     altref = '1'
+        # key = 'Exif.GPSInfo.GPSAltitudeRef'
+        # metadata[key] = pyexiv2.ExifTag(key, altref)
+        #
+        # # write values
+        # metadata.write()
 
     def parse_coordinate_system(self, _file):
         """Write attributes to jobOptions from coord file"""
@@ -335,7 +360,6 @@ class ODM_Tree(object):
         # order to keep track all files al directories during the
         # whole reconstruction process.
         self.dataset_raw = io.join_paths(self.root_path, 'images')
-        self.dataset_resize = io.join_paths(self.root_path, 'images_resize')
         self.opensfm = io.join_paths(self.root_path, 'opensfm')
         self.pmvs = io.join_paths(self.root_path, 'pmvs')
         self.odm_meshing = io.join_paths(self.root_path, 'odm_meshing')
