@@ -891,7 +891,7 @@ void OdmTexturing::createTextures()
     std::vector<std::vector<pcl::Vertices> > faceVector = std::vector<std::vector<pcl::Vertices> >(nrTextures_ + 1);
 
     // Container for texture coordinates according to submesh. Used to replace texture coordinates in mesh_.
-    std::vector<std::vector<Eigen::Vector2f> > textureCoordinatesVector = std::vector<std::vector<Eigen::Vector2f> >(nrTextures_ + 1);
+    std::vector<std::vector<Eigen::Vector2f, Eigen::aligned_allocator<Eigen::Vector2f> > > textureCoordinatesVector = std::vector<std::vector<Eigen::Vector2f, Eigen::aligned_allocator<Eigen::Vector2f> > >(nrTextures_ + 1);
 
     // Container for materials according to submesh. Used to replace materials in mesh_.
     std::vector<pcl::TexMaterial> materialVector = std::vector<pcl::TexMaterial>(nrTextures_ + 1);

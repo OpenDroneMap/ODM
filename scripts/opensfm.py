@@ -14,6 +14,7 @@ class ODMOpenSfMCell(ecto.Cell):
         params.declare("processes", "The application arguments.", context.num_cores)
         params.declare("matching_gps_neighbors", "The application arguments.", 8)
         params.declare("matching_gps_distance", "The application arguments.", 0)
+        params.declare("fixed_camera_params", "Optimize internal camera parameters", True)
 
     def declare_io(self, params, inputs, outputs):
         inputs.declare("tree", "Struct with paths", [])
@@ -57,8 +58,11 @@ class ODMOpenSfMCell(ecto.Cell):
         if not io.file_exists(output_file) or rerun_cell:
             # create file list
             list_path = io.join_paths(tree.opensfm, 'image_list.txt')
+            has_alt = True
             with open(list_path, 'w') as fout:
                 for photo in photos:
+                    if not photo.altitude:
+                        has_alt = False
                     fout.write('%s\n' % photo.path_file)
 
             # create config file for OpenSfM
@@ -67,8 +71,14 @@ class ODMOpenSfMCell(ecto.Cell):
                 "feature_process_size: %s" % self.params.feature_process_size,
                 "feature_min_frames: %s" % self.params.feature_min_frames,
                 "processes: %s" % self.params.processes,
-                "matching_gps_neighbors: %s" % self.params.matching_gps_neighbors
+                "matching_gps_neighbors: %s" % self.params.matching_gps_neighbors,
+                "optimize_camera_parameters: %s" % ('no' if self.params.fixed_camera_params else 'yes')
             ]
+
+            if has_alt:
+                log.ODM_DEBUG("Altitude data detected, enabling it for GPS alignment")
+                config.append("use_altitude_tag: True")
+                config.append("align_method: naive")
 
             if args.matcher_distance > 0:
                 config.append("matching_gps_distance: %s" % self.params.matching_gps_distance)
