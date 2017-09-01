@@ -33,7 +33,7 @@ has equivalent procedures for Mac OS X and Windows found at [docs.docker.com](do
 docker run -it --rm -v $(pwd)/images:/code/images -v $(pwd)/odm_orthophoto:/code/odm_orthophoto -v $(pwd)/odm_texturing:/code/odm_texturing opendronemap/opendronemap
 ```
 
-### Native Install (Ubuntu Trusty or Xenial)
+### Native Install (Ubuntu 16.04)
 
 ** Please note that we need help getting ODM updated to work for 16.10+. Look at #659 or drop into the [gitter][https://gitter.im/OpenDroneMap/OpenDroneMap) for more info. 
 
