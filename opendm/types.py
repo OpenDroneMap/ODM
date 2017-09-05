@@ -307,8 +307,8 @@ class ODM_GeoRef(object):
         with open(_file) as f:
             # extract reference system and utm zone from first line.
             # We will assume the following format:
-            # 'WGS84 UTM 17N'
-            line = f.readline()
+            # 'WGS84 UTM 17N' or 'WGS84 UTM 17N \n'
+            line = f.readline().rstrip()
             log.ODM_DEBUG('Line: %s' % line)
             ref = line.split(' ')
             # match_wgs_utm = re.search('WGS84 UTM (\d{1,2})(N|S)', line, re.I)
