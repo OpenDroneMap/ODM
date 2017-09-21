@@ -4,6 +4,8 @@ FROM phusion/baseimage
 ENV DEBIAN_FRONTEND noninteractive
 
 #Install dependencies
+RUN apt-get update -y
+RUN apt-get install software-properties-common -y
 #Required Requisites
 RUN add-apt-repository -y ppa:ubuntugis/ppa
 RUN add-apt-repository -y ppa:george-edison55/cmake-3.x
