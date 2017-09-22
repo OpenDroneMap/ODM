@@ -90,7 +90,7 @@ install() {
     echo "Installing OpenDroneMap Dependencies"
     sudo apt-get install -y -qq python-pyexiv2 \
                          python-scipy \
-                         jhead \
+                         libexiv2-dev \
                          liblas-bin
 
     echo "Installing lidar2dems Dependencies"
