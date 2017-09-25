@@ -25,14 +25,15 @@ if __name__ == '__main__':
     # If user asks to rerun everything, delete all of the existing progress directories.
     # TODO: Move this somewhere it's not hard-coded
     if args.rerun_all:
+        log.ODM_DEBUG("Rerun all -- Removing old data")
         os.system("rm -rf "
-                  + args.project_path + "images_resize/ "
-                  + args.project_path + "odm_georeferencing/ "
-                  + args.project_path + "odm_meshing/ "
-                  + args.project_path + "odm_orthophoto/ "
-                  + args.project_path + "odm_texturing/ "
-                  + args.project_path + "opensfm/ "
-                  + args.project_path + "pmvs/")
+                  + args.project_path + "/images_resize "
+                  + args.project_path + "/odm_georeferencing "
+                  + args.project_path + "/odm_meshing "
+                  + args.project_path + "/odm_orthophoto "
+                  + args.project_path + "/odm_texturing "
+                  + args.project_path + "/opensfm "
+                  + args.project_path + "/pmvs")
 
     # create an instance of my App BlackBox
     # internally configure all tasks
