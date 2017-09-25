@@ -3,7 +3,7 @@
 
 OdmMeshing::OdmMeshing() : log_(false)
 {
-    meshCreator_ = pcl::Poisson<pcl::PointNormal>::Ptr(new pcl::Poisson<pcl::PointNormal>());
+
     points_  = pcl::PointCloud<pcl::PointNormal>::Ptr(new pcl::PointCloud<pcl::PointNormal>());
     mesh_   = pcl::PolygonMeshPtr(new pcl::PolygonMesh);
     decimatedMesh_   = pcl::PolygonMeshPtr(new pcl::PolygonMesh);
@@ -282,15 +282,17 @@ void OdmMeshing::createMesh()
     log_ << "Octree depth used for reconstruction is: " << treeDepth_ << "\n";
     log_ << "Estimated initial vertex count: " << pow(4, treeDepth_) << "\n\n";
 
-    meshCreator_->setDepth(treeDepth_);
-    meshCreator_->setSamplesPerNode(samplesPerNode_);
-    meshCreator_->setInputCloud(points_);
+    pcl::Poisson<pcl::PointNormal> meshCreator_; //::Ptr(new pcl::Poisson<pcl::PointNormal>());
+    meshCreator_.setDepth(treeDepth_);
+    meshCreator_.setSamplesPerNode(samplesPerNode_);
+    meshCreator_.setInputCloud(points_);
+    meshCreator_.setOutputPolygons(true);
 
     // Guarantee manifold mesh.
-    meshCreator_->setManifold(true);
+    meshCreator_.setManifold(true);
 
     // Begin reconstruction
-    meshCreator_->reconstruct(*mesh_.get());
+    meshCreator_.reconstruct(*mesh_.get());
 
     log_ << "Reconstruction complete:\n";
     log_ << "Vertex count: " << mesh_->cloud.width << "\n";
