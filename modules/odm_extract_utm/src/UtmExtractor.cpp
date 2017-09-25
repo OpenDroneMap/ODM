@@ -188,16 +188,21 @@ void UtmExtractor::extractUtm()
       }
 
       // Parse exif data for positional data
-      double lon, lat, alt;
+      double lon, lat, alt = 0.0;
 
-      if (!parsePosition(exifData, lon, lat, alt)) {
-        std::string error("Failed parsing GPS position.");
+      parsePosition(exifData, lon, lat, alt);
+
+      if (lon == 0.0 || lat == 0.0 || alt == 0.0) {
+        std::string error("Failed parsing GPS position for " + imageFilename);
         throw UtmExtractorException(error);
       }
-
       // Convert to UTM
-      double x, y, z;
+      double x, y, z = 0.0;
       convert(lon, lat, alt, x, y, z, utmZone, hemisphere);
+      if (x == 0.0 || y == 0.0 || z == 0.0) {
+        std::string error("Failed to convert GPS position to UTM for " + imageFilename);
+        throw UtmExtractorException(error);
+      }
       coords.push_back(Coord(x, y, z));
     }
   }
@@ -232,15 +237,12 @@ void UtmExtractor::extractUtm()
 
 }
 
-bool UtmExtractor::convert(const double &lon, const double &lat, const double &alt, double &x, double &y, double &z, int &utmZone, char &hemisphere)
+void UtmExtractor::convert(const double &lon, const double &lat, const double &alt, double &x, double &y, double &z, int &utmZone, char &hemisphere)
 {
-  x = y = z = 0.0;
-
   // Create WGS84 longitude/latitude coordinate system
   projPJ pjLatLon = pj_init_plus("+proj=latlong +datum=WGS84");
   if (!pjLatLon) {
     throw UtmExtractorException("Couldn't create WGS84 coordinate system with PROJ.4.");
-    return false;
   }
 
   // Calculate UTM zone if it's set to magic 99
@@ -262,7 +264,6 @@ bool UtmExtractor::convert(const double &lon, const double &lat, const double &a
   projPJ pjUtm = pj_init_plus(("+proj=utm +datum=WGS84 +zone=" + ostr.str()).c_str());
   if (!pjUtm) {
     throw UtmExtractorException("Couldn't create UTM coordinate system with PROJ.4.");
-    return false;
   }
 
   // Convert to radians
@@ -274,13 +275,10 @@ bool UtmExtractor::convert(const double &lon, const double &lat, const double &a
   int res = pj_transform(pjLatLon, pjUtm, 1, 1, &x, &y, &z);
   if (res != 0) {
     throw UtmExtractorException("Failed to transform coordinates");
-    return false;
   }
-
-  return true;
 }
 
-bool UtmExtractor::parsePosition(Exiv2::ExifData &exifData, double &lon, double &lat, double &alt)
+void UtmExtractor::parsePosition(Exiv2::ExifData &exifData, double &lon, double &lat, double &alt)
 {
   Exiv2::Exifdatum& latitudeTag = exifData["Exif.GPSInfo.GPSLatitude"];
   Exiv2::Exifdatum& latitudeRef = exifData["Exif.GPSInfo.GPSLatitudeRef"];
@@ -323,11 +321,8 @@ bool UtmExtractor::parsePosition(Exiv2::ExifData &exifData, double &lon, double 
   else {
     Exiv2::URational rAlt = altitudeTag.toRational(0);
     bool below = (altitudeRef.count() >= 1 && altitudeRef.toLong() == 1);
-    alt = (below ? -1 : 1) * (double)rAlt.first / (double)rAlt.second;
+    alt = (below ? -1 : 1) * (double) rAlt.first / (double) rAlt.second;
   }
-
-  return true;
-
 }
 
 void UtmExtractor::printHelp()
