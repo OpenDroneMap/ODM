@@ -286,7 +286,6 @@ void OdmMeshing::createMesh()
     meshCreator_.setDepth(treeDepth_);
     meshCreator_.setSamplesPerNode(samplesPerNode_);
     meshCreator_.setInputCloud(points_);
-    meshCreator_.setOutputPolygons(true);
 
     // Guarantee manifold mesh.
     meshCreator_.setManifold(true);
