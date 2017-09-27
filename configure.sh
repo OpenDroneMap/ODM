@@ -12,7 +12,7 @@ install() {
     echo "Updating the system"
     sudo apt-get update
 
-    if [["$os_version" == *1[46].04* ]]; then
+    if [[ "$os_version" == *1[46].04* ]]; then
     sudo add-apt-repository -y ppa:ubuntugis/ppa
     echo "Getting CMake 3.1 for MVS-Texturing"
     sudo apt-get install -y software-properties-common python-software-properties
