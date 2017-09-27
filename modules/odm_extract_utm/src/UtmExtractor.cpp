@@ -10,6 +10,7 @@
 #include <ctype.h>
 #include <sstream>
 #include <math.h>
+#include <exiv2/exiv2.hpp>
 
 // Proj4
 #include <proj_api.h>
@@ -168,32 +169,42 @@ void UtmExtractor::extractUtm()
   std::string imageFilename;
   std::vector<Coord> coords;
   while (getline(imageListStream, imageFilename)) {
-    // Run jhead on image to extract EXIF data to temporary file
-    std::string commandLine = "jhead -v " + imagesPath_ + "/" + imageFilename + " > extract_utm_output.txt";
-    system(commandLine.c_str());
-    
-    // Read temporary EXIF data file
-    std::ifstream jheadDataStream;
-    jheadDataStream.open("extract_utm_output.txt");
-    if (!jheadDataStream.good()) {
-      throw UtmExtractorException("Failed to open temporary jhead data file extract_utm_output.txt");
-    }
-    
-    // Delete temporary file
-    remove("extract_utm_output.txt");
 
-    // Parse jhead output
-    double lon, lat, alt;
-    if (!parsePosition(jheadDataStream, lon, lat, alt)) {
-      throw UtmExtractorException("Failed parsing GPS position.");
-      jheadDataStream.close();
+    // Read image and load metadata
+    Exiv2::Image::AutoPtr image = Exiv2::ImageFactory::open(imagesPath_ + "/" + imageFilename);
+    if (image.get() == 0) {
+      std::string error(imageFilename);
+      error += ": Image cannot be read";
+      throw Exiv2::Error(1, error);
     }
-    jheadDataStream.close();
+    else {
+      image->readMetadata();
 
-    // Convert to UTM
-    double x, y, z;
-    convert(lon, lat, alt, x, y, z, utmZone, hemisphere);
-    coords.push_back(Coord(x, y, z));
+      Exiv2::ExifData &exifData = image->exifData();
+      if (exifData.empty()) {
+        std::string error(imageFilename);
+        error += ": No Exif data found in the file";
+        throw Exiv2::Error(1, error);
+      }
+
+      // Parse exif data for positional data
+      double lon, lat, alt = 0.0;
+
+      parsePosition(exifData, lon, lat, alt);
+
+      if (lon == 0.0 || lat == 0.0 || alt == 0.0) {
+        std::string error("Failed parsing GPS position for " + imageFilename);
+        throw UtmExtractorException(error);
+      }
+      // Convert to UTM
+      double x, y, z = 0.0;
+      convert(lon, lat, alt, x, y, z, utmZone, hemisphere);
+      if (x == 0.0 || y == 0.0 || z == 0.0) {
+        std::string error("Failed to convert GPS position to UTM for " + imageFilename);
+        throw UtmExtractorException(error);
+      }
+      coords.push_back(Coord(x, y, z));
+    }
   }
   imageListStream.close();
 
@@ -223,17 +234,15 @@ void UtmExtractor::extractUtm()
   }
 
   outputCoordStream.close();
+
 }
 
-bool UtmExtractor::convert(const double &lon, const double &lat, const double &alt, double &x, double &y, double &z, int &utmZone, char &hemisphere)
+void UtmExtractor::convert(const double &lon, const double &lat, const double &alt, double &x, double &y, double &z, int &utmZone, char &hemisphere)
 {
-  x = y = z = 0.0;
-
   // Create WGS84 longitude/latitude coordinate system
   projPJ pjLatLon = pj_init_plus("+proj=latlong +datum=WGS84");
   if (!pjLatLon) {
     throw UtmExtractorException("Couldn't create WGS84 coordinate system with PROJ.4.");
-    return false;
   }
 
   // Calculate UTM zone if it's set to magic 99
@@ -255,7 +264,6 @@ bool UtmExtractor::convert(const double &lon, const double &lat, const double &a
   projPJ pjUtm = pj_init_plus(("+proj=utm +datum=WGS84 +zone=" + ostr.str()).c_str());
   if (!pjUtm) {
     throw UtmExtractorException("Couldn't create UTM coordinate system with PROJ.4.");
-    return false;
   }
 
   // Convert to radians
@@ -267,87 +275,54 @@ bool UtmExtractor::convert(const double &lon, const double &lat, const double &a
   int res = pj_transform(pjLatLon, pjUtm, 1, 1, &x, &y, &z);
   if (res != 0) {
     throw UtmExtractorException("Failed to transform coordinates");
-    return false;
   }
-
-  return true;
 }
 
-bool UtmExtractor::parsePosition(std::ifstream &jheadStream, double &lon, double &lat, double &alt)
+void UtmExtractor::parsePosition(Exiv2::ExifData &exifData, double &lon, double &lat, double &alt)
 {
-  lon = lat = alt = 0.0;
+  Exiv2::Exifdatum& latitudeTag = exifData["Exif.GPSInfo.GPSLatitude"];
+  Exiv2::Exifdatum& latitudeRef = exifData["Exif.GPSInfo.GPSLatitudeRef"];
+  Exiv2::Exifdatum& longitudeTag = exifData["Exif.GPSInfo.GPSLongitude"];
+  Exiv2::Exifdatum& longitudeRef = exifData["Exif.GPSInfo.GPSLongitudeRef"];
+  Exiv2::Exifdatum& altitudeTag = exifData["Exif.GPSInfo.GPSAltitude"];
+  Exiv2::Exifdatum& altitudeRef = exifData["Exif.GPSInfo.GPSAltitudeRef"];
 
-  // Parse position
-  std::string str;
-  std::string latStr, lonStr, altStr;
-  while (std::getline(jheadStream, str))
-  {
-    const char* latitudeTag = "GPS Latitude : ";
-    size_t index = str.find(latitudeTag);
-    if (index != std::string::npos)
-    {
-        latStr = str.substr(index + std::strlen(latitudeTag));
-        size_t find = latStr.find_first_of("0123456789");
-        if(std::string::npos == find)
-        {
-            throw UtmExtractorException("Image is missing GPS Latitude data");
-        }
+  // Latitude: parse into a double
+  if (latitudeTag.count() < 3)
+    throw UtmExtractorException("Image is missing GPS Latitude data");
+  else {
+    Exiv2::URational rLat[] = {latitudeTag.toRational(0), latitudeTag.toRational(1), latitudeTag.toRational(2)};
+    bool south = (strcmp(latitudeRef.toString().c_str(), "S") == 0);
+    double degrees, minutes, seconds;
 
-    }
-
-    const char* longitudeTag = "GPS Longitude: ";
-    index = str.find(longitudeTag);
-    if (index != std::string::npos)
-    {
-        lonStr = str.substr(index + std::strlen(longitudeTag));
-        size_t find = lonStr.find_first_of("0123456789");
-        if(std::string::npos == find)
-        {
-            throw UtmExtractorException("Image is missing GPS Longitude data");
-        }
-    }
-
-    const char* altitudeTag = "GPS Altitude :";
-    index = str.find(altitudeTag);
-    if (index != std::string::npos)
-    {
-       altStr = str.substr(index + std::strlen(altitudeTag));
-       size_t find = altStr.find_first_of("0123456789");
-       if(std::string::npos == find)
-       {
-           throw UtmExtractorException("Image is missing GPS Altitude data");
-       }
-    }
+    degrees = (double)rLat[0].first / (double)rLat[0].second;
+    minutes = (double)rLat[1].first / (double)rLat[1].second / 60.0;
+    seconds = (double)rLat[2].first / (double)rLat[2].second / 3600.0;
+    lat = (south ? -1 : 1) * (degrees + minutes + seconds);
   }
 
-  if (lonStr.empty() || latStr.empty()) {
-    throw UtmExtractorException("No valid GPS position found");
-    return false;
+  // Longitude
+  if (longitudeTag.count() < 3)
+    throw UtmExtractorException("Image is missing GPS Longitude data");
+  else {
+    Exiv2::URational rLon[] = {longitudeTag.toRational(0), longitudeTag.toRational(1), longitudeTag.toRational(2)};
+    bool west = (strcmp(longitudeRef.toString().c_str(), "W") == 0);
+    double degrees, minutes, seconds;
+
+    degrees = (double)rLon[0].first / (double)rLon[0].second;
+    minutes = (double)rLon[1].first / (double)rLon[1].second / 60.0;
+    seconds = (double)rLon[2].first / (double)rLon[2].second / 3600.0;
+    lon = (west ? -1 : 1) * (degrees + minutes + seconds);
   }
 
-  // Parse longitude
-  std::string hemisphere;
-  double degrees, minutes, seconds;
-  std::istringstream istr(lonStr);
-  char degChar = 'd', minChar = 'm', secChar = 's';
-  istr >> hemisphere >> degrees >> degChar >> minutes >> minChar >> seconds >> secChar;
-  lon = (hemisphere == "W" ? -1 : 1) * (degrees + minutes/60.0 + seconds/3600.0);
-
-  // Parse latitude
-  istr.clear();
-  istr.str(latStr);
-  istr >> hemisphere >> degrees >> degChar >> minutes >> minChar >> seconds >> secChar;
-  lat = (hemisphere == "S" ? -1 : 1) * (degrees + minutes/60.0 + seconds/3600.0);
-
-  if (!altStr.empty())
-  {
-    char meterUnitChar;
-    istr.clear();
-    istr.str(altStr);
-    istr >> alt >> meterUnitChar;
+  // Altitude
+  if (altitudeTag.count() < 1)
+    throw UtmExtractorException("Image is missing GPS Altitude data");
+  else {
+    Exiv2::URational rAlt = altitudeTag.toRational(0);
+    bool below = (altitudeRef.count() >= 1 && altitudeRef.toLong() == 1);
+    alt = (below ? -1 : 1) * (double) rAlt.first / (double) rAlt.second;
   }
-
-  return true;
 }
 
 void UtmExtractor::printHelp()
