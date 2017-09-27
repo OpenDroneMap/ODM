@@ -230,8 +230,13 @@ def config():
                         metavar='<float >= 1.0>',
                         default=1.0,
                         type=float,
-                        help=('Number of points per octree node, recommended '
-                              'and default value: %(default)s'))
+                        help=('Number of points per octree node, '
+                              'For noise-free samples, small values in the '
+                              'range [1.0 - 5.0] can be used. For more noisy '
+                              'samples, larger values in the range [15.0 - '
+                              '20.0] may be needed to provide a smoother, '
+                              'noise-reduced, reconstruction. Default: '
+                              '%(default)s'))
 
     parser.add_argument('--mesh-solver-divide',
                         metavar='<positive integer>',
