@@ -7,8 +7,8 @@ ExternalProject_Add(${_proj_name}
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}/${_proj_name}
-  URL               https://github.com/edgarriba/CMVS-PMVS/archive/master.zip
-  URL_MD5           dbb1493f49ca099b4208381bd20d1435
+  URL               https://github.com/OpenDroneMap/CMVS-PMVS/archive/7224aecf050a1f789f5535c1744a5e1deaac4734.zip
+  URL_MD5           24DF6898F824791FDA9D22E1465E2E43
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   #--Configure step-------------

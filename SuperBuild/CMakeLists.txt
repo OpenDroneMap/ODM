@@ -113,7 +113,7 @@ SETUP_EXTERNAL_PROJECT(Hexer 1.4 ON)
 
 set(custom_libs OpenGV
 				OpenSfM
-				# CMVS
+				CMVS
 				Catkin
 				Ecto
 				PDAL
