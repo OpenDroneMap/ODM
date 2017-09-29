@@ -27,13 +27,13 @@ def run_command(args):
 
 def resize_images(data_path, args):
     command = os.path.join(context.root_path, 'run.py')
-    path, name = os.path.split(data_path)
+    path, name = os.path.split(data_path.rstrip('/'))
     run_command(['python',
                  command,
                  '--project-path', path,
                  name,
                  '--resize-to', str(args.resize_to),
-                 '--end-with', 'resize',
+                 '--end-with', 'dataset',
                  ])
 
 
@@ -58,7 +58,7 @@ def create_config(opensfm_path, args):
     config = {
         "submodels_relpath": "../submodels/opensfm",
         "submodel_relpath_template": "../submodels/submodel_%04d/opensfm",
-        "submodel_images_relpath_template": "../submodels/submodel_%04d/images_resize",
+        "submodel_images_relpath_template": "../submodels/submodel_%04d/images",
 
         "feature_process_size": args.resize_to,
         "feature_min_frames": args.min_num_features,
@@ -118,7 +118,7 @@ if __name__ == '__main__':
 
     resize_images(data_path, args)
 
-    image_path = os.path.join(data_path, 'images_resize')
+    image_path = os.path.join(data_path, 'images')
     opensfm_path = os.path.join(data_path, 'opensfm')
 
     mkdir_p(opensfm_path)
