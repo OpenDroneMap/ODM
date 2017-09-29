@@ -1,8 +1,6 @@
 import os
 import ecto
 
-from functools import partial
-from multiprocessing import Pool
 from opendm import context
 from opendm import io
 from opendm import types
@@ -27,6 +25,7 @@ class ODMLoadDatasetCell(ecto.Cell):
 
     def declare_io(self, params, inputs, outputs):
         inputs.declare("tree", "Struct with paths", [])
+        inputs.declare("args", "The application arguments.", {})
         outputs.declare("photos", "list of ODMPhotos", [])
 
     def process(self, inputs, outputs):
@@ -45,6 +44,7 @@ class ODMLoadDatasetCell(ecto.Cell):
 
         # get inputs
         tree = self.inputs.tree
+        args = self.inputs.args
 
         # get images directory
         input_dir = tree.input_images
@@ -70,8 +70,8 @@ class ODMLoadDatasetCell(ecto.Cell):
             photos = []
             for files in path_files:
                 photos += [make_odm_photo(self.params.force_focal, self.params.force_ccd, files)]
-            
-            log.ODM_INFO('Found %s usable images' % len(photos))            
+
+            log.ODM_INFO('Found %s usable images' % len(photos))
         else:
             log.ODM_ERROR('Not enough supported images in %s' % images_dir)
             return ecto.QUIT
@@ -80,4 +80,4 @@ class ODMLoadDatasetCell(ecto.Cell):
         outputs.photos = photos
 
         log.ODM_INFO('Running ODM Load Dataset Cell - Finished')
-        return ecto.OK
+        return ecto.OK if args.end_with != 'dataset' else ecto.QUIT
