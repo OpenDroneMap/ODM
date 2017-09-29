@@ -108,7 +108,8 @@ class ODMApp(ecto.BlackBox):
         # define the connections like you would for the plasm
 
         # load the dataset
-        connections = [self.tree[:] >> self.dataset['tree']]
+        connections = [self.tree[:] >> self.dataset['tree'],
+                       self.args[:] >> self.dataset['args']]
 
         # run opensfm with images from load dataset
         connections += [self.tree[:] >> self.opensfm['tree'],
@@ -135,7 +136,7 @@ class ODMApp(ecto.BlackBox):
             connections += [self.tree[:] >> self.meshing['tree'],
                             self.args[:] >> self.meshing['args'],
                             self.pmvs['reconstruction'] >> self.meshing['reconstruction']]
-        
+
         # create odm texture
         connections += [self.tree[:] >> self.texturing['tree'],
                         self.args[:] >> self.texturing['args'],
@@ -145,12 +146,12 @@ class ODMApp(ecto.BlackBox):
         connections += [self.tree[:] >> self.georeferencing['tree'],
                         self.args[:] >> self.georeferencing['args'],
                         self.texturing['reconstruction'] >> self.georeferencing['reconstruction']]
-        
+
         # create odm dem
         connections += [self.tree[:] >> self.dem['tree'],
                         self.args[:] >> self.dem['args'],
                         self.georeferencing['reconstruction'] >> self.dem['reconstruction']]
-        
+
         # create odm orthophoto
         connections += [self.tree[:] >> self.orthophoto['tree'],
                         self.args[:] >> self.orthophoto['args'],

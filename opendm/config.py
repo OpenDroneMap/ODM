@@ -7,7 +7,7 @@ from appsettings import SettingsParser
 import sys
 
 # parse arguments
-processopts = ['resize', 'opensfm', 'slam', 'cmvs', 'pmvs',
+processopts = ['dataset', 'opensfm', 'slam', 'cmvs', 'pmvs',
                'odm_meshing', 'odm_25dmeshing', 'mvs_texturing', 'odm_georeferencing',
                'odm_dem', 'odm_orthophoto']
 
@@ -300,8 +300,8 @@ def config():
                         metavar='<string>',
                         default='gauss_clamping',
                         choices=['none', 'gauss_clamping', 'gauss_damping'],
-                        help=('Type of photometric outlier removal method: ' 
-                              '[none, gauss_damping, gauss_clamping]. Default: '  
+                        help=('Type of photometric outlier removal method: '
+                              '[none, gauss_damping, gauss_clamping]. Default: '
                               '%(default)s'))
 
     parser.add_argument('--texturing-skip-visibility-test',
@@ -330,7 +330,7 @@ def config():
     parser.add_argument('--texturing-keep-unseen-faces',
                         action='store_true',
                         default=False,
-                        help=('Keep faces in the mesh that are not seen in any camera. ' 
+                        help=('Keep faces in the mesh that are not seen in any camera. '
                               'Default:  %(default)s'))
 
     parser.add_argument('--texturing-tone-mapping',
