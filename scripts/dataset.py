@@ -28,6 +28,7 @@ class ODMLoadDatasetCell(ecto.Cell):
     def declare_io(self, params, inputs, outputs):
         inputs.declare("tree", "Struct with paths", [])
         outputs.declare("reconstruction", "ODMReconstruction", [])
+        inputs.declare("args", "The application arguments.", {})
 
     def process(self, inputs, outputs):
         # check if the extension is supported
@@ -45,6 +46,7 @@ class ODMLoadDatasetCell(ecto.Cell):
 
         # get inputs
         tree = self.inputs.tree
+        args = self.inputs.args
 
         # get images directory
         input_dir = tree.input_images
@@ -106,4 +108,4 @@ class ODMLoadDatasetCell(ecto.Cell):
             outputs.reconstruction = types.ODM_Reconstruction(photos, projstring=self.params.proj)
 
         log.ODM_INFO('Running ODM Load Dataset Cell - Finished')
-        return ecto.OK
+        return ecto.OK if args.end_with != 'dataset' else ecto.QUIT
