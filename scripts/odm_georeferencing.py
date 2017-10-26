@@ -157,36 +157,36 @@ class ODMGeoreferencingCell(ecto.Cell):
                                     'provided a GCP file. ')
                     geocreated = False # skip the rest of the georeferencing
 
-            odm_georeferencing_model_ply_geo = os.path.join(tree.odm_georeferencing, tree.odm_georeferencing_model_ply_geo)
-            if geocreated:
-                # update images metadata
-                geo_ref = types.ODM_GeoRef()
-                geo_ref.parse_coordinate_system(tree.odm_georeferencing_coords)
+                odm_georeferencing_model_ply_geo = os.path.join(tree.odm_georeferencing, tree.odm_georeferencing_model_ply_geo)
+                if geocreated:
+                    # update images metadata
+                    geo_ref = types.ODM_GeoRef()
+                    geo_ref.parse_coordinate_system(tree.odm_georeferencing_coords)
 
-                for idx, photo in enumerate(self.inputs.photos):
-                    geo_ref.utm_to_latlon(tree.odm_georeferencing_latlon, photo, idx)
+                    for idx, photo in enumerate(self.inputs.photos):
+                        geo_ref.utm_to_latlon(tree.odm_georeferencing_latlon, photo, idx)
 
-                # convert ply model to LAS reference system
-                geo_ref.convert_to_las(odm_georeferencing_model_ply_geo,
-                                       tree.odm_georeferencing_model_las,
-                                       tree.odm_georeferencing_las_json)
+                    # convert ply model to LAS reference system
+                    geo_ref.convert_to_las(odm_georeferencing_model_ply_geo,
+                                           tree.odm_georeferencing_model_las,
+                                           tree.odm_georeferencing_las_json)
 
-                # XYZ point cloud output
-                log.ODM_INFO("Creating geo-referenced CSV file (XYZ format)")
-                with open(tree.odm_georeferencing_xyz_file, "wb") as csvfile:
-                    csvfile_writer = csv.writer(csvfile, delimiter=",")
-                    reachedpoints = False
-                    with open(odm_georeferencing_model_ply_geo) as f:
-                        for lineNumber, line in enumerate(f):
-                            if reachedpoints:
-                                tokens = line.split(" ")
-                                csv_line = [float(tokens[0])+geo_ref.utm_east_offset,
-                                            float(tokens[1])+geo_ref.utm_north_offset,
-                                            tokens[2]]
-                                csvfile_writer.writerow(csv_line)
-                            if line.startswith("end_header"):
-                                reachedpoints = True
-                csvfile.close()
+                    # XYZ point cloud output
+                    log.ODM_INFO("Creating geo-referenced CSV file (XYZ format)")
+                    with open(tree.odm_georeferencing_xyz_file, "wb") as csvfile:
+                        csvfile_writer = csv.writer(csvfile, delimiter=",")
+                        reachedpoints = False
+                        with open(odm_georeferencing_model_ply_geo) as f:
+                            for lineNumber, line in enumerate(f):
+                                if reachedpoints:
+                                    tokens = line.split(" ")
+                                    csv_line = [float(tokens[0])+geo_ref.utm_east_offset,
+                                                float(tokens[1])+geo_ref.utm_north_offset,
+                                                tokens[2]]
+                                    csvfile_writer.writerow(csv_line)
+                                if line.startswith("end_header"):
+                                    reachedpoints = True
+                    csvfile.close()
 
         else:
             log.ODM_WARNING('Found a valid georeferenced model in: %s'
