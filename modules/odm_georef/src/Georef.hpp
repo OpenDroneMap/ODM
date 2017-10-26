@@ -271,7 +271,7 @@ private:
     bool            exportCoordinateFile_;
     bool            exportGeorefSystem_;
     bool            useGCP_;                    /**< Check if GCP-file is present and use this to georeference the model. **/
-    double          bundleResizedTo_;           /**< The size used in the previous steps to calculate the camera focal_length. */
+    // double          bundleResizedTo_;           /**< The size used in the previous steps to calculate the camera focal_length. */
 
     std::vector<GeorefCamera> cameras_;         /**< A vector of all cameras. **/
     std::vector<GeorefGCP> gcps_;               /**< A vector of all GCPs. **/
