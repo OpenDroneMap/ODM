@@ -76,7 +76,8 @@ install() {
                         exifread \
                         gpxpy \
                         xmltodict \
-                        appsettings
+                        appsettings \
+                        loky
 
     echo "Installing CGAL dependencies"
     sudo apt-get install -y -qq libgmp-dev libmpfr-dev
