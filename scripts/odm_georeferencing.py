@@ -15,7 +15,6 @@ class ODMGeoreferencingCell(ecto.Cell):
                             'points used for georeferencing.The file needs to '
                             'be on the following line format: \neasting '
                             'northing height pixelrow pixelcol imagename', 'gcp_list.txt')
-        params.declare("img_size", 'image size used in calibration', 2400)
         params.declare("use_exif", 'use exif', False)
         params.declare("verbose", 'print additional messages to console', False)
 
@@ -122,7 +121,6 @@ class ODMGeoreferencingCell(ecto.Cell):
                     'pc_geo': odm_georeferencing_model_ply_geo,
                     'geo_sys': os.path.join(r['georeferencing_dir'], tree.odm_georeferencing_model_txt_geo),
                     'model_geo': odm_georeferencing_model_obj_geo,
-                    'size': self.params.img_size,
                     'gcp': gcpfile,
                     'verbose': verbose
 
@@ -138,7 +136,7 @@ class ODMGeoreferencingCell(ecto.Cell):
                     log.ODM_INFO('Found %s' % gcpfile)
                     try:
                         system.run('{bin}/odm_georef -bundleFile {bundle} -imagesPath {imgs} -imagesListPath {imgs_list} '
-                                   '-bundleResizedTo {size} -inputFile {model} -outputFile {model_geo} '
+                                   '-inputFile {model} -outputFile {model_geo} '
                                    '-inputPointCloudFile {pc} -outputPointCloudFile {pc_geo} {verbose} '
                                    '-logFile {log} -outputTransformFile {transform_file} -georefFileOutputPath {geo_sys} -gcpFile {gcp} '
                                    '-outputCoordFile {coords}'.format(**kwargs))
