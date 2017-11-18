@@ -10,11 +10,8 @@
 
 import sys
 import bpy
-import materials_utils
 import subprocess
-
-surfaceShaderType = 'ShaderNodeEmission'
-surfaceShaderName = 'Emission'
+from common import loadMesh
 
 
 def main():
@@ -24,47 +21,12 @@ def main():
 
     projectHome = sys.argv[-1]
 
-    bpy.utils.register_module('materials_utils')
-
-    bpy.ops.import_scene.obj(filepath=projectHome +
-                             '/odm_texturing/odm_textured_model_geo.obj',
-                             axis_forward='Y', axis_up='Z')
-
-    bpy.ops.xps_tools.convert_to_cycles_all()
-
-    model = bpy.data.objects[-1]
-    minX = float('inf')
-    maxX = float('-inf')
-    minY = float('inf')
-    maxY = float('-inf')
-    minZ = float('inf')
-    maxZ = float('-inf')
-    for coord in model.bound_box:
-        x = coord[0]
-        y = coord[1]
-        z = coord[2]
-        minX = min(x, minX)
-        maxX = max(x, maxX)
-        minY = min(y, minY)
-        maxY = max(y, maxY)
-        minZ = min(z, minZ)
-        maxZ = max(z, maxZ)
-
-    model.location[2] += (maxZ - minZ)/2
-
-    for m in bpy.data.materials:
-        nt = m.node_tree
-        nt.nodes.remove(nt.nodes['Color Mult'])
-        nt.nodes.remove(nt.nodes['Diffuse BSDF'])
-        nt.nodes.new(surfaceShaderType)
-        nt.links.new(nt.nodes['Material Output'].inputs[0],
-                     nt.nodes[surfaceShaderName].outputs[0])
-        nt.links.new(nt.nodes[surfaceShaderName].inputs[0],
-                     nt.nodes['Diffuse Texture'].outputs[0])
+    loadMesh(projectHome +
+             '/odm_texturing/odm_textured_model_geo.obj')
 
     blendName = bpy.path.display_name_from_filepath(bpy.data.filepath)
     fileName = projectHome + '/odm_photo/odm_' + blendName
-    render = bpy.data.scenes[0].render
+    render = bpy.data.scenes['Scene'].render
     render.filepath = fileName
     bpy.ops.render.render(write_still=True)
 
