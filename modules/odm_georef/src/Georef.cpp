@@ -1067,8 +1067,9 @@ void Georef::createGeoreferencedModelFromExifData()
     // Remove invalid cameras
     std::vector<GeorefCamera> goodCameras;
     for (size_t i = 0; i < cameras_.size(); i++){
-        if (cameras_[i].isValid()) goodCameras.push_back(cameras_[i]);
+        if (cameras_[i].isValid()) goodCameras.push_back(GeorefCamera(cameras_[i]));
     }
+    cameras_.clear();
     cameras_ = goodCameras;
 
     // The optimal camera triplet.
