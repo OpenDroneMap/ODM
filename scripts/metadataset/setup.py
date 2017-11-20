@@ -59,6 +59,8 @@ def create_config(opensfm_path, args):
         "submodels_relpath": "../submodels/opensfm",
         "submodel_relpath_template": "../submodels/submodel_%04d/opensfm",
         "submodel_images_relpath_template": "../submodels/submodel_%04d/images",
+        "submodel_size": args.submodel_size,
+        "submodel_overlap": args.submodel_overlap,
 
         "feature_process_size": args.resize_to,
         "feature_min_frames": args.min_num_features,
@@ -108,6 +110,25 @@ def parse_command_line():
                              'uses both parameters at the same time, Bundler '
                              'uses only one which has value, prefering the '
                              'Neighbors parameter. Default: %(default)s')
+
+    parser.add_argument('--submodel-size',
+                        type=int,
+                        default=80,
+                        help='Average number of images per submodel. When '
+                             'splitting a large dataset into smaller '
+                             'submodels, images are grouped into clusters. '
+                             'This value regulates the number of images that '
+                             'each cluster should have on average.')
+
+    parser.add_argument('--submodel-overlap',
+                        type=float,
+                        metavar='<positive integer>',
+                        default=150,
+                        help='Radius of the overlap between submodels. '
+                        'After grouping images into clusters, images '
+                        'that are closer than this radius to a cluster '
+                        'are added to the cluster. This is done to ensure '
+                        'that neighboring submodels overlap.')
 
     return parser.parse_args()
 
