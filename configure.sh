@@ -70,6 +70,7 @@ install() {
                         exifread \
                         gpxpy \
                         xmltodict \
+                        loky \
                         appsettings
 
     echo "Installing CGAL dependencies"
@@ -97,12 +98,12 @@ install() {
     echo "Compiling SuperBuild"
     cd ${RUNPATH}/SuperBuild
     mkdir -p build && cd build
-    cmake .. && make -j$(nproc)
+    cmake .. && make -j1
 
     echo "Compiling build"
     cd ${RUNPATH}
     mkdir -p build && cd build
-    cmake .. && make -j$(nproc)
+    cmake .. && make -j1
 
     echo "Configuration Finished"
 }
