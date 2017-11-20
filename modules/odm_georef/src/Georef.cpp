@@ -190,6 +190,11 @@ Vec3 GeorefCamera::getReferencedPos()
     return Vec3(easting_,northing_,altitude_);
 }
 
+bool GeorefCamera::isValid()
+{
+    return focalLength_ != 0 && k1_ != 0 && k2_ != 0;
+}
+
 std::ostream& operator<<(std::ostream &os, const GeorefCamera &cam)
 {
     os << "Focal, k1, k2 : " << cam.focalLength_ << ", " << cam.k1_ << ", " << cam.k2_ << "\n";
@@ -1058,7 +1063,14 @@ void Georef::createGeoreferencedModelFromExifData()
     {
         throw GeorefException("Not enough cameras in \'" + inputCoordFilename_ + "\' coord file.\n");
     }
-    
+
+    // Remove invalid cameras
+    std::vector<GeorefCamera> goodCameras;
+    for (size_t i = 0; i < cameras_.size(); i++){
+        if (cameras_[i].isValid()) goodCameras.push_back(cameras_[i]);
+    }
+    cameras_ = goodCameras;
+
     // The optimal camera triplet.
     size_t cam0, cam1, cam2;
     
