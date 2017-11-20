@@ -314,7 +314,7 @@ class ODM_GeoRef(object):
             # match_wgs_utm = re.search('WGS84 UTM (\d{1,2})(N|S)', line, re.I)
             if ref[0] == 'WGS84' and ref[1] == 'UTM':  # match_wgs_utm:
                 self.datum = ref[0]
-                self.utm_pole = ref[2][len(ref) - 1]
+                self.utm_pole = ref[2][len(ref[2]) - 1]
                 self.utm_zone = int(ref[2][:len(ref[2]) - 1])
                 # extract east and west offsets from second line.
                 # We will assume the following format:
