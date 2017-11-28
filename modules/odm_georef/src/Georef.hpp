@@ -95,6 +95,11 @@ struct GeorefCamera
      * \brief getReferencedPos     Get the georeferenced position of the camera.
      */
     Vec3 getReferencedPos();
+
+    /*!
+     * \brief isValid     Whether this camera is valid based on its parameters.
+     */
+    bool isValid();
     
     double focalLength_;            /**< The focal length of the camera. */
     double k1_;                     /**< The k1 lens distortion parameter. **/
