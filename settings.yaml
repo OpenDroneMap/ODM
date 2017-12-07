@@ -16,6 +16,7 @@ project_path: '' # Example: '/home/user/ODMProjects
 #verbose: False
 #time: False
 #use_fixed_camera_params: False
+#use_hybrid_bundle_adjustment: False
 #opensfm_processes: 4 # by default this is set to $(nproc)
 #min_num_features: 4000
 #matcher_threshold: 2.0
@@ -57,3 +58,6 @@ project_path: '' # Example: '/home/user/ODMProjects
 #orthophoto_target_srs: !!null # Currently does nothing
 #orthophoto_no_tiled: False
 #orthophoto_compression: DEFLATE # Options are [JPEG, LZW, PACKBITS, DEFLATE, LZMA, NONE] Don't change unless you know what you are doing
+#orthophoto_bigtiff: IF_SAFER # Options are [YES, NO, IF_NEEDED, IF_SAFER]
+#build_overviews: FALSE
+

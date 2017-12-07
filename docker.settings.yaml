@@ -16,6 +16,7 @@ project_path: '/' #DO NOT CHANGE THIS OR DOCKER WILL NOT WORK. It should be '/'
 #verbose: False
 #time: False
 #use_fixed_camera_params: False
+#use_hybrid_bundle_adjustment: False
 #opensfm_processes: 4 # by default this is set to $(nproc)
 #min_num_features: 4000
 #matcher_threshold: 2.0
@@ -43,6 +44,7 @@ project_path: '/' #DO NOT CHANGE THIS OR DOCKER WILL NOT WORK. It should be '/'
 #texturing_keep_unseen_faces: False
 #texturing_tone_mapping: 'none'
 #gcp: !!null  # YAML tag for None
+#use_exif: False # Set to True if you have a GCP file (it auto-detects) and want to use EXIF
 #dtm: False      # Use this tag to build a DTM (Digital Terrain Model
 #dsm: False      # Use this tag to build a DSM (Digital Surface Model
 #dem-gapfill-steps: 4
@@ -52,8 +54,9 @@ project_path: '/' #DO NOT CHANGE THIS OR DOCKER WILL NOT WORK. It should be '/'
 #dem-approximate: False
 #dem-decimation: 1
 #dem-terrain-type: ComplexForest
-#use_exif: False # Set to True if you have a GCP file (it auto-detects) and want to use EXIF
 #orthophoto_resolution: 20.0 # Pixels/meter
 #orthophoto_target_srs: !!null # Currently does nothing
 #orthophoto_no_tiled: False
 #orthophoto_compression: DEFLATE # Options are [JPEG, LZW, PACKBITS, DEFLATE, LZMA, NONE] Don't change unless you know what you are doing
+#orthophoto_bigtiff: IF_SAFER # Options are [YES, NO, IF_NEEDED, IF_SAFER]
+#build_overviews: FALSE

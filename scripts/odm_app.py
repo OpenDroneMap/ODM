@@ -45,7 +45,8 @@ class ODMApp(ecto.BlackBox):
                                            processes=p.args.opensfm_processes,
                                            matching_gps_neighbors=p.args.matcher_neighbors,
                                            matching_gps_distance=p.args.matcher_distance,
-                                           fixed_camera_params=p.args.use_fixed_camera_params),
+                                           fixed_camera_params=p.args.use_fixed_camera_params,
+                                           hybrid_bundle_adjustment=p.args.use_hybrid_bundle_adjustment),
                  'slam': ODMSlamCell(),
                  'cmvs': ODMCmvsCell(max_images=p.args.cmvs_maxImages),
                  'pmvs': ODMPmvsCell(level=p.args.pmvs_level,
@@ -97,7 +98,7 @@ class ODMApp(ecto.BlackBox):
 
     def connections(self, p):
         if p.args.video:
-            return self.slam_connections(_p)
+            return self.slam_connections(p)
 
         # define initial task
         # TODO: What is this?
