@@ -10,6 +10,7 @@ other.
 
 import argparse
 import os
+import logging
 import subprocess
 
 import yaml
@@ -18,11 +19,17 @@ from opensfm.io import mkdir_p
 
 from opendm import context
 
+logger = logging.getLogger(__name__)
+
+logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s',
+                    level=logging.INFO)
+
 
 def run_command(args):
     result = subprocess.Popen(args).wait()
     if result != 0:
-        raise RuntimeError(result)
+        logger.error("The command '{}' exited with return value {}". format(
+            ' '.join(args), result))
 
 
 def resize_images(data_path, args):
@@ -69,6 +76,13 @@ def create_config(opensfm_path, args):
     }
     with open(os.path.join(opensfm_path, 'config.yaml'), 'w') as fout:
         yaml.dump(config, fout, default_flow_style=False)
+
+
+def link_image_groups(data_path, opensfm_path):
+    src = os.path.join(data_path, 'image_groups.txt')
+    dst = os.path.join(opensfm_path, 'image_groups.txt')
+    if os.path.isfile(src) and not os.path.isfile(dst):
+        os.symlink(src, dst)
 
 
 def parse_command_line():
@@ -145,3 +159,4 @@ if __name__ == '__main__':
     mkdir_p(opensfm_path)
     create_image_list(image_path, opensfm_path)
     create_config(opensfm_path, args)
+    link_image_groups(data_path, opensfm_path)

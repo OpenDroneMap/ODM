@@ -98,12 +98,12 @@ install() {
     echo "Compiling SuperBuild"
     cd ${RUNPATH}/SuperBuild
     mkdir -p build && cd build
-    cmake .. && make -j1
+    cmake .. && make -j$(nproc)
 
     echo "Compiling build"
     cd ${RUNPATH}
     mkdir -p build && cd build
-    cmake .. && make -j1
+    cmake .. && make -j$(nproc)
 
     echo "Configuration Finished"
 }
