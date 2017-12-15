@@ -190,6 +190,11 @@ Vec3 GeorefCamera::getReferencedPos()
     return Vec3(easting_,northing_,altitude_);
 }
 
+bool GeorefCamera::isValid()
+{
+    return focalLength_ != 0 && k1_ != 0 && k2_ != 0;
+}
+
 std::ostream& operator<<(std::ostream &os, const GeorefCamera &cam)
 {
     os << "Focal, k1, k2 : " << cam.focalLength_ << ", " << cam.k1_ << ", " << cam.k2_ << "\n";
@@ -272,7 +277,7 @@ void Georef::parseArguments(int argc, char *argv[])
     bool imageListSpecified = false;
     bool gcpFileSpecified = false;
     bool imageLocation = false;
-    bool bundleResized = false;
+    // bool bundleResized = false;
     bool outputCoordSpecified = false;
     bool inputCoordSpecified = false;
     
@@ -435,7 +440,7 @@ void Georef::parseArguments(int argc, char *argv[])
             log_ << "Georef file output path is set to: " << georefFilename_ << "\n";
             exportGeorefSystem_ = true;
         }
-        else if(argument == "-bundleResizedTo" && argIndex < argc)
+        /*else if(argument == "-bundleResizedTo" && argIndex < argc)
         {
             argIndex++;
             if (argIndex >= argc)
@@ -450,7 +455,7 @@ void Georef::parseArguments(int argc, char *argv[])
             }
             log_ << "Bundle resize value is set to: " << bundleResizedTo_ << "\n";
             bundleResized = true;
-        }
+        }*/
         else if(argument == "-outputFile" && argIndex < argc)
         {
             argIndex++;
@@ -485,7 +490,7 @@ void Georef::parseArguments(int argc, char *argv[])
         throw GeorefException("Both output and input coordfile specified, only one of those are accepted.");
     }
 
-    if (imageListSpecified && gcpFileSpecified && imageLocation && bundleResized)
+    if (imageListSpecified && gcpFileSpecified && imageLocation ) // && bundleResized)
     {
         useGCP_ = true;
     }
@@ -550,8 +555,8 @@ void Georef::printHelp()
     log_ << "\"-imagesPath <path>\" (mandatory if using ground control points)\n";
     log_ << "Path to the folder containing full resolution images.\n\n";
 
-    log_ << "\"-bundleResizedTo <integer>\" (mandatory if using ground control points)\n";
-    log_ << "The resized resolution used in bundler.\n\n";
+    // log_ << "\"-bundleResizedTo <integer>\" (mandatory if using ground control points)\n";
+    // log_ << "The resized resolution used in bundler.\n\n";
     
     log_ << "\"-outputFile <path>\" (optional, default <inputFile>_geo)" << "\n";
     log_ << "\"Output obj file that will contain the georeferenced texture mesh.\n\n";
@@ -797,7 +802,6 @@ void Georef::performGeoreferencingWithGCP()
         cv::Mat image = cv::imread(cam.texture_file);
         cam.height = static_cast<double>(image.rows);
         cam.width = static_cast<double>(image.cols);
-        cam.focal_length *= static_cast<double>(cam.width)/bundleResizedTo_;
 
         // The pixel position for the GCP in pcl-format in order to use pcl-functions
         pcl::PointXY gcpPos;
@@ -1059,7 +1063,15 @@ void Georef::createGeoreferencedModelFromExifData()
     {
         throw GeorefException("Not enough cameras in \'" + inputCoordFilename_ + "\' coord file.\n");
     }
-    
+
+    // Remove invalid cameras
+    std::vector<GeorefCamera> goodCameras;
+    for (size_t i = 0; i < cameras_.size(); i++){
+        if (cameras_[i].isValid()) goodCameras.push_back(GeorefCamera(cameras_[i]));
+    }
+    cameras_.clear();
+    cameras_ = goodCameras;
+
     // The optimal camera triplet.
     size_t cam0, cam1, cam2;
     

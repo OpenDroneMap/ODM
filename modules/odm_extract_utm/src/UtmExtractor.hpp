@@ -2,6 +2,8 @@
 
 // Logging
 #include "Logger.hpp"
+#include <exiv2/exiv2.hpp>
+
 
 /*!
 * \breif	The Coord struct		Class used in UtmExtractor to extract GPS positions from images and ODM output
@@ -55,7 +57,7 @@ private:
    *
    * \returns True if successful (otherwise output parameters are 0)
    */
-    static bool convert(const double &lon, const double &lat, const double &alt, double &x, double &y, double &z, int &utmZone, char &hemisphere);
+    static void convert(const double &lon, const double &lat, const double &alt, double &x, double &y, double &z, int &utmZone, char &hemisphere);
 
 	/*!
 	* \brief Static method that parses a GPS position from jhead data.
@@ -67,7 +69,7 @@ private:
 	*
 	* \returns True if successful (otherwise output parameters are 0)
 	*/
-    static bool parsePosition(std::ifstream &jheadStream, double &lon, double &lat, double &alt);
+    static void parsePosition(Exiv2::ExifData &exifData, double &lon, double &lat, double &alt);
 	
 	/*!
      * \brief printHelp         Prints help, explaining usage. Can be shown by calling the program with arguments: "-help".

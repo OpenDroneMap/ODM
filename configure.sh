@@ -6,6 +6,12 @@ install() {
     export PYTHONPATH=$RUNPATH/SuperBuild/install/lib/python2.7/dist-packages:$RUNPATH/SuperBuild/src/opensfm:$PYTHONPATH
     export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$RUNPATH/SuperBuild/install/lib
 
+    if [[ $2 =~ ^[0-9]+$ ]] ; then
+        processes=$2
+    else
+        processes=$(nproc)
+    fi
+
     ## Before installing
     echo "Updating the system"
     sudo apt-get update
@@ -70,8 +76,8 @@ install() {
                         exifread \
                         gpxpy \
                         xmltodict \
-                        loky \
-                        appsettings
+                        appsettings \
+                        loky
 
     echo "Installing CGAL dependencies"
     sudo apt-get install -y -qq libgmp-dev libmpfr-dev
@@ -85,7 +91,7 @@ install() {
     echo "Installing OpenDroneMap Dependencies"
     sudo apt-get install -y -qq python-pyexiv2 \
                          python-scipy \
-                         jhead \
+                         libexiv2-dev \
                          liblas-bin
 
     echo "Installing lidar2dems Dependencies"
@@ -98,12 +104,12 @@ install() {
     echo "Compiling SuperBuild"
     cd ${RUNPATH}/SuperBuild
     mkdir -p build && cd build
-    cmake .. && make -j$(nproc)
+    cmake .. && make -j$processes
 
     echo "Compiling build"
     cd ${RUNPATH}
     mkdir -p build && cd build
-    cmake .. && make -j$(nproc)
+    cmake .. && make -j$processes
 
     echo "Configuration Finished"
 }
@@ -124,7 +130,7 @@ reinstall() {
 
 usage() {
     echo "Usage:"
-    echo "bash configure.sh <install|update|uninstall|help>"
+    echo "bash configure.sh <install|update|uninstall|help> [nproc]"
     echo "Subcommands:"
     echo "  install"
     echo "    Installs all dependencies and modules for running OpenDroneMap"
@@ -134,6 +140,7 @@ usage() {
     echo "    Removes SuperBuild and build modules. Does not uninstall dependencies"
     echo "  help"
     echo "    Displays this message"
+    echo "[nproc] is an optional argument that can set the number of processes for the make -j tag. By default it uses $(nproc)"
 }
 
 if [[ $1 =~ ^(install|reinstall|uninstall|usage)$ ]]; then

@@ -95,6 +95,11 @@ struct GeorefCamera
      * \brief getReferencedPos     Get the georeferenced position of the camera.
      */
     Vec3 getReferencedPos();
+
+    /*!
+     * \brief isValid     Whether this camera is valid based on its parameters.
+     */
+    bool isValid();
     
     double focalLength_;            /**< The focal length of the camera. */
     double k1_;                     /**< The k1 lens distortion parameter. **/
@@ -271,7 +276,7 @@ private:
     bool            exportCoordinateFile_;
     bool            exportGeorefSystem_;
     bool            useGCP_;                    /**< Check if GCP-file is present and use this to georeference the model. **/
-    double          bundleResizedTo_;           /**< The size used in the previous steps to calculate the camera focal_length. */
+    // double          bundleResizedTo_;           /**< The size used in the previous steps to calculate the camera focal_length. */
 
     std::vector<GeorefCamera> cameras_;         /**< A vector of all cameras. **/
     std::vector<GeorefGCP> gcps_;               /**< A vector of all GCPs. **/

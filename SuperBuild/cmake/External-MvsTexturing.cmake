@@ -8,8 +8,8 @@ ExternalProject_Add(${_proj_name}
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
-  URL               https://github.com/nmoehrle/mvs-texturing/archive/44d594d8e1d7a6b323371b1f5f0fbd3e19d7c52a.zip
-  URL_MD5           A21CCA0177522F9747D5F88846B42C11
+  URL               https://github.com/OpenDroneMap/mvs-texturing/archive/bc2c5695e32366fc00e04a560d0d933715a524a1.zip
+  URL_MD5           1c53b1bd78695fe55b7df118c4216605
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   #--Configure step-------------
