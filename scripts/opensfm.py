@@ -15,7 +15,7 @@ class ODMOpenSfMCell(ecto.Cell):
         params.declare("matching_gps_neighbors", "The application arguments.", 8)
         params.declare("matching_gps_distance", "The application arguments.", 0)
         params.declare("fixed_camera_params", "Optimize internal camera parameters", True)
-        params.declare("hybrid_bundle_adjustment", "USe local + global bundle adjustment", False)
+        params.declare("hybrid_bundle_adjustment", "Use local + global bundle adjustment", False)
 
     def declare_io(self, params, inputs, outputs):
         inputs.declare("tree", "Struct with paths", [])
