@@ -2,7 +2,6 @@ import argparse
 from opendm import context
 from opendm import io
 from opendm import log
-from yaml import safe_load
 from appsettings import SettingsParser
 
 import sys
@@ -143,7 +142,13 @@ def config():
                         type=int,
                         help=('The maximum number of processes to use in dense '
                               'reconstruction. Default: %(default)s'))
-    
+
+    parser.add_argument('--use-hybrid-bundle-adjustment',
+                        action='store_true',
+                        default=False,
+                        help='Run local bundle adjustment for every image added to the reconstruction and a global '
+                             'adjustment every 100 images. Speeds up reconstruction for very large datasets.')
+
     parser.add_argument('--use-25dmesh',
                     action='store_true',
                     default=False,
