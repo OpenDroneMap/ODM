@@ -15,6 +15,7 @@ class ODMOpenSfMCell(ecto.Cell):
         params.declare("matching_gps_neighbors", "The application arguments.", 8)
         params.declare("matching_gps_distance", "The application arguments.", 0)
         params.declare("fixed_camera_params", "Optimize internal camera parameters", True)
+        params.declare("hybrid_bundle_adjustment", "Use local + global bundle adjustment", False)
 
     def declare_io(self, params, inputs, outputs):
         inputs.declare("tree", "Struct with paths", [])
@@ -79,6 +80,12 @@ class ODMOpenSfMCell(ecto.Cell):
                 log.ODM_DEBUG("Altitude data detected, enabling it for GPS alignment")
                 config.append("use_altitude_tag: True")
                 config.append("align_method: naive")
+
+            if args.use_hybrid_bundle_adjustment:
+                log.ODM_DEBUG("Enabling hybrid bundle adjustment")
+                config.append("bundle_interval: 100")          # Bundle after adding 'bundle_interval' cameras
+                config.append("bundle_new_points_ratio: 1.2")  # Bundle when (new points) / (bundled points) > bundle_new_points_ratio
+                config.append("local_bundle_radius: 1")        # Max image graph distance for images to be included in local bundle adjustment
 
             if args.matcher_distance > 0:
                 config.append("matching_gps_distance: %s" % self.params.matching_gps_distance)
