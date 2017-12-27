@@ -9,18 +9,18 @@ set(PCL_DIR "PCL_DIR-NOTFOUND" CACHE "PCL_DIR" "Path to the pcl installation dir
 find_package(VTK REQUIRED)
 include(${VTK_USE_FILE})
 
-find_program(CCACHE_FOUND ccache)
-if(CCACHE_FOUND)
-    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
-    set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
-endif(CCACHE_FOUND)
+#find_program(CCACHE_FOUND ccache)
+#if(CCACHE_FOUND)
+#    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
+#    set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
+#endif(CCACHE_FOUND)
 
 find_package(PCL 1.8 HINTS "${PCL_DIR}/share/pcl-1.8")
 include_directories(${PCL_ROOT}/include/pcl-${PCL_VERSION_MAJOR}.${PCL_VERSION_MINOR})
 include_directories(${EIGEN_ROOT})
 
 # Add compiler options.
-add_definitions(-Wall -Wextra)
+add_definitions(-Wall -Wextra -O0 -g3)
 	
 # Add source directory
 aux_source_directory("./src" SRC_LIST)

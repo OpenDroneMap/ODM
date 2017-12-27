@@ -106,28 +106,30 @@ void Odm25dMeshing::buildMesh(){
 //	elevationFilter->SetScalarRange(0.0f, 1.0f);
 //	elevationFilter->Update();
 
-//	vtkSmartPointer<vtkGreedyTerrainDecimation> decimation =
-//	  vtkSmartPointer<vtkGreedyTerrainDecimation>::New();
-//	#if VTK_MAJOR_VERSION <= 5
-//	  decimation->SetInputConnection(elevationFilter->GetProducerPort());
-//	#else
-//	  decimation->SetInputData(elevationFilter->GetOutput());
-//	#endif
-//	  decimation->Update();
-
 	vtkSmartPointer<vtkPolyData> polydataToProcess =
 	  vtkSmartPointer<vtkPolyData>::New();
 	polydataToProcess->SetPoints(points);
 	polydataToProcess->GetPointData()->SetScalars(elevation);
 
+	const float RESOLUTION = 10.0f; // pixels per meter
+	const float RADIUS = 1.0f;
+
+	double *bounds = polydataToProcess->GetBounds();
+
+	float extentX = bounds[1] - bounds[0];
+	float extentY = bounds[3] - bounds[2];
+
+	int width = ceil(extentX * RESOLUTION);
+	int height = ceil(extentY * RESOLUTION);
 
 	vtkSmartPointer<vtkPlaneSource> plane =
 			vtkSmartPointer<vtkPlaneSource>::New();
-	plane->SetResolution(100, 100);
+	plane->SetResolution(width, height);
 	plane->SetOrigin(0.0f, 0.0f, 0.0f);
-	plane->SetPoint1(100.0f, 0.0f, 0.0f);
-	plane->SetPoint2(0.0f, 100.0f, 0);
+	plane->SetPoint1(extentX, 0.0f, 0.0f);
+	plane->SetPoint2(0.0f, extentY, 0);
 	plane->SetCenter(polydataToProcess->GetCenter());
+	plane->SetNormal(0.0f, 0.0f, 1.0f);
 
 	vtkSmartPointer<vtkStaticPointLocator> locator =
 			vtkSmartPointer<vtkStaticPointLocator>::New();
@@ -136,7 +138,7 @@ void Odm25dMeshing::buildMesh(){
 
 	vtkSmartPointer<vtkShepardKernel> shepardKernel =
 				vtkSmartPointer<vtkShepardKernel>::New();
-	shepardKernel->SetRadius(1.0);
+	shepardKernel->SetRadius(RADIUS);
 	shepardKernel->SetPowerParameter(2.0);
 
 	vtkSmartPointer<vtkPointInterpolator> interpolator =
@@ -145,28 +147,68 @@ void Odm25dMeshing::buildMesh(){
 	interpolator->SetSourceData(polydataToProcess);
 	interpolator->SetKernel(shepardKernel);
 	interpolator->SetLocator(locator);
+	interpolator->SetNullPointsStrategyToClosestPoint();
 	interpolator->Update();
 
 
-//	vtkSmartPointer<vtkVertexGlyphFilter> vertexFilter =
-//	    vtkSmartPointer<vtkVertexGlyphFilter>::New();
-//	  vertexFilter->SetInputData(polydataToProcess);
-//	  vertexFilter->Update();
-//
-//	  vtkSmartPointer<vtkPolyData> polydataToShow =
-//	    vtkSmartPointer<vtkPolyData>::New();
-//	  polydataToShow->ShallowCopy(vertexFilter->GetOutput());
-//	  polydataToShow->GetPointData()->SetScalars(elevation);
+	vtkSmartPointer<vtkPolyData> interpolatedPoly =
+			interpolator->GetPolyDataOutput();
+	  vtkSmartPointer<vtkFloatArray> interpolatedElevation =
+			  vtkFloatArray::SafeDownCast(interpolatedPoly->GetPointData()->GetArray("elevation"));
+
+
+	vtkSmartPointer<vtkImageData> image =
+	    vtkSmartPointer<vtkImageData>::New();
+	image->SetDimensions(width, height, 1);
+	image->AllocateScalars(VTK_FLOAT, 1);
+	for (int i = 0; i < width; i++){
+		for (int j = 0; j < height; j++){
+			float* pixel = static_cast<float*>(image->GetScalarPointer(i,j,0));
+			vtkIdType cellId = interpolatedPoly->GetCell(j * width + i)->GetPointId(0);
+			pixel[0] = interpolatedElevation->GetValue(cellId);
+		}
+	}
+
+	vtkSmartPointer<vtkVertexGlyphFilter> vertexFilter =
+	    vtkSmartPointer<vtkVertexGlyphFilter>::New();
+	  vertexFilter->SetInputData(interpolator->GetOutput());
+	  vertexFilter->Update();
+	  vtkSmartPointer<vtkPolyData> polydataToShow =
+	    vtkSmartPointer<vtkPolyData>::New();
+	  polydataToShow->ShallowCopy(vertexFilter->GetOutput());
+
+	vtkSmartPointer<vtkGreedyTerrainDecimation> decimation =
+			vtkSmartPointer<vtkGreedyTerrainDecimation>::New();
+//	decimation->SetErrorMeasureToNumberOfTriangles();
+//	decimation->SetNumberOfTriangles(100000);
+	decimation->SetInputData(image);
+	decimation->Update();
+
+	vtkSmartPointer<vtkPLYWriter> plyWriter =
+			vtkSmartPointer<vtkPLYWriter>::New();
+	plyWriter->SetFileName(outputFile.c_str());
+	plyWriter->SetInputConnection(decimation->GetOutputPort());
+	plyWriter->Write();
 
 	vtkSmartPointer<vtkPolyDataMapper> mapper =
 			vtkSmartPointer<vtkPolyDataMapper>::New();
-	mapper->SetInputConnection(interpolator->GetOutputPort());
+	mapper->SetInputConnection(decimation->GetOutputPort());
+//	mapper->SetInputConnection(interpolator->GetOutputPort());
 //	mapper->SetInputData(polydataToShow);
 	mapper->SetScalarRange(150, 170);
+
+//	  vtkSmartPointer<vtkDataSetMapper> mapper =
+//	    vtkSmartPointer<vtkDataSetMapper>::New();
+//	  mapper->SetInputData(image);
+//	  mapper->SetScalarRange(150, 170);
 
 	  vtkSmartPointer<vtkActor> actor =
 	    vtkSmartPointer<vtkActor>::New();
 	  actor->SetMapper(mapper);
+	  actor->GetProperty()->SetPointSize(5);
+	  actor->GetProperty()->SetInterpolationToFlat();
+//	  actor->GetProperty()->EdgeVisibilityOn();
+//	  actor->GetProperty()->SetEdgeColor(1,0,0);
 
 	  vtkSmartPointer<vtkRenderer> renderer =
 	    vtkSmartPointer<vtkRenderer>::New();
