@@ -25,10 +25,11 @@
 #include <vtkPlaneSource.h>
 #include <vtkStructuredGridOutlineFilter.h>
 
+#include <vtkImageData.h>
 #include <vtkGreedyTerrainDecimation.h>
+#include <vtkPLYWriter.h>
 #include <vtkElevationFilter.h>
 #include <vtkPointInterpolator.h>
-#include <vtkLookupTable.h>
 #include <vtkImageMapToColors.h>
 #include <vtkImageActor.h>
 #include <vtkDataSetMapper.h>
