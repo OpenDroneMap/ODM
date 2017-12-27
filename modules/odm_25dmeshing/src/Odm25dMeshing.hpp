@@ -1,25 +1,47 @@
 #pragma once
 
-// STL
-#include <string>
-#include <iostream>
-#include <unordered_map>
-#include <queue>
+#include <vtkVersion.h>
+#include <vtkActor.h>
+#include <vtkCamera.h>
+#include <vtkCellArray.h>
+#include <vtkColorTransferFunction.h>
+#include <vtkContourFilter.h>
+#include <vtkFloatArray.h>
+#include <vtkPointData.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkProperty.h>
+#include <vtkRenderer.h>
+#include <vtkRenderWindow.h>
+#include <vtkRenderWindowInteractor.h>
+#include <vtkShepardMethod.h>
+#include <vtkSmartPointer.h>
+#include <vtkVertexGlyphFilter.h>
 
-#include <CGAL/wlop_simplify_and_regularize_point_set.h>
-#include <CGAL/bounding_box.h>
-#include <CGAL/remove_outliers.h>
-#include <CGAL/Polygon_mesh_processing/refine.h>
-#include <CGAL/Polygon_mesh_processing/fair.h>
-#include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Count_stop_predicate.h>
-#include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Edge_length_cost.h>
-#include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Midpoint_placement.h>
-#include <CGAL/Inverse_index.h>
+#include <vtkPLYReader.h>
+#include <vtkVertexGlyphFilter.h>
+#include <vtkStaticPointLocator.h>
+#include <vtkShepardKernel.h>
+#include <vtkPointInterpolator.h>
+#include <vtkPlaneSource.h>
+#include <vtkStructuredGridOutlineFilter.h>
 
-#include "CGAL.hpp"
+#include <vtkGreedyTerrainDecimation.h>
+#include <vtkElevationFilter.h>
+#include <vtkPointInterpolator.h>
+#include <vtkLookupTable.h>
+#include <vtkImageMapToColors.h>
+#include <vtkImageActor.h>
+#include <vtkDataSetMapper.h>
+
+#include <pcl/io/ply_io.h>
+#include <pcl/PCLPointCloud2.h>
+
+// For compatibility with new VTK generic data arrays
+#ifdef vtkGenericDataArray_h
+#define InsertNextTupleValue InsertNextTypedTuple
+#endif
+
 #include "Logger.hpp"
-#include "PlyInterpreter.hpp"
-#include "PolyhedronBuilder.hpp"
 
 class Odm25dMeshing {
 public:
@@ -47,30 +69,21 @@ private:
 	void parseArguments(int argc, char** argv);
 
 	/*!
-	 * \brief loadPointCloud    Loads a PLY file with points and normals from file.
-	 */
-	void loadPointCloud();
-
-	/*!
-	 * \brief loadPointCloud    Builds a 2.5D mesh from loaded points
-	 */
-	void buildMesh();
-
-	/*!
 	 * \brief printHelp     Prints help, explaining usage. Can be shown by calling the program with argument: "-help".
 	 */
 	void printHelp();
+
+	void loadPointCloud();
+	void buildMesh();
 
 	Logger log;
 
 	std::string inputFile = "";
 	std::string outputFile = "odm_25dmesh.ply";
 	std::string logFilePath = "odm_25dmeshing_log.txt";
-	unsigned int maxVertexCount = 100000;
-	double outliersRemovalPercentage = 2;
-	unsigned int wlopIterations = 35;
-	std::vector<Point3> points;
-	bool flipFaces = false;
+
+	vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
+	vtkSmartPointer<vtkFloatArray> elevation = vtkSmartPointer<vtkFloatArray>::New();
 };
 
 class Odm25dMeshingException: public std::exception {
