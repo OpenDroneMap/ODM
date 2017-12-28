@@ -1,38 +1,33 @@
 #pragma once
 
-#include <vtkVersion.h>
+//#define SHOWDEBUGWINDOW
+
+#ifdef SHOWDEBUGWINDOW
 #include <vtkActor.h>
 #include <vtkCamera.h>
-#include <vtkCellArray.h>
-#include <vtkColorTransferFunction.h>
-#include <vtkContourFilter.h>
-#include <vtkFloatArray.h>
-#include <vtkPointData.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkProperty.h>
 #include <vtkRenderer.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
-#include <vtkShepardMethod.h>
-#include <vtkSmartPointer.h>
-#include <vtkVertexGlyphFilter.h>
+#include <vtkDataSetMapper.h>
+#endif
 
-#include <vtkPLYReader.h>
 #include <vtkVertexGlyphFilter.h>
-#include <vtkStaticPointLocator.h>
 #include <vtkShepardKernel.h>
-#include <vtkPointInterpolator.h>
-#include <vtkPlaneSource.h>
-#include <vtkStructuredGridOutlineFilter.h>
-
+#include <vtkPointData.h>
 #include <vtkImageData.h>
 #include <vtkGreedyTerrainDecimation.h>
 #include <vtkPLYWriter.h>
-#include <vtkElevationFilter.h>
+#include <vtkSmartPointer.h>
+#include <vtkFloatArray.h>
+#include <vtkStaticPointLocator.h>
 #include <vtkPointInterpolator.h>
-#include <vtkImageMapToColors.h>
-#include <vtkImageActor.h>
-#include <vtkDataSetMapper.h>
+#include <vtkPlaneSource.h>
+#include <vtkTransform.h>
+#include <vtkTransformFilter.h>
+#include <vtkWindowedSincPolyDataFilter.h>
+#include <vtkPointInterpolator.h>
 
 #include <pcl/io/ply_io.h>
 #include <pcl/PCLPointCloud2.h>
