@@ -100,8 +100,9 @@ void Odm25dMeshing::buildMesh(){
 	polydataToProcess->SetPoints(points);
 	polydataToProcess->GetPointData()->SetScalars(elevation);
 
-	const double RESOLUTION = 10.0; // pixels per meter
-	const double RADIUS = 1.0;
+	const double RADIUS = 0.1;
+	const int RADIUS_STEPS = 1;
+	const float NODATA = -9999;
 
 	double *bounds = polydataToProcess->GetBounds();
 	double *center = polydataToProcess->GetCenter();
@@ -109,8 +110,8 @@ void Odm25dMeshing::buildMesh(){
 	double extentX = bounds[1] - bounds[0];
 	double extentY = bounds[3] - bounds[2];
 
-	int width = ceil(extentX * RESOLUTION);
-	int height = ceil(extentY * RESOLUTION);
+	int width = ceil(extentX * resolution);
+	int height = ceil(extentY * resolution);
 
 	log << "Plane extentX: " << extentX <<
 				", extentY: " << extentY << "\n";
@@ -131,26 +132,7 @@ void Odm25dMeshing::buildMesh(){
 
 	vtkSmartPointer<vtkShepardKernel> shepardKernel =
 				vtkSmartPointer<vtkShepardKernel>::New();
-	shepardKernel->SetRadius(RADIUS);
 	shepardKernel->SetPowerParameter(2.0);
-
-	log << "Begin point interpolation using shepard's kernel...";
-
-	vtkSmartPointer<vtkPointInterpolator> interpolator =
-				vtkSmartPointer<vtkPointInterpolator>::New();
-	interpolator->SetInputConnection(plane->GetOutputPort());
-	interpolator->SetSourceData(polydataToProcess);
-	interpolator->SetKernel(shepardKernel);
-	interpolator->SetLocator(locator);
-	interpolator->SetNullPointsStrategyToClosestPoint();
-	interpolator->Update();
-
-	log << "OK\n";
-
-	vtkSmartPointer<vtkPolyData> interpolatedPoly =
-			interpolator->GetPolyDataOutput();
-	  vtkSmartPointer<vtkFloatArray> interpolatedElevation =
-			  vtkFloatArray::SafeDownCast(interpolatedPoly->GetPointData()->GetArray("elevation"));
 
 	vtkSmartPointer<vtkImageData> image =
 	    vtkSmartPointer<vtkImageData>::New();
@@ -162,27 +144,71 @@ void Odm25dMeshing::buildMesh(){
 	for (int i = 0; i < width; i++){
 		for (int j = 0; j < height; j++){
 			float* pixel = static_cast<float*>(image->GetScalarPointer(i,j,0));
-			vtkIdType cellId = interpolatedPoly->GetCell(j * width + i)->GetPointId(0);
-			pixel[0] = interpolatedElevation->GetValue(cellId);
+			pixel[0] = NODATA;
 		}
 	}
 
-	vtkSmartPointer<vtkVertexGlyphFilter> vertexFilter =
-	    vtkSmartPointer<vtkVertexGlyphFilter>::New();
-	  vertexFilter->SetInputData(interpolator->GetOutput());
-	  vertexFilter->Update();
-	  vtkSmartPointer<vtkPolyData> polydataToShow =
-	    vtkSmartPointer<vtkPolyData>::New();
-	  polydataToShow->ShallowCopy(vertexFilter->GetOutput());
+	log << "Point interpolation using shepard's kernel...";
+
+	vtkSmartPointer<vtkPointInterpolator> interpolator =
+				vtkSmartPointer<vtkPointInterpolator>::New();
+	interpolator->SetInputConnection(plane->GetOutputPort());
+	interpolator->SetSourceData(polydataToProcess);
+	interpolator->SetKernel(shepardKernel);
+	interpolator->SetLocator(locator);
+	interpolator->SetNullValue(NODATA);
+
+	double currentRadius = RADIUS;
+	for (int r = 0; r < RADIUS_STEPS; r++, currentRadius *= 1.414){
+		log << " " << (r + 1) << " (" << currentRadius << ")...";
+
+		shepardKernel->SetRadius(currentRadius);
+
+		// At the last step we linearly interpolate remaining values
+		if (r == RADIUS_STEPS - 1) {
+			interpolator->SetNullPointsStrategyToClosestPoint();
+		}
+
+		interpolator->Update();
+
+		vtkSmartPointer<vtkPolyData> interpolatedPoly =
+				interpolator->GetPolyDataOutput();
+
+		  vtkSmartPointer<vtkFloatArray> interpolatedElevation =
+				  vtkFloatArray::SafeDownCast(interpolatedPoly->GetPointData()->GetArray("elevation"));
+
+		for (int i = 0; i < width; i++){
+			for (int j = 0; j < height; j++){
+				float* pixel = static_cast<float*>(image->GetScalarPointer(i,j,0));
+				if (pixel[0] == NODATA){
+					vtkIdType cellId = interpolatedPoly->GetCell(j * width + i)->GetPointId(0);
+					pixel[0] = interpolatedElevation->GetValue(cellId);
+				}
+			}
+		}
+	}
+
+	vtkSmartPointer<vtkImageAnisotropicDiffusion2D> diffusion =
+			vtkSmartPointer<vtkImageAnisotropicDiffusion2D>::New();
+	diffusion->SetInputData(image);
+	diffusion->EdgesOn();
+	diffusion->CornersOn();
+//	diffusion->SetDiffusionFactor(0.5);
+	diffusion->GradientMagnitudeThresholdOn();
+	diffusion->SetDiffusionThreshold(0.5); // Don't smooth jumps in elevation > than 0.3m
+	diffusion->SetNumberOfIterations(10);
+	diffusion->Update();
+
+	log << " OK\nTriangulate... ";
 
 	vtkSmartPointer<vtkGreedyTerrainDecimation> decimation =
 			vtkSmartPointer<vtkGreedyTerrainDecimation>::New();
-//	decimation->SetErrorMeasureToNumberOfTriangles();
-//	decimation->SetNumberOfTriangles(100000);
-	decimation->SetInputData(image);
+	decimation->SetErrorMeasureToNumberOfTriangles();
+	decimation->SetNumberOfTriangles(maxVertexCount * 2); // Approximate
+	decimation->SetInputData(diffusion->GetOutput());
 	decimation->Update();
 
-	log << "Transform...";
+	log << "OK\nTransform... ";
 	vtkSmartPointer<vtkTransform> transform =
 			vtkSmartPointer<vtkTransform>::New();
 	transform->Translate(-extentX / 2.0 + center[0],
@@ -196,41 +222,37 @@ void Odm25dMeshing::buildMesh(){
 
 	log << "OK\n";
 
-	vtkSmartPointer<vtkWindowedSincPolyDataFilter> smoother =
-			vtkSmartPointer<vtkWindowedSincPolyDataFilter>::New();
-	smoother->SetInputConnection(transformFilter->GetOutputPort());
-	smoother->SetNumberOfIterations(15);
+//	vtkSmartPointer<vtkWindowedSincPolyDataFilter> smoother =
+//			vtkSmartPointer<vtkWindowedSincPolyDataFilter>::New();
+//	smoother->SetInputConnection(transformFilter->GetOutputPort());
+//	smoother->SetNumberOfIterations(10);
 //	smoother->BoundarySmoothingOff();
-//	smoother->FeatureEdgeSmoothingOff();
-	smoother->SetFeatureAngle(30.0);
-	smoother->SetPassBand(.001);
-//	smoother->NonManifoldSmoothingOn();
-//	smoother->NormalizeCoordinatesOn();
-	smoother->Update();
+//	smoother->SetPassBand(0.1);
+//	smoother->Update();
 
 	log << "Saving mesh to file...";
 
 	vtkSmartPointer<vtkPLYWriter> plyWriter =
 			vtkSmartPointer<vtkPLYWriter>::New();
 	plyWriter->SetFileName(outputFile.c_str());
-	plyWriter->SetInputConnection(smoother->GetOutputPort());
+	plyWriter->SetInputConnection(transformFilter->GetOutputPort());
 	plyWriter->SetFileTypeToASCII();
 	plyWriter->Write();
 
 	log << "OK\n";
 
 #ifdef SHOWDEBUGWINDOW
-//	vtkSmartPointer<vtkPolyDataMapper> mapper =
-//			vtkSmartPointer<vtkPolyDataMapper>::New();
-//	mapper->SetInputConnection(smoother->GetOutputPort());
-////	mapper->SetInputConnection(interpolator->GetOutputPort());
-////	mapper->SetInputData(polydataToShow);
-//	mapper->SetScalarRange(150, 170);
+	vtkSmartPointer<vtkPolyDataMapper> mapper =
+			vtkSmartPointer<vtkPolyDataMapper>::New();
+	mapper->SetInputConnection(transformFilter->GetOutputPort());
+//	mapper->SetInputConnection(interpolator->GetOutputPort());
+//	mapper->SetInputData(polydataToShow);
+	mapper->SetScalarRange(150, 170);
 
-	  vtkSmartPointer<vtkDataSetMapper> mapper =
-	    vtkSmartPointer<vtkDataSetMapper>::New();
-	  mapper->SetInputData(image);
-	  mapper->SetScalarRange(150, 170);
+//	  vtkSmartPointer<vtkDataSetMapper> mapper =
+//	    vtkSmartPointer<vtkDataSetMapper>::New();
+//	  mapper->SetInputData(image);
+//	  mapper->SetScalarRange(150, 170);
 
 	  vtkSmartPointer<vtkActor> actor =
 	    vtkSmartPointer<vtkActor>::New();
@@ -264,14 +286,23 @@ void Odm25dMeshing::parseArguments(int argc, char **argv) {
 			exit(0);
 		} else if (argument == "-verbose") {
 			log.setIsPrintingInCout(true);
-//		} else if (argument == "-maxVertexCount" && argIndex < argc) {
-//            ++argIndex;
-//            if (argIndex >= argc) throw Odm25dMeshingException("Argument '" + argument + "' expects 1 more input following it, but no more inputs were provided.");
-//            std::stringstream ss(argv[argIndex]);
-//            ss >> maxVertexCount;
-//            if (ss.bad()) throw Odm25dMeshingException("Argument '" + argument + "' has a bad value (wrong type).");
-//            maxVertexCount = std::max<unsigned int>(maxVertexCount, 0);
-//            log << "Vertex count was manually set to: " << maxVertexCount << "\n";
+		} else if (argument == "-maxVertexCount" && argIndex < argc) {
+            ++argIndex;
+            if (argIndex >= argc) throw Odm25dMeshingException("Argument '" + argument + "' expects 1 more input following it, but no more inputs were provided.");
+            std::stringstream ss(argv[argIndex]);
+            ss >> maxVertexCount;
+            if (ss.bad()) throw Odm25dMeshingException("Argument '" + argument + "' has a bad value (wrong type).");
+            maxVertexCount = std::max<unsigned int>(maxVertexCount, 0);
+            log << "Vertex count was manually set to: " << maxVertexCount << "\n";
+		} else if (argument == "-resolution" && argIndex < argc) {
+			++argIndex;
+			if (argIndex >= argc) throw Odm25dMeshingException("Argument '" + argument + "' expects 1 more input following it, but no more inputs were provided.");
+			std::stringstream ss(argv[argIndex]);
+			ss >> resolution;
+			if (ss.bad()) throw Odm25dMeshingException("Argument '" + argument + "' has a bad value (wrong type).");
+
+			resolution = std::min<double>(100000, std::max<double>(resolution, 0.00001));
+			log << "Resolution was manually set to: " << resolution << "\n";
 //		} else if (argument == "-outliersRemovalPercentage" && argIndex < argc) {
 //			++argIndex;
 //			if (argIndex >= argc) throw Odm25dMeshingException("Argument '" + argument + "' expects 1 more input following it, but no more inputs were provided.");
@@ -353,8 +384,9 @@ void Odm25dMeshing::printHelp() {
 		<< "	-outputFile	<path>	where the output PLY 2.5D mesh should be saved (default: " << outputFile << ")\n"
 		<< "	-logFile	<path>	log file path (default: " << logFilePath << ")\n"
 		<< "	-verbose	whether to print verbose output (default: " << (printInCoutPop ? "true" : "false") << ")\n"
-//		<< "	-maxVertexCount	<0 - N>	Maximum number of vertices in the output mesh. The mesh might have fewer vertices, but will not exceed this limit. (default: " << maxVertexCount << ")\n"
-//		<< "	-wlopIterations	<1 - 1000>	Iterations of the Weighted Locally Optimal Projection (WLOP) simplification algorithm. Higher values take longer but produce a smoother mesh. (default: " << wlopIterations << ")\n"
+		<< "	-maxVertexCount	<0 - N>	Maximum number of vertices in the output mesh. The mesh might have fewer vertices, but will not exceed this limit. (default: " << maxVertexCount << ")\n"
+		//		<< "	-wlopIterations	<1 - 1000>	Iterations of the Weighted Locally Optimal Projection (WLOP) simplification algorithm. Higher values take longer but produce a smoother mesh. (default: " << wlopIterations << ")\n"
+		<< "	-resolution	<1 - N>	Size of the interpolated digital surface model (DSM) used for deriving the 2.5D mesh, expressed in pixels per meter unit. (default: " << resolution << ")\n"
 
 		<< "\n";
 
