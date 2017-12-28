@@ -81,12 +81,12 @@ void Odm25dMeshing::loadPointCloud() {
 		if (posX->datatype == pcl::PCLPointField::FLOAT64) {
 			points->InsertNextPoint(*(reinterpret_cast<double *>(point + posX->offset)),
 					*(reinterpret_cast<double *>(point + posY->offset)),
-					0.0f);
+					0.0);
 			elevation->InsertNextValue(*(reinterpret_cast<double *>(point + posZ->offset)));
 		} else if (posX->datatype == pcl::PCLPointField::FLOAT32) {
 			points->InsertNextPoint(*(reinterpret_cast<float *>(point + posX->offset)),
 								*(reinterpret_cast<float *>(point + posY->offset)),
-								0.0f);
+								0.0);
 			elevation->InsertNextValue(*(reinterpret_cast<float *>(point + posZ->offset)));
 		}
 	}
@@ -95,41 +95,34 @@ void Odm25dMeshing::loadPointCloud() {
 }
 
 void Odm25dMeshing::buildMesh(){
-//	double bounds[6];
-//	reader->GetOutput()->GetBounds(bounds);
-
-//	vtkSmartPointer<vtkElevationFilter> elevationFilter =
-//			vtkSmartPointer<vtkElevationFilter>::New();
-//	elevationFilter->SetInputConnection(reader->GetOutputPort());
-//	elevationFilter->SetLowPoint(0.0, 0.0, bounds[4]);
-//	elevationFilter->SetHighPoint(0.0, 0.0, bounds[5]);
-//	elevationFilter->SetScalarRange(0.0f, 1.0f);
-//	elevationFilter->Update();
-
 	vtkSmartPointer<vtkPolyData> polydataToProcess =
 	  vtkSmartPointer<vtkPolyData>::New();
 	polydataToProcess->SetPoints(points);
 	polydataToProcess->GetPointData()->SetScalars(elevation);
 
-	const float RESOLUTION = 10.0f; // pixels per meter
-	const float RADIUS = 1.0f;
+	const double RESOLUTION = 10.0; // pixels per meter
+	const double RADIUS = 1.0;
 
 	double *bounds = polydataToProcess->GetBounds();
+	double *center = polydataToProcess->GetCenter();
 
-	float extentX = bounds[1] - bounds[0];
-	float extentY = bounds[3] - bounds[2];
+	double extentX = bounds[1] - bounds[0];
+	double extentY = bounds[3] - bounds[2];
 
 	int width = ceil(extentX * RESOLUTION);
 	int height = ceil(extentY * RESOLUTION);
 
+	log << "Plane extentX: " << extentX <<
+				", extentY: " << extentY << "\n";
+
 	vtkSmartPointer<vtkPlaneSource> plane =
 			vtkSmartPointer<vtkPlaneSource>::New();
 	plane->SetResolution(width, height);
-	plane->SetOrigin(0.0f, 0.0f, 0.0f);
-	plane->SetPoint1(extentX, 0.0f, 0.0f);
-	plane->SetPoint2(0.0f, extentY, 0);
-	plane->SetCenter(polydataToProcess->GetCenter());
-	plane->SetNormal(0.0f, 0.0f, 1.0f);
+	plane->SetOrigin(0.0, 0.0, 0.0);
+	plane->SetPoint1(extentX, 0.0, 0.0);
+	plane->SetPoint2(0.0, extentY, 0);
+	plane->SetCenter(center);
+	plane->SetNormal(0.0, 0.0, 1.0);
 
 	vtkSmartPointer<vtkStaticPointLocator> locator =
 			vtkSmartPointer<vtkStaticPointLocator>::New();
@@ -141,6 +134,8 @@ void Odm25dMeshing::buildMesh(){
 	shepardKernel->SetRadius(RADIUS);
 	shepardKernel->SetPowerParameter(2.0);
 
+	log << "Begin point interpolation using shepard's kernel...";
+
 	vtkSmartPointer<vtkPointInterpolator> interpolator =
 				vtkSmartPointer<vtkPointInterpolator>::New();
 	interpolator->SetInputConnection(plane->GetOutputPort());
@@ -150,16 +145,19 @@ void Odm25dMeshing::buildMesh(){
 	interpolator->SetNullPointsStrategyToClosestPoint();
 	interpolator->Update();
 
+	log << "OK\n";
 
 	vtkSmartPointer<vtkPolyData> interpolatedPoly =
 			interpolator->GetPolyDataOutput();
 	  vtkSmartPointer<vtkFloatArray> interpolatedElevation =
 			  vtkFloatArray::SafeDownCast(interpolatedPoly->GetPointData()->GetArray("elevation"));
 
-
 	vtkSmartPointer<vtkImageData> image =
 	    vtkSmartPointer<vtkImageData>::New();
 	image->SetDimensions(width, height, 1);
+
+	log << "DSM size is " << width << "x" << height << " (" << ceil(width * height * sizeof(float) * 1e-6) << " MB) \n";
+
 	image->AllocateScalars(VTK_FLOAT, 1);
 	for (int i = 0; i < width; i++){
 		for (int j = 0; j < height; j++){
@@ -184,31 +182,60 @@ void Odm25dMeshing::buildMesh(){
 	decimation->SetInputData(image);
 	decimation->Update();
 
+	log << "Transform...";
+	vtkSmartPointer<vtkTransform> transform =
+			vtkSmartPointer<vtkTransform>::New();
+	transform->Translate(-extentX / 2.0 + center[0],
+			-extentY / 2.0 + center[1], 0);
+	transform->Scale(extentX / width, extentY / height, 1);
+
+	vtkSmartPointer<vtkTransformFilter> transformFilter =
+	    vtkSmartPointer<vtkTransformFilter>::New();
+	transformFilter->SetInputConnection(decimation->GetOutputPort());
+	transformFilter->SetTransform(transform);
+
+	log << "OK\n";
+
+	vtkSmartPointer<vtkWindowedSincPolyDataFilter> smoother =
+			vtkSmartPointer<vtkWindowedSincPolyDataFilter>::New();
+	smoother->SetInputConnection(transformFilter->GetOutputPort());
+	smoother->SetNumberOfIterations(15);
+//	smoother->BoundarySmoothingOff();
+//	smoother->FeatureEdgeSmoothingOff();
+	smoother->SetFeatureAngle(30.0);
+	smoother->SetPassBand(.001);
+//	smoother->NonManifoldSmoothingOn();
+//	smoother->NormalizeCoordinatesOn();
+	smoother->Update();
+
+	log << "Saving mesh to file...";
+
 	vtkSmartPointer<vtkPLYWriter> plyWriter =
 			vtkSmartPointer<vtkPLYWriter>::New();
 	plyWriter->SetFileName(outputFile.c_str());
-	plyWriter->SetInputConnection(decimation->GetOutputPort());
+	plyWriter->SetInputConnection(smoother->GetOutputPort());
+	plyWriter->SetFileTypeToASCII();
 	plyWriter->Write();
 
-	vtkSmartPointer<vtkPolyDataMapper> mapper =
-			vtkSmartPointer<vtkPolyDataMapper>::New();
-	mapper->SetInputConnection(decimation->GetOutputPort());
-//	mapper->SetInputConnection(interpolator->GetOutputPort());
-//	mapper->SetInputData(polydataToShow);
-	mapper->SetScalarRange(150, 170);
+	log << "OK\n";
 
-//	  vtkSmartPointer<vtkDataSetMapper> mapper =
-//	    vtkSmartPointer<vtkDataSetMapper>::New();
-//	  mapper->SetInputData(image);
-//	  mapper->SetScalarRange(150, 170);
+#ifdef SHOWDEBUGWINDOW
+//	vtkSmartPointer<vtkPolyDataMapper> mapper =
+//			vtkSmartPointer<vtkPolyDataMapper>::New();
+//	mapper->SetInputConnection(smoother->GetOutputPort());
+////	mapper->SetInputConnection(interpolator->GetOutputPort());
+////	mapper->SetInputData(polydataToShow);
+//	mapper->SetScalarRange(150, 170);
+
+	  vtkSmartPointer<vtkDataSetMapper> mapper =
+	    vtkSmartPointer<vtkDataSetMapper>::New();
+	  mapper->SetInputData(image);
+	  mapper->SetScalarRange(150, 170);
 
 	  vtkSmartPointer<vtkActor> actor =
 	    vtkSmartPointer<vtkActor>::New();
 	  actor->SetMapper(mapper);
 	  actor->GetProperty()->SetPointSize(5);
-	  actor->GetProperty()->SetInterpolationToFlat();
-//	  actor->GetProperty()->EdgeVisibilityOn();
-//	  actor->GetProperty()->SetEdgeColor(1,0,0);
 
 	  vtkSmartPointer<vtkRenderer> renderer =
 	    vtkSmartPointer<vtkRenderer>::New();
@@ -224,151 +251,7 @@ void Odm25dMeshing::buildMesh(){
 
 	  renderWindow->Render();
 	  renderWindowInteractor->Start();
-
-//	// Create a set of vertices (polydata)
-//	vtkSmartPointer<vtkPoints> points =
-//	  vtkSmartPointer<vtkPoints>::New();
-//	points->InsertNextPoint(100.0, 0.0, 0.0);
-//	points->InsertNextPoint(300.0, 0.0, 0.0);
-//
-//	// Setup colors
-//	unsigned char white[3] = {255, 255, 255};
-//	unsigned char black[3] = {0, 0, 0};
-//
-//	vtkSmartPointer<vtkUnsignedCharArray> vertexColors =
-//	vtkSmartPointer<vtkUnsignedCharArray>::New();
-//	vertexColors->SetNumberOfComponents(3);
-//	vertexColors->SetName("Colors");
-//	vertexColors->InsertNextTupleValue(black);
-//	vertexColors->InsertNextTupleValue(white);
-//
-//	// Create a scalar array for the pointdata, each value represents the distance
-//	// of the vertices from the first vertex
-//	vtkSmartPointer<vtkFloatArray> values =
-//	  vtkSmartPointer<vtkFloatArray>::New();
-//	values->SetNumberOfComponents(1);
-//	values->SetName("Values");
-//	values->InsertNextValue(0.0);
-//	values->InsertNextValue(1.0);
-//
-//	// We must make two objects, because the ShepardMethod uses the ActiveScalars, as does the renderer!
-//	vtkSmartPointer<vtkPolyData> polydataToProcess =
-//	  vtkSmartPointer<vtkPolyData>::New();
-//	polydataToProcess->SetPoints(points);
-//	polydataToProcess->GetPointData()->SetScalars(values);
-//
-//	vtkSmartPointer<vtkPolyData> polydataToVisualize =
-//	vtkSmartPointer<vtkPolyData>::New();
-//	polydataToVisualize->SetPoints(points);
-//	polydataToVisualize->GetPointData()->SetScalars(vertexColors);
-//
-//	vtkSmartPointer<vtkVertexGlyphFilter> vertexGlyphFilter =
-//	vtkSmartPointer<vtkVertexGlyphFilter>::New();
-//	#if VTK_MAJOR_VERSION <= 5
-//	vertexGlyphFilter->AddInputConnection(polydataToVisualize->GetProducerPort());
-//	#else
-//	vertexGlyphFilter->AddInputData(polydataToVisualize);
-//	#endif
-//	vertexGlyphFilter->Update();
-//
-//	//Create a mapper and actor
-//	vtkSmartPointer<vtkPolyDataMapper> vertsMapper =
-//	  vtkSmartPointer<vtkPolyDataMapper>::New();
-//	//vertsMapper->ScalarVisibilityOff();
-//	vertsMapper->SetInputConnection(vertexGlyphFilter->GetOutputPort());
-//
-//	vtkSmartPointer<vtkActor> vertsActor =
-//	vtkSmartPointer<vtkActor>::New();
-//	vertsActor->SetMapper(vertsMapper);
-//	vertsActor->GetProperty()->SetColor(1,0,0);
-//	vertsActor->GetProperty()->SetPointSize(3);
-//
-//	// Create a shepard filter to interpolate the vertices over a regularized image grid
-//	vtkSmartPointer<vtkShepardMethod> shepard = vtkSmartPointer<vtkShepardMethod>::New();
-//	#if VTK_MAJOR_VERSION <= 5
-//	shepard->SetInputConnection(polydataToProcess->GetProducerPort());
-//	#else
-//	shepard->SetInputData(polydataToProcess);
-//	#endif
-//	shepard->SetSampleDimensions(2,2,2);
-//	shepard->SetModelBounds(100,300,-10,10,-10,10);
-//	shepard->SetMaximumDistance(1);
-//
-//	// Contour the shepard generated image at 3 isovalues
-//	// The accuracy of the results are highly dependent on how the shepard filter is set up
-//	vtkSmartPointer<vtkContourFilter> contourFilter = vtkSmartPointer<vtkContourFilter>::New();
-//	contourFilter->SetNumberOfContours(3);
-//	contourFilter->SetValue(0, 0.25);
-//	contourFilter->SetValue(1, 0.50);
-//	contourFilter->SetValue(2, 0.75);
-//	contourFilter->SetInputConnection(shepard->GetOutputPort());
-//	contourFilter->Update();
-//
-//	//Create a mapper and actor for the resulting isosurfaces
-//	vtkSmartPointer<vtkPolyDataMapper> contourMapper =
-//	vtkSmartPointer<vtkPolyDataMapper>::New();
-//	contourMapper->SetInputConnection(contourFilter->GetOutputPort());
-//	contourMapper->ScalarVisibilityOn();
-//	contourMapper->SetColorModeToMapScalars();
-//
-//	vtkSmartPointer<vtkActor> contourActor =
-//	vtkSmartPointer<vtkActor>::New();
-//	contourActor->SetMapper(contourMapper);
-//	contourActor->GetProperty()->SetAmbient(1);
-//	contourActor->GetProperty()->SetSpecular(0);
-//	contourActor->GetProperty()->SetDiffuse(0);
-//
-//	// Report the results of the interpolation
-//	double *range = contourFilter->GetOutput()->GetScalarRange();
-//
-//	std::cout << "Shepard interpolation:" << std::endl;
-//	std::cout << "contour output scalar range: " << range[0] << ", " << range[1] << std::endl;
-//
-//	vtkIdType nCells = contourFilter->GetOutput()->GetNumberOfCells();
-//	double bounds[6];
-//	for( vtkIdType i = 0; i < nCells; ++i )
-//	{
-//	if(i%2) // each isosurface value only has 2 cells to report on the odd ones
-//	{
-//	  contourFilter->GetOutput()->GetCellBounds(i,bounds);
-//	  std::cout << "cell " << i << ", x position: " << bounds[0] << std::endl;
-//	}
-//	}
-//
-//	// Create a transfer function to color the isosurfaces
-//	vtkSmartPointer<vtkColorTransferFunction> lut =
-//	vtkSmartPointer<vtkColorTransferFunction>::New();
-//	lut->SetColorSpaceToRGB();
-//	lut->AddRGBPoint(range[0],0,0,0);//black
-//	lut->AddRGBPoint(range[1],1,1,1);//white
-//	lut->SetScaleToLinear();
-//
-//	contourMapper->SetLookupTable( lut );
-//
-//	// Create a renderer, render window and interactor
-//	vtkSmartPointer<vtkRenderer> renderer =
-//	vtkSmartPointer<vtkRenderer>::New();
-//	renderer->GradientBackgroundOn();
-//	renderer->SetBackground(0,0,1);
-//	renderer->SetBackground2(1,0,1);
-//
-//	vtkSmartPointer<vtkRenderWindow> renderWindow =
-//	vtkSmartPointer<vtkRenderWindow>::New();
-//	renderWindow->AddRenderer(renderer);
-//	renderer->AddActor(contourActor);
-//	renderer->AddActor(vertsActor);
-//
-//	vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor =
-//	vtkSmartPointer<vtkRenderWindowInteractor>::New();
-//	renderWindowInteractor->SetRenderWindow(renderWindow);
-//
-//	// Position the camera so that the image produced is viewable
-//	vtkCamera* camera = renderer->GetActiveCamera();
-//	camera->SetPosition(450, 100, 100);
-//	camera->SetFocalPoint(200, 0, 0);
-//	camera->SetViewUp(0, 0, 1);
-//
-//	renderWindowInteractor->Start();
+#endif
 }
 
 void Odm25dMeshing::parseArguments(int argc, char **argv) {
