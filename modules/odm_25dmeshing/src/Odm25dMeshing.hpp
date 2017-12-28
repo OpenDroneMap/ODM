@@ -1,6 +1,6 @@
 #pragma once
 
-//#define SHOWDEBUGWINDOW
+#define SHOWDEBUGWINDOW
 
 #ifdef SHOWDEBUGWINDOW
 #include <vtkActor.h>
@@ -28,6 +28,7 @@
 #include <vtkTransformFilter.h>
 #include <vtkWindowedSincPolyDataFilter.h>
 #include <vtkPointInterpolator.h>
+#include <vtkImageAnisotropicDiffusion2D.h>
 
 #include <pcl/io/ply_io.h>
 #include <pcl/PCLPointCloud2.h>
@@ -77,6 +78,8 @@ private:
 	std::string inputFile = "";
 	std::string outputFile = "odm_25dmesh.ply";
 	std::string logFilePath = "odm_25dmeshing_log.txt";
+	int maxVertexCount = 100000;
+	double resolution = 20.0;
 
 	vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
 	vtkSmartPointer<vtkFloatArray> elevation = vtkSmartPointer<vtkFloatArray>::New();
