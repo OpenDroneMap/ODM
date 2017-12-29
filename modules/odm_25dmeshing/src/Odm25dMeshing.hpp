@@ -30,6 +30,9 @@
 #include <vtkPointInterpolator.h>
 #include <vtkImageAnisotropicDiffusion2D.h>
 
+#include <vtkDelaunay2D.h>
+#include <vtkClipPolyData.h>
+
 #include <pcl/io/ply_io.h>
 #include <pcl/PCLPointCloud2.h>
 
