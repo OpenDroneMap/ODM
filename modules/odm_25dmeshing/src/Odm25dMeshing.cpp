@@ -159,7 +159,9 @@ void Odm25dMeshing::buildMesh(){
 	interpolator->SetNullValue(NODATA);
 
 	double currentRadius = RADIUS;
-	for (int r = 0; r < RADIUS_STEPS; r++, currentRadius *= 1.414){
+	const double sqrt_2 = sqrt(2.0);
+
+	for (int r = 0; r < RADIUS_STEPS; r++, currentRadius *= sqrt_2){
 		log << " " << (r + 1) << " (" << currentRadius << ")...";
 
 		shepardKernel->SetRadius(currentRadius);
@@ -191,12 +193,13 @@ void Odm25dMeshing::buildMesh(){
 	vtkSmartPointer<vtkImageAnisotropicDiffusion2D> diffusion =
 			vtkSmartPointer<vtkImageAnisotropicDiffusion2D>::New();
 	diffusion->SetInputData(image);
+	diffusion->FacesOn();
 	diffusion->EdgesOn();
 	diffusion->CornersOn();
-//	diffusion->SetDiffusionFactor(0.5);
+	diffusion->SetDiffusionFactor(0.5); // Half strength
 	diffusion->GradientMagnitudeThresholdOn();
 	diffusion->SetDiffusionThreshold(0.5); // Don't smooth jumps in elevation > than 0.3m
-	diffusion->SetNumberOfIterations(10);
+	diffusion->SetNumberOfIterations(5);
 	diffusion->Update();
 
 	log << " OK\nTriangulate... ";
@@ -222,20 +225,20 @@ void Odm25dMeshing::buildMesh(){
 
 	log << "OK\n";
 
-//	vtkSmartPointer<vtkWindowedSincPolyDataFilter> smoother =
-//			vtkSmartPointer<vtkWindowedSincPolyDataFilter>::New();
-//	smoother->SetInputConnection(transformFilter->GetOutputPort());
-//	smoother->SetNumberOfIterations(10);
-//	smoother->BoundarySmoothingOff();
-//	smoother->SetPassBand(0.1);
-//	smoother->Update();
+	vtkSmartPointer<vtkWindowedSincPolyDataFilter> smoother =
+			vtkSmartPointer<vtkWindowedSincPolyDataFilter>::New();
+	smoother->SetInputConnection(transformFilter->GetOutputPort());
+	smoother->SetNumberOfIterations(10);
+	smoother->BoundarySmoothingOff();
+	smoother->SetPassBand(0.5);
+	smoother->Update();
 
 	log << "Saving mesh to file...";
 
 	vtkSmartPointer<vtkPLYWriter> plyWriter =
 			vtkSmartPointer<vtkPLYWriter>::New();
 	plyWriter->SetFileName(outputFile.c_str());
-	plyWriter->SetInputConnection(transformFilter->GetOutputPort());
+	plyWriter->SetInputConnection(smoother->GetOutputPort());
 	plyWriter->SetFileTypeToASCII();
 	plyWriter->Write();
 
@@ -244,7 +247,7 @@ void Odm25dMeshing::buildMesh(){
 #ifdef SHOWDEBUGWINDOW
 	vtkSmartPointer<vtkPolyDataMapper> mapper =
 			vtkSmartPointer<vtkPolyDataMapper>::New();
-	mapper->SetInputConnection(transformFilter->GetOutputPort());
+	mapper->SetInputConnection(smoother->GetOutputPort());
 //	mapper->SetInputConnection(interpolator->GetOutputPort());
 //	mapper->SetInputData(polydataToShow);
 	mapper->SetScalarRange(150, 170);
