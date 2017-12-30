@@ -1,8 +1,5 @@
 #pragma once
 
-#define SHOWDEBUGWINDOW
-
-#ifdef SHOWDEBUGWINDOW
 #include <vtkActor.h>
 #include <vtkCamera.h>
 #include <vtkPolyDataMapper.h>
@@ -11,7 +8,6 @@
 #include <vtkRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
 #include <vtkDataSetMapper.h>
-#endif
 
 #include <vtkVertexGlyphFilter.h>
 #include <vtkShepardKernel.h>
@@ -29,9 +25,7 @@
 #include <vtkWindowedSincPolyDataFilter.h>
 #include <vtkPointInterpolator.h>
 #include <vtkImageAnisotropicDiffusion2D.h>
-
-#include <vtkDelaunay2D.h>
-#include <vtkClipPolyData.h>
+#include <vtkTIFFWriter.h>
 
 #include <pcl/io/ply_io.h>
 #include <pcl/PCLPointCloud2.h>
@@ -83,6 +77,9 @@ private:
 	std::string logFilePath = "odm_25dmeshing_log.txt";
 	int maxVertexCount = 100000;
 	double resolution = 20.0;
+	unsigned int shepardNeighbors = 24;
+	std::string outputDsmFile = "";
+	bool showDebugWindow = false;
 
 	vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
 	vtkSmartPointer<vtkFloatArray> elevation = vtkSmartPointer<vtkFloatArray>::New();
