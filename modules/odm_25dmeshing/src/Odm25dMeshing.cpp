@@ -100,8 +100,6 @@ void Odm25dMeshing::buildMesh(){
 	polydataToProcess->SetPoints(points);
 	polydataToProcess->GetPointData()->SetScalars(elevation);
 
-	const double RADIUS = 0.01;
-	const int RADIUS_STEPS = 1;
 	const float NODATA = -9999;
 
 	double *bounds = polydataToProcess->GetBounds();
@@ -133,20 +131,14 @@ void Odm25dMeshing::buildMesh(){
 	vtkSmartPointer<vtkShepardKernel> shepardKernel =
 				vtkSmartPointer<vtkShepardKernel>::New();
 	shepardKernel->SetPowerParameter(2.0);
+	shepardKernel->SetKernelFootprintToNClosest();
+	shepardKernel->SetNumberOfPoints(shepardNeighbors);
 
 	vtkSmartPointer<vtkImageData> image =
 	    vtkSmartPointer<vtkImageData>::New();
 	image->SetDimensions(width, height, 1);
-
 	log << "DSM size is " << width << "x" << height << " (" << ceil(width * height * sizeof(float) * 1e-6) << " MB) \n";
-
 	image->AllocateScalars(VTK_FLOAT, 1);
-	for (int i = 0; i < width; i++){
-		for (int j = 0; j < height; j++){
-			float* pixel = static_cast<float*>(image->GetScalarPointer(i,j,0));
-			pixel[0] = NODATA;
-		}
-	}
 
 	log << "Point interpolation using shepard's kernel...";
 
@@ -157,36 +149,33 @@ void Odm25dMeshing::buildMesh(){
 	interpolator->SetKernel(shepardKernel);
 	interpolator->SetLocator(locator);
 	interpolator->SetNullValue(NODATA);
+	interpolator->Update();
 
-	double currentRadius = RADIUS;
+	vtkSmartPointer<vtkPolyData> interpolatedPoly =
+			interpolator->GetPolyDataOutput();
 
-	for (int r = 0; r < RADIUS_STEPS; r++, currentRadius *= 3){
-		log << " " << (r + 1) << " (" << currentRadius << ")...";
+	vtkSmartPointer<vtkFloatArray> interpolatedElevation =
+		  vtkFloatArray::SafeDownCast(interpolatedPoly->GetPointData()->GetArray("elevation"));
 
-		shepardKernel->SetRadius(currentRadius);
-		if (r == RADIUS_STEPS - 1){
-			interpolator->SetNullPointsStrategyToClosestPoint();
-//			shepardKernel->SetKernelFootprintToNClosest();
-//			shepardKernel->SetNumberOfPoints(8);
+	for (int i = 0; i < width; i++){
+		for (int j = 0; j < height; j++){
+			float* pixel = static_cast<float*>(image->GetScalarPointer(i,j,0));
+			vtkIdType cellId = interpolatedPoly->GetCell(j * width + i)->GetPointId(0);
+			pixel[0] = interpolatedElevation->GetValue(cellId);
 		}
+	}
 
-		interpolator->Update();
+	log << "OK\n";
 
-		vtkSmartPointer<vtkPolyData> interpolatedPoly =
-				interpolator->GetPolyDataOutput();
 
-		  vtkSmartPointer<vtkFloatArray> interpolatedElevation =
-				  vtkFloatArray::SafeDownCast(interpolatedPoly->GetPointData()->GetArray("elevation"));
-
-		for (int i = 0; i < width; i++){
-			for (int j = 0; j < height; j++){
-				float* pixel = static_cast<float*>(image->GetScalarPointer(i,j,0));
-				if (pixel[0] == NODATA){
-					vtkIdType cellId = interpolatedPoly->GetCell(j * width + i)->GetPointId(0);
-					pixel[0] = interpolatedElevation->GetValue(cellId);
-				}
-			}
-		}
+	if (outputDsmFile != ""){
+		log << "Saving DSM to file... ";
+		vtkSmartPointer<vtkTIFFWriter> tiffWriter =
+				vtkSmartPointer<vtkTIFFWriter>::New();
+		tiffWriter->SetFileName(outputDsmFile.c_str());
+		tiffWriter->SetInputData(image);
+		tiffWriter->Write();
+		log << "OK\n";
 	}
 
 	vtkSmartPointer<vtkImageAnisotropicDiffusion2D> surfaceDiffusion =
@@ -197,27 +186,17 @@ void Odm25dMeshing::buildMesh(){
 	surfaceDiffusion->CornersOn();
 	surfaceDiffusion->SetDiffusionFactor(1); // Full strength
 	surfaceDiffusion->GradientMagnitudeThresholdOn();
-	surfaceDiffusion->SetDiffusionThreshold(0.5); // Don't smooth jumps in elevation > than 0.3m
-	surfaceDiffusion->SetNumberOfIterations(5);
+	surfaceDiffusion->SetDiffusionThreshold(0.2); // Don't smooth jumps in elevation > than 0.20m
+	surfaceDiffusion->SetNumberOfIterations(resolution / 2.0);
 	surfaceDiffusion->Update();
 
-	vtkSmartPointer<vtkImageAnisotropicDiffusion2D> diffusion =
-			vtkSmartPointer<vtkImageAnisotropicDiffusion2D>::New();
-	diffusion->SetInputConnection(surfaceDiffusion->GetOutputPort());
-	diffusion->FacesOn();
-	diffusion->EdgesOn();
-	diffusion->CornersOn();
-	diffusion->SetDiffusionFactor(0.5); // Half strength
-	diffusion->SetNumberOfIterations(2);
-	diffusion->Update();
-
-	log << " OK\nTriangulate... ";
+	log << "Triangulate... ";
 
 	vtkSmartPointer<vtkGreedyTerrainDecimation> terrain =
 			vtkSmartPointer<vtkGreedyTerrainDecimation>::New();
 	terrain->SetErrorMeasureToNumberOfTriangles();
 	terrain->SetNumberOfTriangles(maxVertexCount * 2); // Approximate
-	terrain->SetInputData(diffusion->GetOutput());
+	terrain->SetInputData(surfaceDiffusion->GetOutput());
 	terrain->BoundaryVertexDeletionOn();
 	terrain->Update();
 
@@ -243,7 +222,7 @@ void Odm25dMeshing::buildMesh(){
 //	smoother->SetPassBand(0.5);
 //	smoother->Update();
 
-	log << "Saving mesh to file...";
+	log << "Saving mesh to file... ";
 
 	vtkSmartPointer<vtkPLYWriter> plyWriter =
 			vtkSmartPointer<vtkPLYWriter>::New();
@@ -254,39 +233,37 @@ void Odm25dMeshing::buildMesh(){
 
 	log << "OK\n";
 
-#ifdef SHOWDEBUGWINDOW
-	vtkSmartPointer<vtkPolyDataMapper> mapper =
-			vtkSmartPointer<vtkPolyDataMapper>::New();
-	mapper->SetInputConnection(transformFilter->GetOutputPort());
-//	mapper->SetInputConnection(interpolator->GetOutputPort());
-//	mapper->SetInputData(polydataToShow);
-	mapper->SetScalarRange(150, 170);
+	if (showDebugWindow){
+		vtkSmartPointer<vtkPolyDataMapper> mapper =
+				vtkSmartPointer<vtkPolyDataMapper>::New();
+		mapper->SetInputConnection(transformFilter->GetOutputPort());
+		mapper->SetScalarRange(150, 170);
 
-//	  vtkSmartPointer<vtkDataSetMapper> mapper =
-//	    vtkSmartPointer<vtkDataSetMapper>::New();
-//	  mapper->SetInputData(image);
-//	  mapper->SetScalarRange(150, 170);
+	//	  vtkSmartPointer<vtkDataSetMapper> mapper =
+	//	    vtkSmartPointer<vtkDataSetMapper>::New();
+	//	  mapper->SetInputData(image);
+	//	  mapper->SetScalarRange(150, 170);
 
-	  vtkSmartPointer<vtkActor> actor =
-	    vtkSmartPointer<vtkActor>::New();
-	  actor->SetMapper(mapper);
-	  actor->GetProperty()->SetPointSize(5);
+		  vtkSmartPointer<vtkActor> actor =
+			vtkSmartPointer<vtkActor>::New();
+		  actor->SetMapper(mapper);
+		  actor->GetProperty()->SetPointSize(5);
 
-	  vtkSmartPointer<vtkRenderer> renderer =
-	    vtkSmartPointer<vtkRenderer>::New();
-	  vtkSmartPointer<vtkRenderWindow> renderWindow =
-	    vtkSmartPointer<vtkRenderWindow>::New();
-	  renderWindow->AddRenderer(renderer);
-	  vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor =
-	    vtkSmartPointer<vtkRenderWindowInteractor>::New();
-	  renderWindowInteractor->SetRenderWindow(renderWindow);
+		  vtkSmartPointer<vtkRenderer> renderer =
+			vtkSmartPointer<vtkRenderer>::New();
+		  vtkSmartPointer<vtkRenderWindow> renderWindow =
+			vtkSmartPointer<vtkRenderWindow>::New();
+		  renderWindow->AddRenderer(renderer);
+		  vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor =
+			vtkSmartPointer<vtkRenderWindowInteractor>::New();
+		  renderWindowInteractor->SetRenderWindow(renderWindow);
 
-	  renderer->AddActor(actor);
-	  renderer->SetBackground(0.1804,0.5451,0.3412); // Sea green
+		  renderer->AddActor(actor);
+		  renderer->SetBackground(0.1804,0.5451,0.3412); // Sea green
 
-	  renderWindow->Render();
-	  renderWindowInteractor->Start();
-#endif
+		  renderWindow->Render();
+		  renderWindowInteractor->Start();
+	}
 }
 
 void Odm25dMeshing::parseArguments(int argc, char **argv) {
@@ -325,15 +302,14 @@ void Odm25dMeshing::parseArguments(int argc, char **argv) {
 //
 //			outliersRemovalPercentage = std::min<double>(99.99, std::max<double>(outliersRemovalPercentage, 0));
 //			log << "Outliers removal was manually set to: " << outliersRemovalPercentage << "\n";
-//		} else if (argument == "-wlopIterations" && argIndex < argc) {
-//			++argIndex;
-//			if (argIndex >= argc) throw Odm25dMeshingException("Argument '" + argument + "' expects 1 more input following it, but no more inputs were provided.");
-//			std::stringstream ss(argv[argIndex]);
-//			ss >> wlopIterations;
-//			if (ss.bad()) throw Odm25dMeshingException("Argument '" + argument + "' has a bad value (wrong type).");
-//
-//			wlopIterations = std::min<unsigned int>(1000, std::max<unsigned int>(wlopIterations, 1));
-//			log << "WLOP iterations was manually set to: " << wlopIterations << "\n";
+		} else if (argument == "-shepardNeighbors" && argIndex < argc) {
+			++argIndex;
+			if (argIndex >= argc) throw Odm25dMeshingException("Argument '" + argument + "' expects 1 more input following it, but no more inputs were provided.");
+			std::stringstream ss(argv[argIndex]);
+			ss >> shepardNeighbors;
+			if (ss.bad()) throw Odm25dMeshingException("Argument '" + argument + "' has a bad value (wrong type).");
+			shepardNeighbors = std::min<unsigned int>(1000, std::max<unsigned int>(shepardNeighbors, 1));
+			log << "Shepard neighbors was manually set to: " << shepardNeighbors << "\n";
 		} else if (argument == "-inputFile" && argIndex < argc) {
 			++argIndex;
 			if (argIndex >= argc) {
@@ -363,6 +339,23 @@ void Odm25dMeshing::parseArguments(int argc, char **argv) {
 			}
 			testFile.close();
 			log << "Writing output to: " << outputFile << "\n";
+		}else if (argument == "-outputDsmFile" && argIndex < argc) {
+			++argIndex;
+			if (argIndex >= argc) {
+				throw Odm25dMeshingException(
+						"Argument '" + argument
+								+ "' expects 1 more input following it, but no more inputs were provided.");
+			}
+			outputDsmFile = std::string(argv[argIndex]);
+			std::ofstream testFile(outputDsmFile.c_str());
+			if (!testFile.is_open()) {
+				throw Odm25dMeshingException(
+						"Argument '" + argument	+ "' has a bad value. (file not accessible)");
+			}
+			testFile.close();
+			log << "Saving DSM output to: " << outputDsmFile << "\n";
+		} else if (argument == "-showDebugWindow") {
+			showDebugWindow = true;
 		} else if (argument == "-logFile" && argIndex < argc) {
 			++argIndex;
 			if (argIndex >= argc) {
