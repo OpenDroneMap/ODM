@@ -15,7 +15,6 @@
 
 #endif
 
-#include <vtkVertexGlyphFilter.h>
 #include <vtkShepardKernel.h>
 #include <vtkPointData.h>
 #include <vtkImageData.h>
@@ -28,19 +27,18 @@
 #include <vtkPlaneSource.h>
 #include <vtkTransform.h>
 #include <vtkTransformFilter.h>
-#include <vtkWindowedSincPolyDataFilter.h>
-#include <vtkPointInterpolator.h>
 #include <vtkImageAnisotropicDiffusion2D.h>
 #include <vtkTIFFWriter.h>
 #include <vtkStatisticalOutlierRemoval.h>
-
-#include <pcl/io/ply_io.h>
-#include <pcl/PCLPointCloud2.h>
 
 // For compatibility with new VTK generic data arrays
 #ifdef vtkGenericDataArray_h
 #define InsertNextTupleValue InsertNextTypedTuple
 #endif
+
+#include <cstring>
+#include "tinyply.h"
+using namespace tinyply;
 
 #include "Logger.hpp"
 

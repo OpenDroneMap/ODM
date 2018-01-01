@@ -38,61 +38,44 @@ int Odm25dMeshing::run(int argc, char **argv) {
 }
 
 void Odm25dMeshing::loadPointCloud() {
-	pcl::PCLPointCloud2 blob;
-
 	log << "Loading point cloud... ";
 
-	if (pcl::io::loadPLYFile(inputFile.c_str(), blob) == -1) {
-		throw Odm25dMeshingException("Error when reading from: " + inputFile);
-	}
+	try{
+		std::ifstream ss(inputFile, std::ios::binary);
+		if (ss.fail()) throw Odm25dMeshingException("Failed to open " + inputFile);
+		PlyFile file;
 
-	log << "OK\n";
+		file.parse_header(ss);
 
-	log << "Scanning fields... ";
+		std::shared_ptr<PlyData> vertices = file.request_properties_from_element("vertex", { "x", "y", "z" });
+		file.read(ss);
 
-	pcl::PCLPointField *posX = NULL, *posY = NULL, *posZ = NULL;
+		const size_t numVerticesBytes = vertices->buffer.size_bytes();
+		struct float3 { float x, y, z; };
+		struct double3 { double x, y, z; };
 
-#define ASSIGN(_name, _field) if (blob.fields[i].name == _name){ _field = &blob.fields[i]; log << _name << " "; continue; }
-
-	for (size_t i = 0; i < blob.fields.size(); ++i) {
-		ASSIGN("x", posX);
-		ASSIGN("y", posY);
-		ASSIGN("z", posZ);
-	}
-
-	log << "OK\n";
-
-	if (posX == NULL || posY == NULL || posZ == NULL)
-		throw Odm25dMeshingException(
-				"Position attributes (x,y,z) missing from input");
-	if (posX->datatype != pcl::PCLPointField::FLOAT32
-			&& posX->datatype != pcl::PCLPointField::FLOAT64)
-		throw Odm25dMeshingException(
-				"Only float and float64 types are supported for position information");
-
-
-	for (size_t point_step = 0, i = 0; point_step < blob.data.size();
-			point_step += blob.point_step, i++) {
-		uint8_t *point = blob.data.data() + point_step;
-		double x,y,z;
-
-		if (posX->datatype == pcl::PCLPointField::FLOAT64) {
-			x = *(reinterpret_cast<double *>(point + posX->offset));
-			y = *(reinterpret_cast<double *>(point + posY->offset));
-			z = *(reinterpret_cast<double *>(point + posZ->offset));
-		} else if (posX->datatype == pcl::PCLPointField::FLOAT32) {
-			x = *(reinterpret_cast<float *>(point + posX->offset));
-			y = *(reinterpret_cast<float *>(point + posY->offset));
-			z = *(reinterpret_cast<float *>(point + posZ->offset));
-		} else {
-			throw Odm25dMeshingException(
-					"Invalid datatype " + std::to_string(posX->datatype)  + " for point.");
+		if (vertices->t == tinyply::Type::FLOAT32) {
+			std::vector<float3> verts(vertices->count);
+			std::memcpy(verts.data(), vertices->buffer.get(), numVerticesBytes);
+			for (float3 &v : verts){
+				points->InsertNextPoint(v.x, v.y, v.z);
+			}
+		}else if (vertices->t == tinyply::Type::FLOAT64) {
+			std::vector<double3> verts(vertices->count);
+			std::memcpy(verts.data(), vertices->buffer.get(), numVerticesBytes);
+			for (double3 &v : verts){
+				points->InsertNextPoint(v.x, v.y, v.z);
+			}
+		}else{
+			throw Odm25dMeshingException("Invalid data type (only float32 and float64 are supported): " + std::to_string((int)vertices->t));
 		}
-
-		points->InsertNextPoint(x, y, z);
+	}
+	catch (const std::exception & e)
+	{
+		throw Odm25dMeshingException("Error while loading point cloud: " + std::string(e.what()));
 	}
 
-	log << "Loaded " << points->GetNumberOfPoints() << " points\n";
+	log << "loaded " << points->GetNumberOfPoints() << " points\n";
 }
 
 void Odm25dMeshing::buildMesh(){
