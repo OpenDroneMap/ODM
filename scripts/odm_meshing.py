@@ -19,13 +19,6 @@ class ODMeshingCell(ecto.Cell):
                                  'is solved in the surface reconstruction step. '
                                  'Increasing this value increases computation '
                                  'times slightly but helps reduce memory usage.', 9)
-
-        params.declare("remove_outliers", 'Percentage of outliers to remove from the point set. Set to 0 to disable. '
-                                          'Applies to 2.5D mesh only.', 2)
-        params.declare("wlop_iterations", 'Iterations of the Weighted Locally Optimal Projection (WLOP) simplification algorithm. '
-                                          'Higher values take longer but produce a smoother mesh. '
-                                          'Applies to 2.5D mesh only. ', 70)
-
         params.declare("verbose", 'print additional messages to console', False)
 
     def declare_io(self, params, inputs, outputs):

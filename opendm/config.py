@@ -248,22 +248,32 @@ def config():
                               'times slightly but helps reduce memory usage. '
                               'Default: %(default)s'))
     
-    parser.add_argument('--mesh-remove-outliers',
-                        metavar='<percent>',
-                        default=2,
-                        type=float,
-                        help=('Percentage of outliers to remove from the point set. Set to 0 to disable. '
+    parser.add_argument('--mesh-neighbors',
+                        metavar='<positive integer>',
+                        default=24,
+                        type=int,
+                        help=('Number of neighbors to select when estimating the surface model used to compute the mesh and for statistical outlier removal. Higher values lead to smoother meshes but take longer to process. '
                               'Applies to 2.5D mesh only. '
                               'Default: %(default)s'))
 
-    parser.add_argument('--mesh-wlop-iterations',
+    parser.add_argument('--mesh-resolution',
                         metavar='<positive integer>',
-                        default=35,
+                        default=10,
                         type=int,
-                        help=('Iterations of the Weighted Locally Optimal Projection (WLOP) simplification algorithm. '
-                              'Higher values take longer but produce a smoother mesh. '
+                        help=('Size of the interpolated surface model used for deriving the 2.5D mesh, expressed in pixels per meter. '
+                              'Higher values work better for complex or urban terrains. '
+                              'Lower values work better on flat areas. '
+                              'Resolution has no effect on the number of vertices, but high values can severely impact runtime speed and memory usage. '
                               'Applies to 2.5D mesh only. '
                               'Default: %(default)s'))
+
+    parser.add_argument('--fast-orthophoto',
+                action='store_true',
+                default=False,
+                help='Skips dense reconstruction and 3D model generation. '
+                'It generates an orthophoto directly from the sparse reconstruction. '
+                'If you just need an orthophoto and do not need a full 3D model, turn on this option. '
+                'Experimental.')
 
     parser.add_argument('--texturing-data-term',
                         metavar='<string>',
@@ -481,6 +491,10 @@ def config():
                         help='Displays version number and exits. ')
 
     args = parser.parse_args()
+
+    if args.fast_orthophoto:
+      log.ODM_INFO('Fast orthophoto is turned on, automatically setting --use-25dmesh')
+      args.use_25dmesh = True
 
     # check that the project path setting has been set properly
     if not args.project_path:

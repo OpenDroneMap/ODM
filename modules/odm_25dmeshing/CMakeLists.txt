@@ -5,7 +5,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR})
 
 #set(VTK_DIR "/data/packages/VTK-7.1.1-build")
 set(VTK_SMP_IMPLEMENTATION_TYPE TBB)
-find_package(VTK REQUIRED)
+find_package(VTK 7.1.1 REQUIRED)
 include(${VTK_USE_FILE})
 
 # Add compiler options.

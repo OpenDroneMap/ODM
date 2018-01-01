@@ -96,7 +96,7 @@ void Odm25dMeshing::buildMesh(){
 			vtkSmartPointer<vtkStatisticalOutlierRemoval>::New();
 	removal->SetInputData(polyPoints);
 	removal->SetLocator(pointsLocator);
-	removal->SetSampleSize(24);
+	removal->SetSampleSize(neighbors);
 	removal->SetStandardDeviationFactor(1.5);
 	removal->GenerateOutliersOff();
 	removal->Update();
@@ -157,7 +157,7 @@ void Odm25dMeshing::buildMesh(){
 				vtkSmartPointer<vtkShepardKernel>::New();
 	shepardKernel->SetPowerParameter(2.0);
 	shepardKernel->SetKernelFootprintToNClosest();
-	shepardKernel->SetNumberOfPoints(shepardNeighbors);
+	shepardKernel->SetNumberOfPoints(neighbors);
 
 	vtkSmartPointer<vtkImageData> image =
 	    vtkSmartPointer<vtkImageData>::New();
@@ -312,14 +312,14 @@ void Odm25dMeshing::parseArguments(int argc, char **argv) {
 
 			resolution = std::min<double>(100000, std::max<double>(resolution, 0.00001));
 			log << "Resolution was manually set to: " << resolution << "\n";
-		} else if (argument == "-shepardNeighbors" && argIndex < argc) {
+		} else if (argument == "-neighbors" && argIndex < argc) {
 			++argIndex;
 			if (argIndex >= argc) throw Odm25dMeshingException("Argument '" + argument + "' expects 1 more input following it, but no more inputs were provided.");
 			std::stringstream ss(argv[argIndex]);
-			ss >> shepardNeighbors;
+			ss >> neighbors;
 			if (ss.bad()) throw Odm25dMeshingException("Argument '" + argument + "' has a bad value (wrong type).");
-			shepardNeighbors = std::min<unsigned int>(1000, std::max<unsigned int>(shepardNeighbors, 1));
-			log << "Shepard neighbors was manually set to: " << shepardNeighbors << "\n";
+			neighbors = std::min<unsigned int>(1000, std::max<unsigned int>(neighbors, 1));
+			log << "Neighbors was manually set to: " << neighbors << "\n";
 		} else if (argument == "-inputFile" && argIndex < argc) {
 			++argIndex;
 			if (argIndex >= argc) {
@@ -402,7 +402,7 @@ void Odm25dMeshing::printHelp() {
 		<< "	-logFile	<path>	log file path (default: " << logFilePath << ")\n"
 		<< "	-verbose	whether to print verbose output (default: " << (printInCoutPop ? "true" : "false") << ")\n"
 		<< "	-maxVertexCount	<0 - N>	Maximum number of vertices in the output mesh. The mesh might have fewer vertices, but will not exceed this limit. (default: " << maxVertexCount << ")\n"
-		<< "	-shepardNeighbors	<1 - 1000>	Number of nearest neighbors to consider when doing shepard's interpolation. Higher values lead to smoother meshes but take longer to process. (default: " << shepardNeighbors << ")\n"
+		<< "	-neighbors	<1 - 1000>	Number of nearest neighbors to consider when doing shepard's interpolation and outlier removal. Higher values lead to smoother meshes but take longer to process. (default: " << neighbors << ")\n"
 		<< "	-resolution	<1 - N>	Size of the interpolated digital surface model (DSM) used for deriving the 2.5D mesh, expressed in pixels per meter unit. (default: " << resolution << ")\n"
 
 		<< "\n";
