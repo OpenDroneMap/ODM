@@ -38,9 +38,6 @@ int Odm25dMeshing::run(int argc, char **argv) {
 }
 
 void Odm25dMeshing::loadPointCloud() {
-	elevation->SetName("elevation");
-	elevation->SetNumberOfComponents(1);
-
 	pcl::PCLPointCloud2 blob;
 
 	log << "Loading point cloud... ";
@@ -77,27 +74,72 @@ void Odm25dMeshing::loadPointCloud() {
 	for (size_t point_step = 0, i = 0; point_step < blob.data.size();
 			point_step += blob.point_step, i++) {
 		uint8_t *point = blob.data.data() + point_step;
+		double x,y,z;
 
 		if (posX->datatype == pcl::PCLPointField::FLOAT64) {
-			points->InsertNextPoint(*(reinterpret_cast<double *>(point + posX->offset)),
-					*(reinterpret_cast<double *>(point + posY->offset)),
-					0.0);
-			elevation->InsertNextValue(*(reinterpret_cast<double *>(point + posZ->offset)));
+			x = *(reinterpret_cast<double *>(point + posX->offset));
+			y = *(reinterpret_cast<double *>(point + posY->offset));
+			z = *(reinterpret_cast<double *>(point + posZ->offset));
 		} else if (posX->datatype == pcl::PCLPointField::FLOAT32) {
-			points->InsertNextPoint(*(reinterpret_cast<float *>(point + posX->offset)),
-								*(reinterpret_cast<float *>(point + posY->offset)),
-								0.0);
-			elevation->InsertNextValue(*(reinterpret_cast<float *>(point + posZ->offset)));
+			x = *(reinterpret_cast<float *>(point + posX->offset));
+			y = *(reinterpret_cast<float *>(point + posY->offset));
+			z = *(reinterpret_cast<float *>(point + posZ->offset));
+		} else {
+			throw Odm25dMeshingException(
+					"Invalid datatype " + std::to_string(posX->datatype)  + " for point.");
 		}
+
+		points->InsertNextPoint(x, y, z);
 	}
 
 	log << "Loaded " << points->GetNumberOfPoints() << " points\n";
 }
 
 void Odm25dMeshing::buildMesh(){
+	vtkThreadedImageAlgorithm::SetGlobalDefaultEnableSMP(true);
+
+	log << "Remove outliers... ";
+
+	vtkSmartPointer<vtkPolyData> polyPoints =
+		  vtkSmartPointer<vtkPolyData>::New();
+	polyPoints->SetPoints(points);
+
+	vtkSmartPointer<vtkStaticPointLocator> pointsLocator =
+			vtkSmartPointer<vtkStaticPointLocator>::New();
+	pointsLocator->SetDataSet(polyPoints);
+	pointsLocator->BuildLocator();
+
+	vtkSmartPointer<vtkStatisticalOutlierRemoval> removal =
+			vtkSmartPointer<vtkStatisticalOutlierRemoval>::New();
+	removal->SetInputData(polyPoints);
+	removal->SetLocator(pointsLocator);
+	removal->SetSampleSize(24);
+	removal->SetStandardDeviationFactor(1.5);
+	removal->GenerateOutliersOff();
+	removal->Update();
+
+	log << removal->GetNumberOfPointsRemoved() << " points removed\n";
+
+	log << "Squash point cloud to plane... ";
+
+	vtkSmartPointer<vtkPoints> cleanedPoints = removal->GetOutput()->GetPoints();
+	vtkSmartPointer<vtkFloatArray> elevation = vtkSmartPointer<vtkFloatArray>::New();
+	elevation->SetName("elevation");
+	elevation->SetNumberOfComponents(1);
+	double p[2];
+
+	for (vtkIdType i = 0; i < cleanedPoints->GetNumberOfPoints(); i++){
+		cleanedPoints->GetPoint(i, p);
+		elevation->InsertNextValue(p[2]);
+		p[2] = 0.0;
+		cleanedPoints->SetPoint(i, p);
+	}
+
+	log << "OK\n";
+
 	vtkSmartPointer<vtkPolyData> polydataToProcess =
 	  vtkSmartPointer<vtkPolyData>::New();
-	polydataToProcess->SetPoints(points);
+	polydataToProcess->SetPoints(cleanedPoints);
 	polydataToProcess->GetPointData()->SetScalars(elevation);
 
 	const float NODATA = -9999;
@@ -214,14 +256,6 @@ void Odm25dMeshing::buildMesh(){
 
 	log << "OK\n";
 
-//	vtkSmartPointer<vtkWindowedSincPolyDataFilter> smoother =
-//			vtkSmartPointer<vtkWindowedSincPolyDataFilter>::New();
-//	smoother->SetInputConnection(transformFilter->GetOutputPort());
-//	smoother->SetNumberOfIterations(10);
-//	smoother->BoundarySmoothingOff();
-//	smoother->SetPassBand(0.5);
-//	smoother->Update();
-
 	log << "Saving mesh to file... ";
 
 	vtkSmartPointer<vtkPLYWriter> plyWriter =
@@ -233,6 +267,7 @@ void Odm25dMeshing::buildMesh(){
 
 	log << "OK\n";
 
+#ifdef SUPPORTDEBUGWINDOW
 	if (showDebugWindow){
 		vtkSmartPointer<vtkPolyDataMapper> mapper =
 				vtkSmartPointer<vtkPolyDataMapper>::New();
@@ -264,6 +299,7 @@ void Odm25dMeshing::buildMesh(){
 		  renderWindow->Render();
 		  renderWindowInteractor->Start();
 	}
+#endif
 }
 
 void Odm25dMeshing::parseArguments(int argc, char **argv) {
@@ -293,15 +329,6 @@ void Odm25dMeshing::parseArguments(int argc, char **argv) {
 
 			resolution = std::min<double>(100000, std::max<double>(resolution, 0.00001));
 			log << "Resolution was manually set to: " << resolution << "\n";
-//		} else if (argument == "-outliersRemovalPercentage" && argIndex < argc) {
-//			++argIndex;
-//			if (argIndex >= argc) throw Odm25dMeshingException("Argument '" + argument + "' expects 1 more input following it, but no more inputs were provided.");
-//			std::stringstream ss(argv[argIndex]);
-//			ss >> outliersRemovalPercentage;
-//			if (ss.bad()) throw Odm25dMeshingException("Argument '" + argument + "' has a bad value (wrong type).");
-//
-//			outliersRemovalPercentage = std::min<double>(99.99, std::max<double>(outliersRemovalPercentage, 0));
-//			log << "Outliers removal was manually set to: " << outliersRemovalPercentage << "\n";
 		} else if (argument == "-shepardNeighbors" && argIndex < argc) {
 			++argIndex;
 			if (argIndex >= argc) throw Odm25dMeshingException("Argument '" + argument + "' expects 1 more input following it, but no more inputs were provided.");
@@ -383,15 +410,16 @@ void Odm25dMeshing::printHelp() {
 	log.setIsPrintingInCout(true);
 
 	log << "Usage: odm_25dmeshing -inputFile [plyFile] [optional-parameters]\n";
-	log << "Create a 2.5D mesh from an oriented point cloud (points with normals) using a constrained delaunay triangulation. "
+	log << "Create a 2.5D mesh from a point cloud. "
 		<< "The program requires a path to an input PLY point cloud file, all other input parameters are optional.\n\n";
 
 	log << "	-inputFile	<path>	to PLY point cloud\n"
 		<< "	-outputFile	<path>	where the output PLY 2.5D mesh should be saved (default: " << outputFile << ")\n"
+		<< "	-outputDsmFile	<path>	Optionally output the Digital Surface Model (DSM) computed for generating the mesh. (default: " << outputDsmFile << ")\n"
 		<< "	-logFile	<path>	log file path (default: " << logFilePath << ")\n"
 		<< "	-verbose	whether to print verbose output (default: " << (printInCoutPop ? "true" : "false") << ")\n"
 		<< "	-maxVertexCount	<0 - N>	Maximum number of vertices in the output mesh. The mesh might have fewer vertices, but will not exceed this limit. (default: " << maxVertexCount << ")\n"
-		//		<< "	-wlopIterations	<1 - 1000>	Iterations of the Weighted Locally Optimal Projection (WLOP) simplification algorithm. Higher values take longer but produce a smoother mesh. (default: " << wlopIterations << ")\n"
+		<< "	-shepardNeighbors	<1 - 1000>	Number of nearest neighbors to consider when doing shepard's interpolation. Higher values lead to smoother meshes but take longer to process. (default: " << shepardNeighbors << ")\n"
 		<< "	-resolution	<1 - N>	Size of the interpolated digital surface model (DSM) used for deriving the 2.5D mesh, expressed in pixels per meter unit. (default: " << resolution << ")\n"
 
 		<< "\n";

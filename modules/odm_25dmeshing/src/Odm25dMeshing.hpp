@@ -1,5 +1,9 @@
 #pragma once
 
+//#define SUPPORTDEBUGWINDOW 1
+
+#ifdef SUPPORTDEBUGWINDOW
+
 #include <vtkActor.h>
 #include <vtkCamera.h>
 #include <vtkPolyDataMapper.h>
@@ -8,6 +12,8 @@
 #include <vtkRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
 #include <vtkDataSetMapper.h>
+
+#endif
 
 #include <vtkVertexGlyphFilter.h>
 #include <vtkShepardKernel.h>
@@ -26,6 +32,7 @@
 #include <vtkPointInterpolator.h>
 #include <vtkImageAnisotropicDiffusion2D.h>
 #include <vtkTIFFWriter.h>
+#include <vtkStatisticalOutlierRemoval.h>
 
 #include <pcl/io/ply_io.h>
 #include <pcl/PCLPointCloud2.h>
@@ -82,7 +89,6 @@ private:
 	bool showDebugWindow = false;
 
 	vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
-	vtkSmartPointer<vtkFloatArray> elevation = vtkSmartPointer<vtkFloatArray>::New();
 };
 
 class Odm25dMeshingException: public std::exception {
