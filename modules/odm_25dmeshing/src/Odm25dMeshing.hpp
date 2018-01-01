@@ -82,7 +82,7 @@ private:
 	std::string logFilePath = "odm_25dmeshing_log.txt";
 	int maxVertexCount = 100000;
 	double resolution = 20.0;
-	unsigned int shepardNeighbors = 24;
+	unsigned int neighbors = 24;
 	std::string outputDsmFile = "";
 	bool showDebugWindow = false;
 
