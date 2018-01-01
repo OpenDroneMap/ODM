@@ -6,6 +6,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR})
 # Set pcl dir to the input spedified with option -DPCL_DIR="path"
 set(PCL_DIR "PCL_DIR-NOTFOUND" CACHE "PCL_DIR" "Path to the pcl installation directory")
 
+set(VTK_SMP_IMPLEMENTATION_TYPE TBB)
 find_package(VTK REQUIRED)
 include(${VTK_USE_FILE})
 
