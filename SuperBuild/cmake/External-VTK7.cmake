@@ -16,7 +16,6 @@ ExternalProject_Add(${_proj_name}
     -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
     -DVTK_SMP_IMPLEMENTATION_TYPE=TBB 
     -DCMAKE_BUILD_TYPE=Release 
-    -DBUILD_SHARED_LIBS=OFF 
     -DVTK_Group_Rendering=OFF 
     -DBUILD_TESTING=OFF
   #--Build step-----------------

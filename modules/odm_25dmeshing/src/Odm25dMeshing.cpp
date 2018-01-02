@@ -165,7 +165,7 @@ void Odm25dMeshing::buildMesh(){
 	log << "DSM size is " << width << "x" << height << " (" << ceil(width * height * sizeof(float) * 1e-6) << " MB) \n";
 	image->AllocateScalars(VTK_FLOAT, 1);
 
-	log << "Point interpolation using shepard's kernel...";
+	log << "Point interpolation using shepard's kernel... ";
 
 	vtkSmartPointer<vtkPointInterpolator> interpolator =
 				vtkSmartPointer<vtkPointInterpolator>::New();

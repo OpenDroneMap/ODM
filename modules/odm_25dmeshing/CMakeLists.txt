@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 2.8)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR})
 
+set (CMAKE_CXX_STANDARD 11)
 #set(VTK_DIR "/data/packages/VTK-7.1.1-build")
 set(VTK_SMP_IMPLEMENTATION_TYPE TBB)
 find_package(VTK 7.1.1 REQUIRED)
