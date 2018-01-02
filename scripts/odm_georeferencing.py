@@ -42,7 +42,7 @@ class ODMGeoreferencingCell(ecto.Cell):
         tree = self.inputs.tree
         gcpfile = io.join_paths(tree.root_path, self.params.gcp_file) \
             if self.params.gcp_file else find('gcp_list.txt', tree.root_path)
-        geocreated = True
+        doPointCloudGeo = True
         verbose = '-verbose' if self.params.verbose else ''
 
         # define paths and create working directories
@@ -160,16 +160,11 @@ class ODMGeoreferencingCell(ecto.Cell):
                     log.ODM_WARNING('Georeferencing failed. Make sure your '
                                     'photos have geotags in the EXIF or you have '
                                     'provided a GCP file. ')
-                    geocreated = False # skip the rest of the georeferencing
+                    doPointCloudGeo = False # skip the rest of the georeferencing
 
-                odm_georeferencing_model_ply_geo = os.path.join(tree.odm_georeferencing, tree.odm_georeferencing_model_ply_geo)
-                if geocreated:
-                    # update images metadata
+                if doPointCloudGeo:
                     geo_ref = types.ODM_GeoRef()
                     geo_ref.parse_coordinate_system(tree.odm_georeferencing_coords)
-
-                    for idx, photo in enumerate(self.inputs.photos):
-                        geo_ref.utm_to_latlon(tree.odm_georeferencing_latlon, photo, idx)
 
                     # convert ply model to LAS reference system
                     geo_ref.convert_to_las(odm_georeferencing_model_ply_geo,
@@ -192,6 +187,11 @@ class ODMGeoreferencingCell(ecto.Cell):
                                 if line.startswith("end_header"):
                                     reachedpoints = True
                     csvfile.close()
+
+                    # Do not execute a second time, since
+                    # We might be doing georeferencing for 
+                    # multiple models (3D, 2.5D, ...)
+                    doPointCloudGeo = False
 
         else:
             log.ODM_WARNING('Found a valid georeferenced model in: %s'
