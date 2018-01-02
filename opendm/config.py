@@ -104,7 +104,7 @@ def config():
 
     parser.add_argument('--min-num-features',
                         metavar='<integer>',
-                        default=4000,
+                        default=8000,
                         type=int,
                         help=('Minimum number of features to extract per image. '
                               'More features leads to better results but slower '
@@ -492,10 +492,6 @@ def config():
 
     args = parser.parse_args()
 
-    if args.fast_orthophoto:
-      log.ODM_INFO('Fast orthophoto is turned on, automatically setting --use-25dmesh')
-      args.use_25dmesh = True
-
     # check that the project path setting has been set properly
     if not args.project_path:
         log.ODM_ERROR('You need to set the project path in the '
@@ -503,5 +499,14 @@ def config():
                       'or use `--project-path <path>`. Run `python '
                       'run.py --help` for more information. ')
         sys.exit(1)
+
+    if args.fast_orthophoto:
+      log.ODM_INFO('Fast orthophoto is turned on, automatically setting --use-25dmesh')
+      args.use_25dmesh = True
+
+      # Cannot use pmvs
+      if args.use_pmvs:
+        log.ODM_INFO('Fast orthophoto is turned on, cannot use pmvs (removing --use-pmvs)')
+        args.use_pmvs = False
 
     return args
