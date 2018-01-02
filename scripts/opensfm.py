@@ -52,6 +52,8 @@ class ODMOpenSfMCell(ecto.Cell):
 
         if not args.use_pmvs:
             output_file = tree.opensfm_model
+            if args.fast_orthophoto:
+                output_file = io.join_paths(tree.opensfm, 'reconstruction.ply')
         else:
             output_file = tree.opensfm_reconstruction
 
