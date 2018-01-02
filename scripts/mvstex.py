@@ -53,6 +53,9 @@ class ODMMvsTexCell(ecto.Cell):
             'model': tree.odm_mesh
         }]
 
+        if args.fast_orthophoto:
+            runs = []
+
         if args.use_25dmesh:
             runs += [{
                     'out_dir': tree.odm_25dtexturing,

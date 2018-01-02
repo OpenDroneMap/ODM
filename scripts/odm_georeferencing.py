@@ -92,6 +92,10 @@ class ODMGeoreferencingCell(ecto.Cell):
             'texturing_dir': tree.odm_texturing,
             'model': os.path.join(tree.odm_texturing, tree.odm_textured_model_obj)
         }]
+
+        if args.fast_orthophoto:
+            runs = []
+
         if args.use_25dmesh:
             runs += [{
                     'georeferencing_dir': tree.odm_25dgeoreferencing,
@@ -126,7 +130,10 @@ class ODMGeoreferencingCell(ecto.Cell):
 
                 }
                 if not args.use_pmvs:
-                    kwargs['pc'] = tree.opensfm_model
+                    if args.fast_orthophoto:
+                        kwargs['pc'] = os.path.join(tree.opensfm, 'reconstruction.ply')
+                    else:
+                        kwargs['pc'] = tree.opensfm_model
                 else:
                     kwargs['pc'] = tree.pmvs_model
 

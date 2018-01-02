@@ -141,8 +141,16 @@ class ODMOpenSfMCell(ecto.Cell):
 
                 system.run('PYTHONPATH=%s %s/bin/opensfm undistort %s' %
                            (context.pyopencv_path, context.opensfm_path, tree.opensfm))
-                system.run('PYTHONPATH=%s %s/bin/opensfm compute_depthmaps %s' %
+                
+                # Skip dense reconstruction if necessary and export
+                # sparse reconstruction instead
+                if args.fast_orthophoto:
+                    system.run('PYTHONPATH=%s %s/bin/opensfm export_ply --no-cameras %s' %
                            (context.pyopencv_path, context.opensfm_path, tree.opensfm))
+                else:
+                    system.run('PYTHONPATH=%s %s/bin/opensfm compute_depthmaps %s' %
+                           (context.pyopencv_path, context.opensfm_path, tree.opensfm))
+
         else:
             log.ODM_WARNING('Found a valid OpenSfM reconstruction file in: %s' %
                             tree.opensfm_reconstruction)
