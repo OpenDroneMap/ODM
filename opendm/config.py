@@ -281,7 +281,7 @@ def config():
                     type=int,
                     help=('Automatically crop image outputs by creating a smooth buffer '
                           'around the dataset boundaries, shrinked by N meters. '
-                          'Set to 0 to disable cropping. '
+                          'Use 0 to disable cropping. '
                           'Default: %(default)s'))
 
     parser.add_argument('--texturing-data-term',

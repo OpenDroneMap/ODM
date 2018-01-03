@@ -64,7 +64,6 @@ class ODMDEMCell(ecto.Cell):
                 rerun_cell:
 
                 clipper = Clipper(odm_dem_root, 'odm_georeferenced_model')
-                bounds_buffer_path = clipper.create_buffer_shapefile(tree.odm_georeferencing_model_las, args.crop)
 
                 # Process with lidar2dems
                 terrain_params_map = {
@@ -80,12 +79,16 @@ class ODMDEMCell(ecto.Cell):
                     'slope': terrain_params[0],
                     'cellsize': terrain_params[1],
                     'outdir': odm_dem_root,
-                    'site': bounds_buffer_path
+                    'site': ''
                 }
+
+                if args.crop > 0:
+                    bounds_buffer_path = clipper.create_buffer_shapefile(tree.odm_georeferencing_model_las, args.crop)
+                    kwargs['site'] = '-s {}'.format(bounds_buffer_path)
 
                 l2d_params = '--slope {slope} --cellsize {cellsize} ' \
                              '{verbose} ' \
-                             '-o -s {site} ' \
+                             '-o {site} ' \
                              '--outdir {outdir}'.format(**kwargs)
 
                 approximate = '--approximate' if args.dem_approximate else ''
