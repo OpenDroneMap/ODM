@@ -275,6 +275,15 @@ def config():
                 'If you just need an orthophoto and do not need a full 3D model, turn on this option. '
                 'Experimental.')
 
+    parser.add_argument('--crop',
+                    metavar='<positive integer>',
+                    default=3,
+                    type=int,
+                    help=('Automatically crop image outputs by creating a smooth buffer '
+                          'around the dataset boundaries, shrinked by N meters. '
+                          'Set to 0 to disable cropping. '
+                          'Default: %(default)s'))
+
     parser.add_argument('--texturing-data-term',
                         metavar='<string>',
                         default='gmi',
