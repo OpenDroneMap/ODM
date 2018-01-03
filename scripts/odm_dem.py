@@ -6,6 +6,7 @@ from opendm import log
 from opendm import system
 from opendm import context
 from opendm import types
+from opendm.clipper import Clipper
 
 
 class ODMDEMCell(ecto.Cell):
@@ -62,44 +63,8 @@ class ODMDEMCell(ecto.Cell):
                 (args.dsm and not io.file_exists(dsm_output_filename)) or \
                 rerun_cell:
 
-                # Extract boundaries and srs of point cloud
-                summary_file_path = os.path.join(odm_dem_root, 'odm_georeferenced_model.summary.json')
-                boundary_file_path = os.path.join(odm_dem_root, 'odm_georeferenced_model.boundary.json')
-
-                system.run('pdal info --summary {0} > {1}'.format(tree.odm_georeferencing_model_las, summary_file_path), env_paths)
-                system.run('pdal info --boundary {0} > {1}'.format(tree.odm_georeferencing_model_las,  boundary_file_path), env_paths)
-
-                pc_proj4 = ""
-                pc_geojson_bounds_feature = None
-
-                with open(summary_file_path, 'r') as f:
-                    json_f = json.loads(f.read())
-                    pc_proj4 = json_f['summary']['srs']['proj4']
-
-                with open(boundary_file_path, 'r') as f:
-                    json_f = json.loads(f.read())
-                    pc_geojson_boundary_feature = json_f['boundary']['boundary_json']
-
-                # Write bounds to GeoJSON
-                bounds_geojson_path = os.path.join(odm_dem_root, 'odm_georeferenced_model.bounds.geojson')
-                with open(bounds_geojson_path, "w") as f:
-                    f.write(json.dumps({
-                        "type": "FeatureCollection",
-                        "features": [{
-                            "type": "Feature",
-                            "geometry": pc_geojson_boundary_feature
-                        }]
-                    }))
-
-                bounds_shapefile_path = os.path.join(odm_dem_root, 'bounds.shp')
-
-                # Convert bounds to Shapefile
-                kwargs = {
-                    'input': bounds_geojson_path,
-                    'output': bounds_shapefile_path,
-                    'proj4': pc_proj4
-                }
-                system.run('ogr2ogr -overwrite -a_srs "{proj4}" {output} {input}'.format(**kwargs))
+                clipper = Clipper(odm_dem_root, 'odm_georeferenced_model')
+                bounds_buffer_path = clipper.create_buffer_shapefile(tree.odm_georeferencing_model_las, args.crop)
 
                 # Process with lidar2dems
                 terrain_params_map = {
@@ -115,7 +80,7 @@ class ODMDEMCell(ecto.Cell):
                     'slope': terrain_params[0],
                     'cellsize': terrain_params[1],
                     'outdir': odm_dem_root,
-                    'site': bounds_shapefile_path
+                    'site': bounds_buffer_path
                 }
 
                 l2d_params = '--slope {slope} --cellsize {cellsize} ' \
