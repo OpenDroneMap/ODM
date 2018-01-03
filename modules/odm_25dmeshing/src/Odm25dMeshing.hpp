@@ -30,6 +30,7 @@
 #include <vtkImageAnisotropicDiffusion2D.h>
 #include <vtkTIFFWriter.h>
 #include <vtkStatisticalOutlierRemoval.h>
+#include <vtkImageMedian3D.h>
 
 // For compatibility with new VTK generic data arrays
 #ifdef vtkGenericDataArray_h

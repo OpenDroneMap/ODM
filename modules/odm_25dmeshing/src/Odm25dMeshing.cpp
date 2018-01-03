@@ -190,30 +190,41 @@ void Odm25dMeshing::buildMesh(){
 		}
 	}
 
+	log << "OK\nMedian filter...";
+
+	vtkSmartPointer<vtkImageMedian3D> medianFilter =
+			vtkSmartPointer<vtkImageMedian3D>::New();
+	medianFilter->SetInputData(image);
+	medianFilter->SetKernelSize(
+			std::max(1.0, resolution),
+			std::max(1.0, resolution),
+			1);
+	medianFilter->Update();
+
 	log << "OK\n";
 
+//	double diffuseIterations = std::max(1.0, resolution / 2.0);
+//	vtkSmartPointer<vtkImageAnisotropicDiffusion2D> diffuse1 =
+//			vtkSmartPointer<vtkImageAnisotropicDiffusion2D>::New();
+//	diffuse1->SetInputConnection(medianFilter->GetOutputPort());
+//	diffuse1->FacesOn();
+//	diffuse1->EdgesOn();
+//	diffuse1->CornersOn();
+//	diffuse1->SetDiffusionFactor(1); // Full strength
+//	diffuse1->GradientMagnitudeThresholdOn();
+//	diffuse1->SetDiffusionThreshold(0.2); // Don't smooth jumps in elevation > than 0.20m
+//	diffuse1->SetNumberOfIterations(diffuseIterations);
+//	diffuse1->Update();
 
 	if (outputDsmFile != ""){
 		log << "Saving DSM to file... ";
 		vtkSmartPointer<vtkTIFFWriter> tiffWriter =
 				vtkSmartPointer<vtkTIFFWriter>::New();
 		tiffWriter->SetFileName(outputDsmFile.c_str());
-		tiffWriter->SetInputData(image);
+		tiffWriter->SetInputData(medianFilter->GetOutput());
 		tiffWriter->Write();
 		log << "OK\n";
 	}
-
-	vtkSmartPointer<vtkImageAnisotropicDiffusion2D> surfaceDiffusion =
-			vtkSmartPointer<vtkImageAnisotropicDiffusion2D>::New();
-	surfaceDiffusion->SetInputData(image);
-	surfaceDiffusion->FacesOn();
-	surfaceDiffusion->EdgesOn();
-	surfaceDiffusion->CornersOn();
-	surfaceDiffusion->SetDiffusionFactor(1); // Full strength
-	surfaceDiffusion->GradientMagnitudeThresholdOn();
-	surfaceDiffusion->SetDiffusionThreshold(0.2); // Don't smooth jumps in elevation > than 0.20m
-	surfaceDiffusion->SetNumberOfIterations(resolution / 2.0);
-	surfaceDiffusion->Update();
 
 	log << "Triangulate... ";
 
@@ -221,7 +232,7 @@ void Odm25dMeshing::buildMesh(){
 			vtkSmartPointer<vtkGreedyTerrainDecimation>::New();
 	terrain->SetErrorMeasureToNumberOfTriangles();
 	terrain->SetNumberOfTriangles(maxVertexCount * 2); // Approximate
-	terrain->SetInputData(surfaceDiffusion->GetOutput());
+	terrain->SetInputData(medianFilter->GetOutput());
 	terrain->BoundaryVertexDeletionOn();
 	terrain->Update();
 
