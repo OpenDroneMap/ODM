@@ -6,7 +6,6 @@ from opendm import log
 from opendm import system
 from opendm import context
 from opendm import types
-from opendm.clipper import Clipper
 
 
 class ODMDEMCell(ecto.Cell):
@@ -62,9 +61,7 @@ class ODMDEMCell(ecto.Cell):
             if (args.dtm and not io.file_exists(dtm_output_filename)) or \
                 (args.dsm and not io.file_exists(dsm_output_filename)) or \
                 rerun_cell:
-
-                clipper = Clipper(odm_dem_root, 'odm_georeferenced_model')
-
+                 
                 # Process with lidar2dems
                 terrain_params_map = {
                     'flatnonforest': (1, 3), 
@@ -83,8 +80,9 @@ class ODMDEMCell(ecto.Cell):
                 }
 
                 if args.crop > 0:
-                    bounds_buffer_path = clipper.create_buffer_shapefile(tree.odm_georeferencing_model_las, args.crop)
-                    kwargs['site'] = '-s {}'.format(bounds_buffer_path)
+                    bounds_shapefile_path = os.path.join(tree.odm_georeferencing, 'odm_georeferenced_model.bounds.shp')
+                    if os.path.exists(bounds_shapefile_path):
+                        kwargs['site'] = '-s {}'.format(bounds_shapefile_path)
 
                 l2d_params = '--slope {slope} --cellsize {cellsize} ' \
                              '{verbose} ' \
@@ -103,7 +101,8 @@ class ODMDEMCell(ecto.Cell):
                         args.dem_initial_distance, tree.odm_georeferencing), env_paths)
                 else:
                     log.ODM_INFO("Will skip classification, only DSM is needed")
-                    copyfile(tree.odm_georeferencing_model_las, os.path.join(odm_dem_root, 'bounds-0_l2d_s{slope}c{cellsize}.las'.format(**kwargs)))
+                    l2d_classified_pattern = 'odm_georeferenced_model.bounds-0_l2d_s{slope}c{cellsize}.las' if args.crop > 0 else 'l2d_s{slope}c{cellsize}.las'
+                    copyfile(tree.odm_georeferencing_model_las, os.path.join(odm_dem_root, l2d_classified_pattern.format(**kwargs)))
 
                 products = []
                 if args.dsm: products.append('dsm') 
@@ -136,9 +135,11 @@ class ODMDEMCell(ecto.Cell):
 
                     # Rename final output
                     if product == 'dsm':
-                        os.rename(os.path.join(odm_dem_root, 'bounds-0_dsm.idw.tif'), dsm_output_filename)
+                        dsm_pattern = 'odm_georeferenced_model.bounds-0_dsm.idw.tif' if args.crop > 0 else 'dsm.idw.tif'
+                        os.rename(os.path.join(odm_dem_root, dsm_pattern), dsm_output_filename)
                     elif product == 'dtm':
-                        os.rename(os.path.join(odm_dem_root, 'bounds-0_dtm.idw.tif'), dtm_output_filename)
+                        dtm_pattern = 'odm_georeferenced_model.bounds-0_dsm.idw.tif' if args.crop > 0 else 'dtm.idw.tif'
+                        os.rename(os.path.join(odm_dem_root, dtm_pattern), dtm_output_filename)
 
             else:
                 log.ODM_WARNING('Found existing outputs in: %s' % odm_dem_root)

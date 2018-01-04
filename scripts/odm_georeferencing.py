@@ -7,6 +7,7 @@ from opendm import log
 from opendm import types
 from opendm import system
 from opendm import context
+from opendm.cropper import Cropper
 
 
 class ODMGeoreferencingCell(ecto.Cell):
@@ -187,6 +188,11 @@ class ODMGeoreferencingCell(ecto.Cell):
                                 if line.startswith("end_header"):
                                     reachedpoints = True
                     csvfile.close()
+
+                    if args.crop > 0:
+                        log.ODM_INFO("Calculating cropping area and generating bounds shapefile from point cloud")
+                        cropper = Cropper(tree.odm_georeferencing, 'odm_georeferenced_model')
+                        cropper.create_bounds_shapefile(tree.odm_georeferencing_model_las, args.crop)
 
                     # Do not execute a second time, since
                     # We might be doing georeferencing for 
