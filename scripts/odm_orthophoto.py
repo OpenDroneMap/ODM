@@ -5,6 +5,7 @@ from opendm import log
 from opendm import system
 from opendm import context
 from opendm import types
+from opendm.cropper import Cropper
 
 
 class ODMOrthoPhotoCell(ecto.Cell):
@@ -127,6 +128,18 @@ class ODMOrthoPhotoCell(ecto.Cell):
                                '-co NUM_THREADS=ALL_CPUS '
                                '-a_srs \"EPSG:{epsg}\" '
                                '{png} {tiff} > {log}'.format(**kwargs))
+
+                    if args.crop > 0:
+                        shapefile_path = os.path.join(tree.odm_georeferencing, 'odm_georeferenced_model.bounds.shp')
+                        Cropper.crop(shapefile_path, tree.odm_orthophoto_tif, {
+                                'TILED': 'NO' if self.params.no_tiled else 'YES',
+                                'COMPRESS': self.params.compress,
+                                'PREDICTOR': '2' if self.params.compress in ['LZW', 'DEFLATE'] else '1',
+                                'BIGTIFF': self.params.bigtiff,
+                                'BLOCKXSIZE': 512,
+                                'BLOCKYSIZE': 512,
+                                'NUM_THREADS': 'ALL_CPUS'
+                            })
 
                     if self.params.build_overviews:
                         log.ODM_DEBUG("Building Overviews")
