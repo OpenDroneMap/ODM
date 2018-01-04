@@ -257,9 +257,9 @@ def config():
                               'Default: %(default)s'))
 
     parser.add_argument('--mesh-resolution',
-                        metavar='<positive integer>',
+                        metavar='<positive float>',
                         default=10,
-                        type=int,
+                        type=float,
                         help=('Size of the interpolated surface model used for deriving the 2.5D mesh, expressed in pixels per meter. '
                               'Higher values work better for complex or urban terrains. '
                               'Lower values work better on flat areas. '
@@ -276,9 +276,9 @@ def config():
                 'Experimental.')
 
     parser.add_argument('--crop',
-                    metavar='<positive integer>',
+                    metavar='<positive float>',
                     default=3,
-                    type=int,
+                    type=float,
                     help=('Automatically crop image outputs by creating a smooth buffer '
                           'around the dataset boundaries, shrinked by N meters. '
                           'Use 0 to disable cropping. '
