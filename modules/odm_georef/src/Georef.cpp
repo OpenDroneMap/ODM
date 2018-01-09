@@ -192,7 +192,16 @@ Vec3 GeorefCamera::getReferencedPos()
 
 bool GeorefCamera::isValid()
 {
-    return focalLength_ != 0 && k1_ != 0 && k2_ != 0;
+    return focalLength_ != 0 &&
+           ((*transform_)(0, 0) != 0 ||
+           (*transform_)(0, 1) != 0 ||
+           (*transform_)(0, 2) != 0 ||
+           (*transform_)(1, 0) != 0 ||
+           (*transform_)(1, 1) != 0 ||
+           (*transform_)(1, 2) != 0 ||
+           (*transform_)(2, 0) != 0 ||
+           (*transform_)(2, 1) != 0 ||
+           (*transform_)(2, 2) != 0);
 }
 
 std::ostream& operator<<(std::ostream &os, const GeorefCamera &cam)
