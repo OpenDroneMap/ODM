@@ -22,7 +22,7 @@
 #include <vtkPLYWriter.h>
 #include <vtkSmartPointer.h>
 #include <vtkFloatArray.h>
-#include <vtkStaticPointLocator.h>
+#include <vtkOctreePointLocator.h>
 #include <vtkPointInterpolator.h>
 #include <vtkPlaneSource.h>
 #include <vtkTransform.h>
