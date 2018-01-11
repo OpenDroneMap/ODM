@@ -14,13 +14,13 @@ install() {
 
     ## Before installing
     echo "Updating the system"
-    sudo apt-get update
+    apt-get update
 
-    sudo add-apt-repository -y ppa:ubuntugis/ppa
-    sudo apt-get update
+    add-apt-repository -y ppa:ubuntugis/ppa
+    apt-get update
 
     echo "Installing Required Requisites"
-    sudo apt-get install -y -qq build-essential \
+    apt-get install -y -qq build-essential \
                          git \
                          cmake \
                          python-pip \
@@ -31,13 +31,13 @@ install() {
                          libjsoncpp-dev
 
     echo "Getting CMake 3.1 for MVS-Texturing"
-    sudo apt-get install -y software-properties-common python-software-properties
-    sudo add-apt-repository -y ppa:george-edison55/cmake-3.x
-    sudo apt-get update -y
-    sudo apt-get install -y --only-upgrade cmake
+    apt-get install -y software-properties-common python-software-properties
+    add-apt-repository -y ppa:george-edison55/cmake-3.x
+    apt-get update -y
+    apt-get install -y --only-upgrade cmake
 
     echo "Installing OpenCV Dependencies"
-    sudo apt-get install -y -qq libgtk2.0-dev \
+    apt-get install -y -qq libgtk2.0-dev \
                          libavcodec-dev \
                          libavformat-dev \
                          libswscale-dev \
@@ -57,11 +57,11 @@ install() {
                          libvtk6-dev
 
     echo "Removing libdc1394-22-dev due to python opencv issue"
-    sudo apt-get remove libdc1394-22-dev
+    apt-get remove libdc1394-22-dev
 
     ## Installing OpenSfM Requisites
     echo "Installing OpenSfM Dependencies"
-    sudo apt-get install -y -qq python-networkx \
+    apt-get install -y -qq python-networkx \
                          libgoogle-glog-dev \
                          libsuitesparse-dev \
                          libboost-filesystem-dev \
@@ -72,7 +72,7 @@ install() {
                          libboost-thread-dev \
                          python-pyproj
 
-    sudo pip install -U PyYAML \
+    pip install -U PyYAML \
                         exifread \
                         gpxpy \
                         xmltodict \
@@ -80,26 +80,26 @@ install() {
                         loky
 
     echo "Installing CGAL dependencies"
-    sudo apt-get install -y -qq libgmp-dev libmpfr-dev
+    apt-get install -y -qq libgmp-dev libmpfr-dev
 
     echo "Installing Ecto Dependencies"
-    sudo pip install -U catkin-pkg
-    sudo apt-get install -y -qq python-empy \
+    pip install -U catkin-pkg
+    apt-get install -y -qq python-empy \
                          python-nose \
                          python-pyside
 
     echo "Installing OpenDroneMap Dependencies"
-    sudo apt-get install -y -qq python-pyexiv2 \
+    apt-get install -y -qq python-pyexiv2 \
                          python-scipy \
                          libexiv2-dev \
                          liblas-bin
 
     echo "Installing lidar2dems Dependencies"
-    sudo apt-get install -y -qq swig2.0 \
+    apt-get install -y -qq swig2.0 \
                          python-wheel \
                          libboost-log-dev
 
-    sudo pip install -U https://github.com/OpenDroneMap/gippy/archive/v0.3.9.tar.gz
+    pip install -U https://github.com/OpenDroneMap/gippy/archive/v0.3.9.tar.gz
 
     echo "Compiling SuperBuild"
     cd ${RUNPATH}/SuperBuild
