@@ -87,8 +87,8 @@ void Odm25dMeshing::buildMesh(){
 		  vtkSmartPointer<vtkPolyData>::New();
 	polyPoints->SetPoints(points);
 
-	vtkSmartPointer<vtkStaticPointLocator> pointsLocator =
-			vtkSmartPointer<vtkStaticPointLocator>::New();
+	vtkSmartPointer<vtkOctreePointLocator> pointsLocator =
+			vtkSmartPointer<vtkOctreePointLocator>::New();
 	pointsLocator->SetDataSet(polyPoints);
 	pointsLocator->BuildLocator();
 
@@ -148,8 +148,8 @@ void Odm25dMeshing::buildMesh(){
 	plane->SetCenter(center);
 	plane->SetNormal(0.0, 0.0, 1.0);
 
-	vtkSmartPointer<vtkStaticPointLocator> locator =
-			vtkSmartPointer<vtkStaticPointLocator>::New();
+	vtkSmartPointer<vtkOctreePointLocator> locator =
+			vtkSmartPointer<vtkOctreePointLocator>::New();
 	locator->SetDataSet(polydataToProcess);
 	locator->BuildLocator();
 
