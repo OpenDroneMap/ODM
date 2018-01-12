@@ -258,12 +258,13 @@ def config():
 
     parser.add_argument('--mesh-resolution',
                         metavar='<positive float>',
-                        default=10,
+                        default=0,
                         type=float,
                         help=('Size of the interpolated surface model used for deriving the 2.5D mesh, expressed in pixels per meter. '
                               'Higher values work better for complex or urban terrains. '
                               'Lower values work better on flat areas. '
                               'Resolution has no effect on the number of vertices, but high values can severely impact runtime speed and memory usage. '
+                              'When set to zero, the program automatically attempts to find a good value based on the point cloud extent and target vertex count. '
                               'Applies to 2.5D mesh only. '
                               'Default: %(default)s'))
 
