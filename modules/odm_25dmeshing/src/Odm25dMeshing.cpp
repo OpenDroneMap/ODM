@@ -141,6 +141,11 @@ void Odm25dMeshing::buildMesh(){
 	double extentX = bounds[1] - bounds[0];
 	double extentY = bounds[3] - bounds[2];
 
+	if (resolution == 0.0){
+		resolution = (double)maxVertexCount / (sqrt(extentX * extentY) * 75.0);
+		log << "Automatically set resolution to " << std::fixed << resolution << "\n";
+	}
+
 	int width = ceil(extentX * resolution);
 	int height = ceil(extentY * resolution);
 
@@ -334,7 +339,7 @@ void Odm25dMeshing::parseArguments(int argc, char **argv) {
 			ss >> resolution;
 			if (ss.bad()) throw Odm25dMeshingException("Argument '" + argument + "' has a bad value (wrong type).");
 
-			resolution = std::min<double>(100000, std::max<double>(resolution, 0.00001));
+			resolution = std::min<double>(100000, std::max<double>(resolution, 0));
 			log << "Resolution was manually set to: " << resolution << "\n";
 		} else if (argument == "-neighbors" && argIndex < argc) {
 			++argIndex;
@@ -427,7 +432,7 @@ void Odm25dMeshing::printHelp() {
 		<< "	-verbose	whether to print verbose output (default: " << (printInCoutPop ? "true" : "false") << ")\n"
 		<< "	-maxVertexCount	<0 - N>	Maximum number of vertices in the output mesh. The mesh might have fewer vertices, but will not exceed this limit. (default: " << maxVertexCount << ")\n"
 		<< "	-neighbors	<1 - 1000>	Number of nearest neighbors to consider when doing shepard's interpolation and outlier removal. Higher values lead to smoother meshes but take longer to process. (default: " << neighbors << ")\n"
-		<< "	-resolution	<1 - N>	Size of the interpolated digital surface model (DSM) used for deriving the 2.5D mesh, expressed in pixels per meter unit. (default: " << resolution << ")\n"
+		<< "	-resolution	<0 - N>	Size of the interpolated digital surface model (DSM) used for deriving the 2.5D mesh, expressed in pixels per meter unit. When set to zero, the program automatically attempts to find a good value based on the point cloud extent and target vertex count. (default: " << resolution << ")\n"
 
 		<< "\n";
 

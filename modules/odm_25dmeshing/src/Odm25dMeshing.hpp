@@ -83,7 +83,7 @@ private:
 	std::string outputFile = "odm_25dmesh.ply";
 	std::string logFilePath = "odm_25dmeshing_log.txt";
 	int maxVertexCount = 100000;
-	double resolution = 20.0;
+	double resolution = 0;
 	unsigned int neighbors = 24;
 	std::string outputDsmFile = "";
 	bool showDebugWindow = false;
