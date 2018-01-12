@@ -31,6 +31,7 @@
 #include <vtkTIFFWriter.h>
 #include <vtkStatisticalOutlierRemoval.h>
 #include <vtkImageMedian3D.h>
+#include <vtkRadiusOutlierRemoval.h>
 
 // For compatibility with new VTK generic data arrays
 #ifdef vtkGenericDataArray_h

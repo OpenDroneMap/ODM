@@ -87,25 +87,33 @@ void Odm25dMeshing::buildMesh(){
 		  vtkSmartPointer<vtkPolyData>::New();
 	polyPoints->SetPoints(points);
 
-	vtkSmartPointer<vtkOctreePointLocator> pointsLocator =
-			vtkSmartPointer<vtkOctreePointLocator>::New();
-	pointsLocator->SetDataSet(polyPoints);
-	pointsLocator->BuildLocator();
+	vtkSmartPointer<vtkOctreePointLocator> locator = vtkSmartPointer<vtkOctreePointLocator>::New();
 
-	vtkSmartPointer<vtkStatisticalOutlierRemoval> removal =
+	vtkSmartPointer<vtkRadiusOutlierRemoval> radiusRemoval =
+		vtkSmartPointer<vtkRadiusOutlierRemoval>::New();
+	radiusRemoval->SetInputData(polyPoints);
+	radiusRemoval->SetLocator(locator);
+	radiusRemoval->SetRadius(20); // 20 meters
+	radiusRemoval->SetNumberOfNeighbors(2);
+
+	vtkSmartPointer<vtkStatisticalOutlierRemoval> statsRemoval =
 			vtkSmartPointer<vtkStatisticalOutlierRemoval>::New();
-	removal->SetInputData(polyPoints);
-	removal->SetLocator(pointsLocator);
-	removal->SetSampleSize(neighbors);
-	removal->SetStandardDeviationFactor(1.5);
-	removal->GenerateOutliersOff();
-	removal->Update();
+	statsRemoval->SetInputConnection(radiusRemoval->GetOutputPort());
+	statsRemoval->SetLocator(locator);
+	statsRemoval->SetSampleSize(neighbors);
+	statsRemoval->SetStandardDeviationFactor(1.5);
+	statsRemoval->GenerateOutliersOff();
+	statsRemoval->Update();
 
-	log << removal->GetNumberOfPointsRemoved() << " points removed\n";
+	log << (radiusRemoval->GetNumberOfPointsRemoved() + statsRemoval->GetNumberOfPointsRemoved()) << " points removed\n";
+	vtkSmartPointer<vtkPoints> cleanedPoints = statsRemoval->GetOutput()->GetPoints();
+
+	statsRemoval = nullptr;
+	radiusRemoval = nullptr;
+	polyPoints = nullptr;
 
 	log << "Squash point cloud to plane... ";
 
-	vtkSmartPointer<vtkPoints> cleanedPoints = removal->GetOutput()->GetPoints();
 	vtkSmartPointer<vtkFloatArray> elevation = vtkSmartPointer<vtkFloatArray>::New();
 	elevation->SetName("elevation");
 	elevation->SetNumberOfComponents(1);
@@ -148,11 +156,6 @@ void Odm25dMeshing::buildMesh(){
 	plane->SetCenter(center);
 	plane->SetNormal(0.0, 0.0, 1.0);
 
-	vtkSmartPointer<vtkOctreePointLocator> locator =
-			vtkSmartPointer<vtkOctreePointLocator>::New();
-	locator->SetDataSet(polydataToProcess);
-	locator->BuildLocator();
-
 	vtkSmartPointer<vtkShepardKernel> shepardKernel =
 				vtkSmartPointer<vtkShepardKernel>::New();
 	shepardKernel->SetPowerParameter(2.0);
@@ -178,6 +181,16 @@ void Odm25dMeshing::buildMesh(){
 
 	vtkSmartPointer<vtkPolyData> interpolatedPoly =
 			interpolator->GetPolyDataOutput();
+
+	log << "OK\nTransfering interpolation results to DSM... ";
+
+	interpolator = nullptr;
+	polydataToProcess = nullptr;
+	elevation = nullptr;
+	cleanedPoints = nullptr;
+	plane = nullptr;
+	shepardKernel = nullptr;
+	locator = nullptr;
 
 	vtkSmartPointer<vtkFloatArray> interpolatedElevation =
 		  vtkFloatArray::SafeDownCast(interpolatedPoly->GetPointData()->GetArray("elevation"));
@@ -234,7 +247,7 @@ void Odm25dMeshing::buildMesh(){
 	terrain->SetNumberOfTriangles(maxVertexCount * 2); // Approximate
 	terrain->SetInputData(medianFilter->GetOutput());
 	terrain->BoundaryVertexDeletionOn();
-	terrain->Update();
+
 
 	log << "OK\nTransform... ";
 	vtkSmartPointer<vtkTransform> transform =
