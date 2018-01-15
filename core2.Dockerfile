@@ -54,6 +54,7 @@ RUN mv -v /usr/bin/gcc /usr/bin/gcc_real && mv -v /usr/bin/g++ /usr/bin/g++_real
 RUN cd SuperBuild && mkdir build && cd build && cmake  .. && make -j$(nproc)     && cd ../.. && mkdir build && cd build && cmake .. && make -j$(nproc)
 
 RUN apt-get -y remove libgl1-mesa-dri git cmake python-pip build-essential
+RUN apt-get install -y libvtk6-dev
 
 # Cleanup APT
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* 
