@@ -87,11 +87,7 @@ void Odm25dMeshing::buildMesh(){
 		  vtkSmartPointer<vtkPolyData>::New();
 	polyPoints->SetPoints(points);
 
-	double *bounds = polyPoints->GetBounds();
-	double *center = polyPoints->GetCenter();
-
-	double extentX = bounds[1] - bounds[0];
-	double extentY = bounds[3] - bounds[2];
+	double *unfilteredBounds = polyPoints->GetBounds();
 
 	vtkSmartPointer<vtkOctreePointLocator> locator = vtkSmartPointer<vtkOctreePointLocator>::New();
 
@@ -140,6 +136,12 @@ void Odm25dMeshing::buildMesh(){
 	polydataToProcess->GetPointData()->SetScalars(elevation);
 
 	const float NODATA = -9999;
+
+	double *bounds = polydataToProcess->GetBounds();
+	double *center = polydataToProcess->GetCenter();
+
+	double extentX = bounds[1] - bounds[0];
+	double extentY = bounds[3] - bounds[2];
 
 	if (resolution == 0.0){
 		resolution = (double)maxVertexCount / (sqrt(extentX * extentY) * 75.0);
@@ -253,12 +255,11 @@ void Odm25dMeshing::buildMesh(){
 	terrain->SetInputData(medianFilter->GetOutput());
 	terrain->BoundaryVertexDeletionOn();
 
-
 	log << "OK\nTransform... ";
 	vtkSmartPointer<vtkTransform> transform =
 			vtkSmartPointer<vtkTransform>::New();
-	transform->Translate(-extentX / 2.0 + center[0],
-			-extentY / 2.0 + center[1], 0);
+	transform->Translate(-extentX / 2.0 + center[0] + (bounds[0] - unfilteredBounds[0]),
+			-extentY / 2.0 + center[1] + (bounds[2] - unfilteredBounds[2]), 0);
 	transform->Scale(extentX / width, extentY / height, 1);
 
 	vtkSmartPointer<vtkTransformFilter> transformFilter =
