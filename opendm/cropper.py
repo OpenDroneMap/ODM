@@ -1,12 +1,8 @@
 from opendm import context
-from opendm import system
+from opendm.system import run
 from opendm import log
 from osgeo import ogr
 import json, os
-
-def run(command):
-    env_paths = [context.superbuild_bin_path]
-    return system.run(command, env_paths)
 
 class Cropper:
     def __init__(self, storage_dir, files_prefix = "crop"):
