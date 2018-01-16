@@ -2,6 +2,7 @@ import os, glob
 import gippy
 import numpy
 from datetime import datetime
+from opendm import log
 
 from . import pdal
 
@@ -17,7 +18,7 @@ def classify(lasFile, smrf=False, slope=1, cellsize=3, maxWindowSize=10, maxDist
     except:
         raise Exception("Error creating classified file %s" % fout)
 
-    print 'Created %s in %s' % (os.path.relpath(lasFile), datetime.now() - start)
+    log.ODM_INFO('Created %s in %s' % (os.path.relpath(lasFile), datetime.now() - start))
     return lasFile
 
 
@@ -63,38 +64,31 @@ def create_dem(filenames, demtype, radius='0.56', decimation=None,
     fouts = {o: bname + '.%s.%s' % (o, ext) for o in products}
     prettyname = os.path.relpath(bname) + ' [%s]' % (' '.join(products))
 
-    # run if any products missing (any extension version is ok, i.e. vrt or tif)
-    run = False
+    log.ODM_INFO('Creating %s from %s files' % (prettyname, len(filenames)))
+    # JSON pipeline
+    json = pdal.json_gdal_base(bname, products, radius, resolution)
+    json = pdal.json_add_filters(json, maxsd, maxz, maxangle, returnnum)
+    
+    if demtype == 'dsm':
+        json = pdal.json_add_classification_filter(json, 2, equality='max')
+    elif demtype == 'dtm':
+        json = pdal.json_add_classification_filter(json, 2)
+
+    if decimation is not None:
+        json = pdal.json_add_decimation_filter(json, decimation)
+
+    pdal.json_add_readers(json, filenames)
+
+    pdal.run_pipeline(json, verbose=verbose)
+    # verify existence of fout
+    exists = True
     for f in fouts.values():
-        if len(glob.glob(f[:-3] + '*')) == 0:
-            run = True
+        if not os.path.exists(f):
+            exists = False
+    if not exists:
+        raise Exception("Error creating dems: %s" % ' '.join(fouts))
 
-    if run:
-        print 'Creating %s from %s files' % (prettyname, len(filenames))
-        # JSON pipeline
-        json = pdal.json_gdal_base(bname, products, radius, resolution)
-        json = pdal.json_add_filters(json, maxsd, maxz, maxangle, returnnum)
-        
-        if demtype == 'dsm':
-            json = pdal.json_add_classification_filter(json, 2, equality='max')
-        elif demtype == 'dtm':
-            json = pdal.json_add_classification_filter(json, 2)
-
-        if decimation is not None:
-            json = pdal.json_add_decimation_filter(json, decimation)
-
-        pdal.json_add_readers(json, filenames)
-
-        pdal.run_pipeline(json, verbose=verbose)
-        # verify existence of fout
-        exists = True
-        for f in fouts.values():
-            if not os.path.exists(f):
-                exists = False
-        if not exists:
-            raise Exception("Error creating dems: %s" % ' '.join(fouts))
-
-    print 'Completed %s in %s' % (prettyname, datetime.now() - start)
+    log.ODM_INFO('Completed %s in %s' % (prettyname, datetime.now() - start))
     return fouts
 
 
@@ -127,6 +121,6 @@ def gap_fill(filenames, fout, interpolation='nearest'):
     fout = imgout.Filename()
     imgout = None
 
-    print 'Completed gap-filling to create %s in %s' % (os.path.relpath(fout), datetime.now() - start)
+    log.ODM_INFO('Completed gap-filling to create %s in %s' % (os.path.relpath(fout), datetime.now() - start))
 
     return fout

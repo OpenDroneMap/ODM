@@ -105,7 +105,6 @@ class ODMDEMCell(ecto.Cell):
                             Cropper.crop(bounds_shapefile_path, os.path.join(odm_dem_root, "{}.tif".format(product)), {
                                 'TILED': 'YES',
                                 'COMPRESS': 'LZW',
-                                'PREDICTOR': '2',
                                 'BLOCKXSIZE': 512,
                                 'BLOCKYSIZE': 512,
                                 'NUM_THREADS': 'ALL_CPUS'
