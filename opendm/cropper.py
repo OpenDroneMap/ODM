@@ -16,7 +16,7 @@ class Cropper:
         return os.path.join(self.storage_dir, '{}.{}'.format(self.files_prefix, suffix))
 
     @staticmethod
-    def crop(shapefile_path, geotiff_path, gdal_options):
+    def crop(shapefile_path, geotiff_path, gdal_options, keep_original=True):
         if not os.path.exists(shapefile_path) or not os.path.exists(geotiff_path):
             log.ODM_WARNING("Either {} or {} does not exist, will skip cropping.".format(shapefile_path, geotiff_path))
             return geotiff_path
@@ -48,6 +48,9 @@ class Cropper:
                 '{options} '
                 '{geotiffInput} '
                 '{geotiffOutput} '.format(**kwargs))
+
+            if not keep_original:
+                os.remove(original_geotiff)
 
         except Exception as e:
             log.ODM_WARNING('Something went wrong while cropping: {}'.format(e.message))
