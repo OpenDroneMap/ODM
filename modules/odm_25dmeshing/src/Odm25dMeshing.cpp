@@ -87,12 +87,6 @@ void Odm25dMeshing::buildMesh(){
 		  vtkSmartPointer<vtkPolyData>::New();
 	polyPoints->SetPoints(points);
 
-	double *bounds = polyPoints->GetBounds();
-	double *center = polyPoints->GetCenter();
-
-	double extentX = bounds[1] - bounds[0];
-	double extentY = bounds[3] - bounds[2];
-
 	vtkSmartPointer<vtkOctreePointLocator> locator = vtkSmartPointer<vtkOctreePointLocator>::New();
 
 	vtkSmartPointer<vtkRadiusOutlierRemoval> radiusRemoval =
@@ -140,6 +134,12 @@ void Odm25dMeshing::buildMesh(){
 	polydataToProcess->GetPointData()->SetScalars(elevation);
 
 	const float NODATA = -9999;
+
+	double *bounds = polydataToProcess->GetBounds();
+	double *center = polydataToProcess->GetCenter();
+
+	double extentX = bounds[1] - bounds[0];
+	double extentY = bounds[3] - bounds[2];
 
 	if (resolution == 0.0){
 		resolution = (double)maxVertexCount / (sqrt(extentX * extentY) * 75.0);
