@@ -72,12 +72,28 @@ class Cropper:
             log.ODM_WARNING('Point cloud does not exist, cannot generate shapefile bounds {}'.format(pointcloud_path))
             return ''
 
+        # Do basic outlier removal prior to extracting boundary information
+        filtered_pointcloud_path = self.path('filtered.las')
+
+        run("pdal translate -i \"{}\" "
+            "-o \"{}\" "
+            "decimation outlier range "
+            "--filters.decimation.step=40 "
+            "--filters.outlier.method=radius "
+            "--filters.outlier.radius=20 "
+            "--filters.outlier.min_k=2 "
+            "--filters.range.limits='Classification![7:7]'".format(pointcloud_path, filtered_pointcloud_path))
+
+        if not os.path.exists(filtered_pointcloud_path):
+            log.ODM_WARNING('Could not filter point cloud, cannot generate shapefile bounds {}'.format(filtered_pointcloud_path))
+            return ''
+
         # Use PDAL to dump boundary information
         # then read the information back
 
         boundary_file_path = self.path('boundary.json')
 
-        run('pdal info --boundary --filters.hexbin.edge_length=1 --filters.hexbin.threshold=0 {0} > {1}'.format(pointcloud_path,  boundary_file_path))
+        run('pdal info --boundary --filters.hexbin.edge_length=1 --filters.hexbin.threshold=0 {0} > {1}'.format(filtered_pointcloud_path,  boundary_file_path))
         
         pc_geojson_boundary_feature = None
 
@@ -138,6 +154,10 @@ class Cropper:
 
         # Save and close data sources
         out_ds = ds = None
+
+        # Remove filtered point cloud
+        if os.path.exists(filtered_pointcloud_path):
+            os.remove(filtered_pointcloud_path)
 
         return bounds_geojson_path
 
