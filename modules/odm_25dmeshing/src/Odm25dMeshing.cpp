@@ -87,8 +87,6 @@ void Odm25dMeshing::buildMesh(){
 		  vtkSmartPointer<vtkPolyData>::New();
 	polyPoints->SetPoints(points);
 
-	double *unfilteredBounds = polyPoints->GetBounds();
-
 	vtkSmartPointer<vtkOctreePointLocator> locator = vtkSmartPointer<vtkOctreePointLocator>::New();
 
 	vtkSmartPointer<vtkRadiusOutlierRemoval> radiusRemoval =
@@ -255,11 +253,12 @@ void Odm25dMeshing::buildMesh(){
 	terrain->SetInputData(medianFilter->GetOutput());
 	terrain->BoundaryVertexDeletionOn();
 
+
 	log << "OK\nTransform... ";
 	vtkSmartPointer<vtkTransform> transform =
 			vtkSmartPointer<vtkTransform>::New();
-	transform->Translate(-extentX / 2.0 + center[0] + (bounds[0] - unfilteredBounds[0]),
-			-extentY / 2.0 + center[1] + (bounds[2] - unfilteredBounds[2]), 0);
+	transform->Translate(-extentX / 2.0 + center[0],
+			-extentY / 2.0 + center[1], 0);
 	transform->Scale(extentX / width, extentY / height, 1);
 
 	vtkSmartPointer<vtkTransformFilter> transformFilter =
