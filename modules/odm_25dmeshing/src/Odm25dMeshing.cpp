@@ -136,7 +136,10 @@ void Odm25dMeshing::buildMesh(){
 	const float NODATA = -9999;
 
 	double *bounds = polydataToProcess->GetBounds();
-	double *center = polydataToProcess->GetCenter();
+
+	double centerX = polydataToProcess->GetCenter()[0];
+	double centerY = polydataToProcess->GetCenter()[1];
+	double centerZ = polydataToProcess->GetCenter()[2];
 
 	double extentX = bounds[1] - bounds[0];
 	double extentY = bounds[3] - bounds[2];
@@ -152,13 +155,18 @@ void Odm25dMeshing::buildMesh(){
 	log << "Plane extentX: " << extentX <<
 				", extentY: " << extentY << "\n";
 
+	double planeCenter[3];
+	planeCenter[0] = centerX;
+	planeCenter[1] = centerY;
+	planeCenter[2] = centerZ;
+
 	vtkSmartPointer<vtkPlaneSource> plane =
 			vtkSmartPointer<vtkPlaneSource>::New();
 	plane->SetResolution(width, height);
 	plane->SetOrigin(0.0, 0.0, 0.0);
 	plane->SetPoint1(extentX, 0.0, 0.0);
 	plane->SetPoint2(0.0, extentY, 0);
-	plane->SetCenter(center);
+	plane->SetCenter(planeCenter);
 	plane->SetNormal(0.0, 0.0, 1.0);
 
 	vtkSmartPointer<vtkShepardKernel> shepardKernel =
@@ -253,12 +261,11 @@ void Odm25dMeshing::buildMesh(){
 	terrain->SetInputData(medianFilter->GetOutput());
 	terrain->BoundaryVertexDeletionOn();
 
-
 	log << "OK\nTransform... ";
 	vtkSmartPointer<vtkTransform> transform =
 			vtkSmartPointer<vtkTransform>::New();
-	transform->Translate(-extentX / 2.0 + center[0],
-			-extentY / 2.0 + center[1], 0);
+	transform->Translate(-extentX / 2.0 + centerX,
+			-extentY / 2.0 + centerY, 0);
 	transform->Scale(extentX / width, extentY / height, 1);
 
 	vtkSmartPointer<vtkTransformFilter> transformFilter =
