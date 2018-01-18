@@ -1,25 +1,48 @@
 #pragma once
 
-// STL
-#include <string>
-#include <iostream>
-#include <unordered_map>
-#include <queue>
+//#define SUPPORTDEBUGWINDOW 1
 
-#include <CGAL/wlop_simplify_and_regularize_point_set.h>
-#include <CGAL/bounding_box.h>
-#include <CGAL/remove_outliers.h>
-#include <CGAL/Polygon_mesh_processing/refine.h>
-#include <CGAL/Polygon_mesh_processing/fair.h>
-#include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Count_stop_predicate.h>
-#include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Edge_length_cost.h>
-#include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Midpoint_placement.h>
-#include <CGAL/Inverse_index.h>
+#ifdef SUPPORTDEBUGWINDOW
 
-#include "CGAL.hpp"
+#include <vtkActor.h>
+#include <vtkCamera.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkProperty.h>
+#include <vtkRenderer.h>
+#include <vtkRenderWindow.h>
+#include <vtkRenderWindowInteractor.h>
+#include <vtkDataSetMapper.h>
+
+#endif
+
+#include <vtkShepardKernel.h>
+#include <vtkPointData.h>
+#include <vtkImageData.h>
+#include <vtkGreedyTerrainDecimation.h>
+#include <vtkPLYWriter.h>
+#include <vtkSmartPointer.h>
+#include <vtkFloatArray.h>
+#include <vtkOctreePointLocator.h>
+#include <vtkPointInterpolator.h>
+#include <vtkPlaneSource.h>
+#include <vtkTransform.h>
+#include <vtkTransformFilter.h>
+#include <vtkImageAnisotropicDiffusion2D.h>
+#include <vtkTIFFWriter.h>
+#include <vtkStatisticalOutlierRemoval.h>
+#include <vtkImageMedian3D.h>
+#include <vtkRadiusOutlierRemoval.h>
+
+// For compatibility with new VTK generic data arrays
+#ifdef vtkGenericDataArray_h
+#define InsertNextTupleValue InsertNextTypedTuple
+#endif
+
+#include <cstring>
+#include "tinyply.h"
+using namespace tinyply;
+
 #include "Logger.hpp"
-#include "PlyInterpreter.hpp"
-#include "PolyhedronBuilder.hpp"
 
 class Odm25dMeshing {
 public:
@@ -47,30 +70,25 @@ private:
 	void parseArguments(int argc, char** argv);
 
 	/*!
-	 * \brief loadPointCloud    Loads a PLY file with points and normals from file.
-	 */
-	void loadPointCloud();
-
-	/*!
-	 * \brief loadPointCloud    Builds a 2.5D mesh from loaded points
-	 */
-	void buildMesh();
-
-	/*!
 	 * \brief printHelp     Prints help, explaining usage. Can be shown by calling the program with argument: "-help".
 	 */
 	void printHelp();
+
+	void loadPointCloud();
+	void buildMesh();
 
 	Logger log;
 
 	std::string inputFile = "";
 	std::string outputFile = "odm_25dmesh.ply";
 	std::string logFilePath = "odm_25dmeshing_log.txt";
-	unsigned int maxVertexCount = 100000;
-	double outliersRemovalPercentage = 2;
-	unsigned int wlopIterations = 35;
-	std::vector<Point3> points;
-	bool flipFaces = false;
+	int maxVertexCount = 100000;
+	double resolution = 0;
+	unsigned int neighbors = 24;
+	std::string outputDsmFile = "";
+	bool showDebugWindow = false;
+
+	vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
 };
 
 class Odm25dMeshingException: public std::exception {

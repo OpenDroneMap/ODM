@@ -79,9 +79,6 @@ install() {
                         appsettings \
                         loky
 
-    echo "Installing CGAL dependencies"
-    sudo apt-get install -y -qq libgmp-dev libmpfr-dev
-
     echo "Installing Ecto Dependencies"
     sudo pip install -U catkin-pkg
     sudo apt-get install -y -qq python-empy \
