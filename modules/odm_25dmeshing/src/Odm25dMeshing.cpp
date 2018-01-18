@@ -37,6 +37,290 @@ int Odm25dMeshing::run(int argc, char **argv) {
 	return EXIT_SUCCESS;
 }
 
+void Odm25dMeshing::loadPointCloud() {
+	log << "Loading point cloud... ";
+
+	try{
+		std::ifstream ss(inputFile, std::ios::binary);
+		if (ss.fail()) throw Odm25dMeshingException("Failed to open " + inputFile);
+		PlyFile file;
+
+		file.parse_header(ss);
+
+		std::shared_ptr<PlyData> vertices = file.request_properties_from_element("vertex", { "x", "y", "z" });
+		file.read(ss);
+
+		const size_t numVerticesBytes = vertices->buffer.size_bytes();
+		struct float3 { float x, y, z; };
+		struct double3 { double x, y, z; };
+
+		if (vertices->t == tinyply::Type::FLOAT32) {
+			std::vector<float3> verts(vertices->count);
+			std::memcpy(verts.data(), vertices->buffer.get(), numVerticesBytes);
+			for (float3 &v : verts){
+				points->InsertNextPoint(v.x, v.y, v.z);
+			}
+		}else if (vertices->t == tinyply::Type::FLOAT64) {
+			std::vector<double3> verts(vertices->count);
+			std::memcpy(verts.data(), vertices->buffer.get(), numVerticesBytes);
+			for (double3 &v : verts){
+				points->InsertNextPoint(v.x, v.y, v.z);
+			}
+		}else{
+			throw Odm25dMeshingException("Invalid data type (only float32 and float64 are supported): " + std::to_string((int)vertices->t));
+		}
+	}
+	catch (const std::exception & e)
+	{
+		throw Odm25dMeshingException("Error while loading point cloud: " + std::string(e.what()));
+	}
+
+	log << "loaded " << points->GetNumberOfPoints() << " points\n";
+}
+
+void Odm25dMeshing::buildMesh(){
+	vtkThreadedImageAlgorithm::SetGlobalDefaultEnableSMP(true);
+
+	log << "Remove outliers... ";
+
+	vtkSmartPointer<vtkPolyData> polyPoints =
+		  vtkSmartPointer<vtkPolyData>::New();
+	polyPoints->SetPoints(points);
+
+	vtkSmartPointer<vtkOctreePointLocator> locator = vtkSmartPointer<vtkOctreePointLocator>::New();
+
+	vtkSmartPointer<vtkRadiusOutlierRemoval> radiusRemoval =
+		vtkSmartPointer<vtkRadiusOutlierRemoval>::New();
+	radiusRemoval->SetInputData(polyPoints);
+	radiusRemoval->SetLocator(locator);
+	radiusRemoval->SetRadius(20); // 20 meters
+	radiusRemoval->SetNumberOfNeighbors(2);
+
+	vtkSmartPointer<vtkStatisticalOutlierRemoval> statsRemoval =
+			vtkSmartPointer<vtkStatisticalOutlierRemoval>::New();
+	statsRemoval->SetInputConnection(radiusRemoval->GetOutputPort());
+	statsRemoval->SetLocator(locator);
+	statsRemoval->SetSampleSize(neighbors);
+	statsRemoval->SetStandardDeviationFactor(1.5);
+	statsRemoval->GenerateOutliersOff();
+	statsRemoval->Update();
+
+	log << (radiusRemoval->GetNumberOfPointsRemoved() + statsRemoval->GetNumberOfPointsRemoved()) << " points removed\n";
+	vtkSmartPointer<vtkPoints> cleanedPoints = statsRemoval->GetOutput()->GetPoints();
+
+	statsRemoval = nullptr;
+	radiusRemoval = nullptr;
+	polyPoints = nullptr;
+
+	log << "Squash point cloud to plane... ";
+
+	vtkSmartPointer<vtkFloatArray> elevation = vtkSmartPointer<vtkFloatArray>::New();
+	elevation->SetName("elevation");
+	elevation->SetNumberOfComponents(1);
+	double p[2];
+
+	for (vtkIdType i = 0; i < cleanedPoints->GetNumberOfPoints(); i++){
+		cleanedPoints->GetPoint(i, p);
+		elevation->InsertNextValue(p[2]);
+		p[2] = 0.0;
+		cleanedPoints->SetPoint(i, p);
+	}
+
+	log << "OK\n";
+
+	vtkSmartPointer<vtkPolyData> polydataToProcess =
+	  vtkSmartPointer<vtkPolyData>::New();
+	polydataToProcess->SetPoints(cleanedPoints);
+	polydataToProcess->GetPointData()->SetScalars(elevation);
+
+	const float NODATA = -9999;
+
+	double *bounds = polydataToProcess->GetBounds();
+
+	double centerX = polydataToProcess->GetCenter()[0];
+	double centerY = polydataToProcess->GetCenter()[1];
+	double centerZ = polydataToProcess->GetCenter()[2];
+
+	double extentX = bounds[1] - bounds[0];
+	double extentY = bounds[3] - bounds[2];
+
+	if (resolution == 0.0){
+		resolution = (double)maxVertexCount / (sqrt(extentX * extentY) * 75.0);
+		log << "Automatically set resolution to " << std::fixed << resolution << "\n";
+	}
+
+	int width = ceil(extentX * resolution);
+	int height = ceil(extentY * resolution);
+
+	log << "Plane extentX: " << extentX <<
+				", extentY: " << extentY << "\n";
+
+	double planeCenter[3];
+	planeCenter[0] = centerX;
+	planeCenter[1] = centerY;
+	planeCenter[2] = centerZ;
+
+	vtkSmartPointer<vtkPlaneSource> plane =
+			vtkSmartPointer<vtkPlaneSource>::New();
+	plane->SetResolution(width, height);
+	plane->SetOrigin(0.0, 0.0, 0.0);
+	plane->SetPoint1(extentX, 0.0, 0.0);
+	plane->SetPoint2(0.0, extentY, 0);
+	plane->SetCenter(planeCenter);
+	plane->SetNormal(0.0, 0.0, 1.0);
+
+	vtkSmartPointer<vtkShepardKernel> shepardKernel =
+				vtkSmartPointer<vtkShepardKernel>::New();
+	shepardKernel->SetPowerParameter(2.0);
+	shepardKernel->SetKernelFootprintToNClosest();
+	shepardKernel->SetNumberOfPoints(neighbors);
+
+	vtkSmartPointer<vtkImageData> image =
+	    vtkSmartPointer<vtkImageData>::New();
+	image->SetDimensions(width, height, 1);
+	log << "DSM size is " << width << "x" << height << " (" << ceil(width * height * sizeof(float) * 1e-6) << " MB) \n";
+	image->AllocateScalars(VTK_FLOAT, 1);
+
+	log << "Point interpolation using shepard's kernel... ";
+
+	vtkSmartPointer<vtkPointInterpolator> interpolator =
+				vtkSmartPointer<vtkPointInterpolator>::New();
+	interpolator->SetInputConnection(plane->GetOutputPort());
+	interpolator->SetSourceData(polydataToProcess);
+	interpolator->SetKernel(shepardKernel);
+	interpolator->SetLocator(locator);
+	interpolator->SetNullValue(NODATA);
+	interpolator->Update();
+
+	vtkSmartPointer<vtkPolyData> interpolatedPoly =
+			interpolator->GetPolyDataOutput();
+
+	log << "OK\nTransfering interpolation results to DSM... ";
+
+	interpolator = nullptr;
+	polydataToProcess = nullptr;
+	elevation = nullptr;
+	cleanedPoints = nullptr;
+	plane = nullptr;
+	shepardKernel = nullptr;
+	locator = nullptr;
+
+	vtkSmartPointer<vtkFloatArray> interpolatedElevation =
+		  vtkFloatArray::SafeDownCast(interpolatedPoly->GetPointData()->GetArray("elevation"));
+
+	for (int i = 0; i < width; i++){
+		for (int j = 0; j < height; j++){
+			float* pixel = static_cast<float*>(image->GetScalarPointer(i,j,0));
+			vtkIdType cellId = interpolatedPoly->GetCell(j * width + i)->GetPointId(0);
+			pixel[0] = interpolatedElevation->GetValue(cellId);
+		}
+	}
+
+	log << "OK\nMedian filter...";
+
+	vtkSmartPointer<vtkImageMedian3D> medianFilter =
+			vtkSmartPointer<vtkImageMedian3D>::New();
+	medianFilter->SetInputData(image);
+	medianFilter->SetKernelSize(
+			std::max(1.0, resolution),
+			std::max(1.0, resolution),
+			1);
+	medianFilter->Update();
+
+	log << "OK\n";
+
+//	double diffuseIterations = std::max(1.0, resolution / 2.0);
+//	vtkSmartPointer<vtkImageAnisotropicDiffusion2D> diffuse1 =
+//			vtkSmartPointer<vtkImageAnisotropicDiffusion2D>::New();
+//	diffuse1->SetInputConnection(medianFilter->GetOutputPort());
+//	diffuse1->FacesOn();
+//	diffuse1->EdgesOn();
+//	diffuse1->CornersOn();
+//	diffuse1->SetDiffusionFactor(1); // Full strength
+//	diffuse1->GradientMagnitudeThresholdOn();
+//	diffuse1->SetDiffusionThreshold(0.2); // Don't smooth jumps in elevation > than 0.20m
+//	diffuse1->SetNumberOfIterations(diffuseIterations);
+//	diffuse1->Update();
+
+	if (outputDsmFile != ""){
+		log << "Saving DSM to file... ";
+		vtkSmartPointer<vtkTIFFWriter> tiffWriter =
+				vtkSmartPointer<vtkTIFFWriter>::New();
+		tiffWriter->SetFileName(outputDsmFile.c_str());
+		tiffWriter->SetInputData(medianFilter->GetOutput());
+		tiffWriter->Write();
+		log << "OK\n";
+	}
+
+	log << "Triangulate... ";
+
+	vtkSmartPointer<vtkGreedyTerrainDecimation> terrain =
+			vtkSmartPointer<vtkGreedyTerrainDecimation>::New();
+	terrain->SetErrorMeasureToNumberOfTriangles();
+	terrain->SetNumberOfTriangles(maxVertexCount * 2); // Approximate
+	terrain->SetInputData(medianFilter->GetOutput());
+	terrain->BoundaryVertexDeletionOn();
+
+	log << "OK\nTransform... ";
+	vtkSmartPointer<vtkTransform> transform =
+			vtkSmartPointer<vtkTransform>::New();
+	transform->Translate(-extentX / 2.0 + centerX,
+			-extentY / 2.0 + centerY, 0);
+	transform->Scale(extentX / width, extentY / height, 1);
+
+	vtkSmartPointer<vtkTransformFilter> transformFilter =
+	    vtkSmartPointer<vtkTransformFilter>::New();
+	transformFilter->SetInputConnection(terrain->GetOutputPort());
+	transformFilter->SetTransform(transform);
+
+	log << "OK\n";
+
+	log << "Saving mesh to file... ";
+
+	vtkSmartPointer<vtkPLYWriter> plyWriter =
+			vtkSmartPointer<vtkPLYWriter>::New();
+	plyWriter->SetFileName(outputFile.c_str());
+	plyWriter->SetInputConnection(transformFilter->GetOutputPort());
+	plyWriter->SetFileTypeToASCII();
+	plyWriter->Write();
+
+	log << "OK\n";
+
+#ifdef SUPPORTDEBUGWINDOW
+	if (showDebugWindow){
+		vtkSmartPointer<vtkPolyDataMapper> mapper =
+				vtkSmartPointer<vtkPolyDataMapper>::New();
+		mapper->SetInputConnection(transformFilter->GetOutputPort());
+		mapper->SetScalarRange(150, 170);
+
+	//	  vtkSmartPointer<vtkDataSetMapper> mapper =
+	//	    vtkSmartPointer<vtkDataSetMapper>::New();
+	//	  mapper->SetInputData(image);
+	//	  mapper->SetScalarRange(150, 170);
+
+		  vtkSmartPointer<vtkActor> actor =
+			vtkSmartPointer<vtkActor>::New();
+		  actor->SetMapper(mapper);
+		  actor->GetProperty()->SetPointSize(5);
+
+		  vtkSmartPointer<vtkRenderer> renderer =
+			vtkSmartPointer<vtkRenderer>::New();
+		  vtkSmartPointer<vtkRenderWindow> renderWindow =
+			vtkSmartPointer<vtkRenderWindow>::New();
+		  renderWindow->AddRenderer(renderer);
+		  vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor =
+			vtkSmartPointer<vtkRenderWindowInteractor>::New();
+		  renderWindowInteractor->SetRenderWindow(renderWindow);
+
+		  renderer->AddActor(actor);
+		  renderer->SetBackground(0.1804,0.5451,0.3412); // Sea green
+
+		  renderWindow->Render();
+		  renderWindowInteractor->Start();
+	}
+#endif
+}
+
 void Odm25dMeshing::parseArguments(int argc, char **argv) {
 	for (int argIndex = 1; argIndex < argc; ++argIndex) {
 		// The argument to be parsed.
@@ -55,24 +339,23 @@ void Odm25dMeshing::parseArguments(int argc, char **argv) {
             if (ss.bad()) throw Odm25dMeshingException("Argument '" + argument + "' has a bad value (wrong type).");
             maxVertexCount = std::max<unsigned int>(maxVertexCount, 0);
             log << "Vertex count was manually set to: " << maxVertexCount << "\n";
-		} else if (argument == "-outliersRemovalPercentage" && argIndex < argc) {
+		} else if (argument == "-resolution" && argIndex < argc) {
 			++argIndex;
 			if (argIndex >= argc) throw Odm25dMeshingException("Argument '" + argument + "' expects 1 more input following it, but no more inputs were provided.");
 			std::stringstream ss(argv[argIndex]);
-			ss >> outliersRemovalPercentage;
+			ss >> resolution;
 			if (ss.bad()) throw Odm25dMeshingException("Argument '" + argument + "' has a bad value (wrong type).");
 
-			outliersRemovalPercentage = std::min<double>(99.99, std::max<double>(outliersRemovalPercentage, 0));
-			log << "Outliers removal was manually set to: " << outliersRemovalPercentage << "\n";
-		} else if (argument == "-wlopIterations" && argIndex < argc) {
+			resolution = std::min<double>(100000, std::max<double>(resolution, 0));
+			log << "Resolution was manually set to: " << resolution << "\n";
+		} else if (argument == "-neighbors" && argIndex < argc) {
 			++argIndex;
 			if (argIndex >= argc) throw Odm25dMeshingException("Argument '" + argument + "' expects 1 more input following it, but no more inputs were provided.");
 			std::stringstream ss(argv[argIndex]);
-			ss >> wlopIterations;
+			ss >> neighbors;
 			if (ss.bad()) throw Odm25dMeshingException("Argument '" + argument + "' has a bad value (wrong type).");
-
-			wlopIterations = std::min<unsigned int>(1000, std::max<unsigned int>(wlopIterations, 1));
-			log << "WLOP iterations was manually set to: " << wlopIterations << "\n";
+			neighbors = std::min<unsigned int>(1000, std::max<unsigned int>(neighbors, 1));
+			log << "Neighbors was manually set to: " << neighbors << "\n";
 		} else if (argument == "-inputFile" && argIndex < argc) {
 			++argIndex;
 			if (argIndex >= argc) {
@@ -102,6 +385,23 @@ void Odm25dMeshing::parseArguments(int argc, char **argv) {
 			}
 			testFile.close();
 			log << "Writing output to: " << outputFile << "\n";
+		}else if (argument == "-outputDsmFile" && argIndex < argc) {
+			++argIndex;
+			if (argIndex >= argc) {
+				throw Odm25dMeshingException(
+						"Argument '" + argument
+								+ "' expects 1 more input following it, but no more inputs were provided.");
+			}
+			outputDsmFile = std::string(argv[argIndex]);
+			std::ofstream testFile(outputDsmFile.c_str());
+			if (!testFile.is_open()) {
+				throw Odm25dMeshingException(
+						"Argument '" + argument	+ "' has a bad value. (file not accessible)");
+			}
+			testFile.close();
+			log << "Saving DSM output to: " << outputDsmFile << "\n";
+		} else if (argument == "-showDebugWindow") {
+			showDebugWindow = true;
 		} else if (argument == "-logFile" && argIndex < argc) {
 			++argIndex;
 			if (argIndex >= argc) {
@@ -124,302 +424,22 @@ void Odm25dMeshing::parseArguments(int argc, char **argv) {
 	}
 }
 
-void Odm25dMeshing::loadPointCloud(){
-	  PlyInterpreter interpreter(points);
-
-	  std::ifstream in(inputFile);
-	  if (!in || !CGAL::read_ply_custom_points (in, interpreter, Kernel())){
-		  throw Odm25dMeshingException(
-		  				"Error when reading points and normals from:\n" + inputFile + "\n");
-	  }
-
-	  flipFaces = interpreter.flip_faces();
-
-	  log << "Successfully loaded " << points.size() << " points from file\n";
-}
-
-void Odm25dMeshing::buildMesh(){
-	const unsigned int NEIGHBORS = 24;
-
-	size_t pointCount = points.size();
-	size_t pointCountBeforeOutlierRemoval = pointCount;
-
-	log << "Removing outliers... ";
-
-	points.erase(CGAL::remove_outliers(points.begin(), points.end(),
-				 NEIGHBORS,
-				 outliersRemovalPercentage),
-	 			points.end());
-	std::vector<Point3>(points).swap(points);
-	pointCount = points.size();
-
-	log << "removed " << pointCountBeforeOutlierRemoval - pointCount << " points\n";
-
-	log << "Computing average spacing... ";
-
-	FT avgSpacing = CGAL::compute_average_spacing<Concurrency_tag>(
-			points.begin(),
-			points.end(),
-			NEIGHBORS);
-
-	log << avgSpacing << "\n";
-
-	log << "Grid Z sampling... ";
-
-	size_t pointCountBeforeGridSampling = pointCount;
-
-	double gridStep = avgSpacing / 2;
-	Kernel::Iso_cuboid_3 bbox = CGAL::bounding_box(points.begin(), points.end());
-	Vector3 boxDiag = bbox.max() - bbox.min();
-
-	int gridWidth = 1 + static_cast<unsigned>(boxDiag.x() / gridStep + 0.5);
-	int gridHeight = 1 + static_cast<unsigned>(boxDiag.y() / gridStep + 0.5);
-
-	#define KEY(i, j) (i * gridWidth + j)
-
-	std::unordered_map<int, Point3> grid;
-
-	for (size_t c = 0; c < pointCount; c++){
-		const Point3 &p = points[c];
-		Vector3 relativePos = p - bbox.min();
-		int i = static_cast<int>((relativePos.x() / gridStep + 0.5));
-		int j = static_cast<int>((relativePos.y() / gridStep + 0.5));
-
-		if ((i >= 0 && i < gridWidth) && (j >= 0 && j < gridHeight)){
-			int key = KEY(i, j);
-
-			if (grid.find(key) == grid.end()){
-				grid[key] = p;
-			}else if ((!flipFaces && p.z() > grid[key].z()) || (flipFaces && p.z() < grid[key].z())){
-				grid[key] = p;
-			}
-		}
-	}
-
-	std::vector<Point3> gridPoints;
-	for ( auto it = grid.begin(); it != grid.end(); ++it ){
-		gridPoints.push_back(it->second);
-	}
-
-	pointCount = gridPoints.size();
-	log << "sampled " << (pointCountBeforeGridSampling - pointCount) << " points\n";
-
-	const double RETAIN_PERCENTAGE = std::min<double>(80., 100. * static_cast<double>(maxVertexCount) / static_cast<double>(pointCount));   // percentage of points to retain.
-	std::vector<Point3> simplifiedPoints;
-
-	log << "Performing weighted locally optimal projection simplification and regularization (retain: " << RETAIN_PERCENTAGE << "%, iterate: " << wlopIterations << ")" << "\n";
-
-	CGAL::wlop_simplify_and_regularize_point_set<Concurrency_tag>(
-		 	gridPoints.begin(),
-			gridPoints.end(),
-			std::back_inserter(simplifiedPoints),
-			RETAIN_PERCENTAGE,
-			8 * avgSpacing,
-			wlopIterations,
-			true);
-
-	pointCount = simplifiedPoints.size();
-
-	if (pointCount < 3){
-		throw Odm25dMeshingException("Not enough points");
-	}
-
-	log << "Vertex count is " << pointCount << "\n";
-
-	typedef CDT::Point cgalPoint;
-	typedef CDT::Vertex_circulator Vertex_circulator;
-
-	std::vector< std::pair<cgalPoint, size_t > > pts;
-	try{
-		pts.reserve(pointCount);
-	} catch (const std::bad_alloc&){
-		throw Odm25dMeshingException("Not enough memory");
-	}
-
-	for (size_t i = 0; i < pointCount; ++i){
-		pts.push_back(std::make_pair(cgalPoint(simplifiedPoints[i].x(), simplifiedPoints[i].y()), i));
-	}
-
-	log << "Computing delaunay triangulation... ";
-
-	CDT cdt;
-	cdt.insert(pts.begin(), pts.end());
-
-	unsigned int numberOfTriangles = static_cast<unsigned >(cdt.number_of_faces());
-	unsigned int triIndexes = cdt.number_of_faces()*3;
-
-	if (numberOfTriangles == 0) throw Odm25dMeshingException("No triangles in resulting mesh");
-
-	log << numberOfTriangles << " triangles\n";
-
-	std::vector<float> vertices;
-	std::vector<int> vertexIndices;
-
-	try{
-		vertices.reserve(pointCount);
-		vertexIndices.reserve(triIndexes);
-	} catch (const std::bad_alloc&){
-		throw Odm25dMeshingException("Not enough memory");
-	}
-
-
-	for (size_t i = 0; i < pointCount; ++i){
-		vertices.push_back(simplifiedPoints[i].x());
-		vertices.push_back(simplifiedPoints[i].y());
-		vertices.push_back(simplifiedPoints[i].z());
-	}
-
-	for (CDT::Face_iterator face = cdt.faces_begin(); face != cdt.faces_end(); ++face) {
-		if (flipFaces){
-			vertexIndices.push_back(face->vertex(2)->info());
-			vertexIndices.push_back(face->vertex(1)->info());
-			vertexIndices.push_back(face->vertex(0)->info());
-		}else{
-			vertexIndices.push_back(face->vertex(0)->info());
-			vertexIndices.push_back(face->vertex(1)->info());
-			vertexIndices.push_back(face->vertex(2)->info());
-		}
-	}
-
-	log << "Removing spikes... ";
-
-	const float THRESHOLD = avgSpacing;
-	std::vector<float> heights;
-	unsigned int spikesRemoved = 0;
-
-	for (CDT::Vertex_iterator vertex = cdt.vertices_begin(); vertex != cdt.vertices_end(); ++vertex){
-		// Check if the height between this vertex and its
-		// incident vertices is greater than THRESHOLD
-		Vertex_circulator vc = cdt.incident_vertices(vertex), done(vc);
-
-		if (vc != 0){
-			float height = vertices[vertex->info() * 3 + 2];
-			int threshold_over_count = 0;
-			int vertexCount = 0;
-
-			do{
-				if (cdt.is_infinite(vc)) continue;
-
-				float ivHeight = vertices[vc->info() * 3 + 2];
-
-				if (fabs(height - ivHeight) > THRESHOLD){
-					threshold_over_count++;
-					heights.push_back(ivHeight);
-				}
-
-				vertexCount++;
-			}while(++vc != done);
-
-			if (vertexCount == threshold_over_count){
-				// Replace the height of the vertex by the median height
-				// of its incident vertices
-				std::sort(heights.begin(), heights.end());
-
-				vertices[vertex->info() * 3 + 2] = heights[heights.size() / 2];
-
-				spikesRemoved++;
-			}
-
-			heights.clear();
-		}
-	}
-
-	log << "removed " << spikesRemoved << " spikes\n";
-
-	log << "Building polyhedron... ";
-
-	Polyhedron poly;
-	PolyhedronBuilder<HalfedgeDS> builder(vertices, vertexIndices);
-	poly.delegate( builder );
-
-	log << "done\n";
-
-	log << "Refining... ";
-
-	typedef Polyhedron::Vertex_handle   Vertex_handle;
-	std::vector<Polyhedron::Facet_handle>  new_facets;
-	std::vector<Vertex_handle> new_vertices;
-	CGAL::Polygon_mesh_processing::refine(poly,
-				  faces(poly),
-				  std::back_inserter(new_facets),
-				  std::back_inserter(new_vertices),
-				  CGAL::Polygon_mesh_processing::parameters::density_control_factor(2.));
-
-	log << "added " << new_vertices.size() << " new vertices\n";
-
-//	log << "Edge collapsing... ";
-//
-//	SMS::Count_stop_predicate<Polyhedron> stop(maxVertexCount * 3);
-//	int redgesRemoved = SMS::edge_collapse(poly, stop,
-//				  CGAL::parameters::vertex_index_map(get(CGAL::vertex_external_index, poly))
-//								 .halfedge_index_map  (get(CGAL::halfedge_external_index, poly))
-//								 .get_cost (SMS::Edge_length_cost <Polyhedron>())
-//								 .get_placement(SMS::Midpoint_placement<Polyhedron>())
-//			  );
-//
-//	log << redgesRemoved << " edges removed.\n";
-
-	log << "Final vertex count is " << poly.size_of_vertices() << "\n";
-
-	log << "Saving mesh to file.\n";
-
-    typedef typename Polyhedron::Vertex_const_iterator VCI;
-    typedef typename Polyhedron::Facet_const_iterator FCI;
-    typedef typename Polyhedron::Halfedge_around_facet_const_circulator HFCC;
-
-	std::filebuf fb;
-	fb.open(outputFile, std::ios::out);
-	std::ostream os(&fb);
-
-	os << "ply\n"
-	   << "format ascii 1.0\n"
-	   << "element vertex " << poly.size_of_vertices() << "\n"
-	   << "property float x\n"
-	   << "property float y\n"
-	   << "property float z\n"
-	   << "element face " << poly.size_of_facets() << "\n"
-	   << "property list uchar int vertex_index\n"
-	   << "end_header\n";
-
-	for (auto it = poly.vertices_begin(); it != poly.vertices_end(); it++){
-		os << it->point().x() << " " << it->point().y() << " " << it->point().z() << std::endl;
-	}
-
-	typedef CGAL::Inverse_index<VCI> Index;
-	Index index(poly.vertices_begin(), poly.vertices_end());
-
-	for( FCI fi = poly.facets_begin(); fi != poly.facets_end(); ++fi) {
-		HFCC hc = fi->facet_begin();
-		HFCC hc_end = hc;
-
-		os << circulator_size(hc) << " ";
-		do {
-			os << index[VCI(hc->vertex())] << " ";
-			++hc;
-		} while( hc != hc_end);
-
-		os << "\n";
-	}
-
-	fb.close();
-
-	log << "Successfully wrote mesh to: " << outputFile << "\n";
-}
-
 void Odm25dMeshing::printHelp() {
 	bool printInCoutPop = log.isPrintingInCout();
 	log.setIsPrintingInCout(true);
 
 	log << "Usage: odm_25dmeshing -inputFile [plyFile] [optional-parameters]\n";
-	log << "Create a 2.5D mesh from an oriented point cloud (points with normals) using a constrained delaunay triangulation. "
+	log << "Create a 2.5D mesh from a point cloud. "
 		<< "The program requires a path to an input PLY point cloud file, all other input parameters are optional.\n\n";
 
 	log << "	-inputFile	<path>	to PLY point cloud\n"
 		<< "	-outputFile	<path>	where the output PLY 2.5D mesh should be saved (default: " << outputFile << ")\n"
+		<< "	-outputDsmFile	<path>	Optionally output the Digital Surface Model (DSM) computed for generating the mesh. (default: " << outputDsmFile << ")\n"
 		<< "	-logFile	<path>	log file path (default: " << logFilePath << ")\n"
 		<< "	-verbose	whether to print verbose output (default: " << (printInCoutPop ? "true" : "false") << ")\n"
 		<< "	-maxVertexCount	<0 - N>	Maximum number of vertices in the output mesh. The mesh might have fewer vertices, but will not exceed this limit. (default: " << maxVertexCount << ")\n"
-		<< "	-wlopIterations	<1 - 1000>	Iterations of the Weighted Locally Optimal Projection (WLOP) simplification algorithm. Higher values take longer but produce a smoother mesh. (default: " << wlopIterations << ")\n"
+		<< "	-neighbors	<1 - 1000>	Number of nearest neighbors to consider when doing shepard's interpolation and outlier removal. Higher values lead to smoother meshes but take longer to process. (default: " << neighbors << ")\n"
+		<< "	-resolution	<0 - N>	Size of the interpolated digital surface model (DSM) used for deriving the 2.5D mesh, expressed in pixels per meter unit. When set to zero, the program automatically attempts to find a good value based on the point cloud extent and target vertex count. (default: " << resolution << ")\n"
 
 		<< "\n";
 
