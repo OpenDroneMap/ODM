@@ -30,6 +30,13 @@ class ODMDEMCell(ecto.Cell):
         tree = self.inputs.tree
         las_model_found = io.file_exists(tree.odm_georeferencing_model_las)
 
+        # check if we rerun cell or not
+        rerun_cell = (args.rerun is not None and
+                      args.rerun == 'odm_dem') or \
+                     (args.rerun_all) or \
+                     (args.rerun_from is not None and
+                      'odm_dem' in args.rerun_from)
+
         log.ODM_INFO('Classify: ' + str(args.pc_classify != "none"))
         log.ODM_INFO('Create DSM: ' + str(args.dsm))
         log.ODM_INFO('Create DTM: ' + str(args.dtm))
@@ -45,33 +52,35 @@ class ODMDEMCell(ecto.Cell):
         terrain_params = terrain_params_map[args.dem_terrain_type.lower()]             
         slope, cellsize = terrain_params
 
+        # define paths and create working directories
+        odm_dem_root = tree.path('odm_dem')
+        if not io.dir_exists(odm_dem_root):
+            system.mkdir_p(odm_dem_root)
+
         if args.pc_classify != "none" and las_model_found:
-            log.ODM_INFO("Classifying {} using {}".format(tree.odm_georeferencing_model_las, args.pc_classify))
-            commands.classify(tree.odm_georeferencing_model_las, 
-                              args.pc_classify == "smrf",
-                              slope,
-                              cellsize,
-                              approximate=args.dem_approximate,
-                              initialDistance=args.dem_initial_distance,
-                              verbose=args.verbose
-                            )
+            pc_classify_marker = os.path.join(odm_dem_root, 'pc_classify_done.txt')
+
+            if not io.file_exists(pc_classify_marker) or rerun_cell:
+                log.ODM_INFO("Classifying {} using {}".format(tree.odm_georeferencing_model_las, args.pc_classify))
+                commands.classify(tree.odm_georeferencing_model_las, 
+                                  args.pc_classify == "smrf",
+                                  slope,
+                                  cellsize,
+                                  approximate=args.dem_approximate,
+                                  initialDistance=args.dem_initial_distance,
+                                  verbose=args.verbose
+                                )
+                with open(pc_classify_marker, 'w') as f: 
+                    f.write('Classify: {}\n'.format(args.pc_classify))
+                    f.write('Slope: {}\n'.format(slope))
+                    f.write('Cellsize: {}\n'.format(cellsize))
+                    f.write('Approximate: {}\n'.format(args.dem_approximate))
+                    f.write('InitialDistance: {}\n'.format(args.dem_initial_distance))
 
         # Do we need to process anything here?
         if (args.dsm or args.dtm) and las_model_found:
-
-            # define paths and create working directories
-            odm_dem_root = tree.path('odm_dem')
-            system.mkdir_p(odm_dem_root)
-
             dsm_output_filename = os.path.join(odm_dem_root, 'dsm.tif')
             dtm_output_filename = os.path.join(odm_dem_root, 'dtm.tif')
-
-            # check if we rerun cell or not
-            rerun_cell = (args.rerun is not None and
-                          args.rerun == 'odm_dem') or \
-                         (args.rerun_all) or \
-                         (args.rerun_from is not None and
-                          'odm_dem' in args.rerun_from)
 
             if (args.dtm and not io.file_exists(dtm_output_filename)) or \
                 (args.dsm and not io.file_exists(dsm_output_filename)) or \
