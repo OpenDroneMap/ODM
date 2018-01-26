@@ -20,7 +20,7 @@ class ODMOpenSfMCell(ecto.Cell):
     def declare_io(self, params, inputs, outputs):
         inputs.declare("tree", "Struct with paths", [])
         inputs.declare("args", "The application arguments.", {})
-        inputs.declare("photos", "list of ODMPhoto's", [])
+        inputs.declare("reconstruction", "ODMReconstruction", [])
         outputs.declare("reconstruction", "list of ODMReconstructions", [])
 
     def process(self, inputs, outputs):
@@ -31,9 +31,10 @@ class ODMOpenSfMCell(ecto.Cell):
         log.ODM_INFO('Running ODM OpenSfM Cell')
 
         # get inputs
-        tree = self.inputs.tree
-        args = self.inputs.args
-        photos = self.inputs.photos
+        tree = inputs.tree
+        args = inputs.args
+        reconstruction = inputs.reconstruction
+        photos = reconstruction.photos
 
         if not photos:
             log.ODM_ERROR('Not enough photos in photos array to start OpenSfM')
@@ -73,6 +74,7 @@ class ODMOpenSfMCell(ecto.Cell):
                 "feature_min_frames: %s" % self.params.feature_min_frames,
                 "processes: %s" % self.params.processes,
                 "matching_gps_neighbors: %s" % self.params.matching_gps_neighbors,
+                "depthmap_resolution: 640",
                 "optimize_camera_parameters: %s" % ('no' if self.params.fixed_camera_params else 'yes')
             ]
 
@@ -90,7 +92,12 @@ class ODMOpenSfMCell(ecto.Cell):
             if args.matcher_distance > 0:
                 config.append("matching_gps_distance: %s" % self.params.matching_gps_distance)
 
+            if tree.odm_georeferencing_gcp:
+                config.append("bundle_use_gcp: yes")
+                io.copy(tree.odm_georeferencing_gcp, tree.opensfm)
+
             # write config file
+            log.ODM_DEBUG(config)
             config_filename = io.join_paths(tree.opensfm, 'config.yaml')
             with open(config_filename, 'w') as fout:
                 fout.write("\n".join(config))
@@ -164,6 +171,11 @@ class ODMOpenSfMCell(ecto.Cell):
                            (context.pyopencv_path, context.opensfm_path, tree.opensfm, tree.pmvs))
             else:
                 log.ODM_WARNING('Found a valid CMVS file in: %s' % tree.pmvs_visdat)
+
+        system.run('PYTHONPATH=%s %s/bin/opensfm export_geocoords %s --transformation --proj \'%s\'' %
+                   (context.pyopencv_path, context.opensfm_path, tree.opensfm, reconstruction.georef.projection.srs))
+
+        outputs.reconstruction = reconstruction
 
         if args.time:
             system.benchmark(start_time, tree.benchmarking, 'OpenSfM')

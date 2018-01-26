@@ -24,8 +24,6 @@ class ODMMvsTexCell(ecto.Cell):
         inputs.declare("reconstruction", "Clusters output. list of ODMReconstructions", [])
         outputs.declare("reconstruction", "Clusters output. list of ODMReconstructions", [])
 
-    
-
     def process(self, inputs, outputs):
 
         # Benchmarking
@@ -34,8 +32,9 @@ class ODMMvsTexCell(ecto.Cell):
         log.ODM_INFO('Running MVS Texturing Cell')
 
         # get inputs
-        args = self.inputs.args
-        tree = self.inputs.tree
+        args = inputs.args
+        tree = inputs.tree
+        reconstruction = inputs.reconstruction
 
         # define paths and create working directories
         system.mkdir_p(tree.odm_texturing)
@@ -65,8 +64,7 @@ class ODMMvsTexCell(ecto.Cell):
             if not io.file_exists(odm_textured_model_obj) or rerun_cell:
                 log.ODM_DEBUG('Writing MVS Textured file in: %s'
                               % odm_textured_model_obj)
-                
-                
+
                 # Format arguments to fit Mvs-Texturing app
                 skipGeometricVisibilityTest = ""
                 skipGlobalSeamLeveling = ""
@@ -125,6 +123,8 @@ class ODMMvsTexCell(ecto.Cell):
             else:
                 log.ODM_WARNING('Found a valid ODM Texture file in: %s'
                                 % odm_textured_model_obj)
+
+        outputs.reconstruction = reconstruction
 
         if args.time:
             system.benchmark(start_time, tree.benchmarking, 'Texturing')
