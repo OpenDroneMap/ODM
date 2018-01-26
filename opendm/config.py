@@ -97,6 +97,10 @@ def config():
                         help=('Override the focal length information for the '
                               'images'))
 
+    parser.add_argument('--proj',
+                        metavar='<PROJ4 string>',
+                        help='Projection used to transform the model into geographic coordinates')
+
     parser.add_argument('--force-ccd',
                         metavar='<positive float>',
                         type=float,

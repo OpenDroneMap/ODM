@@ -264,6 +264,7 @@ private:
     std::string     inputCoordFilename_;        /**< The path to the cameras exif gps positions file. **/
     std::string     outputCoordFilename_;       /**< The path to the cameras georeferenced gps positions file. **/
     std::string     gcpFilename_;               /**< The path to the GCP file **/
+    std::string     transformFilename_;         /**< The path to the input transform file **/
     std::string     imagesListPath_;            /**< Path to the image list. **/
     std::string     imagesLocation_;            /**< The folder containing the images in the image list. **/
     std::string     inputObjFilename_;          /**< The path to the input mesh obj file. **/
@@ -276,6 +277,7 @@ private:
     bool            exportCoordinateFile_;
     bool            exportGeorefSystem_;
     bool            useGCP_;                    /**< Check if GCP-file is present and use this to georeference the model. **/
+    bool            useTransform_;
     // double          bundleResizedTo_;           /**< The size used in the previous steps to calculate the camera focal_length. */
 
     std::vector<GeorefCamera> cameras_;         /**< A vector of all cameras. **/
@@ -287,6 +289,9 @@ private:
     bool            multiMaterial_;     /**< True if the mesh has multiple materials. **/
 
     std::vector<pcl::MTLReader> companions_; /**< Materials (used by loadOBJFile). **/
+    void performFinalTransform(Mat4 &transMat, pcl::TextureMesh &mesh, pcl::PointCloud<pcl::PointXYZ>::Ptr &meshCloud);
+
+    void createGeoreferencedModelFromSFM();
 };
 
 /*!
