@@ -147,8 +147,8 @@ You can also view the orthophoto GeoTIFF in [QGIS](http://www.qgis.org/) or othe
 
 ## Build and Run Using Docker
 
-(Instructions below apply to Ubuntu 14.04, but the Docker image workflow
-has equivalent procedures for Mac OS X and Windows. See [docs.docker.com](docs.docker.com))
+(Instructions below apply to Ubuntu 14.04, but the Docker image workflow 
+has equivalent procedures for Mac OS X and Windows. See [docs.docker.com](https://docs.docker.com/))
 
 OpenDroneMap is Dockerized, meaning you can use containerization to build and run it without tampering with the configuration of libraries and packages already
 installed on your machine. Docker software is free to install and use in this context. If you don't have it installed,

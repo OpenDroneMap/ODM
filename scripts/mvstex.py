@@ -50,13 +50,24 @@ class ODMMvsTexCell(ecto.Cell):
 
         runs = [{
             'out_dir': tree.odm_texturing,
-            'model': tree.odm_mesh
+            'model': tree.odm_mesh,
+            'force_skip_vis_test': False
         }]
+
+        if args.fast_orthophoto:
+            runs = []
 
         if args.use_25dmesh:
             runs += [{
                     'out_dir': tree.odm_25dtexturing,
-                    'model': tree.odm_25dmesh
+                    'model': tree.odm_25dmesh,
+
+                    # We always skip the visibility test when using the 2.5D mesh
+                    # because many faces end up being narrow, and almost perpendicular 
+                    # to the ground plane. The visibility test improperly classifies
+                    # them as "not seen" since the test is done on a single triangle vertex,
+                    # and while one vertex might be occluded, the other two might not.
+                    'force_skip_vis_test': True 
                 }]
 
         for r in runs:
@@ -74,7 +85,7 @@ class ODMMvsTexCell(ecto.Cell):
                 skipHoleFilling = ""
                 keepUnseenFaces = ""
                 
-                if (self.params.skip_vis_test):
+                if (self.params.skip_vis_test or r['force_skip_vis_test']):
                     skipGeometricVisibilityTest = "--skip_geometric_visibility_test"
                 if (self.params.skip_glob_seam_leveling):
                     skipGlobalSeamLeveling = "--skip_global_seam_leveling"
