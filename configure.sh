@@ -28,7 +28,8 @@ install() {
                          gdal-bin \
                          libgeotiff-dev \
                          pkg-config \
-                         libjsoncpp-dev
+                         libjsoncpp-dev \
+                         python-gdal
 
     echo "Getting CMake 3.1 for MVS-Texturing"
     apt-get install -y software-properties-common python-software-properties
@@ -78,9 +79,6 @@ install() {
                         xmltodict \
                         appsettings \
                         loky
-
-    echo "Installing CGAL dependencies"
-    apt-get install -y -qq libgmp-dev libmpfr-dev
 
     echo "Installing Ecto Dependencies"
     pip install -U catkin-pkg

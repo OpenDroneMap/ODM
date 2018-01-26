@@ -7,6 +7,7 @@ from opendm import log
 from opendm import types
 from opendm import system
 from opendm import context
+from opendm.cropper import Cropper
 
 
 class ODMGeoreferencingCell(ecto.Cell):
@@ -42,7 +43,7 @@ class ODMGeoreferencingCell(ecto.Cell):
         tree = self.inputs.tree
         gcpfile = io.join_paths(tree.root_path, self.params.gcp_file) \
             if self.params.gcp_file else find('gcp_list.txt', tree.root_path)
-        geocreated = True
+        doPointCloudGeo = True
         verbose = '-verbose' if self.params.verbose else ''
 
         # define paths and create working directories
@@ -92,6 +93,10 @@ class ODMGeoreferencingCell(ecto.Cell):
             'texturing_dir': tree.odm_texturing,
             'model': os.path.join(tree.odm_texturing, tree.odm_textured_model_obj)
         }]
+
+        if args.fast_orthophoto:
+            runs = []
+
         if args.use_25dmesh:
             runs += [{
                     'georeferencing_dir': tree.odm_25dgeoreferencing,
@@ -126,7 +131,10 @@ class ODMGeoreferencingCell(ecto.Cell):
 
                 }
                 if not args.use_pmvs:
-                    kwargs['pc'] = tree.opensfm_model
+                    if args.fast_orthophoto:
+                        kwargs['pc'] = os.path.join(tree.opensfm, 'reconstruction.ply')
+                    else:
+                        kwargs['pc'] = tree.opensfm_model
                 else:
                     kwargs['pc'] = tree.pmvs_model
 
@@ -153,16 +161,11 @@ class ODMGeoreferencingCell(ecto.Cell):
                     log.ODM_WARNING('Georeferencing failed. Make sure your '
                                     'photos have geotags in the EXIF or you have '
                                     'provided a GCP file. ')
-                    geocreated = False # skip the rest of the georeferencing
+                    doPointCloudGeo = False # skip the rest of the georeferencing
 
-                odm_georeferencing_model_ply_geo = os.path.join(tree.odm_georeferencing, tree.odm_georeferencing_model_ply_geo)
-                if geocreated:
-                    # update images metadata
+                if doPointCloudGeo:
                     geo_ref = types.ODM_GeoRef()
                     geo_ref.parse_coordinate_system(tree.odm_georeferencing_coords)
-
-                    for idx, photo in enumerate(self.inputs.photos):
-                        geo_ref.utm_to_latlon(tree.odm_georeferencing_latlon, photo, idx)
 
                     # convert ply model to LAS reference system
                     geo_ref.convert_to_las(odm_georeferencing_model_ply_geo,
@@ -185,6 +188,16 @@ class ODMGeoreferencingCell(ecto.Cell):
                                 if line.startswith("end_header"):
                                     reachedpoints = True
                     csvfile.close()
+
+                    if args.crop > 0:
+                        log.ODM_INFO("Calculating cropping area and generating bounds shapefile from point cloud")
+                        cropper = Cropper(tree.odm_georeferencing, 'odm_georeferenced_model')
+                        cropper.create_bounds_shapefile(tree.odm_georeferencing_model_las, args.crop)
+
+                    # Do not execute a second time, since
+                    # We might be doing georeferencing for 
+                    # multiple models (3D, 2.5D, ...)
+                    doPointCloudGeo = False
 
         else:
             log.ODM_WARNING('Found a valid georeferenced model in: %s'
