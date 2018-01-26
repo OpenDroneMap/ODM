@@ -116,6 +116,13 @@ private:
       * \brief Creates a transformation which aligns the area for the orthophoto.
       */
     Eigen::Transform<float, 3, Eigen::Affine> getROITransform(float xMin, float yMin) const;
+
+    /*!
+     * \brief Reads a transformation matrix from a file
+     * @param transformFile_
+     * @return
+     */
+    Eigen::Transform<float, 3, Eigen::Affine> readTransform(std::string transformFile_) const;
     
     /*!
       * \brief Renders a triangle into the ortho photo.
@@ -193,12 +200,14 @@ private:
 
     std::string     inputFile_;         /**< Path to the textured mesh as an obj-file. */
     std::string     inputGeoRefFile_;   /**< Path to the georeference system file. */
+    std::string     inputTransformFile_;
     std::string     outputFile_;        /**< Path to the destination file. */
     std::string     outputCornerFile_;  /**< Path to the output corner file. */
     std::string     logFile_;           /**< Path to the log file. */
 
     float           resolution_;        /**< The number of pixels per meter in the ortho photo. */
 
+    bool            transformOverride_;
     bool            boundaryDefined_;    /**< True if the user has defined a boundary. */
 
     WorldPoint      worldPoint1_;       /**< The first boundary point for the ortho photo, in world coordinates. */
