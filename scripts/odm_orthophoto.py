@@ -32,6 +32,7 @@ class ODMOrthoPhotoCell(ecto.Cell):
         # get inputs
         args = self.inputs.args
         tree = self.inputs.tree
+        reconstruction = inputs.reconstruction
         verbose = '-verbose' if self.params.verbose else ''
 
         # define paths and create working directories
@@ -57,7 +58,7 @@ class ODMOrthoPhotoCell(ecto.Cell):
             }
 
             # Have geo coordinates?
-            if io.file_exists(tree.odm_georeferencing_coords):
+            if reconstruction.georef:  # io.file_exists(tree.odm_georeferencing_coords):
                 if args.use_25dmesh:
                     kwargs['model_geo'] = os.path.join(tree.odm_25dtexturing, tree.odm_georeferencing_model_obj_geo)
                 else:
@@ -79,11 +80,11 @@ class ODMOrthoPhotoCell(ecto.Cell):
             else:
                 # Create georeferenced GeoTiff
                 geotiffcreated = False
-                georef = types.ODM_GeoRef()
+                georef = reconstruction.georef
                 # creates the coord refs # TODO I don't want to have to do this twice- after odm_georef
-                georef.parse_coordinate_system(tree.odm_georeferencing_coords)
+                # georef.parse_coordinate_system(tree.odm_georeferencing_coords)
 
-                if georef.epsg and georef.utm_east_offset and georef.utm_north_offset:
+                if georef.projection and georef.utm_east_offset and georef.utm_north_offset:
                     ulx = uly = lrx = lry = 0.0
                     with open(tree.odm_orthophoto_corners) as f:
                         for lineNumber, line in enumerate(f):
@@ -109,8 +110,7 @@ class ODMOrthoPhotoCell(ecto.Cell):
                         'compress': self.params.compress,
                         'predictor': '-co PREDICTOR=2 ' if self.params.compress in
                                                            ['LZW', 'DEFLATE'] else '',
-                        'epsg': georef.epsg,
-                        't_srs': self.params.t_srs or "EPSG:{0}".format(georef.epsg),
+                        'proj': georef.projection.srs,
                         'bigtiff': self.params.bigtiff,
                         'png': tree.odm_orthophoto_file,
                         'tiff': tree.odm_orthophoto_tif,
@@ -125,7 +125,7 @@ class ODMOrthoPhotoCell(ecto.Cell):
                                '-co BLOCKXSIZE=512 '
                                '-co BLOCKYSIZE=512 '
                                '-co NUM_THREADS=ALL_CPUS '
-                               '-a_srs \"EPSG:{epsg}\" '
+                               '-a_srs \"{proj}\" '
                                '{png} {tiff} > {log}'.format(**kwargs))
 
                     if self.params.build_overviews:
