@@ -206,6 +206,9 @@ class ODM_GeoRef(object):
             log.ODM_ERROR('Unknown pole format %s' % _pole)
             return
 
+    def calculate_EPSG(self, proj):
+        return proj
+
     def coord_to_fractions(self, coord, refs):
         deg_dec = abs(float(coord))
         deg = int(deg_dec)
