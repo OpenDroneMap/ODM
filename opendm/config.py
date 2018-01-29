@@ -361,7 +361,7 @@ def config():
                         default=False,
                         help='Use this tag to build a DTM (Digital Terrain Model, ground only) using a progressive '
                              'morphological filter. Check the --dem* parameters for fine tuning.')
-    
+
     parser.add_argument('--dsm',
                         action='store_true',
                         default=False,
