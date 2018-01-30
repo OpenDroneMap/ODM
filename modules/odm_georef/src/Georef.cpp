@@ -1061,6 +1061,9 @@ void Georef::createGeoreferencedModelFromSFM()
         l4 >> transform.r4c1_ >> transform.r4c2_ >> transform.r4c3_ >> transform.r4c4_;
     }
 
+    transform.r1c2_ = 0.0f;
+    transform.r2c1_ = 0.0f;
+
     // load mesh
     printFinalTransform(transform);
 
