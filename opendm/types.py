@@ -162,9 +162,10 @@ class ODM_Reconstruction(object):
                 return Proj(proj="utm", zone=utm_zone, datum=datum, no_defs=True)
             elif '+proj' in line:
                 return Proj(line.strip('\''))
+            elif 'epsg' in line.lower():
+                return Proj(init=line)
             else:
-                log.ODM_ERROR('Could not parse coordinates. Bad CRS supplied: %s' % line)
-                return
+                raise log.ODM_ERROR('Could not parse coordinates. Bad CRS supplied: %s' % line)
 
     def set_projection(self, projstring):
         try:
@@ -236,7 +237,7 @@ class ODM_GeoRef(object):
         kwargs = {'bin': context.pdal_path,
                   'f_in': _file,
                   'f_out': _file_out,
-                  'east': self.utm_east_offset,
+                  'east': self.utm_east_offset, # Todo: change to use transformation matrix
                   'north': self.utm_north_offset,
                   'srs': self.projection.srs,
                   'json': json_file}
@@ -385,7 +386,7 @@ class ODM_GeoRef(object):
 
 
 class ODM_Tree(object):
-    def __init__(self, root_path, images_path):
+    def __init__(self, root_path, images_path, gcp_file = None):
         # root path to the project
         self.root_path = io.absolute_path_file(root_path)
         if not images_path:
@@ -452,7 +453,7 @@ class ODM_Tree(object):
             self.odm_georeferencing, 'latlon.txt')
         self.odm_georeferencing_coords = io.join_paths(
             self.root_path, 'coords.txt') # Todo put this somewhere better
-        self.odm_georeferencing_gcp = io.find('gcp_list.txt', self.root_path)
+        self.odm_georeferencing_gcp = gcp_file or io.find('gcp_list.txt', self.root_path)
         self.odm_georeferencing_utm_log = io.join_paths(
             self.odm_georeferencing, 'odm_georeferencing_utm_log.txt')
         self.odm_georeferencing_log = 'odm_georeferencing_log.txt'
