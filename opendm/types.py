@@ -237,7 +237,7 @@ class ODM_GeoRef(object):
         kwargs = {'bin': context.pdal_path,
                   'f_in': _file,
                   'f_out': _file_out,
-                  'east': self.utm_east_offset, # Todo: change to use transformation matrix
+                  'east': self.utm_east_offset,
                   'north': self.utm_north_offset,
                   'srs': self.projection.srs,
                   'json': json_file}
@@ -246,10 +246,6 @@ class ODM_GeoRef(object):
         pipeline = '{{' \
                    '  "pipeline":[' \
                    '    "untransformed.ply",' \
-                   '    {{' \
-                   '      "type":"filters.transformation",' \
-                   '      "matrix":"1 0 0 {east} 0 1 0 {north} 0 0 1 0 0 0 0 1"' \
-                   '    }},' \
                    '    {{' \
                    '      "a_srs":"{srs}",' \
                    '      "offset_x":"{east}",' \
