@@ -156,8 +156,8 @@ class ODMGeoreferencingCell(ecto.Cell):
                             for lineNumber, line in enumerate(f):
                                 if reachedpoints:
                                     tokens = line.split(" ")
-                                    csv_line = [float(tokens[0])+geo_ref.utm_east_offset,
-                                                float(tokens[1])+geo_ref.utm_north_offset,
+                                    csv_line = [float(tokens[0]),
+                                                float(tokens[1]),
                                                 tokens[2]]
                                     csvfile_writer.writerow(csv_line)
                                 if line.startswith("end_header"):
