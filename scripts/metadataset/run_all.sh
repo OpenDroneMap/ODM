@@ -8,7 +8,7 @@ set -e
 
 DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
-python $DIR/setup.py $1
+python $DIR/setup.py "$@"
 python $DIR/run_matching.py $1
 python $DIR/split.py $1
 python $DIR/run_reconstructions.py $1

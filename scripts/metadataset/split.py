@@ -1,16 +1,23 @@
 #!/usr/bin/env python
 
 import argparse
+import logging
 import os
 import subprocess
 
 from opendm import context
 
+logger = logging.getLogger(__name__)
+
+logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s',
+                    level=logging.INFO)
+
 
 def run_command(args):
     result = subprocess.Popen(args).wait()
     if result != 0:
-        raise RuntimeError(result)
+        logger.error("The command '{}' exited with return value {}". format(
+            ' '.join(args), result))
 
 
 if __name__ == "__main__":
@@ -22,4 +29,4 @@ if __name__ == "__main__":
     command = os.path.join(context.opensfm_path, 'bin', 'opensfm')
     path = os.path.join(args.dataset, 'opensfm')
 
-    run_command([command, 'create_submodels', path, '--dist', '150'])
+    run_command([command, 'create_submodels', path])
