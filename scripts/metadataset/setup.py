@@ -10,6 +10,7 @@ other.
 
 import argparse
 import os
+import logging
 import subprocess
 
 import yaml
@@ -18,11 +19,17 @@ from opensfm.io import mkdir_p
 
 from opendm import context
 
+logger = logging.getLogger(__name__)
+
+logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s',
+                    level=logging.INFO)
+
 
 def run_command(args):
     result = subprocess.Popen(args).wait()
     if result != 0:
-        raise RuntimeError(result)
+        logger.error("The command '{}' exited with return value {}". format(
+            ' '.join(args), result))
 
 
 def resize_images(data_path, args):
@@ -59,6 +66,8 @@ def create_config(opensfm_path, args):
         "submodels_relpath": "../submodels/opensfm",
         "submodel_relpath_template": "../submodels/submodel_%04d/opensfm",
         "submodel_images_relpath_template": "../submodels/submodel_%04d/images",
+        "submodel_size": args.submodel_size,
+        "submodel_overlap": args.submodel_overlap,
 
         "feature_process_size": args.resize_to,
         "feature_min_frames": args.min_num_features,
@@ -67,6 +76,13 @@ def create_config(opensfm_path, args):
     }
     with open(os.path.join(opensfm_path, 'config.yaml'), 'w') as fout:
         yaml.dump(config, fout, default_flow_style=False)
+
+
+def link_image_groups(data_path, opensfm_path):
+    src = os.path.join(data_path, 'image_groups.txt')
+    dst = os.path.join(opensfm_path, 'image_groups.txt')
+    if os.path.isfile(src) and not os.path.isfile(dst):
+        os.symlink(src, dst)
 
 
 def parse_command_line():
@@ -109,6 +125,25 @@ def parse_command_line():
                              'uses only one which has value, prefering the '
                              'Neighbors parameter. Default: %(default)s')
 
+    parser.add_argument('--submodel-size',
+                        type=int,
+                        default=80,
+                        help='Average number of images per submodel. When '
+                             'splitting a large dataset into smaller '
+                             'submodels, images are grouped into clusters. '
+                             'This value regulates the number of images that '
+                             'each cluster should have on average.')
+
+    parser.add_argument('--submodel-overlap',
+                        type=float,
+                        metavar='<positive integer>',
+                        default=150,
+                        help='Radius of the overlap between submodels. '
+                        'After grouping images into clusters, images '
+                        'that are closer than this radius to a cluster '
+                        'are added to the cluster. This is done to ensure '
+                        'that neighboring submodels overlap.')
+
     return parser.parse_args()
 
 
@@ -124,3 +159,4 @@ if __name__ == '__main__':
     mkdir_p(opensfm_path)
     create_image_list(image_path, opensfm_path)
     create_config(opensfm_path, args)
+    link_image_groups(data_path, opensfm_path)

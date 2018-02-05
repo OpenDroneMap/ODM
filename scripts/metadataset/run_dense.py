@@ -12,13 +12,15 @@ from opendm import context
 
 logger = logging.getLogger(__name__)
 
-logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
+logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s',
+                    level=logging.INFO)
 
 
 def run_command(args):
     result = subprocess.Popen(args).wait()
     if result != 0:
-        raise RuntimeError(result)
+        logger.error("The command '{}' exited with return value {}". format(
+            ' '.join(args), result))
 
 
 class DenseReconstructor:
