@@ -50,6 +50,7 @@ struct GeorefGCP
     double pixelY_;            /**< The pixels y-position for the GCP in the corresponding image **/
 
     std::string image_;     /**< The corresponding image for the GCP **/
+    std::string idgcp_;     /**< The corresponding identification for the GCP **/
 
     GeorefGCP();
     ~GeorefGCP();

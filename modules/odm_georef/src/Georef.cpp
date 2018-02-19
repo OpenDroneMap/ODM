@@ -1,4 +1,4 @@
-// to format log_ output
+// to format log_ output; version 2018-02-18
 #include <iostream>
 #include <iomanip>
 using namespace std;
@@ -19,7 +19,7 @@ std::ostream& operator<<(std::ostream &os, const GeorefSystem &geo)
 }
 
 GeorefGCP::GeorefGCP()
-    :x_(0.0), y_(0.0), z_(0.0), use_(false), localX_(0.0), localY_(0.0), localZ_(0.0),cameraIndex_(0), pixelX_(0.0), pixelY_(0.0), image_("")
+    :x_(0.0), y_(0.0), z_(0.0), use_(false), localX_(0.0), localY_(0.0), localZ_(0.0),cameraIndex_(0), pixelX_(0.0), pixelY_(0.0), image_(""), idgcp_("")
 {
 }
 
@@ -29,7 +29,7 @@ GeorefGCP::~GeorefGCP()
 
 void GeorefGCP::extractGCP(std::istringstream &gcpStream)
 {
-    gcpStream >> x_ >> y_ >> z_ >> pixelX_ >> pixelY_ >> image_;
+    gcpStream >> x_ >> y_ >> z_ >> pixelX_ >> pixelY_ >> image_ >> idgcp_;
 }
 
 Vec3 GeorefGCP::getPos()
@@ -687,7 +687,7 @@ void Georef::readGCPs()
         ++nrGCPs;
 
 //        log_<<"x_: "<<gcp.x_<<" y_: "<<gcp.y_<<" z_: "<<gcp.z_<<" pixelX_: "<<gcp.pixelX_<<" pixelY_: "<<gcp.pixelY_<<" image: "<<gcp.image_<<"\n";
-        log_<< setiosflags(ios::fixed) << setprecision(3) <<"x_: "<< gcp.x_ <<" y_: "<< gcp.y_<<" z_: "<< gcp.z_ <<" pixelX_: "<<gcp.pixelX_<<" pixelY_: "<<gcp.pixelY_<<" image: "<<gcp.image_<<"\n";  // more readeable
+        log_<< setiosflags(ios::fixed) << setprecision(3) <<"x_: "<< gcp.x_ <<" y_: "<< gcp.y_<<" z_: "<< gcp.z_ <<" pixelX_: "<<gcp.pixelX_<<" pixelY_: "<<gcp.pixelY_<<" image: "<<gcp.image_ <<" idgcp_: " << gcp.idgcp_ << "\n";  // more readeable
     }
 
     // Check if the GCPs have corresponding images in the bundle files and if they don't, remove them from the GCP-list
