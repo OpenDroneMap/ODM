@@ -1,4 +1,4 @@
-// to format log_ output; version 2018-02-18
+// to format log_ output; version 2018-02-18, skip gcp comments and empty lines.
 #include <iostream>
 #include <iomanip>
 using namespace std;
@@ -682,6 +682,9 @@ void Georef::readGCPs()
     {
         std::istringstream istr(gcpString);
         GeorefGCP gcp;
+        if ( ! gcpString[0] || gcpString[0] == '#' ) {      /* skip comments */
+            continue; 
+        }
         gcp.extractGCP(istr);
         gcps_.push_back(gcp);
         ++nrGCPs;
