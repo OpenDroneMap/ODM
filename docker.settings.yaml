@@ -60,3 +60,4 @@ project_path: '/' #DO NOT CHANGE THIS OR DOCKER WILL NOT WORK. It should be '/'
 #orthophoto_compression: DEFLATE # Options are [JPEG, LZW, PACKBITS, DEFLATE, LZMA, NONE] Don't change unless you know what you are doing
 #orthophoto_bigtiff: IF_SAFER # Options are [YES, NO, IF_NEEDED, IF_SAFER]
 #build_overviews: FALSE
+#pc-classify: none
