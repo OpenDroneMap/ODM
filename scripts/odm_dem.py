@@ -6,6 +6,8 @@ from opendm import log
 from opendm import system
 from opendm import context
 from opendm import types
+from opendm.dem import commands
+from opendm.cropper import Cropper
 
 
 class ODMDEMCell(ecto.Cell):
@@ -27,82 +29,62 @@ class ODMDEMCell(ecto.Cell):
         args = self.inputs.args
         tree = self.inputs.tree
         las_model_found = io.file_exists(tree.odm_georeferencing_model_las)
-        env_paths = [context.superbuild_bin_path]
 
-        # Just to make sure
-        l2d_module_installed = True
-        try:
-            system.run('l2d_classify --help > /dev/null', env_paths)
-        except:
-            log.ODM_WARNING('lidar2dems is not installed properly')
-            l2d_module_installed = False
+        # check if we rerun cell or not
+        rerun_cell = (args.rerun is not None and
+                      args.rerun == 'odm_dem') or \
+                     (args.rerun_all) or \
+                     (args.rerun_from is not None and
+                      'odm_dem' in args.rerun_from)
 
+        log.ODM_INFO('Classify: ' + str(args.pc_classify != "none"))
         log.ODM_INFO('Create DSM: ' + str(args.dsm))
         log.ODM_INFO('Create DTM: ' + str(args.dtm))
         log.ODM_INFO('DEM input file {0} found: {1}'.format(tree.odm_georeferencing_model_las, str(las_model_found)))
 
-        # Do we need to process anything here?
-        if (args.dsm or args.dtm) and las_model_found and l2d_module_installed:
+        # Setup terrain parameters
+        terrain_params_map = {
+            'flatnonforest': (1, 3), 
+            'flatforest': (1, 2), 
+            'complexnonforest': (5, 2), 
+            'complexforest': (10, 2)
+        }
+        terrain_params = terrain_params_map[args.dem_terrain_type.lower()]             
+        slope, cellsize = terrain_params
 
-            # define paths and create working directories
-            odm_dem_root = tree.path('odm_dem')
+        # define paths and create working directories
+        odm_dem_root = tree.path('odm_dem')
+        if not io.dir_exists(odm_dem_root):
             system.mkdir_p(odm_dem_root)
 
+        if args.pc_classify != "none" and las_model_found:
+            pc_classify_marker = os.path.join(odm_dem_root, 'pc_classify_done.txt')
+
+            if not io.file_exists(pc_classify_marker) or rerun_cell:
+                log.ODM_INFO("Classifying {} using {}".format(tree.odm_georeferencing_model_las, args.pc_classify))
+                commands.classify(tree.odm_georeferencing_model_las, 
+                                  args.pc_classify == "smrf",
+                                  slope,
+                                  cellsize,
+                                  approximate=args.dem_approximate,
+                                  initialDistance=args.dem_initial_distance,
+                                  verbose=args.verbose
+                                )
+                with open(pc_classify_marker, 'w') as f: 
+                    f.write('Classify: {}\n'.format(args.pc_classify))
+                    f.write('Slope: {}\n'.format(slope))
+                    f.write('Cellsize: {}\n'.format(cellsize))
+                    f.write('Approximate: {}\n'.format(args.dem_approximate))
+                    f.write('InitialDistance: {}\n'.format(args.dem_initial_distance))
+
+        # Do we need to process anything here?
+        if (args.dsm or args.dtm) and las_model_found:
             dsm_output_filename = os.path.join(odm_dem_root, 'dsm.tif')
             dtm_output_filename = os.path.join(odm_dem_root, 'dtm.tif')
-
-            # check if we rerun cell or not
-            rerun_cell = (args.rerun is not None and
-                          args.rerun == 'odm_dem') or \
-                         (args.rerun_all) or \
-                         (args.rerun_from is not None and
-                          'odm_dem' in args.rerun_from)
 
             if (args.dtm and not io.file_exists(dtm_output_filename)) or \
                 (args.dsm and not io.file_exists(dsm_output_filename)) or \
                 rerun_cell:
-                 
-                # Process with lidar2dems
-                terrain_params_map = {
-                    'flatnonforest': (1, 3), 
-                    'flatforest': (1, 2), 
-                    'complexnonforest': (5, 2), 
-                    'complexforest': (10, 2)
-                }
-                terrain_params = terrain_params_map[args.dem_terrain_type.lower()]             
-
-                kwargs = {
-                    'verbose': '-v' if self.params.verbose else '',
-                    'slope': terrain_params[0],
-                    'cellsize': terrain_params[1],
-                    'outdir': odm_dem_root,
-                    'site': ''
-                }
-
-                if args.crop > 0:
-                    bounds_shapefile_path = os.path.join(tree.odm_georeferencing, 'odm_georeferenced_model.bounds.shp')
-                    if os.path.exists(bounds_shapefile_path):
-                        kwargs['site'] = '-s {}'.format(bounds_shapefile_path)
-
-                l2d_params = '--slope {slope} --cellsize {cellsize} ' \
-                             '{verbose} ' \
-                             '-o {site} ' \
-                             '--outdir {outdir}'.format(**kwargs)
-
-                approximate = '--approximate' if args.dem_approximate else ''
-
-                # Classify only if we need a DTM
-                run_classification = args.dtm
-
-                if run_classification:
-                    system.run('l2d_classify {0} --decimation {1} '
-                               '{2} --initialDistance {3} {4}'.format(
-                        l2d_params, args.dem_decimation, approximate, 
-                        args.dem_initial_distance, tree.odm_georeferencing), env_paths)
-                else:
-                    log.ODM_INFO("Will skip classification, only DSM is needed")
-                    l2d_classified_pattern = 'odm_georeferenced_model.bounds-0_l2d_s{slope}c{cellsize}.las' if args.crop > 0 else 'l2d_s{slope}c{cellsize}.las'
-                    copyfile(tree.odm_georeferencing_model_las, os.path.join(odm_dem_root, l2d_classified_pattern.format(**kwargs)))
 
                 products = []
                 if args.dsm: products.append('dsm') 
@@ -113,34 +95,29 @@ class ODMDEMCell(ecto.Cell):
                     radius_steps.append(radius_steps[-1] * 3) # 3 is arbitrary, maybe there's a better value?
 
                 for product in products:
-                    demargs = {
-                        'product': product,
-                        'indir': odm_dem_root,
-                        'l2d_params': l2d_params,
-                        'maxsd': args.dem_maxsd,
-                        'maxangle': args.dem_maxangle,
-                        'resolution': args.dem_resolution,
-                        'radius_steps': ' '.join(map(str, radius_steps)),
-                        'gapfill': '--gapfill' if args.dem_gapfill_steps > 0 else '',
-                        
-                        # If we didn't run a classification, we should pass the decimate parameter here
-                        'decimation': '--decimation {0}'.format(args.dem_decimation) if not run_classification else ''
-                    }
+                    commands.create_dems(
+                            [tree.odm_georeferencing_model_las], 
+                            product,
+                            radius=map(str, radius_steps),
+                            gapfill=True,
+                            outdir=odm_dem_root,
+                            resolution=args.dem_resolution,
+                            maxsd=args.dem_maxsd,
+                            maxangle=args.dem_maxangle,
+                            decimation=args.dem_decimation,
+                            verbose=args.verbose
+                        )
 
-                    system.run('l2d_dems {product} {indir} {l2d_params} '
-                               '--maxsd {maxsd} --maxangle {maxangle} '
-                               '--resolution {resolution} --radius {radius_steps} '
-                               '{decimation} '
-                               '{gapfill} '.format(**demargs), env_paths)
-
-                    # Rename final output
-                    if product == 'dsm':
-                        dsm_pattern = 'odm_georeferenced_model.bounds-0_dsm.idw.tif' if args.crop > 0 else 'dsm.idw.tif'
-                        os.rename(os.path.join(odm_dem_root, dsm_pattern), dsm_output_filename)
-                    elif product == 'dtm':
-                        dtm_pattern = 'odm_georeferenced_model.bounds-0_dsm.idw.tif' if args.crop > 0 else 'dtm.idw.tif'
-                        os.rename(os.path.join(odm_dem_root, dtm_pattern), dtm_output_filename)
-
+                    if args.crop > 0:
+                        bounds_shapefile_path = os.path.join(tree.odm_georeferencing, 'odm_georeferenced_model.bounds.shp')
+                        if os.path.exists(bounds_shapefile_path):
+                            Cropper.crop(bounds_shapefile_path, os.path.join(odm_dem_root, "{}.tif".format(product)), {
+                                'TILED': 'YES',
+                                'COMPRESS': 'LZW',
+                                'BLOCKXSIZE': 512,
+                                'BLOCKYSIZE': 512,
+                                'NUM_THREADS': 'ALL_CPUS'
+                            })
             else:
                 log.ODM_WARNING('Found existing outputs in: %s' % odm_dem_root)
         else:
