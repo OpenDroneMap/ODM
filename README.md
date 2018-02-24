@@ -182,6 +182,20 @@ If you want to pass in custom parameters using the settings.yaml file, you can p
 
     docker run -it --rm -v $(pwd)/images:/code/images v $(pwd)/odm_orthophoto:/code/odm_orthophoto -v $(pwd)/odm_texturing:/code/odm_texturing -v $(pwd)/settings.yaml:/code/settings.yaml opendronemap/opendronemap
 
+When building your own Docker image, if image size is of importance to you, you should use the ```--squash``` flag, like so:
+
+    docker build --squash -t my_odm_image .
+
+This will clean up intermediate steps in the Docker build process, resulting in a significantly smaller image (about half the size).
+
+Experimental flags need to be enabled in Docker to use the ```--squash``` flag. To enable this, insert the following into the file ```/etc/docker/daemon.json```:
+    
+    {
+        "experimental": true
+    }
+
+After this, you must restart docker by typing ```sudo service docker restart``` into your Linux terminal.
+
 
 ## User Interface
 
