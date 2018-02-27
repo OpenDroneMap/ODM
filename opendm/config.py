@@ -289,6 +289,17 @@ def config():
                           'Use 0 to disable cropping. '
                           'Default: %(default)s'))
 
+    parser.add_argument('--pc-classify',
+            metavar='<string>',
+            default='none',
+            choices=['none', 'smrf', 'pmf'],
+            help='Classify the .LAS point cloud output using either '
+            'a Simple Morphological Filter or a Progressive Morphological Filter. '
+            'If --dtm is set this parameter defaults to smrf. '
+            'You can control the behavior of both smrf and pmf by tweaking the --dem-* parameters. '
+            'Default: '
+            '%(default)s')
+
     parser.add_argument('--texturing-data-term',
                         metavar='<string>',
                         default='gmi',
@@ -522,5 +533,9 @@ def config():
       if args.use_pmvs:
         log.ODM_INFO('Fast orthophoto is turned on, cannot use pmvs (removing --use-pmvs)')
         args.use_pmvs = False
+
+    if args.dtm and args.pc_classify == 'none':
+      log.ODM_INFO("DTM is turned on, automatically turning on point cloud classification")
+      args.pc_classify = "smrf"
 
     return args
