@@ -1,20 +1,19 @@
 EPSG:32617
 ## comment: the first line must contain EPSG. ( mandatory )
-## x1 y1 z1 pixelx1 pixely1 imagename1 idGCP
 ## 0/0 of Pixel Coord = Upper left corner pixelX(column_0..) pixelY(row_0..)
+## x1 y1 z1 pixelx1 pixely1 imagename1 idGCP ( idGCP optional )
 # order by GCP
 # GCP01
 274914.738    4603349.014    400    1229.676   514.215    DJI_0068.JPG    HV01
 274914.738    4603349.014    400    1268.023    31.309    DJI_0104.JPG    HV01
 #274914.738   4603349.014    400    1350.499 -1506.619    1JI_0076.JPG badHV01
 274914.738    4603349.014    400    1350.499  1506.619    1JI_0076.JPG    HV01
-# this is a comment. skip this and empty lines
-
-# GCP02
-274915.887    4603307.715    400    1276.695  1043.561    DJI_0068.JPG    HV02
-274915.887    4603307.715    400     750.239    81.604    DJI_0104.JPG    HV02
-274915.887    4603307.715    400     336.897   634.845    DJI_0083.JPG    HV02
-274915.887    4603307.715    400    1344.332   956.654    1JI_0076.JPG    HV02
+# this is a comment, skip
+# GCP02, no idGCP ( old format )
+274915.887    4603307.715    400    1276.695  1043.561    DJI_0068.JPG
+274915.887    4603307.715    400     750.239    81.604    DJI_0104.JPG
+274915.887    4603307.715    400     336.897   634.845    DJI_0083.JPG
+274915.887    4603307.715    400    1344.332   956.654    1JI_0076.JPG
 # GCP03
 274985.284    4603319.756    400    2125.152   841.227    DJI_0068.JPG    HV03
 274985.284    4603319.756    400     919.044   903.661    DJI_0104.JPG    HV03

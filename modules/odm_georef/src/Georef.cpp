@@ -29,7 +29,8 @@ GeorefGCP::~GeorefGCP()
 
 void GeorefGCP::extractGCP(std::istringstream &gcpStream)
 {
-    gcpStream >> x_ >> y_ >> z_ >> pixelX_ >> pixelY_ >> image_ >> idgcp_;
+//        gcpStream >> x_ >> y_ >> z_ >> pixelX_ >> pixelY_ >> image_; 
+        gcpStream >> x_ >> y_ >> z_ >> pixelX_ >> pixelY_ >> image_ >> idgcp_;
 }
 
 Vec3 GeorefGCP::getPos()
@@ -682,7 +683,9 @@ void Georef::readGCPs()
     {
         std::istringstream istr(gcpString);
         GeorefGCP gcp;
-        if ( ! gcpString[0] || gcpString[0] == '#' ) {      /* skip comments */
+//        if ( ! gcpString[0] || gcpString[0] == '#' ) {      /* skip comments */
+//TODO skip empty lines too
+        if ( istr.peek() == '#' || istr.peek() == '\r' || istr.peek() == '\n' ) {      /* skip comments */
             continue; 
         }
         gcp.extractGCP(istr);
@@ -690,7 +693,7 @@ void Georef::readGCPs()
         ++nrGCPs;
 
 //        log_<<"x_: "<<gcp.x_<<" y_: "<<gcp.y_<<" z_: "<<gcp.z_<<" pixelX_: "<<gcp.pixelX_<<" pixelY_: "<<gcp.pixelY_<<" image: "<<gcp.image_<<"\n";
-        log_<< setiosflags(ios::fixed) << setprecision(3) <<"x_: "<< gcp.x_ <<" y_: "<< gcp.y_<<" z_: "<< gcp.z_ <<" pixelX_: "<<gcp.pixelX_<<" pixelY_: "<<gcp.pixelY_<<" image: "<<gcp.image_ <<" idgcp_: " << gcp.idgcp_ << "\n";  // more readeable
+        log_<< setiosflags(ios::fixed) << setprecision(3) << "x_: " << gcp.x_ << " y_: " << gcp.y_<< " z_: " << gcp.z_ <<" pixelX_: " << gcp.pixelX_ << " pixelY_: " << gcp.pixelY_ << " image: " << gcp.image_ << " idgcp_: " << gcp.idgcp_ << '\n';  // more readeable
     }
 
     // Check if the GCPs have corresponding images in the bundle files and if they don't, remove them from the GCP-list
