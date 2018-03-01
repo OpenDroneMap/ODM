@@ -2,8 +2,7 @@ EPSG:32617
 ## comment: the first line must contain EPSG. ( mandatory )
 ## x1 y1 z1 pixelx1 pixely1 imagename1 idGCP
 ## 0/0 of Pixel Coord = Upper left corner pixelX(column_0..) pixelY(row_0..)
-# this is a comment. skip this and empty lines
-
+# this is a comment. skip 
 # order by photo
 274920.710    4603258.802    400   2202.425   1319.122    DJI_0063.JPG    HV04
 274879.571    4603204.279    400   1505.237    849.416    DJI_0063.JPG    HV05
