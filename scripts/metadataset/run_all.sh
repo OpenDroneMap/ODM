@@ -14,3 +14,4 @@ python $DIR/split.py $1
 python $DIR/run_reconstructions.py $1
 python $DIR/align.py $1
 python $DIR/run_dense.py $1
+python $DIR/merge.py $1

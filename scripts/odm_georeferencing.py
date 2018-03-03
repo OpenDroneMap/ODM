@@ -40,10 +40,6 @@ class ODMGeoreferencingCell(ecto.Cell):
         doPointCloudGeo = True
         verbose = '-verbose' if self.params.verbose else ''
 
-        # define paths and create working directories
-        system.mkdir_p(tree.odm_georeferencing)
-        if args.use_25dmesh: system.mkdir_p(tree.odm_25dgeoreferencing)
-
         # check if we rerun cell or not
         rerun_cell = (args.rerun is not None and
                       args.rerun == 'odm_georeferencing') or \
