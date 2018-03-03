@@ -717,20 +717,10 @@ void OdmOrthoPhoto::drawTexturedTriangle(const cv::Mat &texture, const pcl::Vert
     v2x = v2.x; v2y = v2.y; v2z = v2.z;
     v3x = v3.x; v3y = v3.y; v3z = v3.z;
 
-    // Get texture coordinates. (Special cases for PCL when using multiple materials vs one material)
-    if(multiMaterial_)
-    {
-        v1u = uvs[3*faceIndex][0]; v1v = uvs[3*faceIndex][1];
-        v2u = uvs[3*faceIndex+1][0]; v2v = uvs[3*faceIndex+1][1];
-        v3u = uvs[3*faceIndex+2][0]; v3v = uvs[3*faceIndex+2][1];
-
-    }
-    else
-    {
-        v1u = uvs[v1i][0]; v1v = uvs[v1i][1];
-        v2u = uvs[v2i][0]; v2v = uvs[v2i][1];
-        v3u = uvs[v3i][0]; v3v = uvs[v3i][1];
-    }
+    // Get texture coordinates. 
+    v1u = uvs[3*faceIndex][0]; v1v = uvs[3*faceIndex][1];
+    v2u = uvs[3*faceIndex+1][0]; v2v = uvs[3*faceIndex+1][1];
+    v3u = uvs[3*faceIndex+2][0]; v3v = uvs[3*faceIndex+2][1];
 
     // Check bounding box overlap.
     int xMin = static_cast<int>(std::min(std::min(v1x, v2x), v3x));
