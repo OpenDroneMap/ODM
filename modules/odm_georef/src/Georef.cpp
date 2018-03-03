@@ -683,9 +683,11 @@ void Georef::readGCPs()
     {
         std::istringstream istr(gcpString);
         GeorefGCP gcp;
-//        if ( ! gcpString[0] || gcpString[0] == '#' ) {      /* skip comments */
-//TODO skip empty lines too
-        if ( istr.peek() == '#' || istr.peek() == '\r' || istr.peek() == '\n' ) {      /* skip comments */
+      
+        if ( gcpString.empty() )  {
+            continue;
+        }
+        if ( istr.peek() == '#' ) {                         /* skip comments */
             continue; 
         }
         gcp.extractGCP(istr);

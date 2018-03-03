@@ -1,11 +1,14 @@
 #ODM 0.3.1 under Debian 8.10 jessie  - 2018-02-27 by yjmenezes
 #https://github.com/OpenDroneMap/OpenDroneMap/wiki/Docker
-git clone https://github.com/OpenDroneMap/OpenDroneMap.git
+#git clone https://github.com/OpenDroneMap/OpenDroneMap.git
+git clone https://github.com/yjmenezes/OpenDroneMap.git
 cd OpenDroneMap
+# list images
+docker images
 #remove old my_odm_image if necessary
-docker rmi my_odm_image
+docker rmi my_odm_image 
 #build a fresh one
-docker build -t my_odm_image
+docker build -t my_odm_image . 
 #run tests with supplied image set. 
 #Mapped host directories for output. -v host_path:container_path
 cd tests/test_data/
