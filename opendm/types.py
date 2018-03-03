@@ -448,12 +448,13 @@ class ODM_Tree(object):
         self.odm_georeferencing_latlon = io.join_paths(
             self.odm_georeferencing, 'latlon.txt')
         self.odm_georeferencing_coords = io.join_paths(
-            self.root_path, 'coords.txt') # Todo put this somewhere better
+            self.odm_georeferencing, 'coords.txt')
         self.odm_georeferencing_gcp = gcp_file or io.find('gcp_list.txt', self.root_path)
         self.odm_georeferencing_utm_log = io.join_paths(
             self.odm_georeferencing, 'odm_georeferencing_utm_log.txt')
         self.odm_georeferencing_log = 'odm_georeferencing_log.txt'
         self.odm_georeferencing_transform_file = 'odm_georeferencing_transform.txt'
+        self.odm_georeferencing_proj = 'proj.txt'
         self.odm_georeferencing_model_txt_geo = 'odm_georeferencing_model_geo.txt'
         self.odm_georeferencing_model_ply_geo = 'odm_georeferenced_model.ply'
         self.odm_georeferencing_model_obj_geo = 'odm_textured_model_geo.obj'
