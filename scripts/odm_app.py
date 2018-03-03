@@ -7,7 +7,7 @@ from opendm import io
 from opendm import system
 
 from dataset import ODMLoadDatasetCell
-from opensfm import ODMOpenSfMCell
+from run_opensfm import ODMOpenSfMCell
 from odm_slam import ODMSlamCell
 from pmvs import ODMPmvsCell
 from cmvs import ODMCmvsCell
@@ -38,7 +38,9 @@ class ODMApp(ecto.BlackBox):
         """
         cells = {'args': ecto.Constant(value=p.args),
                  'dataset': ODMLoadDatasetCell(force_focal=p.args.force_focal,
-                                               force_ccd=p.args.force_ccd),
+                                               force_ccd=p.args.force_ccd,
+                                               verbose=p.args.verbose,
+                                               proj=p.args.proj),
                  'opensfm': ODMOpenSfMCell(use_exif_size=False,
                                            feature_process_size=p.args.resize_to,
                                            feature_min_frames=p.args.min_num_features,
@@ -84,7 +86,7 @@ class ODMApp(ecto.BlackBox):
         return cells
 
     def configure(self, p, _i, _o):
-        tree = types.ODM_Tree(p.args.project_path, p.args.images)
+        tree = types.ODM_Tree(p.args.project_path, p.args.images, p.args.gcp)
         self.tree = ecto.Constant(value=tree)
 
         # TODO(dakota) put this somewhere better maybe
@@ -106,12 +108,13 @@ class ODMApp(ecto.BlackBox):
         # define the connections like you would for the plasm
 
         # load the dataset
-        connections = [self.tree[:] >> self.dataset['tree']]
+        connections = [self.tree[:] >> self.dataset['tree'],
+                       self.args[:] >> self.dataset['args']]
 
         # run opensfm with images from load dataset
         connections += [self.tree[:] >> self.opensfm['tree'],
                         self.args[:] >> self.opensfm['args'],
-                        self.dataset['photos'] >> self.opensfm['photos']]
+                        self.dataset['reconstruction'] >> self.opensfm['reconstruction']]
 
         if not p.args.use_pmvs:
             # create odm mesh from opensfm point cloud
@@ -133,7 +136,7 @@ class ODMApp(ecto.BlackBox):
             connections += [self.tree[:] >> self.meshing['tree'],
                             self.args[:] >> self.meshing['args'],
                             self.pmvs['reconstruction'] >> self.meshing['reconstruction']]
-        
+
         # create odm texture
         connections += [self.tree[:] >> self.texturing['tree'],
                         self.args[:] >> self.texturing['args'],
@@ -142,14 +145,13 @@ class ODMApp(ecto.BlackBox):
         # create odm georeference
         connections += [self.tree[:] >> self.georeferencing['tree'],
                         self.args[:] >> self.georeferencing['args'],
-                        self.dataset['photos'] >> self.georeferencing['photos'],
                         self.texturing['reconstruction'] >> self.georeferencing['reconstruction']]
-        
+
         # create odm dem
         connections += [self.tree[:] >> self.dem['tree'],
                         self.args[:] >> self.dem['args'],
                         self.georeferencing['reconstruction'] >> self.dem['reconstruction']]
-        
+
         # create odm orthophoto
         connections += [self.tree[:] >> self.orthophoto['tree'],
                         self.args[:] >> self.orthophoto['args'],

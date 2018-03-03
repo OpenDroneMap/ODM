@@ -44,9 +44,12 @@ OdmOrthoPhoto::OdmOrthoPhoto()
 {
     inputFile_ = "";
     inputGeoRefFile_ = "";
+    inputTransformFile_ = "";
     outputFile_ = "ortho.jpg";
     logFile_    = "log.txt";
     outputCornerFile_ = "";
+
+    transformOverride_ = false;
 
     resolution_ = 0.0f;
 
@@ -241,6 +244,17 @@ void OdmOrthoPhoto::parseArguments(int argc, char *argv[])
             }
             outputCornerFile_ = std::string(argv[argIndex]);
             log_ << "Writing corners to: " << outputCornerFile_ << "\n";
+        }
+        else if(argument == "-inputTransformFile")
+        {
+            argIndex++;
+            if (argIndex >= argc)
+            {
+                throw OdmOrthoPhotoException("Argument '" + argument + "' expects 1 more input following it, but no more inputs were provided.");
+            }
+            inputTransformFile_ = std::string(argv[argIndex]);
+            transformOverride_ = true;
+            log_ << "Reading transformation matrix from: " << outputCornerFile_ << "\n";
         }
         else
         {
@@ -655,28 +669,70 @@ void OdmOrthoPhoto::adjustBoundsForEntireModel(const pcl::TextureMesh &mesh)
 
 Eigen::Transform<float, 3, Eigen::Affine> OdmOrthoPhoto::getROITransform(float xMin, float yMin) const
 {
-    // The transform used to move the chosen area into the ortho photo.
+    //Use transformation matrix if provided:
+    if(transformOverride_){
+        return readTransform(inputTransformFile_);
+    }
+    else {
+        // The transform used to move the chosen area into the ortho photo.
+        Eigen::Transform<float, 3, Eigen::Affine> transform;
+
+        transform(0, 0) = resolution_;     // x Scaling.
+        transform(1, 0) = 0.0f;
+        transform(2, 0) = 0.0f;
+        transform(3, 0) = 0.0f;
+
+        transform(0, 1) = 0.0f;
+        transform(1, 1) = -resolution_;     // y Scaling, mirrored for easier rendering.
+        transform(2, 1) = 0.0f;
+        transform(3, 1) = 0.0f;
+
+        transform(0, 2) = 0.0f;
+        transform(1, 2) = 0.0f;
+        transform(2, 2) = 1.0f;
+        transform(3, 2) = 0.0f;
+
+        transform(0, 3) = -xMin * resolution_;    // x Translation
+        transform(1, 3) = -yMin * resolution_;    // y Translation
+        transform(2, 3) = 0.0f;
+        transform(3, 3) = 1.0f;
+
+        return transform;
+    }
+}
+
+Eigen::Transform<float, 3, Eigen::Affine> OdmOrthoPhoto::readTransform(std::string transformFile_) const
+{
     Eigen::Transform<float, 3, Eigen::Affine> transform;
 
-    transform(0, 0) = resolution_;     // x Scaling.
-    transform(1, 0) = 0.0f;
-    transform(2, 0) = 0.0f;
-    transform(3, 0) = 0.0f;
+    std::ifstream transStream(transformFile_.c_str());
+    if (!transStream.good())
+    {
+        throw OdmOrthoPhotoException("Failed opening coordinate file " + transformFile_ + " for reading. " + '\n');
+    }
 
-    transform(0, 1) = 0.0f;
-    transform(1, 1) = -resolution_;     // y Scaling, mirrored for easier rendering.
-    transform(2, 1) = 0.0f;
-    transform(3, 1) = 0.0f;
+    std::string transString;
+    {
+        std::getline(transStream, transString);
+        std::stringstream l1(transString);
+        l1 >> transform(0,0) >> transform(0,1) >> transform(0,2) >> transform(0,3);
 
-    transform(0, 2) = 0.0f;
-    transform(1, 2) = 0.0f;
-    transform(2, 2) = 1.0f;
-    transform(3, 2) = 0.0f;
+        std::getline(transStream, transString);
+        std::stringstream l2(transString);
+        l2 >> transform(1,0) >> transform(1,1) >> transform(1,2) >> transform(1,3);
 
-    transform(0, 3) = -xMin*resolution_;    // x Translation
-    transform(1, 3) = -yMin*resolution_;    // y Translation
-    transform(2, 3) = 0.0f;
-    transform(3, 3) = 1.0f;
+        std::getline(transStream, transString);
+        std::stringstream l3(transString);
+        l3 >> transform(2,0) >> transform(2,1) >> transform(2,2) >> transform(2,3);
+
+        std::getline(transStream, transString);
+        std::stringstream l4(transString);
+        l4 >> transform(3,0) >> transform(3,1) >> transform(3,2) >> transform(3,3);
+    }
+
+    // Don't do any rotation/shear
+    transform(0,1) = 0.0f;
+    transform(1,0) = 0.0f;
 
     return transform;
 }
