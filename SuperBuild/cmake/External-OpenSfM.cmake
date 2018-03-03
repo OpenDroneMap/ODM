@@ -8,8 +8,8 @@ ExternalProject_Add(${_proj_name}
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
-  URL               https://github.com/mapillary/OpenSfM/archive/93be3a1bfe46482345ddd57bc1f3a62f63169b86.zip
-  URL_MD5           2b310420a5c7c2297294a39183fb8b1a
+  URL               https://github.com/mapillary/OpenSfM/archive/e3f56375f834822f1e03d37bd9b48777acc092ed.zip
+  URL_MD5           0560754729245891ee8279f7c788b044
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   #--Configure step-------------
@@ -28,4 +28,3 @@ ExternalProject_Add(${_proj_name}
   LOG_CONFIGURE     OFF
   LOG_BUILD         OFF
 )
-

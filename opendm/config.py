@@ -7,7 +7,7 @@ from appsettings import SettingsParser
 import sys
 
 # parse arguments
-processopts = ['resize', 'opensfm', 'slam', 'cmvs', 'pmvs',
+processopts = ['dataset', 'opensfm', 'slam', 'cmvs', 'pmvs',
                'odm_meshing', 'odm_25dmeshing', 'mvs_texturing', 'odm_georeferencing',
                'odm_dem', 'odm_orthophoto']
 
@@ -96,6 +96,10 @@ def config():
                         type=float,
                         help=('Override the focal length information for the '
                               'images'))
+
+    parser.add_argument('--proj',
+                        metavar='<PROJ4 string>',
+                        help='Projection used to transform the model into geographic coordinates')
 
     parser.add_argument('--force-ccd',
                         metavar='<positive float>',
@@ -307,8 +311,8 @@ def config():
                         metavar='<string>',
                         default='gauss_clamping',
                         choices=['none', 'gauss_clamping', 'gauss_damping'],
-                        help=('Type of photometric outlier removal method: ' 
-                              '[none, gauss_damping, gauss_clamping]. Default: '  
+                        help=('Type of photometric outlier removal method: '
+                              '[none, gauss_damping, gauss_clamping]. Default: '
                               '%(default)s'))
 
     parser.add_argument('--texturing-skip-visibility-test',
@@ -337,7 +341,7 @@ def config():
     parser.add_argument('--texturing-keep-unseen-faces',
                         action='store_true',
                         default=False,
-                        help=('Keep faces in the mesh that are not seen in any camera. ' 
+                        help=('Keep faces in the mesh that are not seen in any camera. '
                               'Default:  %(default)s'))
 
     parser.add_argument('--texturing-tone-mapping',
@@ -368,7 +372,7 @@ def config():
                         default=False,
                         help='Use this tag to build a DTM (Digital Terrain Model, ground only) using a progressive '
                              'morphological filter. Check the --dem* parameters for fine tuning.')
-    
+
     parser.add_argument('--dsm',
                         action='store_true',
                         default=False,
