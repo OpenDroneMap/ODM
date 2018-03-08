@@ -5,5 +5,14 @@
 Download
 ========
 
+Stable
+------
+`<https://github.com/OpenDroneMap/OpenDroneMap/releases/latest>`_
 
-Latest version: (stable): `<https://github.com/OpenDroneMap/OpenDroneMap/releases/latest>`_
+Development
+-----------
+
+Use git to clone the OpenDroneMap repository::
+
+    git clone https://github.com/OpenDroneMap/OpenDroneMap.git
+

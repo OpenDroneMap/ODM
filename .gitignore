@@ -20,3 +20,6 @@ ceres-solver.tar.gz
 opencv.zip
 settings.yaml
 docker.settings.yaml
+
+#Sphinx
+docs/_build

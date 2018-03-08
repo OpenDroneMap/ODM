@@ -9,15 +9,46 @@ Usage
 Docker
 ------
 
-There are two methods for running with docker. One pulls a pre-built image from the docker hub. This is the most reliable. You can also :ref:`build your own image <docker-installation>`. In either case, the run command is the same, what you will change is the name of the image. For the docker hub image, use ``opendronemap/opendronemap``. For an image you built yourself, use that image name (in our case, ``my_odm_image``).
+There are two methods for running with docker. One pulls a pre-built image from the docker hub. This is the most reliable. You can also :ref:`build your own image <docker-installation>`. In either case, the run command is the same, what you will change is the name of the image. For the docker hub image, use ``opendronemap/opendronemap``. For an image you built yourself, use that image name (in our case, ``my_odm_image``).::
 
     docker run -it --rm \
-    -v $(pwd)/images:/code/images \
-    -v $(pwd)/odm_texturing:/code/odm_texturing \
-    -v $(pwd)/odm_orthophoto:/code/odm_orthophoto \
-    <docker-image>
+        -v $(pwd)/images:/code/images \
+        -v $(pwd)/odm_texturing:/code/odm_texturing \
+        -v $(pwd)/odm_orthophoto:/code/odm_orthophoto \
+        <docker-image>
 
-``-v`` is used to connect folders in the docker container to local folders. See :doc:`dataset` for
+``-v`` is used to connect folders in the docker container to local folders. See :doc:`dataset` for reference on the project layout.
+
+If you want to get all intermediate outputs, run the following command:::
+
+    docker run -it --rm \
+        -v $(pwd)/images:/code/images \
+        -v $(pwd)/odm_meshing:/code/odm_meshing \
+        -v $(pwd)/odm_orthophoto:/code/odm_orthophoto \
+        -v $(pwd)/odm_georeferencing:/code/odm_georeferencing \
+        -v $(pwd)/odm_texturing:/code/odm_texturing \
+        -v $(pwd)/opensfm:/code/opensfm \
+        -v $(pwd)/pmvs:/code/pmvs \
+        opendronemap/opendronemap
+
+To pass in custom parameters to the run.py script, simply pass it as arguments to the docker run command. For example:::
+
+    docker run -it --rm \
+        -v $(pwd)/images:/code/images \
+        -v $(pwd)/odm_orthophoto:/code/odm_orthophoto \
+        -v $(pwd)/odm_texturing:/code/odm_texturing \
+        opendronemap/opendronemap --resize-to 1800 --force-ccd 6.16
+
+If you want to pass in custom parameters using the settings.yaml file, you can pass it as a -v volume binding:::
+
+    docker run -it --rm \
+        -v $(pwd)/images:/code/images \
+        -v $(pwd)/odm_orthophoto:/code/odm_orthophoto \
+        -v $(pwd)/odm_texturing:/code/odm_texturing \
+        -v $(pwd)/settings.yaml:/code/settings.yaml \
+        opendronemap/opendronemap
+
+For more information about Docker, check out their `docs <https://docs.docker.com/>`_.
 
 .. _native-usage:
 
@@ -48,190 +79,213 @@ Additional Arguments
 
 Args::
 
-    -h, --help            show this help message and exit
-    --images <path>, -i <path>
+  -h, --help            show this help message and exit
+  --images <path>, -i <path>
                         Path to input images
-    --project-path <path>
+  --project-path <path>
                         Path to the project folder
-    --resize-to <integer>
-                        resizes images by the largest side for opensfm
-    --skip-resize
-                        skips the resize step altogether and instead just copies the images into the resized folder
-    --start-with <string>, -s <string>
-                        Can be one of: resize | opensfm | slam | cmvs | pmvs |
+  --resize-to <integer>
+                        resizes images by the largest side for opensfm. Set to
+                        -1 to disable. Default: 2048
+  --start-with <string>, -s <string>
+                        Can be one of: dataset | opensfm | slam | cmvs | pmvs
+                        | odm_meshing | odm_25dmeshing | mvs_texturing |
+                        odm_georeferencing | odm_dem | odm_orthophoto
+  --end-with <string>, -e <string>
+                        Can be one of:dataset | opensfm | slam | cmvs | pmvs |
                         odm_meshing | odm_25dmeshing | mvs_texturing |
-                        odm_georeferencing | odm_orthophoto
-    --end-with <string>, -e <string>
-                        Can be one of:resize | opensfm | slam | cmvs | pmvs |
+                        odm_georeferencing | odm_dem | odm_orthophoto
+  --rerun <string>, -r <string>
+                        Can be one of:dataset | opensfm | slam | cmvs | pmvs |
                         odm_meshing | odm_25dmeshing | mvs_texturing |
-                        odm_georeferencing | odm_orthophoto
-    --rerun <string>, -r <string>
-                        Can be one of:resize | opensfm | slam | cmvs | pmvs |
+                        odm_georeferencing | odm_dem | odm_orthophoto
+  --rerun-all           force rerun of all tasks
+  --rerun-from <string>
+                        Can be one of:dataset | opensfm | slam | cmvs | pmvs |
                         odm_meshing | odm_25dmeshing | mvs_texturing |
-                        odm_georeferencing | odm_orthophoto
-    --rerun-all
-                        force rerun of all tasks
-    --rerun-from <string>
-                        Can be one of:resize | opensfm | slam | cmvs | pmvs |
-                        odm_meshing | odm_25dmeshing | mvs_texturing |
-                        odm_georeferencing | odm_orthophoto
-    --video <string>
-                        Path to the video file to process
-    --slam-config <string>
+                        odm_georeferencing | odm_dem | odm_orthophoto
+  --video <string>      Path to the video file to process
+  --slam-config <string>
                         Path to config file for orb-slam
-    --force-focal <positive float>
+  --force-focal <positive float>
                         Override the focal length information for the images
-    --force-ccd <positive float>
+  --proj <PROJ4 string>
+                        Projection used to transform the model into geographic
+                        coordinates
+  --force-ccd <positive float>
                         Override the ccd width information for the images
-    --min-num-features <integer>
+  --min-num-features <integer>
                         Minimum number of features to extract per image. More
                         features leads to better results but slower execution.
-                        Default: 4000
-    --matcher-threshold <percent>
-                        Ignore matched keypoints if the two images share less
-                        than <float> percent of keypoints. Default: 2.0
-    --matcher-ratio <float>
-                        Ratio of the distance to the next best matched
-                        keypoint. Default: 0.6
-    --matcher-neighbors <integer>
+                        Default: 8000
+  --matcher-neighbors <integer>
                         Number of nearest images to pre-match based on GPS
                         exif data. Set to 0 to skip pre-matching. Neighbors
                         works together with Distance parameter, set both to 0
                         to not use pre-matching. OpenSFM uses both parameters
                         at the same time, Bundler uses only one which has
                         value, prefering the Neighbors parameter. Default: 8
-    --matcher-distance <integer>
+  --matcher-distance <integer>
                         Distance threshold in meters to find pre-matching
                         images based on GPS exif data. Set both matcher-
                         neighbors and this to 0 to skip pre-matching. Default:
                         0
-    --opensfm-processes <positive integer>
+  --use-fixed-camera-params
+                        Turn off camera parameter optimization during bundler
+  --opensfm-processes <positive integer>
                         The maximum number of processes to use in dense
-                        reconstruction. Default: 1
-    --use-25dmesh
-                        Use a 2.5D mesh to compute the orthophoto. This option
+                        reconstruction. Default: 16
+  --use-hybrid-bundle-adjustment
+                        Run local bundle adjustment for every image added to
+                        the reconstruction and a global adjustment every 100
+                        images. Speeds up reconstruction for very large
+                        datasets.
+  --use-25dmesh         Use a 2.5D mesh to compute the orthophoto. This option
                         tends to provide better results for planar surfaces.
                         Experimental.
-    --use-pmvs
-                        Use pmvs to compute point cloud alternatively
-    --cmvs-maxImages <integer>
+  --use-pmvs            Use pmvs to compute point cloud alternatively
+  --cmvs-maxImages <integer>
                         The maximum number of images per cluster. Default: 500
-    --pmvs-level <positive integer>
+  --pmvs-level <positive integer>
                         The level in the image pyramid that is used for the
                         computation. see
                         http://www.di.ens.fr/pmvs/documentation.html for more
                         pmvs documentation. Default: 1
-    --pmvs-csize <positive integer>
+  --pmvs-csize <positive integer>
                         Cell size controls the density of
                         reconstructionsDefault: 2
-    --pmvs-threshold <float: -1.0 <= x <= 1.0>
+  --pmvs-threshold <float: -1.0 <= x <= 1.0>
                         A patch reconstruction is accepted as a success and
                         kept if its associated photometric consistency measure
                         is above this threshold. Default: 0.7
-    --pmvs-wsize <positive integer>
+  --pmvs-wsize <positive integer>
                         pmvs samples wsize x wsize pixel colors from each
                         image to compute photometric consistency score. For
                         example, when wsize=7, 7x7=49 pixel colors are sampled
                         in each image. Increasing the value leads to more
                         stable reconstructions, but the program becomes
                         slower. Default: 7
-    --pmvs-min-images <positive integer>
+  --pmvs-min-images <positive integer>
                         Each 3D point must be visible in at least minImageNum
                         images for being reconstructed. 3 is suggested in
                         general. Default: 3
-    --pmvs-num-cores <positive integer>
+  --pmvs-num-cores <positive integer>
                         The maximum number of cores to use in dense
-                        reconstruction. Default: 6
-    --mesh-size <positive integer>
+                        reconstruction. Default: 16
+  --mesh-size <positive integer>
                         The maximum vertex count of the output mesh Default:
                         100000
-    --mesh-octree-depth <positive integer>
+  --mesh-octree-depth <positive integer>
                         Oct-tree depth used in the mesh reconstruction,
                         increase to get more vertices, recommended values are
                         8-12. Default: 9
-    --mesh-samples <float >= 1.0>
+  --mesh-samples <float >= 1.0>
                         Number of points per octree node, recommended and
                         default value: 1.0
-    --mesh-solver-divide <positive integer>
+  --mesh-solver-divide <positive integer>
                         Oct-tree depth at which the Laplacian equation is
                         solved in the surface reconstruction step. Increasing
                         this value increases computation times slightly but
                         helps reduce memory usage. Default: 9
-    --mesh-remove-outliers <percent>
-                        Percentage of outliers to remove from the point set.
-                        Set to 0 to disable. Applies to 2.5D mesh only.
-                        Default: 2
-    --mesh-wlop-iterations <positive integer>
-                        Iterations of the Weighted Locally Optimal Projection
-                        (WLOP) simplification algorithm. Higher values take
-                        longer but produce a smoother mesh. Applies to 2.5D
-                        mesh only. Default: 35
-    --texturing-data-term <string>
+  --mesh-neighbors <positive integer>
+                        Number of neighbors to select when estimating the
+                        surface model used to compute the mesh and for
+                        statistical outlier removal. Higher values lead to
+                        smoother meshes but take longer to process. Applies to
+                        2.5D mesh only. Default: 24
+  --mesh-resolution <positive float>
+                        Size of the interpolated surface model used for
+                        deriving the 2.5D mesh, expressed in pixels per meter.
+                        Higher values work better for complex or urban
+                        terrains. Lower values work better on flat areas.
+                        Resolution has no effect on the number of vertices,
+                        but high values can severely impact runtime speed and
+                        memory usage. When set to zero, the program
+                        automatically attempts to find a good value based on
+                        the point cloud extent and target vertex count.
+                        Applies to 2.5D mesh only. Default: 0
+  --fast-orthophoto     Skips dense reconstruction and 3D model generation. It
+                        generates an orthophoto directly from the sparse
+                        reconstruction. If you just need an orthophoto and do
+                        not need a full 3D model, turn on this option.
+                        Experimental.
+  --crop <positive float>
+                        Automatically crop image outputs by creating a smooth
+                        buffer around the dataset boundaries, shrinked by N
+                        meters. Use 0 to disable cropping. Default: 3
+  --pc-classify <string>
+                        Classify the .LAS point cloud output using either a
+                        Simple Morphological Filter or a Progressive
+                        Morphological Filter. If --dtm is set this parameter
+                        defaults to smrf. You can control the behavior of both
+                        smrf and pmf by tweaking the --dem-* parameters.
+                        Default: none
+  --texturing-data-term <string>
                         Data term: [area, gmi]. Default: gmi
-    --texturing-outlier-removal-type <string>
+  --texturing-outlier-removal-type <string>
                         Type of photometric outlier removal method: [none,
                         gauss_damping, gauss_clamping]. Default:
                         gauss_clamping
-    --texturing-skip-visibility-test
+  --texturing-skip-visibility-test
                         Skip geometric visibility test. Default: False
-    --texturing-skip-global-seam-leveling
+  --texturing-skip-global-seam-leveling
                         Skip global seam leveling. Useful for IR data.Default:
                         False
-    --texturing-skip-local-seam-leveling
+  --texturing-skip-local-seam-leveling
                         Skip local seam blending. Default: False
-    --texturing-skip-hole-filling
+  --texturing-skip-hole-filling
                         Skip filling of holes in the mesh. Default: False
-    --texturing-keep-unseen-faces
+  --texturing-keep-unseen-faces
                         Keep faces in the mesh that are not seen in any
                         camera. Default: False
-    --texturing-tone-mapping <string>
+  --texturing-tone-mapping <string>
                         Turn on gamma tone mapping or none for no tone
                         mapping. Choices are 'gamma' or 'none'. Default: none
-    --gcp <path string>
-                        path to the file containing the ground control points
+  --gcp <path string>   path to the file containing the ground control points
                         used for georeferencing. Default: None. The file needs
                         to be on the following line format: easting northing
                         height pixelrow pixelcol imagename
-    --use-exif
-                        Use this tag if you have a gcp_list.txt but want to
+  --use-exif            Use this tag if you have a gcp_list.txt but want to
                         use the exif geotags instead
-    --dem
-                        Use this tag to build a DEM using a progressive
-                        morphological filter in PDAL.
-    --dtm
-                        Use this tag to build a DTM (Digital Terrain Model,
+  --dtm                 Use this tag to build a DTM (Digital Terrain Model,
                         ground only) using a progressive morphological filter.
                         Check the --dem* parameters for fine tuning.
-    --dsm
-                        Use this tag to build a DSM (Digital Surface Model,
+  --dsm                 Use this tag to build a DSM (Digital Surface Model,
                         ground + objects) using a progressive morphological
                         filter. Check the --dem* parameters for fine tuning.
-    --dem-gapfill-steps <positive integer>
+  --dem-gapfill-steps <positive integer>
                         Number of steps used to fill areas with gaps. Set to 0
                         to disable gap filling. Starting with a radius equal
                         to the output resolution, N different DEMs are
                         generated with progressively bigger radius using the
                         inverse distance weighted (IDW) algorithm and merged
                         together. Remaining gaps are then merged using nearest
-                        neighbor interpolation. generation. Default=4
-    --dem-resolution <float>
-                        Length of raster cell edges in X/Y units. Default: 0.1
-    --dem-maxangle <positive float>
+                        neighbor interpolation. Default=4
+  --dem-resolution <float>
+                        Length of raster cell edges in meters. Default: 0.1
+  --dem-maxangle <positive float>
                         Points that are more than maxangle degrees off-nadir
                         are discarded. Default: 20
-    --dem-maxsd <positive float>
+  --dem-maxsd <positive float>
                         Points that deviate more than maxsd standard
                         deviations from the local mean are discarded. Default:
                         2.5
-    --dem-approximate
-                        Use this tag use the approximate progressive
+  --dem-initial-distance <positive float>
+                        Used to classify ground vs non-ground points. Set this
+                        value to account for Z noise in meters. If you have an
+                        uncertainty of around 15 cm, set this value large
+                        enough to not exclude these points. Too small of a
+                        value will exclude valid ground points, while too
+                        large of a value will misclassify non-ground points
+                        for ground ones. Default: 0.15
+  --dem-approximate     Use this tag use the approximate progressive
                         morphological filter, which computes DEMs faster but
                         is not as accurate.
-    --dem-decimation <positive integer>
+  --dem-decimation <positive integer>
                         Decimate the points before generating the DEM. 1 is no
                         decimation (full quality). 100 decimates ~99% of the
                         points. Useful for speeding up generation. Default=1
-    --dem-terrain-type <string>
+  --dem-terrain-type <string>
                         One of: FlatNonForest, FlatForest, ComplexNonForest,
                         ComplexForest. Specifies the type of terrain. This
                         mainly helps reduce processing time. FlatNonForest:
@@ -240,40 +294,34 @@ Args::
                         ComplexNonForest: Varied terrain with little to no
                         vegetation ComplexForest: Varied terrain that is
                         forested Default=ComplexForest
-    --orthophoto-resolution <float > 0.0>
+  --orthophoto-resolution <float > 0.0>
                         Orthophoto ground resolution in pixels/meterDefault:
                         20.0
-    --orthophoto-target-srs <EPSG:XXXX>
+  --orthophoto-target-srs <EPSG:XXXX>
                         Target spatial reference for orthophoto creation. Not
                         implemented yet. Default: None
-    --orthophoto-no-tiled
+  --orthophoto-no-tiled
                         Set this parameter if you want a stripped geoTIFF.
                         Default: False
-    --orthophoto-compression <string>
+  --orthophoto-compression <string>
                         Set the compression to use. Note that this could break
                         gdal_translate if you don't know what you are doing.
                         Options: JPEG, LZW, PACKBITS, DEFLATE, LZMA, NONE.
                         Default: DEFLATE
-    --orthophoto-bigtiff {YES,NO,IF_NEEDED,IF_SAFER}
+  --orthophoto-bigtiff {YES,NO,IF_NEEDED,IF_SAFER}
                         Control whether the created orthophoto is a BigTIFF or
                         classic TIFF. BigTIFF is a variant for files larger
                         than 4GiB of data. Options are YES, NO, IF_NEEDED,
                         IF_SAFER. See GDAL specs:
                         https://www.gdal.org/frmt_gtiff.html for more info.
                         Default: IF_SAFER
-    --build-overviews
-                        Build orthophoto overviews using gdaladdo.
-    --zip-results
-                        compress the results using gunzip
-    --verbose, -v
-                        Print additional messages to the console Default:
+  --build-overviews     Build orthophoto overviews using gdaladdo.
+  --zip-results         compress the results using gunzip
+  --verbose, -v         Print additional messages to the console Default:
                         False
-    --time
-                        Generates a benchmark file with runtime info Default:
+  --time                Generates a benchmark file with runtime info Default:
                         False
-    --version
-                        Displays version number and exits.
-
+  --version             Displays version number and exits.
 
 .. _ground-control:
 
@@ -286,13 +334,13 @@ If you supply a GCP file called gcp_list.txt then ODM will automatically detect 
 
 For example, in this image, I would use the sharp corners of the diamond-shaped bioswales in the parking lot:
 
-.. image:: _static/bellus_gcp_sm.jpg
+.. image:: _static/tol_sm.jpg
 
 You should also place/find the GCPs evenly around your survey area.
 
 The ``gcp_list.txt`` file must then be created in the base of your project folder:
 
-The format of the GCP file is simple. The header line is a description of the coordinate system: either a UTM specification written as "WGS84 UTM xx\<N\\S\>" or a coordinate system definition in any format the GDAL library can understand. `Link <http://www.gdal.org/classOGRSpatialReference.html#aec3c6a49533fe457ddc763d699ff8796>`_. **We recommend using EPSG:n codes**. Please note that currently angular coordinates (like lat/lon) do not work. Subsequent lines are the X, Y & Z coordinate in your coordinate system, your associated pixel and line number in the image, and the image name itself::
+The format of the GCP file is simple. The header line is a description of the coordinate system, which must be written as a http://spatialreference.org/ is a good resource for finding that information. proj4 string. Please note that currently angular coordinates (like lat/lon) do not work. Subsequent lines are the X, Y & Z coordinate in your coordinate system, your associated pixel and line number in the image, and the image name itself::
 
     coordinate system description
     x1 y1 z1 pixelx1 pixely1 imagename1
@@ -339,6 +387,8 @@ By default, OpenDroneMap does not build the SLAM module.  To build it we need to
     make
     cd ..
 
+
+.. _calibration:
 
 Calibrating the camera
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -392,4 +442,46 @@ When done, the textured model will be in ``PROJECT_PATH/odm_texturing/odm_textur
 Camera Calibration
 ------------------
 
-.. TODO
+It is highly recommended that you calibrate your images to reduce lens distortion. Doing so will increase the likelihood of finding quality matches between photos and reduce processing time. You can do this in Photoshop or `ImageMagick <http://www.imagemagick.org/Usage/lens/>`_. We also have some simple scripts to perform this task: https://github.com/OpenDroneMap/CameraCalibration . This suite of scripts will find camera matrix and distortion parameters with a set of checkerboard images, then use those parameters to remove distortion from photos.
+
+Installation
+````````````
+
+You need to install numpy and opencv:::
+
+    pip install numpy
+    sudo apt-get install python-opencv exiftool
+
+Usage: Calibrate chessboard
+```````````````````````````
+
+First you will need to take some photos of a black and white chessboard with a white border, `like this one <https://raw.githubusercontent.com/LongerVision/OpenCV_Examples/master/markers/pattern_chessboard.png>`_.
+
+Then you will run the opencv_calibrate.py script to generate the matrix and distortion files.::
+
+    python opencv_calibrate.py ./sample/chessboard/ 10 7
+
+The first argument is the path to the chessboard. You will also have to input the chessboard dimensions (the number of squares in x and y) Optional arguments:::
+
+    --out           path      if you want to output the parameters and the image outputs to a specific path. otherwise it gets writting to ./out
+    --square_size   float     if your chessboard squares are not square, you can change this. default is 1.0
+
+Usage: undistort photos
+```````````````````````
+
+With the photos and the produced matrix.txt and distortion.txt, run the following:::
+
+    python undistort.py --matrix matrix.txt --distortion distortion.txt "/path/to/images/"
+
+Note: Do not forget the quotes in "/path/to/images"
+
+Docker Usage for undistorting images
+````````````````````````````````````
+
+The ``undistort.py`` script depends on exiftool to copy exif metadata to the new images, so on Windows you may have to use Docker for the undistort step. Put the matrix.txt and distortion.txt in their own directory (eg. sample/config) and do the following:::
+
+    docker build -t cc_undistort .
+    docker run -v ~/CameraCalibration/sample/images:/app/images \
+               -v ~/CameraCalibration/sample/config:/app/config \
+               cc_undistort
+
