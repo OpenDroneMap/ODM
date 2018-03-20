@@ -42,7 +42,7 @@ class Cropper:
                 'geotiffInput': original_geotiff,
                 'geotiffOutput': geotiff_path,
                 'options': ' '.join(map(lambda k: '-co {}={}'.format(k, gdal_options[k]), gdal_options)),
-                'max_memory': (100 - virtual_memory().percent) / 2
+                'max_memory': max(5, (100 - virtual_memory().percent) / 2)
             }
 
             run('gdalwarp -cutline {shapefile_path} '
