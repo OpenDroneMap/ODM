@@ -111,7 +111,7 @@ class ODMOrthoPhotoCell(ecto.Cell):
                     'png': tree.odm_orthophoto_file,
                     'tiff': tree.odm_orthophoto_tif,
                     'log': tree.odm_orthophoto_tif_log,
-                    'max_memory': (100 - virtual_memory().percent) / 2
+                    'max_memory': max(5, (100 - virtual_memory().percent) / 2)
                 }
 
                 system.run('gdal_translate -a_ullr {ulx} {uly} {lrx} {lry} '
