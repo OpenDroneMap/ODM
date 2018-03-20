@@ -1,4 +1,5 @@
 import ecto, os
+from psutil import virtual_memory
 
 from opendm import io
 from opendm import log
@@ -109,7 +110,8 @@ class ODMOrthoPhotoCell(ecto.Cell):
                     'bigtiff': self.params.bigtiff,
                     'png': tree.odm_orthophoto_file,
                     'tiff': tree.odm_orthophoto_tif,
-                    'log': tree.odm_orthophoto_tif_log
+                    'log': tree.odm_orthophoto_tif_log,
+                    'max_memory': max(5, (100 - virtual_memory().percent) / 2)
                 }
 
                 system.run('gdal_translate -a_ullr {ulx} {uly} {lrx} {lry} '
@@ -121,6 +123,7 @@ class ODMOrthoPhotoCell(ecto.Cell):
                            '-co BLOCKYSIZE=512 '
                            '-co NUM_THREADS=ALL_CPUS '
                            '-a_srs \"{proj}\" '
+                           '--config GDAL_CACHEMAX {max_memory}%'
                            '{png} {tiff} > {log}'.format(**kwargs))
 
                 if args.crop > 0:
