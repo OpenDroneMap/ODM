@@ -35,6 +35,7 @@ ExternalProject_Add(${_proj_name}
 	-DWITH_GEOTIFF=ON
 	-DWITH_LASZIP=ON
 	-DWITH_TESTS=OFF
+	-DCMAKE_BUILD_TYPE=Release
     -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
   #--Build step-----------------
   BINARY_DIR        ${_SB_BINARY_DIR}
