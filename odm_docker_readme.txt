@@ -7,7 +7,7 @@ cd OpenDroneMap
 docker images
 #remove old my_odm_image if necessary
 docker rmi my_odm_image 
-#build a fresh one
+#build a fresh one using instructions from ./Dockerfile
 docker build -t my_odm_image . 
 #run tests with supplied image set. 
 #Mapped host directories for output. -v host_path:container_path
