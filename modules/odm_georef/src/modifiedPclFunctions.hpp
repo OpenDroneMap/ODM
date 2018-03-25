@@ -7,7 +7,6 @@
 // PCL
 #include <pcl/point_types.h>
 #include <pcl/surface/texture_mapping.h>
-#include <pcl/io/ply_io.h>
 #include <pcl/io/obj_io.h>
 
 int saveOBJFile(const std::string &file_name, const pcl::TextureMesh &tex_mesh, unsigned precision);

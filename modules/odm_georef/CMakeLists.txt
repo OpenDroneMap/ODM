@@ -9,8 +9,7 @@ find_library(PROJ4_LIBRARY "libproj.so" PATHS "/usr/lib" "/usr/lib/x86_64-linux-
 #set(PROJ4_LIBRARY "/usr/lib/x86_64-linux-gnu/libproj.so" CACHE "PROJ4_LIBRARY" "Path to the proj4 library directory")
 
 # Add compiler options.
-add_definitions(-Wall -Wextra -Wconversion -pedantic)
-#add_definitions(-pedantic -pedantic-errors -Wall -Wextra -Werror -Wfatal-errors -Wabi -Wctor-dtor-privacy -Wnon-virtual-dtor -Wreorder -Weffc++ -Wstrict-null-sentinel -Wnon-template-friend -Wold-style-cast -Woverloaded-virtual -Wpmf-conversions -Wsign-promo -Waddress -Warray-bounds -Wattributes -Wbuiltin-macro-redefined -Wc++0x-compat -Wcast-align -Wcast-qual -Wchar-subscripts -Wclobbered -Wcomment -Wconversion -Wcoverage-mismatch -Wdeprecated -Wdeprecated-declarations -Wdisabled-optimization -Wdiv-by-zero -Wempty-body -Wenum-compare -Wendif-labels -Wfatal-errors -Wfloat-equal -Wformat -Wformat=2 -Wformat-contains-nul -Wformat-extra-args -Wformat-nonliteral -Wformat-security -Wformat-y2k -Wignored-qualifiers -Winit-self -Wint-to-pointer-cast -Winvalid-offsetof -Winvalid-pch -Wlogical-op -Wmain -Wvariadic-macros -Wmissing-braces -Wmissing-field-initializers -Wmissing-include-dirs -Wmissing-noreturn -Wvla -Wmultichar -Wfatal-errors -Wnonnull -Woverflow -Woverlength-strings -Wpacked -Wpacked-bitfield-compat -Wparentheses -Wpointer-arith -Wredundant-decls -Wsequence-point -Wshadow -Wsign-compare -Wsign-conversion -Wstack-protector -Wstrict-overflow=5 -Wswitch -Wswitch-enum -Wsync-nand -Wvolatile-register-var -Wtrigraphs -Wtype-limits -Wuninitialized -Wunknown-pragmas -Wwrite-strings -Wpragmas -Wunreachable-code -Wunused -Wunused-function -Wunused-label -Wunused-parameter -Wunused-value -Wunused-variable -Wno-return-type)
+add_definitions(-Wall -Wextra -Wconversion -pedantic -std=c++11)
 
 # Find pcl at the location specified by PCL_DIR
 find_package(PCL 1.8 HINTS "${PCL_DIR}/share/pcl-1.8")
