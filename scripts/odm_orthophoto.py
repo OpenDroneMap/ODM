@@ -123,7 +123,7 @@ class ODMOrthoPhotoCell(ecto.Cell):
                            '-co BLOCKYSIZE=512 '
                            '-co NUM_THREADS=ALL_CPUS '
                            '-a_srs \"{proj}\" '
-                           '--config GDAL_CACHEMAX {max_memory}%'
+                           '--config GDAL_CACHEMAX {max_memory}% '
                            '{png} {tiff} > {log}'.format(**kwargs))
 
                 if args.crop > 0:
