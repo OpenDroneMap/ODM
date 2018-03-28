@@ -11,6 +11,9 @@
 // Modified PCL
 #include "modifiedPclFunctions.hpp"
 
+#include "tinyply.h"
+using namespace tinyply;
+
 // Logger
 #include "Logger.hpp"
 
@@ -290,7 +293,10 @@ private:
 
     std::vector<pcl::MTLReader> companions_; /**< Materials (used by loadOBJFile). **/
     void performFinalTransform(Mat4 &transMat, pcl::TextureMesh &mesh, pcl::PointCloud<pcl::PointXYZ>::Ptr &meshCloud);
-
+    
+    template <typename Scalar>
+    void transformPointCloud(const char *inputFile, const Eigen::Transform<Scalar, 3, Eigen::Affine> &transform, const char *outputFile);
+    
     void createGeoreferencedModelFromSFM();
 };
 
