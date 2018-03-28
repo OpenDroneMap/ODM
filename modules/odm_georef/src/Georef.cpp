@@ -1280,27 +1280,27 @@ void Georef::printFinalTransform(Mat4 transform)
 
 void Georef::performFinalTransform(Mat4 &transMat, pcl::TextureMesh &mesh, pcl::PointCloud<pcl::PointXYZ>::Ptr &meshCloud)
 {
-    Eigen::Transform<float, 3, Eigen::Affine> transform;
+    Eigen::Transform<double, 3, Eigen::Affine> transform;
 
-    transform(0, 0) = static_cast<float>(transMat.r1c1_);
-    transform(1, 0) = static_cast<float>(transMat.r2c1_);
-    transform(2, 0) = static_cast<float>(transMat.r3c1_);
-    transform(3, 0) = static_cast<float>(transMat.r4c1_);
+    transform(0, 0) = static_cast<double>(transMat.r1c1_);
+    transform(1, 0) = static_cast<double>(transMat.r2c1_);
+    transform(2, 0) = static_cast<double>(transMat.r3c1_);
+    transform(3, 0) = static_cast<double>(transMat.r4c1_);
 
-    transform(0, 1) = static_cast<float>(transMat.r1c2_);
-    transform(1, 1) = static_cast<float>(transMat.r2c2_);
-    transform(2, 1) = static_cast<float>(transMat.r3c2_);
-    transform(3, 1) = static_cast<float>(transMat.r4c2_);
+    transform(0, 1) = static_cast<double>(transMat.r1c2_);
+    transform(1, 1) = static_cast<double>(transMat.r2c2_);
+    transform(2, 1) = static_cast<double>(transMat.r3c2_);
+    transform(3, 1) = static_cast<double>(transMat.r4c2_);
 
-    transform(0, 2) = static_cast<float>(transMat.r1c3_);
-    transform(1, 2) = static_cast<float>(transMat.r2c3_);
-    transform(2, 2) = static_cast<float>(transMat.r3c3_);
-    transform(3, 2) = static_cast<float>(transMat.r4c3_);
+    transform(0, 2) = static_cast<double>(transMat.r1c3_);
+    transform(1, 2) = static_cast<double>(transMat.r2c3_);
+    transform(2, 2) = static_cast<double>(transMat.r3c3_);
+    transform(3, 2) = static_cast<double>(transMat.r4c3_);
 
-    transform(0, 3) = static_cast<float>(transMat.r1c4_);
-    transform(1, 3) = static_cast<float>(transMat.r2c4_);
-    transform(2, 3) = static_cast<float>(transMat.r3c4_);
-    transform(3, 3) = static_cast<float>(transMat.r4c4_);
+    transform(0, 3) = static_cast<double>(transMat.r1c4_);
+    transform(1, 3) = static_cast<double>(transMat.r2c4_);
+    transform(2, 3) = static_cast<double>(transMat.r3c4_);
+    transform(3, 3) = static_cast<double>(transMat.r4c4_);
 
     // Iterate over each part of the mesh (one per material), to make texture file paths relative the .mtl file.
     for(size_t t = 0; t < mesh.tex_materials.size(); ++t)
@@ -1327,27 +1327,7 @@ void Georef::performFinalTransform(Mat4 &transMat, pcl::TextureMesh &mesh, pcl::
 
     if(georeferencePointCloud_)
     {
-        //pcl::PointCloud2<pcl::PointNormal>::Ptr pointCloud;
-        pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr pointCloud(new pcl::PointCloud<pcl::PointXYZRGBNormal>());
-        if(pcl::io::loadPLYFile<pcl::PointXYZRGBNormal> (inputPointCloudFilename_.c_str(), *pointCloud.get()) == -1) {
-            throw GeorefException("Error when reading point cloud:\n" + inputPointCloudFilename_ + "\n");
-        }
-        else
-        {
-            log_ << "Successfully loaded " << pointCloud->size() << " points with corresponding normals from file.\n";
-        }
-        log_ << '\n';
-        log_ << "Applying transform to point cloud...\n";
-        pcl::transformPointCloud(*pointCloud, *pointCloud, transform);
-        log_ << ".. point cloud transformed.\n";
-
-        pcl::PLYWriter plyWriter;
-
-        log_ << '\n';
-        log_ << "Saving point cloud file to \'" << outputPointCloudFilename_ << "\'...\n";
-        //pcl::io::savePLYFileASCII(outputPointCloudFilename_.c_str(), *pointCloud.get());
-        plyWriter.write(outputPointCloudFilename_.c_str(), *pointCloud.get(), false, false);
-        log_ << ".. point cloud file saved.\n";
+        transformPointCloud(inputPointCloudFilename_.c_str(), transform, outputPointCloudFilename_.c_str());
     }
 
     if(exportCoordinateFile_)
@@ -1371,6 +1351,79 @@ void Georef::performFinalTransform(Mat4 &transMat, pcl::TextureMesh &mesh, pcl::
     if(exportGeorefSystem_)
     {
         printGeorefSystem();
+    }
+}
+
+template <typename Scalar>
+void Georef::transformPointCloud(const char *inputFile, const Eigen::Transform<Scalar, 3, Eigen::Affine> &transform, const char *outputFile){
+    try{
+        std::ifstream ss(inputFile, std::ios::binary);
+        if (ss.fail()) throw GeorefException("Error when reading point cloud:\n" + std::string(inputFile) + "\n");
+        PlyFile file;
+
+        file.parse_header(ss);
+
+        std::shared_ptr<PlyData> vertices = file.request_properties_from_element("vertex", { "x", "y", "z" });
+        std::shared_ptr<PlyData> normals = file.request_properties_from_element("vertex", { "nx", "ny", "nz" });
+        std::shared_ptr<PlyData> colors = file.request_properties_from_element("vertex", { "diffuse_red", "diffuse_green", "diffuse_blue" });
+        
+        file.read(ss);
+        log_ << "Successfully loaded " << vertices->count << " points with corresponding normals from file.\n";
+
+        const size_t numVerticesBytes = vertices->buffer.size_bytes();
+
+        struct float3 { float x, y, z; };
+        struct double3 { double x, y, z; };
+
+        std::vector<double3> verts(vertices->count);
+
+        if (vertices->t == tinyply::Type::FLOAT32) {
+            std::vector<float3> floatVerts(vertices->count);
+            std::memcpy(floatVerts.data(), vertices->buffer.get(), numVerticesBytes);
+            // Copy and cast to double
+            for (unsigned int i = 0; i < vertices->count; i++){
+                verts[i].x = static_cast<double>(floatVerts[i].x);
+                verts[i].y = static_cast<double>(floatVerts[i].y);
+                verts[i].z = static_cast<double>(floatVerts[i].z);
+            }
+        }else if (vertices->t == tinyply::Type::FLOAT64) {
+            std::memcpy(verts.data(), vertices->buffer.get(), numVerticesBytes);
+        }else{
+            GeorefException ("Invalid data type (only float32 and float64 are supported): " + std::to_string((int)vertices->t));
+        }
+
+        // Transform
+        for (unsigned int i = 0; i < verts.size(); i++){
+            verts[i].x = static_cast<Scalar> (transform (0, 0) * verts[i].x + transform (0, 1) * verts[i].y + transform (0, 2) * verts[i].z + transform (0, 3));
+            verts[i].y = static_cast<Scalar> (transform (1, 0) * verts[i].x + transform (1, 1) * verts[i].y + transform (1, 2) * verts[i].z + transform (1, 3));
+            verts[i].z = static_cast<Scalar> (transform (2, 0) * verts[i].x + transform (2, 1) * verts[i].y + transform (2, 2) * verts[i].z + transform (2, 3));
+        }
+
+        log_ << '\n';
+        log_ << "Saving point cloud file to \'" << outputFile << "\'...\n";
+
+        // Save
+        std::filebuf fb;
+        fb.open(outputFile, std::ios::out | std::ios::binary);
+        std::ostream outputStream(&fb);
+
+        outputStream << std::setprecision(12);
+
+        PlyFile outFile;
+        outFile.add_properties_to_element("vertex", { "x", "y", "z" }, Type::FLOAT64, verts.size() * 3, reinterpret_cast<uint8_t*>(verts.data()), Type::INVALID, 0);
+        outFile.add_properties_to_element("vertex", { "nx", "ny", "nz" }, Type::FLOAT32, verts.size() * 3, reinterpret_cast<uint8_t*>(normals->buffer.get()), Type::INVALID, 0);
+        outFile.add_properties_to_element("vertex", { "red", "green", "blue" }, Type::UINT8, verts.size() * 3, reinterpret_cast<uint8_t*>(colors->buffer.get()), Type::INVALID, 0);
+        outFile.get_comments().push_back("generated by OpenDroneMap");
+        
+        outFile.write(outputStream, false);
+
+        fb.close();
+
+        log_ << ".. point cloud file saved.\n";
+    }
+    catch (const std::exception & e)
+    {
+        throw GeorefException("Error while loading point cloud: " + std::string(e.what()));
     }
 }
 
