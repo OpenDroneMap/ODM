@@ -1,4 +1,4 @@
-EPSG:32617
++proj=utm +zone=17 +north +ellps=WGS84 +datum=WGS84 +units=m +no_defs 
 ## comment: the first line must contain EPSG. ( mandatory )
 ## 0/0 of Pixel Coord = Upper left corner pixelX(column_0..) pixelY(row_0..)
 ## x1 y1 z1 pixelx1 pixely1 imagename1 idGCP ( idGCP optional )
