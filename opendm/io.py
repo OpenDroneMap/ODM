@@ -40,3 +40,9 @@ def copy(src, dst):
         if e.errno == errno.ENOTDIR:
             shutil.copy(src, dst)
         else: raise
+
+
+# find a file in the root directory
+def find(filename, folder):
+    for root, dirs, files in os.walk(folder):
+        return '/'.join((root, filename)) if filename in files else None

@@ -121,7 +121,6 @@ set(custom_libs OpenGV
 				Ecto
 				PDAL
 				MvsTexturing
-				Lidar2dems
 )
 
 # Dependencies of the SLAM module
