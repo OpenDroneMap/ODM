@@ -4,7 +4,12 @@ include/
 lib/
 logs/
 share/
+
+
 src/
+
+!modules/*
+
 download/
 
 SuperBuild/build/

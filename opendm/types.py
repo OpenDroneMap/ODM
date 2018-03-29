@@ -3,6 +3,7 @@ import pyexiv2
 import re
 from fractions import Fraction
 from opensfm.exif import sensor_string
+from pyproj import Proj
 
 import log
 import io
@@ -128,9 +129,49 @@ class ODM_Photo:
 class ODM_Reconstruction(object):
     """docstring for ODMReconstruction"""
 
-    def __init__(self, arg):
-        super(ODMReconstruction, self).__init__()
-        self.arg = arg
+    def __init__(self, photos, projstring = None, coords_file = None):
+        self.photos = photos    # list of ODM_Photos
+        self.projection = None  # Projection system the whole project will be in
+        if projstring:
+            self.projection = self.set_projection(projstring)
+            self.georef = ODM_GeoRef(self.projection)
+        else:
+            self.projection = self.parse_coordinate_system(coords_file)
+            self.georef = ODM_GeoRef(self.projection)
+
+    def parse_coordinate_system(self, _file):
+        """Write attributes to jobOptions from coord file"""
+        # check for coordinate file existence
+        if not io.file_exists(_file):
+            log.ODM_ERROR('Could not find file %s' % _file)
+            return
+
+        with open(_file) as f:
+            # extract reference system and utm zone from first line.
+            # We will assume the following format:
+            # 'WGS84 UTM 17N' or 'WGS84 UTM 17N \n'
+            line = f.readline().rstrip()
+            log.ODM_DEBUG('Line: %s' % line)
+            ref = line.split(' ')
+            # match_wgs_utm = re.search('WGS84 UTM (\d{1,2})(N|S)', line, re.I)
+            if ref[0] == 'WGS84' and ref[1] == 'UTM':  # match_wgs_utm:
+                datum = ref[0]
+                utm_pole = ref[2][len(ref[2]) - 1]
+                utm_zone = int(ref[2][:len(ref[2]) - 1])
+
+                return Proj(proj="utm", zone=utm_zone, datum=datum, no_defs=True)
+            elif '+proj' in line:
+                return Proj(line.strip('\''))
+            elif 'epsg' in line.lower():
+                return Proj(init=line)
+            else:
+                raise log.ODM_ERROR('Could not parse coordinates. Bad CRS supplied: %s' % line)
+
+    def set_projection(self, projstring):
+        try:
+            return Proj(projstring)
+        except RuntimeError:
+            log.ODM_EXCEPTION('Could not set projection. Please use a proj4 string')
 
 
 class ODM_GCPoint(object):
@@ -145,13 +186,15 @@ class ODM_GCPoint(object):
 class ODM_GeoRef(object):
     """docstring for ODMUtmZone"""
 
-    def __init__(self):
+    def __init__(self, projection):
+        self.projection = projection
         self.datum = 'WGS84'
         self.epsg = None
         self.utm_zone = 0
         self.utm_pole = 'N'
         self.utm_east_offset = 0
         self.utm_north_offset = 0
+        self.transform = []
         self.gcps = []
 
     def calculate_EPSG(self, _utm_zone, _pole):
@@ -163,6 +206,9 @@ class ODM_GeoRef(object):
         else:
             log.ODM_ERROR('Unknown pole format %s' % _pole)
             return
+
+    def calculate_EPSG(self, proj):
+        return proj
 
     def coord_to_fractions(self, coord, refs):
         deg_dec = abs(float(coord))
@@ -184,8 +230,8 @@ class ODM_GeoRef(object):
 
     def convert_to_las(self, _file, _file_out, json_file):
 
-        if not self.epsg:
-            log.ODM_ERROR('Empty EPSG: Could not convert to LAS')
+        if not self.projection.srs:
+            log.ODM_ERROR('Empty CRS: Could not convert to LAS')
             return
 
         kwargs = {'bin': context.pdal_path,
@@ -193,7 +239,7 @@ class ODM_GeoRef(object):
                   'f_out': _file_out,
                   'east': self.utm_east_offset,
                   'north': self.utm_north_offset,
-                  'epsg': self.epsg,
+                  'srs': self.projection.srs,
                   'json': json_file}
 
         # create pipeline file transform.xml to enable transformation
@@ -201,11 +247,7 @@ class ODM_GeoRef(object):
                    '  "pipeline":[' \
                    '    "untransformed.ply",' \
                    '    {{' \
-                   '      "type":"filters.transformation",' \
-                   '      "matrix":"1 0 0 {east} 0 1 0 {north} 0 0 1 0 0 0 0 1"' \
-                   '    }},' \
-                   '    {{' \
-                   '      "a_srs":"EPSG:{epsg}",' \
+                   '      "a_srs":"{srs}",' \
                    '      "offset_x":"{east}",' \
                    '      "offset_y":"{north}",' \
                    '      "offset_z":"0",' \
@@ -221,43 +263,100 @@ class ODM_GeoRef(object):
         system.run('{bin}/pdal pipeline -i {json} --readers.ply.filename={f_in} '
                    '--writers.las.filename={f_out}'.format(**kwargs))
 
-    def parse_coordinate_system(self, _file):
-        """Write attributes to jobOptions from coord file"""
-        # check for coordinate file existence
+    def utm_to_latlon(self, _file, _photo, idx):
+
+        gcp = self.gcps[idx]
+
+        kwargs = {'proj': self.projection,
+                  'file': _file,
+                  'x': gcp.x + self.utm_east_offset,
+                  'y': gcp.y + self.utm_north_offset,
+                  'z': gcp.z}
+
+        latlon = system.run_and_return('echo {x} {y} {z} '.format(**kwargs),
+                                       'gdaltransform -s_srs \"{proj}\" '
+                                       '-t_srs \"EPSG:4326\"'.format(**kwargs)).split()
+
+        # Example: 83d18'16.285"W
+        # Example: 41d2'11.789"N
+        # Example: 0.998
+
+        if len(latlon) == 3:
+            lon_str, lat_str, alt_str = latlon
+        elif len(latlon) == 2:
+            lon_str, lat_str = latlon
+            alt_str = ''
+        else:
+            log.ODM_ERROR('Something went wrong %s' % latlon)
+
+        lat_frac = self.coord_to_fractions(latlon[1], ['N', 'S'])
+        lon_frac = self.coord_to_fractions(latlon[0], ['E', 'W'])
+
+        # read image metadata
+        metadata = pyexiv2.ImageMetadata(_photo.path_file)
+        metadata.read()
+
+        # #set values
+        #
+        # # GPS latitude
+        # key = 'Exif.GPSInfo.GPSLatitude'
+        # value = lat_frac[0].split(' ')
+        # log.ODM_DEBUG('lat_frac: %s %s %s' % (value[0], value[1], value[2]))
+        # metadata[key] = pyexiv2.ExifTag(key,
+        #                                 [Fraction(value[0]),
+        #                                  Fraction(value[1]),
+        #                                  Fraction(value[2])])
+        #
+        # key = 'Exif.GPSInfo.GPSLatitudeRef'
+        # value = lat_frac[1]
+        # metadata[key] = pyexiv2.ExifTag(key, value)
+        #
+        # # GPS longitude
+        # key = 'Exif.GPSInfo.GPSLongitude'
+        # value = lon_frac[0].split(' ')
+        # metadata[key] = pyexiv2.ExifTag(key,
+        #                                 [Fraction(value[0]),
+        #                                  Fraction(value[1]),
+        #                                  Fraction(value[2])])
+        #
+        # key = 'Exif.GPSInfo.GPSLongitudeRef'
+        # value = lon_frac[1]
+        # metadata[key] = pyexiv2.ExifTag(key, value)
+        #
+        # # GPS altitude
+        # altitude = abs(int(float(latlon[2]) * 100))
+        # key = 'Exif.GPSInfo.GPSAltitude'
+        # value = Fraction(altitude, 1)
+        # metadata[key] = pyexiv2.ExifTag(key, value)
+        #
+        # if latlon[2] >= 0:
+        #     altref = '0'
+        # else:
+        #     altref = '1'
+        # key = 'Exif.GPSInfo.GPSAltitudeRef'
+        # metadata[key] = pyexiv2.ExifTag(key, altref)
+        #
+        # # write values
+        # metadata.write()
+
+    def extract_offsets(self, _file):
         if not io.file_exists(_file):
             log.ODM_ERROR('Could not find file %s' % _file)
             return
 
         with open(_file) as f:
-            # extract reference system and utm zone from first line.
-            # We will assume the following format:
-            # 'WGS84 UTM 17N' or 'WGS84 UTM 17N \n'
-            line = f.readline().rstrip()
-            log.ODM_DEBUG('Line: %s' % line)
-            ref = line.split(' ')
-            # match_wgs_utm = re.search('WGS84 UTM (\d{1,2})(N|S)', line, re.I)
-            if ref[0] == 'WGS84' and ref[1] == 'UTM':  # match_wgs_utm:
-                self.datum = ref[0]
-                self.utm_pole = ref[2][len(ref[2]) - 1]
-                self.utm_zone = int(ref[2][:len(ref[2]) - 1])
-                # extract east and west offsets from second line.
-                # We will assume the following format:
-                # '440143 4588391'
-                # update EPSG
-                self.epsg = self.calculate_EPSG(self.utm_zone, self.utm_pole)
-            # If the first line looks like "EPSG:n" or "epsg:n"
-            elif ref[0].split(':')[0].lower() == 'epsg':
-                self.epsg = line.split(':')[1]
-            else:
-                log.ODM_ERROR('Could not parse coordinates. Bad CRS supplied: %s' % line)
-                return
-
-            offsets = f.readline().split(' ')
+            offsets = f.readlines()[1].split(' ')
             self.utm_east_offset = int(offsets[0])
             self.utm_north_offset = int(offsets[1])
 
+    def create_gcps(self, _file):
+        if not io.file_exists(_file):
+            log.ODM_ERROR('Could not find file %s' % _file)
+            return
+
+        with open(_file) as f:
             # parse coordinates
-            lines = f.readlines()
+            lines = f.readlines()[2:]
             for l in lines:
                 xyz = l.split(' ')
                 if len(xyz) == 3:
@@ -268,9 +367,22 @@ class ODM_GeoRef(object):
                 self.gcps.append(ODM_GCPoint(float(x), float(y), float(z)))
                 # Write to json file
 
+    def parse_transformation_matrix(self, _file):
+        if not io.file_exists(_file):
+            log.ODM_ERROR('Could not find file %s' % _file)
+            return
+
+        # Create a nested list for the transformation matrix
+        with open(_file) as f:
+            for line in f:
+                self.transform += [[float(i) for i in line.split()]]
+
+        self.utm_east_offset = self.transform[0][3]
+        self.utm_north_offset = self.transform[1][3]
+
 
 class ODM_Tree(object):
-    def __init__(self, root_path, images_path):
+    def __init__(self, root_path, images_path, gcp_file = None):
         # root path to the project
         self.root_path = io.absolute_path_file(root_path)
         if not images_path:
@@ -298,6 +410,7 @@ class ODM_Tree(object):
 
         # benchmarking
         self.benchmarking = io.join_paths(self.root_path, 'benchmark.txt')
+        self.dataset_list = io.join_paths(self.root_path, 'img_list.txt')
 
         # opensfm
         self.opensfm_tracks = io.join_paths(self.opensfm, 'tracks.csv')
@@ -308,6 +421,7 @@ class ODM_Tree(object):
         self.opensfm_reconstruction_meshed = io.join_paths(self.opensfm, 'reconstruction.meshed.json')
         self.opensfm_reconstruction_nvm = io.join_paths(self.opensfm, 'reconstruction.nvm')
         self.opensfm_model = io.join_paths(self.opensfm, 'depthmaps/merged.ply')
+        self.opensfm_transformation = io.join_paths(self.opensfm, 'geocoords_transformation.txt')
 
         # pmvs
         self.pmvs_rec_path = io.join_paths(self.pmvs, 'recon0')
@@ -335,12 +449,12 @@ class ODM_Tree(object):
             self.odm_georeferencing, 'latlon.txt')
         self.odm_georeferencing_coords = io.join_paths(
             self.odm_georeferencing, 'coords.txt')
-        self.odm_georeferencing_gcp = io.join_paths(
-            self.odm_georeferencing, 'gcp_list.txt')
+        self.odm_georeferencing_gcp = gcp_file or io.find('gcp_list.txt', self.root_path)
         self.odm_georeferencing_utm_log = io.join_paths(
             self.odm_georeferencing, 'odm_georeferencing_utm_log.txt')
         self.odm_georeferencing_log = 'odm_georeferencing_log.txt'
         self.odm_georeferencing_transform_file = 'odm_georeferencing_transform.txt'
+        self.odm_georeferencing_proj = 'proj.txt'
         self.odm_georeferencing_model_txt_geo = 'odm_georeferencing_model_geo.txt'
         self.odm_georeferencing_model_ply_geo = 'odm_georeferenced_model.ply'
         self.odm_georeferencing_model_obj_geo = 'odm_textured_model_geo.obj'

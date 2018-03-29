@@ -35,8 +35,9 @@ class ODMeshingCell(ecto.Cell):
         log.ODM_INFO('Running ODM Meshing Cell')
 
         # get inputs
-        args = self.inputs.args
-        tree = self.inputs.tree
+        args = inputs.args
+        tree = inputs.tree
+        reconstruction = inputs.reconstruction
         verbose = '-verbose' if self.params.verbose else ''
 
         # define paths and create working directories
@@ -106,6 +107,8 @@ class ODMeshingCell(ecto.Cell):
           else:
               log.ODM_WARNING('Found a valid ODM 2.5D Mesh file in: %s' %
                               tree.odm_25dmesh)
+
+        outputs.reconstruction = reconstruction
 
         if args.time:
             system.benchmark(start_time, tree.benchmarking, 'Meshing')

@@ -97,7 +97,10 @@ install() {
                          python-wheel \
                          libboost-log-dev
 
-    pip install -U https://github.com/OpenDroneMap/gippy/archive/v0.3.9.tar.gz
+    echo "Installing split-merge Dependencies"
+    pip install -U scipy shapely numpy pyproj
+
+    pip install -U https://github.com/OpenDroneMap/gippy/archive/v0.3.9.tar.gz psutil
 
     echo "Compiling SuperBuild"
     cd ${RUNPATH}/SuperBuild

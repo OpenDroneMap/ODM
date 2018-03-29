@@ -1,8 +1,6 @@
 import os
 import ecto
 
-from functools import partial
-from multiprocessing import Pool
 from opendm import context
 from opendm import io
 from opendm import types
@@ -24,10 +22,13 @@ class ODMLoadDatasetCell(ecto.Cell):
                        'images', None)
         params.declare("force_ccd", 'Override the ccd width information for the '
                        'images', None)
+        params.declare("verbose", 'indicate verbosity', False)
+        params.declare("proj", 'Geographic projection', None)
 
     def declare_io(self, params, inputs, outputs):
         inputs.declare("tree", "Struct with paths", [])
-        outputs.declare("photos", "list of ODMPhotos", [])
+        outputs.declare("reconstruction", "ODMReconstruction", [])
+        inputs.declare("args", "The application arguments.", {})
 
     def process(self, inputs, outputs):
         # check if the extension is supported
@@ -45,6 +46,7 @@ class ODMLoadDatasetCell(ecto.Cell):
 
         # get inputs
         tree = self.inputs.tree
+        args = self.inputs.args
 
         # get images directory
         input_dir = tree.input_images
@@ -55,6 +57,10 @@ class ODMLoadDatasetCell(ecto.Cell):
             system.mkdir_p(images_dir)
             copied = [copyfile(io.join_paths(input_dir, f), io.join_paths(images_dir, f)) for f in get_images(input_dir)]
 
+        # define paths and create working directories
+        system.mkdir_p(tree.odm_georeferencing)
+        if args.use_25dmesh: system.mkdir_p(tree.odm_25dgeoreferencing)
+
         log.ODM_DEBUG('Loading dataset from: %s' % images_dir)
 
         files = get_images(images_dir)
@@ -62,22 +68,52 @@ class ODMLoadDatasetCell(ecto.Cell):
         if files:
             # create ODMPhoto list
             path_files = [io.join_paths(images_dir, f) for f in files]
-            # photos = Pool().map(
-            #     partial(make_odm_photo, self.params.force_focal, self.params.force_ccd),
-            #     path_files
-            # )
 
             photos = []
-            for files in path_files:
-                photos += [make_odm_photo(self.params.force_focal, self.params.force_ccd, files)]
-            
-            log.ODM_INFO('Found %s usable images' % len(photos))            
+            with open(tree.dataset_list, 'w') as dataset_list:
+                for files in path_files:
+                    photos += [make_odm_photo(self.params.force_focal, self.params.force_ccd, files)]
+                    dataset_list.write(photos[-1].filename + '\n')
+
+            log.ODM_INFO('Found %s usable images' % len(photos))
         else:
             log.ODM_ERROR('Not enough supported images in %s' % images_dir)
             return ecto.QUIT
 
         # append photos to cell output
-        outputs.photos = photos
+        if not self.params.proj:
+            if tree.odm_georeferencing_gcp:
+                outputs.reconstruction = types.ODM_Reconstruction(photos, coords_file=tree.odm_georeferencing_gcp)
+            else:
+                verbose = '-verbose' if self.params.verbose else ''
+                # Generate UTM from images
+                # odm_georeference definitions
+                kwargs = {
+                    'bin': context.odm_modules_path,
+                    'imgs': tree.dataset_raw,
+                    'imgs_list': tree.dataset_list,
+                    'coords': tree.odm_georeferencing_coords,
+                    'log': tree.odm_georeferencing_utm_log,
+                    'verbose': verbose
+                }
+
+                # run UTM extraction binary
+                extract_utm = system.run_and_return('{bin}/odm_extract_utm -imagesPath {imgs}/ '
+                                                    '-imageListFile {imgs_list} -outputCoordFile {coords} {verbose} '
+                                                    '-logFile {log}'.format(**kwargs))
+
+                if extract_utm != '':
+                    log.ODM_WARNING('Could not generate coordinates file. '
+                                    'Ignore if there is a GCP file. Error: %s'
+                                    % extract_utm)
+
+                outputs.reconstruction = types.ODM_Reconstruction(photos, coords_file=tree.odm_georeferencing_coords)
+        else:
+            outputs.reconstruction = types.ODM_Reconstruction(photos, projstring=self.params.proj)
+
+        # Save proj to file for future use
+        with open(io.join_paths(tree.odm_georeferencing, tree.odm_georeferencing_proj), 'w') as f:
+            f.write(outputs.reconstruction.projection.srs)
 
         log.ODM_INFO('Running ODM Load Dataset Cell - Finished')
-        return ecto.OK
+        return ecto.OK if args.end_with != 'dataset' else ecto.QUIT
