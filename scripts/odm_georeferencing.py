@@ -129,8 +129,6 @@ class ODMGeoreferencingCell(ecto.Cell):
                                     'provided a GCP file. ')
                     doPointCloudGeo = False # skip the rest of the georeferencing
 
-                odm_georeferencing_model_ply_geo = os.path.join(tree.odm_georeferencing,
-                                                                tree.odm_georeferencing_model_ply_geo)
                 if doPointCloudGeo:
                     # update images metadata
                     geo_ref = reconstruction.georef
