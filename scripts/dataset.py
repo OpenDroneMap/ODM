@@ -111,9 +111,11 @@ class ODMLoadDatasetCell(ecto.Cell):
         else:
             outputs.reconstruction = types.ODM_Reconstruction(photos, projstring=self.params.proj)
 
-        # Save proj to file for future use
-        with open(io.join_paths(tree.odm_georeferencing, tree.odm_georeferencing_proj), 'w') as f:
-            f.write(outputs.reconstruction.projection.srs)
+        # Save proj to file for future use (unless this 
+        # dataset is not georeferenced)
+        if outputs.reconstruction.projection:
+            with open(io.join_paths(tree.odm_georeferencing, tree.odm_georeferencing_proj), 'w') as f:
+                f.write(outputs.reconstruction.projection.srs)
 
         log.ODM_INFO('Running ODM Load Dataset Cell - Finished')
         return ecto.OK if args.end_with != 'dataset' else ecto.QUIT

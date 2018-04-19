@@ -184,8 +184,9 @@ class ODMOpenSfMCell(ecto.Cell):
             else:
                 log.ODM_WARNING('Found a valid CMVS file in: %s' % tree.pmvs_visdat)
 
-        system.run('PYTHONPATH=%s %s/bin/opensfm export_geocoords %s --transformation --proj \'%s\'' %
-                   (context.pyopencv_path, context.opensfm_path, tree.opensfm, reconstruction.georef.projection.srs))
+        if reconstruction.georef:
+            system.run('PYTHONPATH=%s %s/bin/opensfm export_geocoords %s --transformation --proj \'%s\'' %
+                       (context.pyopencv_path, context.opensfm_path, tree.opensfm, reconstruction.georef.projection.srs))
 
         outputs.reconstruction = reconstruction
 
