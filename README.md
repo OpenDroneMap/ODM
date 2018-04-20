@@ -35,7 +35,7 @@ docker run -it --rm -v $(pwd)/images:/code/images -v $(pwd)/odm_orthophoto:/code
 
 ### Native Install (Ubuntu 16.04)
 
-** Please note that we need help getting ODM updated to work for 16.10+. Look at #659 or drop into the [gitter][https://gitter.im/OpenDroneMap/OpenDroneMap) for more info.
+** Please note that we need help getting ODM updated to work for 16.10+. Look at #659 or drop into the [gitter](https://gitter.im/OpenDroneMap/OpenDroneMap) for more info.
 
 
 **[Download the latest release here](https://github.com/OpenDroneMap/OpenDroneMap/releases)**  
