@@ -80,7 +80,7 @@ class ODMOrthoPhotoCell(ecto.Cell):
             geotiffcreated = False
             georef = reconstruction.georef
 
-            if georef.projection and georef.utm_east_offset and georef.utm_north_offset:
+            if georef and georef.projection and georef.utm_east_offset and georef.utm_north_offset:
                 ulx = uly = lrx = lry = 0.0
                 with open(tree.odm_orthophoto_corners) as f:
                     for lineNumber, line in enumerate(f):
