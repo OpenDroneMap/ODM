@@ -18,7 +18,7 @@ In a word, OpenDroneMap is a toolchain for processing raw civilian UAS imagery t
 6. Digital Elevation Models
 7. etc.
 
-Open Drone Map now includes state-of-the-art 3D reconstruction work by Michael Waechter, Nils Moehrle, and Michael Goesele. See their publication at http://www.gcc.tu-darmstadt.de/media/gcc/papers/Waechter-2014-LTB.pdf.
+Open Drone Map now includes state-of-the-art 3D reconstruction work by Michael Waechter, Nils Moehrle, and Michael Goesele. See their publication at [http://www.gcc.tu-darmstadt.de/media/gcc/papers/Waechter-2014-LTB.pdf](http://www.gcc.tu-darmstadt.de/media/gcc/papers/Waechter-2014-LTB.pdf).
 
 ## QUICKSTART
 
@@ -35,7 +35,7 @@ docker run -it --rm -v $(pwd)/images:/code/images -v $(pwd)/odm_orthophoto:/code
 
 ### Native Install (Ubuntu 16.04)
 
-** Please note that we need help getting ODM updated to work for 16.10+. Look at #659 or drop into the [gitter][https://gitter.im/OpenDroneMap/OpenDroneMap) for more info.
+** Please note that we need help getting ODM updated to work for 16.10+. Look at #659 or drop into the [gitter](https://gitter.im/OpenDroneMap/OpenDroneMap) for more info.
 
 
 **[Download the latest release here](https://github.com/OpenDroneMap/OpenDroneMap/releases)**  
@@ -211,7 +211,7 @@ Coming soon...
 
 ## Documentation:
 
-For documentation, please take a look at our [wiki](https://github.com/OpenDroneMap/OpenDroneMap/wiki).Check here first if you are having problems. If you still need help, look through the issue queue or create one. There's also a general help chat [here](https://gitter.im/OpenDroneMap/generalhelp).
+For documentation, everything is being moved to [http://docs.opendronemap.org/](http://docs.opendronemap.org/) but you can also take a look at our [wiki](https://github.com/OpenDroneMap/OpenDroneMap/wiki). Check those places first if you are having problems. If you still need help, look through the issue queue or create one. There's also a general help chat on [gitter](https://gitter.im/OpenDroneMap/generalhelp) and a [community forum](http://community.opendronemap.org/).
 
 ## Developers
 
