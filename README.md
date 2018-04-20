@@ -211,7 +211,7 @@ Coming soon...
 
 ## Documentation:
 
-For documentation, please take a look at our [wiki](https://github.com/OpenDroneMap/OpenDroneMap/wiki).Check here first if you are having problems. If you still need help, look through the issue queue or create one. There's also a general help chat [here](https://gitter.im/OpenDroneMap/generalhelp).
+For documentation, everything is being move to [http://docs.opendronemap.org/](http://docs.opendronemap.org/) but you can also take a look at our [wiki](https://github.com/OpenDroneMap/OpenDroneMap/wiki). Check those places first if you are having problems. If you still need help, look through the issue queue or create one. There's also a general help chat on [gitter](https://gitter.im/OpenDroneMap/generalhelp) and a [community forum](http://community.opendronemap.org/).
 
 ## Developers
 
