@@ -132,18 +132,20 @@ class ODM_Reconstruction(object):
     def __init__(self, photos, projstring = None, coords_file = None):
         self.photos = photos    # list of ODM_Photos
         self.projection = None  # Projection system the whole project will be in
+        self.georef = None
         if projstring:
             self.projection = self.set_projection(projstring)
             self.georef = ODM_GeoRef(self.projection)
         else:
             self.projection = self.parse_coordinate_system(coords_file)
-            self.georef = ODM_GeoRef(self.projection)
+            if self.projection:
+                self.georef = ODM_GeoRef(self.projection)
 
     def parse_coordinate_system(self, _file):
         """Write attributes to jobOptions from coord file"""
         # check for coordinate file existence
         if not io.file_exists(_file):
-            log.ODM_ERROR('Could not find file %s' % _file)
+            log.ODM_WARNING('Could not find file %s' % _file)
             return
 
         with open(_file) as f:
