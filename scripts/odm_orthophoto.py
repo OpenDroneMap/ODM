@@ -60,7 +60,25 @@ class ODMOrthoPhotoCell(ecto.Cell):
             }
 
             # Have geo coordinates?
-            if reconstruction.georef:  # io.file_exists(tree.odm_georeferencing_coords):
+            georef = reconstruction.georef
+
+            # Check if the georef object is initialized
+            # (during a --rerun this might not be)
+            # TODO: we should move this to a more central
+            # location (perhaps during the dataset initialization)
+            if georef and not georef.utm_east_offset:
+                if args.use_25dmesh:
+                    odm_georeferencing_model_txt_geo_file = os.path.join(tree.odm_25dtexturing, tree.odm_georeferencing_model_txt_geo)
+                else:
+                    odm_georeferencing_model_txt_geo_file = os.path.join(tree.odm_texturing, tree.odm_georeferencing_model_txt_geo)
+
+                if io.file_exists(odm_georeferencing_model_txt_geo_file):
+                    georef.extract_offsets(odm_georeferencing_model_txt_geo_file)
+                else:
+                    log.ODM_WARNING('Cannot read UTM offset from {}. An orthophoto will not be generated.'.format(odm_georeferencing_model_txt_geo_file))
+
+
+            if georef:
                 if args.use_25dmesh:
                     kwargs['model_geo'] = os.path.join(tree.odm_25dtexturing, tree.odm_georeferencing_model_obj_geo)
                 else:
@@ -78,7 +96,6 @@ class ODMOrthoPhotoCell(ecto.Cell):
 
             # Create georeferenced GeoTiff
             geotiffcreated = False
-            georef = reconstruction.georef
 
             if georef and georef.projection and georef.utm_east_offset and georef.utm_north_offset:
                 ulx = uly = lrx = lry = 0.0
