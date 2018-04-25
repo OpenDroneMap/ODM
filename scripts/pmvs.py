@@ -75,6 +75,8 @@ class ODMPmvsCell(ecto.Cell):
         else:
             log.ODM_WARNING('Found a valid PMVS file in %s' % tree.pmvs_model)
 
+        outputs.reconstruction = inputs.reconstruction
+        
         if args.time:
             system.benchmark(start_time, tree.benchmarking, 'PMVS')
 
