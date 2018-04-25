@@ -239,7 +239,9 @@ private:
     /*!
       * \brief printFinalTransform      Prints a file containing the final transform, next to the output file.
       **/
-    void printFinalTransform(Mat4 transform);
+    template <typename Scalar>
+    void printFinalTransform(const Eigen::Transform<Scalar, 3, Eigen::Affine> &transform);
+
     
     /*!
       * \brief Loads a model from an .obj file (replacement for the pcl obj loader).

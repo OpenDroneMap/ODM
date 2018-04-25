@@ -15,7 +15,7 @@ using namespace std;
 
 std::ostream& operator<<(std::ostream &os, const GeorefSystem &geo)
 {
-    return os << setiosflags(ios::fixed) << setprecision(6) << geo.system_ << "\n" << geo.eastingOffset_ << " " << geo.northingOffset_;
+    return os << setiosflags(ios::fixed) << setprecision(7) << geo.system_ << "\n" << geo.eastingOffset_ << " " << geo.northingOffset_;
 }
 
 GeorefGCP::GeorefGCP()
@@ -940,8 +940,6 @@ void Georef::performGeoreferencingWithGCP()
     log_ << "Final transform:\n";
     log_ << transFinal.transform_ << '\n';
     
-    printFinalTransform(transFinal.transform_);
-
     // The transform used to transform model into the georeferenced system.
     performFinalTransform(transFinal.transform_, mesh, meshCloud, true);
 }
@@ -1029,8 +1027,6 @@ void Georef::createGeoreferencedModelFromExifData()
     log_ << "Final transform:\n";
     log_ << transFinal.transform_ << '\n';
     
-    printFinalTransform(transFinal.transform_);
-
     log_ << '\n';
     log_ << "Reading mesh file...\n";
     pcl::TextureMesh mesh;
@@ -1083,8 +1079,6 @@ void Georef::createGeoreferencedModelFromSFM()
 
     georefSystem_.eastingOffset_ = transform.r1c4_;
     georefSystem_.northingOffset_ = transform.r2c4_;
-
-    printFinalTransform(transform);
 
     // load mesh
     log_ << '\n';
@@ -1272,8 +1266,8 @@ void Georef::printGeorefSystem()
     log_ << "... georeference system saved.\n";
 }
 
-
-void Georef::printFinalTransform(Mat4 transform)
+template <typename Scalar>
+void Georef::printFinalTransform(const Eigen::Transform<Scalar, 3, Eigen::Affine> &transform)
 {
     if(outputObjFilename_.empty())
     {
@@ -1291,7 +1285,11 @@ void Georef::printFinalTransform(Mat4 transform)
     log_ << '\n';
     log_ << "Saving final transform file to \'" << finalTransformFile_ << "\'...\n";
     std::ofstream transformStream(finalTransformFile_.c_str());
-    transformStream << transform << std::endl;
+    transformStream  << setiosflags(ios::fixed) << setprecision(7) << 
+      "[ " << transform(0, 0) << ",\t" << transform(0, 1) << ",\t" << transform(0, 2) << ",\t" << transform(0, 3) << " ]" << std::endl << 
+      "[ " << transform(1, 0) << ",\t" << transform(1, 1) << ",\t" << transform(1, 2) << ",\t" << transform(1, 3) << " ]" << std::endl << 
+      "[ " << transform(2, 0) << ",\t" << transform(2, 1) << ",\t" << transform(2, 2) << ",\t" << transform(2, 3) << " ]" << std::endl << 
+      "[ " << transform(3, 0) << ",\t" << transform(3, 1) << ",\t" << transform(3, 2) << ",\t" << transform(3, 3) << " ]";
     transformStream.close();
     log_ << "... final transform saved.\n";
 }
@@ -1373,9 +1371,11 @@ void Georef::performFinalTransform(Mat4 &transMat, pcl::TextureMesh &mesh, pcl::
         transform(1, 3) = georefSystem_.northingOffset_;
     }
 
+    printFinalTransform(transform);
+
     if(georeferencePointCloud_)
     {
-        transformPointCloud(inputPointCloudFilename_.c_str(), transform, outputPointCloudFilename_.c_str());
+        Georef::transformPointCloud(inputPointCloudFilename_.c_str(), transform, outputPointCloudFilename_.c_str());
     }
 
     if(exportCoordinateFile_)
