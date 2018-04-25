@@ -101,13 +101,13 @@ def gap_fill(filenames, fout, interpolation='nearest'):
 
     filenames = sorted(filenames)
 
-    imgs = gippy.GeoImages(filenames)
-    nodata = imgs[0][0].NoDataValue()
-    arr = imgs[0][0].Read()
+    imgs = map(gippy.GeoImage, filenames)
+    nodata = imgs[0][0].nodata()
+    arr = imgs[0][0].read()
 
-    for i in range(1, imgs.size()):
+    for i in range(1, len(imgs)):
         locs = numpy.where(arr == nodata)
-        arr[locs] = imgs[i][0].Read()[locs]
+        arr[locs] = imgs[i][0].read()[locs]
 
     # interpolation at bad points
     goodlocs = numpy.where(arr != nodata)
@@ -115,10 +115,10 @@ def gap_fill(filenames, fout, interpolation='nearest'):
     arr[badlocs] = griddata(goodlocs, arr[goodlocs], badlocs, method=interpolation)
 
     # write output
-    imgout = gippy.GeoImage(fout, imgs[0])
-    imgout.SetNoData(nodata)
-    imgout[0].Write(arr)
-    fout = imgout.Filename()
+    imgout = gippy.GeoImage.create_from(imgs[0], fout)
+    imgout.set_nodata(nodata)
+    imgout[0].write(arr)
+    fout = imgout.filename()
     imgout = None
 
     log.ODM_INFO('Completed gap-filling to create %s in %s' % (os.path.relpath(fout), datetime.now() - start))
