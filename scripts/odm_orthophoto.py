@@ -67,10 +67,7 @@ class ODMOrthoPhotoCell(ecto.Cell):
             # TODO: we should move this to a more central
             # location (perhaps during the dataset initialization)
             if georef and not georef.utm_east_offset:
-                if args.use_25dmesh:
-                    odm_georeferencing_model_txt_geo_file = os.path.join(tree.odm_25dtexturing, tree.odm_georeferencing_model_txt_geo)
-                else:
-                    odm_georeferencing_model_txt_geo_file = os.path.join(tree.odm_texturing, tree.odm_georeferencing_model_txt_geo)
+                odm_georeferencing_model_txt_geo_file = os.path.join(tree.odm_georeferencing, tree.odm_georeferencing_model_txt_geo)
 
                 if io.file_exists(odm_georeferencing_model_txt_geo_file):
                     georef.extract_offsets(odm_georeferencing_model_txt_geo_file)
