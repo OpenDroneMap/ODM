@@ -1361,8 +1361,7 @@ void Georef::performFinalTransform(Mat4 &transMat, pcl::TextureMesh &mesh, pcl::
     // but not UTM offsets. We want our point cloud
     // and odm_georeferencing_model_geo.txt file 
     // to include the UTM offset.
-    // OpenSfM already has UTM offsets encoded
-    // in the translation matrix.
+    // OpenSfM already has UTM offsets
     if (addUTM){
         georefSystem_.eastingOffset_ += transX;
         georefSystem_.northingOffset_ += transY;
