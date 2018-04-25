@@ -348,8 +348,8 @@ class ODM_GeoRef(object):
 
         with open(_file) as f:
             offsets = f.readlines()[1].split(' ')
-            self.utm_east_offset = int(offsets[0])
-            self.utm_north_offset = int(offsets[1])
+            self.utm_east_offset = float(offsets[0])
+            self.utm_north_offset = float(offsets[1])
 
     def create_gcps(self, _file):
         if not io.file_exists(_file):
@@ -377,6 +377,9 @@ class ODM_GeoRef(object):
         # Create a nested list for the transformation matrix
         with open(_file) as f:
             for line in f:
+                # Handle matrix formats that either 
+                # have leading or trailing brakets or just plain numbers.
+                line = re.sub(r"[\[\],]", "", line).strip()
                 self.transform += [[float(i) for i in line.split()]]
 
         self.utm_east_offset = self.transform[0][3]
