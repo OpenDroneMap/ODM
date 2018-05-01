@@ -59,6 +59,8 @@ class ODMCmvsCell(ecto.Cell):
             log.ODM_WARNING('Found a valid CMVS file in: %s' % 
                             tree.pmvs_bundle)
 
+        outputs.reconstruction = inputs.reconstruction
+
         if args.time:
             system.benchmark(start_time, tree.benchmarking, 'CMVS')
 

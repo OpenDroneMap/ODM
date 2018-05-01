@@ -68,6 +68,7 @@ class ODMGeoreferencingCell(ecto.Cell):
             odm_georeferencing_model_ply_geo = os.path.join(r['georeferencing_dir'], tree.odm_georeferencing_model_ply_geo)
             odm_georeferencing_log = os.path.join(r['georeferencing_dir'], tree.odm_georeferencing_log)
             odm_georeferencing_transform_file = os.path.join(r['georeferencing_dir'], tree.odm_georeferencing_transform_file)
+            odm_georeferencing_model_txt_geo_file = os.path.join(r['georeferencing_dir'], tree.odm_georeferencing_model_txt_geo)
 
             if not io.file_exists(odm_georeferencing_model_obj_geo) or \
                not io.file_exists(odm_georeferencing_model_ply_geo) or rerun_cell:
@@ -84,7 +85,7 @@ class ODMGeoreferencingCell(ecto.Cell):
                     'transform_file': odm_georeferencing_transform_file,
                     'coords': tree.odm_georeferencing_coords,
                     'pc_geo': odm_georeferencing_model_ply_geo,
-                    'geo_sys': os.path.join(r['georeferencing_dir'], tree.odm_georeferencing_model_txt_geo),
+                    'geo_sys': odm_georeferencing_model_txt_geo_file,
                     'model_geo': odm_georeferencing_model_obj_geo,
                     'gcp': gcpfile,
                     'verbose': verbose
@@ -100,20 +101,20 @@ class ODMGeoreferencingCell(ecto.Cell):
 
                 # Check to see if the GCP file exists
 
-                #if not self.params.use_exif and (self.params.gcp_file or tree.odm_georeferencing_gcp):
-                #    log.ODM_INFO('Found %s' % gcpfile)
-                #    try:
-                #        system.run('{bin}/odm_georef -bundleFile {bundle} -imagesPath {imgs} -imagesListPath {imgs_list} '
-                #                   '-inputFile {model} -outputFile {model_geo} '
-                #                   '-inputPointCloudFile {pc} -outputPointCloudFile {pc_geo} {verbose} '
-                #                   '-logFile {log} -outputTransformFile {transform_file} -georefFileOutputPath {geo_sys} -gcpFile {gcp} '
-                #                   '-outputCoordFile {coords}'.format(**kwargs))
-                #    except Exception:
-                #        log.ODM_EXCEPTION('Georeferencing failed. ')
-                #        return ecto.QUIT
-                if io.file_exists(tree.opensfm_transformation):
+                if not self.params.use_exif and (self.params.gcp_file or tree.odm_georeferencing_gcp):
+                   log.ODM_INFO('Found %s' % gcpfile)
+                   try:
+                       system.run('{bin}/odm_georef -bundleFile {bundle} -imagesPath {imgs} -imagesListPath {imgs_list} '
+                                  '-inputFile {model} -outputFile {model_geo} '
+                                  '-inputPointCloudFile {pc} -outputPointCloudFile {pc_geo} {verbose} '
+                                  '-logFile {log} -outputTransformFile {transform_file} -georefFileOutputPath {geo_sys} -gcpFile {gcp} '
+                                  '-outputCoordFile {coords}'.format(**kwargs))
+                   except Exception:
+                       log.ODM_EXCEPTION('Georeferencing failed. ')
+                       return ecto.QUIT
+                elif io.file_exists(tree.opensfm_transformation) and io.file_exists(tree.odm_georeferencing_coords):
                     log.ODM_INFO('Running georeferencing with OpenSfM transformation matrix')
-                    system.run('{bin}/odm_georef -bundleFile {bundle} -inputTransformFile {input_trans_file} '
+                    system.run('{bin}/odm_georef -bundleFile {bundle} -inputTransformFile {input_trans_file} -inputCoordFile {coords} '
                                '-inputFile {model} -outputFile {model_geo} '
                                '-inputPointCloudFile {pc} -outputPointCloudFile {pc_geo} {verbose} '
                                '-logFile {log} -outputTransformFile {transform_file} -georefFileOutputPath {geo_sys}'.format(**kwargs))
@@ -132,7 +133,7 @@ class ODMGeoreferencingCell(ecto.Cell):
                 if doPointCloudGeo:
                     # update images metadata
                     geo_ref = reconstruction.georef
-                    geo_ref.parse_transformation_matrix(tree.opensfm_transformation)
+                    geo_ref.extract_offsets(odm_georeferencing_model_txt_geo_file)
 
                     # convert ply model to LAS reference system
                     geo_ref.convert_to_las(odm_georeferencing_model_ply_geo,
@@ -167,10 +168,9 @@ class ODMGeoreferencingCell(ecto.Cell):
                     # We might be doing georeferencing for
                     # multiple models (3D, 2.5D, ...)
                     doPointCloudGeo = False
-
-        else:
-            log.ODM_WARNING('Found a valid georeferenced model in: %s'
-                            % odm_georeferencing_model_ply_geo)
+            else:
+                log.ODM_WARNING('Found a valid georeferenced model in: %s'
+                                % odm_georeferencing_model_ply_geo)
 
         outputs.reconstruction = reconstruction
 
