@@ -100,7 +100,7 @@ install() {
     echo "Installing split-merge Dependencies"
     pip install -U scipy shapely numpy pyproj
 
-    pip install -U https://github.com/OpenDroneMap/gippy/archive/v0.3.9.tar.gz psutil
+    pip install -U gippy psutil
 
     echo "Compiling SuperBuild"
     cd ${RUNPATH}/SuperBuild
