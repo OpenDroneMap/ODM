@@ -160,7 +160,7 @@ def config():
                       type=int,
                       default=3,
                       help=('Minimum number of views that should reconstruct a point for it to be valid. Use lower values '
-                            'if your images have few overlap. Lower values result in denser point clouds '
+                            'if your images have less overlap. Lower values result in denser point clouds '
                             'but with more noise. '
                             'Default: %(default)s'))
 
