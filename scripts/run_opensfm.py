@@ -76,9 +76,10 @@ class ODMOpenSfMCell(ecto.Cell):
                 "feature_min_frames: %s" % self.params.feature_min_frames,
                 "processes: %s" % self.params.processes,
                 "matching_gps_neighbors: %s" % self.params.matching_gps_neighbors,
-                # "depthmap_resolution: 2560",
-                # "depthmap_min_patch_sd: 4.0",
-                # "depthmap_min_consistent_views: 3",
+                "depthmap_method: %s" % args.opensfm_depthmap_method,
+                "depthmap_resolution: %s" % args.opensfm_depthmap_resolution,
+                "depthmap_min_patch_sd: %s" % args.opensfm_depthmap_min_patch_sd,
+                "depthmap_min_consistent_views: %s" % args.opensfm_depthmap_min_consistent_views,
                 "optimize_camera_parameters: %s" % ('no' if self.params.fixed_camera_params else 'yes')
             ]
 
