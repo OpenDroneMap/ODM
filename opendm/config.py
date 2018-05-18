@@ -166,10 +166,10 @@ def config():
 
     parser.add_argument('--opensfm-depthmap-method',
                       metavar='<string>',
-                      default='PATCH_MAP',
-                      choices=['PATCH_MAP', 'BRUTE_FORCE', 'PATCH_MATCH_SAMPLE'],
+                      default='PATCH_MATCH',
+                      choices=['PATCH_MATCH', 'BRUTE_FORCE', 'PATCH_MATCH_SAMPLE'],
                       help=('Raw depthmap computation algorithm. '
-                            'PATCH_MAP and PATCH_MATCH_SAMPLE are faster, but might miss some valid points. '
+                            'PATCH_MATCH and PATCH_MATCH_SAMPLE are faster, but might miss some valid points. '
                             'BRUTE_FORCE takes longer but produces denser reconstructions. '
                             'Default: %(default)s'))
 
@@ -177,7 +177,7 @@ def config():
                       metavar='<positive float>',
                       type=float,
                       default=1,
-                      help=('When using PATCH_MAP or PATCH_MATCH_SAMPLE, controls the standard deviation threshold to include patches. '
+                      help=('When using PATCH_MATCH or PATCH_MATCH_SAMPLE, controls the standard deviation threshold to include patches. '
                             'Patches with lower standard deviation are ignored. '
                             'Default: %(default)s'))
 
