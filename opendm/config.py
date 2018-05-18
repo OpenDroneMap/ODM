@@ -147,6 +147,40 @@ def config():
                         help=('The maximum number of processes to use in dense '
                               'reconstruction. Default: %(default)s'))
 
+    parser.add_argument('--opensfm-depthmap-resolution',
+                        metavar='<positive float>',
+                        type=float,
+                        default=640,
+                        help=('Resolution of the depthmaps. Higher values take longer to compute '
+                              'but produce denser point clouds. '
+                              'Default: %(default)s'))
+
+    parser.add_argument('--opensfm-depthmap-min-consistent-views',
+                      metavar='<integer: 2 <= x <= 9>',
+                      type=int,
+                      default=3,
+                      help=('Minimum number of views that should reconstruct a point for it to be valid. Use lower values '
+                            'if your images have less overlap. Lower values result in denser point clouds '
+                            'but with more noise. '
+                            'Default: %(default)s'))
+
+    parser.add_argument('--opensfm-depthmap-method',
+                      metavar='<string>',
+                      default='PATCH_MAP',
+                      choices=['PATCH_MAP', 'BRUTE_FORCE', 'PATCH_MATCH_SAMPLE'],
+                      help=('Raw depthmap computation algorithm. '
+                            'PATCH_MAP and PATCH_MATCH_SAMPLE are faster, but might miss some valid points. '
+                            'BRUTE_FORCE takes longer but produces denser reconstructions. '
+                            'Default: %(default)s'))
+
+    parser.add_argument('--opensfm-depthmap-min-patch-sd',
+                      metavar='<positive float>',
+                      type=float,
+                      default=1,
+                      help=('When using PATCH_MAP or PATCH_MATCH_SAMPLE, controls the standard deviation threshold to include patches. '
+                            'Patches with lower standard deviation are ignored. '
+                            'Default: %(default)s'))
+
     parser.add_argument('--use-hybrid-bundle-adjustment',
                         action='store_true',
                         default=False,
