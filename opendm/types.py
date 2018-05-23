@@ -156,18 +156,29 @@ class ODM_Reconstruction(object):
             log.ODM_DEBUG('Line: %s' % line)
             ref = line.split(' ')
             # match_wgs_utm = re.search('WGS84 UTM (\d{1,2})(N|S)', line, re.I)
-            if ref[0] == 'WGS84' and ref[1] == 'UTM':  # match_wgs_utm:
-                datum = ref[0]
-                utm_pole = ref[2][len(ref[2]) - 1]
-                utm_zone = int(ref[2][:len(ref[2]) - 1])
+            try:
+                if ref[0] == 'WGS84' and ref[1] == 'UTM':  # match_wgs_utm:
+                    datum = ref[0]
+                    utm_pole = ref[2][len(ref[2]) - 1]
+                    utm_zone = int(ref[2][:len(ref[2]) - 1])
 
-                return Proj(proj="utm", zone=utm_zone, datum=datum, no_defs=True)
-            elif '+proj' in line:
-                return Proj(line.strip('\''))
-            elif 'epsg' in line.lower():
-                return Proj(init=line)
-            else:
-                raise log.ODM_ERROR('Could not parse coordinates. Bad CRS supplied: %s' % line)
+                    return Proj(proj="utm", zone=utm_zone, datum=datum, no_defs=True)
+                elif '+proj' in line:
+                    return Proj(line.strip('\''))
+                elif 'epsg' in line.lower():
+                    return Proj(init=line)
+                else:
+                    log.ODM_ERROR('Could not parse coordinates. Bad CRS supplied: %s' % line)
+            except RuntimeError as e:
+                log.ODM_ERROR('Uh oh! There seems to be a problem with your GCP file.\n\n'
+                                    'The line: %s\n\n'
+                                    'Is not valid. Projections that are valid include:\n'
+                                    ' - EPSG:*****\n'
+                                    ' - WGS84 UTM **(N|S)\n'
+                                    ' - Any valid proj4 string (for example, +proj=utm +zone=32 +north +ellps=WGS84 +datum=WGS84 +units=m +no_defs)\n\n'
+                                    'Modify your GCP file and try again.' % line)
+                raise RuntimeError(e)
+
 
     def set_projection(self, projstring):
         try:
