@@ -8,11 +8,9 @@
 // PCL
 #include <pcl/common/eigen.h>
 #include <pcl/common/common.h>
+#include <pcl/io/ply_io.h>
 // Modified PCL
 #include "modifiedPclFunctions.hpp"
-
-#include "tinyply.h"
-using namespace tinyply;
 
 // Logger
 #include "Logger.hpp"
