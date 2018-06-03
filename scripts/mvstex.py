@@ -1,4 +1,4 @@
-import ecto, os
+import ecto, os, shutil
 
 from opendm import log
 from opendm import io
@@ -121,6 +121,12 @@ class ODMMvsTexCell(ecto.Cell):
                     # Create .nvm camera file.
                     pmvs2nvmcams.run('{pmvs_folder}'.format(**kwargs),
                                      '{nvm_file}'.format(**kwargs))
+
+                # Make sure tmp directory is empty
+                mvs_tmp_dir = os.path.join(r['out_dir'], 'tmp')
+                if io.dir_exists(mvs_tmp_dir):
+                    log.ODM_INFO("Removing old tmp directory {}".format(mvs_tmp_dir))
+                    shutil.rmtree(mvs_tmp_dir)
 
                 # run texturing binary
                 system.run('{bin} {nvm_file} {model} {out_dir} '
