@@ -334,6 +334,11 @@ def config():
             'Default: '
             '%(default)s')
 
+    parser.add_argument('--pc-csv',
+                        action='store_true',
+                        default=False,
+                        help='Export the georeferenced point cloud in CSV format. Default:  %(default)s')
+
     parser.add_argument('--texturing-data-term',
                         metavar='<string>',
                         default='gmi',
