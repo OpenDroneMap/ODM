@@ -157,11 +157,12 @@ class ODMGeoreferencingCell(ecto.Cell):
                                     if line.startswith("end_header"):
                                         break
 
+                                fmt = '{}dddBBB'.format(endianess)
                                 while True:
                                     chunk = f.read(27) # 3 doubles, 3 uints
                                     if len(chunk) < 27:
                                         break
-                                    tokens = struct.unpack('<dddBBB', chunk)
+                                    tokens = struct.unpack(fmt, chunk)
                                     csv_line = [float(tokens[0]),
                                                 float(tokens[1]),
                                                 tokens[2]]
