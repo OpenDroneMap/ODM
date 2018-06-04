@@ -1,6 +1,7 @@
 import ecto
 import csv
 import os
+import struct
 
 from opendm import io
 from opendm import log
@@ -143,21 +144,29 @@ class ODMGeoreferencingCell(ecto.Cell):
                     reconstruction.georef = geo_ref
 
                     # XYZ point cloud output
-                    log.ODM_INFO("Creating geo-referenced CSV file (XYZ format)")
-                    with open(tree.odm_georeferencing_xyz_file, "wb") as csvfile:
-                        csvfile_writer = csv.writer(csvfile, delimiter=",")
-                        reachedpoints = False
-                        with open(odm_georeferencing_model_ply_geo) as f:
-                            for lineNumber, line in enumerate(f):
-                                if reachedpoints:
-                                    tokens = line.split(" ")
+                    if args.pc_csv:
+                        log.ODM_INFO("Creating geo-referenced CSV file (XYZ format)")
+                        with open(tree.odm_georeferencing_xyz_file, "wb") as csvfile:
+                            csvfile_writer = csv.writer(csvfile, delimiter=",")
+                            with open(odm_georeferencing_model_ply_geo) as f:
+                                endianess = '<' # little endian
+                                while True:
+                                    line = f.readline()
+                                    if "binary_big_endian" in line:
+                                        endianess = '>'
+                                    if line.startswith("end_header"):
+                                        break
+
+                                fmt = '{}dddBBB'.format(endianess)
+                                while True:
+                                    chunk = f.read(27) # 3 doubles, 3 uints
+                                    if len(chunk) < 27:
+                                        break
+                                    tokens = struct.unpack(fmt, chunk)
                                     csv_line = [float(tokens[0]),
                                                 float(tokens[1]),
                                                 tokens[2]]
                                     csvfile_writer.writerow(csv_line)
-                                if line.startswith("end_header"):
-                                    reachedpoints = True
-                    csvfile.close()
 
                     if args.crop > 0:
                         log.ODM_INFO("Calculating cropping area and generating bounds shapefile from point cloud")
