@@ -136,13 +136,6 @@ class ODMOpenSfMCell(ecto.Cell):
                 log.ODM_WARNING('Found a valid OpenSfM reconstruction file in: %s' %
                                 tree.opensfm_reconstruction)
 
-            if not io.file_exists(tree.opensfm_reconstruction_meshed) or rerun_cell:
-                system.run('PYTHONPATH=%s %s/bin/opensfm mesh %s' %
-                           (context.pyopencv_path, context.opensfm_path, tree.opensfm))
-            else:
-                log.ODM_WARNING('Found a valid OpenSfM meshed reconstruction file in: %s' %
-                                tree.opensfm_reconstruction_meshed)
-
             if not args.use_pmvs:
                 if not io.file_exists(tree.opensfm_reconstruction_nvm) or rerun_cell:
                     system.run('PYTHONPATH=%s %s/bin/opensfm export_visualsfm %s' %

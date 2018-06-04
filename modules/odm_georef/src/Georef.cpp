@@ -13,6 +13,8 @@ using namespace std;
 // This
 #include "Georef.hpp"
 
+#define IS_BIG_ENDIAN (*(uint16_t *)"\0\xff" < 0x100)
+
 std::ostream& operator<<(std::ostream &os, const GeorefSystem &geo)
 {
     return os << setiosflags(ios::fixed) << setprecision(7) << geo.system_ << "\n" << geo.eastingOffset_ << " " << geo.northingOffset_;
@@ -1404,98 +1406,74 @@ void Georef::performFinalTransform(Mat4 &transMat, pcl::TextureMesh &mesh, pcl::
 template <typename Scalar>
 void Georef::transformPointCloud(const char *inputFile, const Eigen::Transform<Scalar, 3, Eigen::Affine> &transform, const char *outputFile){
     try{
-        std::ifstream ss(inputFile, std::ios::binary);
-        if (ss.fail()) throw GeorefException("Error when reading point cloud:\n" + std::string(inputFile) + "\n");
-        PlyFile file;
-
-        file.parse_header(ss);
-
-        std::shared_ptr<PlyData> vertices = file.request_properties_from_element("vertex", { "x", "y", "z" });
-        // std::shared_ptr<PlyData> normals;
-        std::shared_ptr<PlyData> colors;
-        
-        // Not all point clouds have normals and colors
-        // and different naming conventions apply
-        // try{
-        //     normals = file.request_properties_from_element("vertex", { "nx", "ny", "nz" });
-        // }catch(const std::exception &){}
-
-        // if (!normals){
-        //     try{
-        //         normals = file.request_properties_from_element("vertex", { "normal_x", "normal_y", "normal_z" });
-        //     }catch(const std::exception &){}
-        // }
-
-        try{
-            colors = file.request_properties_from_element("vertex", { "diffuse_red", "diffuse_green", "diffuse_blue" });
-        }catch(const std::exception &){}
-
-        if (!colors){
-            try{
-                colors = file.request_properties_from_element("vertex", { "red", "green", "blue" });
-            }catch(const std::exception &){}
+        pcl::PointCloud<pcl::PointXYZRGBNormal> pointCloud;
+        if(pcl::io::loadPLYFile<pcl::PointXYZRGBNormal> (inputFile, pointCloud) == -1) {
+            throw GeorefException("Error when reading point cloud:\n" + std::string(inputFile) + "\n");
         }
+        else
+        {
+            log_ << "Successfully loaded " << pointCloud.size() << " points with corresponding normals from file.\n";
+        }
+        log_ << "Writing transformed point cloud to " << outputFile << "...\n";
 
-        file.read(ss);
-        log_ << "Successfully loaded " << vertices->count << " points with corresponding normals from file.\n";
+        // We don't use PCL's built-in functions
+        // because PCL does not support double coordinates
+        // precision
+        std::ofstream f (outputFile);
+        f << "ply" << std::endl;
 
-        const size_t numVerticesBytes = vertices->buffer.size_bytes();
-
-        struct float3 { float x, y, z; };
-        struct double3 { double x, y, z; };
-
-        std::vector<double3> verts(vertices->count);
-
-        if (vertices->t == tinyply::Type::FLOAT32) {
-            std::vector<float3> floatVerts(vertices->count);
-            std::memcpy(floatVerts.data(), vertices->buffer.get(), numVerticesBytes);
-            // Copy and cast to double
-            for (unsigned int i = 0; i < vertices->count; i++){
-                verts[i].x = static_cast<double>(floatVerts[i].x);
-                verts[i].y = static_cast<double>(floatVerts[i].y);
-                verts[i].z = static_cast<double>(floatVerts[i].z);
-            }
-        }else if (vertices->t == tinyply::Type::FLOAT64) {
-            std::memcpy(verts.data(), vertices->buffer.get(), numVerticesBytes);
+        if (IS_BIG_ENDIAN){
+          f << "format binary_big_endian 1.0" << std::endl;
         }else{
-            GeorefException ("Invalid data type (only float32 and float64 are supported): " + std::to_string((int)vertices->t));
+          f << "format binary_little_endian 1.0" << std::endl;
         }
+
+        const char *type = "double";
+        if (sizeof(Scalar) == sizeof(float)){
+            type = "float";
+        }
+
+        f   << "element vertex " << pointCloud.size() << std::endl
+            << "property " << type << " x" << std::endl
+            << "property " << type << " y" << std::endl
+            << "property " << type << " z" << std::endl
+            << "property uchar red" << std::endl
+            << "property uchar green" << std::endl
+            << "property uchar blue" << std::endl
+            << "end_header" << std::endl;
+
+        struct PlyPoint{
+            Scalar x;
+            Scalar y;
+            Scalar z;
+            uint8_t r;
+            uint8_t g;
+            uint8_t b;
+        } p;
+        size_t psize = sizeof(Scalar) * 3 + sizeof(uint8_t) * 3;
 
         // Transform
-        for (unsigned int i = 0; i < verts.size(); i++){
-            Scalar x = verts[i].x;
-            Scalar y = verts[i].y;
-            Scalar z = verts[i].z;
+        for (unsigned int i = 0; i < pointCloud.size(); i++){
+            Scalar x = static_cast<Scalar>(pointCloud[i].x);
+            Scalar y = static_cast<Scalar>(pointCloud[i].y);
+            Scalar z = static_cast<Scalar>(pointCloud[i].z);
+            p.r = pointCloud[i].r;
+            p.g = pointCloud[i].g;
+            p.b = pointCloud[i].b;
 
-            verts[i].x = static_cast<Scalar> (transform (0, 0) * x + transform (0, 1) * y + transform (0, 2) * z + transform (0, 3));
-            verts[i].y = static_cast<Scalar> (transform (1, 0) * x + transform (1, 1) * y + transform (1, 2) * z + transform (1, 3));
-            verts[i].z = static_cast<Scalar> (transform (2, 0) * x + transform (2, 1) * y + transform (2, 2) * z + transform (2, 3));
+            p.x = static_cast<Scalar> (transform (0, 0) * x + transform (0, 1) * y + transform (0, 2) * z + transform (0, 3));
+            p.y = static_cast<Scalar> (transform (1, 0) * x + transform (1, 1) * y + transform (1, 2) * z + transform (1, 3));
+            p.z = static_cast<Scalar> (transform (2, 0) * x + transform (2, 1) * y + transform (2, 2) * z + transform (2, 3));
+
+            f.write(reinterpret_cast<char*>(&p), psize);
 
             // TODO: normals can be computed using the inverse transpose
             // https://paroj.github.io/gltut/Illumination/Tut09%20Normal%20Transformation.html
         }
 
-        log_ << '\n';
-        log_ << "Saving point cloud file to \'" << outputFile << "\'...\n";
+        f.close();
 
-        // Save
-        std::filebuf fb;
-        fb.open(outputFile, std::ios::out | std::ios::binary);
-        std::ostream outputStream(&fb);
-
-        outputStream << std::setprecision(12);
-
-        PlyFile outFile;
-        outFile.add_properties_to_element("vertex", { "x", "y", "z" }, Type::FLOAT64, verts.size() * 3, reinterpret_cast<uint8_t*>(verts.data()), Type::INVALID, 0);
-        // if (normals) outFile.add_properties_to_element("vertex", { "nx", "ny", "nz" }, Type::FLOAT32, verts.size() * 3, reinterpret_cast<uint8_t*>(normals->buffer.get()), Type::INVALID, 0);
-        if (colors) outFile.add_properties_to_element("vertex", { "red", "green", "blue" }, Type::UINT8, verts.size() * 3, reinterpret_cast<uint8_t*>(colors->buffer.get()), Type::INVALID, 0);
-        outFile.get_comments().push_back("generated by OpenDroneMap");
-        
-        outFile.write(outputStream, true);
-
-        fb.close();
-
-        log_ << ".. point cloud file saved.\n";
+        log_ << "Point cloud file saved.\n";
     }
     catch (const std::exception & e)
     {
