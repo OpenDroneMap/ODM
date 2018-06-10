@@ -67,7 +67,10 @@ def create_dem(filenames, demtype, radius='0.56', decimation=None,
     log.ODM_INFO('Creating %s from %s files' % (prettyname, len(filenames)))
     # JSON pipeline
     json = pdal.json_gdal_base(bname, products, radius, resolution)
-    json = pdal.json_add_filters(json, maxsd, maxz, maxangle, returnnum)
+    
+    # A DSM for meshing does not use additional filters
+    if demtype != 'mesh_dsm':
+        json = pdal.json_add_filters(json, maxsd, maxz, maxangle, returnnum)
     
     if demtype == 'dsm':
         json = pdal.json_add_classification_filter(json, 2, equality='max')
@@ -98,6 +101,8 @@ def gap_fill(filenames, fout, interpolation='nearest'):
     from scipy.interpolate import griddata
     if len(filenames) == 0:
         raise Exception('No filenames provided!')
+
+    log.ODM_INFO('Starting gap-filling with %s interpolation...' % interpolation)
 
     filenames = sorted(filenames)
 
