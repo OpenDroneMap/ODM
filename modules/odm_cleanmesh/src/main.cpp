@@ -26,11 +26,6 @@ cmdLineReadable* params[] = {
     NULL
 };
 
-// TODO:
-// 2. optional decimation filter
-// 3. optional island removal
-
-
 void help(char *ex){
     std::cout << "Usage: " << ex << std::endl
               << "\t -" << InputFile.name << " <input polygon mesh>" << std::endl
