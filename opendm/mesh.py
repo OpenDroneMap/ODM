@@ -18,8 +18,7 @@ def create_25dmesh(inPointCloud, outMesh, dsm_resolution=0.05, depth=8, samples=
     os.mkdir(tmp_directory)
     log.ODM_INFO('Created temporary directory: %s' % tmp_directory)
 
-    # Always use just two steps
-    radius_steps = [dsm_resolution / 8.0, dsm_resolution / 4.0, dsm_resolution / 2.0, dsm_resolution]
+    radius_steps = [dsm_resolution / 4.0, dsm_resolution / 2.0, dsm_resolution, dsm_resolution * 2]
 
     log.ODM_INFO('Creating DSM for 2.5D mesh')
 
