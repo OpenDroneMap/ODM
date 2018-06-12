@@ -30,7 +30,7 @@ void help(char *ex){
     std::cout << "Usage: " << ex << std::endl
               << "\t -" << InputFile.name << " <input polygon mesh>" << std::endl
               << "\t -" << OutputFile.name << " <output polygon mesh>" << std::endl
-              << "\t [-" << DecimateMesh.name << " <target number of polygons>]" << std::endl
+              << "\t [-" << DecimateMesh.name << " <target number of vertices>]" << std::endl
               << "\t [-" << RemoveIslands.name << "]" << std::endl
 
               << "\t [-" << Verbose.name << "]" << std::endl;
