@@ -90,7 +90,9 @@ int main(int argc, char **argv) {
         logWriter("Wanted vertex count: %d\n", DecimateMesh.value);
 
         if (vertexCount > DecimateMesh.value){
-            decimationFilter->SetTargetReduction(static_cast<double>(DecimateMesh.value) / static_cast<double>(nextOutput->GetNumberOfPolys()));
+            double targetReduction = 1.0 - static_cast<double>(DecimateMesh.value) / static_cast<double>(vertexCount);
+            logWriter("Target reduction set to %f\n", targetReduction);
+            decimationFilter->SetTargetReduction(targetReduction);
             decimationFilter->SetInputData(nextOutput);
             decimationFilter->Update();
             nextOutput = decimationFilter->GetOutput();
