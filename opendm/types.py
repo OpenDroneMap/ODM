@@ -255,16 +255,18 @@ class ODM_GeoRef(object):
                   'srs': self.projection.srs,
                   'json': json_file}
 
-        # create pipeline file transform.xml to enable transformation
+        # create pipeline file las.json to write odm_georeferenced_model.laz point cloud
         pipeline = '{{' \
                    '  "pipeline":[' \
                    '    "untransformed.ply",' \
                    '    {{' \
+                   '      "type":"writers.las",' \
                    '      "a_srs":"{srs}",' \
                    '      "offset_x":"{east}",' \
                    '      "offset_y":"{north}",' \
                    '      "offset_z":"0",' \
-                   '      "filename":"transformed.las"' \
+                   '      "compression":"laszip",' \
+                   '      "filename":"{f_out}"' \
                    '    }}' \
                    '  ]' \
                    '}}'.format(**kwargs)
@@ -273,8 +275,7 @@ class ODM_GeoRef(object):
             f.write(pipeline)
 
         # call pdal 
-        system.run('{bin}/pdal pipeline -i {json} --readers.ply.filename={f_in} '
-                   '--writers.las.filename={f_out}'.format(**kwargs))
+        system.run('{bin}/pdal pipeline -i {json} --readers.ply.filename={f_in}'.format(**kwargs))
 
     def utm_to_latlon(self, _file, _photo, idx):
 
@@ -475,7 +476,7 @@ class ODM_Tree(object):
         self.odm_georeferencing_model_obj_geo = 'odm_textured_model_geo.obj'
         self.odm_georeferencing_xyz_file = io.join_paths(
             self.odm_georeferencing, 'odm_georeferenced_model.csv')
-        self.odm_georeferencing_las_json = io.join_paths(
+        self.odm_georeferencing_laz_json = io.join_paths(
             self.odm_georeferencing, 'las.json')
         self.odm_georeferencing_model_laz = io.join_paths(
             self.odm_georeferencing, 'odm_georeferenced_model.laz')
