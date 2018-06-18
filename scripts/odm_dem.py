@@ -28,7 +28,7 @@ class ODMDEMCell(ecto.Cell):
         # get inputs
         args = self.inputs.args
         tree = self.inputs.tree
-        las_model_found = io.file_exists(tree.odm_georeferencing_model_las)
+        las_model_found = io.file_exists(tree.odm_georeferencing_model_laz)
 
         # check if we rerun cell or not
         rerun_cell = (args.rerun is not None and
@@ -40,7 +40,7 @@ class ODMDEMCell(ecto.Cell):
         log.ODM_INFO('Classify: ' + str(args.pc_classify != "none"))
         log.ODM_INFO('Create DSM: ' + str(args.dsm))
         log.ODM_INFO('Create DTM: ' + str(args.dtm))
-        log.ODM_INFO('DEM input file {0} found: {1}'.format(tree.odm_georeferencing_model_las, str(las_model_found)))
+        log.ODM_INFO('DEM input file {0} found: {1}'.format(tree.odm_georeferencing_model_laz, str(las_model_found)))
 
         # Setup terrain parameters
         terrain_params_map = {
@@ -61,8 +61,8 @@ class ODMDEMCell(ecto.Cell):
             pc_classify_marker = os.path.join(odm_dem_root, 'pc_classify_done.txt')
 
             if not io.file_exists(pc_classify_marker) or rerun_cell:
-                log.ODM_INFO("Classifying {} using {}".format(tree.odm_georeferencing_model_las, args.pc_classify))
-                commands.classify(tree.odm_georeferencing_model_las, 
+                log.ODM_INFO("Classifying {} using {}".format(tree.odm_georeferencing_model_laz, args.pc_classify))
+                commands.classify(tree.odm_georeferencing_model_laz, 
                                   args.pc_classify == "smrf",
                                   slope,
                                   cellsize,
@@ -96,7 +96,7 @@ class ODMDEMCell(ecto.Cell):
 
                 for product in products:
                     commands.create_dems(
-                            [tree.odm_georeferencing_model_las], 
+                            [tree.odm_georeferencing_model_laz], 
                             product,
                             radius=map(str, radius_steps),
                             gapfill=True,
