@@ -136,7 +136,7 @@ class TestGeoreferencing(unittest.TestCase):
 
     def test_las_out(self):
         self.assertTrue(os.path.isfile(os.path.join(self.app.georeferencing.inputs.tree.odm_georeferencing,
-                                                    "odm_georeferenced_model.laz")))
+                                                    "odm_georeferenced_model.ply.las")))
 
 
 class TestOrthophoto(unittest.TestCase):
