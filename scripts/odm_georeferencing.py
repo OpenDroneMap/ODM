@@ -138,7 +138,7 @@ class ODMGeoreferencingCell(ecto.Cell):
 
                     # convert ply model to LAS reference system
                     geo_ref.convert_to_las(odm_georeferencing_model_ply_geo,
-                                           tree.odm_georeferencing_model_las,
+                                           tree.odm_georeferencing_model_laz,
                                            tree.odm_georeferencing_las_json)
 
                     reconstruction.georef = geo_ref
@@ -171,7 +171,7 @@ class ODMGeoreferencingCell(ecto.Cell):
                     if args.crop > 0:
                         log.ODM_INFO("Calculating cropping area and generating bounds shapefile from point cloud")
                         cropper = Cropper(tree.odm_georeferencing, 'odm_georeferenced_model')
-                        cropper.create_bounds_shapefile(tree.odm_georeferencing_model_las, args.crop)
+                        cropper.create_bounds_shapefile(tree.odm_georeferencing_model_laz, args.crop)
 
                     # Do not execute a second time, since
                     # We might be doing georeferencing for
