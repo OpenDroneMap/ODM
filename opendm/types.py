@@ -61,7 +61,7 @@ class ODM_Photo:
         metadata.read()
         # loop over image tags
         for key in metadata:
-            # try/catch tag value due to weird bug in pyexiv2 
+            # try/catch tag value due to weird bug in pyexiv2
             # ValueError: invalid literal for int() with base 10: ''
             GPS = 'Exif.GPSInfo.GPS'
             try:
@@ -272,7 +272,7 @@ class ODM_GeoRef(object):
         with open(json_file, 'w') as f:
             f.write(pipeline)
 
-        # call pdal 
+        # call pdal
         system.run('{bin}/pdal pipeline -i {json} --readers.ply.filename={f_in} '
                    '--writers.las.filename={f_out}'.format(**kwargs))
 
@@ -388,7 +388,7 @@ class ODM_GeoRef(object):
         # Create a nested list for the transformation matrix
         with open(_file) as f:
             for line in f:
-                # Handle matrix formats that either 
+                # Handle matrix formats that either
                 # have leading or trailing brakets or just plain numbers.
                 line = re.sub(r"[\[\],]", "", line).strip()
                 self.transform += [[float(i) for i in line.split()]]
@@ -413,6 +413,7 @@ class ODM_Tree(object):
         # whole reconstruction process.
         self.dataset_raw = io.join_paths(self.root_path, 'images')
         self.opensfm = io.join_paths(self.root_path, 'opensfm')
+        self.smvs = io.join_paths(self.root_path, 'smvs')
         self.pmvs = io.join_paths(self.root_path, 'pmvs')
         self.odm_meshing = io.join_paths(self.root_path, 'odm_meshing')
         self.odm_texturing = io.join_paths(self.root_path, 'odm_texturing')
@@ -444,6 +445,12 @@ class ODM_Tree(object):
         self.pmvs_visdat = io.join_paths(self.pmvs_rec_path, 'vis.dat')
         self.pmvs_options = io.join_paths(self.pmvs_rec_path, 'pmvs_options.txt')
         self.pmvs_model = io.join_paths(self.pmvs_rec_path, 'models/option-0000.ply')
+
+        # smvs
+        self.smvs_model = io.join_paths(self.smvs, 'smvs_dense_point_cloud.ply')
+        self.mve_path = io.join_paths(self.opensfm, 'mve')
+        self.mve_image_list = io.join_paths(self.mve_path, 'list.txt')
+        self.mve_bundle = io.join_paths(self.mve_path, 'bundle/bundle.out')
 
         # odm_meshing
         self.odm_mesh = io.join_paths(self.odm_meshing, 'odm_mesh.ply')

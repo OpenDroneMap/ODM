@@ -7,7 +7,7 @@ from appsettings import SettingsParser
 import sys
 
 # parse arguments
-processopts = ['dataset', 'opensfm', 'slam', 'cmvs', 'pmvs',
+processopts = ['dataset', 'opensfm', 'slam', 'cmvs', 'pmvs', 'smvs',
                'odm_meshing', 'odm_25dmeshing', 'mvs_texturing', 'odm_georeferencing',
                'odm_dem', 'odm_orthophoto']
 
@@ -192,10 +192,18 @@ def config():
                     default=False,
                     help='Use a 2.5D mesh to compute the orthophoto. This option tends to provide better results for planar surfaces. Experimental.')
 
-    parser.add_argument('--use-pmvs',
+    parser.add_argument('--use-opensfm-dense',
                         action='store_true',
                         default=False,
-                        help='Use pmvs to compute point cloud alternatively')
+                        help='Use opensfm to compute dense point cloud alternatively')
+
+    parser.add_argument('--smvs-scale',
+                        metavar='<non-negative integer>',
+                        default=1,
+                        type=int,
+                        help='Scales the input images, which affects the output'
+                             ' density. 0 is original scale but takes longer '
+                             'to process. 2 is 1/4 scale. Default: %(default)s')
 
     parser.add_argument('--cmvs-maxImages',
                         metavar='<integer>',
@@ -285,7 +293,7 @@ def config():
                               'Increasing this value increases computation '
                               'times slightly but helps reduce memory usage. '
                               'Default: %(default)s'))
-    
+
     parser.add_argument('--mesh-neighbors',
                         metavar='<positive integer>',
                         default=24,
