@@ -34,13 +34,18 @@ def dir_exists(dirname):
 
 
 def copy(src, dst):
-    try: 
+    try:
         shutil.copytree(src, dst)
     except OSError as e:
         if e.errno == errno.ENOTDIR:
             shutil.copy(src, dst)
         else: raise
 
+def rename_file(src, dst):
+    try:
+        os.rename(src, dst)
+    except OSError as e:
+        raise
 
 # find a file in the root directory
 def find(filename, folder):

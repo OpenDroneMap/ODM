@@ -102,6 +102,7 @@ install() {
 
     pip install -U gippy psutil
 
+
     echo "Compiling SuperBuild"
     cd ${RUNPATH}/SuperBuild
     mkdir -p build && cd build
@@ -111,6 +112,12 @@ install() {
     cd ${RUNPATH}
     mkdir -p build && cd build
     cmake .. && make -j$processes
+
+    # echo "Compiling mve and smvs"
+    # git clone https://github.com/simonfuhrmann/mve.git
+    # git clone https://github.com/flanggut/smvs.git
+    # make -C mve -j$processes
+    # make -C smvs -j$processes
 
     echo "Configuration Finished"
 }

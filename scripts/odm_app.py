@@ -8,6 +8,7 @@ from opendm import system
 
 from dataset import ODMLoadDatasetCell
 from run_opensfm import ODMOpenSfMCell
+from smvs import ODMSmvsCell
 from odm_slam import ODMSlamCell
 from pmvs import ODMPmvsCell
 from cmvs import ODMCmvsCell
@@ -57,6 +58,7 @@ class ODMApp(ecto.BlackBox):
                                      wsize=p.args.pmvs_wsize,
                                      min_imgs=p.args.pmvs_min_images,
                                      cores=p.args.pmvs_num_cores),
+                 'smvs': ODMSmvsCell(scale=p.args.smvs_scale), #TODO: add more options
                  'meshing': ODMeshingCell(max_vertex=p.args.mesh_size,
                                           oct_tree=p.args.mesh_octree_depth,
                                           samples=p.args.mesh_samples,
@@ -116,26 +118,21 @@ class ODMApp(ecto.BlackBox):
                         self.args[:] >> self.opensfm['args'],
                         self.dataset['reconstruction'] >> self.opensfm['reconstruction']]
 
-        if not p.args.use_pmvs:
+        if p.args.use_opensfm_dense:
             # create odm mesh from opensfm point cloud
             connections += [self.tree[:] >> self.meshing['tree'],
                             self.args[:] >> self.meshing['args'],
                             self.opensfm['reconstruction'] >> self.meshing['reconstruction']]
         else:
-            # run cmvs
-            connections += [self.tree[:] >> self.cmvs['tree'],
-                            self.args[:] >> self.cmvs['args'],
-                            self.opensfm['reconstruction'] >> self.cmvs['reconstruction']]
-
-            # run pmvs
-            connections += [self.tree[:] >> self.pmvs['tree'],
-                            self.args[:] >> self.pmvs['args'],
-                            self.cmvs['reconstruction'] >> self.pmvs['reconstruction']]
+            # run smvs
+            connections += [self.tree[:] >> self.smvs['tree'],
+                            self.args[:] >> self.smvs['args'],
+                            self.opensfm['reconstruction'] >> self.smvs['reconstruction']]
 
             # create odm mesh from pmvs point cloud
             connections += [self.tree[:] >> self.meshing['tree'],
                             self.args[:] >> self.meshing['args'],
-                            self.pmvs['reconstruction'] >> self.meshing['reconstruction']]
+                            self.smvs['reconstruction'] >> self.meshing['reconstruction']]
 
         # create odm texture
         connections += [self.tree[:] >> self.texturing['tree'],
