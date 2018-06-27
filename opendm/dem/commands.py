@@ -1,8 +1,11 @@
 import os, glob
 import gippy
 import numpy
+from scipy import ndimage
 from datetime import datetime
 from opendm import log
+from loky import get_reusable_executor
+from functools import partial
 
 from . import pdal
 
@@ -26,10 +29,14 @@ def create_dems(filenames, demtype, radius=['0.56'], gapfill=False,
                 outdir='', suffix='', resolution=0.1, **kwargs):
     """ Create DEMS for multiple radii, and optionally gapfill """
     fouts = []
-    for rad in radius:
-        fouts.append(
-            create_dem(filenames, demtype,
-                       radius=rad, outdir=outdir, suffix=suffix, resolution=resolution, **kwargs))
+    
+    create_dem_for_radius = partial(create_dem, 
+        filenames, demtype,
+        outdir=outdir, suffix=suffix, resolution=resolution, **kwargs)
+    
+    with get_reusable_executor(timeout=None) as e:
+         fouts = list(e.map(create_dem_for_radius, radius))
+
     fnames = {}
     # convert from list of dicts, to dict of lists
     for product in fouts[0].keys():
@@ -52,7 +59,7 @@ def create_dems(filenames, demtype, radius=['0.56'], gapfill=False,
     return _fouts
 
 
-def create_dem(filenames, demtype, radius='0.56', decimation=None,
+def create_dem(filenames, demtype, radius, decimation=None,
                maxsd=None, maxz=None, maxangle=None, returnnum=None,
                products=['idw'], outdir='', suffix='', verbose=False, resolution=0.1):
     """ Create DEM from collection of LAS files """
@@ -83,6 +90,7 @@ def create_dem(filenames, demtype, radius='0.56', decimation=None,
     pdal.json_add_readers(json, filenames)
 
     pdal.run_pipeline(json, verbose=verbose)
+    
     # verify existence of fout
     exists = True
     for f in fouts.values():
@@ -95,15 +103,14 @@ def create_dem(filenames, demtype, radius='0.56', decimation=None,
     return fouts
 
 
-def gap_fill(filenames, fout, interpolation='nearest'):
+def gap_fill(filenames, fout):
     """ Gap fill from higher radius DTMs, then fill remainder with interpolation """
     start = datetime.now()
-    from scipy.interpolate import griddata
+
     if len(filenames) == 0:
         raise Exception('No filenames provided!')
 
-    log.ODM_INFO('Starting gap-filling with %s interpolation...' % interpolation)
-
+    log.ODM_INFO('Starting gap-filling with nearest interpolation...')
     filenames = sorted(filenames)
 
     imgs = map(gippy.GeoImage, filenames)
@@ -114,11 +121,12 @@ def gap_fill(filenames, fout, interpolation='nearest'):
         locs = numpy.where(arr == nodata)
         arr[locs] = imgs[i][0].read()[locs]
 
-    # interpolation at bad points
-    goodlocs = numpy.where(arr != nodata)
-    badlocs = numpy.where(arr == nodata)
-    arr[badlocs] = griddata(goodlocs, arr[goodlocs], badlocs, method=interpolation)
-
+    # Nearest neighbor interpolation at bad points
+    indices = ndimage.distance_transform_edt(arr == nodata, 
+                                    return_distances=False, 
+                                    return_indices=True)
+    arr = arr[tuple(indices)]
+    
     # write output
     imgout = gippy.GeoImage.create_from(imgs[0], fout)
     imgout.set_nodata(nodata)
