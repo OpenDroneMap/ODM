@@ -1,11 +1,12 @@
 from __future__ import absolute_import
-import os, shutil, sys, struct
+import os, shutil, sys, struct, random
 from io import BytesIO
 from gippy import GeoImage
 from opendm.dem import commands
 from opendm import system
 from opendm import log
-from scipy import signal
+from scipy import signal, ndimage
+import numpy as np
 
 def create_25dmesh(inPointCloud, outMesh, dsm_resolution=0.05, depth=8, samples=1, verbose=False):
     # Create DSM from point cloud
@@ -18,7 +19,7 @@ def create_25dmesh(inPointCloud, outMesh, dsm_resolution=0.05, depth=8, samples=
     os.mkdir(tmp_directory)
     log.ODM_INFO('Created temporary directory: %s' % tmp_directory)
 
-    radius_steps = [dsm_resolution / 4.0, dsm_resolution / 2.0, dsm_resolution, dsm_resolution * 2]
+    radius_steps = [dsm_resolution / 4.0, dsm_resolution / 2.0, dsm_resolution]
 
     log.ODM_INFO('Creating DSM for 2.5D mesh')
 
@@ -29,6 +30,7 @@ def create_25dmesh(inPointCloud, outMesh, dsm_resolution=0.05, depth=8, samples=
             gapfill=True,
             outdir=tmp_directory,
             resolution=dsm_resolution,
+            products=['idw'],
             verbose=verbose
         )
 
@@ -48,11 +50,6 @@ def dem_to_points(inGeotiff, outPointCloud):
     arr = image['z'].read_raw()
     resolution = max(abs(image.resolution().x()), abs(image.resolution().y()))
 
-    # Median filter
-    log.ODM_INFO('Applying median filter...')
-
-    arr = signal.medfilt2d(arr, 5)
-
     log.ODM_INFO('Writing points...')
 
     mem_file = BytesIO()
@@ -64,7 +61,7 @@ def dem_to_points(inGeotiff, outPointCloud):
     skirt_points = 0
 
     skirt_height_threshold = 1 # meter
-    skirt_increments = resolution
+    skirt_increments = 0.1
 
     for x in range(2, arr_width - 2):
         for y in range(2, arr_height - 2):
@@ -74,15 +71,19 @@ def dem_to_points(inGeotiff, outPointCloud):
             mem_file.write(struct.pack('ffffff', tx, ty, z, 0, 0, 1))
             
             # Skirting
-            for (nx, ny) in ((y + 1, x), (y - 1, x), (y, x + 1), (y, x - 1)):
+            for (nx, ny) in ((x, y + 1), (x, y - 1), (x + 1, y), (x - 1, y)):
                 current_z = z
-                neighbor_z = arr[nx][ny]
+                neighbor_z = arr[ny][nx]
+
                 if current_z - neighbor_z > skirt_height_threshold:
-                    stop_at_z = neighbor_z + skirt_increments
-                    while current_z > stop_at_z:
+                    while current_z > neighbor_z:
                         current_z -= skirt_increments
                         mem_file.write(struct.pack('ffffff', tx, ty, current_z, 0, 0, 1))
                         skirt_points += 1
+
+                    mem_file.write(struct.pack('ffffff', tx, ty, neighbor_z, 0, 0, 1))
+                    skirt_points += 1
+                    
 
     with open(outPointCloud, "wb") as f:
         f.write("ply\n")

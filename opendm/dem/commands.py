@@ -126,6 +126,10 @@ def gap_fill(filenames, fout):
                                     return_distances=False, 
                                     return_indices=True)
     arr = arr[tuple(indices)]
+
+    # Median filter
+    from scipy import signal
+    arr = signal.medfilt(arr, 5)
     
     # write output
     imgout = gippy.GeoImage.create_from(imgs[0], fout)
