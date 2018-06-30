@@ -8,13 +8,16 @@ ExternalProject_Add(${_proj_name}
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
-  URL               https://github.com/LASzip/LASzip/releases/download/3.2.2/laszip-src-3.2.2.tar.gz
+  URL               https://github.com/LASzip/LASzip/archive/master.zip
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   #--Configure step-------------
   SOURCE_DIR        ${SB_SOURCE_DIR}/${_proj_name}
   CMAKE_ARGS
-    -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
+    -DBUILD_SHARED_LIBS=ON
+    -DBUILD_STATIC_LIBS=OFF
+    -DCMAKE_INSTALL_PREFIX=${SB_INSTALL_DIR}
+    -DCMAKE_INSTALL_LIBDIR=lib
   #--Build step-----------------
   BINARY_DIR        ${_SB_BINARY_DIR}
   #--Install step---------------
