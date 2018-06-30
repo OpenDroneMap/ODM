@@ -8,7 +8,7 @@ ExternalProject_Add(${_proj_name}
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
-  URL               https://github.com/PDAL/PDAL/releases/download/1.7.2/PDAL-1.7.2-src.tar.gz
+  URL               https://github.com/PDAL/PDAL/archive/1.6.zip
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   #--Configure step-------------
