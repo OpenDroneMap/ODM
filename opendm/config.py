@@ -140,12 +140,13 @@ def config():
                         default=False,
                         help='Turn off camera parameter optimization during bundler')
 
-    parser.add_argument('--opensfm-processes',
+    parser.add_argument('--max-concurrency',
                         metavar='<positive integer>',
                         default=context.num_cores,
                         type=int,
-                        help=('The maximum number of processes to use in dense '
-                              'reconstruction. Default: %(default)s'))
+                        help=('The maximum number of processes to use in various '
+                              'processes. Peak memory requirement is ~1GB per '
+                              'thread and 2 megapixel image resolution. Default: %(default)s'))
 
     parser.add_argument('--opensfm-depthmap-resolution',
                         metavar='<positive float>',
@@ -197,6 +198,13 @@ def config():
                         default=False,
                         help='Use opensfm to compute dense point cloud alternatively')
 
+    parser.add_argument('--smvs-alpha',
+                        metavar='<float>',
+                        default=1.0,
+                        type=float,
+                        help='Regularization parameter, a higher alpha leads to '
+                        'smoother surfaces. Default: %(default)s')
+
     parser.add_argument('--smvs-scale',
                         metavar='<non-negative integer>',
                         default=1,
@@ -204,6 +212,34 @@ def config():
                         help='Scales the input images, which affects the output'
                              ' density. 0 is original scale but takes longer '
                              'to process. 2 is 1/4 scale. Default: %(default)s')
+
+    parser.add_argument('--smvs-output-scale',
+                        metavar='<positive integer>',
+                        default=2,
+                        type=int,
+                        help='The scale of the optimization - the '
+                        'finest resolution of the bicubic patches will have the'
+                        ' size of the respective power of 2 (e.g. 2 will '
+                        'optimize patches covering down to 4x4 pixels). '
+                        'Default: %(default)s')
+
+    parser.add_argument('--smvs-enable-shading',
+                        action='store_true',
+                        default=False,
+                        help='Use shading-based optimization. This model cannot '
+                        'handle complex scenes. Try to supply linear images to '
+                        'the reconstruction pipeline that are not tone mapped '
+                        'or altered as this can also have very negative effects '
+                        'on the reconstruction. If you have simple JPGs with SRGB '
+                        'gamma correction you can remove it with the --smvs-gamma-srgb '
+                        'option. Default: %(default)s')
+
+    parser.add_argument('--smvs-gamma-srgb',
+                        action='store_true',
+                        default=False,
+                        help='Apply inverse SRGB gamma correction. To be used '
+                        'with --smvs-enable-shading when you have simple JPGs with '
+                        'SRGB gamma correction. Default: %(default)s')
 
     parser.add_argument('--cmvs-maxImages',
                         metavar='<integer>',

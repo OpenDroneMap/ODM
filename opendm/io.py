@@ -44,8 +44,13 @@ def copy(src, dst):
 def rename_file(src, dst):
     try:
         os.rename(src, dst)
+        return True
     except OSError as e:
-        raise
+        if e.errno == errno.ENOENT:
+            return False
+        else:
+            raise
+
 
 # find a file in the root directory
 def find(filename, folder):
