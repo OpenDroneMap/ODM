@@ -7,7 +7,7 @@ ExternalProject_Add(${_proj_name}
   TMP_DIR           ${_SB_BINARY_DIR}/tmp
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
   #--Download step--------------
-  DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
+  DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}/${_proj_name}
   URL               https://github.com/OpenDroneMap/mvs-texturing/archive/master.zip
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
