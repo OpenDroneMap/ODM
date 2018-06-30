@@ -113,12 +113,6 @@ install() {
     mkdir -p build && cd build
     cmake .. && make -j$processes
 
-    # echo "Compiling mve and smvs"
-    # git clone https://github.com/simonfuhrmann/mve.git
-    # git clone https://github.com/flanggut/smvs.git
-    # make -C mve -j$processes
-    # make -C smvs -j$processes
-
     echo "Configuration Finished"
 }
 
