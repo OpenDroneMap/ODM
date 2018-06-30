@@ -52,7 +52,7 @@ class ODMeshingCell(ecto.Cell):
 
         infile = tree.smvs_model
         if args.use_opensfm_dense:
-          infile = ttree.opensfm_model
+          infile = tree.opensfm_model
         elif args.fast_orthophoto:
           infile = os.path.join(tree.opensfm, 'reconstruction.ply')
 
