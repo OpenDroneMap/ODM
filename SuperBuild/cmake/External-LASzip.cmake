@@ -8,7 +8,7 @@ ExternalProject_Add(${_proj_name}
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}/${_proj_name}
-  URL               https://github.com/LASzip/LASzip/archive/master.zip
+  URL               https://github.com/LASzip/LASzip/archive/0069c42307183c49744f1eb170f7032a8cf6a9db.zip
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   #--Configure step-------------
