@@ -124,6 +124,7 @@ set(custom_libs OpenGV
 				CMVS
 				Catkin
 				Ecto
+				LASzip
 				PDAL
 				MvsTexturing
 )
