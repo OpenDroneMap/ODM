@@ -66,7 +66,7 @@ class ODMSmvsCell(ecto.Cell):
                 "-a%s" % self.params.alpha,
                 "-s%s" % self.params.scale,
                 "-o%s" % self.params.output_scale,
-                "--debug-lvl=%s" % '1' if self.params.verbose else '0',
+                "--debug-lvl=%s" % ('1' if self.params.verbose else '0'),
                 "%s" % '-S' if self.params.shading else '',
                 "%s" % '-g' if self.params.gamma_srgb and self.params.shading else '',
                 "--force" if rerun_cell else ''

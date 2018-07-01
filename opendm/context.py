@@ -23,11 +23,6 @@ ccd_widths_path = os.path.join(opensfm_path, 'opensfm/data/sensor_data.json')
 # define orb_slam2 path
 orb_slam2_path = os.path.join(superbuild_path, "src/orb_slam2")
 
-# define pmvs path
-cmvs_path = os.path.join(superbuild_path, "install/bin/cmvs")
-cmvs_opts_path = os.path.join(superbuild_path, "install/bin/genOption")
-pmvs2_path = os.path.join(superbuild_path, "install/bin/pmvs2")
-
 # define smvs join_paths
 makescene_path = os.path.join(superbuild_path, 'src', 'elibs', 'mve', 'apps', 'makescene', 'makescene') #TODO: don't install in source
 smvs_path = os.path.join(superbuild_path, 'src', 'elibs', 'smvs', 'app', 'smvsrecon')

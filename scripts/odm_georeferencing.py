@@ -92,13 +92,12 @@ class ODMGeoreferencingCell(ecto.Cell):
                     'verbose': verbose
 
                 }
-                if not args.use_pmvs:
-                    if args.fast_orthophoto:
-                        kwargs['pc'] = os.path.join(tree.opensfm, 'reconstruction.ply')
-                    else:
-                        kwargs['pc'] = tree.opensfm_model
+
+                if args.fast_orthophoto:
+                    kwargs['pc'] = os.path.join(tree.opensfm, 'reconstruction.ply')
                 else:
-                    kwargs['pc'] = tree.pmvs_model
+                    kwargs['pc'] = tree.opensfm_model
+
 
                 # Check to see if the GCP file exists
 
