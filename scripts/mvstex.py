@@ -5,8 +5,6 @@ from opendm import io
 from opendm import system
 from opendm import context
 
-import pmvs2nvmcams
-
 class ODMMvsTexCell(ecto.Cell):
     def declare_params(self, params):
         params.declare("data_term", 'Data term: [area, gmi] default: gmi', "gmi")
@@ -38,7 +36,7 @@ class ODMMvsTexCell(ecto.Cell):
 
         # define paths and create working directories
         system.mkdir_p(tree.odm_texturing)
-        if args.use_25dmesh: system.mkdir_p(tree.odm_25dtexturing) 
+        if args.use_25dmesh: system.mkdir_p(tree.odm_25dtexturing)
 
         # check if we rerun cell or not
         rerun_cell = (args.rerun is not None and
@@ -62,11 +60,11 @@ class ODMMvsTexCell(ecto.Cell):
                     'model': tree.odm_25dmesh,
 
                     # We always skip the visibility test when using the 2.5D mesh
-                    # because many faces end up being narrow, and almost perpendicular 
+                    # because many faces end up being narrow, and almost perpendicular
                     # to the ground plane. The visibility test improperly classifies
                     # them as "not seen" since the test is done on a single triangle vertex,
                     # and while one vertex might be occluded, the other two might not.
-                    'force_skip_vis_test': True 
+                    'force_skip_vis_test': True
                 }]
 
         for r in runs:
@@ -82,7 +80,7 @@ class ODMMvsTexCell(ecto.Cell):
                 skipLocalSeamLeveling = ""
                 skipHoleFilling = ""
                 keepUnseenFaces = ""
-                
+
                 if (self.params.skip_vis_test or r['force_skip_vis_test']):
                     skipGeometricVisibilityTest = "--skip_geometric_visibility_test"
                 if (self.params.skip_glob_seam_leveling):
@@ -98,8 +96,6 @@ class ODMMvsTexCell(ecto.Cell):
                 kwargs = {
                     'bin': context.mvstex_path,
                     'out_dir': io.join_paths(r['out_dir'], "odm_textured_model"),
-                    'pmvs_folder': tree.pmvs_rec_path,
-                    'nvm_file': io.join_paths(tree.pmvs_rec_path, "nvmCams.nvm"),
                     'model': r['model'],
                     'dataTerm': self.params.data_term,
                     'outlierRemovalType': self.params.outlier_rem_type,
@@ -111,16 +107,8 @@ class ODMMvsTexCell(ecto.Cell):
                     'toneMapping': self.params.tone_mapping
                 }
 
-                if not args.use_pmvs:
-                    kwargs['nvm_file'] = io.join_paths(tree.opensfm,
-                                                       "reconstruction.nvm")
-                else:
-                    log.ODM_DEBUG('Generating .nvm file from pmvs output: %s'
-                                  % '{nvm_file}'.format(**kwargs))
-
-                    # Create .nvm camera file.
-                    pmvs2nvmcams.run('{pmvs_folder}'.format(**kwargs),
-                                     '{nvm_file}'.format(**kwargs))
+                kwargs['nvm_file'] = io.join_paths(tree.opensfm,
+                                                   "reconstruction.nvm")
 
                 # Make sure tmp directory is empty
                 mvs_tmp_dir = os.path.join(r['out_dir'], 'tmp')

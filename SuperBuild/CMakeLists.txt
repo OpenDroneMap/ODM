@@ -114,14 +114,12 @@ SETUP_EXTERNAL_PROJECT(Hexer 1.4 ON)
 # ---------------------------------------------------------------------------------------------
 # Open Geometric Vision (OpenGV)
 # Open Structure from Motion (OpenSfM)
-# Clustering Views for Multi-view Stereo (CMVS)
 # Catkin
 # Ecto
 #
 
 set(custom_libs OpenGV
 				OpenSfM
-				CMVS
 				Catkin
 				Ecto
 				LASzip

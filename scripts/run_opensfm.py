@@ -42,7 +42,6 @@ class ODMOpenSfMCell(ecto.Cell):
 
         # create working directories
         system.mkdir_p(tree.opensfm)
-        system.mkdir_p(tree.pmvs)
 
         # check if we rerun cell or not
         rerun_cell = (args.rerun is not None and
@@ -168,15 +167,6 @@ class ODMOpenSfMCell(ecto.Cell):
         else:
             log.ODM_WARNING('Found a valid Bundler file in: %s' %
                             tree.opensfm_reconstruction)
-
-        # if args.use_pmvs:
-        #     # check if reconstruction was exported to pmvs before
-        #     if not io.file_exists(tree.pmvs_visdat) or rerun_cell:
-        #         # run PMVS converter
-        #         system.run('PYTHONPATH=%s %s/bin/export_pmvs %s --output %s' %
-        #                    (context.pyopencv_path, context.opensfm_path, tree.opensfm, tree.pmvs))
-        #     else:
-        #         log.ODM_WARNING('Found a valid CMVS file in: %s' % tree.pmvs_visdat)
 
         if reconstruction.georef:
             system.run('PYTHONPATH=%s %s/bin/opensfm export_geocoords %s --transformation --proj \'%s\'' %

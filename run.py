@@ -33,7 +33,7 @@ if __name__ == '__main__':
                   + args.project_path + "/odm_orthophoto "
                   + args.project_path + "/odm_texturing "
                   + args.project_path + "/opensfm "
-                  + args.project_path + "/pmvs")
+                  + args.project_path + "/smvs")
 
     # create an instance of my App BlackBox
     # internally configure all tasks
