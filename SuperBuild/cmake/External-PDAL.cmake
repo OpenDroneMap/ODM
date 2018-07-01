@@ -2,14 +2,13 @@ set(_proj_name pdal)
 set(_SB_BINARY_DIR "${SB_BINARY_DIR}/${_proj_name}")
 
 ExternalProject_Add(${_proj_name}
-  DEPENDS           hexer
+  DEPENDS           hexer laszip
   PREFIX            ${_SB_BINARY_DIR}
   TMP_DIR           ${_SB_BINARY_DIR}/tmp
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
-  URL               https://github.com/PDAL/PDAL/archive/e881b581e3b91a928105d67db44c567f3b6d1afe.tar.gz
-  URL_MD5           cadbadf1c83d69d6525cfffd41473323
+  URL               https://github.com/PDAL/PDAL/releases/download/1.7.2/PDAL-1.7.2-src.tar.gz
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   #--Configure step-------------

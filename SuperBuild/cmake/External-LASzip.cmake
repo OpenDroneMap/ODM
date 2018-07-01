@@ -1,22 +1,23 @@
-set(_proj_name mvstexturing)
+set(_proj_name laszip)
 set(_SB_BINARY_DIR "${SB_BINARY_DIR}/${_proj_name}")
 
 ExternalProject_Add(${_proj_name}
-  DEPENDS           
+  DEPENDS
   PREFIX            ${_SB_BINARY_DIR}
   TMP_DIR           ${_SB_BINARY_DIR}/tmp
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}/${_proj_name}
-  URL               https://github.com/OpenDroneMap/mvs-texturing/archive/master.zip
+  URL               https://github.com/LASzip/LASzip/archive/master.zip
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   #--Configure step-------------
   SOURCE_DIR        ${SB_SOURCE_DIR}/${_proj_name}
   CMAKE_ARGS
-    -DRESEARCH=OFF
-    -DCMAKE_BUILD_TYPE:STRING=Release
-    -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
+    -DBUILD_SHARED_LIBS=ON
+    -DBUILD_STATIC_LIBS=OFF
+    -DCMAKE_INSTALL_PREFIX=${SB_INSTALL_DIR}
+    -DCMAKE_INSTALL_LIBDIR=lib
   #--Build step-----------------
   BINARY_DIR        ${_SB_BINARY_DIR}
   #--Install step---------------
