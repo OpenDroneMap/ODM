@@ -72,13 +72,15 @@ class ODMApp(ecto.BlackBox):
                  'georeferencing': ODMGeoreferencingCell(gcp_file=p.args.gcp,
                                                          use_exif=p.args.use_exif,
                                                          verbose=p.args.verbose),
-                 'dem': ODMDEMCell(verbose=p.args.verbose),
+                 'dem': ODMDEMCell(max_concurrency=p.args.max_concurrency,
+                                   verbose=p.args.verbose),
                  'orthophoto': ODMOrthoPhotoCell(resolution=p.args.orthophoto_resolution,
                                                  t_srs=p.args.orthophoto_target_srs,
                                                  no_tiled=p.args.orthophoto_no_tiled,
                                                  compress=p.args.orthophoto_compression,
                                                  bigtiff=p.args.orthophoto_bigtiff,
                                                  build_overviews=p.args.build_overviews,
+                                                 max_concurrency=p.args.max_concurrency,
                                                  verbose=p.args.verbose)
                  }
 
