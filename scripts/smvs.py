@@ -39,6 +39,8 @@ class ODMSmvsCell(ecto.Cell):
             log.ODM_ERROR('Not enough photos in photos array to start SMVS')
             return ecto.QUIT
 
+        system.mkdir_p(tree.smvs)
+
         # check if we rerun cell or not
         rerun_cell = (args.rerun is not None and
                       args.rerun == 'smvs') or \
@@ -57,7 +59,7 @@ class ODMSmvsCell(ecto.Cell):
                 io.copy(tree.opensfm_bundle, tree.mve_bundle)
 
             # run mve makescene
-            if not io.dir_exists(tree.mve_path):
+            if not io.dir_exists(tree.mve_views):
                 system.run('%s %s %s' % (context.makescene_path, tree.mve_path, tree.smvs))
 
             # config

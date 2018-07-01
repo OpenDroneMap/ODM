@@ -95,9 +95,10 @@ class ODMGeoreferencingCell(ecto.Cell):
 
                 if args.fast_orthophoto:
                     kwargs['pc'] = os.path.join(tree.opensfm, 'reconstruction.ply')
-                else:
+                elif args.use_opensfm_dense:
                     kwargs['pc'] = tree.opensfm_model
-
+                else:
+                    kwargs['pc'] = tree.smvs_model
 
                 # Check to see if the GCP file exists
 
