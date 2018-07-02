@@ -2,14 +2,13 @@ set(_proj_name pdal)
 set(_SB_BINARY_DIR "${SB_BINARY_DIR}/${_proj_name}")
 
 ExternalProject_Add(${_proj_name}
-  DEPENDS           hexer
+  DEPENDS           hexer laszip
   PREFIX            ${_SB_BINARY_DIR}
   TMP_DIR           ${_SB_BINARY_DIR}/tmp
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
-  URL               https://github.com/PDAL/PDAL/archive/e881b581e3b91a928105d67db44c567f3b6d1afe.tar.gz
-  URL_MD5           cadbadf1c83d69d6525cfffd41473323
+  URL               https://github.com/PDAL/PDAL/archive/1.6.zip
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   #--Configure step-------------
@@ -34,6 +33,11 @@ ExternalProject_Add(${_proj_name}
 	-DWITH_LAZPERF=OFF
 	-DWITH_GEOTIFF=ON
 	-DWITH_LASZIP=ON
+	-DLASZIP_FOUND=TRUE
+	-DLASZIP_LIBRARIES=${SB_INSTALL_DIR}/lib/liblaszip.so
+	-DLASZIP_VERSION=3.1.1
+	-DLASZIP_INCLUDE_DIR=${SB_INSTALL_DIR}/include
+	-DLASZIP_LIBRARY=${SB_INSTALL_DIR}/lib/liblaszip.so
 	-DWITH_TESTS=OFF
 	-DCMAKE_BUILD_TYPE=Release
     -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
