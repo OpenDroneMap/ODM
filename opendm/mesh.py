@@ -38,8 +38,8 @@ def create_25dmesh(inPointCloud, outMesh, dsm_resolution=0.05, depth=8, samples=
     mesh = screened_poisson_reconstruction(dsm_points, outMesh, depth=depth, samples=samples, verbose=verbose)
     
     # Cleanup tmp
-    #if os.path.exists(tmp_directory):
-    #    shutil.rmtree(tmp_directory)
+    if os.path.exists(tmp_directory):
+        shutil.rmtree(tmp_directory)
 
     return mesh
 

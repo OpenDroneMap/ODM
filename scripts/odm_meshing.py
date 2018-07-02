@@ -88,26 +88,12 @@ class ODMeshingCell(ecto.Cell):
         if args.use_25dmesh:
           if not io.file_exists(tree.odm_25dmesh) or rerun_cell:
 
-              # TODO
-              
               log.ODM_DEBUG('Writing ODM 2.5D Mesh file in: %s' % tree.odm_25dmesh)
 
-              kwargs = {
-                  'bin': context.odm_modules_path,
-                  'outfile': tree.odm_25dmesh,
-                  'infile': infile,
-                  'log': tree.odm_25dmeshing_log,
-                  'verbose': verbose,
-                  'max_vertex': self.params.max_vertex,
-                  'neighbors': args.mesh_neighbors,
-                  'resolution': args.mesh_resolution
-              }
-
-              # run 2.5D meshing binary
-              system.run('{bin}/odm_25dmeshing -inputFile {infile} '
-                         '-outputFile {outfile} -logFile {log} '
-                         '-maxVertexCount {max_vertex} -neighbors {neighbors} '
-                         '-resolution {resolution} {verbose}'.format(**kwargs))
+              mesh.create_25dmesh(infile, tree.odm_25dmesh, 
+                    dsm_resolution=args.mesh_resolution, 
+                    depth=self.params.oct_tree,
+                    verbose=self.params.verbose)
           else:
               log.ODM_WARNING('Found a valid ODM 2.5D Mesh file in: %s' %
                               tree.odm_25dmesh)
