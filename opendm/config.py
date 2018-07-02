@@ -206,8 +206,8 @@ def config():
                         'smoother surfaces. Default: %(default)s')
 
     parser.add_argument('--smvs-scale',
-                        metavar='<non-negative integer>',
-                        default=1,
+                        metavar='<positive integer>',
+                        default=2,
                         type=int,
                         help='Scales the input images, which affects the output'
                              ' density. 0 is original scale but takes longer '
