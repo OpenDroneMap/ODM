@@ -10,8 +10,6 @@ Licensing for portions of OpenDroneMap are as follows:
 * libcv - BSD - http://opencv.org/license.html
 * libcvaux - BSD - http://opencv.org/license.html
 * bundler - GPLv3 - http://www.gnu.org/copyleft/gpl.html
-* cmvs  - GPLv3 - http://www.gnu.org/copyleft/gpl.html
-* pmvs2  - GPLv3 - http://www.gnu.org/copyleft/gpl.html
 * parallel  - GPLv3 - http://www.gnu.org/copyleft/gpl.html
 * PoissonRecon - BSD - http://www.cs.jhu.edu/~misha/Code/PoissonRecon/license.txt
 * vlfeat - BSD - http://www.vlfeat.org/license.html
