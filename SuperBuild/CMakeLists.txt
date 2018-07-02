@@ -129,16 +129,6 @@ endforeach()
 
 ## Add smvs Build
 
-externalproject_add(smvs
-    GIT_REPOSITORY  https://github.com/flanggut/smvs.git
-    UPDATE_COMMAND  ""
-    SOURCE_DIR      ${SB_SOURCE_DIR}/elibs/smvs
-    CONFIGURE_COMMAND ""
-    BUILD_IN_SOURCE 1
-    BUILD_COMMAND   make
-    INSTALL_COMMAND ""
-)
-
 externalproject_add(mve
     GIT_REPOSITORY  https://github.com/simonfuhrmann/mve.git
     UPDATE_COMMAND  ""
@@ -148,3 +138,15 @@ externalproject_add(mve
     BUILD_COMMAND   make
     INSTALL_COMMAND ""
 )
+
+externalproject_add(smvs
+    DEPENDS         mve
+    GIT_REPOSITORY  https://github.com/flanggut/smvs.git
+    UPDATE_COMMAND  ""
+    SOURCE_DIR      ${SB_SOURCE_DIR}/elibs/smvs
+    CONFIGURE_COMMAND ""
+    BUILD_IN_SOURCE 1
+    BUILD_COMMAND   make
+    INSTALL_COMMAND ""
+)
+
