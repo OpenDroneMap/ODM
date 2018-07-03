@@ -188,10 +188,15 @@ def config():
                         help='Run local bundle adjustment for every image added to the reconstruction and a global '
                              'adjustment every 100 images. Speeds up reconstruction for very large datasets.')
 
-    parser.add_argument('--use-25dmesh',
+    parser.add_argument('--use-3dmesh',
                     action='store_true',
                     default=False,
-                    help='Use a 2.5D mesh to compute the orthophoto. This option tends to provide better results for planar surfaces. Experimental.')
+                    help='Use a full 3D mesh to compute the orthophoto instead of a 2.5D mesh. This option is a bit faster and provides similar results in planar areas.')
+
+    parser.add_argument('--skip-3dmodel',
+                    action='store_true',
+                    default=False,
+                    help='Skip generation of a full 3D model. This can save time if you only need 2D results such as orthophotos and DEMs.')
 
     parser.add_argument('--use-opensfm-dense',
                         action='store_true',
@@ -552,11 +557,15 @@ def config():
         sys.exit(1)
 
     if args.fast_orthophoto:
-      log.ODM_INFO('Fast orthophoto is turned on, automatically setting --use-25dmesh')
-      args.use_25dmesh = True
+      log.ODM_INFO('Fast orthophoto is turned on, automatically setting --skip-3dmodel')
+      args.skip_3dmodel = True
 
     if args.dtm and args.pc_classify == 'none':
       log.ODM_INFO("DTM is turned on, automatically turning on point cloud classification")
       args.pc_classify = "smrf"
+
+    if args.skip_3dmodel and args.use_3dmesh:
+      log.ODM_WARNING('--skip-3dmodel is set, but so is --use-3dmesh. You can\'t have both!')
+      sys.exit(1)
 
     return args
