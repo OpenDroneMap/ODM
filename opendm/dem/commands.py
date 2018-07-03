@@ -26,7 +26,7 @@ def classify(lasFile, smrf=False, slope=1, cellsize=3, maxWindowSize=10, maxDist
 
 
 def create_dems(filenames, demtype, radius=['0.56'], gapfill=False,
-                outdir='', suffix='', resolution=0.1, **kwargs):
+                outdir='', suffix='', resolution=0.1, max_workers=None, **kwargs):
     """ Create DEMS for multiple radii, and optionally gapfill """
     fouts = []
     
@@ -34,7 +34,7 @@ def create_dems(filenames, demtype, radius=['0.56'], gapfill=False,
         filenames, demtype,
         outdir=outdir, suffix=suffix, resolution=resolution, **kwargs)
     
-    with get_reusable_executor(timeout=None) as e:
+    with get_reusable_executor(max_workers=max_workers, timeout=None) as e:
          fouts = list(e.map(create_dem_for_radius, radius))
 
     fnames = {}

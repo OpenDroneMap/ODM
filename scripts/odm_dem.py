@@ -106,7 +106,8 @@ class ODMDEMCell(ecto.Cell):
                             maxsd=args.dem_maxsd,
                             maxangle=args.dem_maxangle,
                             decimation=args.dem_decimation,
-                            verbose=args.verbose
+                            verbose=args.verbose,
+                            max_workers=args.max_concurrency
                         )
 
                     if args.crop > 0:

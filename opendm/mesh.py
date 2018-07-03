@@ -9,7 +9,7 @@ from opendm import context
 from scipy import signal, ndimage
 import numpy as np
 
-def create_25dmesh(inPointCloud, outMesh, dsm_resolution=0.05, depth=8, samples=1, maxVertexCount=100000, verbose=False):
+def create_25dmesh(inPointCloud, outMesh, dsm_resolution=0.05, depth=8, samples=1, maxVertexCount=100000, verbose=False, max_workers=None):
     # Create DSM from point cloud
 
     # Create temporary directory
@@ -32,7 +32,8 @@ def create_25dmesh(inPointCloud, outMesh, dsm_resolution=0.05, depth=8, samples=
             outdir=tmp_directory,
             resolution=dsm_resolution,
             products=['idw'],
-            verbose=verbose
+            verbose=verbose,
+            max_workers=max_workers
         )
 
     dsm_points = dem_to_points(os.path.join(tmp_directory, 'mesh_dsm.tif'), os.path.join(tmp_directory, 'dsm_points.ply'))
