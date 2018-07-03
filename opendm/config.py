@@ -407,7 +407,7 @@ def config():
 
     parser.add_argument('--dem-gapfill-steps',
                         metavar='<positive integer>',
-                        default=4,
+                        default=3,
                         type=int,
                         help='Number of steps used to fill areas with gaps. Set to 0 to disable gap filling. '
                              'Starting with a radius equal to the output resolution, N different DEMs are generated with '
