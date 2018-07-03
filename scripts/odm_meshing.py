@@ -57,8 +57,8 @@ class ODMeshingCell(ecto.Cell):
         elif args.fast_orthophoto:
           infile = os.path.join(tree.opensfm, 'reconstruction.ply')
 
-        # Do not create full 3D model with fast_orthophoto
-        if not args.fast_orthophoto:
+        # Create full 3D model unless --skip-3dmodel is set
+        if not args.skip_3dmodel:
           if not io.file_exists(tree.odm_mesh) or rerun_cell:
               log.ODM_DEBUG('Writing ODM Mesh file in: %s' % tree.odm_mesh)
 
@@ -73,15 +73,15 @@ class ODMeshingCell(ecto.Cell):
               log.ODM_WARNING('Found a valid ODM Mesh file in: %s' %
                               tree.odm_mesh)
 
-        # Do we need to generate a 2.5D mesh also?
-        # This is always set if fast_orthophoto is set
-        if args.use_25dmesh:
+        # Always generate a 2.5D mesh
+        # unless --use-3dmesh is set.
+        if not args.use_3dmesh:
           if not io.file_exists(tree.odm_25dmesh) or rerun_cell:
 
               log.ODM_DEBUG('Writing ODM 2.5D Mesh file in: %s' % tree.odm_25dmesh)
 
               mesh.create_25dmesh(infile, tree.odm_25dmesh, 
-                    dsm_resolution=args.mesh_resolution, 
+                    dsm_resolution=float(1.0 / args.orthophoto_resolution), 
                     depth=self.params.oct_tree,
                     maxVertexCount=self.params.max_vertex,
                     verbose=self.params.verbose)

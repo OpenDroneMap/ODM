@@ -36,7 +36,7 @@ class ODMMvsTexCell(ecto.Cell):
 
         # define paths and create working directories
         system.mkdir_p(tree.odm_texturing)
-        if args.use_25dmesh: system.mkdir_p(tree.odm_25dtexturing)
+        if not args.use_3dmesh: system.mkdir_p(tree.odm_25dtexturing)
 
         # check if we rerun cell or not
         rerun_cell = (args.rerun is not None and
@@ -48,23 +48,17 @@ class ODMMvsTexCell(ecto.Cell):
         runs = [{
             'out_dir': tree.odm_texturing,
             'model': tree.odm_mesh,
-            'force_skip_vis_test': False
+            'nadir': False
         }]
 
-        if args.fast_orthophoto:
+        if args.skip_3dmodel:
             runs = []
 
-        if args.use_25dmesh:
+        if not args.use_3dmesh:
             runs += [{
                     'out_dir': tree.odm_25dtexturing,
                     'model': tree.odm_25dmesh,
-
-                    # We always skip the visibility test when using the 2.5D mesh
-                    # because many faces end up being narrow, and almost perpendicular
-                    # to the ground plane. The visibility test improperly classifies
-                    # them as "not seen" since the test is done on a single triangle vertex,
-                    # and while one vertex might be occluded, the other two might not.
-                    'force_skip_vis_test': True
+                    'nadir': True
                 }]
 
         for r in runs:
@@ -80,8 +74,9 @@ class ODMMvsTexCell(ecto.Cell):
                 skipLocalSeamLeveling = ""
                 skipHoleFilling = ""
                 keepUnseenFaces = ""
+                nadir = ""
 
-                if (self.params.skip_vis_test or r['force_skip_vis_test']):
+                if (self.params.skip_vis_test):
                     skipGeometricVisibilityTest = "--skip_geometric_visibility_test"
                 if (self.params.skip_glob_seam_leveling):
                     skipGlobalSeamLeveling = "--skip_global_seam_leveling"
@@ -91,6 +86,8 @@ class ODMMvsTexCell(ecto.Cell):
                     skipHoleFilling = "--skip_hole_filling"
                 if (self.params.keep_unseen_faces):
                     keepUnseenFaces = "--keep_unseen_faces"
+                if (r['nadir']):
+                    nadir = '--nadir_mode'
 
                 # mvstex definitions
                 kwargs = {
@@ -104,7 +101,8 @@ class ODMMvsTexCell(ecto.Cell):
                     'skipLocalSeamLeveling': skipLocalSeamLeveling,
                     'skipHoleFilling': skipHoleFilling,
                     'keepUnseenFaces': keepUnseenFaces,
-                    'toneMapping': self.params.tone_mapping
+                    'toneMapping': self.params.tone_mapping,
+                    'nadirMode': nadir
                 }
 
                 if args.use_opensfm_dense:
@@ -127,7 +125,8 @@ class ODMMvsTexCell(ecto.Cell):
                            '{skipGlobalSeamLeveling} '
                            '{skipLocalSeamLeveling} '
                            '{skipHoleFilling} '
-                           '{keepUnseenFaces}'.format(**kwargs))
+                           '{keepUnseenFaces} '
+                           '{nadirMode}'.format(**kwargs))
             else:
                 log.ODM_WARNING('Found a valid ODM Texture file in: %s'
                                 % odm_textured_model_obj)
