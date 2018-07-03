@@ -84,7 +84,8 @@ class ODMeshingCell(ecto.Cell):
                     dsm_resolution=float(1.0 / args.orthophoto_resolution), 
                     depth=self.params.oct_tree,
                     maxVertexCount=self.params.max_vertex,
-                    verbose=self.params.verbose)
+                    verbose=self.params.verbose,
+                    max_workers=args.max_concurrency)
           else:
               log.ODM_WARNING('Found a valid ODM 2.5D Mesh file in: %s' %
                               tree.odm_25dmesh)
