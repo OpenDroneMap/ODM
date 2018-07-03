@@ -5,10 +5,11 @@ from gippy import GeoImage
 from opendm.dem import commands
 from opendm import system
 from opendm import log
+from opendm import context
 from scipy import signal, ndimage
 import numpy as np
 
-def create_25dmesh(inPointCloud, outMesh, dsm_resolution=0.05, depth=8, samples=1, verbose=False):
+def create_25dmesh(inPointCloud, outMesh, dsm_resolution=0.05, depth=8, samples=1, maxVertexCount=100000, verbose=False):
     # Create DSM from point cloud
 
     # Create temporary directory
@@ -35,7 +36,7 @@ def create_25dmesh(inPointCloud, outMesh, dsm_resolution=0.05, depth=8, samples=
         )
 
     dsm_points = dem_to_points(os.path.join(tmp_directory, 'mesh_dsm.tif'), os.path.join(tmp_directory, 'dsm_points.ply'))
-    mesh = screened_poisson_reconstruction(dsm_points, outMesh, depth=depth, samples=samples, verbose=verbose)
+    mesh = screened_poisson_reconstruction(dsm_points, outMesh, depth=depth, samples=samples, maxVertexCount=maxVertexCount, verbose=verbose)
     
     # Cleanup tmp
     if os.path.exists(tmp_directory):
@@ -106,22 +107,57 @@ def dem_to_points(inGeotiff, outPointCloud):
     return outPointCloud
 
 
-def screened_poisson_reconstruction(inPointCloud, outMesh, depth = 8, samples = 1, verbose=False):
-    #TODO: @dakotabenjamin adjust path to PoissonRecon program
-    kwargs = {
-      'bin': '/PoissonRecon/Bin/Linux/PoissonRecon',
-      'outfile': outMesh,
+def screened_poisson_reconstruction(inPointCloud, outMesh, depth = 8, samples = 1, maxVertexCount=100000, verbose=False):
+
+    mesh_path, mesh_filename = os.path.split(outMesh)
+    # mesh_path = path/to
+    # mesh_filename = odm_mesh.ply
+
+    basename, ext = os.path.splitext(mesh_filename)
+    # basename = odm_mesh
+    # ext = .ply
+
+    outMeshDirty = os.path.join(mesh_path, "{}.dirty{}".format(basename, ext))
+
+    poissonReconArgs = {
+      #TODO: @dakotabenjamin adjust path to PoissonRecon program
+      # 'bin': '/PoissonRecon/Bin/Linux/PoissonRecon',
+      'bin': context.odm_modules_path,
+      'outfile': outMeshDirty,
       'infile': inPointCloud,
       'depth': depth,
       'samples': samples,
       'verbose': '--verbose' if verbose else ''
     }
 
-    # Run PoissonRecon
-    system.run('{bin} --in {infile} '
-             '--out {outfile} '
-             '--depth {depth} '
-             '--linearFit '
-             '{verbose}'.format(**kwargs))
+    # Run PoissonRecon (new)
+    # system.run('{bin} --in {infile} '
+    #          '--out {outfile} '
+    #          '--depth {depth} '
+    #          '--linearFit '
+    #          '{verbose}'.format(**kwargs))
+
+    # TODO: remove odm_meshing in favor of above
+    system.run('{bin}/odm_meshing -inputFile {infile} '
+         '-outputFile {outfile} '
+         '-octreeDepth {depth} -verbose '
+         '-samplesPerNode {samples} -solverDivide 9'.format(**poissonReconArgs))
+
+    # Cleanup and reduce vertex count if necessary
+    cleanupArgs = {
+        'bin': context.odm_modules_path,
+        'outfile': outMesh,
+        'infile': outMeshDirty,
+        'max_vertex': maxVertexCount,
+        'verbose': '-verbose' if verbose else ''
+    }
+
+    system.run('{bin}/odm_cleanmesh -inputFile {infile} '
+         '-outputFile {outfile} '
+         '-removeIslands '
+         '-decimateMesh {max_vertex} {verbose} '.format(**cleanupArgs))
+
+    # Delete intermediate results
+    os.remove(outMeshDirty)
 
     return outMesh

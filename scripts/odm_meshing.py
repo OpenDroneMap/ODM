@@ -62,23 +62,13 @@ class ODMeshingCell(ecto.Cell):
           if not io.file_exists(tree.odm_mesh) or rerun_cell:
               log.ODM_DEBUG('Writing ODM Mesh file in: %s' % tree.odm_mesh)
 
-              kwargs = {
-                  'bin': context.odm_modules_path,
-                  'outfile': tree.odm_mesh,
-                  'infile': infile,
-                  'log': tree.odm_meshing_log,
-                  'max_vertex': self.params.max_vertex,
-                  'oct_tree': self.params.oct_tree,
-                  'samples': self.params.samples,
-                  'solver': self.params.solver,
-                  'verbose': verbose
-              }
+              mesh.screened_poisson_reconstruction(infile, 
+                tree.odm_mesh,
+                depth=self.params.oct_tree, 
+                samples=self.params.samples, 
+                maxVertexCount=self.params.max_vertex, 
+                verbose=verbose)
 
-              # run meshing binary
-              system.run('{bin}/odm_meshing -inputFile {infile} '
-                         '-outputFile {outfile} -logFile {log} '
-                         '-maxVertexCount {max_vertex} -octreeDepth {oct_tree} {verbose} '
-                         '-samplesPerNode {samples} -solverDivide {solver}'.format(**kwargs))
           else:
               log.ODM_WARNING('Found a valid ODM Mesh file in: %s' %
                               tree.odm_mesh)
@@ -93,6 +83,7 @@ class ODMeshingCell(ecto.Cell):
               mesh.create_25dmesh(infile, tree.odm_25dmesh, 
                     dsm_resolution=args.mesh_resolution, 
                     depth=self.params.oct_tree,
+                    maxVertexCount=self.params.max_vertex,
                     verbose=self.params.verbose)
           else:
               log.ODM_WARNING('Found a valid ODM 2.5D Mesh file in: %s' %
