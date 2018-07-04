@@ -103,7 +103,9 @@ class ODMGeoreferencingCell(ecto.Cell):
 
                 if transformPointCloud:
                     kwargs['pc_params'] = '-inputPointCloudFile {pc} -outputPointCloudFile {pc_geo}'.format(**kwargs)
-
+                else:
+                    kwargs['pc_params'] = ''
+                    
                 # Check to see if the GCP file exists
 
                 if not self.params.use_exif and (self.params.gcp_file or tree.odm_georeferencing_gcp):
