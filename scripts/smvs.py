@@ -82,7 +82,7 @@ class ODMSmvsCell(ecto.Cell):
             system.run('%s %s %s' % (context.smvs_path, ' '.join(config), tree.smvs))
             
             # find and rename the output file for simplicity
-            smvs_files = glob.glob('smvs-*')
+            smvs_files = glob.glob(os.path.join(tree.smvs, 'smvs-*'))
             smvs_files.sort(key=os.path.getmtime) # sort by last modified date
             if len(smvs_files) > 0:
                 old_file = smvs_files[-1]
