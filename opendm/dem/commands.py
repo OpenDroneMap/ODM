@@ -36,7 +36,7 @@ def create_dems(filenames, demtype, radius=['0.56'], gapfill=False,
     
     with get_reusable_executor(max_workers=max_workers, timeout=None) as e:
          fouts = list(e.map(create_dem_for_radius, radius))
-
+    
     fnames = {}
     # convert from list of dicts, to dict of lists
     for product in fouts[0].keys():
