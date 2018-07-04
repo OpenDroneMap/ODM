@@ -148,11 +148,11 @@ def config():
                               'processes. Peak memory requirement is ~1GB per '
                               'thread and 2 megapixel image resolution. Default: %(default)s'))
 
-    parser.add_argument('--opensfm-depthmap-resolution',
+    parser.add_argument('--depthmap-resolution',
                         metavar='<positive float>',
                         type=float,
                         default=640,
-                        help=('Resolution of the depthmaps. Higher values take longer to compute '
+                        help=('Controls the density of the point cloud by setting the resolution of the depthmap images. Higher values take longer to compute '
                               'but produce denser point clouds. '
                               'Default: %(default)s'))
 
@@ -209,14 +209,6 @@ def config():
                         type=float,
                         help='Regularization parameter, a higher alpha leads to '
                         'smoother surfaces. Default: %(default)s')
-
-    parser.add_argument('--smvs-scale',
-                        metavar='<positive integer>',
-                        default=2,
-                        type=int,
-                        help='Scales the input images, which affects the output'
-                             ' density. 0 is original scale but takes longer '
-                             'to process. 2 is 1/4 scale. Default: %(default)s')
 
     parser.add_argument('--smvs-output-scale',
                         metavar='<positive integer>',

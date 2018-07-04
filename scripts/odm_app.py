@@ -50,7 +50,7 @@ class ODMApp(ecto.BlackBox):
                                            hybrid_bundle_adjustment=p.args.use_hybrid_bundle_adjustment),
                  'slam': ODMSlamCell(),
                  'smvs': ODMSmvsCell(alpha=p.args.smvs_alpha,
-                                     scale=p.args.smvs_scale,
+                                     max_pixels=p.args.depthmap_resolution*p.args.depthmap_resolution,
                                      threads=p.args.max_concurrency,
                                      output_scale=p.args.smvs_output_scale,
                                      shading=p.args.smvs_enable_shading,
