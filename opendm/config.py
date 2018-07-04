@@ -557,8 +557,9 @@ def config():
         sys.exit(1)
 
     if args.fast_orthophoto:
-      log.ODM_INFO('Fast orthophoto is turned on, automatically setting --skip-3dmodel')
+      log.ODM_INFO('Fast orthophoto is turned on, automatically setting --skip-3dmodel and --use-opensfm-dense')
       args.skip_3dmodel = True
+      args.use_opensfm_dense = True
 
     if args.dtm and args.pc_classify == 'none':
       log.ODM_INFO("DTM is turned on, automatically turning on point cloud classification")
