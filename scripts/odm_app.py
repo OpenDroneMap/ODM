@@ -8,9 +8,8 @@ from opendm import system
 
 from dataset import ODMLoadDatasetCell
 from run_opensfm import ODMOpenSfMCell
+from smvs import ODMSmvsCell
 from odm_slam import ODMSlamCell
-from pmvs import ODMPmvsCell
-from cmvs import ODMCmvsCell
 from odm_meshing import ODMeshingCell
 from mvstex import ODMMvsTexCell
 from odm_georeferencing import ODMGeoreferencingCell
@@ -44,19 +43,19 @@ class ODMApp(ecto.BlackBox):
                  'opensfm': ODMOpenSfMCell(use_exif_size=False,
                                            feature_process_size=p.args.resize_to,
                                            feature_min_frames=p.args.min_num_features,
-                                           processes=p.args.opensfm_processes,
+                                           processes=p.args.max_concurrency,
                                            matching_gps_neighbors=p.args.matcher_neighbors,
                                            matching_gps_distance=p.args.matcher_distance,
                                            fixed_camera_params=p.args.use_fixed_camera_params,
                                            hybrid_bundle_adjustment=p.args.use_hybrid_bundle_adjustment),
                  'slam': ODMSlamCell(),
-                 'cmvs': ODMCmvsCell(max_images=p.args.cmvs_maxImages),
-                 'pmvs': ODMPmvsCell(level=p.args.pmvs_level,
-                                     csize=p.args.pmvs_csize,
-                                     thresh=p.args.pmvs_threshold,
-                                     wsize=p.args.pmvs_wsize,
-                                     min_imgs=p.args.pmvs_min_images,
-                                     cores=p.args.pmvs_num_cores),
+                 'smvs': ODMSmvsCell(alpha=p.args.smvs_alpha,
+                                     scale=p.args.smvs_scale,
+                                     threads=p.args.max_concurrency,
+                                     output_scale=p.args.smvs_output_scale,
+                                     shading=p.args.smvs_enable_shading,
+                                     gamma_srgb=p.args.smvs_gamma_srgb,
+                                     verbose=p.args.verbose),
                  'meshing': ODMeshingCell(max_vertex=p.args.mesh_size,
                                           oct_tree=p.args.mesh_octree_depth,
                                           samples=p.args.mesh_samples,
@@ -73,13 +72,15 @@ class ODMApp(ecto.BlackBox):
                  'georeferencing': ODMGeoreferencingCell(gcp_file=p.args.gcp,
                                                          use_exif=p.args.use_exif,
                                                          verbose=p.args.verbose),
-                 'dem': ODMDEMCell(verbose=p.args.verbose),
+                 'dem': ODMDEMCell(max_concurrency=p.args.max_concurrency,
+                                   verbose=p.args.verbose),
                  'orthophoto': ODMOrthoPhotoCell(resolution=p.args.orthophoto_resolution,
                                                  t_srs=p.args.orthophoto_target_srs,
                                                  no_tiled=p.args.orthophoto_no_tiled,
                                                  compress=p.args.orthophoto_compression,
                                                  bigtiff=p.args.orthophoto_bigtiff,
                                                  build_overviews=p.args.build_overviews,
+                                                 max_concurrency=p.args.max_concurrency,
                                                  verbose=p.args.verbose)
                  }
 
@@ -116,26 +117,21 @@ class ODMApp(ecto.BlackBox):
                         self.args[:] >> self.opensfm['args'],
                         self.dataset['reconstruction'] >> self.opensfm['reconstruction']]
 
-        if not p.args.use_pmvs:
+        if p.args.use_opensfm_dense:
             # create odm mesh from opensfm point cloud
             connections += [self.tree[:] >> self.meshing['tree'],
                             self.args[:] >> self.meshing['args'],
                             self.opensfm['reconstruction'] >> self.meshing['reconstruction']]
         else:
-            # run cmvs
-            connections += [self.tree[:] >> self.cmvs['tree'],
-                            self.args[:] >> self.cmvs['args'],
-                            self.opensfm['reconstruction'] >> self.cmvs['reconstruction']]
+            # run smvs
+            connections += [self.tree[:] >> self.smvs['tree'],
+                            self.args[:] >> self.smvs['args'],
+                            self.opensfm['reconstruction'] >> self.smvs['reconstruction']]
 
-            # run pmvs
-            connections += [self.tree[:] >> self.pmvs['tree'],
-                            self.args[:] >> self.pmvs['args'],
-                            self.cmvs['reconstruction'] >> self.pmvs['reconstruction']]
-
-            # create odm mesh from pmvs point cloud
+            # create odm mesh from smvs point cloud
             connections += [self.tree[:] >> self.meshing['tree'],
                             self.args[:] >> self.meshing['args'],
-                            self.pmvs['reconstruction'] >> self.meshing['reconstruction']]
+                            self.smvs['reconstruction'] >> self.meshing['reconstruction']]
 
         # create odm texture
         connections += [self.tree[:] >> self.texturing['tree'],
@@ -166,20 +162,14 @@ class ODMApp(ecto.BlackBox):
         connections += [self.tree[:] >> self.slam['tree'],
                         self.args[:] >> self.slam['args']]
 
-        # run cmvs
-        connections += [self.tree[:] >> self.cmvs['tree'],
-                        self.args[:] >> self.cmvs['args'],
-                        self.slam['reconstruction'] >> self.cmvs['reconstruction']]
-
-        # run pmvs
-        connections += [self.tree[:] >> self.pmvs['tree'],
-                        self.args[:] >> self.pmvs['args'],
-                        self.cmvs['reconstruction'] >> self.pmvs['reconstruction']]
+        connections += [self.tree[:] >> self.smvs['tree'],
+                        self.args[:] >> self.smvs['args'],
+                        self.slam['reconstruction'] >> self.smvs['reconstruction']]
 
         # create odm mesh
         connections += [self.tree[:] >> self.meshing['tree'],
                         self.args[:] >> self.meshing['args'],
-                        self.pmvs['reconstruction'] >> self.meshing['reconstruction']]
+                        self.smvs['reconstruction'] >> self.meshing['reconstruction']]
 
         # create odm texture
         connections += [self.tree[:] >> self.texturing['tree'],

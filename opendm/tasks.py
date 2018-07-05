@@ -8,8 +8,6 @@ from scripts.opensfm import opensfm
 
 # Define pipeline tasks
 tasks_dict = {'1': 'opensfm',
-              '2': 'cmvs',
-              '3': 'pmvs',
               '4': 'odm_meshing',
               '5': 'mvs_texturing',
               '6': 'odm_georeferencing',
@@ -52,7 +50,7 @@ class ODMTaskManager(object):
                           'args': _odm_app.args,
                           'photos': _odm_app.photos}
 
-            elif task_name in ['cmvs', 'pmvs', 'odm_meshing', 'mvs_texturing', 'odm_georeferencing', 'odm_orthophoto', 'zip_results']:
+            elif task_name in [ 'odm_meshing', 'mvs_texturing', 'odm_georeferencing', 'odm_orthophoto', 'zip_results']:
                 # setup this task
                 command = None
                 inputs = {}

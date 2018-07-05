@@ -98,7 +98,7 @@ SETUP_EXTERNAL_PROJECT(Ceres ${ODM_Ceres_Version} ${ODM_BUILD_Ceres})
 # ---------------------------------------------------------------------------------------------
 # VTK7
 # We need to build VTK from sources because Debian packages
-# are built with DVTK_SMP_IMPLEMENTATION_TYPE set to 
+# are built with DVTK_SMP_IMPLEMENTATION_TYPE set to
 # "Sequential" which means no multithread support.
 
 set(ODM_VTK7_Version 7.1.1)
@@ -114,14 +114,12 @@ SETUP_EXTERNAL_PROJECT(Hexer 1.4 ON)
 # ---------------------------------------------------------------------------------------------
 # Open Geometric Vision (OpenGV)
 # Open Structure from Motion (OpenSfM)
-# Clustering Views for Multi-view Stereo (CMVS)
 # Catkin
 # Ecto
 #
 
 set(custom_libs OpenGV
 				OpenSfM
-				CMVS
 				Catkin
 				Ecto
 				LASzip
@@ -140,3 +138,24 @@ foreach(lib ${custom_libs})
 	SETUP_EXTERNAL_PROJECT_CUSTOM(${lib})
 endforeach()
 
+## Add smvs Build
+
+externalproject_add(smvs
+    GIT_REPOSITORY  https://github.com/flanggut/smvs.git
+    UPDATE_COMMAND  ""
+    SOURCE_DIR      ${SB_SOURCE_DIR}/elibs/smvs
+    CONFIGURE_COMMAND ""
+    BUILD_IN_SOURCE 1
+    BUILD_COMMAND   make
+    INSTALL_COMMAND ""
+)
+
+externalproject_add(mve
+    GIT_REPOSITORY  https://github.com/simonfuhrmann/mve.git
+    UPDATE_COMMAND  ""
+    SOURCE_DIR      ${SB_SOURCE_DIR}/elibs/mve
+    CONFIGURE_COMMAND ""
+    BUILD_IN_SOURCE 1
+    BUILD_COMMAND   make
+    INSTALL_COMMAND ""
+)
