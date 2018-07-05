@@ -18,6 +18,7 @@ class ODMOrthoPhotoCell(ecto.Cell):
         params.declare("bigtiff", 'Make BigTIFF orthophoto', 'IF_SAFER')
         params.declare("build_overviews", 'Build overviews', False)
         params.declare("verbose", 'print additional messages to console', False)
+        params.declare("max_concurrency", "number of threads", context.num_cores)
 
     def declare_io(self, params, inputs, outputs):
         inputs.declare("tree", "Struct with paths", [])
@@ -125,7 +126,8 @@ class ODMOrthoPhotoCell(ecto.Cell):
                     'png': tree.odm_orthophoto_file,
                     'tiff': tree.odm_orthophoto_tif,
                     'log': tree.odm_orthophoto_tif_log,
-                    'max_memory': max(5, (100 - virtual_memory().percent) / 2)
+                    'max_memory': max(5, (100 - virtual_memory().percent) / 2),
+                    'threads': self.params.max_concurrency
                 }
 
                 system.run('gdal_translate -a_ullr {ulx} {uly} {lrx} {lry} '
@@ -135,7 +137,7 @@ class ODMOrthoPhotoCell(ecto.Cell):
                            '{predictor} '
                            '-co BLOCKXSIZE=512 '
                            '-co BLOCKYSIZE=512 '
-                           '-co NUM_THREADS=ALL_CPUS '
+                           '-co NUM_THREADS={threads} '
                            '-a_srs \"{proj}\" '
                            '--config GDAL_CACHEMAX {max_memory}% '
                            '{png} {tiff} > {log}'.format(**kwargs))
@@ -149,7 +151,7 @@ class ODMOrthoPhotoCell(ecto.Cell):
                             'BIGTIFF': self.params.bigtiff,
                             'BLOCKXSIZE': 512,
                             'BLOCKYSIZE': 512,
-                            'NUM_THREADS': 'ALL_CPUS'
+                            'NUM_THREADS': self.params.max_concurrency
                         })
 
                 if self.params.build_overviews:
