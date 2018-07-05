@@ -245,7 +245,7 @@ def config():
                         metavar='<positive integer>',
                         default=100000,
                         type=int,
-                        help=('The maximum vertex count of the output mesh '
+                        help=('The maximum vertex count of the output mesh. Applies to 2.5D mesh only. '
                               'Default: %(default)s'))
 
     parser.add_argument('--mesh-octree-depth',
@@ -263,15 +263,16 @@ def config():
                         help=('Number of points per octree node, recommended '
                               'and default value: %(default)s'))
 
-    parser.add_argument('--mesh-solver-divide',
-                        metavar='<positive integer>',
-                        default=9,
-                        type=int,
-                        help=('Oct-tree depth at which the Laplacian equation '
-                              'is solved in the surface reconstruction step. '
-                              'Increasing this value increases computation '
-                              'times slightly but helps reduce memory usage. '
-                              'Default: %(default)s'))
+    parser.add_argument('--mesh-point-weight',
+                        metavar='<interpolation weight>',
+                        default=4,
+                        type=float,
+                        help=('This floating point value specifies the importance'
+                        ' that interpolation of the point samples is given in the '
+                        'formulation of the screened Poisson equation. The results '
+                        'of the original (unscreened) Poisson Reconstruction can '
+                        'be obtained by setting this value to 0.'
+                        'Default= %(default)s'))
 
     parser.add_argument('--mesh-neighbors',
                         metavar='<positive integer>',

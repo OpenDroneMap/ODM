@@ -15,10 +15,8 @@ class ODMeshingCell(ecto.Cell):
                                    'values are 8-12', 9)
         params.declare("samples", 'Number of points per octree node, recommended '
                                   'value: 1.0', 1)
-        params.declare("solver", 'Oct-tree depth at which the Laplacian equation '
-                                 'is solved in the surface reconstruction step. '
-                                 'Increasing this value increases computation '
-                                 'times slightly but helps reduce memory usage.', 9)
+        params.declare("point_weight", "specifies the importance that interpolation of the point samples is given in the formulation of the screened Poisson equation.", 4)
+        params.declare("max_concurrency", 'max threads', context.num_cores)
         params.declare("verbose", 'print additional messages to console', False)
 
     def declare_io(self, params, inputs, outputs):
@@ -38,7 +36,7 @@ class ODMeshingCell(ecto.Cell):
         args = inputs.args
         tree = inputs.tree
         reconstruction = inputs.reconstruction
-        verbose = '-verbose' if self.params.verbose else ''
+        verbose = '--verbose' if self.params.verbose else ''
 
         # define paths and create working directories
         system.mkdir_p(tree.odm_meshing)
@@ -62,22 +60,20 @@ class ODMeshingCell(ecto.Cell):
               log.ODM_DEBUG('Writing ODM Mesh file in: %s' % tree.odm_mesh)
 
               kwargs = {
-                  'bin': context.odm_modules_path,
-                  'outfile': tree.odm_mesh,
-                  'infile': infile,
-                  'log': tree.odm_meshing_log,
-                  'max_vertex': self.params.max_vertex,
-                  'oct_tree': self.params.oct_tree,
-                  'samples': self.params.samples,
-                  'solver': self.params.solver,
-                  'verbose': verbose
+                'bin': context.poisson_recon_path,
+                'outfile': tree.odm_mesh,
+                'infile': infile,
+                'oct_tree': self.params.oct_tree,
+                'point_weight': self.params.point_weight,
+                'threads': self.params.max_concurrency,
+                'samples': self.params.samples,
+                'verbose': verbose
               }
 
-              # run meshing binary
-              system.run('{bin}/odm_meshing -inputFile {infile} '
-                         '-outputFile {outfile} -logFile {log} '
-                         '-maxVertexCount {max_vertex} -octreeDepth {oct_tree} {verbose} '
-                         '-samplesPerNode {samples} -solverDivide {solver}'.format(**kwargs))
+              system.run('{bin} --in {infile} --out {outfile} '
+                         '--depth {oct_tree} --pointWeight {point_weight} '
+                         '--linearFit --normals --density --samplesPerNode {samples} '
+                         '--threads {threads} {verbose}'.format(**kwargs))
           else:
               log.ODM_WARNING('Found a valid ODM Mesh file in: %s' %
                               tree.odm_mesh)
