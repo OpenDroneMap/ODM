@@ -37,8 +37,12 @@ def create_25dmesh(inPointCloud, outMesh, dsm_resolution=0.05, depth=8, samples=
         )
 
     dsm_points = dem_to_points(os.path.join(tmp_directory, 'mesh_dsm.tif'), os.path.join(tmp_directory, 'dsm_points.ply'))
-    mesh = screened_poisson_reconstruction(dsm_points, outMesh, depth=depth, samples=samples, maxVertexCount=maxVertexCount, verbose=verbose)
-    
+    mesh = screened_poisson_reconstruction(dsm_points, outMesh, depth=depth, 
+                                    samples=samples, 
+                                    maxVertexCount=maxVertexCount, 
+                                    threads=max_workers,
+                                    verbose=verbose)
+
     # Cleanup tmp
     if os.path.exists(tmp_directory):
         shutil.rmtree(tmp_directory)
@@ -71,7 +75,7 @@ def dem_to_points(inGeotiff, outPointCloud):
             tx = xmin + (float(x) / float(arr_width)) * ext_width
             ty = ymax - (float(y) / float(arr_height)) * ext_height
             mem_file.write(struct.pack('ffffff', tx, ty, z, 0, 0, 1))
-            
+
             # Skirting
             for (nx, ny) in ((x, y + 1), (x, y - 1), (x + 1, y), (x - 1, y)):
                 current_z = z
@@ -85,11 +89,11 @@ def dem_to_points(inGeotiff, outPointCloud):
 
                     mem_file.write(struct.pack('ffffff', tx, ty, neighbor_z, 0, 0, 1))
                     skirt_points += 1
-                    
+
 
     with open(outPointCloud, "wb") as f:
         f.write("ply\n")
-        f.write("format binary_%s_endian 1.0\n" % sys.byteorder) 
+        f.write("format binary_%s_endian 1.0\n" % sys.byteorder)
         f.write("element vertex %s\n" % (vertex_count + skirt_points))
         f.write("property float x\n")
         f.write("property float y\n")
@@ -108,7 +112,7 @@ def dem_to_points(inGeotiff, outPointCloud):
     return outPointCloud
 
 
-def screened_poisson_reconstruction(inPointCloud, outMesh, depth = 8, samples = 1, maxVertexCount=100000, verbose=False):
+def screened_poisson_reconstruction(inPointCloud, outMesh, depth = 8, samples = 1, maxVertexCount=100000, pointWeight=4, threads=context.num_cores, verbose=False):
 
     mesh_path, mesh_filename = os.path.split(outMesh)
     # mesh_path = path/to
@@ -121,28 +125,25 @@ def screened_poisson_reconstruction(inPointCloud, outMesh, depth = 8, samples = 
     outMeshDirty = os.path.join(mesh_path, "{}.dirty{}".format(basename, ext))
 
     poissonReconArgs = {
-      #TODO: @dakotabenjamin adjust path to PoissonRecon program
-      # 'bin': '/PoissonRecon/Bin/Linux/PoissonRecon',
-      'bin': context.odm_modules_path,
+      'bin': context.poisson_recon_path,
       'outfile': outMeshDirty,
       'infile': inPointCloud,
       'depth': depth,
       'samples': samples,
+      'pointWeight': pointWeight,
+      'threads': threads,
       'verbose': '--verbose' if verbose else ''
     }
 
-    # Run PoissonRecon (new)
-    # system.run('{bin} --in {infile} '
-    #          '--out {outfile} '
-    #          '--depth {depth} '
-    #          '--linearFit '
-    #          '{verbose}'.format(**kwargs))
-
-    # TODO: remove odm_meshing in favor of above
-    system.run('{bin}/odm_meshing -inputFile {infile} '
-         '-outputFile {outfile} '
-         '-octreeDepth {depth} -verbose '
-         '-samplesPerNode {samples} -solverDivide 9'.format(**poissonReconArgs))
+    # Run PoissonRecon
+    system.run('{bin} --in {infile} '
+             '--out {outfile} '
+             '--depth {depth} '
+             '--pointWeight {pointWeight} '
+             '--samplesPerNode {samples} '
+             '--threads {threads} '
+             '--linearFit '
+             '{verbose}'.format(**poissonReconArgs))
 
     # Cleanup and reduce vertex count if necessary
     cleanupArgs = {
