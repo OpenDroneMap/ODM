@@ -96,17 +96,6 @@ SETUP_EXTERNAL_PROJECT(Ceres ${ODM_Ceres_Version} ${ODM_BUILD_Ceres})
 
 
 # ---------------------------------------------------------------------------------------------
-# VTK7
-# We need to build VTK from sources because Debian packages
-# are built with DVTK_SMP_IMPLEMENTATION_TYPE set to
-# "Sequential" which means no multithread support.
-
-set(ODM_VTK7_Version 7.1.1)
-option(ODM_BUILD_VTK7 "Force to build VTK7 library" OFF)
-
-SETUP_EXTERNAL_PROJECT(VTK7 ${ODM_VTK7_Version} ${ODM_BUILD_VTK7})
-
-# ---------------------------------------------------------------------------------------------
 # Hexer
 #
 SETUP_EXTERNAL_PROJECT(Hexer 1.4 ON)
@@ -140,22 +129,23 @@ endforeach()
 
 ## Add smvs Build
 
-externalproject_add(smvs
-    GIT_REPOSITORY  https://github.com/flanggut/smvs.git
-    GIT_TAG         6a7d0c095aa66ab98c5b285c2bc04e34d8993353
+externalproject_add(mve
+    GIT_REPOSITORY  https://github.com/simonfuhrmann/mve.git
+    GIT_TAG         2106a5b0aef61a7f744551510b1b4c5d8e3be594
     UPDATE_COMMAND  ""
-    SOURCE_DIR      ${SB_SOURCE_DIR}/elibs/smvs
+    SOURCE_DIR      ${SB_SOURCE_DIR}/elibs/mve
     CONFIGURE_COMMAND ""
     BUILD_IN_SOURCE 1
     BUILD_COMMAND   make
     INSTALL_COMMAND ""
 )
 
-externalproject_add(mve
-    GIT_REPOSITORY  https://github.com/simonfuhrmann/mve.git
-    GIT_TAG         2106a5b0aef61a7f744551510b1b4c5d8e3be594
+externalproject_add(smvs
+    DEPENDS         mve
+    GIT_REPOSITORY  https://github.com/flanggut/smvs.git
+    GIT_TAG         6a7d0c095aa66ab98c5b285c2bc04e34d8993353
     UPDATE_COMMAND  ""
-    SOURCE_DIR      ${SB_SOURCE_DIR}/elibs/mve
+    SOURCE_DIR      ${SB_SOURCE_DIR}/elibs/smvs
     CONFIGURE_COMMAND ""
     BUILD_IN_SOURCE 1
     BUILD_COMMAND   make

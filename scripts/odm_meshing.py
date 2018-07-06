@@ -4,6 +4,7 @@ from opendm import log
 from opendm import io
 from opendm import system
 from opendm import context
+from opendm import mesh
 
 
 class ODMeshingCell(ecto.Cell):
@@ -54,52 +55,43 @@ class ODMeshingCell(ecto.Cell):
         elif args.fast_orthophoto:
           infile = os.path.join(tree.opensfm, 'reconstruction.ply')
 
-        # Do not create full 3D model with fast_orthophoto
-        if not args.fast_orthophoto:
+        # Create full 3D model unless --skip-3dmodel is set
+        if not args.skip_3dmodel:
           if not io.file_exists(tree.odm_mesh) or rerun_cell:
               log.ODM_DEBUG('Writing ODM Mesh file in: %s' % tree.odm_mesh)
 
-              kwargs = {
-                'bin': context.poisson_recon_path,
-                'outfile': tree.odm_mesh,
-                'infile': infile,
-                'oct_tree': self.params.oct_tree,
-                'point_weight': self.params.point_weight,
-                'threads': self.params.max_concurrency,
-                'samples': self.params.samples,
-                'verbose': verbose
-              }
+              mesh.screened_poisson_reconstruction(infile,
+                tree.odm_mesh,
+                depth=self.params.oct_tree,
+                samples=self.params.samples,
+                maxVertexCount=self.params.max_vertex,
+                pointWeight=self.params.point_weight,
+                threads=self.params.max_concurrency,
+                verbose=verbose)
 
-              system.run('{bin} --in {infile} --out {outfile} '
-                         '--depth {oct_tree} --pointWeight {point_weight} '
-                         '--linearFit --normals --density --samplesPerNode {samples} '
-                         '--threads {threads} {verbose}'.format(**kwargs))
           else:
               log.ODM_WARNING('Found a valid ODM Mesh file in: %s' %
                               tree.odm_mesh)
 
-        # Do we need to generate a 2.5D mesh also?
-        # This is always set if fast_orthophoto is set
-        if args.use_25dmesh:
+        # Always generate a 2.5D mesh
+        # unless --use-3dmesh is set.
+        if not args.use_3dmesh:
           if not io.file_exists(tree.odm_25dmesh) or rerun_cell:
+
               log.ODM_DEBUG('Writing ODM 2.5D Mesh file in: %s' % tree.odm_25dmesh)
+              dsm_resolution = 1.0 / float(args.orthophoto_resolution)
 
-              kwargs = {
-                  'bin': context.odm_modules_path,
-                  'outfile': tree.odm_25dmesh,
-                  'infile': infile,
-                  'log': tree.odm_25dmeshing_log,
-                  'verbose': verbose,
-                  'max_vertex': self.params.max_vertex,
-                  'neighbors': args.mesh_neighbors,
-                  'resolution': args.mesh_resolution
-              }
+              # Sparse point clouds benefits from using
+              # a larger resolution value (more radius interolation, less holes)
+              if args.fast_orthophoto:
+                  dsm_resolution *= 2
 
-              # run 2.5D meshing binary
-              system.run('{bin}/odm_25dmeshing -inputFile {infile} '
-                         '-outputFile {outfile} -logFile {log} '
-                         '-maxVertexCount {max_vertex} -neighbors {neighbors} '
-                         '-resolution {resolution} {verbose}'.format(**kwargs))
+              mesh.create_25dmesh(infile, tree.odm_25dmesh,
+                    dsm_resolution=dsm_resolution,
+                    depth=self.params.oct_tree,
+                    maxVertexCount=self.params.max_vertex,
+                    verbose=self.params.verbose,
+                    max_workers=args.max_concurrency)
           else:
               log.ODM_WARNING('Found a valid ODM 2.5D Mesh file in: %s' %
                               tree.odm_25dmesh)

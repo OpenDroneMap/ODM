@@ -91,9 +91,9 @@ class ODMDEMCell(ecto.Cell):
                 if args.dsm: products.append('dsm')
                 if args.dtm: products.append('dtm')
 
-                radius_steps = [args.dem_resolution]
+                radius_steps = [args.dem_resolution / 4.0]
                 for _ in range(args.dem_gapfill_steps - 1):
-                    radius_steps.append(radius_steps[-1] * 3) # 3 is arbitrary, maybe there's a better value?
+                    radius_steps.append(radius_steps[-1] * 2) # 2 is arbitrary, maybe there's a better value?
 
                 for product in products:
                     commands.create_dems(
@@ -106,7 +106,8 @@ class ODMDEMCell(ecto.Cell):
                             maxsd=args.dem_maxsd,
                             maxangle=args.dem_maxangle,
                             decimation=args.dem_decimation,
-                            verbose=args.verbose
+                            verbose=args.verbose,
+                            max_workers=args.max_concurrency
                         )
 
                     if args.crop > 0:
