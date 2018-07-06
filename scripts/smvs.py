@@ -1,4 +1,4 @@
-import ecto
+import ecto, shutil, os, glob
 
 from opendm import log
 from opendm import io
@@ -10,7 +10,7 @@ class ODMSmvsCell(ecto.Cell):
     def declare_params(self, params):
         params.declare("threads", "max number of threads", context.num_cores)
         params.declare("alpha", "Regularization parameter", 1)
-        params.declare("scale", "input scale", 1)
+        params.declare("max_pixels", "max pixels for reconstruction", 1700000)
         params.declare("output_scale", "scale of optimization", 2)
         params.declare("shading", "Enable shading-aware model", False)
         params.declare("gamma_srgb", "Apply inverse SRGB gamma correction", False)
@@ -39,8 +39,6 @@ class ODMSmvsCell(ecto.Cell):
             log.ODM_ERROR('Not enough photos in photos array to start SMVS')
             return ecto.QUIT
 
-        system.mkdir_p(tree.smvs)
-
         # check if we rerun cell or not
         rerun_cell = (args.rerun is not None and
                       args.rerun == 'smvs') or \
@@ -58,6 +56,12 @@ class ODMSmvsCell(ecto.Cell):
                 io.copy(tree.opensfm_image_list, tree.mve_image_list)
                 io.copy(tree.opensfm_bundle, tree.mve_bundle)
 
+            # mve makescene wants the output directory
+            # to not exists before executing it (otherwise it
+            # will prompt the user for confirmation)
+            if io.dir_exists(tree.smvs):
+                shutil.rmtree(tree.smvs)
+
             # run mve makescene
             if not io.dir_exists(tree.mve_views):
                 system.run('%s %s %s' % (context.makescene_path, tree.mve_path, tree.smvs))
@@ -66,7 +70,7 @@ class ODMSmvsCell(ecto.Cell):
             config = [
                 "-t%s" % self.params.threads,
                 "-a%s" % self.params.alpha,
-                "-s%s" % self.params.scale,
+                "--max-pixels=%s" % self.params.max_pixels,
                 "-o%s" % self.params.output_scale,
                 "--debug-lvl=%s" % ('1' if self.params.verbose else '0'),
                 "%s" % '-S' if self.params.shading else '',
@@ -76,13 +80,16 @@ class ODMSmvsCell(ecto.Cell):
 
             # run smvs
             system.run('%s %s %s' % (context.smvs_path, ' '.join(config), tree.smvs))
-            # rename the file for simplicity
-            old_file = io.join_paths(tree.smvs, 'smvs-%s%s.ply' %
-                ('S' if self.params.shading else 'B', self.params.scale))
-            if not (io.rename_file(old_file, tree.smvs_model)):
-                log.ODM_WARNING("File %s does not exist, cannot be renamed. " % old_file)
-
-
+            
+            # find and rename the output file for simplicity
+            smvs_files = glob.glob(os.path.join(tree.smvs, 'smvs-*'))
+            smvs_files.sort(key=os.path.getmtime) # sort by last modified date
+            if len(smvs_files) > 0:
+                old_file = smvs_files[-1]
+                if not (io.rename_file(old_file, tree.smvs_model)):
+                    log.ODM_WARNING("File %s does not exist, cannot be renamed. " % old_file)
+            else:
+                log.ODM_WARNING("Cannot find a valid point cloud (smvs-XX.ply) in %s. Check the console output for errors." % tree.smvs)
         else:
             log.ODM_WARNING('Found a valid SMVS reconstruction file in: %s' %
                             tree.smvs_model)

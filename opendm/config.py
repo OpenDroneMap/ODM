@@ -148,11 +148,11 @@ def config():
                               'processes. Peak memory requirement is ~1GB per '
                               'thread and 2 megapixel image resolution. Default: %(default)s'))
 
-    parser.add_argument('--opensfm-depthmap-resolution',
+    parser.add_argument('--depthmap-resolution',
                         metavar='<positive float>',
                         type=float,
                         default=640,
-                        help=('Resolution of the depthmaps. Higher values take longer to compute '
+                        help=('Controls the density of the point cloud by setting the resolution of the depthmap images. Higher values take longer to compute '
                               'but produce denser point clouds. '
                               'Default: %(default)s'))
 
@@ -188,10 +188,15 @@ def config():
                         help='Run local bundle adjustment for every image added to the reconstruction and a global '
                              'adjustment every 100 images. Speeds up reconstruction for very large datasets.')
 
-    parser.add_argument('--use-25dmesh',
+    parser.add_argument('--use-3dmesh',
                     action='store_true',
                     default=False,
-                    help='Use a 2.5D mesh to compute the orthophoto. This option tends to provide better results for planar surfaces. Experimental.')
+                    help='Use a full 3D mesh to compute the orthophoto instead of a 2.5D mesh. This option is a bit faster and provides similar results in planar areas.')
+
+    parser.add_argument('--skip-3dmodel',
+                    action='store_true',
+                    default=False,
+                    help='Skip generation of a full 3D model. This can save time if you only need 2D results such as orthophotos and DEMs.')
 
     parser.add_argument('--use-opensfm-dense',
                         action='store_true',
@@ -204,14 +209,6 @@ def config():
                         type=float,
                         help='Regularization parameter, a higher alpha leads to '
                         'smoother surfaces. Default: %(default)s')
-
-    parser.add_argument('--smvs-scale',
-                        metavar='<non-negative integer>',
-                        default=1,
-                        type=int,
-                        help='Scales the input images, which affects the output'
-                             ' density. 0 is original scale but takes longer '
-                             'to process. 2 is 1/4 scale. Default: %(default)s')
 
     parser.add_argument('--smvs-output-scale',
                         metavar='<positive integer>',
@@ -408,7 +405,7 @@ def config():
 
     parser.add_argument('--dem-gapfill-steps',
                         metavar='<positive integer>',
-                        default=4,
+                        default=3,
                         type=int,
                         help='Number of steps used to fill areas with gaps. Set to 0 to disable gap filling. '
                              'Starting with a radius equal to the output resolution, N different DEMs are generated with '
@@ -553,11 +550,16 @@ def config():
         sys.exit(1)
 
     if args.fast_orthophoto:
-      log.ODM_INFO('Fast orthophoto is turned on, automatically setting --use-25dmesh')
-      args.use_25dmesh = True
+      log.ODM_INFO('Fast orthophoto is turned on, automatically setting --skip-3dmodel and --use-opensfm-dense')
+      args.skip_3dmodel = True
+      args.use_opensfm_dense = True
 
     if args.dtm and args.pc_classify == 'none':
       log.ODM_INFO("DTM is turned on, automatically turning on point cloud classification")
       args.pc_classify = "smrf"
+
+    if args.skip_3dmodel and args.use_3dmesh:
+      log.ODM_WARNING('--skip-3dmodel is set, but so is --use-3dmesh. You can\'t have both!')
+      sys.exit(1)
 
     return args
