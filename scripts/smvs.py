@@ -70,7 +70,7 @@ class ODMSmvsCell(ecto.Cell):
             config = [
                 "-t%s" % self.params.threads,
                 "-a%s" % self.params.alpha,
-                "--max-pixels=%s" % self.params.max_pixels,
+                "--max-pixels=%s" % int(self.params.max_pixels),
                 "-o%s" % self.params.output_scale,
                 "--debug-lvl=%s" % ('1' if self.params.verbose else '0'),
                 "%s" % '-S' if self.params.shading else '',
