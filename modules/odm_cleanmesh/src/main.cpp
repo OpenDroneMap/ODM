@@ -58,7 +58,7 @@ int main(int argc, char **argv) {
 
 
     logWriter.verbose = Verbose.set;
-    logWriter.outputFile = "odm_cleanmesh_log.txt";
+    // logWriter.outputFile = "odm_cleanmesh_log.txt";
     logArgs(params, logWriter);
 
 	vtkSmartPointer<vtkPLYReader> reader =
