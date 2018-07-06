@@ -242,7 +242,7 @@ def config():
                         metavar='<positive integer>',
                         default=100000,
                         type=int,
-                        help=('The maximum vertex count of the output mesh '
+                        help=('The maximum vertex count of the output mesh. '
                               'Default: %(default)s'))
 
     parser.add_argument('--mesh-octree-depth',
@@ -255,40 +255,21 @@ def config():
 
     parser.add_argument('--mesh-samples',
                         metavar='<float >= 1.0>',
-                        default=1.0,
+                        default=2.0,
                         type=float,
                         help=('Number of points per octree node, recommended '
                               'and default value: %(default)s'))
 
-    parser.add_argument('--mesh-solver-divide',
-                        metavar='<positive integer>',
-                        default=9,
-                        type=int,
-                        help=('Oct-tree depth at which the Laplacian equation '
-                              'is solved in the surface reconstruction step. '
-                              'Increasing this value increases computation '
-                              'times slightly but helps reduce memory usage. '
-                              'Default: %(default)s'))
-
-    parser.add_argument('--mesh-neighbors',
-                        metavar='<positive integer>',
-                        default=24,
-                        type=int,
-                        help=('Number of neighbors to select when estimating the surface model used to compute the mesh and for statistical outlier removal. Higher values lead to smoother meshes but take longer to process. '
-                              'Applies to 2.5D mesh only. '
-                              'Default: %(default)s'))
-
-    parser.add_argument('--mesh-resolution',
-                        metavar='<positive float>',
-                        default=0,
+    parser.add_argument('--mesh-point-weight',
+                        metavar='<interpolation weight>',
+                        default=4,
                         type=float,
-                        help=('Size of the interpolated surface model used for deriving the 2.5D mesh, expressed in pixels per meter. '
-                              'Higher values work better for complex or urban terrains. '
-                              'Lower values work better on flat areas. '
-                              'Resolution has no effect on the number of vertices, but high values can severely impact runtime speed and memory usage. '
-                              'When set to zero, the program automatically attempts to find a good value based on the point cloud extent and target vertex count. '
-                              'Applies to 2.5D mesh only. '
-                              'Default: %(default)s'))
+                        help=('This floating point value specifies the importance'
+                        ' that interpolation of the point samples is given in the '
+                        'formulation of the screened Poisson equation. The results '
+                        'of the original (unscreened) Poisson Reconstruction can '
+                        'be obtained by setting this value to 0.'
+                        'Default= %(default)s'))
 
     parser.add_argument('--fast-orthophoto',
                 action='store_true',

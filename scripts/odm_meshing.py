@@ -16,10 +16,8 @@ class ODMeshingCell(ecto.Cell):
                                    'values are 8-12', 9)
         params.declare("samples", 'Number of points per octree node, recommended '
                                   'value: 1.0', 1)
-        params.declare("solver", 'Oct-tree depth at which the Laplacian equation '
-                                 'is solved in the surface reconstruction step. '
-                                 'Increasing this value increases computation '
-                                 'times slightly but helps reduce memory usage.', 9)
+        params.declare("point_weight", "specifies the importance that interpolation of the point samples is given in the formulation of the screened Poisson equation.", 4)
+        params.declare("max_concurrency", 'max threads', context.num_cores)
         params.declare("verbose", 'print additional messages to console', False)
 
     def declare_io(self, params, inputs, outputs):
@@ -39,7 +37,6 @@ class ODMeshingCell(ecto.Cell):
         args = inputs.args
         tree = inputs.tree
         reconstruction = inputs.reconstruction
-        verbose = '-verbose' if self.params.verbose else ''
 
         # define paths and create working directories
         system.mkdir_p(tree.odm_meshing)
@@ -62,12 +59,14 @@ class ODMeshingCell(ecto.Cell):
           if not io.file_exists(tree.odm_mesh) or rerun_cell:
               log.ODM_DEBUG('Writing ODM Mesh file in: %s' % tree.odm_mesh)
 
-              mesh.screened_poisson_reconstruction(infile, 
+              mesh.screened_poisson_reconstruction(infile,
                 tree.odm_mesh,
-                depth=self.params.oct_tree, 
-                samples=self.params.samples, 
-                maxVertexCount=self.params.max_vertex, 
-                verbose=verbose)
+                depth=self.params.oct_tree,
+                samples=self.params.samples,
+                maxVertexCount=self.params.max_vertex,
+                pointWeight=self.params.point_weight,
+                threads=self.params.max_concurrency,
+                verbose=self.params.verbose)
 
           else:
               log.ODM_WARNING('Found a valid ODM Mesh file in: %s' %
@@ -83,14 +82,14 @@ class ODMeshingCell(ecto.Cell):
 
               # Create reference DSM at half ortho resolution
               dsm_resolution *= 2
-              
+
               # Sparse point clouds benefits from using
               # a larger resolution value (more radius interolation, less holes)
               if args.fast_orthophoto:
                   dsm_resolution *= 2
 
-              mesh.create_25dmesh(infile, tree.odm_25dmesh, 
-                    dsm_resolution=dsm_resolution, 
+              mesh.create_25dmesh(infile, tree.odm_25dmesh,
+                    dsm_resolution=dsm_resolution,
                     depth=self.params.oct_tree,
                     maxVertexCount=self.params.max_vertex,
                     verbose=self.params.verbose,

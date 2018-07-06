@@ -27,6 +27,8 @@ orb_slam2_path = os.path.join(superbuild_path, "src/orb_slam2")
 makescene_path = os.path.join(superbuild_path, 'src', 'elibs', 'mve', 'apps', 'makescene', 'makescene') #TODO: don't install in source
 smvs_path = os.path.join(superbuild_path, 'src', 'elibs', 'smvs', 'app', 'smvsrecon')
 
+poisson_recon_path = os.path.join(superbuild_path, 'src', 'PoissonRecon', 'Bin', 'Linux', 'PoissonRecon')
+
 # define mvstex path
 mvstex_path = os.path.join(superbuild_path, "install/bin/texrecon")
 
