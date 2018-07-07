@@ -255,7 +255,7 @@ def config():
 
     parser.add_argument('--mesh-samples',
                         metavar='<float >= 1.0>',
-                        default=2.0,
+                        default=1.0,
                         type=float,
                         help=('Number of points per octree node, recommended '
                               'and default value: %(default)s'))
