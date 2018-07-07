@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-import os, shutil, sys, struct, random
+import os, shutil, sys, struct, random, math
 from gippy import GeoImage
 from opendm.dem import commands
 from opendm import system
@@ -19,7 +19,7 @@ def create_25dmesh(inPointCloud, outMesh, dsm_resolution=0.05, depth=8, samples=
     os.mkdir(tmp_directory)
     log.ODM_INFO('Created temporary directory: %s' % tmp_directory)
 
-    radius_steps = [dsm_resolution / 4.0, dsm_resolution / 2.0, dsm_resolution]
+    radius_steps = [dsm_resolution * math.sqrt(2)]
 
     log.ODM_INFO('Creating DSM for 2.5D mesh')
 
