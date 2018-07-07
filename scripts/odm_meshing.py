@@ -92,6 +92,7 @@ class ODMeshingCell(ecto.Cell):
                     dsm_resolution=dsm_resolution,
                     depth=self.params.oct_tree,
                     maxVertexCount=self.params.max_vertex,
+                    samples=self.params.samples,
                     verbose=self.params.verbose,
                     max_workers=args.max_concurrency)
           else:

@@ -63,7 +63,8 @@ def json_gdal_base(fout, output, radius, resolution=1):
         'resolution': resolution,
         'radius': radius,
         'filename': '{0}.{1}.tif'.format(fout, output[0]),
-        'output_type': output[0]
+        'output_type': output[0],
+        'data_type': 'float'
     })
 
     return json
