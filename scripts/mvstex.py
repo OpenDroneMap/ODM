@@ -102,7 +102,8 @@ class ODMMvsTexCell(ecto.Cell):
                     'skipHoleFilling': skipHoleFilling,
                     'keepUnseenFaces': keepUnseenFaces,
                     'toneMapping': self.params.tone_mapping,
-                    'nadirMode': nadir
+                    'nadirMode': nadir,
+                    'nadirWeight': 2 ** args.texturing_nadir_weight - 1
                 }
 
                 if args.use_opensfm_dense:
@@ -126,7 +127,8 @@ class ODMMvsTexCell(ecto.Cell):
                            '{skipLocalSeamLeveling} '
                            '{skipHoleFilling} '
                            '{keepUnseenFaces} '
-                           '{nadirMode}'.format(**kwargs))
+                           '{nadirMode} '
+                           '-n {nadirWeight}'.format(**kwargs))
             else:
                 log.ODM_WARNING('Found a valid ODM Texture file in: %s'
                                 % odm_textured_model_obj)
