@@ -311,6 +311,16 @@ def config():
                         help=('Data term: [area, gmi]. Default: '
                               '%(default)s'))
 
+    parser.add_argument('--texturing-nadir-weight',
+                        metavar='<integer: 0 <= x <= 32>',
+                        default=16,
+                        type=int,
+                        help=('Affects orthophotos only. '
+                              'Higher values result in sharper corners, but can affect color distribution and blurriness. '
+                              'Use lower values for planar areas and higher values for urban areas. '
+                              'The default value works well for most scenarios. Default: '
+                              '%(default)s'))
+
     parser.add_argument('--texturing-outlier-removal-type',
                         metavar='<string>',
                         default='gauss_clamping',
