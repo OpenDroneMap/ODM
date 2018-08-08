@@ -1,7 +1,31 @@
 import os
 import json
 import numpy as np
+import functools
+from opendm import log
 
+def cap_resolution(resolution, reconstruction_json):
+    """
+    :param resolution resolution in cm / pixel
+    :param reconstruction_json path to OpenSfM's reconstruction.json
+    :return The max value between resolution and the GSD computed from the reconstruction.
+        If a GSD cannot be computed, it just returns resolution. Units are in cm / pixel.
+    """
+    gsd = opensfm_reconstruction_average_gsd(reconstruction_json)
+
+    if gsd is not None:
+        log.ODM_INFO('Ground Sampling Distance: {} cm / pixel'.format(round(gsd, 2))
+        if gsd > resolution:
+            log.ODM_WARNING('Maximum resolution set to GSD (requested resolution was {})'.format(round(resolution, 2)))
+            return gsd
+        else:
+            return resolution
+    else:
+        log.ODM_WARNING('Cannot calculate GSD, using requested resolution of {}'.format(round(resolution, 2))
+        return resolution
+
+
+@functools.lru_cache(maxsize=None, typed=False)
 def opensfm_reconstruction_average_gsd(reconstruction_json):
     """
     Computes the average Ground Sampling Distance of an OpenSfM reconstruction.

@@ -5,6 +5,7 @@ from opendm import io
 from opendm import system
 from opendm import context
 from opendm import mesh
+from opendm import gsd
 
 
 class ODMeshingCell(ecto.Cell):
@@ -78,7 +79,7 @@ class ODMeshingCell(ecto.Cell):
           if not io.file_exists(tree.odm_25dmesh) or rerun_cell:
 
               log.ODM_DEBUG('Writing ODM 2.5D Mesh file in: %s' % tree.odm_25dmesh)
-              dsm_resolution = float(args.orthophoto_resolution) / 100.0 
+              dsm_resolution = gsd.cap_resolution(args.orthophoto_resolution, tree.opensfm_reconstruction) / 100.0 
 
               # Create reference DSM at half ortho resolution
               dsm_resolution *= 2
