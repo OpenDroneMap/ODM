@@ -406,8 +406,8 @@ def config():
     parser.add_argument('--dem-resolution',
                         metavar='<float>',
                         type=float,
-                        default=0.1,
-                        help='Length of raster cell edges in meters.'
+                        default=5,
+                        help='DSM/DTM resolution in cm / pixel.'
                              '\nDefault: %(default)s')
 
     parser.add_argument('--dem-maxangle',
@@ -464,9 +464,9 @@ def config():
 
     parser.add_argument('--orthophoto-resolution',
                         metavar='<float > 0.0>',
-                        default=20.0,
+                        default=5,
                         type=float,
-                        help=('Orthophoto ground resolution in pixels/meter'
+                        help=('Orthophoto resolution in cm / pixel.\n'
                               'Default: %(default)s'))
 
     parser.add_argument('--orthophoto-target-srs',

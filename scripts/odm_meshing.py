@@ -78,7 +78,7 @@ class ODMeshingCell(ecto.Cell):
           if not io.file_exists(tree.odm_25dmesh) or rerun_cell:
 
               log.ODM_DEBUG('Writing ODM 2.5D Mesh file in: %s' % tree.odm_25dmesh)
-              dsm_resolution = 1.0 / float(args.orthophoto_resolution)
+              dsm_resolution = float(args.orthophoto_resolution) / 100.0 
 
               # Create reference DSM at half ortho resolution
               dsm_resolution *= 2

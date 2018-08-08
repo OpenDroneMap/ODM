@@ -91,7 +91,7 @@ class ODMDEMCell(ecto.Cell):
                 if args.dsm: products.append('dsm')
                 if args.dtm: products.append('dtm')
 
-                radius_steps = [args.dem_resolution / 4.0]
+                radius_steps = [(float(args.dem_resolution) / 100.0) / 2.0]
                 for _ in range(args.dem_gapfill_steps - 1):
                     radius_steps.append(radius_steps[-1] * 2) # 2 is arbitrary, maybe there's a better value?
 
@@ -102,7 +102,7 @@ class ODMDEMCell(ecto.Cell):
                             radius=map(str, radius_steps),
                             gapfill=True,
                             outdir=odm_dem_root,
-                            resolution=args.dem_resolution,
+                            resolution=float(args.dem_resolution) / 100.0,
                             maxsd=args.dem_maxsd,
                             maxangle=args.dem_maxangle,
                             decimation=args.dem_decimation,
