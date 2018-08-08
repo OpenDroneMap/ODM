@@ -11,7 +11,7 @@ from opendm.cropper import Cropper
 
 class ODMOrthoPhotoCell(ecto.Cell):
     def declare_params(self, params):
-        params.declare("resolution", 'Orthophoto ground resolution in pixels/meter', 20)
+        params.declare("resolution", 'Orthophoto resolution in cm / pixel', 5)
         params.declare("t_srs", 'Target SRS', None)
         params.declare("no_tiled", 'Do not tile tiff', False)
         params.declare("compress", 'Compression type', 'DEFLATE')
@@ -56,7 +56,7 @@ class ODMOrthoPhotoCell(ecto.Cell):
                 'log': tree.odm_orthophoto_log,
                 'ortho': tree.odm_orthophoto_file,
                 'corners': tree.odm_orthophoto_corners,
-                'res': self.params.resolution,
+                'res': 1.0 / (float(self.params.resolution) / 100.0),
                 'verbose': verbose
             }
 
