@@ -6,6 +6,7 @@ from opendm import log
 from opendm import system
 from opendm import context
 from opendm import types
+from opendm import gsd
 from opendm.cropper import Cropper
 
 
@@ -56,7 +57,7 @@ class ODMOrthoPhotoCell(ecto.Cell):
                 'log': tree.odm_orthophoto_log,
                 'ortho': tree.odm_orthophoto_file,
                 'corners': tree.odm_orthophoto_corners,
-                'res': 1.0 / (float(self.params.resolution) / 100.0),
+                'res': 1.0 / (gsd.cap_resolution(self.params.resolution, tree.reconstruction_json) / 100.0),
                 'verbose': verbose
             }
 

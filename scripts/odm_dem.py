@@ -6,6 +6,7 @@ from opendm import log
 from opendm import system
 from opendm import context
 from opendm import types
+from opendm import gsd
 from opendm.dem import commands
 from opendm.cropper import Cropper
 
@@ -90,8 +91,9 @@ class ODMDEMCell(ecto.Cell):
                 products = []
                 if args.dsm: products.append('dsm')
                 if args.dtm: products.append('dtm')
-
-                radius_steps = [(float(args.dem_resolution) / 100.0) / 2.0]
+                
+                resolution = gsd.cap_resolution(args.dem_resolution, tree.opensfm_reconstruction)
+                radius_steps = [(resolution / 100.0) / 2.0]
                 for _ in range(args.dem_gapfill_steps - 1):
                     radius_steps.append(radius_steps[-1] * 2) # 2 is arbitrary, maybe there's a better value?
 
@@ -102,7 +104,7 @@ class ODMDEMCell(ecto.Cell):
                             radius=map(str, radius_steps),
                             gapfill=True,
                             outdir=odm_dem_root,
-                            resolution=float(args.dem_resolution) / 100.0,
+                            resolution=resolution / 100.0,
                             maxsd=args.dem_maxsd,
                             maxangle=args.dem_maxangle,
                             decimation=args.dem_decimation,
