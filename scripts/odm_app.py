@@ -118,13 +118,14 @@ class ODMApp(ecto.BlackBox):
                         self.args[:] >> self.opensfm['args'],
                         self.dataset['reconstruction'] >> self.opensfm['reconstruction']]
 
-        if p.args.use_opensfm_dense:
+        if p.args.use_opensfm_dense or p.args.fast_orthophoto:
             # create odm mesh from opensfm point cloud
             connections += [self.tree[:] >> self.meshing['tree'],
                             self.args[:] >> self.meshing['args'],
                             self.opensfm['reconstruction'] >> self.meshing['reconstruction']]
         else:
             # run smvs
+
             connections += [self.tree[:] >> self.smvs['tree'],
                             self.args[:] >> self.smvs['args'],
                             self.opensfm['reconstruction'] >> self.smvs['reconstruction']]

@@ -92,7 +92,7 @@ class ODMDEMCell(ecto.Cell):
                 if args.dsm: products.append('dsm')
                 if args.dtm: products.append('dtm')
                 
-                resolution = gsd.cap_resolution(args.dem_resolution, tree.opensfm_reconstruction)
+                resolution = gsd.cap_resolution(args.dem_resolution, tree.opensfm_reconstruction, ignore_gsd=args.ignore_gsd)
                 radius_steps = [(resolution / 100.0) / 2.0]
                 for _ in range(args.dem_gapfill_steps - 1):
                     radius_steps.append(radius_steps[-1] * 2) # 2 is arbitrary, maybe there's a better value?

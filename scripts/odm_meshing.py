@@ -50,10 +50,10 @@ class ODMeshingCell(ecto.Cell):
                       'odm_meshing' in args.rerun_from)
 
         infile = tree.smvs_model
-        if args.use_opensfm_dense:
-          infile = tree.opensfm_model
-        elif args.fast_orthophoto:
+        if args.fast_orthophoto:
           infile = os.path.join(tree.opensfm, 'reconstruction.ply')
+        elif args.use_opensfm_dense:
+          infile = tree.opensfm_model
 
         # Create full 3D model unless --skip-3dmodel is set
         if not args.skip_3dmodel:
@@ -79,7 +79,7 @@ class ODMeshingCell(ecto.Cell):
           if not io.file_exists(tree.odm_25dmesh) or rerun_cell:
 
               log.ODM_DEBUG('Writing ODM 2.5D Mesh file in: %s' % tree.odm_25dmesh)
-              dsm_resolution = gsd.cap_resolution(args.orthophoto_resolution, tree.opensfm_reconstruction) / 100.0 
+              dsm_resolution = gsd.cap_resolution(args.orthophoto_resolution, tree.opensfm_reconstruction, ignore_gsd=args.ignore_gsd) / 100.0 
 
               # Create reference DSM at half ortho resolution
               dsm_resolution *= 2

@@ -203,6 +203,14 @@ def config():
                         default=False,
                         help='Use opensfm to compute dense point cloud alternatively')
 
+    parser.add_argument('--ignore-gsd',
+                        action='store_true',
+                        default=False,
+                        help='Ignore Ground Sampling Distance (GSD). GSD '
+                        'caps the maximum resolution of image outputs and '
+                        'resizes images when necessary, resulting in faster processing and '
+                        'lower memory usage. Since GSD is an estimate, sometimes ignoring it can result in slightly better image output quality.')
+
     parser.add_argument('--smvs-alpha',
                         metavar='<float>',
                         default=1.0,
@@ -540,9 +548,8 @@ def config():
         sys.exit(1)
 
     if args.fast_orthophoto:
-      log.ODM_INFO('Fast orthophoto is turned on, automatically setting --skip-3dmodel and --use-opensfm-dense')
+      log.ODM_INFO('Fast orthophoto is turned on, automatically setting --skip-3dmodel')
       args.skip_3dmodel = True
-      args.use_opensfm_dense = True
 
     if args.dtm and args.pc_classify == 'none':
       log.ODM_INFO("DTM is turned on, automatically turning on point cloud classification")
