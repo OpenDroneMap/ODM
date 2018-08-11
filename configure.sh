@@ -78,7 +78,8 @@ install() {
                         gpxpy \
                         xmltodict \
                         appsettings \
-                        loky
+                        loky \
+                        repoze.lru
 
     echo "Installing Ecto Dependencies"
     pip install -U catkin-pkg

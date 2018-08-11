@@ -1,31 +1,53 @@
 import os
 import json
 import numpy as np
-import functools
+from repoze.lru import lru_cache
 from opendm import log
 
-def cap_resolution(resolution, reconstruction_json):
+def image_scale_factor(target_resolution, reconstruction_json, gsd_error_estimate = 0.1):
     """
-    :param resolution resolution in cm / pixel
+    :param target_resolution resolution the user wants have in cm / pixel
     :param reconstruction_json path to OpenSfM's reconstruction.json
-    :return The max value between resolution and the GSD computed from the reconstruction.
-        If a GSD cannot be computed, it just returns resolution. Units are in cm / pixel.
+    :param gsd_error_estimate percentage of estimated error in the GSD calculation to set an upper bound on resolution.
+    :return A down-scale (<= 1) value to apply to images to achieve the target resolution by comparing the current GSD of the reconstruction.
+        If a GSD cannot be computed, it just returns 1. Returned scale values are never higher than 1.
     """
     gsd = opensfm_reconstruction_average_gsd(reconstruction_json)
 
+    if gsd is not None and target_resolution > 0:
+        gsd = gsd * (1 + gsd_error_estimate)
+        return min(1, gsd / target_resolution)
+    else:
+        return 1
+
+
+def cap_resolution(resolution, reconstruction_json, gsd_error_estimate = 0.1, ignore_gsd=False):
+    """
+    :param resolution resolution in cm / pixel
+    :param reconstruction_json path to OpenSfM's reconstruction.json
+    :param gsd_error_estimate percentage of estimated error in the GSD calculation to set an upper bound on resolution.
+    :param ignore_gsd when set to True, forces the function to just return resolution.
+    :return The max value between resolution and the GSD computed from the reconstruction.
+        If a GSD cannot be computed, or ignore_gsd is set to True, it just returns resolution. Units are in cm / pixel.
+    """
+    if ignore_gsd:
+        return resolution
+
+    gsd = opensfm_reconstruction_average_gsd(reconstruction_json)
+
     if gsd is not None:
-        log.ODM_INFO('Ground Sampling Distance: {} cm / pixel'.format(round(gsd, 2))
+        gsd = gsd * (1 - gsd_error_estimate)
         if gsd > resolution:
-            log.ODM_WARNING('Maximum resolution set to GSD (requested resolution was {})'.format(round(resolution, 2)))
+            log.ODM_WARNING('Maximum resolution set to GSD - {}% ({} cm / pixel, requested resolution was {} cm / pixel)'.format(gsd_error_estimate * 100, round(gsd, 2), round(resolution, 2)))
             return gsd
         else:
             return resolution
     else:
-        log.ODM_WARNING('Cannot calculate GSD, using requested resolution of {}'.format(round(resolution, 2))
+        log.ODM_WARNING('Cannot calculate GSD, using requested resolution of {}'.format(round(resolution, 2)))
         return resolution
 
 
-@functools.lru_cache(maxsize=None, typed=False)
+@lru_cache(maxsize=None)
 def opensfm_reconstruction_average_gsd(reconstruction_json):
     """
     Computes the average Ground Sampling Distance of an OpenSfM reconstruction.
@@ -62,7 +84,12 @@ def opensfm_reconstruction_average_gsd(reconstruction_json):
                                                         shot_height - ground_height, 
                                                         camera['width']))
     
-    return np.mean(gsds) if len(gsds) > 0 else None
+    if len(gsds) > 0:
+        mean = np.mean(gsds)
+        if mean > 0:
+            return mean
+    
+    return None
 
 def calculate_gsd(sensor_width, flight_height, focal_length, image_width):
     """

@@ -103,14 +103,9 @@ class ODMMvsTexCell(ecto.Cell):
                     'keepUnseenFaces': keepUnseenFaces,
                     'toneMapping': self.params.tone_mapping,
                     'nadirMode': nadir,
-                    'nadirWeight': 2 ** args.texturing_nadir_weight - 1
+                    'nadirWeight': 2 ** args.texturing_nadir_weight - 1,
+                    'nvm_file': io.join_paths(tree.opensfm, "reconstruction.nvm")
                 }
-
-                if args.use_opensfm_dense:
-                    kwargs['nvm_file'] = io.join_paths(tree.opensfm,
-                                                       "reconstruction.nvm")
-                else:
-                    kwargs['nvm_file'] = tree.smvs + "::undistorted"
 
                 # Make sure tmp directory is empty
                 mvs_tmp_dir = os.path.join(r['out_dir'], 'tmp')

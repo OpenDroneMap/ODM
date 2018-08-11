@@ -4,7 +4,7 @@ from opendm import log
 from opendm import io
 from opendm import system
 from opendm import context
-
+from opendm import gsd
 
 class ODMOpenSfMCell(ecto.Cell):
     def declare_params(self, params):
@@ -50,10 +50,10 @@ class ODMOpenSfMCell(ecto.Cell):
                      (args.rerun_from is not None and
                       'opensfm' in args.rerun_from)
 
-        if args.use_opensfm_dense:
+        if args.fast_orthophoto:
+            output_file = io.join_paths(tree.opensfm, 'reconstruction.ply')
+        elif args.use_opensfm_dense:
             output_file = tree.opensfm_model
-            if args.fast_orthophoto:
-                output_file = io.join_paths(tree.opensfm, 'reconstruction.ply')
         else:
             output_file = tree.opensfm_reconstruction
 
@@ -135,25 +135,37 @@ class ODMOpenSfMCell(ecto.Cell):
                 log.ODM_WARNING('Found a valid OpenSfM reconstruction file in: %s' %
                                 tree.opensfm_reconstruction)
 
-            if args.use_opensfm_dense:
-                if not io.file_exists(tree.opensfm_reconstruction_nvm) or rerun_cell:
-                    system.run('PYTHONPATH=%s %s/bin/opensfm export_visualsfm %s' %
-                               (context.pyopencv_path, context.opensfm_path, tree.opensfm))
-                else:
-                    log.ODM_WARNING('Found a valid OpenSfM NVM reconstruction file in: %s' %
-                                    tree.opensfm_reconstruction_nvm)
+            # Always export VisualSFM's reconstruction and undistort images
+            # as we'll use these for texturing (after GSD estimation and resizing)
+            if not args.ignore_gsd:
+                image_scale = gsd.image_scale_factor(args.orthophoto_resolution, tree.opensfm_reconstruction)
+            else:
+                image_scale = 1.0
 
+            if not io.file_exists(tree.opensfm_reconstruction_nvm) or rerun_cell:
+                system.run('PYTHONPATH=%s %s/bin/opensfm export_visualsfm --image_extension png --scale_focal %s %s' %
+                            (context.pyopencv_path, context.opensfm_path, image_scale, tree.opensfm))
+            else:
+                log.ODM_WARNING('Found a valid OpenSfM NVM reconstruction file in: %s' %
+                                tree.opensfm_reconstruction_nvm)
+
+            # These will be used for texturing
+            system.run('PYTHONPATH=%s %s/bin/opensfm undistort --image_format png --image_scale %s %s' %
+                        (context.pyopencv_path, context.opensfm_path, image_scale, tree.opensfm))
+
+            # Skip dense reconstruction if necessary and export
+            # sparse reconstruction instead
+            if args.fast_orthophoto:
+                system.run('PYTHONPATH=%s %s/bin/opensfm export_ply --no-cameras %s' %
+                        (context.pyopencv_path, context.opensfm_path, tree.opensfm))
+            elif args.use_opensfm_dense:
+                # Undistort images at full scale in JPG
+                # (TODO: we could compare the size of the PNGs if they are < than depthmap_resolution
+                # and use those instead of re-exporting full resolution JPGs)
                 system.run('PYTHONPATH=%s %s/bin/opensfm undistort %s' %
-                           (context.pyopencv_path, context.opensfm_path, tree.opensfm))
-
-                # Skip dense reconstruction if necessary and export
-                # sparse reconstruction instead
-                if args.fast_orthophoto:
-                    system.run('PYTHONPATH=%s %s/bin/opensfm export_ply --no-cameras %s' %
-                           (context.pyopencv_path, context.opensfm_path, tree.opensfm))
-                else:
-                    system.run('PYTHONPATH=%s %s/bin/opensfm compute_depthmaps %s' %
-                           (context.pyopencv_path, context.opensfm_path, tree.opensfm))
+                        (context.pyopencv_path, context.opensfm_path, tree.opensfm))
+                system.run('PYTHONPATH=%s %s/bin/opensfm compute_depthmaps %s' %
+                        (context.pyopencv_path, context.opensfm_path, tree.opensfm))
 
         else:
             log.ODM_WARNING('Found a valid OpenSfM reconstruction file in: %s' %
