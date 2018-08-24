@@ -8,6 +8,7 @@ set(PCL_DIR "PCL_DIR-NOTFOUND" CACHE "PCL_DIR" "Path to the pcl installation dir
 add_definitions(-Wall -Wextra)
 
 # Find pcl at the location specified by PCL_DIR
+find_package(VTK 6.0 REQUIRED)
 find_package(PCL 1.8 HINTS "${PCL_DIR}/share/pcl-1.8")
 
 # Add the PCL and Eigen include dirs. 
