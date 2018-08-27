@@ -1,16 +1,15 @@
 #!/bin/bash
 
+if [[ $2 =~ ^[0-9]+$ ]] ; then
+    processes=$2
+else
+    processes=$(nproc)
+fi
+
 install() {
     ## Set up library paths
-
     export PYTHONPATH=$RUNPATH/SuperBuild/install/lib/python2.7/dist-packages:$RUNPATH/SuperBuild/src/opensfm:$PYTHONPATH
     export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$RUNPATH/SuperBuild/install/lib
-
-    if [[ $2 =~ ^[0-9]+$ ]] ; then
-        processes=$2
-    else
-        processes=$(nproc)
-    fi
 
     ## Before installing
     echo "Updating the system"
