@@ -50,7 +50,7 @@ int UtmExtractor::run(int argc, char **argv)
         log_ << "For more detailed information, see log file." << "\n";
         return EXIT_FAILURE;
     }
-    catch (const std::exception& e)
+    catch (const std::runtime_error& e)
     {
         log_.setIsPrintingInCout(true);
         log_ << "Error in OdmExtractUtm:\n";
@@ -175,7 +175,7 @@ void UtmExtractor::extractUtm()
     if (image.get() == 0) {
       std::string error(imageFilename);
       error += ": Image cannot be read";
-      throw Exiv2::Error(1, error);
+      throw std::runtime_error(error.c_str());
     }
     else {
       image->readMetadata();
@@ -184,7 +184,7 @@ void UtmExtractor::extractUtm()
       if (exifData.empty()) {
         std::string error(imageFilename);
         error += ": No Exif data found in the file";
-        throw Exiv2::Error(1, error);
+        throw std::runtime_error(error.c_str());
       }
 
       // Parse exif data for positional data
