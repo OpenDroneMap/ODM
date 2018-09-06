@@ -12,6 +12,7 @@ find_library(PROJ4_LIBRARY "libproj.so" PATHS "/usr/lib" "/usr/lib/x86_64-linux-
 add_definitions(-Wall -Wextra -Wconversion -pedantic -std=c++11)
 
 # Find pcl at the location specified by PCL_DIR
+find_package(VTK 6.0 REQUIRED)
 find_package(PCL 1.8 HINTS "${PCL_DIR}/share/pcl-1.8")
 
 # Find OpenCV at the default location
