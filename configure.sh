@@ -99,7 +99,7 @@ install() {
     echo "Installing split-merge Dependencies"
     pip install -U scipy shapely numpy pyproj
 
-    pip install -U https://github.com/gipit/gippy/archive/v1.0.0.zip psutil
+    pip install -U https://github.com/gipit/gippy/archive/1.0.0.zip psutil
 
     echo "Compiling SuperBuild"
     cd ${RUNPATH}/SuperBuild
