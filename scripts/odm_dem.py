@@ -6,6 +6,7 @@ from opendm import log
 from opendm import system
 from opendm import context
 from opendm import types
+from opendm import gsd
 from opendm.dem import commands
 from opendm.cropper import Cropper
 
@@ -13,6 +14,7 @@ from opendm.cropper import Cropper
 class ODMDEMCell(ecto.Cell):
     def declare_params(self, params):
         params.declare("verbose", 'print additional messages to console', False)
+        params.declare("max_concurrency", "Number of threads", context.num_cores)
 
     def declare_io(self, params, inputs, outputs):
         inputs.declare("tree", "Struct with paths", [])
@@ -44,12 +46,12 @@ class ODMDEMCell(ecto.Cell):
 
         # Setup terrain parameters
         terrain_params_map = {
-            'flatnonforest': (1, 3), 
-            'flatforest': (1, 2), 
-            'complexnonforest': (5, 2), 
+            'flatnonforest': (1, 3),
+            'flatforest': (1, 2),
+            'complexnonforest': (5, 2),
             'complexforest': (10, 2)
         }
-        terrain_params = terrain_params_map[args.dem_terrain_type.lower()]             
+        terrain_params = terrain_params_map[args.dem_terrain_type.lower()]
         slope, cellsize = terrain_params
 
         # define paths and create working directories
@@ -62,7 +64,7 @@ class ODMDEMCell(ecto.Cell):
 
             if not io.file_exists(pc_classify_marker) or rerun_cell:
                 log.ODM_INFO("Classifying {} using {}".format(tree.odm_georeferencing_model_laz, args.pc_classify))
-                commands.classify(tree.odm_georeferencing_model_laz, 
+                commands.classify(tree.odm_georeferencing_model_laz,
                                   args.pc_classify == "smrf",
                                   slope,
                                   cellsize,
@@ -70,7 +72,7 @@ class ODMDEMCell(ecto.Cell):
                                   initialDistance=args.dem_initial_distance,
                                   verbose=args.verbose
                                 )
-                with open(pc_classify_marker, 'w') as f: 
+                with open(pc_classify_marker, 'w') as f:
                     f.write('Classify: {}\n'.format(args.pc_classify))
                     f.write('Slope: {}\n'.format(slope))
                     f.write('Cellsize: {}\n'.format(cellsize))
@@ -87,25 +89,27 @@ class ODMDEMCell(ecto.Cell):
                 rerun_cell:
 
                 products = []
-                if args.dsm: products.append('dsm') 
+                if args.dsm: products.append('dsm')
                 if args.dtm: products.append('dtm')
-
-                radius_steps = [args.dem_resolution]
+                
+                resolution = gsd.cap_resolution(args.dem_resolution, tree.opensfm_reconstruction, ignore_gsd=args.ignore_gsd)
+                radius_steps = [(resolution / 100.0) / 2.0]
                 for _ in range(args.dem_gapfill_steps - 1):
-                    radius_steps.append(radius_steps[-1] * 3) # 3 is arbitrary, maybe there's a better value?
+                    radius_steps.append(radius_steps[-1] * 2) # 2 is arbitrary, maybe there's a better value?
 
                 for product in products:
                     commands.create_dems(
-                            [tree.odm_georeferencing_model_laz], 
+                            [tree.odm_georeferencing_model_laz],
                             product,
                             radius=map(str, radius_steps),
                             gapfill=True,
                             outdir=odm_dem_root,
-                            resolution=args.dem_resolution,
+                            resolution=resolution / 100.0,
                             maxsd=args.dem_maxsd,
                             maxangle=args.dem_maxangle,
                             decimation=args.dem_decimation,
-                            verbose=args.verbose
+                            verbose=args.verbose,
+                            max_workers=args.max_concurrency
                         )
 
                     if args.crop > 0:
@@ -116,7 +120,7 @@ class ODMDEMCell(ecto.Cell):
                                 'COMPRESS': 'LZW',
                                 'BLOCKXSIZE': 512,
                                 'BLOCKYSIZE': 512,
-                                'NUM_THREADS': 'ALL_CPUS'
+                                'NUM_THREADS': self.params.max_concurrency
                             })
             else:
                 log.ODM_WARNING('Found existing outputs in: %s' % odm_dem_root)

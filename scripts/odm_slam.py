@@ -39,7 +39,6 @@ class ODMSlamCell(ecto.Cell):
 
         # create working directories
         system.mkdir_p(tree.opensfm)
-        system.mkdir_p(tree.pmvs)
 
         vocabulary = os.path.join(context.orb_slam2_path,
                                   'Vocabulary/ORBvoc.txt')
@@ -95,17 +94,6 @@ class ODMSlamCell(ecto.Cell):
             log.ODM_WARNING(
                 'Found a valid Bundler file in: {}'.format(
                     tree.opensfm_reconstruction))
-
-        # check if reconstruction was exported to pmvs before
-        if not io.file_exists(tree.pmvs_visdat) or rerun_cell:
-            # run PMVS converter
-            system.run(
-                'PYTHONPATH={} {}/bin/export_pmvs {} --output {}'.format(
-                    context.pyopencv_path, context.opensfm_path, tree.opensfm,
-                    tree.pmvs))
-        else:
-            log.ODM_WARNING('Found a valid CMVS file in: {}'.format(
-                tree.pmvs_visdat))
 
         log.ODM_INFO('Running OMD Slam Cell - Finished')
         return ecto.OK if args.end_with != 'odm_slam' else ecto.QUIT

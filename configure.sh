@@ -77,7 +77,8 @@ install() {
                         gpxpy \
                         xmltodict \
                         appsettings \
-                        loky
+                        loky \
+                        repoze.lru
 
     echo "Installing Ecto Dependencies"
     pip install -U catkin-pkg
@@ -100,6 +101,7 @@ install() {
     pip install -U scipy shapely numpy pyproj
 
     pip install -U https://github.com/gipit/gippy/archive/1.0.0.zip psutil
+
 
     echo "Compiling SuperBuild"
     cd ${RUNPATH}/SuperBuild
