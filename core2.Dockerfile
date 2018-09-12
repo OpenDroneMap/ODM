@@ -19,7 +19,7 @@ libexiv2-dev liblas-bin python-matplotlib libatlas-base-dev swig2.0 python-wheel
 RUN apt-get remove libdc1394-22-dev
 RUN pip install --upgrade pip
 RUN pip install setuptools
-RUN pip install -U PyYAML exifread gpxpy xmltodict catkin-pkg appsettings https://github.com/gipit/gippy/archive/1.0.0.zip loky shapely numpy pyproj psutil && pip install -U scipy --ignore-installed
+RUN pip install -U PyYAML exifread gpxpy xmltodict catkin-pkg appsettings https://github.com/gipit/gippy/archive/1.0.0.zip loky shapely numpy pyproj psutil repoze.lru && pip install -U scipy --ignore-installed
 
 ENV PYTHONPATH="$PYTHONPATH:/code/SuperBuild/install/lib/python2.7/dist-packages"
 ENV PYTHONPATH="$PYTHONPATH:/code/SuperBuild/src/opensfm"
@@ -61,7 +61,7 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Clean Superbuild
 
-RUN rm -rf /code/SuperBuild/download /code/SuperBuild/src/vtk7 /code/SuperBuild/src/opencv /code/SuperBuild/src/pcl /code/SuperBuild/src/pdal /code/SuperBuild/src/opengv /code/SuperBuild/src/mvstexturing /code/SuperBuild/src/ceres /code/SuperBuild/build/vtk7 /code/SuperBuild/build/opencv
+RUN rm -rf /code/SuperBuild/download /code/SuperBuild/src/opencv /code/SuperBuild/src/pcl /code/SuperBuild/src/pdal /code/SuperBuild/src/opengv /code/SuperBuild/src/mvstexturing /code/SuperBuild/src/ceres /code/SuperBuild/build/opencv
 
 # Entry point
 ENTRYPOINT ["python", "/code/run.py", "code"]

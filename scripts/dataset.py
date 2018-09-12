@@ -59,7 +59,7 @@ class ODMLoadDatasetCell(ecto.Cell):
 
         # define paths and create working directories
         system.mkdir_p(tree.odm_georeferencing)
-        if args.use_25dmesh: system.mkdir_p(tree.odm_25dgeoreferencing)
+        if not args.use_3dmesh: system.mkdir_p(tree.odm_25dgeoreferencing)
 
         log.ODM_DEBUG('Loading dataset from: %s' % images_dir)
 
