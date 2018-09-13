@@ -53,14 +53,6 @@ def benchmark(start, benchmarking_file, process):
     with open(benchmarking_file, 'a') as b:
         b.write('%s runtime: %s seconds\n' % (process, delta))
 
-
-def run_and_return(cmdSrc, cmdDest=None):
-    """Run a system command and return the output"""
-    process = subprocess.Popen(cmdSrc, stdout=subprocess.PIPE, shell=True)
-    stdout, stderr = process.communicate()
-    return stdout.decode('ascii')
-
-
 def mkdir_p(path):
     """Make a directory including parent directories.
     """

@@ -87,9 +87,7 @@ install() {
                          python-pyside
 
     echo "Installing OpenDroneMap Dependencies"
-    apt-get install -y -qq python-pyexiv2 \
-                         python-scipy \
-                         libexiv2-dev \
+    apt-get install -y -qq python-scipy \
                          liblas-bin
 
     echo "Installing lidar2dems Dependencies"

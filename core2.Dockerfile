@@ -13,8 +13,8 @@ RUN apt-get update -y
 RUN apt-get install --no-install-recommends -y git cmake python-pip build-essential software-properties-common python-software-properties libgdal-dev gdal-bin libgeotiff-dev \
 libgtk2.0-dev libavcodec-dev libavformat-dev libswscale-dev python-dev python-numpy libtbb2 libtbb-dev libjpeg-dev libpng-dev libtiff-dev libjasper-dev libflann-dev \
 libproj-dev libxext-dev liblapack-dev libeigen3-dev libvtk6-dev python-networkx libgoogle-glog-dev libsuitesparse-dev libboost-filesystem-dev libboost-iostreams-dev \
-libboost-regex-dev libboost-python-dev libboost-date-time-dev libboost-thread-dev python-pyproj python-empy python-nose python-pyside python-pyexiv2 python-scipy \
-libexiv2-dev liblas-bin python-matplotlib libatlas-base-dev swig2.0 python-wheel libboost-log-dev libjsoncpp-dev python-gdal
+libboost-regex-dev libboost-python-dev libboost-date-time-dev libboost-thread-dev python-pyproj python-empy python-nose python-pyside python-scipy \
+liblas-bin python-matplotlib libatlas-base-dev swig2.0 python-wheel libboost-log-dev libjsoncpp-dev python-gdal
 
 RUN apt-get remove libdc1394-22-dev
 RUN pip install --upgrade pip
@@ -61,7 +61,7 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Clean Superbuild
 
-RUN rm -rf /code/SuperBuild/download /code/SuperBuild/src/opencv /code/SuperBuild/src/pcl /code/SuperBuild/src/pdal /code/SuperBuild/src/opengv /code/SuperBuild/src/mvstexturing /code/SuperBuild/src/ceres /code/SuperBuild/build/opencv
+RUN rm -rf /code/SuperBuild/download /code/SuperBuild/src/opencv /code/SuperBuild/src/pcl /code/SuperBuild/src/pdal /code/SuperBuild/src/opengv /code/SuperBuild/src/mvstexturing /code/SuperBuild/src/ceres /code/SuperBuild/build/opencv /code/SuperBuild/src/exiv2lib
 
 # Entry point
 ENTRYPOINT ["python", "/code/run.py", "code"]
