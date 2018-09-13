@@ -1,5 +1,5 @@
 import cv2
-import pyexiv2
+import exifread
 import re
 from fractions import Fraction
 from opensfm.exif import sensor_string
@@ -9,7 +9,7 @@ import log
 import io
 import system
 import context
-
+import logging
 
 class ODM_Photo:
     """   ODMPhoto - a class for ODMPhotos
@@ -33,7 +33,7 @@ class ODM_Photo:
         self.longitude = None
         self.altitude = None
         # parse values from metadata
-        self.parse_pyexiv2_values(self.path_file, force_focal, force_ccd)
+        self.parse_exif_values(self.path_file, force_focal, force_ccd)
         # compute focal length into pixels
         self.update_focal()
 
@@ -55,39 +55,30 @@ class ODM_Photo:
                 self.focal_length_px = \
                     self.height * (self.focal_length / self.ccd_width)
 
-    def parse_pyexiv2_values(self, _path_file, _force_focal, _force_ccd):
-        # read image metadata
-        metadata = pyexiv2.ImageMetadata(_path_file)
-        metadata.read()
-        # loop over image tags
-        for key in metadata:
-            # try/catch tag value due to weird bug in pyexiv2
-            # ValueError: invalid literal for int() with base 10: ''
-            GPS = 'Exif.GPSInfo.GPS'
+    def parse_exif_values(self, _path_file, _force_focal, _force_ccd):
+        # Disable exifread log
+        logging.getLogger('exifread').setLevel(logging.CRITICAL)
+
+        with open(_path_file, 'rb') as f:
+            tags = exifread.process_file(f, details=False)
+
             try:
-                # parse tag names
-                if key == 'Exif.Image.Make':
-                    self.camera_make = metadata[key].value
-                elif key == 'Exif.Image.Model':
-                    self.camera_model = metadata[key].value
-                elif key == 'Exif.Photo.FocalLength':
-                    self.focal_length = float(metadata[key].value)
-                elif key == GPS + 'Latitude':
-                    self.latitude = self.dms_to_decimal(*metadata[key].value +
-                                                        [metadata[GPS + 'LatitudeRef'].value])
-                elif key == GPS + 'Longitude':
-                    self.longitude = self.dms_to_decimal(*metadata[key].value +
-                                                         [metadata[GPS + 'LongitudeRef'].value])
-                elif key == GPS + 'Altitude':
-                    self.altitude = float(metadata[key].value)
-                    if metadata[GPS + 'AltitudeRef'] and int(metadata[GPS + 'AltitudeRef'].value) > 0:
-                        self.altitude *= -1.
-            except (pyexiv2.ExifValueError, ValueError) as e:
-                pass
-            except KeyError as e:
-                log.ODM_DEBUG('Tag not set')
-            except NotImplementedError as e:
-                pass
+                if 'Image Make' in tags:
+                    self.camera_make = tags['Image Make'].values.encode('utf8')
+                if 'Image Model' in tags:
+                    self.camera_model = tags['Image Model'].values.encode('utf8')
+                if 'EXIF FocalLength' in tags:
+                    self.focal_length = self.float_values(tags['EXIF FocalLength'])[0]
+                if 'GPS GPSAltitude' in tags:
+                    self.altitude = self.float_values(tags['GPS GPSAltitude'])[0]
+                    if 'GPS GPSAltitudeRef' in tags and self.int_values(tags['GPS GPSAltitudeRef'])[0] > 0:
+                        self.altitude *= -1
+                if 'GPS GPSLatitude' in tags and 'GPS GPSLatitudeRef' in tags:
+                    self.latitude = self.dms_to_decimal(tags['GPS GPSLatitude'], tags['GPS GPSLatitudeRef'])
+                if 'GPS GPSLongitude' in tags and 'GPS GPSLongitudeRef' in tags:
+                    self.longitude = self.dms_to_decimal(tags['GPS GPSLongitude'], tags['GPS GPSLongitudeRef'])
+            except IndexError as e:
+                log.ODM_WARNING("Cannot read EXIF tags for %s: %s" % (_path_file, e.message))
 
         if self.camera_make and self.camera_model:
             self.make_model = sensor_string(self.camera_make, self.camera_model)
@@ -116,14 +107,21 @@ class ODM_Photo:
                 log.ODM_WARNING('Could not find ccd_width in file. Use --force-ccd or edit the sensor_data.json '
                                 'file to manually input ccd width')
 
-    def dms_to_decimal(self, degrees, minutes, seconds, sign=' '):
+    def dms_to_decimal(self, dms, sign):
         """Converts dms coords to decimal degrees"""
-        return (-1 if sign[0] in 'SWsw' else 1) * (
-            float(degrees) +
-            float(minutes) / 60 +
-            float(seconds) / 3600
+        degrees, minutes, seconds = self.float_values(dms)
+
+        return (-1 if sign.values[0] in 'SWsw' else 1) * (
+            degrees +
+            minutes / 60 +
+            seconds / 3600
         )
 
+    def float_values(self, tag):
+        return map(lambda v: float(v.num) / float(v.den), tag.values) 
+
+    def int_values(self, tag):
+        return map(int, tag.values)
 
 # TODO: finish this class
 class ODM_Reconstruction(object):
@@ -277,81 +275,6 @@ class ODM_GeoRef(object):
         # call pdal
         system.run('{bin}/pdal pipeline -i {json} --readers.ply.filename={f_in}'.format(**kwargs))
 
-    def utm_to_latlon(self, _file, _photo, idx):
-
-        gcp = self.gcps[idx]
-
-        kwargs = {'proj': self.projection,
-                  'file': _file,
-                  'x': gcp.x + self.utm_east_offset,
-                  'y': gcp.y + self.utm_north_offset,
-                  'z': gcp.z}
-
-        latlon = system.run_and_return('echo {x} {y} {z} '.format(**kwargs),
-                                       'gdaltransform -s_srs \"{proj}\" '
-                                       '-t_srs \"EPSG:4326\"'.format(**kwargs)).split()
-
-        # Example: 83d18'16.285"W
-        # Example: 41d2'11.789"N
-        # Example: 0.998
-
-        if len(latlon) == 3:
-            lon_str, lat_str, alt_str = latlon
-        elif len(latlon) == 2:
-            lon_str, lat_str = latlon
-            alt_str = ''
-        else:
-            log.ODM_ERROR('Something went wrong %s' % latlon)
-
-        lat_frac = self.coord_to_fractions(latlon[1], ['N', 'S'])
-        lon_frac = self.coord_to_fractions(latlon[0], ['E', 'W'])
-
-        # read image metadata
-        metadata = pyexiv2.ImageMetadata(_photo.path_file)
-        metadata.read()
-
-        # #set values
-        #
-        # # GPS latitude
-        # key = 'Exif.GPSInfo.GPSLatitude'
-        # value = lat_frac[0].split(' ')
-        # log.ODM_DEBUG('lat_frac: %s %s %s' % (value[0], value[1], value[2]))
-        # metadata[key] = pyexiv2.ExifTag(key,
-        #                                 [Fraction(value[0]),
-        #                                  Fraction(value[1]),
-        #                                  Fraction(value[2])])
-        #
-        # key = 'Exif.GPSInfo.GPSLatitudeRef'
-        # value = lat_frac[1]
-        # metadata[key] = pyexiv2.ExifTag(key, value)
-        #
-        # # GPS longitude
-        # key = 'Exif.GPSInfo.GPSLongitude'
-        # value = lon_frac[0].split(' ')
-        # metadata[key] = pyexiv2.ExifTag(key,
-        #                                 [Fraction(value[0]),
-        #                                  Fraction(value[1]),
-        #                                  Fraction(value[2])])
-        #
-        # key = 'Exif.GPSInfo.GPSLongitudeRef'
-        # value = lon_frac[1]
-        # metadata[key] = pyexiv2.ExifTag(key, value)
-        #
-        # # GPS altitude
-        # altitude = abs(int(float(latlon[2]) * 100))
-        # key = 'Exif.GPSInfo.GPSAltitude'
-        # value = Fraction(altitude, 1)
-        # metadata[key] = pyexiv2.ExifTag(key, value)
-        #
-        # if latlon[2] >= 0:
-        #     altref = '0'
-        # else:
-        #     altref = '1'
-        # key = 'Exif.GPSInfo.GPSAltitudeRef'
-        # metadata[key] = pyexiv2.ExifTag(key, altref)
-        #
-        # # write values
-        # metadata.write()
 
     def extract_offsets(self, _file):
         if not io.file_exists(_file):

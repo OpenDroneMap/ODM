@@ -98,14 +98,13 @@ class ODMLoadDatasetCell(ecto.Cell):
                 }
 
                 # run UTM extraction binary
-                extract_utm = system.run_and_return('{bin}/odm_extract_utm -imagesPath {imgs}/ '
-                                                    '-imageListFile {imgs_list} -outputCoordFile {coords} {verbose} '
-                                                    '-logFile {log}'.format(**kwargs))
-
-                if extract_utm != '':
+                try:
+                    system.run('{bin}/odm_extract_utm -imagesPath {imgs}/ '
+                                                        '-imageListFile {imgs_list} -outputCoordFile {coords} {verbose} '
+                                                        '-logFile {log}'.format(**kwargs))
+                except:
                     log.ODM_WARNING('Could not generate coordinates file. '
-                                    'Ignore if there is a GCP file. Error: %s'
-                                    % extract_utm)
+                                    'Ignore if there is a GCP file')
 
                 outputs.reconstruction = types.ODM_Reconstruction(photos, coords_file=tree.odm_georeferencing_coords)
         else:
