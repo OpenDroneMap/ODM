@@ -61,7 +61,7 @@ class ODM_Photo:
         metadata.read()
         # loop over image tags
         for key in metadata:
-            # try/catch tag value due to weird bug in pyexiv2 
+            # try/catch tag value due to weird bug in pyexiv2
             # ValueError: invalid literal for int() with base 10: ''
             GPS = 'Exif.GPSInfo.GPS'
             try:
@@ -274,7 +274,7 @@ class ODM_GeoRef(object):
         with open(json_file, 'w') as f:
             f.write(pipeline)
 
-        # call pdal 
+        # call pdal
         system.run('{bin}/pdal pipeline -i {json} --readers.ply.filename={f_in}'.format(**kwargs))
 
     def utm_to_latlon(self, _file, _photo, idx):
@@ -389,7 +389,7 @@ class ODM_GeoRef(object):
         # Create a nested list for the transformation matrix
         with open(_file) as f:
             for line in f:
-                # Handle matrix formats that either 
+                # Handle matrix formats that either
                 # have leading or trailing brakets or just plain numbers.
                 line = re.sub(r"[\[\],]", "", line).strip()
                 self.transform += [[float(i) for i in line.split()]]
@@ -414,7 +414,7 @@ class ODM_Tree(object):
         # whole reconstruction process.
         self.dataset_raw = io.join_paths(self.root_path, 'images')
         self.opensfm = io.join_paths(self.root_path, 'opensfm')
-        self.pmvs = io.join_paths(self.root_path, 'pmvs')
+        self.smvs = io.join_paths(self.root_path, 'smvs')
         self.odm_meshing = io.join_paths(self.root_path, 'odm_meshing')
         self.odm_texturing = io.join_paths(self.root_path, 'odm_texturing')
         self.odm_25dtexturing = io.join_paths(self.root_path, 'odm_texturing_25d')
@@ -439,12 +439,12 @@ class ODM_Tree(object):
         self.opensfm_model = io.join_paths(self.opensfm, 'depthmaps/merged.ply')
         self.opensfm_transformation = io.join_paths(self.opensfm, 'geocoords_transformation.txt')
 
-        # pmvs
-        self.pmvs_rec_path = io.join_paths(self.pmvs, 'recon0')
-        self.pmvs_bundle = io.join_paths(self.pmvs_rec_path, 'bundle.rd.out')
-        self.pmvs_visdat = io.join_paths(self.pmvs_rec_path, 'vis.dat')
-        self.pmvs_options = io.join_paths(self.pmvs_rec_path, 'pmvs_options.txt')
-        self.pmvs_model = io.join_paths(self.pmvs_rec_path, 'models/option-0000.ply')
+        # smvs
+        self.smvs_model = io.join_paths(self.smvs, 'smvs_dense_point_cloud.ply')
+        self.mve_path = io.join_paths(self.opensfm, 'mve')
+        self.mve_image_list = io.join_paths(self.mve_path, 'list.txt')
+        self.mve_bundle = io.join_paths(self.mve_path, 'bundle/bundle.out')
+        self.mve_views = io.join_paths(self.smvs, 'views')
 
         # odm_meshing
         self.odm_mesh = io.join_paths(self.odm_meshing, 'odm_mesh.ply')
