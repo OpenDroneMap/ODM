@@ -7,7 +7,7 @@ from appsettings import SettingsParser
 import sys
 
 # parse arguments
-processopts = ['dataset', 'opensfm', 'slam', 'cmvs', 'pmvs',
+processopts = ['dataset', 'opensfm', 'slam', 'smvs',
                'odm_meshing', 'odm_25dmeshing', 'mvs_texturing', 'odm_georeferencing',
                'odm_dem', 'odm_orthophoto']
 
@@ -140,18 +140,19 @@ def config():
                         default=False,
                         help='Turn off camera parameter optimization during bundler')
 
-    parser.add_argument('--opensfm-processes',
+    parser.add_argument('--max-concurrency',
                         metavar='<positive integer>',
                         default=context.num_cores,
                         type=int,
-                        help=('The maximum number of processes to use in dense '
-                              'reconstruction. Default: %(default)s'))
+                        help=('The maximum number of processes to use in various '
+                              'processes. Peak memory requirement is ~1GB per '
+                              'thread and 2 megapixel image resolution. Default: %(default)s'))
 
-    parser.add_argument('--opensfm-depthmap-resolution',
+    parser.add_argument('--depthmap-resolution',
                         metavar='<positive float>',
                         type=float,
                         default=640,
-                        help=('Resolution of the depthmaps. Higher values take longer to compute '
+                        help=('Controls the density of the point cloud by setting the resolution of the depthmap images. Higher values take longer to compute '
                               'but produce denser point clouds. '
                               'Default: %(default)s'))
 
@@ -187,78 +188,69 @@ def config():
                         help='Run local bundle adjustment for every image added to the reconstruction and a global '
                              'adjustment every 100 images. Speeds up reconstruction for very large datasets.')
 
-    parser.add_argument('--use-25dmesh',
+    parser.add_argument('--use-3dmesh',
                     action='store_true',
                     default=False,
-                    help='Use a 2.5D mesh to compute the orthophoto. This option tends to provide better results for planar surfaces. Experimental.')
+                    help='Use a full 3D mesh to compute the orthophoto instead of a 2.5D mesh. This option is a bit faster and provides similar results in planar areas.')
 
-    parser.add_argument('--use-pmvs',
+    parser.add_argument('--skip-3dmodel',
+                    action='store_true',
+                    default=False,
+                    help='Skip generation of a full 3D model. This can save time if you only need 2D results such as orthophotos and DEMs.')
+
+    parser.add_argument('--use-opensfm-dense',
                         action='store_true',
                         default=False,
-                        help='Use pmvs to compute point cloud alternatively')
+                        help='Use opensfm to compute dense point cloud alternatively')
 
-    parser.add_argument('--cmvs-maxImages',
-                        metavar='<integer>',
-                        default=500,
-                        type=int,
-                        help='The maximum number of images per cluster. '
-                             'Default: %(default)s')
+    parser.add_argument('--ignore-gsd',
+                        action='store_true',
+                        default=False,
+                        help='Ignore Ground Sampling Distance (GSD). GSD '
+                        'caps the maximum resolution of image outputs and '
+                        'resizes images when necessary, resulting in faster processing and '
+                        'lower memory usage. Since GSD is an estimate, sometimes ignoring it can result in slightly better image output quality.')
 
-    parser.add_argument('--pmvs-level',
-                        metavar='<positive integer>',
-                        default=1,
-                        type=int,
-                        help=('The level in the image pyramid that is used '
-                              'for the computation. see '
-                              'http://www.di.ens.fr/pmvs/documentation.html for '
-                              'more pmvs documentation. Default: %(default)s'))
+    parser.add_argument('--smvs-alpha',
+                        metavar='<float>',
+                        default=1.0,
+                        type=float,
+                        help='Regularization parameter, a higher alpha leads to '
+                        'smoother surfaces. Default: %(default)s')
 
-    parser.add_argument('--pmvs-csize',
+    parser.add_argument('--smvs-output-scale',
                         metavar='<positive integer>',
                         default=2,
                         type=int,
-                        help='Cell size controls the density of reconstructions'
-                             'Default: %(default)s')
+                        help='The scale of the optimization - the '
+                        'finest resolution of the bicubic patches will have the'
+                        ' size of the respective power of 2 (e.g. 2 will '
+                        'optimize patches covering down to 4x4 pixels). '
+                        'Default: %(default)s')
 
-    parser.add_argument('--pmvs-threshold',
-                        metavar='<float: -1.0 <= x <= 1.0>',
-                        default=0.7,
-                        type=float,
-                        help=('A patch reconstruction is accepted as a success '
-                              'and kept if its associated photometric consistency '
-                              'measure is above this threshold. Default: %(default)s'))
+    parser.add_argument('--smvs-enable-shading',
+                        action='store_true',
+                        default=False,
+                        help='Use shading-based optimization. This model cannot '
+                        'handle complex scenes. Try to supply linear images to '
+                        'the reconstruction pipeline that are not tone mapped '
+                        'or altered as this can also have very negative effects '
+                        'on the reconstruction. If you have simple JPGs with SRGB '
+                        'gamma correction you can remove it with the --smvs-gamma-srgb '
+                        'option. Default: %(default)s')
 
-    parser.add_argument('--pmvs-wsize',
-                        metavar='<positive integer>',
-                        default=7,
-                        type=int,
-                        help='pmvs samples wsize x wsize pixel colors from '
-                             'each image to compute photometric consistency '
-                             'score. For example, when wsize=7, 7x7=49 pixel '
-                             'colors are sampled in each image. Increasing the '
-                             'value leads to more stable reconstructions, but '
-                             'the program becomes slower. Default: %(default)s')
-
-    parser.add_argument('--pmvs-min-images',
-                        metavar='<positive integer>',
-                        default=3,
-                        type=int,
-                        help=('Each 3D point must be visible in at least '
-                              'minImageNum images for being reconstructed. 3 is '
-                              'suggested in general. Default: %(default)s'))
-
-    parser.add_argument('--pmvs-num-cores',
-                        metavar='<positive integer>',
-                        default=context.num_cores,
-                        type=int,
-                        help=('The maximum number of cores to use in dense '
-                              'reconstruction. Default: %(default)s'))
+    parser.add_argument('--smvs-gamma-srgb',
+                        action='store_true',
+                        default=False,
+                        help='Apply inverse SRGB gamma correction. To be used '
+                        'with --smvs-enable-shading when you have simple JPGs with '
+                        'SRGB gamma correction. Default: %(default)s')
 
     parser.add_argument('--mesh-size',
                         metavar='<positive integer>',
                         default=100000,
                         type=int,
-                        help=('The maximum vertex count of the output mesh '
+                        help=('The maximum vertex count of the output mesh. '
                               'Default: %(default)s'))
 
     parser.add_argument('--mesh-octree-depth',
@@ -276,35 +268,16 @@ def config():
                         help=('Number of points per octree node, recommended '
                               'and default value: %(default)s'))
 
-    parser.add_argument('--mesh-solver-divide',
-                        metavar='<positive integer>',
-                        default=9,
-                        type=int,
-                        help=('Oct-tree depth at which the Laplacian equation '
-                              'is solved in the surface reconstruction step. '
-                              'Increasing this value increases computation '
-                              'times slightly but helps reduce memory usage. '
-                              'Default: %(default)s'))
-    
-    parser.add_argument('--mesh-neighbors',
-                        metavar='<positive integer>',
-                        default=24,
-                        type=int,
-                        help=('Number of neighbors to select when estimating the surface model used to compute the mesh and for statistical outlier removal. Higher values lead to smoother meshes but take longer to process. '
-                              'Applies to 2.5D mesh only. '
-                              'Default: %(default)s'))
-
-    parser.add_argument('--mesh-resolution',
-                        metavar='<positive float>',
-                        default=0,
+    parser.add_argument('--mesh-point-weight',
+                        metavar='<interpolation weight>',
+                        default=4,
                         type=float,
-                        help=('Size of the interpolated surface model used for deriving the 2.5D mesh, expressed in pixels per meter. '
-                              'Higher values work better for complex or urban terrains. '
-                              'Lower values work better on flat areas. '
-                              'Resolution has no effect on the number of vertices, but high values can severely impact runtime speed and memory usage. '
-                              'When set to zero, the program automatically attempts to find a good value based on the point cloud extent and target vertex count. '
-                              'Applies to 2.5D mesh only. '
-                              'Default: %(default)s'))
+                        help=('This floating point value specifies the importance'
+                        ' that interpolation of the point samples is given in the '
+                        'formulation of the screened Poisson equation. The results '
+                        'of the original (unscreened) Poisson Reconstruction can '
+                        'be obtained by setting this value to 0.'
+                        'Default= %(default)s'))
 
     parser.add_argument('--fast-orthophoto',
                 action='store_true',
@@ -344,6 +317,16 @@ def config():
                         default='gmi',
                         choices=['gmi', 'area'],
                         help=('Data term: [area, gmi]. Default: '
+                              '%(default)s'))
+
+    parser.add_argument('--texturing-nadir-weight',
+                        metavar='<integer: 0 <= x <= 32>',
+                        default=16,
+                        type=int,
+                        help=('Affects orthophotos only. '
+                              'Higher values result in sharper corners, but can affect color distribution and blurriness. '
+                              'Use lower values for planar areas and higher values for urban areas. '
+                              'The default value works well for most scenarios. Default: '
                               '%(default)s'))
 
     parser.add_argument('--texturing-outlier-removal-type',
@@ -420,7 +403,7 @@ def config():
 
     parser.add_argument('--dem-gapfill-steps',
                         metavar='<positive integer>',
-                        default=4,
+                        default=3,
                         type=int,
                         help='Number of steps used to fill areas with gaps. Set to 0 to disable gap filling. '
                              'Starting with a radius equal to the output resolution, N different DEMs are generated with '
@@ -431,8 +414,8 @@ def config():
     parser.add_argument('--dem-resolution',
                         metavar='<float>',
                         type=float,
-                        default=0.1,
-                        help='Length of raster cell edges in meters.'
+                        default=5,
+                        help='DSM/DTM resolution in cm / pixel.'
                              '\nDefault: %(default)s')
 
     parser.add_argument('--dem-maxangle',
@@ -489,9 +472,9 @@ def config():
 
     parser.add_argument('--orthophoto-resolution',
                         metavar='<float > 0.0>',
-                        default=20.0,
+                        default=5,
                         type=float,
-                        help=('Orthophoto ground resolution in pixels/meter'
+                        help=('Orthophoto resolution in cm / pixel.\n'
                               'Default: %(default)s'))
 
     parser.add_argument('--orthophoto-target-srs',
@@ -565,16 +548,15 @@ def config():
         sys.exit(1)
 
     if args.fast_orthophoto:
-      log.ODM_INFO('Fast orthophoto is turned on, automatically setting --use-25dmesh')
-      args.use_25dmesh = True
-
-      # Cannot use pmvs
-      if args.use_pmvs:
-        log.ODM_INFO('Fast orthophoto is turned on, cannot use pmvs (removing --use-pmvs)')
-        args.use_pmvs = False
+      log.ODM_INFO('Fast orthophoto is turned on, automatically setting --skip-3dmodel')
+      args.skip_3dmodel = True
 
     if args.dtm and args.pc_classify == 'none':
       log.ODM_INFO("DTM is turned on, automatically turning on point cloud classification")
       args.pc_classify = "smrf"
+
+    if args.skip_3dmodel and args.use_3dmesh:
+      log.ODM_WARNING('--skip-3dmodel is set, but so is --use-3dmesh. You can\'t have both!')
+      sys.exit(1)
 
     return args

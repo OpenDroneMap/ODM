@@ -63,7 +63,7 @@ class Cropper:
 
         return geotiff_path
 
-    def create_bounds_geojson(self, pointcloud_path, buffer_distance = 0):
+    def create_bounds_geojson(self, pointcloud_path, buffer_distance = 0, decimation_step=40, outlier_radius=20):
         """
         Compute a buffered polygon around the data extents (not just a bounding box)
         of the given point cloud.
@@ -80,11 +80,11 @@ class Cropper:
         run("pdal translate -i \"{}\" "
             "-o \"{}\" "
             "decimation outlier range "
-            "--filters.decimation.step=40 "
+            "--filters.decimation.step={} "
             "--filters.outlier.method=radius "
-            "--filters.outlier.radius=20 "
+            "--filters.outlier.radius={} "
             "--filters.outlier.min_k=2 "
-            "--filters.range.limits='Classification![7:7]'".format(pointcloud_path, filtered_pointcloud_path))
+            "--filters.range.limits='Classification![7:7]'".format(pointcloud_path, filtered_pointcloud_path, decimation_step, outlier_radius))
 
         if not os.path.exists(filtered_pointcloud_path):
             log.ODM_WARNING('Could not filter point cloud, cannot generate shapefile bounds {}'.format(filtered_pointcloud_path))
@@ -164,7 +164,7 @@ class Cropper:
         return bounds_geojson_path
 
 
-    def create_bounds_shapefile(self, pointcloud_path, buffer_distance = 0):
+    def create_bounds_shapefile(self, pointcloud_path, buffer_distance = 0, decimation_step=40, outlier_radius=20):
         """
         Compute a buffered polygon around the data extents (not just a bounding box)
         of the given point cloud.
@@ -175,7 +175,7 @@ class Cropper:
             log.ODM_WARNING('Point cloud does not exist, cannot generate shapefile bounds {}'.format(pointcloud_path))
             return ''
 
-        bounds_geojson_path = self.create_bounds_geojson(pointcloud_path, buffer_distance)
+        bounds_geojson_path = self.create_bounds_geojson(pointcloud_path, buffer_distance, decimation_step, outlier_radius)
 
         summary_file_path = os.path.join(self.storage_dir, '{}.summary.json'.format(self.files_prefix))
         run('pdal info --summary {0} > {1}'.format(pointcloud_path, summary_file_path))

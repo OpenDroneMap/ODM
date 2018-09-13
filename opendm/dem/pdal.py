@@ -63,7 +63,8 @@ def json_gdal_base(fout, output, radius, resolution=1):
         'resolution': resolution,
         'radius': radius,
         'filename': '{0}.{1}.tif'.format(fout, output[0]),
-        'output_type': output[0]
+        'output_type': output[0],
+        'data_type': 'float'
     })
 
     return json
@@ -170,10 +171,19 @@ def json_add_crop_filter(json, wkt):
     return json
 
 
+def is_ply_file(filename):
+    _, ext = os.path.splitext(filename)
+    return ext.lower() == '.ply'
+
+
 def json_add_reader(json, filename):
-    """ Add LAS Reader Element and return """
+    """ Add Reader Element and return """
+    reader_type = 'readers.las' # default
+    if is_ply_file(filename):
+        reader_type = 'readers.ply'
+
     json['pipeline'].insert(0, {
-            'type': 'readers.las',
+            'type': reader_type,
             'filename': os.path.abspath(filename)
         })
     return json

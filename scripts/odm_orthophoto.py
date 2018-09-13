@@ -6,18 +6,20 @@ from opendm import log
 from opendm import system
 from opendm import context
 from opendm import types
+from opendm import gsd
 from opendm.cropper import Cropper
 
 
 class ODMOrthoPhotoCell(ecto.Cell):
     def declare_params(self, params):
-        params.declare("resolution", 'Orthophoto ground resolution in pixels/meter', 20)
+        params.declare("resolution", 'Orthophoto resolution in cm / pixel', 5)
         params.declare("t_srs", 'Target SRS', None)
         params.declare("no_tiled", 'Do not tile tiff', False)
         params.declare("compress", 'Compression type', 'DEFLATE')
         params.declare("bigtiff", 'Make BigTIFF orthophoto', 'IF_SAFER')
         params.declare("build_overviews", 'Build overviews', False)
         params.declare("verbose", 'print additional messages to console', False)
+        params.declare("max_concurrency", "number of threads", context.num_cores)
 
     def declare_io(self, params, inputs, outputs):
         inputs.declare("tree", "Struct with paths", [])
@@ -55,7 +57,7 @@ class ODMOrthoPhotoCell(ecto.Cell):
                 'log': tree.odm_orthophoto_log,
                 'ortho': tree.odm_orthophoto_file,
                 'corners': tree.odm_orthophoto_corners,
-                'res': self.params.resolution,
+                'res': 1.0 / (gsd.cap_resolution(self.params.resolution, tree.opensfm_reconstruction, ignore_gsd=args.ignore_gsd) / 100.0),
                 'verbose': verbose
             }
 
@@ -76,15 +78,15 @@ class ODMOrthoPhotoCell(ecto.Cell):
 
 
             if georef:
-                if args.use_25dmesh:
-                    kwargs['model_geo'] = os.path.join(tree.odm_25dtexturing, tree.odm_georeferencing_model_obj_geo)
-                else:
+                if args.use_3dmesh:
                     kwargs['model_geo'] = os.path.join(tree.odm_texturing, tree.odm_georeferencing_model_obj_geo)
-            else:
-                if args.use_25dmesh:
-                    kwargs['model_geo'] = os.path.join(tree.odm_25dtexturing, tree.odm_textured_model_obj)
                 else:
+                    kwargs['model_geo'] = os.path.join(tree.odm_25dtexturing, tree.odm_georeferencing_model_obj_geo)
+            else:
+                if args.use_3dmesh:
                     kwargs['model_geo'] = os.path.join(tree.odm_texturing, tree.odm_textured_model_obj)
+                else:
+                    kwargs['model_geo'] = os.path.join(tree.odm_25dtexturing, tree.odm_textured_model_obj)
 
             # run odm_orthophoto
             system.run('{bin}/odm_orthophoto -inputFile {model_geo} '
@@ -125,7 +127,8 @@ class ODMOrthoPhotoCell(ecto.Cell):
                     'png': tree.odm_orthophoto_file,
                     'tiff': tree.odm_orthophoto_tif,
                     'log': tree.odm_orthophoto_tif_log,
-                    'max_memory': max(5, (100 - virtual_memory().percent) / 2)
+                    'max_memory': max(5, (100 - virtual_memory().percent) / 2),
+                    'threads': self.params.max_concurrency
                 }
 
                 system.run('gdal_translate -a_ullr {ulx} {uly} {lrx} {lry} '
@@ -135,7 +138,7 @@ class ODMOrthoPhotoCell(ecto.Cell):
                            '{predictor} '
                            '-co BLOCKXSIZE=512 '
                            '-co BLOCKYSIZE=512 '
-                           '-co NUM_THREADS=ALL_CPUS '
+                           '-co NUM_THREADS={threads} '
                            '-a_srs \"{proj}\" '
                            '--config GDAL_CACHEMAX {max_memory}% '
                            '{png} {tiff} > {log}'.format(**kwargs))
@@ -149,7 +152,7 @@ class ODMOrthoPhotoCell(ecto.Cell):
                             'BIGTIFF': self.params.bigtiff,
                             'BLOCKXSIZE': 512,
                             'BLOCKYSIZE': 512,
-                            'NUM_THREADS': 'ALL_CPUS'
+                            'NUM_THREADS': self.params.max_concurrency
                         })
 
                 if self.params.build_overviews:
