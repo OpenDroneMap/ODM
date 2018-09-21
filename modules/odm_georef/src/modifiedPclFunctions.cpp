@@ -45,10 +45,8 @@ int saveOBJFile(const std::string &file_name, const pcl::TextureMesh &tex_mesh, 
     return (-1);
   }
 
-  // Open file
-  std::ofstream fs;
+  std::ostringstream fs;
   fs.precision (precision);
-  fs.open (file_name.c_str ());
 
   // Define material file
   std::string mtl_file_name = file_name.substr (0, file_name.find_last_of (".")) + ".mtl";
@@ -214,7 +212,9 @@ int saveOBJFile(const std::string &file_name, const pcl::TextureMesh &tex_mesh, 
 
   // Close obj file
   //PCL_INFO ("Closing obj file\n");
-  fs.close ();
+  std::ofstream ofs(file_name.c_str ());
+  ofs << fs.str() << std::endl;
+  ofs.close ();
 
   /* Write material defination for OBJ file*/
   // Open file
@@ -223,29 +223,34 @@ int saveOBJFile(const std::string &file_name, const pcl::TextureMesh &tex_mesh, 
   if(tex_mesh.tex_materials.size() ==0)
     return (0);
 
-  std::ofstream m_fs;
-  m_fs.precision (precision);
-  m_fs.open (mtl_file_name.c_str ());
+  // Empty string stream
+  fs.str("");
+
   //std::cout << "MTL file is located at_ " << mtl_file_name << std::endl;
   // default
-  m_fs << "#" << std::endl;
-  m_fs << "# Wavefront material file" << std::endl;
-  m_fs << "#" << std::endl;
+  fs << "#" << std::endl;
+  fs << "# Wavefront material file" << std::endl;
+  fs << "#" << std::endl;
   for(int m = 0; m < nr_meshes; ++m)
   {
-    m_fs << "newmtl " << tex_mesh.tex_materials[m].tex_name << std::endl;
-    m_fs << "Ka "<< tex_mesh.tex_materials[m].tex_Ka.r << " " << tex_mesh.tex_materials[m].tex_Ka.g << " " << tex_mesh.tex_materials[m].tex_Ka.b << std::endl; // defines the ambient color of the material to be (r,g,b).
-    m_fs << "Kd "<< tex_mesh.tex_materials[m].tex_Kd.r << " " << tex_mesh.tex_materials[m].tex_Kd.g << " " << tex_mesh.tex_materials[m].tex_Kd.b << std::endl; // defines the diffuse color of the material to be (r,g,b).
-    m_fs << "Ks "<< tex_mesh.tex_materials[m].tex_Ks.r << " " << tex_mesh.tex_materials[m].tex_Ks.g << " " << tex_mesh.tex_materials[m].tex_Ks.b << std::endl; // defines the specular color of the material to be (r,g,b). This color shows up in highlights.
-    m_fs << "d " << tex_mesh.tex_materials[m].tex_d << std::endl; // defines the transparency of the material to be alpha.
-    m_fs << "Ns "<< tex_mesh.tex_materials[m].tex_Ns  << std::endl; // defines the shininess of the material to be s.
-    m_fs << "illum "<< tex_mesh.tex_materials[m].tex_illum << std::endl; // denotes the illumination model used by the material.
+    fs << "newmtl " << tex_mesh.tex_materials[m].tex_name << std::endl;
+    fs << "Ka "<< tex_mesh.tex_materials[m].tex_Ka.r << " " << tex_mesh.tex_materials[m].tex_Ka.g << " " << tex_mesh.tex_materials[m].tex_Ka.b << std::endl; // defines the ambient color of the material to be (r,g,b).
+    fs << "Kd "<< tex_mesh.tex_materials[m].tex_Kd.r << " " << tex_mesh.tex_materials[m].tex_Kd.g << " " << tex_mesh.tex_materials[m].tex_Kd.b << std::endl; // defines the diffuse color of the material to be (r,g,b).
+    fs << "Ks "<< tex_mesh.tex_materials[m].tex_Ks.r << " " << tex_mesh.tex_materials[m].tex_Ks.g << " " << tex_mesh.tex_materials[m].tex_Ks.b << std::endl; // defines the specular color of the material to be (r,g,b). This color shows up in highlights.
+    fs << "d " << tex_mesh.tex_materials[m].tex_d << std::endl; // defines the transparency of the material to be alpha.
+    fs << "Ns "<< tex_mesh.tex_materials[m].tex_Ns  << std::endl; // defines the shininess of the material to be s.
+    fs << "illum "<< tex_mesh.tex_materials[m].tex_illum << std::endl; // denotes the illumination model used by the material.
     // illum = 1 indicates a flat material with no specular highlights, so the value of Ks is not used.
     // illum = 2 denotes the presence of specular highlights, and so a specification for Ks is required.
-    m_fs << "map_Kd " << tex_mesh.tex_materials[m].tex_file << std::endl;
-    m_fs << "###" << std::endl;
+    fs << "map_Kd " << tex_mesh.tex_materials[m].tex_file << std::endl;
+    fs << "###" << std::endl;
   }
-  m_fs.close ();
+
+
+  std::ofstream omfs(mtl_file_name.c_str ());
+  omfs << fs.str() << std::endl;
+  omfs.close ();
+
   return (0);
 }
 
