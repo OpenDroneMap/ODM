@@ -18,7 +18,9 @@ In a word, OpenDroneMap is a toolchain for processing raw civilian UAS imagery t
 6. Digital Elevation Models
 7. etc.
 
-Open Drone Map now includes state-of-the-art 3D reconstruction work by Michael Waechter, Nils Moehrle, and Michael Goesele. See their publication at [http://www.gcc.tu-darmstadt.de/media/gcc/papers/Waechter-2014-LTB.pdf](http://www.gcc.tu-darmstadt.de/media/gcc/papers/Waechter-2014-LTB.pdf).
+OpenDroneMap now includes state-of-the-art 3D reconstruction work by Michael Waechter, Nils Moehrle, and Michael Goesele. See their publication at [http://www.gcc.tu-darmstadt.de/media/gcc/papers/Waechter-2014-LTB.pdf](http://www.gcc.tu-darmstadt.de/media/gcc/papers/Waechter-2014-LTB.pdf).
+
+For Docs, see Quickstart below and also https://docs.opendronemap.org
 
 ## QUICKSTART
 
