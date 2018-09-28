@@ -220,7 +220,7 @@ def config():
 
     parser.add_argument('--smvs-output-scale',
                         metavar='<positive integer>',
-                        default=2,
+                        default=1,
                         type=int,
                         help='The scale of the optimization - the '
                         'finest resolution of the bicubic patches will have the'
