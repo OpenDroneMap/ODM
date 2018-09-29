@@ -29,11 +29,15 @@ struct PlyPoint{
     float x;
     float y;
     float z;
-    float nx;
-    float ny;
-    float nz;
 } p;
-size_t psize = sizeof(float) * 6;
+size_t psize = sizeof(float) * 3;
+
+struct PlyFace{
+    uint32_t p1;
+    uint32_t p2;
+    uint32_t p3;
+} face;
+size_t fsize = sizeof(uint32_t) * 3;
 
 float *rasterData;
 int arr_width, arr_height;
@@ -89,39 +93,6 @@ BoundingBox getExtent(GDALDataset *dataset){
     return BoundingBox(geoLoc(0, dataset->GetRasterYSize(), affine), geoLoc(dataset->GetRasterXSize(), 0, affine));
 }
 
-int countSkirts(int nx, int ny){
-    float neighbor_z = rasterData[ny * arr_width + nx];
-    float current_z = p.z;
-    int result = 0;
-
-    if (current_z - neighbor_z > SkirtHeightThreshold.value && current_z - neighbor_z < SkirtHeightCap.value){
-        while (current_z > neighbor_z){
-            current_z -= SkirtIncrements.value;
-            result++;
-        }
-        result++;
-    }
-
-    return result;
-}
-
-void writeSkirts(std::ofstream &f, int nx, int ny){
-    float neighbor_z = rasterData[ny * arr_width + nx];
-    float z_val = p.z;
-
-    if (p.z - neighbor_z > SkirtHeightThreshold.value && p.z - neighbor_z < SkirtHeightCap.value){
-        while (p.z > neighbor_z){
-            p.z -= SkirtIncrements.value;
-            f.write(reinterpret_cast<char*>(&p), psize);
-        }
-        p.z = neighbor_z;
-        f.write(reinterpret_cast<char*>(&p), psize);
-    }
-
-    // Restore original p.z value
-    p.z = z_val;
-}
-
 int main(int argc, char **argv) {
     cmdLineParse( argc-1 , &argv[1] , params );
     if( !InputFile.set || !OutputFile.set ) help(argv[0]);
@@ -164,22 +135,6 @@ int main(int argc, char **argv) {
             exit(1);
         }
 
-        // On the first pass we calculate the number of skirts
-        // on the second pass we sample and write the points
-
-        logWriter("Calculating skirts... ");
-
-        for (int y = 2; y < arr_height - 2; y++){
-            for (int x = 2; x < arr_width - 2; x++){
-                p.z = rasterData[y * arr_width + x];
-
-                skirt_points += countSkirts(x, y + 1);
-                skirt_points += countSkirts(x, y - 1);
-                skirt_points += countSkirts(x + 1, y);
-                skirt_points += countSkirts(x - 1, y);
-            }
-        }
-
         logWriter("%d vertices will be added\n", skirt_points);
         logWriter("Total vertices: %d\n", (skirt_points + vertex_count));
         logWriter("Sampling and writing to file...");
@@ -198,15 +153,9 @@ int main(int argc, char **argv) {
             << "property float x" << std::endl
             << "property float y" << std::endl
             << "property float z" << std::endl
-            << "property float nx" << std::endl
-            << "property float ny" << std::endl
-            << "property float nz" << std::endl
+            << "element face " << ((arr_height - 4 - 1) * (arr_width - 4 - 1) * 2) << std::endl
+            << "property list uint8 uint32 vertex_indices" << std::endl
             << "end_header" << std::endl;
-
-        // Normals are always pointing up
-        p.nx = 0;
-        p.ny = 0;
-        p.nz = 1;
 
         for (int y = 2; y < arr_height - 2; y++){
             for (int x = 2; x < arr_width - 2; x++){
@@ -215,11 +164,28 @@ int main(int argc, char **argv) {
                 p.y = extent.max.y - (static_cast<float>(y) / static_cast<float>(arr_height)) * ext_height;
 
                 f.write(reinterpret_cast<char*>(&p), psize);
+            }
+        }
 
-                writeSkirts(f, x, y + 1);
-                writeSkirts(f, x, y - 1);
-                writeSkirts(f, x + 1, y);
-                writeSkirts(f, x - 1, y);
+        uint8_t vertices = 3;
+        unsigned int cols = arr_width - 4;
+        unsigned int rows = arr_height - 4;
+
+        for (unsigned int y = 0; y < rows - 1; y++){
+            for (unsigned int x = 0; x < cols - 1; x++){
+                face.p1 = cols * (y + 1) + x;
+                face.p2 = cols * y + x + 1;
+                face.p3 = cols * y + x;
+
+                f.write((char *)&vertices, sizeof(vertices));
+                f.write((char *)(&face), fsize);
+
+                face.p1 = cols * (y + 1) + x;
+                face.p2 = cols * (y + 1) + x + 1;
+                face.p3 = cols * y + x + 1;
+
+                f.write((char *)&vertices, sizeof(vertices));
+                f.write((char *)(&face), fsize);
             }
         }
 
