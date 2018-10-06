@@ -3,6 +3,7 @@
 #include <fstream>
 #include "CmdLineParser.h"
 #include "Logger.h"
+#include "Simplify.h"
 
 #include "gdal_priv.h"
 #include "cpl_conv.h" // for CPLMalloc()
@@ -47,25 +48,21 @@ int arr_width, arr_height;
 cmdLineParameter< char* >
     InputFile( "inputFile" ) ,
     OutputFile( "outputFile" );
-cmdLineParameter< float >
-    SkirtHeightThreshold( "skirtHeightThreshold" ),
-    SkirtIncrements("skirtIncrements"),
-    SkirtHeightCap( "skirtHeightCap");
+cmdLineParameter< int >
+    MaxFaceCount( "maxFaceCount" );
 cmdLineReadable
 	Verbose( "verbose" );
 
 cmdLineReadable* params[] = {
-    &InputFile , &OutputFile , &SkirtHeightThreshold, &SkirtIncrements, &SkirtHeightCap, &Verbose ,
+    &InputFile , &OutputFile , &Verbose ,
     NULL
 };
 
 void help(char *ex){
     std::cout << "Usage: " << ex << std::endl
               << "\t -" << InputFile.name << " <input DSM raster>" << std::endl
-              << "\t -" << OutputFile.name << " <output PLY points>" << std::endl
-              << "\t [-" << SkirtHeightThreshold.name << " <Height threshold between cells that triggers the creation of a skirt>]" << std::endl
-              << "\t [-" << SkirtIncrements.name << " <Skirt height increments when adding a new skirt>]" << std::endl
-              << "\t [-" << SkirtHeightCap.name << " <Height cap that blocks the creation of a skirt>]" << std::endl
+              << "\t -" << OutputFile.name << " <output PLY mesh>" << std::endl
+              << "\t [-" << MaxFaceCount.name << " <target number faces> (Default: 100000)]" << std::endl
               << "\t [-" << Verbose.name << "]" << std::endl;
     exit(EXIT_FAILURE);
 }
@@ -96,10 +93,7 @@ BoundingBox getExtent(GDALDataset *dataset){
 int main(int argc, char **argv) {
     cmdLineParse( argc-1 , &argv[1] , params );
     if( !InputFile.set || !OutputFile.set ) help(argv[0]);
-
-    if (!SkirtHeightThreshold.set) SkirtHeightThreshold.value = 1.5f;
-    if (!SkirtIncrements.set) SkirtIncrements.value = 0.1f;
-    if (!SkirtHeightCap.set) SkirtHeightCap.value = 100.0f;
+    if ( !MaxFaceCount.set ) MaxFaceCount.value = 100000;
 
     logWriter.verbose = Verbose.set;
     // logWriter.outputFile = "odm_dem2points_log.txt";
@@ -122,8 +116,7 @@ int main(int argc, char **argv) {
         float ext_width = extent.max.x - extent.min.x;
         float ext_height = extent.max.y - extent.min.y;
 
-        int vertex_count = (arr_height - 4) * (arr_width - 4);
-        int skirt_points = 0;
+        int vertex_count = (arr_height - 2) * (arr_width - 2);
 
         GDALRasterBand *band = dataset->GetRasterBand(1);
 
@@ -135,11 +128,61 @@ int main(int argc, char **argv) {
             exit(1);
         }
 
-        logWriter("%d vertices will be added\n", skirt_points);
-        logWriter("Total vertices: %d\n", (skirt_points + vertex_count));
-        logWriter("Sampling and writing to file...");
+        logWriter("Total vertices before simplification: %d\n", vertex_count);
+        logWriter("Sampling...\n");
 
-        // Starting writing ply file
+        for (int y = 1; y < arr_height - 1; y++){
+            for (int x = 1; x < arr_width - 1; x++){
+                Simplify::Vertex v;
+                v.p.x = extent.min.x + (static_cast<float>(x) / static_cast<float>(arr_width)) * ext_width;
+                v.p.y = extent.max.y - (static_cast<float>(y) / static_cast<float>(arr_height)) * ext_height;
+                v.p.z = rasterData[y * arr_width + x];
+
+                Simplify::vertices.push_back(v);
+            }
+        }
+
+        unsigned int cols = arr_width - 2;
+        unsigned int rows = arr_height - 2;
+
+        for (unsigned int y = 0; y < rows - 1; y++){
+            for (unsigned int x = 0; x < cols - 1; x++){
+                Simplify::Triangle t1;
+                t1.v[0] = cols * (y + 1) + x;
+                t1.v[1] = cols * y + x + 1;
+                t1.v[2] = cols * y + x;
+                t1.attr = 0;
+                t1.material = -1;
+
+                Simplify::triangles.push_back(t1);
+
+                Simplify::Triangle t2;
+                t2.v[0] = cols * (y + 1) + x;
+                t2.v[1] = cols * (y + 1) + x + 1;
+                t2.v[2] = cols * y + x + 1;
+                t2.attr = 0;
+                t2.material = -1;
+
+                Simplify::triangles.push_back(t2);
+            }
+        }
+
+        double agressiveness = 7.0;
+        int target_count = std::min(MaxFaceCount.value, static_cast<int>(Simplify::triangles.size()));
+
+        logWriter("Sampled %d faces, target is %d\n", static_cast<int>(Simplify::triangles.size()), MaxFaceCount.value);
+        logWriter("Simplifying...\n");
+
+        unsigned long start_size = Simplify::triangles.size();
+        Simplify::simplify_mesh(target_count, agressiveness, true);
+        if ( Simplify::triangles.size() >= start_size) {
+            std::cerr << "Unable to reduce mesh.\n";
+            exit(1);
+        }
+
+        logWriter("Writing to file...");
+
+        // Start writing ply file
         std::ofstream f (OutputFile.value);
         f << "ply" << std::endl;
 
@@ -149,51 +192,35 @@ int main(int argc, char **argv) {
           f << "format binary_little_endian 1.0" << std::endl;
         }
 
-        f   << "element vertex " << (vertex_count + skirt_points) << std::endl
+        f   << "element vertex " << Simplify::vertices.size() << std::endl
             << "property float x" << std::endl
             << "property float y" << std::endl
             << "property float z" << std::endl
-            << "element face " << ((arr_height - 4 - 1) * (arr_width - 4 - 1) * 2) << std::endl
+            << "element face " << Simplify::triangles.size() << std::endl
             << "property list uint8 uint32 vertex_indices" << std::endl
             << "end_header" << std::endl;
 
-        for (int y = 2; y < arr_height - 2; y++){
-            for (int x = 2; x < arr_width - 2; x++){
-                p.z = rasterData[y * arr_width + x];
-                p.x = extent.min.x + (static_cast<float>(x) / static_cast<float>(arr_width)) * ext_width;
-                p.y = extent.max.y - (static_cast<float>(y) / static_cast<float>(arr_height)) * ext_height;
-
-                f.write(reinterpret_cast<char*>(&p), psize);
-            }
+        for(Simplify::Vertex &v : Simplify::vertices){
+            p.x = static_cast<float>(v.p.x);
+            p.y = static_cast<float>(v.p.y);
+            p.z = static_cast<float>(v.p.z);
+            f.write(reinterpret_cast<char *>(&p), psize);
         }
 
-        uint8_t vertices = 3;
-        unsigned int cols = arr_width - 4;
-        unsigned int rows = arr_height - 4;
+        uint8_t three = 3;
+        for(Simplify::Triangle &t : Simplify::triangles){
+            face.p1 = static_cast<uint32_t>(t.v[0]);
+            face.p2 = static_cast<uint32_t>(t.v[1]);
+            face.p3 = static_cast<uint32_t>(t.v[2]);
 
-        for (unsigned int y = 0; y < rows - 1; y++){
-            for (unsigned int x = 0; x < cols - 1; x++){
-                face.p1 = cols * (y + 1) + x;
-                face.p2 = cols * y + x + 1;
-                face.p3 = cols * y + x;
-
-                f.write((char *)&vertices, sizeof(vertices));
-                f.write((char *)(&face), fsize);
-
-                face.p1 = cols * (y + 1) + x;
-                face.p2 = cols * (y + 1) + x + 1;
-                face.p3 = cols * y + x + 1;
-
-                f.write((char *)&vertices, sizeof(vertices));
-                f.write((char *)(&face), fsize);
-            }
+            f.write(reinterpret_cast<char *>(&three), sizeof(three));
+            f.write(reinterpret_cast<char *>(&face), fsize);
         }
 
         logWriter(" done!\n");
 
         f.close();
         GDALClose(dataset);
-
     }else{
         std::cerr << "Cannot open " << InputFile.value << std::endl;
     }
