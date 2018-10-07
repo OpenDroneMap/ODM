@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <fstream>
+#include <cmath>
 #include "CmdLineParser.h"
 #include "Logger.h"
 #include "Simplify.h"
@@ -54,7 +55,7 @@ cmdLineReadable
 	Verbose( "verbose" );
 
 cmdLineReadable* params[] = {
-    &InputFile , &OutputFile , &Verbose ,
+    &InputFile , &OutputFile , &MaxVertexCount , &Verbose ,
     NULL
 };
 
