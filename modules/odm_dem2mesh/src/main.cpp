@@ -49,7 +49,7 @@ cmdLineParameter< char* >
     InputFile( "inputFile" ) ,
     OutputFile( "outputFile" );
 cmdLineParameter< int >
-    MaxFaceCount( "maxFaceCount" );
+    MaxVertexCount( "maxVertexCount" );
 cmdLineReadable
 	Verbose( "verbose" );
 
@@ -62,7 +62,7 @@ void help(char *ex){
     std::cout << "Usage: " << ex << std::endl
               << "\t -" << InputFile.name << " <input DSM raster>" << std::endl
               << "\t -" << OutputFile.name << " <output PLY mesh>" << std::endl
-              << "\t [-" << MaxFaceCount.name << " <target number faces> (Default: 100000)]" << std::endl
+              << "\t [-" << MaxVertexCount.name << " <target number vertices> (Default: 100000)]" << std::endl
               << "\t [-" << Verbose.name << "]" << std::endl;
     exit(EXIT_FAILURE);
 }
@@ -93,12 +93,10 @@ BoundingBox getExtent(GDALDataset *dataset){
 int main(int argc, char **argv) {
     cmdLineParse( argc-1 , &argv[1] , params );
     if( !InputFile.set || !OutputFile.set ) help(argv[0]);
-    if ( !MaxFaceCount.set ) MaxFaceCount.value = 100000;
+    if ( !MaxVertexCount.set ) MaxVertexCount.value = 100000;
 
     logWriter.verbose = Verbose.set;
-    // logWriter.outputFile = "odm_dem2points_log.txt";
     logArgs(params, logWriter);
-
 
     GDALDataset  *dataset;
     GDALAllRegister();
@@ -116,7 +114,8 @@ int main(int argc, char **argv) {
         float ext_width = extent.max.x - extent.min.x;
         float ext_height = extent.max.y - extent.min.y;
 
-        int vertex_count = (arr_height - 2) * (arr_width - 2);
+        unsigned long long int vertex_count = static_cast<unsigned long long int>(arr_height) *
+                                              static_cast<unsigned long long int>(arr_width);
 
         GDALRasterBand *band = dataset->GetRasterBand(1);
 
@@ -128,11 +127,26 @@ int main(int argc, char **argv) {
             exit(1);
         }
 
-        logWriter("Total vertices before simplification: %d\n", vertex_count);
         logWriter("Sampling...\n");
 
-        for (int y = 1; y < arr_height - 1; y++){
-            for (int x = 1; x < arr_width - 1; x++){
+        // If the DSM is really large, we only sample a subset of it
+        // to remain within INT_MAX vertices. This does not happen often,
+        // but it's a safeguard to make sure we'll get an output and not
+        // overflow.
+        int stride = 1;
+        while (vertex_count > INT_MAX){
+            stride += 1;
+            vertex_count = static_cast<int>(std::ceil((arr_height / static_cast<double>(stride))) *
+                                            std::ceil((arr_width / static_cast<double>(stride))));
+        }
+
+        if (stride != 1){
+            logWriter("Warning: DSM is large, will sample using stride value of %d\n", stride);
+        }
+        logWriter("Total vertices before simplification: %llu\n", vertex_count);
+
+        for (int y = 0; y < arr_height; y += stride){
+            for (int x = 0; x < arr_width; x += stride){
                 Simplify::Vertex v;
                 v.p.x = extent.min.x + (static_cast<float>(x) / static_cast<float>(arr_width)) * ext_width;
                 v.p.y = extent.max.y - (static_cast<float>(y) / static_cast<float>(arr_height)) * ext_height;
@@ -142,8 +156,8 @@ int main(int argc, char **argv) {
             }
         }
 
-        unsigned int cols = arr_width - 2;
-        unsigned int rows = arr_height - 2;
+        unsigned int cols = static_cast<unsigned int>(std::ceil((arr_width / static_cast<double>(stride))));
+        unsigned int rows = static_cast<unsigned int>(std::ceil((arr_height / static_cast<double>(stride))));
 
         for (unsigned int y = 0; y < rows - 1; y++){
             for (unsigned int x = 0; x < cols - 1; x++){
@@ -168,9 +182,9 @@ int main(int argc, char **argv) {
         }
 
         double agressiveness = 7.0;
-        int target_count = std::min(MaxFaceCount.value, static_cast<int>(Simplify::triangles.size()));
+        int target_count = std::min(MaxVertexCount.value * 2, static_cast<int>(Simplify::triangles.size()));
 
-        logWriter("Sampled %d faces, target is %d\n", static_cast<int>(Simplify::triangles.size()), MaxFaceCount.value);
+        logWriter("Sampled %d faces, target is %d\n", static_cast<int>(Simplify::triangles.size()), target_count);
         logWriter("Simplifying...\n");
 
         unsigned long start_size = Simplify::triangles.size();

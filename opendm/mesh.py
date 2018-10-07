@@ -35,12 +35,7 @@ def create_25dmesh(inPointCloud, outMesh, dsm_resolution=0.05, depth=8, samples=
             max_workers=max_workers
         )
 
-    dsm_points = dem_to_points(os.path.join(tmp_directory, 'mesh_dsm.tif'), os.path.join(tmp_directory, 'dsm_points.ply'), verbose)
-    mesh = screened_poisson_reconstruction(dsm_points, outMesh, depth=depth, 
-                                    samples=samples, 
-                                    maxVertexCount=maxVertexCount, 
-                                    threads=max_workers,
-                                    verbose=verbose)
+    mesh = dem_to_mesh(os.path.join(tmp_directory, 'mesh_dsm.tif'), outMesh, maxVertexCount, verbose)
 
     # Cleanup tmp
     #if os.path.exists(tmp_directory):
@@ -48,7 +43,7 @@ def create_25dmesh(inPointCloud, outMesh, dsm_resolution=0.05, depth=8, samples=
 
     return mesh
 
-def dem_to_points(inGeotiff, outPointCloud, verbose=False):
+def dem_to_mesh(inGeotiff, outPointCloud, maxVertexCount, verbose=False):
     log.ODM_INFO('Sampling points from DSM: %s' % inGeotiff)
 
     kwargs = {
@@ -58,11 +53,10 @@ def dem_to_points(inGeotiff, outPointCloud, verbose=False):
         'verbose': '-verbose' if verbose else ''
     }
 
-    system.run('{bin}/odm_dem2points -inputFile {infile} '
+    # TODO: finish here.
+    system.run('{bin}/odm_dem2mesh -inputFile {infile} '
          '-outputFile {outfile} '
-         '-skirtHeightThreshold 1.5 '
-         '-skirtIncrements 0.2 '
-         '-skirtHeightCap 100 '
+         '- '
          ' {verbose} '.format(**kwargs))
 
     return outPointCloud
