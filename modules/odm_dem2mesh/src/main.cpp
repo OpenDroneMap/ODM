@@ -75,8 +75,8 @@ void logArgs(cmdLineReadable* params[], Logger& logWriter){
     for( int i=0 ; params[i] ; i++ ){
         if( params[i]->set ){
             params[i]->writeValue( str );
-            if( strlen( str ) ) logWriter( "\t--%s %s\n" , params[i]->name , str );
-            else                logWriter( "\t--%s\n" , params[i]->name );
+            if( strlen( str ) ) logWriter( "\t-%s %s\n" , params[i]->name , str );
+            else                logWriter( "\t-%s\n" , params[i]->name );
         }
     }
 }
@@ -115,8 +115,8 @@ int main(int argc, char **argv) {
         float ext_width = extent.max.x - extent.min.x;
         float ext_height = extent.max.y - extent.min.y;
 
-        unsigned long long int vertex_count = static_cast<unsigned long long int>(arr_height) *
-                                              static_cast<unsigned long long int>(arr_width);
+        unsigned long long int vertex_count = static_cast<unsigned long long int>(arr_height - 2) *
+                                              static_cast<unsigned long long int>(arr_width - 2);
 
         GDALRasterBand *band = dataset->GetRasterBand(1);
 
@@ -128,6 +128,9 @@ int main(int argc, char **argv) {
             exit(1);
         }
 
+        // TODO:
+        // 2. Figure out bad_alloc in cmparks dataset
+
         logWriter("Sampling...\n");
 
         // If the DSM is really large, we only sample a subset of it
@@ -137,8 +140,8 @@ int main(int argc, char **argv) {
         int stride = 1;
         while (vertex_count > INT_MAX){
             stride += 1;
-            vertex_count = static_cast<int>(std::ceil((arr_height / static_cast<double>(stride))) *
-                                            std::ceil((arr_width / static_cast<double>(stride))));
+            vertex_count = static_cast<int>(std::ceil(((arr_height - 2) / static_cast<double>(stride))) *
+                                            std::ceil(((arr_width - 2) / static_cast<double>(stride))));
         }
 
         if (stride != 1){
@@ -146,8 +149,8 @@ int main(int argc, char **argv) {
         }
         logWriter("Total vertices before simplification: %llu\n", vertex_count);
 
-        for (int y = 0; y < arr_height; y += stride){
-            for (int x = 0; x < arr_width; x += stride){
+        for (int y = 1; y < arr_height - 1; y += stride){
+            for (int x = 1; x < arr_width - 1; x += stride){
                 Simplify::Vertex v;
                 v.p.x = extent.min.x + (static_cast<float>(x) / static_cast<float>(arr_width)) * ext_width;
                 v.p.y = extent.max.y - (static_cast<float>(y) / static_cast<float>(arr_height)) * ext_height;
@@ -157,8 +160,8 @@ int main(int argc, char **argv) {
             }
         }
 
-        unsigned int cols = static_cast<unsigned int>(std::ceil((arr_width / static_cast<double>(stride))));
-        unsigned int rows = static_cast<unsigned int>(std::ceil((arr_height / static_cast<double>(stride))));
+        unsigned int cols = static_cast<unsigned int>(std::ceil(((arr_width - 2) / static_cast<double>(stride))));
+        unsigned int rows = static_cast<unsigned int>(std::ceil(((arr_height - 2) / static_cast<double>(stride))));
 
         for (unsigned int y = 0; y < rows - 1; y++){
             for (unsigned int x = 0; x < cols - 1; x++){
