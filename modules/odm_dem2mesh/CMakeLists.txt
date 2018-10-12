@@ -5,17 +5,15 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR})
 
 set (CMAKE_CXX_STANDARD 11)
 find_package(GDAL REQUIRED)
-find_package(VTK REQUIRED)
 include_directories(${GDAL_INCLUDE_DIR})
-include(${VTK_USE_FILE})
 
 # Add compiler options.
 add_definitions(-Wall -Wextra)
 
 # Add source directory
 aux_source_directory("./src" SRC_LIST)
-	
+
 # Add exectuteable
 add_executable(${PROJECT_NAME} ${SRC_LIST})
-	
-target_link_libraries(${PROJECT_NAME} ${GDAL_LIBRARY} ${VTK_LIBRARIES})
+
+target_link_libraries(${PROJECT_NAME} ${GDAL_LIBRARY})
