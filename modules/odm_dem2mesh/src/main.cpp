@@ -128,7 +128,7 @@ int main(int argc, char **argv) {
         // to remain within INT_MAX vertices. This does not happen often,
         // but it's a safeguard to make sure we'll get an output and not
         // overflow.
-        int stride = 4;
+        int stride = 1;
         while (vertex_count > INT_MAX){
             stride *= 2;
             vertex_count = static_cast<int>(std::ceil((arr_height / static_cast<double>(stride))) *
@@ -191,6 +191,8 @@ int main(int argc, char **argv) {
                         t1.v[0] = cols * (y + 1) + x;
                         t1.v[1] = cols * y + x + 1;
                         t1.v[2] = cols * y + x;
+                        /*if (y == 0 || x == 0 || y == rows - 1 || x == cols -1) t1.deleted = -1; // freeze
+                        else */t1.deleted = 0;
 
                         Simplify::triangles.push_back(t1);
 
@@ -198,6 +200,8 @@ int main(int argc, char **argv) {
                         t2.v[0] = cols * (y + 1) + x;
                         t2.v[1] = cols * (y + 1) + x + 1;
                         t2.v[2] = cols * y + x + 1;
+                        /*if (y == 0 || x == 0 || y == rows - 1 || x == cols -1) t2.deleted = -1; // freeze
+                        else */t1.deleted = 0;
 
                         Simplify::triangles.push_back(t2);
                     }

@@ -283,7 +283,7 @@ class SymetricMatrix {
 namespace Simplify
 {
 	// Global Variables & Strctures
-    struct Triangle { int v[3];double err[4];int deleted,dirty;vec3f n; };
+    struct Triangle { int v[3];double err[4];int8_t deleted,dirty;vec3f n; };
 	struct Vertex { vec3f p;int tstart,tcount;SymetricMatrix q;int border;};
 	struct Ref { int tid,tvertex; };
 	std::vector<Triangle> triangles;
@@ -310,10 +310,10 @@ namespace Simplify
 	void simplify_mesh(int target_count, double agressiveness=7, bool verbose=false)
 	{
 		// init
-		loopi(0,triangles.size())
-        {
-            triangles[i].deleted=0;
-        }
+//		loopi(0,triangles.size())
+//        {
+//            triangles[i].deleted=0;
+//        }
 
 		// main iteration loop
 		int deleted_triangles=0;
@@ -352,7 +352,8 @@ namespace Simplify
 			{
 				Triangle &t=triangles[i];
 				if(t.err[3]>threshold) continue;
-				if(t.deleted) continue;
+                if(t.deleted == 1) continue;
+                if(t.deleted == -1) continue;
 				if(t.dirty) continue;
 
 				loopj(0,3)if(t.err[j]<threshold)
@@ -406,7 +407,7 @@ namespace Simplify
 	void simplify_mesh_lossless(bool verbose=false)
 	{
 		// init
-		loopi(0,triangles.size()) triangles[i].deleted=0;
+//		loopi(0,triangles.size()) triangles[i].deleted=0;
 
 		// main iteration loop
 		int deleted_triangles=0;
@@ -436,8 +437,9 @@ namespace Simplify
 			{
 				Triangle &t=triangles[i];
 				if(t.err[3]>threshold) continue;
-				if(t.deleted) continue;
-				if(t.dirty) continue;
+                if(t.deleted == 1) continue;
+                if(t.deleted == -1) continue;
+                if(t.dirty) continue;
 
 				loopj(0,3)if(t.err[j]<threshold)
 				{
@@ -497,7 +499,7 @@ namespace Simplify
 		loopk(0,v0.tcount)
 		{
 			Triangle &t=triangles[refs[v0.tstart+k].tid];
-			if(t.deleted)continue;
+            if(t.deleted == 1)continue;
 
 			int s=refs[v0.tstart+k].tvertex;
 			int id1=t.v[(s+1)%3];
@@ -530,7 +532,8 @@ namespace Simplify
 		{
 			Ref &r=refs[v.tstart+k];
 			Triangle &t=triangles[r.tid];
-			if(t.deleted)continue;
+            if(t.deleted == 1)continue;
+
 			if(deleted[k])
 			{
 				t.deleted=1;
@@ -555,7 +558,7 @@ namespace Simplify
 		{
 			int dst=0;
 			loopi(0,triangles.size())
-			if(!triangles[i].deleted)
+            if(triangles[i].deleted == 0 || triangles[i].deleted == -1)
 			{
 				triangles[dst++]=triangles[i];
 			}
@@ -677,7 +680,7 @@ namespace Simplify
 			vertices[i].tcount=0;
 		}
 		loopi(0,triangles.size())
-		if(!triangles[i].deleted)
+        if(triangles[i].deleted == 0 || triangles[i].deleted == -1)
 		{
 			Triangle &t=triangles[i];
 			triangles[dst++]=t;
