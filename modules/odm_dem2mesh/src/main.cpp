@@ -146,31 +146,33 @@ int main(int argc, char **argv) {
         int numBlocks = (int)pow(2, subdivisions);
         int blockSizeX = arr_width / subdivisions;
         int blockSizeY = arr_height / subdivisions;
+        int blockXPad = 0; // Blocks > 0 need to re-add a column for seamless meshing
+        int blockYPad = 0; // Blocks > 0 need to re-add a row for seamless meshing
 
         logWriter("Splitting area in %d\n", numBlocks);
         logWriter("Block size is %d, %d\n", blockSizeX, blockSizeY);
 
-        rasterData = new float[blockSizeX];
+        rasterData = new float[blockSizeX + stride];
 
         for (int blockX = 0; blockX < subdivisions; blockX++){
-            int xOffset = blockX * blockSizeX;
+            int xOffset = blockX * blockSizeX - blockXPad;
 
             for (int blockY = 0; blockY < subdivisions; blockY++){
-                int yOffset = blockY * blockSizeY;
+                int yOffset = blockY * blockSizeY - blockYPad;
 
                 Simplify::vertices.clear();
                 Simplify::triangles.clear();
 
                 logWriter("Processing block (%d,%d)\n", blockX, blockY);
 
-                for (int y = 0; y < blockSizeY; y += stride){
-                    if (band->RasterIO( GF_Read, xOffset, yOffset + y, blockSizeX, 1,
-                                        rasterData, blockSizeX, 1, GDT_Float32, 0, 0 ) == CE_Failure){
+                for (int y = 0; y < blockSizeY + blockYPad; y += stride){
+                    if (band->RasterIO( GF_Read, xOffset, yOffset + y, blockSizeX + blockXPad, 1,
+                                        rasterData, blockSizeX + blockXPad, 1, GDT_Float32, 0, 0 ) == CE_Failure){
                         std::cerr << "Cannot access raster data" << std::endl;
                         exit(1);
                     }
 
-                    for (int x = 0; x < blockSizeX; x += stride){
+                    for (int x = 0; x < blockSizeX + blockXPad; x += stride){
                         Simplify::Vertex v;
                         v.p.x = extent.min.x + (static_cast<float>(xOffset + x) / static_cast<float>(arr_width)) * ext_width;
                         v.p.y = extent.max.y - (static_cast<float>(yOffset + y) / static_cast<float>(arr_height)) * ext_height;
@@ -180,8 +182,8 @@ int main(int argc, char **argv) {
                     }
                 }
 
-                unsigned int cols = static_cast<unsigned int>(std::ceil((blockSizeX / static_cast<double>(stride))));
-                unsigned int rows = static_cast<unsigned int>(std::ceil((blockSizeY / static_cast<double>(stride))));
+                unsigned int cols = static_cast<unsigned int>(std::ceil(((blockSizeX + blockXPad) / static_cast<double>(stride))));
+                unsigned int rows = static_cast<unsigned int>(std::ceil(((blockSizeY + blockYPad) / static_cast<double>(stride))));
 
                 for (unsigned int y = 0; y < rows - 1; y++){
                     for (unsigned int x = 0; x < cols - 1; x++){
@@ -201,18 +203,18 @@ int main(int argc, char **argv) {
                     }
                 }
 
-//                double agressiveness = 7.0;
-//                int target_count = std::min((MaxVertexCount.value * 2) / numBlocks, static_cast<int>(Simplify::triangles.size()));
+                double agressiveness = 7.0;
+                int target_count = std::min((MaxVertexCount.value * 2) / numBlocks, static_cast<int>(Simplify::triangles.size()));
 
-//                logWriter("Sampled %d faces, target is %d\n", static_cast<int>(Simplify::triangles.size()), target_count);
-//                logWriter("Simplifying...\n");
+                logWriter("Sampled %d faces, target is %d\n", static_cast<int>(Simplify::triangles.size()), target_count);
+                logWriter("Simplifying...\n");
 
-//                unsigned long start_size = Simplify::triangles.size();
-//                Simplify::simplify_mesh(target_count, agressiveness, true);
-//                if ( Simplify::triangles.size() >= start_size) {
-//                    std::cerr << "Unable to reduce mesh.\n";
-//                    exit(1);
-//                }
+                unsigned long start_size = Simplify::triangles.size();
+                Simplify::simplify_mesh(target_count, agressiveness, true);
+                if ( Simplify::triangles.size() >= start_size) {
+                    std::cerr << "Unable to reduce mesh.\n";
+                    exit(1);
+                }
 
                 logWriter("Writing to file...");
 
@@ -256,7 +258,12 @@ int main(int argc, char **argv) {
                 logWriter(" done!\n");
 
                 f.close();
+
+                blockYPad = stride;
             }
+
+            blockYPad = 0;
+            blockXPad = stride;
         }
 
         delete[] rasterData;
