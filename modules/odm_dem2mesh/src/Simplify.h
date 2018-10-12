@@ -307,7 +307,7 @@ namespace Simplify
 	//                 more iterations yield higher quality
 	//
 
-	void simplify_mesh(int target_count, double agressiveness=7, bool verbose=false)
+    void simplify_mesh(int target_count, double agressiveness=7, bool verbose=false, double max_threshold=99999999)
 	{
 		// init
 		loopi(0,triangles.size())
@@ -323,7 +323,16 @@ namespace Simplify
 		//loop(iteration,0,100)
         for (int iteration = 0; iteration < 100; iteration ++)
 		{
-			if(triangle_count-deleted_triangles<=target_count)break;
+            if(triangle_count-deleted_triangles<=target_count) break;
+
+            //
+            // All triangles with edges below the threshold will be removed
+            //
+            // The following numbers works well for most models.
+            // If it does not, try to adjust the 3 parameters
+            //
+            double threshold = 0.000000001*pow(double(iteration+3),agressiveness);
+            if(threshold > max_threshold) break;
 
 			// update mesh once in a while
 			if(iteration%5==0)
@@ -334,13 +343,7 @@ namespace Simplify
 			// clear dirty flag
 			loopi(0,triangles.size()) triangles[i].dirty=0;
 
-			//
-			// All triangles with edges below the threshold will be removed
-			//
-			// The following numbers works well for most models.
-			// If it does not, try to adjust the 3 parameters
-			//
-			double threshold = 0.000000001*pow(double(iteration+3),agressiveness);
+
 
 			// target number of triangles reached ? Then break
 			if ((verbose) && (iteration%5==0)) {
