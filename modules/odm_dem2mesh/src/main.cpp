@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <fstream>
+#include <sstream>
 #include <cmath>
 #include "CmdLineParser.h"
 #include "Logger.h"
@@ -127,9 +128,9 @@ int main(int argc, char **argv) {
         // to remain within INT_MAX vertices. This does not happen often,
         // but it's a safeguard to make sure we'll get an output and not
         // overflow.
-        int stride = 1;
+        int stride = 4;
         while (vertex_count > INT_MAX){
-            stride += 1;
+            stride *= 2;
             vertex_count = static_cast<int>(std::ceil((arr_height / static_cast<double>(stride))) *
                                             std::ceil((arr_width / static_cast<double>(stride))));
         }
@@ -140,102 +141,126 @@ int main(int argc, char **argv) {
         logWriter("Total vertices before simplification: %llu\n", vertex_count);
 
         GDALRasterBand *band = dataset->GetRasterBand(1);
-        rasterData = new float[arr_width];
 
-        for (int y = 0; y < arr_height; y += stride){
-            if (band->RasterIO( GF_Read, 0, y, arr_width, 1,
-                                rasterData, arr_width, 1, GDT_Float32, 0, 0 ) == CE_Failure){
-                std::cerr << "Cannot access raster data" << std::endl;
-                exit(1);
-            }
+        int subdivisions = 2;
+        int numBlocks = (int)pow(2, subdivisions);
+        int blockSizeX = arr_width / subdivisions;
+        int blockSizeY = arr_height / subdivisions;
 
-            for (int x = 0; x < arr_width; x += stride){
-                Simplify::Vertex v;
-                v.p.x = extent.min.x + (static_cast<float>(x) / static_cast<float>(arr_width)) * ext_width;
-                v.p.y = extent.max.y - (static_cast<float>(y) / static_cast<float>(arr_height)) * ext_height;
-                v.p.z = rasterData[x];
+        logWriter("Splitting area in %d\n", numBlocks);
+        logWriter("Block size is %d, %d\n", blockSizeX, blockSizeY);
 
-                Simplify::vertices.push_back(v);
+        rasterData = new float[blockSizeX];
+
+        for (int blockX = 0; blockX < subdivisions; blockX++){
+            int xOffset = blockX * blockSizeX;
+
+            for (int blockY = 0; blockY < subdivisions; blockY++){
+                int yOffset = blockY * blockSizeY;
+
+                Simplify::vertices.clear();
+                Simplify::triangles.clear();
+
+                logWriter("Processing block (%d,%d)\n", blockX, blockY);
+
+                for (int y = 0; y < blockSizeY; y += stride){
+                    if (band->RasterIO( GF_Read, xOffset, yOffset + y, blockSizeX, 1,
+                                        rasterData, blockSizeX, 1, GDT_Float32, 0, 0 ) == CE_Failure){
+                        std::cerr << "Cannot access raster data" << std::endl;
+                        exit(1);
+                    }
+
+                    for (int x = 0; x < blockSizeX; x += stride){
+                        Simplify::Vertex v;
+                        v.p.x = extent.min.x + (static_cast<float>(xOffset + x) / static_cast<float>(arr_width)) * ext_width;
+                        v.p.y = extent.max.y - (static_cast<float>(yOffset + y) / static_cast<float>(arr_height)) * ext_height;
+                        v.p.z = rasterData[x];
+
+                        Simplify::vertices.push_back(v);
+                    }
+                }
+
+                unsigned int cols = static_cast<unsigned int>(std::ceil((blockSizeX / static_cast<double>(stride))));
+                unsigned int rows = static_cast<unsigned int>(std::ceil((blockSizeY / static_cast<double>(stride))));
+
+                for (unsigned int y = 0; y < rows - 1; y++){
+                    for (unsigned int x = 0; x < cols - 1; x++){
+                        Simplify::Triangle t1;
+                        t1.v[0] = cols * (y + 1) + x;
+                        t1.v[1] = cols * y + x + 1;
+                        t1.v[2] = cols * y + x;
+
+                        Simplify::triangles.push_back(t1);
+
+                        Simplify::Triangle t2;
+                        t2.v[0] = cols * (y + 1) + x;
+                        t2.v[1] = cols * (y + 1) + x + 1;
+                        t2.v[2] = cols * y + x + 1;
+
+                        Simplify::triangles.push_back(t2);
+                    }
+                }
+
+//                double agressiveness = 7.0;
+//                int target_count = std::min((MaxVertexCount.value * 2) / numBlocks, static_cast<int>(Simplify::triangles.size()));
+
+//                logWriter("Sampled %d faces, target is %d\n", static_cast<int>(Simplify::triangles.size()), target_count);
+//                logWriter("Simplifying...\n");
+
+//                unsigned long start_size = Simplify::triangles.size();
+//                Simplify::simplify_mesh(target_count, agressiveness, true);
+//                if ( Simplify::triangles.size() >= start_size) {
+//                    std::cerr << "Unable to reduce mesh.\n";
+//                    exit(1);
+//                }
+
+                logWriter("Writing to file...");
+
+                // Start writing ply file
+                std::stringstream ss;
+                ss << OutputFile.value << "." << blockX << "-" << blockY << ".ply";
+                std::ofstream f (ss.str());
+                f << "ply" << std::endl;
+
+                if (IS_BIG_ENDIAN){
+                  f << "format binary_big_endian 1.0" << std::endl;
+                }else{
+                  f << "format binary_little_endian 1.0" << std::endl;
+                }
+
+                f   << "element vertex " << Simplify::vertices.size() << std::endl
+                    << "property float x" << std::endl
+                    << "property float y" << std::endl
+                    << "property float z" << std::endl
+                    << "element face " << Simplify::triangles.size() << std::endl
+                    << "property list uint8 uint32 vertex_indices" << std::endl
+                    << "end_header" << std::endl;
+
+                for(Simplify::Vertex &v : Simplify::vertices){
+                    p.x = static_cast<float>(v.p.x);
+                    p.y = static_cast<float>(v.p.y);
+                    p.z = static_cast<float>(v.p.z);
+                    f.write(reinterpret_cast<char *>(&p), psize);
+                }
+
+                uint8_t three = 3;
+                for(Simplify::Triangle &t : Simplify::triangles){
+                    face.p1 = static_cast<uint32_t>(t.v[0]);
+                    face.p2 = static_cast<uint32_t>(t.v[1]);
+                    face.p3 = static_cast<uint32_t>(t.v[2]);
+
+                    f.write(reinterpret_cast<char *>(&three), sizeof(three));
+                    f.write(reinterpret_cast<char *>(&face), fsize);
+                }
+
+                logWriter(" done!\n");
+
+                f.close();
             }
         }
 
         delete[] rasterData;
         GDALClose(dataset);
-
-        unsigned int cols = static_cast<unsigned int>(std::ceil((arr_width / static_cast<double>(stride))));
-        unsigned int rows = static_cast<unsigned int>(std::ceil((arr_height / static_cast<double>(stride))));
-
-        for (unsigned int y = 0; y < rows - 1; y++){
-            for (unsigned int x = 0; x < cols - 1; x++){
-                Simplify::Triangle t1;
-                t1.v[0] = cols * (y + 1) + x;
-                t1.v[1] = cols * y + x + 1;
-                t1.v[2] = cols * y + x;
-
-                Simplify::triangles.push_back(t1);
-
-                Simplify::Triangle t2;
-                t2.v[0] = cols * (y + 1) + x;
-                t2.v[1] = cols * (y + 1) + x + 1;
-                t2.v[2] = cols * y + x + 1;
-
-                Simplify::triangles.push_back(t2);
-            }
-        }
-
-        double agressiveness = 7.0;
-        int target_count = std::min(MaxVertexCount.value * 2, static_cast<int>(Simplify::triangles.size()));
-
-        logWriter("Sampled %d faces, target is %d\n", static_cast<int>(Simplify::triangles.size()), target_count);
-        logWriter("Simplifying...\n");
-
-        unsigned long start_size = Simplify::triangles.size();
-        Simplify::simplify_mesh(target_count, agressiveness, true);
-        if ( Simplify::triangles.size() >= start_size) {
-            std::cerr << "Unable to reduce mesh.\n";
-            exit(1);
-        }
-
-        logWriter("Writing to file...");
-
-        // Start writing ply file
-        std::ofstream f (OutputFile.value);
-        f << "ply" << std::endl;
-
-        if (IS_BIG_ENDIAN){
-          f << "format binary_big_endian 1.0" << std::endl;
-        }else{
-          f << "format binary_little_endian 1.0" << std::endl;
-        }
-
-        f   << "element vertex " << Simplify::vertices.size() << std::endl
-            << "property float x" << std::endl
-            << "property float y" << std::endl
-            << "property float z" << std::endl
-            << "element face " << Simplify::triangles.size() << std::endl
-            << "property list uint8 uint32 vertex_indices" << std::endl
-            << "end_header" << std::endl;
-
-        for(Simplify::Vertex &v : Simplify::vertices){
-            p.x = static_cast<float>(v.p.x);
-            p.y = static_cast<float>(v.p.y);
-            p.z = static_cast<float>(v.p.z);
-            f.write(reinterpret_cast<char *>(&p), psize);
-        }
-
-        uint8_t three = 3;
-        for(Simplify::Triangle &t : Simplify::triangles){
-            face.p1 = static_cast<uint32_t>(t.v[0]);
-            face.p2 = static_cast<uint32_t>(t.v[1]);
-            face.p3 = static_cast<uint32_t>(t.v[2]);
-
-            f.write(reinterpret_cast<char *>(&three), sizeof(three));
-            f.write(reinterpret_cast<char *>(&face), fsize);
-        }
-
-        logWriter(" done!\n");
-
-        f.close();
     }else{
         std::cerr << "Cannot open " << InputFile.value << std::endl;
     }
