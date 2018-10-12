@@ -171,8 +171,6 @@ int main(int argc, char **argv) {
                 t1.v[0] = cols * (y + 1) + x;
                 t1.v[1] = cols * y + x + 1;
                 t1.v[2] = cols * y + x;
-                t1.attr = 0;
-                t1.material = -1;
 
                 Simplify::triangles.push_back(t1);
 
@@ -180,8 +178,6 @@ int main(int argc, char **argv) {
                 t2.v[0] = cols * (y + 1) + x;
                 t2.v[1] = cols * (y + 1) + x + 1;
                 t2.v[2] = cols * y + x + 1;
-                t2.attr = 0;
-                t2.material = -1;
 
                 Simplify::triangles.push_back(t2);
             }
