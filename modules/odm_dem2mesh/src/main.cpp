@@ -119,16 +119,13 @@ int main(int argc, char **argv) {
         unsigned long long int vertex_count = static_cast<unsigned long long int>(arr_height) *
                                               static_cast<unsigned long long int>(arr_width);
 
-        // TODO:
-        // 2. Figure out bad_alloc in cmparks dataset
-
         logWriter("Reading raster...\n");
 
         // If the DSM is really large, we only sample a subset of it
         // to remain within INT_MAX vertices. This does not happen often,
         // but it's a safeguard to make sure we'll get an output and not
         // overflow.
-        int stride = 4;
+        int stride = 8;
         while (vertex_count > INT_MAX){
             stride *= 2;
             vertex_count = static_cast<int>(std::ceil((arr_height / static_cast<double>(stride))) *
@@ -142,8 +139,8 @@ int main(int argc, char **argv) {
 
         GDALRasterBand *band = dataset->GetRasterBand(1);
 
-        int subdivisions = 2;
-        int numBlocks = (int)pow(2, subdivisions);
+        int subdivisions = 1;
+        int numBlocks = (int)pow(2, subdivisions == 1 ? 0 : subdivisions);
         int blockSizeX = arr_width / subdivisions;
         int blockSizeY = arr_height / subdivisions;
         int blockXPad = 0; // Blocks > 0 need to re-add a column for seamless meshing
@@ -152,7 +149,7 @@ int main(int argc, char **argv) {
         logWriter("Splitting area in %d\n", numBlocks);
         logWriter("Block size is %d, %d\n", blockSizeX, blockSizeY);
 
-        rasterData = new float[blockSizeX + stride];
+        rasterData = new float[blockSizeX + stride * 8];
 
         for (int blockX = 0; blockX < subdivisions; blockX++){
             int xOffset = blockX * blockSizeX - blockXPad;
@@ -203,14 +200,15 @@ int main(int argc, char **argv) {
                     }
                 }
 
-                double agressiveness = 7.0;
+                double agressiveness = 6.0;
+                double max_threshold = 0.30;
                 int target_count = std::min((MaxVertexCount.value * 2) / numBlocks, static_cast<int>(Simplify::triangles.size()));
 
                 logWriter("Sampled %d faces, target is %d\n", static_cast<int>(Simplify::triangles.size()), target_count);
                 logWriter("Simplifying...\n");
 
                 unsigned long start_size = Simplify::triangles.size();
-                Simplify::simplify_mesh(target_count, agressiveness, true);
+                Simplify::simplify_mesh(target_count, agressiveness, Verbose.set, max_threshold);
                 if ( Simplify::triangles.size() >= start_size) {
                     std::cerr << "Unable to reduce mesh.\n";
                     exit(1);
@@ -259,11 +257,11 @@ int main(int argc, char **argv) {
 
                 f.close();
 
-                blockYPad = stride;
+                blockYPad = stride * 8;
             }
 
             blockYPad = 0;
-            blockXPad = stride;
+            blockXPad = stride * 8;
         }
 
         delete[] rasterData;
