@@ -9,7 +9,6 @@
 #include <vtkTransform.h>
 #include <vtkTransformFilter.h>
 #include <vtkPLYWriter.h>
-#include <vtkAdaptiveSubdivisionFilter.h>
 #include <vtkImageData.h>
 
 #include "gdal_priv.h"
@@ -133,11 +132,6 @@ int main(int argc, char **argv) {
         terrain->SetInputData(image);
         terrain->BoundaryVertexDeletionOn();
 
-        vtkSmartPointer<vtkAdaptiveSubdivisionFilter> subdivision =
-                vtkSmartPointer<vtkAdaptiveSubdivisionFilter>::New();
-        subdivision->SetMaximumTriangleArea(50);
-        subdivision->SetInputConnection(terrain->GetOutputPort());
-
         logWriter("OK\nTransform... ");
         vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
         transform->Scale(extentX / width, extentY / height, 1);
@@ -145,7 +139,7 @@ int main(int argc, char **argv) {
 
         vtkSmartPointer<vtkTransformFilter> transformFilter =
           vtkSmartPointer<vtkTransformFilter>::New();
-        transformFilter->SetInputConnection(subdivision->GetOutputPort());
+        transformFilter->SetInputConnection(terrain->GetOutputPort());
         transformFilter->SetTransform(transform);
 
         logWriter("OK\nSaving mesh to file... ");
@@ -158,6 +152,7 @@ int main(int argc, char **argv) {
         plyWriter->Write();
 
         logWriter("OK\n");
+
     }else{
         std::cerr << "Cannot open " << InputFile.value << std::endl;
     }
