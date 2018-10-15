@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
+<<<<<<< HEAD
 <!-- Written by QtCreator 4.7.0, 2018-10-12T14:38:20. -->
+=======
+<!-- Written by QtCreator 4.7.0, 2018-10-15T12:36:52. -->
+>>>>>>> dem2mesh_watertight
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
