@@ -307,7 +307,7 @@ namespace Simplify
 	//                 more iterations yield higher quality
 	//
 
-	void simplify_mesh(int target_count, double agressiveness=7, bool verbose=false)
+    void simplify_mesh(int target_count, double max_threshold, double agressiveness=7, bool verbose=false)
 	{
 		// init
 //		loopi(0,triangles.size())
@@ -324,23 +324,23 @@ namespace Simplify
         for (int iteration = 0; iteration < 100; iteration ++)
 		{
 			if(triangle_count-deleted_triangles<=target_count)break;
+            //
+            // All triangles with edges below the threshold will be removed
+            //
+            // The following numbers works well for most models.
+            // If it does not, try to adjust the 3 parameters
+            //
+            double threshold = 0.000000001*pow(double(iteration+3),agressiveness);
+            if (threshold > max_threshold) break;
 
 			// update mesh once in a while
-			if(iteration%5==0)
-			{
+            if(iteration%5==0)
+            {
 				update_mesh(iteration);
-			}
+            }
 
 			// clear dirty flag
 			loopi(0,triangles.size()) triangles[i].dirty=0;
-
-			//
-			// All triangles with edges below the threshold will be removed
-			//
-			// The following numbers works well for most models.
-			// If it does not, try to adjust the 3 parameters
-			//
-			double threshold = 0.000000001*pow(double(iteration+3),agressiveness);
 
 			// target number of triangles reached ? Then break
 			if ((verbose) && (iteration%5==0)) {
@@ -404,7 +404,7 @@ namespace Simplify
 		compact_mesh();
 	} //simplify_mesh()
 
-	void simplify_mesh_lossless(bool verbose=false)
+    void simplify_mesh_lossless(double threshold, bool verbose=false)
 	{
 		// init
 //		loopi(0,triangles.size()) triangles[i].deleted=0;
@@ -427,7 +427,6 @@ namespace Simplify
 			// The following numbers works well for most models.
 			// If it does not, try to adjust the 3 parameters
 			//
-			double threshold = DBL_EPSILON; //1.0E-3 EPS;
 			if (verbose) {
 				printf("lossless iteration %d\n", iteration);
 			}
