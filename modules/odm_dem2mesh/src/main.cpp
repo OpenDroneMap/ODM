@@ -42,7 +42,6 @@ struct PlyFace{
 } face;
 size_t fsize = sizeof(uint32_t) * 3;
 
-float *rasterData;
 int arr_width, arr_height;
 
 #define IS_BIG_ENDIAN (*(uint16_t *)"\0\xff" < 0x100)
@@ -184,6 +183,7 @@ void readBin(const std::string &filename){
         t.v[0] = triangles[0] + voffset;
         t.v[1] = triangles[1] + voffset;
         t.v[2] = triangles[2] + voffset;
+        t.deleted = 0;
         Simplify::triangles.push_back(t);
     }
 }
@@ -191,12 +191,22 @@ void readBin(const std::string &filename){
 void simplify(int target_count){
     unsigned long start_size = Simplify::triangles.size();
     const double AGRESSIVENESS = 5.0;
-    const double MAX_THRESHOLD = 0.10;
 
-    Simplify::simplify_mesh(target_count, MAX_THRESHOLD, AGRESSIVENESS, Verbose.set);
+    Simplify::simplify_mesh(target_count, AGRESSIVENESS, Verbose.set);
     if ( Simplify::triangles.size() >= start_size) {
         std::cerr << "Unable to reduce mesh.\n";
         exit(1);
+    }
+}
+
+// From grid X/Y to world X/Y
+void transform(const BoundingBox &extent){
+    double ext_width = extent.max.x - extent.min.x;
+    double ext_height = extent.max.y - extent.min.y;
+
+    for(Simplify::Vertex &v : Simplify::vertices){
+        v.p.x = extent.min.x + (static_cast<float>(v.p.x) / static_cast<float>(arr_width)) * ext_width;
+        v.p.y = extent.max.y - (static_cast<float>(v.p.y) / static_cast<float>(arr_height)) * ext_height;;
     }
 }
 
@@ -221,9 +231,6 @@ int main(int argc, char **argv) {
 
         logWriter("Extent is (%f, %f), (%f, %f)\n", extent.min.x, extent.max.x, extent.min.y, extent.max.y);
 
-        float ext_width = extent.max.x - extent.min.x;
-        float ext_height = extent.max.y - extent.min.y;
-
         unsigned long long int vertex_count = static_cast<unsigned long long int>(arr_height) *
                                               static_cast<unsigned long long int>(arr_width);
 
@@ -233,7 +240,7 @@ int main(int argc, char **argv) {
         // to remain within INT_MAX vertices. This does not happen often,
         // but it's a safeguard to make sure we'll get an output and not
         // overflow.
-        int stride = 8;
+        int stride = 4;
         while (vertex_count > INT_MAX){
             stride *= 2;
             vertex_count = static_cast<int>(std::ceil((arr_height / static_cast<double>(stride))) *
@@ -247,7 +254,7 @@ int main(int argc, char **argv) {
 
         GDALRasterBand *band = dataset->GetRasterBand(1);
 
-        int qtreeLevels = 0;
+        int qtreeLevels = 1;
         int subdivisions = (int)pow(2, qtreeLevels);
         int numBlocks = subdivisions * subdivisions;
         int blockSizeX = arr_width / subdivisions;
@@ -258,7 +265,7 @@ int main(int argc, char **argv) {
         logWriter("Splitting area in %d\n", numBlocks);
         logWriter("Block size is %d, %d\n", blockSizeX, blockSizeY);
 
-        rasterData = new float[blockSizeX + stride];
+        float *rasterData = new float[blockSizeX + stride];
 
         for (int blockX = 0; blockX < subdivisions; blockX++){
             int xOffset = blockX * blockSizeX - blockXPad;
@@ -280,8 +287,10 @@ int main(int argc, char **argv) {
 
                     for (int x = 0; x < blockSizeX + blockXPad; x += stride){
                         Simplify::Vertex v;
-                        v.p.x = extent.min.x + (static_cast<float>(xOffset + x) / static_cast<float>(arr_width)) * ext_width;
-                        v.p.y = extent.max.y - (static_cast<float>(yOffset + y) / static_cast<float>(arr_height)) * ext_height;
+                        //v.p.x = extent.min.x + (static_cast<float>(xOffset + x) / static_cast<float>(arr_width)) * ext_width;
+                        //v.p.y = extent.max.y - (static_cast<float>(yOffset + y) / static_cast<float>(arr_height)) * ext_height;
+                        v.p.x = xOffset + x;
+                        v.p.y = yOffset + y;
                         v.p.z = rasterData[x];
 
                         Simplify::vertices.push_back(v);
@@ -329,6 +338,7 @@ int main(int argc, char **argv) {
                 simplify(target_count);
 
                 if (qtreeLevels == 0){
+                    transform(extent);
                     logWriter("Single quad tree level, saving to PLY\n");
                     logWriter("Writing to file...");
                     writePly(OutputFile.value);
@@ -370,6 +380,7 @@ int main(int argc, char **argv) {
             logWriter("Simplifying final mesh...\n");
             int target_count = std::min(MaxVertexCount.value * 2, static_cast<int>(Simplify::triangles.size()));
             simplify(target_count);
+            transform(extent);
             logWriter("Writing to file... ");
             writePly(OutputFile.value);
             logWriter(" done!\n");

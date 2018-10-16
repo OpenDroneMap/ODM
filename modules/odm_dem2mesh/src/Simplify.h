@@ -284,7 +284,7 @@ namespace Simplify
 {
 	// Global Variables & Strctures
     struct Triangle { int v[3];double err[4];int8_t deleted,dirty;vec3f n; };
-	struct Vertex { vec3f p;int tstart,tcount;SymetricMatrix q;int border;};
+    struct Vertex { vec3f p;int tstart,tcount;SymetricMatrix q;int8_t border;};
 	struct Ref { int tid,tvertex; };
 	std::vector<Triangle> triangles;
 	std::vector<Vertex> vertices;
@@ -307,7 +307,7 @@ namespace Simplify
 	//                 more iterations yield higher quality
 	//
 
-    void simplify_mesh(int target_count, double max_threshold, double agressiveness=7, bool verbose=false)
+    void simplify_mesh(int target_count, double agressiveness=7, bool verbose=false)
 	{
 		// init
 //		loopi(0,triangles.size())
@@ -331,7 +331,6 @@ namespace Simplify
             // If it does not, try to adjust the 3 parameters
             //
             double threshold = 0.000000001*pow(double(iteration+3),agressiveness);
-            if (threshold > max_threshold) break;
 
 			// update mesh once in a while
             if(iteration%5==0)
