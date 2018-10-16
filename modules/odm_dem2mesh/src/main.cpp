@@ -3,6 +3,7 @@
 #include <fstream>
 #include <sstream>
 #include <cmath>
+#include <unordered_map>
 #include "CmdLineParser.h"
 #include "Logger.h"
 #include "Simplify.h"
@@ -43,6 +44,8 @@ struct PlyFace{
 size_t fsize = sizeof(uint32_t) * 3;
 
 int arr_width, arr_height;
+int subdivisions;
+int blockSizeX, blockSizeY;
 
 #define IS_BIG_ENDIAN (*(uint16_t *)"\0\xff" < 0x100)
 
@@ -130,12 +133,14 @@ void writePly(const std::string &filename){
     f.close();
 }
 
-void writeBin(const std::string &filename){
+void writeBin(const std::string &filename, int blockWidth, int blockHeight){
     std::ofstream f (filename, std::ios::binary);
 
     unsigned long vsize = Simplify::vertices.size();
     unsigned long tsize = Simplify::triangles.size();
 
+    f.write(reinterpret_cast<char *>(&blockWidth), sizeof(blockWidth));
+    f.write(reinterpret_cast<char *>(&blockHeight), sizeof(blockHeight));
     f.write(reinterpret_cast<char *>(&vsize), sizeof(vsize));
     f.write(reinterpret_cast<char *>(&tsize), sizeof(tsize));
 
@@ -156,19 +161,81 @@ void writeBin(const std::string &filename){
     f.close();
 }
 
-void readBin(const std::string &filename){
+
+// Keep track of edge points's vertex IDs
+// During the merge step we need to replace
+// duplicate points with existing point's vertex IDs
+// Half the array maps to X coords
+// the other half maps to Y coords
+//   1  2
+// __|__|__ 3
+// __|__|__ 4
+//   |  |
+//
+// 1---2---3---4
+unsigned long *pointToVertexIdMap = nullptr;
+
+// (current vertex index) --> (existing vertex index) for duplicate points during merge
+std::unordered_map<int, int> vertexToVertexMap;
+
+void readBin(const std::string &filename, int blockX, int blockY){
     std::ifstream f (filename, std::ios::binary);
 
+    int blockWidth, blockHeight;
     unsigned long vcount, tcount;
     unsigned long voffset = Simplify::vertices.size();
     float vertices[3];
     uint32_t triangles[3];
 
+    f.read(reinterpret_cast<char *>(&blockWidth), sizeof(blockWidth));
+    f.read(reinterpret_cast<char *>(&blockHeight), sizeof(blockHeight));
     f.read(reinterpret_cast<char *>(&vcount), sizeof(vcount));
     f.read(reinterpret_cast<char *>(&tcount), sizeof(tcount));
 
+    int blockXPad = blockWidth - blockSizeX;
+    int blockYPad = blockHeight - blockSizeY;
+    int xOffset = blockX * blockSizeX - blockXPad;
+    int yOffset = blockY * blockSizeY - blockYPad;
+
+    int ptvidMapSize = arr_height * (subdivisions - 1) + arr_width * (subdivisions - 1);
+    int ptvidYOffset = ptvidMapSize / 2;
+    if (pointToVertexIdMap == nullptr){
+        pointToVertexIdMap = new unsigned long[ptvidMapSize];
+        memset(pointToVertexIdMap, -1, ptvidMapSize*sizeof(*pointToVertexIdMap));
+    }
+
+    int x, y;
     for (unsigned long i = 0; i < vcount; i++){
         f.read(reinterpret_cast<char *>(&vertices), sizeof(float) * 3);
+
+        x = static_cast<int>(vertices[0]);
+        y = static_cast<int>(vertices[1]);
+
+        // Detect edge points
+
+        // TODO: check pointToVertexIdMap index!!!!
+
+        if ((blockX > 0 && x == xOffset) || x == xOffset + blockWidth){
+            if (pointToVertexIdMap[(x / (blockSizeX - 1) - 1) * y] == -1){
+                pointToVertexIdMap[(x / (blockSizeX - 1) - 1) * y] = i + voffset;
+            }else{
+                // Already added from another block
+                // Keep a reference to the point from the other block
+                vertexToVertexMap[i + voffset] = pointToVertexIdMap[(x / (blockSizeX - 1) - 1) * y];
+            }
+//              std::cerr << x << " | " << blockSizeX << " | " << x / (blockSizeX - 1) - 1 << " | " << xOffset << " | " << blockWidth << std::endl;
+        }
+
+//        else if ((blockY > 0 && y == yOffset) || y == yOffset + blockHeight){
+//            if (pointToVertexIdMap[ptvidYOffset + y / blockSizeY - 1] == -1){
+//                pointToVertexIdMap[ptvidYOffset + y / blockSizeY - 1] = i + voffset;
+//            }else{
+//                // Already added from another block
+//                // Keep a reference to the point from the other block
+//                vertexToVertexMap[i + voffset] = pointToVertexIdMap[ptvidYOffset + y / blockSizeY - 1];
+//            }
+//        }
+
         Simplify::Vertex v;
         v.p.x = vertices[0];
         v.p.y = vertices[1];
@@ -183,6 +250,21 @@ void readBin(const std::string &filename){
         t.v[0] = triangles[0] + voffset;
         t.v[1] = triangles[1] + voffset;
         t.v[2] = triangles[2] + voffset;
+
+        // Check vertices for substitutions
+        if (vertexToVertexMap.find(t.v[0]) != vertexToVertexMap.end()){
+            std::cerr << "Found 1 " << t.v[0] << "-->" << vertexToVertexMap[t.v[0]] << std::endl;
+            t.v[0] = vertexToVertexMap[t.v[0]];
+        }
+        if (vertexToVertexMap.find(t.v[1]) != vertexToVertexMap.end()){
+             std::cerr << "Found 2 " << t.v[1] << "-->" << vertexToVertexMap[t.v[1]] << std::endl;
+            t.v[1] = vertexToVertexMap[t.v[1]];
+        }
+        if (vertexToVertexMap.find(t.v[2]) != vertexToVertexMap.end()){
+             std::cerr << "Found 3 " << t.v[2] << "--> " << vertexToVertexMap[t.v[2]] << std::endl;
+            t.v[2] = vertexToVertexMap[t.v[2]];
+        }
+
         t.deleted = 0;
         Simplify::triangles.push_back(t);
     }
@@ -235,37 +317,22 @@ int main(int argc, char **argv) {
                                               static_cast<unsigned long long int>(arr_width);
 
         logWriter("Reading raster...\n");
-
-        // If the DSM is really large, we only sample a subset of it
-        // to remain within INT_MAX vertices. This does not happen often,
-        // but it's a safeguard to make sure we'll get an output and not
-        // overflow.
-        int stride = 4;
-        while (vertex_count > INT_MAX){
-            stride *= 2;
-            vertex_count = static_cast<int>(std::ceil((arr_height / static_cast<double>(stride))) *
-                                            std::ceil((arr_width / static_cast<double>(stride))));
-        }
-
-        if (stride != 1){
-            logWriter("Warning: DSM is large, will sample using stride value of %d\n", stride);
-        }
         logWriter("Total vertices before simplification: %llu\n", vertex_count);
 
         GDALRasterBand *band = dataset->GetRasterBand(1);
 
-        int qtreeLevels = 1;
-        int subdivisions = (int)pow(2, qtreeLevels);
+        int qtreeLevels = 2;
+        subdivisions = (int)pow(2, qtreeLevels);
         int numBlocks = subdivisions * subdivisions;
-        int blockSizeX = arr_width / subdivisions;
-        int blockSizeY = arr_height / subdivisions;
+        blockSizeX = arr_width / subdivisions;
+        blockSizeY = arr_height / subdivisions;
         int blockXPad = 0; // Blocks > 0 need to re-add a column for seamless meshing
         int blockYPad = 0; // Blocks > 0 need to re-add a row for seamless meshing
 
         logWriter("Splitting area in %d\n", numBlocks);
         logWriter("Block size is %d, %d\n", blockSizeX, blockSizeY);
 
-        float *rasterData = new float[blockSizeX + stride];
+        float *rasterData = new float[blockSizeX + 1];
 
         for (int blockX = 0; blockX < subdivisions; blockX++){
             int xOffset = blockX * blockSizeX - blockXPad;
@@ -278,14 +345,14 @@ int main(int argc, char **argv) {
 
                 logWriter("Processing block (%d,%d)\n", blockX, blockY);
 
-                for (int y = 0; y < blockSizeY + blockYPad; y += stride){
+                for (int y = 0; y < blockSizeY + blockYPad; y++){
                     if (band->RasterIO( GF_Read, xOffset, yOffset + y, blockSizeX + blockXPad, 1,
                                         rasterData, blockSizeX + blockXPad, 1, GDT_Float32, 0, 0 ) == CE_Failure){
                         std::cerr << "Cannot access raster data" << std::endl;
                         exit(1);
                     }
 
-                    for (int x = 0; x < blockSizeX + blockXPad; x += stride){
+                    for (int x = 0; x < blockSizeX + blockXPad; x++){
                         Simplify::Vertex v;
                         //v.p.x = extent.min.x + (static_cast<float>(xOffset + x) / static_cast<float>(arr_width)) * ext_width;
                         //v.p.y = extent.max.y - (static_cast<float>(yOffset + y) / static_cast<float>(arr_height)) * ext_height;
@@ -297,8 +364,8 @@ int main(int argc, char **argv) {
                     }
                 }
 
-                unsigned int cols = static_cast<unsigned int>(std::ceil(((blockSizeX + blockXPad) / static_cast<double>(stride))));
-                unsigned int rows = static_cast<unsigned int>(std::ceil(((blockSizeY + blockYPad) / static_cast<double>(stride))));
+                unsigned int cols = blockSizeX + blockXPad;
+                unsigned int rows = blockSizeY + blockYPad;
 
                 for (unsigned int y = 0; y < rows - 1; y++){
                     for (unsigned int x = 0; x < cols - 1; x++){
@@ -346,12 +413,12 @@ int main(int argc, char **argv) {
                     logWriter("Writing to binary file...");
                     std::stringstream ss;
                     ss << OutputFile.value << "." << blockX << "-" << blockY << ".bin";
-                    writeBin(ss.str());
+                    writeBin(ss.str(), blockSizeX + blockXPad, blockSizeY + blockYPad);
                 }
 
                 logWriter(" done!\n");
 
-                blockYPad = stride;
+                blockYPad = 1;
             }
 
             blockYPad = 0;
@@ -373,8 +440,13 @@ int main(int argc, char **argv) {
                     std::stringstream ss;
                     ss << OutputFile.value << "." << blockX << "-" << blockY << ".bin";
                     logWriter("Reading %s\n", ss.str().c_str());
-                    readBin(ss.str());
+                    readBin(ss.str(), blockX, blockY);
                 }
+            }
+
+            if (pointToVertexIdMap != nullptr){
+                delete[] pointToVertexIdMap;
+                pointToVertexIdMap = nullptr;
             }
 
             logWriter("Simplifying final mesh...\n");
