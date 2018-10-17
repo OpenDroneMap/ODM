@@ -79,18 +79,21 @@ class ODMeshingCell(ecto.Cell):
           if not io.file_exists(tree.odm_25dmesh) or rerun_cell:
 
               log.ODM_DEBUG('Writing ODM 2.5D Mesh file in: %s' % tree.odm_25dmesh)
-              dsm_resolution = gsd.cap_resolution(args.orthophoto_resolution, tree.opensfm_reconstruction, ignore_gsd=args.ignore_gsd) / 100.0 
-
-              # Create reference DSM at half ortho resolution
-              dsm_resolution *= 2
+              ortho_resolution = gsd.cap_resolution(args.orthophoto_resolution, tree.opensfm_reconstruction, ignore_gsd=args.ignore_gsd) / 100.0 
+              
+              dsm_radius = ortho_resolution * 2
 
               # Sparse point clouds benefits from using
-              # a larger resolution value (more radius interolation, less holes)
+              # a larger radius interolation --> less holes
               if args.fast_orthophoto:
-                  dsm_resolution *= 2
+                  dsm_radius *= 2
+              
+              # A good DSM size is 1/8 of the target orthophoto resolution
+              dsm_resolution = ortho_resolution * 8
 
               mesh.create_25dmesh(infile, tree.odm_25dmesh,
-                    dsm_resolution=dsm_resolution,
+                    dsm_radius=dsm_radius,
+                    dsm_resolution=dsm_resolution, 
                     depth=self.params.oct_tree,
                     maxVertexCount=self.params.max_vertex,
                     samples=self.params.samples,
