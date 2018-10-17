@@ -53,12 +53,13 @@ cmdLineParameter< char* >
     InputFile( "inputFile" ) ,
     OutputFile( "outputFile" );
 cmdLineParameter< int >
-    MaxVertexCount( "maxVertexCount" );
+    MaxVertexCount( "maxVertexCount" ) ,
+    MaxTileLength( "maxTileLength" );
 cmdLineReadable
     Verbose( "verbose" );
 
 cmdLineReadable* params[] = {
-    &InputFile , &OutputFile , &MaxVertexCount , &Verbose ,
+    &InputFile , &OutputFile , &MaxVertexCount , &MaxTileLength, &Verbose ,
     NULL
 };
 
@@ -67,6 +68,7 @@ void help(char *ex){
               << "\t -" << InputFile.name << " <input DSM raster>" << std::endl
               << "\t -" << OutputFile.name << " <output PLY mesh>" << std::endl
               << "\t [-" << MaxVertexCount.name << " <target number vertices> (Default: 100000)]" << std::endl
+              << "\t [-" << MaxTileLength.name << " <max length of a tile. Smaller values take longer to process but reduce memory usage by splitting the meshing process into tiles.> (Default: 1000)]" << std::endl
               << "\t [-" << Verbose.name << "]" << std::endl;
     exit(EXIT_FAILURE);
 }
@@ -282,6 +284,7 @@ int main(int argc, char **argv) {
     cmdLineParse( argc-1 , &argv[1] , params );
     if( !InputFile.set || !OutputFile.set ) help(argv[0]);
     if ( !MaxVertexCount.set ) MaxVertexCount.value = 100000;
+    if ( !MaxTileLength.set ) MaxTileLength.value = 1000;
 
     logWriter.verbose = Verbose.set;
     logWriter.outputFile = "odm_dem2mesh.txt";
@@ -308,14 +311,24 @@ int main(int argc, char **argv) {
 
         GDALRasterBand *band = dataset->GetRasterBand(1);
 
-        int qtreeLevels = 1;
-        subdivisions = (int)pow(2, qtreeLevels);
-        int numBlocks = subdivisions * subdivisions;
-        blockSizeX = arr_width / subdivisions;
-        blockSizeY = arr_height / subdivisions;
+        int qtreeLevels = 0;
+        int numBlocks = 1;
+        while(true){
+            subdivisions = (int)pow(2, qtreeLevels);
+            numBlocks = subdivisions * subdivisions;
+            blockSizeX = arr_width / subdivisions;
+            blockSizeY = arr_height / subdivisions;
+            if (blockSizeX > MaxTileLength.value || blockSizeY > MaxTileLength.value){
+                qtreeLevels++;
+            }else{
+                break;
+            }
+        }
+
         int blockXPad = 0; // Blocks > 0 need to re-add a column for seamless meshing
         int blockYPad = 0; // Blocks > 0 need to re-add a row for seamless meshing
 
+        logWriter("Blocks depth: %d\n", qtreeLevels);
         logWriter("Splitting area in %d\n", numBlocks);
         logWriter("Block size is %d, %d\n", blockSizeX, blockSizeY);
 

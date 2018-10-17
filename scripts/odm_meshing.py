@@ -87,9 +87,15 @@ class ODMeshingCell(ecto.Cell):
               # a larger radius interolation --> less holes
               if args.fast_orthophoto:
                   dsm_radius *= 2
+
+              dsm_multiplier = max(1.0, gsd.rounded_gsd(tree.opensfm_reconstruction, default_value=4, ndigits=3, ignore_gsd=args.ignore_gsd))
               
-              # A good DSM size is 1/2 of the target orthophoto resolution
-              dsm_resolution = ortho_resolution * 2
+              # A good DSM size depends on the flight altitude.
+              # Flights at low altitude need more details (higher resolution) 
+              # Flights at higher altitude benefit from smoother surfaces (lower resolution)
+              dsm_resolution = ortho_resolution * dsm_multiplier
+
+              log.ODM_DEBUG('ODM 2.5D DSM resolution: %s' % dsm_resolution)
 
               mesh.create_25dmesh(infile, tree.odm_25dmesh,
                     dsm_radius=dsm_radius,
