@@ -273,8 +273,8 @@ void transform(const BoundingBox &extent){
     double ext_height = extent.max.y - extent.min.y;
 
     for(Simplify::Vertex &v : Simplify::vertices){
-        v.p.x = extent.min.x + (static_cast<float>(v.p.x) / static_cast<float>(arr_width)) * ext_width;
-        v.p.y = extent.max.y - (static_cast<float>(v.p.y) / static_cast<float>(arr_height)) * ext_height;;
+        v.p.x = extent.min.x + (static_cast<double>(v.p.x) / static_cast<double>(arr_width)) * ext_width;
+        v.p.y = extent.max.y - (static_cast<double>(v.p.y) / static_cast<double>(arr_height)) * ext_height;;
     }
 }
 
@@ -284,6 +284,7 @@ int main(int argc, char **argv) {
     if ( !MaxVertexCount.set ) MaxVertexCount.value = 100000;
 
     logWriter.verbose = Verbose.set;
+    logWriter.outputFile = "odm_dem2mesh.txt";
     logArgs(params, logWriter);
 
     GDALDataset  *dataset;
@@ -307,7 +308,7 @@ int main(int argc, char **argv) {
 
         GDALRasterBand *band = dataset->GetRasterBand(1);
 
-        int qtreeLevels = 2;
+        int qtreeLevels = 1;
         subdivisions = (int)pow(2, qtreeLevels);
         int numBlocks = subdivisions * subdivisions;
         blockSizeX = arr_width / subdivisions;
@@ -427,6 +428,10 @@ int main(int argc, char **argv) {
                     ss << OutputFile.value << "." << blockX << "-" << blockY << ".bin";
                     logWriter("Reading %s\n", ss.str().c_str());
                     readBin(ss.str(), blockX, blockY);
+
+                    if (std::remove(ss.str().c_str()) != 0){
+                        logWriter("Error while deleting intermediate file: %s\n", ss.str().c_str());
+                    }
                 }
             }
 

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 4.7.0, 2018-10-16T15:52:36. -->
+<!-- Written by QtCreator 4.7.0, 2018-10-17T12:29:47. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -452,7 +452,7 @@
      <value type="int">13</value>
      <value type="int">14</value>
     </valuelist>
-    <value type="QString" key="CMakeProjectManager.CMakeRunConfiguration.Arguments">-inputFile /data/drone/cmparks/mesh_dsm_12.tif -outputFile /data/drone/cmparks/mesh_dsm.ply -verbose</value>
+    <value type="QString" key="CMakeProjectManager.CMakeRunConfiguration.Arguments">-inputFile /data/drone/cmparks/mesh_dsm.tif -outputFile /data/drone/cmparks/mesh_dsm.ply -verbose</value>
     <value type="QString" key="CMakeProjectManager.CMakeRunConfiguration.UserWorkingDirectory"></value>
     <value type="QString" key="CMakeProjectManager.CMakeRunConfiguration.UserWorkingDirectory.default">/data/OpenDroneMap/modules/build-odm_dem2mesh-Desktop-Default</value>
     <value type="int" key="PE.EnvironmentAspect.Base">2</value>

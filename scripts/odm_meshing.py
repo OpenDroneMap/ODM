@@ -88,8 +88,8 @@ class ODMeshingCell(ecto.Cell):
               if args.fast_orthophoto:
                   dsm_radius *= 2
               
-              # A good DSM size is 1/8 of the target orthophoto resolution
-              dsm_resolution = ortho_resolution * 8
+              # A good DSM size is 1/4 of the target orthophoto resolution
+              dsm_resolution = ortho_resolution * 4
 
               mesh.create_25dmesh(infile, tree.odm_25dmesh,
                     dsm_radius=dsm_radius,
