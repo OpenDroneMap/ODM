@@ -8,7 +8,7 @@ from opendm import context
 from scipy import signal, ndimage
 import numpy as np
 
-def create_25dmesh(inPointCloud, outMesh, dsm_resolution=0.05, depth=8, samples=1, maxVertexCount=100000, verbose=False, max_workers=None):
+def create_25dmesh(inPointCloud, outMesh, dsm_radius=0.07, dsm_resolution=0.05, depth=8, samples=1, maxVertexCount=100000, verbose=False, max_workers=None):
     # Create DSM from point cloud
 
     # Create temporary directory
@@ -19,7 +19,7 @@ def create_25dmesh(inPointCloud, outMesh, dsm_resolution=0.05, depth=8, samples=
     os.mkdir(tmp_directory)
     log.ODM_INFO('Created temporary directory: %s' % tmp_directory)
 
-    radius_steps = [dsm_resolution * math.sqrt(2)]
+    radius_steps = [dsm_radius]
 
     log.ODM_INFO('Creating DSM for 2.5D mesh')
 

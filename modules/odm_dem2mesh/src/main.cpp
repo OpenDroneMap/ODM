@@ -173,7 +173,7 @@ void writeBin(const std::string &filename, int blockWidth, int blockHeight){
 //   |  |
 //
 // 1---2---3---4
-unsigned long *pointToVertexIdMap = nullptr;
+long *pointToVertexIdMap = nullptr;
 
 // (current vertex index) --> (existing vertex index) for duplicate points during merge
 std::unordered_map<int, int> vertexToVertexMap;
@@ -197,10 +197,10 @@ void readBin(const std::string &filename, int blockX, int blockY){
     int xOffset = blockX * blockSizeX - blockXPad;
     int yOffset = blockY * blockSizeY - blockYPad;
 
-    int ptvidMapSize = arr_height * (subdivisions - 1) + arr_width * (subdivisions - 1);
-    int ptvidYOffset = ptvidMapSize / 2;
+    int ptvidMapSize = arr_height * (subdivisions - 1) + arr_width * (subdivisions - 1) + 1;
+    int ptvidYOffset = arr_height * (subdivisions - 1) + 1;
     if (pointToVertexIdMap == nullptr){
-        pointToVertexIdMap = new unsigned long[ptvidMapSize];
+        pointToVertexIdMap = new long[ptvidMapSize];
         memset(pointToVertexIdMap, -1, ptvidMapSize*sizeof(*pointToVertexIdMap));
     }
 
@@ -212,29 +212,25 @@ void readBin(const std::string &filename, int blockX, int blockY){
         y = static_cast<int>(vertices[1]);
 
         // Detect edge points
-
-        // TODO: check pointToVertexIdMap index!!!!
-
-        if ((blockX > 0 && x == xOffset) || x == xOffset + blockWidth){
-            if (pointToVertexIdMap[(x / (blockSizeX - 1) - 1) * y] == -1){
-                pointToVertexIdMap[(x / (blockSizeX - 1) - 1) * y] = i + voffset;
+        if ((blockX > 0 && x == xOffset) || (blockX < subdivisions - 1 && x == xOffset + blockWidth - 1)){
+            if (pointToVertexIdMap[y + (x / blockSizeX) * arr_height] == -1){
+                pointToVertexIdMap[y + (x / blockSizeX) * arr_height] = static_cast<long>(i + voffset);
             }else{
                 // Already added from another block
                 // Keep a reference to the point from the other block
-                vertexToVertexMap[i + voffset] = pointToVertexIdMap[(x / (blockSizeX - 1) - 1) * y];
+                vertexToVertexMap[i + voffset] = pointToVertexIdMap[y + (x / blockSizeX) * arr_height];
             }
-//              std::cerr << x << " | " << blockSizeX << " | " << x / (blockSizeX - 1) - 1 << " | " << xOffset << " | " << blockWidth << std::endl;
         }
 
-//        else if ((blockY > 0 && y == yOffset) || y == yOffset + blockHeight){
-//            if (pointToVertexIdMap[ptvidYOffset + y / blockSizeY - 1] == -1){
-//                pointToVertexIdMap[ptvidYOffset + y / blockSizeY - 1] = i + voffset;
-//            }else{
-//                // Already added from another block
-//                // Keep a reference to the point from the other block
-//                vertexToVertexMap[i + voffset] = pointToVertexIdMap[ptvidYOffset + y / blockSizeY - 1];
-//            }
-//        }
+        else if ((blockY > 0 && y == yOffset) || (blockY < subdivisions - 1 && y == yOffset + blockHeight - 1)){
+            if (pointToVertexIdMap[ptvidYOffset + x + (y / blockSizeY) * arr_width] == -1){
+                pointToVertexIdMap[ptvidYOffset + x + (y / blockSizeY) * arr_width] = i + voffset;
+            }else{
+                // Already added from another block
+                // Keep a reference to the point from the other block
+                vertexToVertexMap[i + voffset] = pointToVertexIdMap[ptvidYOffset + x + (y / blockSizeY) * arr_width];
+            }
+        }
 
         Simplify::Vertex v;
         v.p.x = vertices[0];
@@ -247,26 +243,16 @@ void readBin(const std::string &filename, int blockX, int blockY){
     for (unsigned long i = 0; i < tcount; i++){
         f.read(reinterpret_cast<char *>(&triangles), sizeof(uint32_t) * 3);
         Simplify::Triangle t;
-        t.v[0] = triangles[0] + voffset;
-        t.v[1] = triangles[1] + voffset;
-        t.v[2] = triangles[2] + voffset;
+        loopk(0, 3) t.v[k] = triangles[k] + voffset;
 
         // Check vertices for substitutions
-        if (vertexToVertexMap.find(t.v[0]) != vertexToVertexMap.end()){
-            std::cerr << "Found 1 " << t.v[0] << "-->" << vertexToVertexMap[t.v[0]] << std::endl;
-            t.v[0] = vertexToVertexMap[t.v[0]];
-        }
-        if (vertexToVertexMap.find(t.v[1]) != vertexToVertexMap.end()){
-             std::cerr << "Found 2 " << t.v[1] << "-->" << vertexToVertexMap[t.v[1]] << std::endl;
-            t.v[1] = vertexToVertexMap[t.v[1]];
-        }
-        if (vertexToVertexMap.find(t.v[2]) != vertexToVertexMap.end()){
-             std::cerr << "Found 3 " << t.v[2] << "--> " << vertexToVertexMap[t.v[2]] << std::endl;
-            t.v[2] = vertexToVertexMap[t.v[2]];
-        }
+        loopk(0, 3) if (vertexToVertexMap.find(t.v[k]) != vertexToVertexMap.end()) t.v[k] = vertexToVertexMap[t.v[k]];
 
-        t.deleted = 0;
-        Simplify::triangles.push_back(t);
+        // Skip degenerate triangles
+        if (t.v[0] != t.v[1] && t.v[0] != t.v[2] && t.v[1] != t.v[2]){
+            t.deleted = 0;
+            Simplify::triangles.push_back(t);
+        }
     }
 }
 
@@ -444,10 +430,12 @@ int main(int argc, char **argv) {
                 }
             }
 
+            // Cleanup
             if (pointToVertexIdMap != nullptr){
                 delete[] pointToVertexIdMap;
                 pointToVertexIdMap = nullptr;
             }
+            vertexToVertexMap.clear();
 
             logWriter("Simplifying final mesh...\n");
             int target_count = std::min(MaxVertexCount.value * 2, static_cast<int>(Simplify::triangles.size()));
