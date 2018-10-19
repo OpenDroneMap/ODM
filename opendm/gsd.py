@@ -19,7 +19,7 @@ def rounded_gsd(reconstruction_json, default_value=None, ndigits=0, ignore_gsd=F
     else:
         return default_value
 
-        
+
 def image_scale_factor(target_resolution, reconstruction_json, gsd_error_estimate = 0.1):
     """
     :param target_resolution resolution the user wants have in cm / pixel
@@ -72,7 +72,7 @@ def opensfm_reconstruction_average_gsd(reconstruction_json):
         a GSD estimate cannot be compute
     """
     if not os.path.isfile(reconstruction_json):
-        raise FileNotFoundError(reconstruction_json + " does not exist.")
+        raise IOError(reconstruction_json + " does not exist.")
 
     with open(reconstruction_json) as f:
         data = json.load(f)
