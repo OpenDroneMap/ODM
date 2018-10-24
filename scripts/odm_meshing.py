@@ -1,4 +1,4 @@
-import ecto, os
+import ecto, os, math
 
 from opendm import log
 from opendm import io
@@ -81,19 +81,19 @@ class ODMeshingCell(ecto.Cell):
               log.ODM_DEBUG('Writing ODM 2.5D Mesh file in: %s' % tree.odm_25dmesh)
               ortho_resolution = gsd.cap_resolution(args.orthophoto_resolution, tree.opensfm_reconstruction, ignore_gsd=args.ignore_gsd) / 100.0 
               
-              dsm_radius = ortho_resolution * 2
-
-              # Sparse point clouds benefits from using
-              # a larger radius interolation --> less holes
-              if args.fast_orthophoto:
-                  dsm_radius *= 2
-
               dsm_multiplier = max(1.0, gsd.rounded_gsd(tree.opensfm_reconstruction, default_value=4, ndigits=3, ignore_gsd=args.ignore_gsd))
               
               # A good DSM size depends on the flight altitude.
               # Flights at low altitude need more details (higher resolution) 
               # Flights at higher altitude benefit from smoother surfaces (lower resolution)
               dsm_resolution = ortho_resolution * dsm_multiplier
+              
+              dsm_radius = dsm_resolution * math.sqrt(2)
+
+              # Sparse point clouds benefits from using
+              # a larger radius interolation --> less holes
+              if args.fast_orthophoto:
+                  dsm_radius *= 2
 
               log.ODM_DEBUG('ODM 2.5D DSM resolution: %s' % dsm_resolution)
 
