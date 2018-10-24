@@ -47,14 +47,14 @@ def dem_to_mesh(inGeotiff, outPointCloud, maxVertexCount, verbose=False):
     log.ODM_INFO('Creating mesh from DSM: %s' % inGeotiff)
 
     kwargs = {
-        'bin': context.odm_modules_path,
+        'bin': context.dem2mesh_path,
         'outfile': outPointCloud,
         'infile': inGeotiff,
         'maxVertexCount': maxVertexCount,
         'verbose': '-verbose' if verbose else ''
     }
 
-    system.run('{bin}/odm_dem2mesh -inputFile {infile} '
+    system.run('{bin} -inputFile {infile} '
          '-outputFile {outfile} '
          '-maxVertexCount {maxVertexCount} '
          ' {verbose} '.format(**kwargs))
