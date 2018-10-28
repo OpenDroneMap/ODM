@@ -8,7 +8,7 @@ from opendm import context
 from scipy import signal, ndimage
 import numpy as np
 
-def create_25dmesh(inPointCloud, outMesh, dsm_radius=0.07, dsm_resolution=0.05, depth=8, samples=1, maxVertexCount=100000, verbose=False, max_workers=None):
+def create_25dmesh(inPointCloud, outMesh, dsm_radius=0.07, dsm_resolution=0.05, depth=8, samples=1, maxVertexCount=100000, verbose=False, max_workers=None, method='gridded'):
     # Create DSM from point cloud
 
     # Create temporary directory
@@ -35,7 +35,17 @@ def create_25dmesh(inPointCloud, outMesh, dsm_radius=0.07, dsm_resolution=0.05, 
             max_workers=max_workers
         )
 
-    mesh = dem_to_mesh(os.path.join(tmp_directory, 'mesh_dsm.tif'), outMesh, maxVertexCount, verbose)
+    if method == 'gridded':
+        mesh = dem_to_mesh_gridded(os.path.join(tmp_directory, 'mesh_dsm.tif'), outMesh, maxVertexCount, verbose)
+    elif method == 'poisson':
+        dsm_points = dem_to_points(os.path.join(tmp_directory, 'mesh_dsm.tif'), os.path.join(tmp_directory, 'dsm_points.ply'), verbose)
+        mesh = screened_poisson_reconstruction(dsm_points, outMesh, depth=depth, 
+                                    samples=samples, 
+                                    maxVertexCount=maxVertexCount, 
+                                    threads=max_workers,
+                                    verbose=verbose)
+    else:
+        raise 'Not a valid method: ' + method
 
     # Cleanup tmp
     if os.path.exists(tmp_directory):
@@ -43,7 +53,28 @@ def create_25dmesh(inPointCloud, outMesh, dsm_radius=0.07, dsm_resolution=0.05, 
 
     return mesh
 
-def dem_to_mesh(inGeotiff, outPointCloud, maxVertexCount, verbose=False):
+
+def dem_to_points(inGeotiff, outPointCloud, verbose=False):
+    log.ODM_INFO('Sampling points from DSM: %s' % inGeotiff)
+
+    kwargs = {
+        'bin': context.dem2points_path,
+        'outfile': outPointCloud,
+        'infile': inGeotiff,
+        'verbose': '-verbose' if verbose else ''
+    }
+
+    system.run('{bin} -inputFile {infile} '
+         '-outputFile {outfile} '
+         '-skirtHeightThreshold 1.5 '
+         '-skirtIncrements 0.2 '
+         '-skirtHeightCap 100 '
+         ' {verbose} '.format(**kwargs))
+
+    return outPointCloud
+
+
+def dem_to_mesh_gridded(inGeotiff, outPointCloud, maxVertexCount, verbose=False):
     log.ODM_INFO('Creating mesh from DSM: %s' % inGeotiff)
 
     kwargs = {

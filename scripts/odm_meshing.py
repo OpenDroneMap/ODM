@@ -96,7 +96,7 @@ class ODMeshingCell(ecto.Cell):
                   dsm_radius *= 2
 
               log.ODM_DEBUG('ODM 2.5D DSM resolution: %s' % dsm_resolution)
-
+              
               mesh.create_25dmesh(infile, tree.odm_25dmesh,
                     dsm_radius=dsm_radius,
                     dsm_resolution=dsm_resolution, 
@@ -104,7 +104,8 @@ class ODMeshingCell(ecto.Cell):
                     maxVertexCount=self.params.max_vertex,
                     samples=self.params.samples,
                     verbose=self.params.verbose,
-                    max_workers=args.max_concurrency)
+                    max_workers=args.max_concurrency,
+                    method='poisson' if args.fast_orthophoto else 'gridded')
           else:
               log.ODM_WARNING('Found a valid ODM 2.5D Mesh file in: %s' %
                               tree.odm_25dmesh)

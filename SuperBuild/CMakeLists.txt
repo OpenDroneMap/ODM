@@ -173,3 +173,13 @@ externalproject_add(dem2mesh
     BUILD_COMMAND     make
     INSTALL_COMMAND   ""
 )
+
+externalproject_add(dem2points
+    GIT_REPOSITORY    https://github.com/OpenDroneMap/dem2points.git
+    GIT_TAG           master
+    SOURCE_DIR        ${SB_SOURCE_DIR}/dem2points
+    UPDATE_COMMAND    ""
+    BUILD_IN_SOURCE 1
+    BUILD_COMMAND     make
+    INSTALL_COMMAND   ""
+)
