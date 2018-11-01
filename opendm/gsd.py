@@ -4,6 +4,22 @@ import numpy as np
 from repoze.lru import lru_cache
 from opendm import log
 
+def rounded_gsd(reconstruction_json, default_value=None, ndigits=0, ignore_gsd=False):
+    """
+    :param reconstruction_json path to OpenSfM's reconstruction.json
+    :return GSD value rounded. If GSD cannot be computed, or ignore_gsd is set, it returns a default value.
+    """
+    if ignore_gsd:
+        return default_value
+
+    gsd = opensfm_reconstruction_average_gsd(reconstruction_json)
+
+    if gsd is not None:
+        return round(gsd, ndigits)
+    else:
+        return default_value
+
+
 def image_scale_factor(target_resolution, reconstruction_json, gsd_error_estimate = 0.1):
     """
     :param target_resolution resolution the user wants have in cm / pixel
@@ -56,7 +72,7 @@ def opensfm_reconstruction_average_gsd(reconstruction_json):
         a GSD estimate cannot be compute
     """
     if not os.path.isfile(reconstruction_json):
-        raise FileNotFoundError(reconstruction_json + " does not exist.")
+        raise IOError(reconstruction_json + " does not exist.")
 
     with open(reconstruction_json) as f:
         data = json.load(f)

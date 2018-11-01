@@ -8,7 +8,7 @@ from opendm import context
 from scipy import signal, ndimage
 import numpy as np
 
-def create_25dmesh(inPointCloud, outMesh, dsm_resolution=0.05, depth=8, samples=1, maxVertexCount=100000, verbose=False, max_workers=None):
+def create_25dmesh(inPointCloud, outMesh, dsm_radius=0.07, dsm_resolution=0.05, depth=8, samples=1, maxVertexCount=100000, verbose=False, max_workers=None, method='gridded'):
     # Create DSM from point cloud
 
     # Create temporary directory
@@ -19,7 +19,7 @@ def create_25dmesh(inPointCloud, outMesh, dsm_resolution=0.05, depth=8, samples=
     os.mkdir(tmp_directory)
     log.ODM_INFO('Created temporary directory: %s' % tmp_directory)
 
-    radius_steps = [dsm_resolution * math.sqrt(2)]
+    radius_steps = [dsm_radius]
 
     log.ODM_INFO('Creating DSM for 2.5D mesh')
 
@@ -30,17 +30,22 @@ def create_25dmesh(inPointCloud, outMesh, dsm_resolution=0.05, depth=8, samples=
             gapfill=True,
             outdir=tmp_directory,
             resolution=dsm_resolution,
-            products=['idw'],
+            products=['max'],
             verbose=verbose,
             max_workers=max_workers
         )
 
-    dsm_points = dem_to_points(os.path.join(tmp_directory, 'mesh_dsm.tif'), os.path.join(tmp_directory, 'dsm_points.ply'), verbose)
-    mesh = screened_poisson_reconstruction(dsm_points, outMesh, depth=depth, 
+    if method == 'gridded':
+        mesh = dem_to_mesh_gridded(os.path.join(tmp_directory, 'mesh_dsm.tif'), outMesh, maxVertexCount, verbose)
+    elif method == 'poisson':
+        dsm_points = dem_to_points(os.path.join(tmp_directory, 'mesh_dsm.tif'), os.path.join(tmp_directory, 'dsm_points.ply'), verbose)
+        mesh = screened_poisson_reconstruction(dsm_points, outMesh, depth=depth, 
                                     samples=samples, 
                                     maxVertexCount=maxVertexCount, 
                                     threads=max_workers,
                                     verbose=verbose)
+    else:
+        raise 'Not a valid method: ' + method
 
     # Cleanup tmp
     if os.path.exists(tmp_directory):
@@ -48,17 +53,18 @@ def create_25dmesh(inPointCloud, outMesh, dsm_resolution=0.05, depth=8, samples=
 
     return mesh
 
+
 def dem_to_points(inGeotiff, outPointCloud, verbose=False):
     log.ODM_INFO('Sampling points from DSM: %s' % inGeotiff)
 
     kwargs = {
-        'bin': context.odm_modules_path,
+        'bin': context.dem2points_path,
         'outfile': outPointCloud,
         'infile': inGeotiff,
         'verbose': '-verbose' if verbose else ''
     }
 
-    system.run('{bin}/odm_dem2points -inputFile {infile} '
+    system.run('{bin} -inputFile {infile} '
          '-outputFile {outfile} '
          '-skirtHeightThreshold 1.5 '
          '-skirtIncrements 0.2 '
@@ -67,67 +73,24 @@ def dem_to_points(inGeotiff, outPointCloud, verbose=False):
 
     return outPointCloud
 
-# Old Python implementation of dem_to_points
-# def dem_to_points(inGeotiff, outPointCloud):
-#     log.ODM_INFO('Sampling points from DSM: %s' % inGeotiff)
 
-#     image = GeoImage.open([inGeotiff], bandnames=['z'], nodata=-9999)
-#     arr = image['z'].read_raw()
+def dem_to_mesh_gridded(inGeotiff, outPointCloud, maxVertexCount, verbose=False):
+    log.ODM_INFO('Creating mesh from DSM: %s' % inGeotiff)
 
-#     mem_file = BytesIO()
+    kwargs = {
+        'bin': context.dem2mesh_path,
+        'outfile': outPointCloud,
+        'infile': inGeotiff,
+        'maxVertexCount': maxVertexCount,
+        'verbose': '-verbose' if verbose else ''
+    }
 
-#     xmin, xmax, ymin, ymax = image.extent().x0(), image.extent().x1(), image.extent().y0(), image.extent().y1()
-#     ext_width, ext_height = xmax - xmin, ymax - ymin
-#     arr_height, arr_width = arr.shape
-#     vertex_count = (arr_height - 4) * (arr_width - 4)
-#     skirt_points = 0
+    system.run('{bin} -inputFile {infile} '
+         '-outputFile {outfile} '
+         '-maxVertexCount {maxVertexCount} '
+         ' {verbose} '.format(**kwargs))
 
-#     skirt_height_threshold = 1 # meter
-#     skirt_increments = 0.1
-
-#     for x in range(2, arr_width - 2):
-#         for y in range(2, arr_height - 2):
-#             z = arr[y][x]
-#             tx = xmin + (float(x) / float(arr_width)) * ext_width
-#             ty = ymax - (float(y) / float(arr_height)) * ext_height
-#             mem_file.write(struct.pack('ffffff', tx, ty, z, 0, 0, 1))
-
-#             # Skirting
-#             for (nx, ny) in ((x, y + 1), (x, y - 1), (x + 1, y), (x - 1, y)):
-#                 current_z = z
-#                 neighbor_z = arr[ny][nx]
-
-#                 if current_z - neighbor_z > skirt_height_threshold:
-#                     while current_z > neighbor_z:
-#                         current_z -= skirt_increments
-#                         mem_file.write(struct.pack('ffffff', tx, ty, current_z, 0, 0, 1))
-#                         skirt_points += 1
-
-#                     mem_file.write(struct.pack('ffffff', tx, ty, neighbor_z, 0, 0, 1))
-#                     skirt_points += 1
-
-#     log.ODM_INFO("Points count: %s (%s samples, %s skirts)", vertex_count + skirt_points, vertex_count, skirt_points)
-#     log.ODM_INFO('Writing points...')
-
-#     mem_file.seek(0)
-#     with open(outPointCloud, "wb") as f:
-#         f.write("ply\n")
-#         f.write("format binary_%s_endian 1.0\n" % sys.byteorder)
-#         f.write("element vertex %s\n" % (vertex_count + skirt_points))
-#         f.write("property float x\n")
-#         f.write("property float y\n")
-#         f.write("property float z\n")
-#         f.write("property float nx\n")
-#         f.write("property float ny\n")
-#         f.write("property float nz\n")
-#         f.write("end_header\n")
-#         shutil.copyfileobj(mem_file, f)
-
-#     mem_file.close()
-
-#     log.ODM_INFO('Wrote points to: %s' % outPointCloud)
-
-#     return outPointCloud
+    return outPointCloud
 
 
 def screened_poisson_reconstruction(inPointCloud, outMesh, depth = 8, samples = 1, maxVertexCount=100000, pointWeight=4, threads=context.num_cores, verbose=False):
