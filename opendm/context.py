@@ -28,6 +28,9 @@ makescene_path = os.path.join(superbuild_path, 'src', 'elibs', 'mve', 'apps', 'm
 smvs_path = os.path.join(superbuild_path, 'src', 'elibs', 'smvs', 'app', 'smvsrecon')
 
 poisson_recon_path = os.path.join(superbuild_path, 'src', 'PoissonRecon', 'Bin', 'Linux', 'PoissonRecon')
+dem2mesh_path = os.path.join(superbuild_path, 'src', 'dem2mesh', 'dem2mesh')
+dem2points_path = os.path.join(superbuild_path, 'src', 'dem2points', 'dem2points')
+
 
 # define mvstex path
 mvstex_path = os.path.join(superbuild_path, "install/bin/texrecon")

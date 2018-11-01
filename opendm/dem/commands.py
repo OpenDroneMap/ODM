@@ -127,10 +127,19 @@ def gap_fill(filenames, fout):
                                     return_indices=True)
     arr = arr[tuple(indices)]
 
-    # Median filter
+    # Median filter (careful, changing the value 5 might require tweaking)
+    # the lines below. There's another numpy function that takes care of 
+    # these edge cases, but it's slower.
     from scipy import signal
     arr = signal.medfilt(arr, 5)
     
+    # Fill corner points with nearest value
+    if arr.shape >= (4, 4):
+        arr[0][:2] = arr[1][0] = arr[1][1]
+        arr[0][-2:] = arr[1][-1] = arr[2][-1]
+        arr[-1][:2] = arr[-2][0] = arr[-2][1]
+        arr[-1][-2:] = arr[-2][-1] = arr[-2][-2]
+
     # write output
     imgout = gippy.GeoImage.create_from(imgs[0], fout)
     imgout.set_nodata(nodata)

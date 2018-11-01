@@ -48,10 +48,13 @@ class ODMSmvsCell(ecto.Cell):
 
         # check if reconstruction was done before
         if not io.file_exists(tree.smvs_model) or rerun_cell:
+            # cleanup if a rerun
+            if io.dir_exists(tree.mve_path) and rerun_cell:
+                shutil.rmtree(tree.mve_path)
 
             # make bundle directory
             if not io.file_exists(tree.mve_bundle):
-                system.mkdir_p(tree.mve_path) #TODO: check permissions/what happens when rerun
+                system.mkdir_p(tree.mve_path)
                 system.mkdir_p(io.join_paths(tree.mve_path, 'bundle'))
                 io.copy(tree.opensfm_image_list, tree.mve_image_list)
                 io.copy(tree.opensfm_bundle, tree.mve_bundle)
