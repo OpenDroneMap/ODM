@@ -53,6 +53,8 @@ struct GeorefGCP
     std::string image_;     /**< The corresponding image for the GCP **/
     std::string idgcp_;     /**< The corresponding identification for the GCP **/
 
+    size_t largeErrors = 0;
+
     GeorefGCP();
     ~GeorefGCP();
 

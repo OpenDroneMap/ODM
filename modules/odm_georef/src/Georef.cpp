@@ -936,6 +936,15 @@ void Georef::performGeoreferencingWithGCP()
     log_ << "Optimal gcp triplet chosen: ";
     log_ << gcp0 << ", " << gcp1 << ", " << gcp2 << '\n';
     log_ << '\n';
+
+    // Warn about possible bad GCPs
+    for (size_t gcpIndex = 0; gcpIndex < gcps_.size(); ++gcpIndex)
+    {
+        if (gcps_[gcpIndex].largeErrors > gcps_.size() * gcps_.size() * 5){
+            log_ << "WARNING: Detected possible malformed GCP # " << (gcpIndex + 1) << ": " << gcps_[gcpIndex].largeErrors << " large georeferencing errors.\n";
+        }
+    }
+
     FindTransform transFinal;
     transFinal.findTransform(gcps_[gcp0].getPos(), gcps_[gcp1].getPos(), gcps_[gcp2].getPos(),
                              gcps_[gcp0].getReferencedPos(), gcps_[gcp1].getReferencedPos(), gcps_[gcp2].getReferencedPos());
@@ -1131,6 +1140,7 @@ void Georef::chooseBestGCPTriplet(size_t &gcp0, size_t &gcp1, size_t &gcp2)
 void Georef::findBestGCPTriplet(size_t &gcp0, size_t &gcp1, size_t &gcp2, size_t offset, size_t stride, double &minTotError)
 {
     minTotError = std::numeric_limits<double>::infinity();
+    const double LARGE_ERROR = 10.0; // meters
 
     for(size_t t = offset; t < gcps_.size(); t+=stride)
     {
@@ -1153,7 +1163,13 @@ void Georef::findBestGCPTriplet(size_t &gcp0, size_t &gcp1, size_t &gcp2, size_t
 
                             for(size_t r = 0; r < gcps_.size(); ++r)
                             {
-                                totError += trans.error(gcps_[r].getPos(), gcps_[r].getReferencedPos());
+                                double err = trans.error(gcps_[r].getPos(), gcps_[r].getReferencedPos());
+                                totError += err;
+                                if (err > LARGE_ERROR){
+                                    gcps_[t].largeErrors++;
+                                    gcps_[s].largeErrors++;
+                                    gcps_[p].largeErrors++;
+                                }
                             }
 
                             if(minTotError > totError)
