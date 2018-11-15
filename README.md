@@ -171,7 +171,7 @@ instructions through "Create a Docker group". Once Docker is installed, the fast
 
 If you want to build your own Docker image from sources, type:
 
-    docker build -t my_odm_image .
+    docker build -t my_odm_image --no-cache .
     docker run -it --rm \
         -v "$(pwd)/images:/code/images" \
         -v "$(pwd)/odm_orthophoto:/code/odm_orthophoto" \
