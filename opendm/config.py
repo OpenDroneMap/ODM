@@ -414,7 +414,7 @@ def config():
     parser.add_argument('--dem-resolution',
                         metavar='<float>',
                         type=float,
-                        default=5,
+                        default=20,
                         help='DSM/DTM resolution in cm / pixel.'
                              '\nDefault: %(default)s')
 
