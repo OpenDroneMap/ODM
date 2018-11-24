@@ -22,6 +22,8 @@ def save_images_database(photos, database_file):
     log.ODM_INFO("Wrote images database: %s" % database_file)
 
 def load_images_database(database_file):
+    # Empty is used to create types.ODM_Photo class
+    # instances without calling __init__
     class Empty:
         pass
 
