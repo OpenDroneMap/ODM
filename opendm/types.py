@@ -38,9 +38,13 @@ class ODM_Photo:
         self.update_focal()
 
         # print log message
-        log.ODM_DEBUG('Loaded {} | camera: {} | dimensions: {} x {} | focal: {} | ccd: {} | lat: {} | lon: {} | alt: {}'
-                      .format(self.filename, self.make_model, self.width, self.height, self.focal_length,
-                              self.ccd_width, self.latitude, self.longitude, self.altitude))
+        log.ODM_DEBUG('Loaded {}'.format(self))
+
+
+    def __str__(self):
+        return '{} | camera: {} | dimensions: {} x {} | focal: {} | ccd: {} | lat: {} | lon: {} | alt: {}'.format(
+                            self.filename, self.make_model, self.width, self.height, self.focal_length,
+                            self.ccd_width, self.latitude, self.longitude, self.altitude)
 
     def update_focal(self):
         # compute focal length in pixels
