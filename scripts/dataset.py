@@ -1,5 +1,6 @@
 import os
 import ecto
+import json
 
 from opendm import context
 from opendm import io
@@ -14,6 +15,32 @@ def make_odm_photo(force_focal, force_ccd, path_file):
                            force_focal,
                            force_ccd)
 
+def save_images_database(photos, database_file):
+    with open(database_file, 'w') as f:
+        f.write(json.dumps(map(lambda p: p.__dict__, photos)))
+    
+    log.ODM_INFO("Wrote images database: %s" % database_file)
+
+def load_images_database(database_file):
+    # Empty is used to create types.ODM_Photo class
+    # instances without calling __init__
+    class Empty:
+        pass
+
+    result = []
+
+    log.ODM_INFO("Loading images database: %s" % database_file)
+
+    with open(database_file, 'r') as f:
+        photos_json = json.load(f)
+        for photo_json in photos_json:
+            p = Empty()
+            for k in photo_json:
+                setattr(p, k, photo_json[k])
+            p.__class__ = types.ODM_Photo
+            result.append(p)
+
+    return result
 
 class ODMLoadDatasetCell(ecto.Cell):
 
@@ -63,22 +90,36 @@ class ODMLoadDatasetCell(ecto.Cell):
 
         log.ODM_DEBUG('Loading dataset from: %s' % images_dir)
 
-        files = get_images(images_dir)
+        # check if we rerun cell or not
+        rerun_cell = (args.rerun is not None and
+                      args.rerun == 'dataset') or \
+                     (args.rerun_all) or \
+                     (args.rerun_from is not None and
+                      'dataset' in args.rerun_from)
+        
+        images_database_file = io.join_paths(tree.root_path, 'images.json')
+        if not io.file_exists(images_database_file) or rerun_cell:
+            files = get_images(images_dir)
+            if files:
+                # create ODMPhoto list
+                path_files = [io.join_paths(images_dir, f) for f in files]
 
-        if files:
-            # create ODMPhoto list
-            path_files = [io.join_paths(images_dir, f) for f in files]
+                photos = []
+                with open(tree.dataset_list, 'w') as dataset_list:
+                    for files in path_files:
+                        photos += [make_odm_photo(self.params.force_focal, self.params.force_ccd, files)]
+                        dataset_list.write(photos[-1].filename + '\n')
 
-            photos = []
-            with open(tree.dataset_list, 'w') as dataset_list:
-                for files in path_files:
-                    photos += [make_odm_photo(self.params.force_focal, self.params.force_ccd, files)]
-                    dataset_list.write(photos[-1].filename + '\n')
-
-            log.ODM_INFO('Found %s usable images' % len(photos))
+                # Save image database for faster restart
+                save_images_database(photos, images_database_file)
+            else:
+                log.ODM_ERROR('Not enough supported images in %s' % images_dir)
+                return ecto.QUIT
         else:
-            log.ODM_ERROR('Not enough supported images in %s' % images_dir)
-            return ecto.QUIT
+            # We have an images database, just load it
+            photos = load_images_database(images_database_file)
+
+        log.ODM_INFO('Found %s usable images' % len(photos))
 
         # append photos to cell output
         if not self.params.proj:
@@ -99,9 +140,12 @@ class ODMLoadDatasetCell(ecto.Cell):
 
                 # run UTM extraction binary
                 try:
-                    system.run('{bin}/odm_extract_utm -imagesPath {imgs}/ '
-                                                        '-imageListFile {imgs_list} -outputCoordFile {coords} {verbose} '
-                                                        '-logFile {log}'.format(**kwargs))
+                    if not io.file_exists(tree.odm_georeferencing_coords) or rerun_cell:
+                        system.run('{bin}/odm_extract_utm -imagesPath {imgs}/ '
+                                                            '-imageListFile {imgs_list} -outputCoordFile {coords} {verbose} '
+                                                            '-logFile {log}'.format(**kwargs))
+                    else:
+                        log.ODM_INFO("Coordinates file already exist: %s" % tree.odm_georeferencing_coords)
                 except:
                     log.ODM_WARNING('Could not generate coordinates file. '
                                     'Ignore if there is a GCP file')

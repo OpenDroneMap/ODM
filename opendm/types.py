@@ -17,7 +17,6 @@ class ODM_Photo:
 
     def __init__(self, path_file, force_focal, force_ccd):
         #  general purpose
-        self.path_file = path_file
         self.filename = io.extract_file_from_path_file(path_file)
         # useful attibutes
         self.width = None
@@ -33,14 +32,18 @@ class ODM_Photo:
         self.longitude = None
         self.altitude = None
         # parse values from metadata
-        self.parse_exif_values(self.path_file, force_focal, force_ccd)
+        self.parse_exif_values(path_file, force_focal, force_ccd)
         # compute focal length into pixels
         self.update_focal()
 
         # print log message
-        log.ODM_DEBUG('Loaded {} | camera: {} | dimensions: {} x {} | focal: {} | ccd: {} | lat: {} | lon: {} | alt: {}'
-                      .format(self.filename, self.make_model, self.width, self.height, self.focal_length,
-                              self.ccd_width, self.latitude, self.longitude, self.altitude))
+        log.ODM_DEBUG('Loaded {}'.format(self))
+
+
+    def __str__(self):
+        return '{} | camera: {} | dimensions: {} x {} | focal: {} | ccd: {} | lat: {} | lon: {} | alt: {}'.format(
+                            self.filename, self.make_model, self.width, self.height, self.focal_length,
+                            self.ccd_width, self.latitude, self.longitude, self.altitude)
 
     def update_focal(self):
         # compute focal length in pixels
