@@ -66,7 +66,7 @@ class ODMOpenSfMCell(ecto.Cell):
                 for photo in photos:
                     if not photo.altitude:
                         has_alt = False
-                    fout.write('%s\n' % photo.path_file)
+                    fout.write('%s\n' % io.join_paths(tree.dataset_raw, photo.filename))
 
             # create config file for OpenSfM
             config = [
