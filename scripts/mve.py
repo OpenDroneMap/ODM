@@ -7,14 +7,8 @@ from opendm import context
 
 
 class ODMMveCell(ecto.Cell):
-    def declare_params(self, params):
-        params.declare("threads", "max number of threads", context.num_cores)
-        params.declare("alpha", "Regularization parameter", 1)
-        params.declare("max_pixels", "max pixels for reconstruction", 1700000)
-        params.declare("output_scale", "scale of optimization", 2)
-        params.declare("shading", "Enable shading-aware model", False)
-        params.declare("gamma_srgb", "Apply inverse SRGB gamma correction", False)
-        params.declare("verbose", "Increase debug level", False)
+#    def declare_params(self, params):
+#        params.declare("output_scale", "scale of optimization", 2)
 
     def declare_io(self, params, inputs, outputs):
         inputs.declare("tree", "Struct with paths", [])
@@ -71,14 +65,6 @@ class ODMMveCell(ecto.Cell):
 
             # config
             config = [
-                "-t%s" % self.params.threads,
-                "-a%s" % self.params.alpha,
-                "--max-pixels=%s" % int(self.params.max_pixels),
-                "-o%s" % self.params.output_scale,
-                "--debug-lvl=%s" % ('1' if self.params.verbose else '0'),
-                "%s" % '-S' if self.params.shading else '',
-                "%s" % '-g' if self.params.gamma_srgb and self.params.shading else '',
-                "--force" if rerun_cell else ''
             ]
 
             # run mve
