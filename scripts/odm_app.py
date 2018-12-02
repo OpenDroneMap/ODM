@@ -8,7 +8,7 @@ from opendm import system
 
 from dataset import ODMLoadDatasetCell
 from run_opensfm import ODMOpenSfMCell
-from mve import ODMMvsCell
+from mve import ODMMveCell
 from odm_slam import ODMSlamCell
 from odm_meshing import ODMeshingCell
 from mvstex import ODMMvsTexCell
