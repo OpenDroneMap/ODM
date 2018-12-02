@@ -45,9 +45,6 @@ if __name__ == '__main__':
 
     # execute the plasm
     plasm.execute(niter=1)
-    log.ODM_INFO('                                                                ')
-    log.ODM_INFO('                                                                ')
-    log.ODM_INFO('                                                                ')
     log.ODM_INFO('MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM')
     log.ODM_INFO('MMMMMMMdo/-.`.-+yNMMMMMMMMMMMMMMMMMMMMMMMMMMMMmy/-.`.-/odMMMMMMM')
     log.ODM_INFO('MMMMMs.`/shmmdho- /dMMMMMMMMMMMMMMMMMMMMMMMMd: -ohdmmhs/`.yMMMMM')
