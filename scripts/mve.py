@@ -6,7 +6,7 @@ from opendm import system
 from opendm import context
 
 
-class ODMSmvsCell(ecto.Cell):
+class ODMMveCell(ecto.Cell):
     def declare_params(self, params):
         params.declare("threads", "max number of threads", context.num_cores)
         params.declare("alpha", "Regularization parameter", 1)
@@ -27,7 +27,7 @@ class ODMSmvsCell(ecto.Cell):
         # Benchmarking
         start_time = system.now_raw()
 
-        log.ODM_INFO('Running SMVS Cell')
+        log.ODM_INFO('Running MVE Cell')
 
         # get inputs
         tree = inputs.tree
@@ -36,18 +36,18 @@ class ODMSmvsCell(ecto.Cell):
         photos = reconstruction.photos
 
         if not photos:
-            log.ODM_ERROR('Not enough photos in photos array to start SMVS')
+            log.ODM_ERROR('Not enough photos in photos array to start MVE')
             return ecto.QUIT
 
         # check if we rerun cell or not
         rerun_cell = (args.rerun is not None and
-                      args.rerun == 'smvs') or \
+                      args.rerun == 'mve') or \
                      (args.rerun_all) or \
                      (args.rerun_from is not None and
-                      'smvs' in args.rerun_from)
+                      'mve' in args.rerun_from)
 
         # check if reconstruction was done before
-        if not io.file_exists(tree.smvs_model) or rerun_cell:
+        if not io.file_exists(tree.mve_model) or rerun_cell:
             # cleanup if a rerun
             if io.dir_exists(tree.mve_path) and rerun_cell:
                 shutil.rmtree(tree.mve_path)
@@ -62,12 +62,12 @@ class ODMSmvsCell(ecto.Cell):
             # mve makescene wants the output directory
             # to not exists before executing it (otherwise it
             # will prompt the user for confirmation)
-            if io.dir_exists(tree.smvs):
-                shutil.rmtree(tree.smvs)
+            if io.dir_exists(tree.mve):
+                shutil.rmtree(tree.mve)
 
             # run mve makescene
             if not io.dir_exists(tree.mve_views):
-                system.run('%s %s %s' % (context.makescene_path, tree.mve_path, tree.smvs))
+                system.run('%s %s %s' % (context.makescene_path, tree.mve_path, tree.mve))
 
             # config
             config = [
@@ -81,26 +81,26 @@ class ODMSmvsCell(ecto.Cell):
                 "--force" if rerun_cell else ''
             ]
 
-            # run smvs
-            system.run('%s %s %s' % (context.smvs_path, ' '.join(config), tree.smvs))
+            # run mve
+            system.run('%s %s %s' % (context.mve_path, ' '.join(config), tree.mve))
             
             # find and rename the output file for simplicity
-            smvs_files = glob.glob(os.path.join(tree.smvs, 'smvs-*'))
-            smvs_files.sort(key=os.path.getmtime) # sort by last modified date
-            if len(smvs_files) > 0:
-                old_file = smvs_files[-1]
-                if not (io.rename_file(old_file, tree.smvs_model)):
+            mve_files = glob.glob(os.path.join(tree.mve, 'mve-*'))
+            mve_files.sort(key=os.path.getmtime) # sort by last modified date
+            if len(mve_files) > 0:
+                old_file = mve_files[-1]
+                if not (io.rename_file(old_file, tree.mve_model)):
                     log.ODM_WARNING("File %s does not exist, cannot be renamed. " % old_file)
             else:
-                log.ODM_WARNING("Cannot find a valid point cloud (smvs-XX.ply) in %s. Check the console output for errors." % tree.smvs)
+                log.ODM_WARNING("Cannot find a valid point cloud (mve-XX.ply) in %s. Check the console output for errors." % tree.mve)
         else:
-            log.ODM_WARNING('Found a valid SMVS reconstruction file in: %s' %
-                            tree.smvs_model)
+            log.ODM_WARNING('Found a valid MVE reconstruction file in: %s' %
+                            tree.mve_model)
 
         outputs.reconstruction = reconstruction
 
         if args.time:
-            system.benchmark(start_time, tree.benchmarking, 'SMVS')
+            system.benchmark(start_time, tree.benchmarking, 'MVE')
 
-        log.ODM_INFO('Running ODM SMVS Cell - Finished')
-        return ecto.OK if args.end_with != 'smvs' else ecto.QUIT
+        log.ODM_INFO('Running ODM MVE Cell - Finished')
+        return ecto.OK if args.end_with != 'mve' else ecto.QUIT

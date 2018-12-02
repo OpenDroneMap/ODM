@@ -141,17 +141,17 @@ externalproject_add(mve
     INSTALL_COMMAND ""
 )
 
-externalproject_add(smvs
-    DEPENDS         mve
-    GIT_REPOSITORY  https://github.com/flanggut/smvs.git
-    GIT_TAG         6a7d0c095aa66ab98c5b285c2bc04e34d8993353
-    UPDATE_COMMAND  ""
-    SOURCE_DIR      ${SB_SOURCE_DIR}/elibs/smvs
-    CONFIGURE_COMMAND ""
-    BUILD_IN_SOURCE 1
-    BUILD_COMMAND   make
-    INSTALL_COMMAND ""
-)
+#externalproject_add(smvs
+#    DEPENDS         mve
+#    GIT_REPOSITORY  https://github.com/flanggut/smvs.git
+#    GIT_TAG         6a7d0c095aa66ab98c5b285c2bc04e34d8993353
+#    UPDATE_COMMAND  ""
+#    SOURCE_DIR      ${SB_SOURCE_DIR}/elibs/smvs
+#    CONFIGURE_COMMAND ""
+#    BUILD_IN_SOURCE 1
+#    BUILD_COMMAND   make
+#    INSTALL_COMMAND ""
+#)
 
 externalproject_add(poissonrecon
     GIT_REPOSITORY    https://github.com/mkazhdan/PoissonRecon.git

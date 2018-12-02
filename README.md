@@ -109,7 +109,7 @@ or
 
     python run.py --rerun-from odm_meshing project-name
 
-The options for rerunning are: 'resize', 'opensfm', 'slam', 'smvs', 'odm_meshing', 'mvs_texturing', 'odm_georeferencing', 'odm_orthophoto'
+The options for rerunning are: 'resize', 'opensfm', 'slam', 'mve', 'odm_meshing', 'mvs_texturing', 'odm_georeferencing', 'odm_orthophoto'
 
 ### View Results
 
