@@ -340,7 +340,7 @@ class ODM_Tree(object):
         # whole reconstruction process.
         self.dataset_raw = io.join_paths(self.root_path, 'images')
         self.opensfm = io.join_paths(self.root_path, 'opensfm')
-        self.smvs = io.join_paths(self.root_path, 'smvs')
+        self.mve = io.join_paths(self.root_path, 'mve')
         self.odm_meshing = io.join_paths(self.root_path, 'odm_meshing')
         self.odm_texturing = io.join_paths(self.root_path, 'odm_texturing')
         self.odm_25dtexturing = io.join_paths(self.root_path, 'odm_texturing_25d')
@@ -365,12 +365,12 @@ class ODM_Tree(object):
         self.opensfm_model = io.join_paths(self.opensfm, 'depthmaps/merged.ply')
         self.opensfm_transformation = io.join_paths(self.opensfm, 'geocoords_transformation.txt')
 
-        # smvs
-        self.smvs_model = io.join_paths(self.smvs, 'smvs_dense_point_cloud.ply')
+        # mve
+        self.mve_model = io.join_paths(self.mve, 'mve_dense_point_cloud.ply')
         self.mve_path = io.join_paths(self.opensfm, 'mve')
         self.mve_image_list = io.join_paths(self.mve_path, 'list.txt')
         self.mve_bundle = io.join_paths(self.mve_path, 'bundle/bundle.out')
-        self.mve_views = io.join_paths(self.smvs, 'views')
+        self.mve_views = io.join_paths(self.mve, 'views')
 
         # odm_meshing
         self.odm_mesh = io.join_paths(self.odm_meshing, 'odm_mesh.ply')

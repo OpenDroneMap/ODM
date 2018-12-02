@@ -8,7 +8,7 @@ from opendm import system
 
 from dataset import ODMLoadDatasetCell
 from run_opensfm import ODMOpenSfMCell
-from smvs import ODMSmvsCell
+from mve import ODMMvsCell
 from odm_slam import ODMSlamCell
 from odm_meshing import ODMeshingCell
 from mvstex import ODMMvsTexCell
@@ -49,13 +49,7 @@ class ODMApp(ecto.BlackBox):
                                            fixed_camera_params=p.args.use_fixed_camera_params,
                                            hybrid_bundle_adjustment=p.args.use_hybrid_bundle_adjustment),
                  'slam': ODMSlamCell(),
-                 'smvs': ODMSmvsCell(alpha=p.args.smvs_alpha,
-                                     max_pixels=p.args.depthmap_resolution*p.args.depthmap_resolution,
-                                     threads=p.args.max_concurrency,
-                                     output_scale=p.args.smvs_output_scale,
-                                     shading=p.args.smvs_enable_shading,
-                                     gamma_srgb=p.args.smvs_gamma_srgb,
-                                     verbose=p.args.verbose),
+                 'mve': ODMMveCell(),
                  'meshing': ODMeshingCell(max_vertex=p.args.mesh_size,
                                           oct_tree=p.args.mesh_octree_depth,
                                           samples=p.args.mesh_samples,
@@ -124,16 +118,16 @@ class ODMApp(ecto.BlackBox):
                             self.args[:] >> self.meshing['args'],
                             self.opensfm['reconstruction'] >> self.meshing['reconstruction']]
         else:
-            # run smvs
+            # run mve
 
-            connections += [self.tree[:] >> self.smvs['tree'],
-                            self.args[:] >> self.smvs['args'],
-                            self.opensfm['reconstruction'] >> self.smvs['reconstruction']]
+            connections += [self.tree[:] >> self.mve['tree'],
+                            self.args[:] >> self.mve['args'],
+                            self.opensfm['reconstruction'] >> self.mve['reconstruction']]
 
-            # create odm mesh from smvs point cloud
+            # create odm mesh from mve point cloud
             connections += [self.tree[:] >> self.meshing['tree'],
                             self.args[:] >> self.meshing['args'],
-                            self.smvs['reconstruction'] >> self.meshing['reconstruction']]
+                            self.mve['reconstruction'] >> self.meshing['reconstruction']]
 
         # create odm texture
         connections += [self.tree[:] >> self.texturing['tree'],
@@ -164,14 +158,14 @@ class ODMApp(ecto.BlackBox):
         connections += [self.tree[:] >> self.slam['tree'],
                         self.args[:] >> self.slam['args']]
 
-        connections += [self.tree[:] >> self.smvs['tree'],
-                        self.args[:] >> self.smvs['args'],
-                        self.slam['reconstruction'] >> self.smvs['reconstruction']]
+        connections += [self.tree[:] >> self.mve['tree'],
+                        self.args[:] >> self.mve['args'],
+                        self.slam['reconstruction'] >> self.mve['reconstruction']]
 
         # create odm mesh
         connections += [self.tree[:] >> self.meshing['tree'],
                         self.args[:] >> self.meshing['args'],
-                        self.smvs['reconstruction'] >> self.meshing['reconstruction']]
+                        self.mve['reconstruction'] >> self.meshing['reconstruction']]
 
         # create odm texture
         connections += [self.tree[:] >> self.texturing['tree'],
