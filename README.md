@@ -199,7 +199,7 @@ If you want to get all intermediate outputs, run the following command:
         -v "$(pwd)/odm_orthophoto:/code/odm_orthophoto" \
         -v "$(pwd)/odm_texturing:/code/odm_texturing" \
         -v "$(pwd)/opensfm:/code/opensfm" \
-        -v "$(pwd)/smvs:/code/smvs" \
+        -v "$(pwd)/mve:/code/mve" \
         opendronemap/opendronemap
 
 To pass in custom parameters to the run.py script, simply pass it as arguments to the `docker run` command. For example:
