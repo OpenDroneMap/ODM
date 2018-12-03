@@ -69,6 +69,7 @@ class ODMMveCell(ecto.Cell):
 
             # run mve
             system.run('%s %s %s' % (context.mve_path, ' '.join(config), tree.mve))
+            system.run('%s %s %s' % (context.mve_path_pc, ' '.join(config), tree.mve))
             
             # find and rename the output file for simplicity
             mve_files = glob.glob(os.path.join(tree.mve, 'mve-*'))
