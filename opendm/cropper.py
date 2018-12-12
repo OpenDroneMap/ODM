@@ -3,7 +3,7 @@ from opendm.system import run
 from opendm import log
 from osgeo import ogr
 import json, os
-from psutil import virtual_memory
+from opendm.concurrency import get_max_memory
 
 class Cropper:
     def __init__(self, storage_dir, files_prefix = "crop"):
@@ -42,7 +42,7 @@ class Cropper:
                 'geotiffInput': original_geotiff,
                 'geotiffOutput': geotiff_path,
                 'options': ' '.join(map(lambda k: '-co {}={}'.format(k, gdal_options[k]), gdal_options)),
-                'max_memory': max(5, (100 - virtual_memory().percent) / 2)
+                'max_memory': get_max_memory()
             }
 
             run('gdalwarp -cutline {shapefile_path} '
