@@ -104,7 +104,7 @@ class ODMeshingCell(ecto.Cell):
                     maxVertexCount=self.params.max_vertex,
                     samples=self.params.samples,
                     verbose=self.params.verbose,
-                    max_workers=args.max_concurrency,
+                    available_cores=args.max_concurrency,
                     method='poisson' if args.fast_orthophoto else 'gridded')
           else:
               log.ODM_WARNING('Found a valid ODM 2.5D Mesh file in: %s' %
