@@ -7,8 +7,14 @@ ExternalProject_Add(${_proj_name}
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
-  URL               https://github.com/PointCloudLibrary/pcl/archive/pcl-1.8.0.tar.gz
-  URL_MD5           8c1308be2c13106e237e4a4204a32cca
+
+  # PCL 1.8 + Fix for loading large point clouds https://github.com/OpenDroneMap/pcl/commit/924ab1137fbfa3004f222fb0834e3d66881ec057
+  URL               https://github.com/OpenDroneMap/pcl/archive/master.zip
+  
+  #-- TODO: Use PCL 1.9.1 when we upgrade to a newer version of Ubuntu. Currently
+  #-- it's troublesome to compile due to the older version of Boost shipping with 16.04.
+  #-- URL               https://github.com/PointCloudLibrary/pcl/archive/pcl-1.9.1.tar.gz
+  
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   #--Configure step-------------
