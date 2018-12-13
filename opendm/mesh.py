@@ -5,10 +5,11 @@ from opendm.dem import commands
 from opendm import system
 from opendm import log
 from opendm import context
+from opendm.concurrency import get_max_concurrency_for_dem
 from scipy import signal, ndimage
 import numpy as np
 
-def create_25dmesh(inPointCloud, outMesh, dsm_radius=0.07, dsm_resolution=0.05, depth=8, samples=1, maxVertexCount=100000, verbose=False, max_workers=None, method='gridded'):
+def create_25dmesh(inPointCloud, outMesh, dsm_radius=0.07, dsm_resolution=0.05, depth=8, samples=1, maxVertexCount=100000, verbose=False, available_cores=None, method='gridded'):
     # Create DSM from point cloud
 
     # Create temporary directory
@@ -32,7 +33,7 @@ def create_25dmesh(inPointCloud, outMesh, dsm_radius=0.07, dsm_resolution=0.05, 
             resolution=dsm_resolution,
             products=['max'],
             verbose=verbose,
-            max_workers=max_workers
+            max_workers=get_max_concurrency_for_dem(available_cores, inPointCloud)
         )
 
     if method == 'gridded':
@@ -42,7 +43,7 @@ def create_25dmesh(inPointCloud, outMesh, dsm_radius=0.07, dsm_resolution=0.05, 
         mesh = screened_poisson_reconstruction(dsm_points, outMesh, depth=depth, 
                                     samples=samples, 
                                     maxVertexCount=maxVertexCount, 
-                                    threads=max_workers,
+                                    threads=available_cores,
                                     verbose=verbose)
     else:
         raise 'Not a valid method: ' + method
