@@ -1428,7 +1428,7 @@ void Georef::transformPointCloud(const char *inputFile, const Eigen::Transform<S
         pdal::PlyReader plyReader;
         plyReader.setOptions(inPlyOpts);
 
-        pdal::MatrixTransformFilter<double> transformFilter(transform);
+        pdal::MatrixTransformFilter<Scalar> transformFilter(transform);
         transformFilter.setInput(plyReader);
 
         pdal::Options outLasOpts;
