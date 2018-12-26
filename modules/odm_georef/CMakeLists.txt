@@ -28,7 +28,6 @@ include_directories(${EIGEN_ROOT})
 
 # PDAL and jsoncpp
 find_package(PDAL REQUIRED CONFIG)
-message(${PDAL_INCLUDE_DIRS})
 include_directories(${PDAL_INCLUDE_DIRS})
 include_directories("${PROJECT_SOURCE_DIR}/../../SuperBuild/src/pdal/vendor/jsoncpp/dist")
 link_directories(${PDAL_LIBRARY_DIRS})
