@@ -166,9 +166,7 @@ class ODMGeoreferencingCell(ecto.Cell):
                         
                         # More aggressive decimation for large datasets
                         if not args.fast_orthophoto:
-                            num_photos = len(reconstruction.photos)
-                            if num_photos > 1000:
-                                decimation_step *= int(num_photos / 1000) + 1
+                            decimation_step *= int(len(reconstruction.photos) / 1000) + 1
 
                         cropper.create_bounds_shapefile(tree.odm_georeferencing_model_laz, args.crop, 
                                                     decimation_step=decimation_step,
