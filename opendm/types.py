@@ -361,7 +361,6 @@ class ODM_Tree(object):
         self.odm_georeferencing_transform_file = 'odm_georeferencing_transform.txt'
         self.odm_georeferencing_proj = 'proj.txt'
         self.odm_georeferencing_model_txt_geo = 'odm_georeferencing_model_geo.txt'
-        self.odm_georeferencing_model_ply_geo = 'odm_georeferenced_model.ply'
         self.odm_georeferencing_model_obj_geo = 'odm_textured_model_geo.obj'
         self.odm_georeferencing_xyz_file = io.join_paths(
             self.odm_georeferencing, 'odm_georeferenced_model.csv')
