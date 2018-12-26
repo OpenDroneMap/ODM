@@ -1,7 +1,7 @@
 import ecto
-import csv
 import os
 import struct
+import pipes
 
 from opendm import io
 from opendm import log
@@ -41,6 +41,7 @@ class ODMGeoreferencingCell(ecto.Cell):
         doPointCloudGeo = True
         transformPointCloud = True
         verbose = '-verbose' if self.params.verbose else ''
+        geo_ref = reconstruction.georef
 
         # check if we rerun cell or not
         rerun_cell = (args.rerun is not None and
@@ -67,13 +68,12 @@ class ODMGeoreferencingCell(ecto.Cell):
 
         for r in runs:
             odm_georeferencing_model_obj_geo = os.path.join(r['texturing_dir'], tree.odm_georeferencing_model_obj_geo)
-            odm_georeferencing_model_ply_geo = os.path.join(r['georeferencing_dir'], tree.odm_georeferencing_model_ply_geo)
             odm_georeferencing_log = os.path.join(r['georeferencing_dir'], tree.odm_georeferencing_log)
             odm_georeferencing_transform_file = os.path.join(r['georeferencing_dir'], tree.odm_georeferencing_transform_file)
             odm_georeferencing_model_txt_geo_file = os.path.join(r['georeferencing_dir'], tree.odm_georeferencing_model_txt_geo)
 
             if not io.file_exists(odm_georeferencing_model_obj_geo) or \
-               not io.file_exists(odm_georeferencing_model_ply_geo) or rerun_cell:
+               not io.file_exists(tree.odm_georeferencing_model_laz) or rerun_cell:
 
                 # odm_georeference definitions
                 kwargs = {
@@ -86,23 +86,27 @@ class ODMGeoreferencingCell(ecto.Cell):
                     'input_trans_file': tree.opensfm_transformation,
                     'transform_file': odm_georeferencing_transform_file,
                     'coords': tree.odm_georeferencing_coords,
-                    'pc_geo': odm_georeferencing_model_ply_geo,
+                    'output_pc_file': tree.odm_georeferencing_model_laz,
                     'geo_sys': odm_georeferencing_model_txt_geo_file,
                     'model_geo': odm_georeferencing_model_obj_geo,
                     'gcp': gcpfile,
                     'verbose': verbose
-
                 }
 
                 if args.fast_orthophoto:
-                    kwargs['pc'] = os.path.join(tree.opensfm, 'reconstruction.ply')
+                    kwargs['input_pc_file'] = os.path.join(tree.opensfm, 'reconstruction.ply')
                 elif args.use_opensfm_dense:
-                    kwargs['pc'] = tree.opensfm_model
+                    kwargs['input_pc_file'] = tree.opensfm_model
                 else:
-                    kwargs['pc'] = tree.smvs_model
+                    kwargs['input_pc_file'] = tree.smvs_model
 
                 if transformPointCloud:
-                    kwargs['pc_params'] = '-inputPointCloudFile {pc} -outputPointCloudFile {pc_geo}'.format(**kwargs)
+                    kwargs['pc_params'] = '-inputPointCloudFile {input_pc_file} -outputPointCloudFile {output_pc_file}'.format(**kwargs)
+
+                    if geo_ref.projection.srs:
+                        kwargs['pc_params'] += ' -outputPointCloudSrs %s' % pipes.quote(geo_ref.projection.srs)
+                    else:
+                        log.ODM_WARNING('NO SRS: The output point cloud will not have a SRS.')
                 else:
                     kwargs['pc_params'] = ''
                     
@@ -139,40 +143,20 @@ class ODMGeoreferencingCell(ecto.Cell):
 
                 if doPointCloudGeo:
                     # update images metadata
-                    geo_ref = reconstruction.georef
                     geo_ref.extract_offsets(odm_georeferencing_model_txt_geo_file)
-
-                    # convert ply model to LAS reference system
-                    geo_ref.convert_to_las(odm_georeferencing_model_ply_geo,
-                                           tree.odm_georeferencing_model_laz,
-                                           tree.odm_georeferencing_las_json)
-
                     reconstruction.georef = geo_ref
 
                     # XYZ point cloud output
                     if args.pc_csv:
                         log.ODM_INFO("Creating geo-referenced CSV file (XYZ format)")
-                        with open(tree.odm_georeferencing_xyz_file, "wb") as csvfile:
-                            csvfile_writer = csv.writer(csvfile, delimiter=",")
-                            with open(odm_georeferencing_model_ply_geo) as f:
-                                endianess = '<' # little endian
-                                while True:
-                                    line = f.readline()
-                                    if "binary_big_endian" in line:
-                                        endianess = '>'
-                                    if line.startswith("end_header"):
-                                        break
-
-                                fmt = '{}dddBBB'.format(endianess)
-                                while True:
-                                    chunk = f.read(27) # 3 doubles, 3 uints
-                                    if len(chunk) < 27:
-                                        break
-                                    tokens = struct.unpack(fmt, chunk)
-                                    csv_line = [float(tokens[0]),
-                                                float(tokens[1]),
-                                                tokens[2]]
-                                    csvfile_writer.writerow(csv_line)
+                        
+                        system.run("pdal translate -i \"{}\" "
+                            "-o \"{}\" "
+                            "--writers.text.format=csv "
+                            "--writers.text.order=\"X,Y,Z\" "
+                            "--writers.text.keep_unspecified=false ".format(
+                                tree.odm_georeferencing_model_laz,
+                                tree.odm_georeferencing_xyz_file))
 
                     if args.crop > 0:
                         log.ODM_INFO("Calculating cropping area and generating bounds shapefile from point cloud")
