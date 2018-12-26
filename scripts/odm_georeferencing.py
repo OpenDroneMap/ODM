@@ -161,8 +161,17 @@ class ODMGeoreferencingCell(ecto.Cell):
                     if args.crop > 0:
                         log.ODM_INFO("Calculating cropping area and generating bounds shapefile from point cloud")
                         cropper = Cropper(tree.odm_georeferencing, 'odm_georeferenced_model')
+                        
+                        decimation_step = 40 if args.fast_orthophoto or args.use_opensfm_dense else 90
+                        
+                        # More aggressive decimation for large datasets
+                        if not args.fast_orthophoto:
+                            num_photos = len(reconstruction.photos)
+                            if num_photos > 1000:
+                                decimation_step *= int(num_photos / 1000) + 1
+
                         cropper.create_bounds_shapefile(tree.odm_georeferencing_model_laz, args.crop, 
-                                                    decimation_step=40 if args.fast_orthophoto or args.use_opensfm_dense else 90,
+                                                    decimation_step=decimation_step,
                                                     outlier_radius=20 if args.fast_orthophoto else 2)
 
                     # Do not execute a second time, since
