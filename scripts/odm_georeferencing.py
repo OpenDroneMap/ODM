@@ -172,7 +172,7 @@ class ODMGeoreferencingCell(ecto.Cell):
                     transformPointCloud = False
             else:
                 log.ODM_WARNING('Found a valid georeferenced model in: %s'
-                                % odm_georeferencing_model_ply_geo)
+                                % tree.odm_georeferencing_model_laz)
 
         outputs.reconstruction = reconstruction
 
