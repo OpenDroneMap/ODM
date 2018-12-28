@@ -15,7 +15,13 @@ from mvstex import ODMMvsTexCell
 from odm_georeferencing import ODMGeoreferencingCell
 from odm_orthophoto import ODMOrthoPhotoCell
 from odm_dem import ODMDEMCell
-
+from metadataset.setup import SMSetupCell
+from metadataset.run_matching import SMMatchingCell
+from metadataset.split import SMSplitCell
+from metadataset.run_reconstructions import SMReconstructionCell
+from metadataset.align import SMAlignCell
+from metadataset.run_dense import SMDenseCell
+from metadataset.merge import SMMergeCell
 
 class ODMApp(ecto.BlackBox):
     """ODMApp - a class for ODM Activities
@@ -24,6 +30,7 @@ class ODMApp(ecto.BlackBox):
     def __init__(self, *args, **kwargs):
         ecto.BlackBox.__init__(self, *args, **kwargs)
         self.tree = None
+        self.split_merge = None
 
     @staticmethod
     def declare_direct_params(p):
@@ -82,7 +89,15 @@ class ODMApp(ecto.BlackBox):
                                                  bigtiff=p.args.orthophoto_bigtiff,
                                                  build_overviews=p.args.build_overviews,
                                                  max_concurrency=p.args.max_concurrency,
-                                                 verbose=p.args.verbose)
+                                                 verbose=p.args.verbose),
+                 ### Split-Merge cells
+                 'setup': SMSetupCell(verbose=p.args.verbose),
+                 'matching': SMMatchingCell(),
+                 'split': SMSplitCell(),
+                 'reconstruction': SMReconstructionCell(),
+                 'align': SMAlignCell(),
+                 'dense': SMDenseCell(),
+                 'merge': SMMergeCell(merge_overwrite=p.args.merge_overwrite) 
                  }
 
         return cells
@@ -90,6 +105,8 @@ class ODMApp(ecto.BlackBox):
     def configure(self, p, _i, _o):
         tree = types.ODM_Tree(p.args.project_path, p.args.images, p.args.gcp)
         self.tree = ecto.Constant(value=tree)
+
+        self.sm_meta = types.SplitMerge(p.args.name)
 
         # TODO(dakota) put this somewhere better maybe
         if p.args.time and io.file_exists(tree.benchmarking):
@@ -101,6 +118,9 @@ class ODMApp(ecto.BlackBox):
     def connections(self, p):
         if p.args.video:
             return self.slam_connections(p)
+
+        if p.args.large:
+            return self.sm_connections(p)
 
         # define initial task
         # TODO: What is this?
@@ -177,5 +197,44 @@ class ODMApp(ecto.BlackBox):
         connections += [self.tree[:] >> self.texturing['tree'],
                         self.args[:] >> self.texturing['args'],
                         self.meshing['reconstruction'] >> self.texturing['reconstruction']]
+
+        return connections
+
+    def sm_connections(self, p):
+        connections = []
+
+        # Setup
+        connections += [self.tree[:] >> self.setup['tree'],
+                        self.args[:] >> self.setup['args']]
+
+        # matching
+        connections += [self.tree[:] >> self.matching['tree'],
+                        self.args[:] >> self.matching['args'],
+                        self.setup['sm_meta'] >> self.matching['sm_meta']]
+
+        # split
+        connections += [self.tree[:] >> self.split['tree'],
+                        self.args[:] >> self.split['args'],
+                        self.matching['sm_meta'] >> self.split['sm_meta']]
+
+        # reconstruction
+        connections += [self.tree[:] >> self.reconstruction['tree'],
+                        self.args[:] >> self.reconstruction['args'],
+                        self.split['sm_meta'] >> self.reconstruction['sm_meta']]
+
+        # align
+        connections += [self.tree[:] >> self.align['tree'],
+                        self.args[:] >> self.align['args'],
+                        self.reconstruction['sm_meta'] >> self.align['sm_meta']]
+
+        # dense
+        connections += [self.tree[:] >> self.dense['tree'],
+                        self.args[:] >> self.dense['args'],
+                        self.align['sm_meta'] >> self.dense['sm_meta']]
+
+        # merge
+        connections += [self.tree[:] >> self.merge['tree'],
+                        self.args[:] >> self.merge['args'],
+                        self.dense['sm_meta'] >> self.merge['sm_meta']]
 
         return connections

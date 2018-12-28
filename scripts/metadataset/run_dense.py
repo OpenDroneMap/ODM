@@ -61,23 +61,32 @@ class DenseReconstructor:
         logger.info("=======================================================")
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Reconstruct all submodels')
-    parser.add_argument('dataset',
-                        help='path to the dataset to be processed')
-    args = parser.parse_args()
+class SMDenseCell(ecto.Cell):
 
-    path = os.path.join(args.dataset, 'opensfm')
-    meta_data = metadataset.MetaDataSet(path)
-    command = os.path.join(context.root_path, 'run.py')
+    # def declare_params(self, params):
+        #todo check if i can drop this
 
-    submodel_paths = meta_data.get_submodel_paths()
-    reconstructor = DenseReconstructor(command)
+    def declare_io(self, params, inputs, outputs):
+        inputs.declare("tree", "Struct with paths", [])
+        inputs.declare("args", "The application arguments.", {})
+        inputs.declare("sm_meta", "SplitMerge metadata", [])
+        outputs.declare("sm_meta", "SplitMerge metadata", [])
 
-    processes = 1
-    if processes == 1:
-        for submodel_path in submodel_paths:
-            reconstructor(submodel_path)
-    else:
-        p = multiprocessing.Pool(processes)
-        p.map(reconstructor, submodel_paths)
+    def process(self, inputs, outputs):
+        args = self.inputs.args
+        tree = self.inputs.tree
+
+        command = os.path.join(context.root_path, 'run.py')
+        path = tree.opensfm
+        meta_data = metadataset.MetaDataSet(path)
+
+        submodel_paths = meta_data.get_submodel_paths()
+        reconstructor = DenseReconstructor(command)
+
+        processes = args.max_concurrency
+        if processes == 1:
+            for submodel_path in submodel_paths:
+                reconstructor(submodel_path)
+        else:
+            p = multiprocessing.Pool(processes)
+            p.map(reconstructor, submodel_paths)

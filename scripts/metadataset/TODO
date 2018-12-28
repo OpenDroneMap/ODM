@@ -1,0 +1,5 @@
+1. Create cells for each step of SM process
+2. Fix logging
+3. Do something with the SplitMerge object
+4. Check efficacy of multiprocessing in run_dense
+5. Add start_with and end_with

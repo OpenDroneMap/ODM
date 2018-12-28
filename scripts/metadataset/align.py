@@ -1,32 +1,33 @@
 #!/usr/bin/env python
 
-import argparse
-import logging
 import os
 import subprocess
 
 from opendm import context
-
-logger = logging.getLogger(__name__)
-
-logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s',
-                    level=logging.INFO)
-
+from opendm import log
 
 def run_command(args):
     result = subprocess.Popen(args).wait()
     if result != 0:
-        logger.error("The command '{}' exited with return value {}". format(
+        log.ODM_ERROR("The command '{}' exited with return value {}". format(
             ' '.join(args), result))
 
+class SMAlignCell(ecto.Cell):
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Align metadaset submodels')
-    parser.add_argument('dataset',
-                        help='path to the dataset to be processed')
-    args = parser.parse_args()
+    # def declare_params(self, params):
+        #todo check if i can drop this
 
-    command = os.path.join(context.opensfm_path, 'bin', 'opensfm')
-    path = os.path.join(args.dataset, 'opensfm')
+    def declare_io(self, params, inputs, outputs):
+        inputs.declare("tree", "Struct with paths", [])
+        inputs.declare("args", "The application arguments.", {})
+        inputs.declare("sm_meta", "SplitMerge metadata", [])
+        outputs.declare("sm_meta", "SplitMerge metadata", [])
 
-    run_command([command, 'align_submodels', path])
+    def process(self, inputs, outputs):
+        args = self.inputs.args
+        tree = self.inputs.tree
+
+        command = os.path.join(context.opensfm_path, 'bin', 'opensfm')
+        path = tree.opensfm
+
+        run_command([command, 'align_submodels', path])

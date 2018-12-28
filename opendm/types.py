@@ -417,5 +417,25 @@ class ODM_Tree(object):
         self.odm_orthophoto_tif_log = io.join_paths(self.odm_orthophoto, 'gdal_translate_log.txt')
         self.odm_orthophoto_gdaladdo_log = io.join_paths(self.odm_orthophoto, 'gdaladdo_log.txt')
 
+        # Split-merge 
+        self.submodels_path = io.join_paths(self.root_path, 'submodels')
+        self.out_tif = io.join_paths(self.root_path, "merged.tif")
+        self.addo_log = io.join_paths(self.root_path, "gdal_addo.log")
+
+
     def path(self, *args):
         return io.join_paths(self.root_path, *args)
+
+
+class SplitMerge(object):
+    """ docstring for SplitMerge"""
+
+    def __init__(self, project_name):
+        self.project_name = project_name
+        self.setup_done = False
+        self.matching_done = False
+        self.split_done = False
+        self.reconstruction_done = False
+        self.align_done = False
+        self.dense_done = False
+        self.merge_done = False
