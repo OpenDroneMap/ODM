@@ -5,7 +5,7 @@ import logging
 import multiprocessing
 import os
 import subprocess
-
+import ecto
 from opensfm.large import metadataset
 
 from opendm import context
