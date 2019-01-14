@@ -26,6 +26,13 @@ set(OpenCV_LIBS opencv_core opencv_imgproc opencv_highgui)
 include_directories(${PCL_ROOT}/include/pcl-${PCL_VERSION_MAJOR}.${PCL_VERSION_MINOR})
 include_directories(${EIGEN_ROOT})
 
+# PDAL and jsoncpp
+find_package(PDAL REQUIRED CONFIG)
+include_directories(${PDAL_INCLUDE_DIRS})
+include_directories("${PROJECT_SOURCE_DIR}/../../SuperBuild/src/pdal/vendor/jsoncpp/dist")
+link_directories(${PDAL_LIBRARY_DIRS})
+add_definitions(${PDAL_DEFINITIONS})
+
 # Add source directory
 aux_source_directory("./src" SRC_LIST)
 
@@ -33,4 +40,4 @@ aux_source_directory("./src" SRC_LIST)
 add_executable(${PROJECT_NAME} ${SRC_LIST})
 
 # Link
-target_link_libraries(${PROJECT_NAME} ${PCL_COMMON_LIBRARIES} ${PCL_IO_LIBRARIES} ${PCL_SURFACE_LIBRARIES} ${PROJ4_LIBRARY} ${OpenCV_LIBS})
+target_link_libraries(${PROJECT_NAME} ${PCL_COMMON_LIBRARIES} ${PCL_IO_LIBRARIES} ${PCL_SURFACE_LIBRARIES} ${PROJ4_LIBRARY} ${OpenCV_LIBS} jsoncpp ${PDAL_LIBRARIES})
