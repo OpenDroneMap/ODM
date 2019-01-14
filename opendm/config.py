@@ -7,7 +7,7 @@ from appsettings import SettingsParser
 import sys
 
 # parse arguments
-processopts = ['dataset', 'opensfm', 'slam', 'smvs',
+processopts = ['dataset', 'opensfm', 'slam', 'mve',
                'odm_meshing', 'odm_25dmeshing', 'mvs_texturing', 'odm_georeferencing',
                'odm_dem', 'odm_orthophoto']
 
@@ -210,41 +210,6 @@ def config():
                         'caps the maximum resolution of image outputs and '
                         'resizes images when necessary, resulting in faster processing and '
                         'lower memory usage. Since GSD is an estimate, sometimes ignoring it can result in slightly better image output quality.')
-
-    parser.add_argument('--smvs-alpha',
-                        metavar='<float>',
-                        default=1.0,
-                        type=float,
-                        help='Regularization parameter, a higher alpha leads to '
-                        'smoother surfaces. Default: %(default)s')
-
-    parser.add_argument('--smvs-output-scale',
-                        metavar='<positive integer>',
-                        default=1,
-                        type=int,
-                        help='The scale of the optimization - the '
-                        'finest resolution of the bicubic patches will have the'
-                        ' size of the respective power of 2 (e.g. 2 will '
-                        'optimize patches covering down to 4x4 pixels). '
-                        'Default: %(default)s')
-
-    parser.add_argument('--smvs-enable-shading',
-                        action='store_true',
-                        default=False,
-                        help='Use shading-based optimization. This model cannot '
-                        'handle complex scenes. Try to supply linear images to '
-                        'the reconstruction pipeline that are not tone mapped '
-                        'or altered as this can also have very negative effects '
-                        'on the reconstruction. If you have simple JPGs with SRGB '
-                        'gamma correction you can remove it with the --smvs-gamma-srgb '
-                        'option. Default: %(default)s')
-
-    parser.add_argument('--smvs-gamma-srgb',
-                        action='store_true',
-                        default=False,
-                        help='Apply inverse SRGB gamma correction. To be used '
-                        'with --smvs-enable-shading when you have simple JPGs with '
-                        'SRGB gamma correction. Default: %(default)s')
 
     parser.add_argument('--mesh-size',
                         metavar='<positive integer>',
