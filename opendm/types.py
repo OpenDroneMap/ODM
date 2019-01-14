@@ -242,43 +242,6 @@ class ODM_GeoRef(object):
         output = str(deg) + '/1 ' + str(minute) + '/1 ' + str(sec_numerator) + '/' + str(sec_denominator)
         return output, latRef
 
-    def convert_to_las(self, _file, _file_out, json_file):
-
-        if not self.projection.srs:
-            log.ODM_ERROR('Empty CRS: Could not convert to LAS')
-            return
-
-        kwargs = {'bin': context.pdal_path,
-                  'f_in': _file,
-                  'f_out': _file_out,
-                  'east': self.utm_east_offset,
-                  'north': self.utm_north_offset,
-                  'srs': self.projection.srs,
-                  'json': json_file}
-
-        # create pipeline file las.json to write odm_georeferenced_model.laz point cloud
-        pipeline = '{{' \
-                   '  "pipeline":[' \
-                   '    "untransformed.ply",' \
-                   '    {{' \
-                   '      "type":"writers.las",' \
-                   '      "a_srs":"{srs}",' \
-                   '      "offset_x":"{east}",' \
-                   '      "offset_y":"{north}",' \
-                   '      "offset_z":"0",' \
-                   '      "compression":"laszip",' \
-                   '      "filename":"{f_out}"' \
-                   '    }}' \
-                   '  ]' \
-                   '}}'.format(**kwargs)
-
-        with open(json_file, 'w') as f:
-            f.write(pipeline)
-
-        # call pdal
-        system.run('{bin}/pdal pipeline -i {json} --readers.ply.filename={f_in}'.format(**kwargs))
-
-
     def extract_offsets(self, _file):
         if not io.file_exists(_file):
             log.ODM_ERROR('Could not find file %s' % _file)
@@ -398,7 +361,6 @@ class ODM_Tree(object):
         self.odm_georeferencing_transform_file = 'odm_georeferencing_transform.txt'
         self.odm_georeferencing_proj = 'proj.txt'
         self.odm_georeferencing_model_txt_geo = 'odm_georeferencing_model_geo.txt'
-        self.odm_georeferencing_model_ply_geo = 'odm_georeferenced_model.ply'
         self.odm_georeferencing_model_obj_geo = 'odm_textured_model_geo.obj'
         self.odm_georeferencing_xyz_file = io.join_paths(
             self.odm_georeferencing, 'odm_georeferenced_model.csv')
