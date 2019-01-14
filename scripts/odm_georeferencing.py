@@ -98,7 +98,7 @@ class ODMGeoreferencingCell(ecto.Cell):
                 elif args.use_opensfm_dense:
                     kwargs['input_pc_file'] = tree.opensfm_model
                 else:
-                    kwargs['input_pc_file'] = tree.smvs_model
+                    kwargs['pc'] = tree.mve_model
 
                 if transformPointCloud:
                     kwargs['pc_params'] = '-inputPointCloudFile {input_pc_file} -outputPointCloudFile {output_pc_file}'.format(**kwargs)
