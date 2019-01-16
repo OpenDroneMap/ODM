@@ -55,11 +55,11 @@ class SMMergeCell(ecto.Cell):
         def get_submodel_files(directory, filename):
             files = []
             for folder in os.listdir(submodels_path):
-            if 'submodel' in folder:
-                folder_number = '0' if folder.split('_')[1] == '0000' else folder.split('_')[1].lstrip('0')
-                file = io.join_paths(submodels_path, folder + directory, filename)
-                if io.file_exists(file):
-                    files += file
+                if 'submodel' in folder:
+                    folder_number = '0' if folder.split('_')[1] == '0000' else folder.split('_')[1].lstrip('0')
+                    file = io.join_paths(submodels_path, folder + directory, filename)
+                    if io.file_exists(file):
+                        files += file
             return files
 
         def points_merge():

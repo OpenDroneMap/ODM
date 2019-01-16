@@ -106,7 +106,27 @@ class ODMApp(ecto.BlackBox):
         tree = types.ODM_Tree(p.args.project_path, p.args.images, p.args.gcp)
         self.tree = ecto.Constant(value=tree)
 
-        self.sm_meta = types.SplitMerge(p.args.name)
+        sm_progress = {
+            'sm_setup': 0,
+            'sm_matching': 1,
+            'sm_split': 2,
+            'sm_reconstruction': 3,
+            'sm_align': 4,
+            'sm_dense': 5,
+            'sm_merge': 6
+        }
+
+        if p.args.start_with.startswith('sm_'):
+            progress = sm_progress[p.args.start_with]
+        elif p.args.rerun.startswith('sm_'):
+            progress = sm_progress[p.args.rerun]
+        elif p.args.rerun_from.startswith('sm_'):
+            progress = sm_progress[p.args.start_with]
+        else:
+            progress = 0
+
+        sm_meta = types.SplitMerge(p.args.name, progress)
+        self.sm_meta = ecto.Constant(value=sm_meta)
 
         # TODO(dakota) put this somewhere better maybe
         if p.args.time and io.file_exists(tree.benchmarking):
@@ -205,6 +225,7 @@ class ODMApp(ecto.BlackBox):
 
         # Setup
         connections += [self.tree[:] >> self.setup['tree'],
+                        self.sm_meta[:] >> self.setup['sm_meta'],
                         self.args[:] >> self.setup['args']]
 
         # matching

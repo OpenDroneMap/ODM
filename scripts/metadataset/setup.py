@@ -17,6 +17,7 @@ from opensfm.io import mkdir_p
 
 from opendm import context
 from opendm import log
+from opendm import util
 
 def run_command(args):
     result = subprocess.Popen(args).wait()
@@ -84,6 +85,7 @@ class SMSetupCell(ecto.Cell):
 
     def declare_io(self, params, inputs, outputs):
         inputs.declare("tree", "Struct with paths", [])
+        inputs.declare("sm_meta", "SM reconstruction")
         outputs.declare("sm_meta", "ODMReconstruction", [])
         inputs.declare("args", "The application arguments.", {})
 
@@ -100,3 +102,6 @@ class SMSetupCell(ecto.Cell):
         create_image_list(image_path, opensfm_path)
         create_config(opensfm_path, args)
         link_image_groups(data_path, opensfm_path)
+
+
+        return ecto.OK if args.end_with != 'sm_setup' else ecto.QUIT

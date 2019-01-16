@@ -5,6 +5,7 @@ import subprocess
 import ecto
 from opendm import context
 from opendm import log
+from opendm import util
 
 
 def run_command(args):
@@ -31,4 +32,9 @@ class SMSplitCell(ecto.Cell):
         command = os.path.join(context.opensfm_path, 'bin', 'opensfm')
         path = tree.opensfm
 
-        run_command([command, 'create_submodels', path])
+        if util.check_rerun(args, 'sm_split'):
+            run_command([command, 'create_submodels', path])
+        else: 
+            log.ODM_DEBUG("Skipping Split")
+
+        return ecto.OK if args.end_with != 'sm_split' else ecto.QUIT

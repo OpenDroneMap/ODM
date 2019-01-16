@@ -429,13 +429,19 @@ class ODM_Tree(object):
 
 class SplitMerge(object):
     """ docstring for SplitMerge"""
-
-    def __init__(self, project_name):
+    def __init__(self, project_name, progress):
         self.project_name = project_name
-        self.setup_done = False
-        self.matching_done = False
-        self.split_done = False
-        self.reconstruction_done = False
-        self.align_done = False
-        self.dense_done = False
-        self.merge_done = False
+        self.progress = 0
+    # def load_progress(sm_file):
+    #     with open(sm_file) as f:
+    #         prog = int(f.readline())
+    #         if prog in range(0, 6):
+    #             update_progress(prog)
+    # def save_progress(sm_file):
+    #     with open(sm_file) as f:
+    #         f.write(self.progress)
+    def update_progress(progress):
+        if progress in range(0,6):
+            self.progress = progress
+        else: 
+            log.ODM_ERROR("Failed to save progress")

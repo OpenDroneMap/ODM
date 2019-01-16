@@ -5,6 +5,7 @@ import subprocess
 import ecto
 from opendm import context
 from opendm import log
+from opendm import util
 
 def run_command(args):
     result = subprocess.Popen(args).wait()
@@ -30,4 +31,9 @@ class SMAlignCell(ecto.Cell):
         command = os.path.join(context.opensfm_path, 'bin', 'opensfm')
         path = tree.opensfm
 
-        run_command([command, 'align_submodels', path])
+        if util.check_rerun(args, 'sm_align'):
+            run_command([command, 'align_submodels', path])
+        else:
+            log.ODM_DEBUG("Skipping Alignment")
+
+        return ecto.OK if args.end_with != 'sm_align' else ecto.QUIT

@@ -1,25 +1,20 @@
 #!/usr/bin/env python
 
 import argparse
-import logging
 import multiprocessing
 import os
 import subprocess
 import ecto
 from opensfm.large import metadataset
-
+from opendm import util
 from opendm import context
-
-logger = logging.getLogger(__name__)
-
-logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s',
-                    level=logging.INFO)
+from opendm import log
 
 
 def run_command(args):
     result = subprocess.Popen(args).wait()
     if result != 0:
-        logger.error("The command '{}' exited with return value {}". format(
+        log.ODM_ERROR("The command '{}' exited with return value {}". format(
             ' '.join(args), result))
 
 
@@ -30,9 +25,9 @@ class DenseReconstructor:
     def __call__(self, opensfm_submodel_path):
         submodel_path = os.path.dirname(opensfm_submodel_path.rstrip('/'))
 
-        logger.info("=======================================================")
-        logger.info("Dense reconstruction submodel {}".format(submodel_path))
-        logger.info("=======================================================")
+        log.ODM_INFO("=======================================================")
+        log.ODM_INFO("Dense reconstruction submodel {}".format(submodel_path))
+        log.ODM_INFO("=======================================================")
 
         # Rename reconstruction.aligned.json
         unaligned = os.path.join(opensfm_submodel_path, 'reconstruction.unaligned.json')
@@ -40,7 +35,7 @@ class DenseReconstructor:
         main = os.path.join(opensfm_submodel_path, 'reconstruction.json')
 
         if not os.path.isfile(aligned):
-            logger.warning("No SfM reconstruction for submodel {}."
+            log.ODM_WARNING("No SfM reconstruction for submodel {}."
                            " Skipping submodel.".format(submodel_path))
             return
 
@@ -56,9 +51,9 @@ class DenseReconstructor:
                      name,
                      '--start-with', 'opensfm'])
 
-        logger.info("=======================================================")
-        logger.info("Submodel {} reconstructed".format(submodel_path))
-        logger.info("=======================================================")
+        log.ODM_INFO("=======================================================")
+        log.ODM_INFO("Submodel {} reconstructed".format(submodel_path))
+        log.ODM_INFO("=======================================================")
 
 
 class SMDenseCell(ecto.Cell):
@@ -76,17 +71,23 @@ class SMDenseCell(ecto.Cell):
         args = self.inputs.args
         tree = self.inputs.tree
 
-        command = os.path.join(context.root_path, 'run.py')
-        path = tree.opensfm
-        meta_data = metadataset.MetaDataSet(path)
+        if util.check_rerun(args, 'sm_dense'):
+            command = os.path.join(context.root_path, 'run.py')
+            path = tree.opensfm
+            meta_data = metadataset.MetaDataSet(path)
 
-        submodel_paths = meta_data.get_submodel_paths()
-        reconstructor = DenseReconstructor(command)
+            submodel_paths = meta_data.get_submodel_paths()
+            reconstructor = DenseReconstructor(command)
 
-        processes = args.max_concurrency
-        if processes == 1:
-            for submodel_path in submodel_paths:
-                reconstructor(submodel_path)
-        else:
-            p = multiprocessing.Pool(processes)
-            p.map(reconstructor, submodel_paths)
+            processes = args.max_concurrency
+            if processes == 1:
+                log.ODM_DEBUG("Running Dense")
+                for submodel_path in submodel_paths:
+                    log.ODM_DEBUG("Submodel {}".format(submodel_path))
+                    reconstructor(submodel_path)
+            else:
+                p = multiprocessing.Pool(processes)
+                p.map(reconstructor, submodel_paths)
+
+        log.ODM_DEBUG("What")
+        return ecto.OK if args.end_with != 'sm_dense' else ecto.QUIT

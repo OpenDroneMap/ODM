@@ -5,7 +5,7 @@ import os
 import subprocess
 import ecto
 from opensfm.large import metadataset
-
+from opendm import util
 from opendm import context
 from opendm import log
 
@@ -67,13 +67,18 @@ class SMReconstructionCell(ecto.Cell):
 
         meta_data = metadataset.MetaDataSet(path)
 
-        submodel_paths = meta_data.get_submodel_paths()
-        reconstructor = Reconstructor(command, args.run_matching)
+        if util.check_rerun(args, 'sm_reconstruction'):
+            submodel_paths = meta_data.get_submodel_paths()
+            reconstructor = Reconstructor(command, args.run_matching)
 
-        processes = meta_data.config['processes']
-        if processes == 1:
-            for submodel_path in submodel_paths:
-                reconstructor(submodel_path)
+            processes = meta_data.config['processes']
+            if processes == 1:
+                for submodel_path in submodel_paths:
+                    reconstructor(submodel_path)
+            else:
+                p = multiprocessing.Pool(processes)
+                p.map(reconstructor, submodel_paths)
         else:
-            p = multiprocessing.Pool(processes)
-            p.map(reconstructor, submodel_paths)
+            log.ODM_DEBUG("Skipping Reconstruction")
+
+        return ecto.OK if args.end_with != 'sm_align' else ecto.QUIT

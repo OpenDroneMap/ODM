@@ -5,6 +5,7 @@ import subprocess
 import ecto
 from opendm import context
 from opendm import log
+from opendm import util
 
 def run_command(args):
     result = subprocess.Popen(args).wait()
@@ -25,10 +26,17 @@ class SMMatchingCell(ecto.Cell):
     def process(self, inputs, outputs):
         args = self.inputs.args
         tree = self.inputs.tree
+        sm_meta = self.inputs.sm_meta
 
-        command = os.path.join(context.opensfm_path, 'bin', 'opensfm')
-        path = tree.opensfm
+        # check if we rerun cell or not
+        if util.check_rerun(args, 'sm_reconstruction'):
+            command = os.path.join(context.opensfm_path, 'bin', 'opensfm')
+            path = tree.opensfm
 
-        run_command([command, 'extract_metadata', path])
-        run_command([command, 'detect_features', path])
-        run_command([command, 'match_features', path])
+            run_command([command, 'extract_metadata', path])
+            run_command([command, 'detect_features', path])
+            run_command([command, 'match_features', path])
+        else: 
+            log.ODM_DEBUG("Skipping Matching")
+
+        return ecto.OK if args.end_with != 'sm_reconstruction' else ecto.QUIT
