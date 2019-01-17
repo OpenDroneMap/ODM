@@ -6,7 +6,7 @@ ExternalProject_Add(${_proj_name}
   TMP_DIR           ${_SB_BINARY_DIR}/tmp
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}/${_proj_name}
-  URL               http://www.exiv2.org/builds/exiv2-0.26-trunk.tar.gz
+  URL               http://www.exiv2.org/builds/exiv2-0.27.0-Source.tar.gz
   SOURCE_DIR        ${SB_SOURCE_DIR}/${_proj_name}
   CMAKE_ARGS
     -DCMAKE_INSTALL_PREFIX=${SB_INSTALL_DIR}
