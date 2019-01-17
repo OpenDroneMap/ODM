@@ -18,6 +18,9 @@
 // Transformation
 #include "FindTransform.hpp"
 
+// PDAL matrix transform filter
+#include "MatrixTransformFilter.hpp"
+
 /*!
  * \brief   The GeorefSystem struct is used to store information about a georeference system.
  */
@@ -275,7 +278,8 @@ private:
     std::string     outputObjFilename_;         /**< The path to the output mesh obj file. **/
     std::string     inputPointCloudFilename_;   /**< The path to the input point cloud file. **/
     std::string     outputPointCloudFilename_;  /**< The path to the output point cloud file. **/
-    std::string     georefFilename_;      /**< The path to the output offset file. **/
+    std::string     georefFilename_;            /**< The path to the output offset file. **/
+    std::string     outputPointCloudSrs_;                       /**< The spatial reference system of the point cloud file to be written. Can be an EPSG string (e.g. “EPSG:26910”) or a WKT string. **/
 
     bool            georeferencePointCloud_;
     bool            exportCoordinateFile_;
