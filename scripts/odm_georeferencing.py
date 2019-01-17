@@ -98,7 +98,7 @@ class ODMGeoreferencingCell(ecto.Cell):
                 elif args.use_opensfm_dense:
                     kwargs['input_pc_file'] = tree.opensfm_model
                 else:
-                    kwargs['pc'] = tree.mve_model
+                    kwargs['input_pc_file'] = tree.mve_model
 
                 if transformPointCloud:
                     kwargs['pc_params'] = '-inputPointCloudFile {input_pc_file} -outputPointCloudFile {output_pc_file}'.format(**kwargs)
@@ -109,7 +109,7 @@ class ODMGeoreferencingCell(ecto.Cell):
                         log.ODM_WARNING('NO SRS: The output point cloud will not have a SRS.')
                 else:
                     kwargs['pc_params'] = ''
-                    
+ 
                 # Check to see if the GCP file exists
 
                 if not self.params.use_exif and (self.params.gcp_file or tree.odm_georeferencing_gcp):
