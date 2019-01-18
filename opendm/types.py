@@ -160,10 +160,10 @@ class ODM_Reconstruction(object):
             try:
                 if ref[0] == 'WGS84' and ref[1] == 'UTM':  # match_wgs_utm:
                     datum = ref[0]
-                    utm_pole = ref[2][len(ref[2]) - 1]
+                    utm_pole = (ref[2][len(ref[2]) - 1]).upper()
                     utm_zone = int(ref[2][:len(ref[2]) - 1])
 
-                    return Proj(proj="utm", zone=utm_zone, datum=datum, no_defs=True)
+                    return Proj(proj="utm", zone=utm_zone, south=True if utm_pole == 'S' else False, datum=datum, no_defs=True)
                 elif '+proj' in line:
                     return Proj(line.strip('\''))
                 elif 'epsg' in line.lower():
@@ -202,10 +202,7 @@ class ODM_GeoRef(object):
 
     def __init__(self, projection):
         self.projection = projection
-        self.datum = 'WGS84'
         self.epsg = None
-        self.utm_zone = 0
-        self.utm_pole = 'N'
         self.utm_east_offset = 0
         self.utm_north_offset = 0
         self.transform = []
