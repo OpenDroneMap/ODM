@@ -1,0 +1,31 @@
+--- /usr/local/lib/python2.7/dist-packages/numpy/compat/py3k.py	2019-01-21 17:16:39.246870668 -0500
++++ /usr/local/lib/python2.7/dist-packages/numpy/compat/py3k_patched.py	2019-01-21 17:16:57.656940074 -0500
+@@ -214,12 +214,12 @@
+ 
+     def os_fspath(path):
+         """Return the path representation of a path-like object.
+-        If str or bytes is passed in, it is returned unchanged. Otherwise the
++        If str or unicode or bytes is passed in, it is returned unchanged. Otherwise the
+         os.PathLike interface is used to get the path representation. If the
+         path representation is not str or bytes, TypeError is raised. If the
+-        provided path is not str, bytes, or os.PathLike, TypeError is raised.
++        provided path is not str, unicode, bytes, or os.PathLike, TypeError is raised.
+         """
+-        if isinstance(path, (str, bytes)):
++        if isinstance(path, (str, unicode, bytes)):
+             return path
+ 
+         # Work from the object's type to match method resolution of other magic
+@@ -235,9 +235,9 @@
+             else:
+                 raise TypeError("expected str, bytes or os.PathLike object, "
+                                 "not " + path_type.__name__)
+-        if isinstance(path_repr, (str, bytes)):
++        if isinstance(path_repr, (str, unicode, bytes)):
+             return path_repr
+         else:
+             raise TypeError("expected {}.__fspath__() to return str or bytes, "
+                             "not {}".format(path_type.__name__,
+-                                            type(path_repr).__name__))
++                                            type(path_repr).__name__))
+\ No newline at end of file

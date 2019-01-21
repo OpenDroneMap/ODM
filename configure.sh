@@ -111,6 +111,9 @@ install() {
     mkdir -p build && cd build
     cmake .. && make -j$processes
 
+    # Numpy patch for 1.16.0 to add unicode string support
+    (cd / && patch --forward --batch -p0) <${RUNPATH}/patched_files/numpy_1_16_0_py3k.patch
+
     echo "Configuration Finished"
 }
 
