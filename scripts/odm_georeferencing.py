@@ -103,7 +103,7 @@ class ODMGeoreferencingCell(ecto.Cell):
                 if transformPointCloud:
                     kwargs['pc_params'] = '-inputPointCloudFile {input_pc_file} -outputPointCloudFile {output_pc_file}'.format(**kwargs)
 
-                    if geo_ref.projection.srs:
+                    if geo_ref.projection and geo_ref.projection.srs:
                         kwargs['pc_params'] += ' -outputPointCloudSrs %s' % pipes.quote(geo_ref.projection.srs)
                     else:
                         log.ODM_WARNING('NO SRS: The output point cloud will not have a SRS.')
