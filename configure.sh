@@ -96,7 +96,7 @@ install() {
                          libboost-log-dev
 
     echo "Installing split-merge Dependencies"
-    pip install -U scipy shapely numpy pyproj
+    pip install -U scipy shapely numpy==1.15.4 pyproj
 
     pip install -U https://github.com/gipit/gippy/archive/1.0.0.zip psutil
 
@@ -110,9 +110,6 @@ install() {
     cd ${RUNPATH}
     mkdir -p build && cd build
     cmake .. && make -j$processes
-
-    # Numpy patch for 1.16.0 to add unicode string support
-    (cd / && patch --forward --batch -p0) <${RUNPATH}/patched_files/numpy_1_16_0_py3k.patch
 
     echo "Configuration Finished"
 }
