@@ -96,7 +96,7 @@ install() {
                          libboost-log-dev
 
     echo "Installing split-merge Dependencies"
-    pip install -U scipy shapely numpy pyproj
+    pip install -U scipy shapely numpy==1.15.4 pyproj
 
     pip install -U https://github.com/gipit/gippy/archive/1.0.0.zip psutil
 
