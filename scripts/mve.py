@@ -65,7 +65,7 @@ class ODMMveCell(ecto.Cell):
 
             # config
             config = [
-                "-s %s" % self.params.output_scale
+                "-s%s" % self.params.output_scale
             ]
 
             # run mve
