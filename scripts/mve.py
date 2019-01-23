@@ -7,6 +7,9 @@ from opendm import context
 
 
 class ODMMveCell(ecto.Cell):
+    
+    def declare_params(self, params):
+        params.declare("output_scale", "scale of optimization", 2)
 
     def declare_io(self, params, inputs, outputs):
         inputs.declare("tree", "Struct with paths", [])
