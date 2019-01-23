@@ -7,7 +7,6 @@ from opendm import context
 
 
 class ODMMveCell(ecto.Cell):
-    
     def declare_params(self, params):
         params.declare("output_scale", "scale of optimization", 2)
 
@@ -66,9 +65,7 @@ class ODMMveCell(ecto.Cell):
 
             # config
             config = [
-                
                 "-o%s" % self.params.output_scale
-                
             ]
 
             # run mve
