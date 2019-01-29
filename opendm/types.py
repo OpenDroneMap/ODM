@@ -163,7 +163,16 @@ class ODM_Reconstruction(object):
                     utm_pole = (ref[2][len(ref[2]) - 1]).upper()
                     utm_zone = int(ref[2][:len(ref[2]) - 1])
 
-                    return Proj(proj="utm", zone=utm_zone, south=utm_pole == 'S', datum=datum, no_defs=True)
+                    proj_args = {
+                        'proj': "utm", 
+                        'zone': utm_zone, 
+                        'datum': datum,
+                        'no_defs': True
+                    }
+                    if utm_pole == 'S':
+                        proj_args['south'] = True
+
+                    return Proj(**proj_args)
                 elif '+proj' in line:
                     return Proj(line.strip('\''))
                 elif 'epsg' in line.lower():
