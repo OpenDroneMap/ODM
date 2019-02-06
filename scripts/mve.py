@@ -9,6 +9,7 @@ from opendm import context
 class ODMMveCell(ecto.Cell):
     def declare_params(self, params):
         params.declare("output_scale", "scale of optimization", 2)
+	params.declare("threads", "max number of threads", context.num_cores)
 
     def declare_io(self, params, inputs, outputs):
         inputs.declare("tree", "Struct with paths", [])
@@ -65,6 +66,7 @@ class ODMMveCell(ecto.Cell):
 
             # config
             config = [
+		"-t%s" % self.params.threads,
                 "-s%s" % self.params.output_scale
             ]
 
