@@ -8,7 +8,7 @@ from opendm import context
 
 class ODMMveCell(ecto.Cell):
     def declare_params(self, params):
-        params.declare("output_scale", "scale of optimization", 2)
+        params.declare("mve_output_scale", "scale of optimization", 2)
 	#params.declare("threads", "max number of threads", context.num_cores)
 
     def declare_io(self, params, inputs, outputs):
