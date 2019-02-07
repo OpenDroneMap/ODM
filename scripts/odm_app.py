@@ -50,7 +50,7 @@ class ODMApp(ecto.BlackBox):
                                            hybrid_bundle_adjustment=p.args.use_hybrid_bundle_adjustment),
                  'slam': ODMSlamCell(),
                  
-                 'mve': ODMMveCell(output_scale=p.args.mve_output_scale,
+                 'mve': ODMMveCell(mve_output_scale=p.args.mve_output_scale,
 				   threads=p.args.max_concurrency),
                  
                  'meshing': ODMeshingCell(max_vertex=p.args.mesh_size,
