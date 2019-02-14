@@ -7,6 +7,9 @@ from opendm import context
 
 
 class ODMMveCell(ecto.Cell):
+    def declare_params(self, params):
+        params.declare("mve_output_scale", "scale of optimization", 2)
+	# params.declare("threads", "max number of threads", context.num_cores)
 
     def declare_io(self, params, inputs, outputs):
         inputs.declare("tree", "Struct with paths", [])
@@ -66,9 +69,11 @@ class ODMMveCell(ecto.Cell):
             if not io.dir_exists(tree.mve_views):
                 system.run('%s %s %s' % (context.makescene_path, tree.mve_path, tree.mve))
 
+		print(args)
+
             # config
             config = [
-            '-s4'
+                "-s%s" % args.mve_output_scale
             ]
 
             # run mve

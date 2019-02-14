@@ -56,7 +56,9 @@ class ODMApp(ecto.BlackBox):
                                            fixed_camera_params=p.args.use_fixed_camera_params,
                                            hybrid_bundle_adjustment=p.args.use_hybrid_bundle_adjustment),
                  'slam': ODMSlamCell(),
-                 'mve': ODMMveCell(),
+                 
+                 'mve': ODMMveCell(mve_output_scale=p.args.mve_output_scale),
+                 
                  'meshing': ODMeshingCell(max_vertex=p.args.mesh_size,
                                           oct_tree=p.args.mesh_octree_depth,
                                           samples=p.args.mesh_samples,
