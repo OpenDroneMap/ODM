@@ -13,8 +13,9 @@ from opendm import log
 def run_command(args):
     result = subprocess.Popen(args).wait()
     if result != 0:
-        log.ODM_ERROR("The command '{}' exited with return value {}". format(
-            ' '.join(args), result))
+    	log.ODM_ERROR("The command '{}' exited with return value {}". format(
+        	' '.join(args), result))
+
 
 
 class Reconstructor:
@@ -67,11 +68,11 @@ class SMReconstructionCell(ecto.Cell):
 
         meta_data = metadataset.MetaDataSet(path)
 
-        if util.check_rerun(args, 'sm_reconstruction'):
+        if True: # util.check_rerun(args, 'sm_reconstruction'):
             submodel_paths = meta_data.get_submodel_paths()
             reconstructor = Reconstructor(command, args.run_matching)
 
-            processes = meta_data.config['processes']
+            processes = 1 # meta_data.config['processes']
             if processes == 1:
                 for submodel_path in submodel_paths:
                     reconstructor(submodel_path)
@@ -81,4 +82,4 @@ class SMReconstructionCell(ecto.Cell):
         else:
             log.ODM_DEBUG("Skipping Reconstruction")
 
-        return ecto.OK if args.end_with != 'sm_align' else ecto.QUIT
+        return ecto.OK if args.end_with != 'sm_reconstruction' else ecto.QUIT

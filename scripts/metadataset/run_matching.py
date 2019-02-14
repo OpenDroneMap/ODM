@@ -13,6 +13,7 @@ def run_command(args):
         log.ODM_ERROR("The command '{}' exited with return value {}". format(
             ' '.join(args), result))
 
+
 class SMMatchingCell(ecto.Cell):
 
     # def declare_params(self, params):
@@ -27,9 +28,10 @@ class SMMatchingCell(ecto.Cell):
         args = self.inputs.args
         tree = self.inputs.tree
         sm_meta = self.inputs.sm_meta
+        result = 0
 
         # check if we rerun cell or not
-        if util.check_rerun(args, 'sm_reconstruction'):
+        if True: # not util.check_rerun(args, 'sm_reconstruction'):
             command = os.path.join(context.opensfm_path, 'bin', 'opensfm')
             path = tree.opensfm
 
@@ -39,4 +41,4 @@ class SMMatchingCell(ecto.Cell):
         else: 
             log.ODM_DEBUG("Skipping Matching")
 
-        return ecto.OK if args.end_with != 'sm_reconstruction' else ecto.QUIT
+        return ecto.OK if args.end_with != 'sm_matching' else ecto.QUIT

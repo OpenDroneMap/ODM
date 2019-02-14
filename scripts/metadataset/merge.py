@@ -51,6 +51,12 @@ class SMMergeCell(ecto.Cell):
                 if io.file_exists(bounds_file):
                     bounds_files[folder_number] = bounds_file
 
+        ## Run points merge
+        points_merge()
+
+        ## Run the simple merge
+        old_ortho_merge()
+
         # example: get_submodel_files("odm_georeferencing", "odm_georeferenced_model.laz")
         def get_submodel_files(directory, filename):
             files = []

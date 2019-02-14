@@ -112,9 +112,9 @@ class ODMApp(ecto.BlackBox):
 
         if p.args.start_with.startswith('sm_'):
             progress = sm_progress[p.args.start_with]
-        elif p.args.rerun.startswith('sm_'):
+        elif p.args.rerun and p.args.rerun.startswith('sm_'):
             progress = sm_progress[p.args.rerun]
-        elif p.args.rerun_from.startswith('sm_'):
+        elif p.args.rerun_from and p.args.rerun_from.startswith('sm_'):
             progress = sm_progress[p.args.start_with]
         else:
             progress = 0

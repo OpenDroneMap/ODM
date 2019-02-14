@@ -10,9 +10,9 @@ from opendm import util
 
 def run_command(args):
     result = subprocess.Popen(args).wait()
-    if result != 0:
-        log.ODM_ERROR("The command '{}' exited with return value {}". format(
-            ' '.join(args), result))
+    log.ODM_ERROR("The command '{}' exited with return value {}". format(
+        ' '.join(args), result))
+
 
 class SMSplitCell(ecto.Cell):
 
@@ -28,11 +28,12 @@ class SMSplitCell(ecto.Cell):
     def process(self, inputs, outputs):
         args = self.inputs.args
         tree = self.inputs.tree
+        result = 0
 
         command = os.path.join(context.opensfm_path, 'bin', 'opensfm')
         path = tree.opensfm
 
-        if util.check_rerun(args, 'sm_split'):
+        if True: # util.check_rerun(args, 'sm_split'):
             run_command([command, 'create_submodels', path])
         else: 
             log.ODM_DEBUG("Skipping Split")

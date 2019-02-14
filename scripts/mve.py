@@ -48,8 +48,13 @@ class ODMMveCell(ecto.Cell):
             if not io.file_exists(tree.mve_bundle):
                 system.mkdir_p(tree.mve_path)
                 system.mkdir_p(io.join_paths(tree.mve_path, 'bundle'))
-                io.copy(tree.opensfm_image_list, tree.mve_image_list)
-                io.copy(tree.opensfm_bundle, tree.mve_bundle)
+                #io.copy(tree.opensfm_image_list, tree.mve_image_list)
+                # Edit relative links in the copied file
+                with open(tree.mve_image_list, 'w') as outf:
+                    with open(tree.opensfm_image_list, 'r') as inf:
+                        for line in inf:
+                            outf.write('../' + line)
+                # io.copy(tree.opensfm_bundle, tree.mve_bundle)
 
             # mve makescene wants the output directory
             # to not exists before executing it (otherwise it
@@ -63,6 +68,7 @@ class ODMMveCell(ecto.Cell):
 
             # config
             config = [
+            '-s4'
             ]
 
             # run mve

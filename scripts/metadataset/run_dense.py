@@ -12,10 +12,9 @@ from opendm import log
 
 
 def run_command(args):
-    result = subprocess.Popen(args).wait()
-    if result != 0:
-        log.ODM_ERROR("The command '{}' exited with return value {}". format(
-            ' '.join(args), result))
+    subprocess.Popen(args).wait()
+    log.ODM_ERROR("The command '{}' exited with return value {}". format(
+        ' '.join(args), result))
 
 
 class DenseReconstructor:
@@ -71,7 +70,7 @@ class SMDenseCell(ecto.Cell):
         args = self.inputs.args
         tree = self.inputs.tree
 
-        if util.check_rerun(args, 'sm_dense'):
+        if True: # util.check_rerun(args, 'sm_dense'):
             command = os.path.join(context.root_path, 'run.py')
             path = tree.opensfm
             meta_data = metadataset.MetaDataSet(path)
