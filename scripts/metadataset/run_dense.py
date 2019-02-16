@@ -12,9 +12,10 @@ from opendm import log
 
 
 def run_command(args):
-    subprocess.Popen(args).wait()
-    log.ODM_ERROR("The command '{}' exited with return value {}". format(
-        ' '.join(args), result))
+    result = subprocess.Popen(args).wait()
+    if result != 0:
+	log.ODM_ERROR("The command '{}' exited with return value {}". format(
+        	' '.join(args), result))
 
 
 class DenseReconstructor:

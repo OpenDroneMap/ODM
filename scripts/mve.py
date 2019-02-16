@@ -57,7 +57,7 @@ class ODMMveCell(ecto.Cell):
                     with open(tree.opensfm_image_list, 'r') as inf:
                         for line in inf:
                             outf.write('../' + line)
-                # io.copy(tree.opensfm_bundle, tree.mve_bundle)
+                io.copy(tree.opensfm_bundle, tree.mve_bundle)
 
             # mve makescene wants the output directory
             # to not exists before executing it (otherwise it
@@ -78,7 +78,7 @@ class ODMMveCell(ecto.Cell):
 
             # run mve
             system.run('%s %s %s' % (context.mve_path, ' '.join(config), tree.mve))
-            system.run('%s %s %s %s' % (context.mve_path_pc, ' '.join(config), tree.mve, tree.mve_model))
+            system.run('%s %s %s %s' % (context.mve_path_pc, ' -S1 ', tree.mve, tree.mve_model))
             
             # find and rename the output file for simplicity
             mve_files = glob.glob(os.path.join(tree.mve, 'mve-*'))
