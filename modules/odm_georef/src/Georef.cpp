@@ -1330,8 +1330,13 @@ void Georef::performFinalTransform(Mat4 &transMat, pcl::TextureMesh &mesh, pcl::
     double transX = static_cast<double>(transMat.r1c4_);
     double transY = static_cast<double>(transMat.r2c4_);
 
-    transform(0, 3) = transX;
-    transform(1, 3) = transY;
+    if (addUTM){
+        transform(0, 3) = transX;
+        transform(1, 3) = transY;
+    }else{
+        transform(0, 3) = 0.0f;
+        transform(1, 3) = 0.0f;
+    }
     transform(2, 3) = static_cast<double>(transMat.r3c4_);
     transform(3, 3) = static_cast<double>(transMat.r4c4_);
 
@@ -1375,6 +1380,9 @@ void Georef::performFinalTransform(Mat4 &transMat, pcl::TextureMesh &mesh, pcl::
     if (addUTM){
         transform(0, 3) = georefSystem_.eastingOffset_ + transX;
         transform(1, 3) = georefSystem_.northingOffset_ + transY;
+    }else{
+        transform(0, 3) = transX;
+        transform(1, 3) = transY;
     }
 
     printFinalTransform(transform);
