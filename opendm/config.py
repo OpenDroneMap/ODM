@@ -556,7 +556,7 @@ def config():
       args.pc_classify = "smrf"
 
     if args.skip_3dmodel and args.use_3dmesh:
-      log.ODM_WARNING('--skip-3dmodel is set, but so is --use-3dmesh. You can\'t have both!')
-      sys.exit(1)
+      log.ODM_WARNING('--skip-3dmodel is set, but so is --use-3dmesh. --skip-3dmodel will be ignored.')
+      args.skip_3dmodel = False
 
     return args
