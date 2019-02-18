@@ -60,11 +60,15 @@ class ODMGeoreferencingCell(ecto.Cell):
             runs = []
 
         if not args.use_3dmesh:
-            runs += [{
+            # Make sure 2.5D mesh is georeferenced before the 3D mesh
+            # Because it will be used to calculate a transform
+            # for the point cloud. If we use the 3D model transform,
+            # DEMs and orthophoto might not align!
+            runs.insert(0, {
                     'georeferencing_dir': tree.odm_25dgeoreferencing,
                     'texturing_dir': tree.odm_25dtexturing,
                     'model': os.path.join(tree.odm_25dtexturing, tree.odm_textured_model_obj)
-                }]
+                })
 
         for r in runs:
             odm_georeferencing_model_obj_geo = os.path.join(r['texturing_dir'], tree.odm_georeferencing_model_obj_geo)
