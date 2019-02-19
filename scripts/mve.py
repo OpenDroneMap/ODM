@@ -64,17 +64,30 @@ class ODMMveCell(ecto.Cell):
             if not io.dir_exists(tree.mve_views):
                 system.run('%s %s %s' % (context.makescene_path, tree.mve_path, tree.mve))
 
-		print(args)
+
 
             # config
             config = [
-                "-s%s" % args.mve_output_scale
+                "-s%s" % args.mve_output_scale,
+	     	"-s2", 
+	        "--progress=silent"
+
             ]
 
-            # run mve
+            #run mve
             system.run('%s %s %s' % (context.mve_path, ' '.join(config), tree.mve))
+
+
+	    #config
+	    config = [
+		"-F2",
+		"--with-conf"
+
+		]
+
+            # run mve
             system.run('%s %s %s %s' % (context.mve_path_pc, ' '.join(config), tree.mve, tree.mve_model))
-            
+           
             # find and rename the output file for simplicity
             mve_files = glob.glob(os.path.join(tree.mve, 'mve-*'))
             mve_files.sort(key=os.path.getmtime) # sort by last modified date
