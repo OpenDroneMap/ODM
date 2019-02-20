@@ -10,8 +10,9 @@ from opendm import util
 
 def run_command(args):
     result = subprocess.Popen(args).wait()
-    log.ODM_ERROR("The command '{}' exited with return value {}". format(
-        ' '.join(args), result))
+    if result != 0:
+        log.ODM_ERROR("The command '{}' exited with return value {}". format(
+            ' '.join(args), result))
 
 
 class SMSplitCell(ecto.Cell):
@@ -28,7 +29,7 @@ class SMSplitCell(ecto.Cell):
     def process(self, inputs, outputs):
         args = self.inputs.args
         tree = self.inputs.tree
-        result = 0
+        sm_meta = self.inputs.sm_meta
 
         command = os.path.join(context.opensfm_path, 'bin', 'opensfm')
         path = tree.opensfm
@@ -37,5 +38,9 @@ class SMSplitCell(ecto.Cell):
             run_command([command, 'create_submodels', path])
         else: 
             log.ODM_DEBUG("Skipping Split")
+
+        sm_meta.update_progress(2)
+        sm_meta.save_progress(tree.sm_progress)
+        self.outputs.sm_meta = sm_meta
 
         return ecto.OK if args.end_with != 'sm_split' else ecto.QUIT

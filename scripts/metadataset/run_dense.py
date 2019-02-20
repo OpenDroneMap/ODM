@@ -70,6 +70,7 @@ class SMDenseCell(ecto.Cell):
     def process(self, inputs, outputs):
         args = self.inputs.args
         tree = self.inputs.tree
+        sm_meta = self.inputs.sm_meta
 
         if True: # util.check_rerun(args, 'sm_dense'):
             command = os.path.join(context.root_path, 'run.py')
@@ -79,7 +80,7 @@ class SMDenseCell(ecto.Cell):
             submodel_paths = meta_data.get_submodel_paths()
             reconstructor = DenseReconstructor(command)
 
-            processes = args.max_concurrency
+            processes = 1 # args.max_concurrency
             if processes == 1:
                 log.ODM_DEBUG("Running Dense")
                 for submodel_path in submodel_paths:
@@ -89,5 +90,8 @@ class SMDenseCell(ecto.Cell):
                 p = multiprocessing.Pool(processes)
                 p.map(reconstructor, submodel_paths)
 
-        log.ODM_DEBUG("What")
+        sm_meta.update_progress(5)
+        sm_meta.save_progress(tree.sm_progress)
+        self.outputs.sm_meta = sm_meta
+
         return ecto.OK if args.end_with != 'sm_dense' else ecto.QUIT

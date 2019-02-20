@@ -41,4 +41,8 @@ class SMMatchingCell(ecto.Cell):
         else: 
             log.ODM_DEBUG("Skipping Matching")
 
+        sm_meta.update_progress(1)
+        sm_meta.save_progress(tree.sm_progress)
+        self.outputs.sm_meta = sm_meta
+
         return ecto.OK if args.end_with != 'sm_matching' else ecto.QUIT

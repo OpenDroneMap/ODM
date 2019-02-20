@@ -93,6 +93,7 @@ class SMSetupCell(ecto.Cell):
     def process(self, inputs, outputs):
         args = self.inputs.args
         tree = self.inputs.tree
+        sm_meta = self.inputs.sm_meta
         data_path = tree.root_path
 
         image_path = tree.dataset_raw
@@ -102,6 +103,8 @@ class SMSetupCell(ecto.Cell):
         create_image_list(image_path, opensfm_path)
         create_config(opensfm_path, args)
         link_image_groups(data_path, opensfm_path)
-
+        
+        sm_meta.save_progress(tree.sm_progress)
+        self.outputs.sm_meta = sm_meta
 
         return ecto.OK if args.end_with != 'sm_setup' else ecto.QUIT

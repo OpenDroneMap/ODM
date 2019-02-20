@@ -380,6 +380,7 @@ class ODM_Tree(object):
         self.submodels_path = io.join_paths(self.root_path, 'submodels')
         self.out_tif = io.join_paths(self.root_path, "merged.tif")
         self.addo_log = io.join_paths(self.root_path, "gdal_addo.log")
+        self.progess_file = io.join_paths(self.root_path, "sm_progress.txt")
 
 
     def path(self, *args):
@@ -391,14 +392,14 @@ class SplitMerge(object):
     def __init__(self, project_name, progress):
         self.project_name = project_name
         self.progress = 0
-    # def load_progress(sm_file):
-    #     with open(sm_file) as f:
-    #         prog = int(f.readline())
-    #         if prog in range(0, 6):
-    #             update_progress(prog)
-    # def save_progress(sm_file):
-    #     with open(sm_file) as f:
-    #         f.write(self.progress)
+    def load_progress(sm_file):
+        with open(sm_file) as f:
+            prog = int(f.readline())
+            if prog in range(0, 6):
+                update_progress(prog)
+    def save_progress(sm_file):
+        with open(sm_file) as f:
+            f.write(self.progress)
     def update_progress(progress):
         if progress in range(0,6):
             self.progress = progress

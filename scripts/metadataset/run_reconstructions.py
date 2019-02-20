@@ -62,6 +62,7 @@ class SMReconstructionCell(ecto.Cell):
     def process(self, inputs, outputs):
         args = self.inputs.args
         tree = self.inputs.tree
+        sm_meta = self.inputs.sm_meta
 
         command = os.path.join(context.opensfm_path, 'bin', 'opensfm')
         path = tree.opensfm
@@ -81,5 +82,9 @@ class SMReconstructionCell(ecto.Cell):
                 p.map(reconstructor, submodel_paths)
         else:
             log.ODM_DEBUG("Skipping Reconstruction")
+
+        sm_meta.update_progress(3)
+        sm_meta.save_progress(tree.sm_progress)
+        self.outputs.sm_meta = sm_meta
 
         return ecto.OK if args.end_with != 'sm_reconstruction' else ecto.QUIT
