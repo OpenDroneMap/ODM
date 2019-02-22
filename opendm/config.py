@@ -300,7 +300,7 @@ def config():
             metavar='<string>',
             default='none',
             choices=['none', 'smrf', 'pmf'],
-            help='Classify the .LAS point cloud output using either '
+            help='Classify the point cloud outputs using either '
             'a Simple Morphological Filter or a Progressive Morphological Filter. '
             'If --dtm is set this parameter defaults to smrf. '
             'You can control the behavior of both smrf and pmf by tweaking the --dem-* parameters. '
@@ -311,6 +311,11 @@ def config():
                         action='store_true',
                         default=False,
                         help='Export the georeferenced point cloud in CSV format. Default:  %(default)s')
+    
+    parser.add_argument('--pc-las',
+                action='store_true',
+                default=False,
+                help='Export the georeferenced point cloud in LAS format. Default:  %(default)s')
 
     parser.add_argument('--texturing-data-term',
                         metavar='<string>',
