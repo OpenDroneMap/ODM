@@ -161,7 +161,16 @@ class ODMGeoreferencingCell(ecto.Cell):
                             "--writers.text.keep_unspecified=false ".format(
                                 tree.odm_georeferencing_model_laz,
                                 tree.odm_georeferencing_xyz_file))
-
+                    
+                    # LAS point cloud output
+                    if args.pc_las:
+                        log.ODM_INFO("Creating geo-referenced LAS file")
+                        
+                        system.run("pdal translate -i \"{}\" "
+                            "-o \"{}\" ".format(
+                                tree.odm_georeferencing_model_laz,
+                                tree.odm_georeferencing_model_las))
+                    
                     if args.crop > 0:
                         log.ODM_INFO("Calculating cropping area and generating bounds shapefile from point cloud")
                         cropper = Cropper(tree.odm_georeferencing, 'odm_georeferenced_model')
