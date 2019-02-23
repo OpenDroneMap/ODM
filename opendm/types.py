@@ -374,6 +374,8 @@ class ODM_Tree(object):
             self.odm_georeferencing, 'las.json')
         self.odm_georeferencing_model_laz = io.join_paths(
             self.odm_georeferencing, 'odm_georeferenced_model.laz')
+        self.odm_georeferencing_model_las = io.join_paths(
+            self.odm_georeferencing, 'odm_georeferenced_model.las')
         self.odm_georeferencing_dem = io.join_paths(
             self.odm_georeferencing, 'odm_georeferencing_model_dem.tif')
 
