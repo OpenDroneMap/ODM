@@ -7,9 +7,11 @@ from opendm import context
 
 
 class ODMMveCell(ecto.Cell):
+
     def declare_params(self, params):
         params.declare("mve_output_scale", "scale of optimization", 2)
-	# params.declare("threads", "max number of threads", context.num_cores)
+        params.declare("max_concurrency", "max number of threads", 3)
+
 
     def declare_io(self, params, inputs, outputs):
         inputs.declare("tree", "Struct with paths", [])
@@ -69,7 +71,7 @@ class ODMMveCell(ecto.Cell):
             # config
             config = [
                 "-s%s" % args.mve_output_scale,
-	     	"-s2", 
+		#"-s%s" % args.max_concurrency,
 	        "--progress=silent"
 
             ]
@@ -80,7 +82,7 @@ class ODMMveCell(ecto.Cell):
 
 	    #config
 	    config = [
-		"-F2",
+		"-F1",
 		"--with-conf"
 
 		]
