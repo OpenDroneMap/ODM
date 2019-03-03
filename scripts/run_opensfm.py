@@ -139,11 +139,11 @@ class ODMOpenSfMCell(ecto.Cell):
             # Check that a reconstruction file has been created
             if not io.file_exists(tree.opensfm_reconstruction):
                 log.ODM_ERROR("The program could not process this dataset using the current settings. "
-                                "Check that images have enough overlap, "
-                                "that there are enough recognizable features, "
-                                "that the images are in focus. "
-                                "You can also try to increase the --min-num-features parameter."
-                                "The program will not exit.")
+                                "Check that the images have enough overlap, "
+                                "that there are enough recognizable features "
+                                "and that the images are in focus. "
+                                "You could also try to increase the --min-num-features parameter."
+                                "The program will now exit.")
                 sys.exit(1)
 
 
