@@ -1,4 +1,5 @@
 import ecto
+import sys
 
 from opendm import log
 from opendm import io
@@ -134,6 +135,17 @@ class ODMOpenSfMCell(ecto.Cell):
             else:
                 log.ODM_WARNING('Found a valid OpenSfM reconstruction file in: %s' %
                                 tree.opensfm_reconstruction)
+
+            # Check that a reconstruction file has been created
+            if not io.file_exists(tree.opensfm_reconstruction):
+                log.ODM_ERROR("The program could not process this dataset using the current settings. "
+                                "Check that the images have enough overlap, "
+                                "that there are enough recognizable features "
+                                "and that the images are in focus. "
+                                "You could also try to increase the --min-num-features parameter."
+                                "The program will now exit.")
+                sys.exit(1)
+
 
             # Always export VisualSFM's reconstruction and undistort images
             # as we'll use these for texturing (after GSD estimation and resizing)
