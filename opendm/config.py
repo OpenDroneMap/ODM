@@ -423,14 +423,6 @@ def config():
                         help='DSM/DTM resolution in cm / pixel.'
                              '\nDefault: %(default)s')
 
-    parser.add_argument('--dem-maxangle',
-                        metavar='<positive float>',
-                        type=float,
-                        default=20,
-                        help='Points that are more than maxangle degrees off-nadir are discarded. '
-                             '\nDefault: '
-                             '%(default)s')
-
     parser.add_argument('--dem-maxsd',
                         metavar='<positive float>',
                         type=float,
