@@ -233,33 +233,6 @@ def run_pipeline(json, verbose=False):
     os.remove(jsonfile)
 
 
-def run_pdalground(fin, fout, slope, cellsize, maxWindowSize, maxDistance, approximate=False, initialDistance=0.7, verbose=False):
-    """ Run PDAL ground """
-    cmd = [
-        'pdal',
-        'ground',
-        '-i %s' % fin,
-        '-o %s' % fout,
-        '--slope %s' % slope,
-        '--cell_size %s' % cellsize,
-        '--initial_distance %s' % initialDistance
-    ]
-    if maxWindowSize is not None:
-        cmd.append('--max_window_size %s' %maxWindowSize)
-    if maxDistance is not None:
-        cmd.append('--max_distance %s' %maxDistance)
-
-    if approximate:
-        cmd.append('--approximate')
-
-    if verbose:
-        cmd.append('--developer-debug')
-        print ' '.join(cmd)
-    print ' '.join(cmd)
-    out = system.run(' '.join(cmd))
-    if verbose:
-        print out
-
 def run_pdaltranslate_smrf(fin, fout, slope, cellsize, maxWindowSize, verbose=False):
     """ Run PDAL translate  """
     cmd = [

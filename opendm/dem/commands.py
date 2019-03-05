@@ -9,15 +9,11 @@ from functools import partial
 
 from . import pdal
 
-def classify(lasFile, smrf=False, slope=1, cellsize=3, maxWindowSize=10, maxDistance=1,
-             approximate=False, initialDistance=0.7, verbose=False):
+def classify(lasFile, slope=0.15, cellsize=1, maxWindowSize=18, verbose=False):
     start = datetime.now()
 
     try:
-        if smrf:
-            pdal.run_pdaltranslate_smrf(lasFile, lasFile, slope, cellsize, maxWindowSize, verbose)
-        else:
-            pdal.run_pdalground(lasFile, lasFile, slope, cellsize, maxWindowSize, maxDistance, approximate=approximate, initialDistance=initialDistance, verbose=verbose)
+        pdal.run_pdaltranslate_smrf(lasFile, lasFile, slope, cellsize, maxWindowSize, verbose)
     except:
         raise Exception("Error creating classified file %s" % fout)
 
