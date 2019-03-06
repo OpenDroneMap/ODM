@@ -314,6 +314,14 @@ def config():
                 default=False,
                 help='Export the georeferenced point cloud in LAS format. Default:  %(default)s')
 
+    parser.add_argument('--pc-maxsd',
+                        metavar='<positive float>',
+                        type=float,
+                        default=2.5,
+                        help='Filters the point cloud by removing points that deviate more than maxsd standard deviations from the local mean. Set to 0 to disable filtering.'
+                             '\nDefault: '
+                             '%(default)s')
+
     parser.add_argument('--texturing-data-term',
                         metavar='<string>',
                         default='gmi',
@@ -419,14 +427,6 @@ def config():
                         default=5,
                         help='DSM/DTM resolution in cm / pixel.'
                              '\nDefault: %(default)s')
-
-    parser.add_argument('--dem-maxsd',
-                        metavar='<positive float>',
-                        type=float,
-                        default=2.5,
-                        help='Points that deviate more than maxsd standard deviations from the local mean '
-                             'are discarded. \nDefault: '
-                             '%(default)s')
 
     parser.add_argument('--dem-decimation',
                         metavar='<positive integer>',

@@ -93,7 +93,6 @@ class ODMDEMCell(ecto.Cell):
                             gapfill=True,
                             outdir=odm_dem_root,
                             resolution=resolution / 100.0,
-                            maxsd=args.dem_maxsd,
                             decimation=args.dem_decimation,
                             verbose=args.verbose,
                             max_workers=get_max_concurrency_for_dem(args.max_concurrency,tree.odm_georeferencing_model_laz)

@@ -56,7 +56,6 @@ def create_dems(filenames, demtype, radius=['0.56'], gapfill=False,
 
 
 def create_dem(filenames, demtype, radius, decimation=None,
-               maxsd=None, maxz=None,
                products=['idw'], outdir='', suffix='', verbose=False, resolution=0.1):
     """ Create DEM from collection of LAS files """
     start = datetime.now()
@@ -70,10 +69,6 @@ def create_dem(filenames, demtype, radius, decimation=None,
     log.ODM_INFO('Creating %s from %s files' % (prettyname, len(filenames)))
     # JSON pipeline
     json = pdal.json_gdal_base(bname, products, radius, resolution)
-    
-    # A DSM for meshing does not use additional filters
-    if demtype != 'mesh_dsm':
-        json = pdal.json_add_filters(json, maxsd, maxz)
     
     if demtype == 'dsm':
         json = pdal.json_add_classification_filter(json, 2, equality='max')
