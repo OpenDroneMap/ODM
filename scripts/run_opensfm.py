@@ -6,6 +6,7 @@ from opendm import io
 from opendm import system
 from opendm import context
 from opendm import gsd
+from opendm import point_cloud
 
 class ODMOpenSfMCell(ecto.Cell):
     def declare_params(self, params):
