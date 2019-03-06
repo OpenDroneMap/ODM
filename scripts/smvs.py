@@ -94,7 +94,7 @@ class ODMSmvsCell(ecto.Cell):
                     log.ODM_WARNING("File %s does not exist, cannot be renamed. " % old_file)
 
                 # Filter
-                point_cloud.filter(tree.smvs_model, standard_deviation=args.pc_maxsd, verbose=args.verbose)
+                point_cloud.filter(tree.smvs_model, standard_deviation=args.pc_filter, verbose=args.verbose)
             else:
                 log.ODM_WARNING("Cannot find a valid point cloud (smvs-XX.ply) in %s. Check the console output for errors." % tree.smvs)
         else:
