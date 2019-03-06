@@ -314,11 +314,11 @@ def config():
                 default=False,
                 help='Export the georeferenced point cloud in LAS format. Default:  %(default)s')
 
-    parser.add_argument('--pc-maxsd',
+    parser.add_argument('--pc-filter',
                         metavar='<positive float>',
                         type=float,
                         default=2.5,
-                        help='Filters the point cloud by removing points that deviate more than maxsd standard deviations from the local mean. Set to 0 to disable filtering.'
+                        help='Filters the point cloud by removing points that deviate more than N standard deviations from the local mean. Set to 0 to disable filtering.'
                              '\nDefault: '
                              '%(default)s')
 
