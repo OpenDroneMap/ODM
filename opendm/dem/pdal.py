@@ -102,75 +102,6 @@ def json_add_classification_filter(json, classification, equality="equals"):
     return json
 
 
-def json_add_maxsd_filter(json, meank=20, thresh=3.0):
-    """ Add outlier Filter element and return """
-    json['pipeline'].insert(0, {
-            'type': 'filters.outlier',
-            'method': 'statistical',
-            'mean_k': meank,
-            'multiplier': thresh
-        })
-    return json
-
-
-def json_add_maxz_filter(json, maxz):
-    """ Add max elevation Filter element and return """
-    json['pipeline'].insert(0, {
-            'type': 'filters.range',
-            'limits': 'Z[:{0}]'.format(maxz)
-        })
-
-    return json
-
-
-def json_add_maxangle_filter(json, maxabsangle):
-    """ Add scan angle Filter element and return """
-    json['pipeline'].insert(0, {
-            'type': 'filters.range',
-            'limits': 'ScanAngleRank[{0}:{1}]'.format(str(-float(maxabsangle)), maxabsangle)
-        })
-    return json
-
-
-def json_add_scanedge_filter(json, value):
-    """ Add EdgeOfFlightLine Filter element and return """
-    json['pipeline'].insert(0, {
-            'type': 'filters.range',
-            'limits': 'EdgeOfFlightLine[{0}:{0}]'.format(value)
-        })
-    return json
-
-
-def json_add_returnnum_filter(json, value):
-    """ Add ReturnNum Filter element and return """
-    json['pipeline'].insert(0, {
-            'type': 'filters.range',
-            'limits': 'ReturnNum[{0}:{0}]'.format(value)
-        })
-    return json
-
-
-def json_add_filters(json, maxsd=None, maxz=None, maxangle=None, returnnum=None):
-    if maxsd is not None:
-        json = json_add_maxsd_filter(json, thresh=maxsd)
-    if maxz is not None:
-        json = json_add_maxz_filter(json, maxz)
-    if maxangle is not None:
-        json = json_add_maxangle_filter(json, maxangle)
-    if returnnum is not None:
-        json = json_add_returnnum_filter(json, returnnum)
-    return json
-
-
-def json_add_crop_filter(json, wkt):
-    """ Add cropping polygon as Filter Element and return """
-    json['pipeline'].insert(0, {
-            'type': 'filters.crop',
-            'polygon': wkt
-        })
-    return json
-
-
 def is_ply_file(filename):
     _, ext = os.path.splitext(filename)
     return ext.lower() == '.ply'
@@ -232,33 +163,6 @@ def run_pipeline(json, verbose=False):
         out = system.run(' '.join(cmd) + ' > /dev/null 2>&1')
     os.remove(jsonfile)
 
-
-def run_pdalground(fin, fout, slope, cellsize, maxWindowSize, maxDistance, approximate=False, initialDistance=0.7, verbose=False):
-    """ Run PDAL ground """
-    cmd = [
-        'pdal',
-        'ground',
-        '-i %s' % fin,
-        '-o %s' % fout,
-        '--slope %s' % slope,
-        '--cell_size %s' % cellsize,
-        '--initial_distance %s' % initialDistance
-    ]
-    if maxWindowSize is not None:
-        cmd.append('--max_window_size %s' %maxWindowSize)
-    if maxDistance is not None:
-        cmd.append('--max_distance %s' %maxDistance)
-
-    if approximate:
-        cmd.append('--approximate')
-
-    if verbose:
-        cmd.append('--developer-debug')
-        print ' '.join(cmd)
-    print ' '.join(cmd)
-    out = system.run(' '.join(cmd))
-    if verbose:
-        print out
 
 def run_pdaltranslate_smrf(fin, fout, slope, cellsize, maxWindowSize, verbose=False):
     """ Run PDAL translate  """

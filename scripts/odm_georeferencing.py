@@ -9,6 +9,7 @@ from opendm import types
 from opendm import system
 from opendm import context
 from opendm.cropper import Cropper
+from opendm import point_cloud
 
 
 class ODMGeoreferencingCell(ecto.Cell):

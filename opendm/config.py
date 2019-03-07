@@ -297,13 +297,10 @@ def config():
                           'Default: %(default)s'))
 
     parser.add_argument('--pc-classify',
-            metavar='<string>',
-            default='none',
-            choices=['none', 'smrf', 'pmf'],
-            help='Classify the point cloud outputs using either '
-            'a Simple Morphological Filter or a Progressive Morphological Filter. '
-            'If --dtm is set this parameter defaults to smrf. '
-            'You can control the behavior of both smrf and pmf by tweaking the --dem-* parameters. '
+            action='store_true',
+            default=False,
+            help='Classify the point cloud outputs using a Simple Morphological Filter. '
+            'You can control the behavior of this option by tweaking the --dem-* parameters. '
             'Default: '
             '%(default)s')
 
@@ -316,6 +313,14 @@ def config():
                 action='store_true',
                 default=False,
                 help='Export the georeferenced point cloud in LAS format. Default:  %(default)s')
+
+    parser.add_argument('--pc-filter',
+                        metavar='<positive float>',
+                        type=float,
+                        default=2.5,
+                        help='Filters the point cloud by removing points that deviate more than N standard deviations from the local mean. Set to 0 to disable filtering.'
+                             '\nDefault: '
+                             '%(default)s')
 
     parser.add_argument('--texturing-data-term',
                         metavar='<string>',
@@ -423,31 +428,6 @@ def config():
                         help='DSM/DTM resolution in cm / pixel.'
                              '\nDefault: %(default)s')
 
-    parser.add_argument('--dem-maxsd',
-                        metavar='<positive float>',
-                        type=float,
-                        default=2.5,
-                        help='Points that deviate more than maxsd standard deviations from the local mean '
-                             'are discarded. \nDefault: '
-                             '%(default)s')
-
-    parser.add_argument('--dem-initial-distance',
-                        metavar='<positive float>',
-                        type=float,
-                        default=0.15,
-                        help='Used to classify ground vs non-ground points. Set this value to account for Z noise in meters. '
-                             'If you have an uncertainty of around 15 cm, set this value large enough to not exclude these points. '
-                             'Too small of a value will exclude valid ground points, while too large of a value will misclassify non-ground points for ground ones. '
-                             '\nDefault: '
-                             '%(default)s')
-
-    parser.add_argument('--dem-approximate',
-                        action='store_true',
-                        default=False,
-                        help='Use this tag use the approximate progressive  '
-                             'morphological filter, which computes DEMs faster '
-                             'but is not as accurate.')
-
     parser.add_argument('--dem-decimation',
                         metavar='<positive integer>',
                         default=1,
@@ -455,17 +435,6 @@ def config():
                         help='Decimate the points before generating the DEM. 1 is no decimation (full quality). '
                              '100 decimates ~99%% of the points. Useful for speeding up '
                              'generation.\nDefault=%(default)s')
-
-    parser.add_argument('--dem-terrain-type',
-                        metavar='<string>',
-                        choices=['FlatNonForest', 'FlatForest', 'ComplexNonForest', 'ComplexForest'],
-                        default='ComplexForest',
-                        help='One of: %(choices)s. Specifies the type of terrain. This mainly helps reduce processing time. '
-                             '\nFlatNonForest: Relatively flat region with little to no vegetation'
-                             '\nFlatForest: Relatively flat region that is forested'
-                             '\nComplexNonForest: Varied terrain with little to no vegetation'
-                             '\nComplexForest: Varied terrain that is forested'
-                             '\nDefault=%(default)s')
 
     parser.add_argument('--orthophoto-resolution',
                         metavar='<float > 0.0>',
@@ -548,9 +517,9 @@ def config():
       log.ODM_INFO('Fast orthophoto is turned on, automatically setting --skip-3dmodel')
       args.skip_3dmodel = True
 
-    if args.dtm and args.pc_classify == 'none':
+    if args.dtm and not args.pc_classify:
       log.ODM_INFO("DTM is turned on, automatically turning on point cloud classification")
-      args.pc_classify = "smrf"
+      args.pc_classify = True
 
     if args.skip_3dmodel and args.use_3dmesh:
       log.ODM_WARNING('--skip-3dmodel is set, but so is --use-3dmesh. --use_3dmesh will be ignored.')
