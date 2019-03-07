@@ -36,9 +36,7 @@ class ODMApp(ecto.BlackBox):
         Only cells from which something is forwarded have to be declared
         """
         cells = {'args': ecto.Constant(value=p.args),
-                 'dataset': ODMLoadDatasetCell(force_focal=p.args.force_focal,
-                                               force_ccd=p.args.force_ccd,
-                                               verbose=p.args.verbose,
+                 'dataset': ODMLoadDatasetCell(verbose=p.args.verbose,
                                                proj=p.args.proj),
                  'opensfm': ODMOpenSfMCell(use_exif_size=False,
                                            feature_process_size=p.args.resize_to,
