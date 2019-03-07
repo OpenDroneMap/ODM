@@ -3,6 +3,7 @@ import exifread
 import re
 from fractions import Fraction
 from opensfm.exif import sensor_string
+from opendm import get_image_size
 from pyproj import Proj
 
 import log
@@ -15,15 +16,11 @@ class ODM_Photo:
     """   ODMPhoto - a class for ODMPhotos
     """
 
-    def __init__(self, path_file, force_focal, force_ccd):
+    def __init__(self, path_file):
         #  general purpose
         self.filename = io.extract_file_from_path_file(path_file)
-        # useful attibutes
         self.width = None
         self.height = None
-        self.ccd_width = None
-        self.focal_length = None
-        self.focal_length_px = None
         # other attributes
         self.camera_make = ''
         self.camera_model = ''
@@ -32,33 +29,17 @@ class ODM_Photo:
         self.longitude = None
         self.altitude = None
         # parse values from metadata
-        self.parse_exif_values(path_file, force_focal, force_ccd)
-        # compute focal length into pixels
-        self.update_focal()
+        self.parse_exif_values(path_file)
 
         # print log message
         log.ODM_DEBUG('Loaded {}'.format(self))
 
 
     def __str__(self):
-        return '{} | camera: {} | dimensions: {} x {} | focal: {} | ccd: {} | lat: {} | lon: {} | alt: {}'.format(
-                            self.filename, self.make_model, self.width, self.height, self.focal_length,
-                            self.ccd_width, self.latitude, self.longitude, self.altitude)
+        return '{} | camera: {} | dimensions: {} x {} | lat: {} | lon: {} | alt: {}'.format(
+                            self.filename, self.make_model, self.width, self.height, self.latitude, self.longitude, self.altitude)
 
-    def update_focal(self):
-        # compute focal length in pixels
-        if self.focal_length and self.ccd_width:
-            # take width or height as reference
-            if self.width > self.height:
-                # f(px) = w(px) * f(mm) / ccd(mm)
-                self.focal_length_px = \
-                    self.width * (self.focal_length / self.ccd_width)
-            else:
-                # f(px) = h(px) * f(mm) / ccd(mm)
-                self.focal_length_px = \
-                    self.height * (self.focal_length / self.ccd_width)
-
-    def parse_exif_values(self, _path_file, _force_focal, _force_ccd):
+    def parse_exif_values(self, _path_file):
         # Disable exifread log
         logging.getLogger('exifread').setLevel(logging.CRITICAL)
 
@@ -70,8 +51,6 @@ class ODM_Photo:
                     self.camera_make = tags['Image Make'].values.encode('utf8')
                 if 'Image Model' in tags:
                     self.camera_model = tags['Image Model'].values.encode('utf8')
-                if 'EXIF FocalLength' in tags:
-                    self.focal_length = self.float_values(tags['EXIF FocalLength'])[0]
                 if 'GPS GPSAltitude' in tags:
                     self.altitude = self.float_values(tags['GPS GPSAltitude'])[0]
                     if 'GPS GPSAltitudeRef' in tags and self.int_values(tags['GPS GPSAltitudeRef'])[0] > 0:
@@ -87,28 +66,13 @@ class ODM_Photo:
             self.make_model = sensor_string(self.camera_make, self.camera_model)
 
         # needed to do that since sometimes metadata contains wrong data
-        img = cv2.imread(_path_file)
-        self.width = img.shape[1]
-        self.height = img.shape[0]
-
-        # force focal and ccd_width with user parameter
-        if _force_focal:
-            self.focal_length = _force_focal
-        if _force_ccd:
-            self.ccd_width = _force_ccd
-
-        # find ccd_width from file if needed
-        if self.ccd_width is None and self.camera_model is not None:
-            # load ccd_widths from file
-            ccd_widths = system.get_ccd_widths()
-            # search ccd by camera model
-            key = [x for x in ccd_widths.keys() if self.make_model in x]
-            # convert to float if found
-            if key:
-                self.ccd_width = float(ccd_widths[key[0]])
-            else:
-                log.ODM_WARNING('Could not find ccd_width in file. Use --force-ccd or edit the sensor_data.json '
-                                'file to manually input ccd width')
+        try:
+            self.width, self.height = get_image_size.get_image_size(_path_file)
+        except get_image_size.UnknownImageFormat:
+            # Fallback to slower cv2
+            img = cv2.imread(_path_file)
+            self.width = img.shape[1]
+            self.height = img.shape[0]
 
     def dms_to_decimal(self, dms, sign):
         """Converts dms coords to decimal degrees"""
@@ -126,7 +90,7 @@ class ODM_Photo:
     def int_values(self, tag):
         return map(int, tag.values)
 
-# TODO: finish this class
+
 class ODM_Reconstruction(object):
     """docstring for ODMReconstruction"""
 
@@ -197,15 +161,6 @@ class ODM_Reconstruction(object):
             log.ODM_EXCEPTION('Could not set projection. Please use a proj4 string')
 
 
-class ODM_GCPoint(object):
-    """docstring for ODMPoint"""
-
-    def __init__(self, x, y, z):
-        self.x = x
-        self.y = y
-        self.z = z
-
-
 class ODM_GeoRef(object):
     """docstring for ODMUtmZone"""
 
@@ -257,24 +212,6 @@ class ODM_GeoRef(object):
             offsets = f.readlines()[1].split(' ')
             self.utm_east_offset = float(offsets[0])
             self.utm_north_offset = float(offsets[1])
-
-    def create_gcps(self, _file):
-        if not io.file_exists(_file):
-            log.ODM_ERROR('Could not find file %s' % _file)
-            return
-
-        with open(_file) as f:
-            # parse coordinates
-            lines = f.readlines()[2:]
-            for l in lines:
-                xyz = l.split(' ')
-                if len(xyz) == 3:
-                    x, y, z = xyz[:3]
-                elif len(xyz) == 2:
-                    x, y = xyz[:2]
-                    z = 0
-                self.gcps.append(ODM_GCPoint(float(x), float(y), float(z)))
-                # Write to json file
 
     def parse_transformation_matrix(self, _file):
         if not io.file_exists(_file):
