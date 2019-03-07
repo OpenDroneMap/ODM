@@ -1,11 +1,13 @@
 import ecto
 import sys
+import os
 
 from opendm import log
 from opendm import io
 from opendm import system
 from opendm import context
 from opendm import gsd
+from opendm import point_cloud
 
 class ODMOpenSfMCell(ecto.Cell):
     def declare_params(self, params):
@@ -170,6 +172,9 @@ class ODMOpenSfMCell(ecto.Cell):
             if args.fast_orthophoto:
                 system.run('PYTHONPATH=%s %s/bin/opensfm export_ply --no-cameras %s' %
                         (context.pyopencv_path, context.opensfm_path, tree.opensfm))
+
+                # Filter
+                point_cloud.filter(os.path.join(tree.opensfm, 'reconstruction.ply'), standard_deviation=args.pc_filter, verbose=args.verbose)
             elif args.use_opensfm_dense:
                 # Undistort images at full scale in JPG
                 # (TODO: we could compare the size of the PNGs if they are < than depthmap_resolution
@@ -179,6 +184,8 @@ class ODMOpenSfMCell(ecto.Cell):
                 system.run('PYTHONPATH=%s %s/bin/opensfm compute_depthmaps %s' %
                         (context.pyopencv_path, context.opensfm_path, tree.opensfm))
 
+                # Filter
+                point_cloud.filter(tree.opensfm_model, standard_deviation=args.pc_filter, verbose=args.verbose)
         else:
             log.ODM_WARNING('Found a valid OpenSfM reconstruction file in: %s' %
                             tree.opensfm_reconstruction)
