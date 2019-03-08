@@ -432,14 +432,6 @@ def config():
                         help=('Orthophoto resolution in cm / pixel.\n'
                               'Default: %(default)s'))
 
-    parser.add_argument('--orthophoto-target-srs',
-                        metavar="<EPSG:XXXX>",
-                        type=str,
-                        default=None,
-                        help='Target spatial reference for orthophoto creation. '
-                             'Not implemented yet.\n'
-                             'Default: %(default)s')
-
     parser.add_argument('--orthophoto-no-tiled',
                         action='store_true',
                         default=False,
