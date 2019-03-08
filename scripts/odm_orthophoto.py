@@ -13,7 +13,6 @@ from opendm.cropper import Cropper
 class ODMOrthoPhotoCell(ecto.Cell):
     def declare_params(self, params):
         params.declare("resolution", 'Orthophoto resolution in cm / pixel', 5)
-        params.declare("t_srs", 'Target SRS', None)
         params.declare("no_tiled", 'Do not tile tiff', False)
         params.declare("compress", 'Compression type', 'DEFLATE')
         params.declare("bigtiff", 'Make BigTIFF orthophoto', 'IF_SAFER')
