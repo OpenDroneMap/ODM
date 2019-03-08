@@ -462,11 +462,6 @@ def config():
                         default=False,
                         help='Build orthophoto overviews using gdaladdo.')
 
-    parser.add_argument('--zip-results',
-                        action='store_true',
-                        default=False,
-                        help='compress the results using gunzip')
-
     parser.add_argument('--verbose', '-v',
                         action='store_true',
                         default=False,
