@@ -31,7 +31,6 @@ RUN mkdir /code
 WORKDIR /code
 
 # Copy repository files
-COPY ccd_defs_check.py /code/ccd_defs_check.py
 COPY CMakeLists.txt /code/CMakeLists.txt
 COPY configure.sh /code/configure.sh
 COPY /modules/ /code/modules/

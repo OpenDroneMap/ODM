@@ -9,12 +9,6 @@ from opendm import log
 from opendm import system
 from shutil import copyfile
 
-
-def make_odm_photo(force_focal, force_ccd, path_file):
-    return types.ODM_Photo(path_file,
-                           force_focal,
-                           force_ccd)
-
 def save_images_database(photos, database_file):
     with open(database_file, 'w') as f:
         f.write(json.dumps(map(lambda p: p.__dict__, photos)))
@@ -45,10 +39,6 @@ def load_images_database(database_file):
 class ODMLoadDatasetCell(ecto.Cell):
 
     def declare_params(self, params):
-        params.declare("force_focal", 'Override the focal length information for the '
-                       'images', None)
-        params.declare("force_ccd", 'Override the ccd width information for the '
-                       'images', None)
         params.declare("verbose", 'indicate verbosity', False)
         params.declare("proj", 'Geographic projection', None)
 
@@ -106,8 +96,8 @@ class ODMLoadDatasetCell(ecto.Cell):
 
                 photos = []
                 with open(tree.dataset_list, 'w') as dataset_list:
-                    for files in path_files:
-                        photos += [make_odm_photo(self.params.force_focal, self.params.force_ccd, files)]
+                    for f in path_files:
+                        photos += [types.ODM_Photo(f)]
                         dataset_list.write(photos[-1].filename + '\n')
 
                 # Save image database for faster restart

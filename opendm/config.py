@@ -91,20 +91,9 @@ def config():
                         metavar='<string>',
                         help='Path to config file for orb-slam')
 
-    parser.add_argument('--force-focal',
-                        metavar='<positive float>',
-                        type=float,
-                        help=('Override the focal length information for the '
-                              'images'))
-
     parser.add_argument('--proj',
                         metavar='<PROJ4 string>',
                         help='Projection used to transform the model into geographic coordinates')
-
-    parser.add_argument('--force-ccd',
-                        metavar='<positive float>',
-                        type=float,
-                        help='Override the ccd width information for the images')
 
     parser.add_argument('--min-num-features',
                         metavar='<integer>',
@@ -443,14 +432,6 @@ def config():
                         help=('Orthophoto resolution in cm / pixel.\n'
                               'Default: %(default)s'))
 
-    parser.add_argument('--orthophoto-target-srs',
-                        metavar="<EPSG:XXXX>",
-                        type=str,
-                        default=None,
-                        help='Target spatial reference for orthophoto creation. '
-                             'Not implemented yet.\n'
-                             'Default: %(default)s')
-
     parser.add_argument('--orthophoto-no-tiled',
                         action='store_true',
                         default=False,
@@ -480,11 +461,6 @@ def config():
                         action='store_true',
                         default=False,
                         help='Build orthophoto overviews using gdaladdo.')
-
-    parser.add_argument('--zip-results',
-                        action='store_true',
-                        default=False,
-                        help='compress the results using gunzip')
 
     parser.add_argument('--verbose', '-v',
                         action='store_true',
