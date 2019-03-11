@@ -220,7 +220,7 @@ def config():
 
     parser.add_argument('--mve-output-scale',
                         metavar='<positive integer>',
-                        default=1,
+                        default=2,
                         type=int,
                         help='The scale of the optimization - the '
                         'finest resolution of the bicubic patches will have the'

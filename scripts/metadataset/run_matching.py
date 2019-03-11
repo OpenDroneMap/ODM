@@ -31,18 +31,19 @@ class SMMatchingCell(ecto.Cell):
         result = 0
 
         # check if we rerun cell or not
-        if True: # not util.check_rerun(args, 'sm_reconstruction'):
+        if sm_meta.progress < 1:  # util.is_run(args, 'sm_reconstruction') or sm_meta.progress < 1:
             command = os.path.join(context.opensfm_path, 'bin', 'opensfm')
             path = tree.opensfm
 
             run_command([command, 'extract_metadata', path])
             run_command([command, 'detect_features', path])
             run_command([command, 'match_features', path])
+
+            sm_meta.update_progress(1)
+            sm_meta.save_progress(tree.sm_progress)
         else: 
             log.ODM_DEBUG("Skipping Matching")
 
-        sm_meta.update_progress(1)
-        sm_meta.save_progress(tree.sm_progress)
         self.outputs.sm_meta = sm_meta
 
         return ecto.OK if args.end_with != 'sm_matching' else ecto.QUIT

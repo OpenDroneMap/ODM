@@ -104,6 +104,7 @@ class SMSetupCell(ecto.Cell):
         create_config(opensfm_path, args)
         link_image_groups(data_path, opensfm_path)
         
+        log.ODM_DEBUG(tree.sm_progress)
         sm_meta.save_progress(tree.sm_progress)
         self.outputs.sm_meta = sm_meta
 

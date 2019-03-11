@@ -34,13 +34,14 @@ class SMSplitCell(ecto.Cell):
         command = os.path.join(context.opensfm_path, 'bin', 'opensfm')
         path = tree.opensfm
 
-        if True: # util.check_rerun(args, 'sm_split'):
+        if sm_meta.progress < 2: ## True: # util.check_rerun(args, 'sm_split'):
+            log.ODM_DEBUG("Running Split")
             run_command([command, 'create_submodels', path])
+            sm_meta.update_progress(2)
+            sm_meta.save_progress(tree.sm_progress)
         else: 
             log.ODM_DEBUG("Skipping Split")
 
-        sm_meta.update_progress(2)
-        sm_meta.save_progress(tree.sm_progress)
         self.outputs.sm_meta = sm_meta
 
         return ecto.OK if args.end_with != 'sm_split' else ecto.QUIT

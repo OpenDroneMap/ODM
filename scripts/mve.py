@@ -78,7 +78,7 @@ class ODMMveCell(ecto.Cell):
 
             # run mve
             system.run('%s %s %s' % (context.mve_path, ' '.join(config), tree.mve))
-            system.run('%s %s %s %s' % (context.mve_path_pc, ' -S1 ', tree.mve, tree.mve_model))
+            system.run('OMP_NUM_THREADS=8 %s -F%s %s %s' % (context.mve_path_pc, args.mve_output_scale, tree.mve, tree.mve_model))
             
             # find and rename the output file for simplicity
             mve_files = glob.glob(os.path.join(tree.mve, 'mve-*'))

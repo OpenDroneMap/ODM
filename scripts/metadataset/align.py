@@ -33,13 +33,13 @@ class SMAlignCell(ecto.Cell):
         command = os.path.join(context.opensfm_path, 'bin', 'opensfm')
         path = tree.opensfm
 
-        if True: # util.check_rerun(args, 'sm_align'):
+        if sm_meta.progress < 4: # util.check_rerun(args, 'sm_align'):
             run_command([command, 'align_submodels', path])
+            sm_meta.update_progress(4)
+            sm_meta.save_progress(tree.sm_progress)
         else:
             log.ODM_DEBUG("Skipping Alignment")
 
-        sm_meta.update_progress(4)
-        sm_meta.save_progress(tree.sm_progress)
         self.outputs.sm_meta = sm_meta
 
         return ecto.OK if args.end_with != 'sm_align' else ecto.QUIT

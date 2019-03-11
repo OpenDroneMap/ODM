@@ -112,17 +112,21 @@ class ODMApp(ecto.BlackBox):
             'sm_merge': 6
         }
 
-        if p.args.start_with.startswith('sm_'):
-            progress = sm_progress[p.args.start_with]
-        elif p.args.rerun and p.args.rerun.startswith('sm_'):
-            progress = sm_progress[p.args.rerun]
-        elif p.args.rerun_from and p.args.rerun_from.startswith('sm_'):
-            progress = sm_progress[p.args.start_with]
-        else:
-            progress = 0
+        if p.args.large:
+            sm_meta = types.SplitMerge(p.args.name, 0)
+	    sm_meta.load_progress(tree.sm_progress)
 
-        sm_meta = types.SplitMerge(p.args.name, progress)
-        self.sm_meta = ecto.Constant(value=sm_meta)
+            if p.args.start_with.startswith('sm_'):
+                progress = sm_progress[p.args.start_with]
+            elif p.args.rerun and p.args.rerun.startswith('sm_'):
+                progress = sm_progress[p.args.rerun]
+            elif p.args.rerun_from and p.args.rerun_from.startswith('sm_'):
+                progress = sm_progress[p.args.start_with]
+            else:
+                progress = sm_meta.progress
+
+	    sm_meta.update_progress(progress)
+            self.sm_meta = ecto.Constant(value=sm_meta)
 
         # TODO(dakota) put this somewhere better maybe
         if p.args.time and io.file_exists(tree.benchmarking):

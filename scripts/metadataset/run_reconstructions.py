@@ -8,7 +8,7 @@ from opensfm.large import metadataset
 from opendm import util
 from opendm import context
 from opendm import log
-
+from opendm import gsd
 
 def run_command(args):
     result = subprocess.Popen(args).wait()
@@ -16,14 +16,12 @@ def run_command(args):
     	log.ODM_ERROR("The command '{}' exited with return value {}". format(
         	' '.join(args), result))
 
-
-
 class Reconstructor:
     def __init__(self, command, run_matching):
         self.command = command
         self.run_matching = run_matching
 
-    def __call__(self, submodel_path):
+    def __call__(self, submodel_path, image_scale):
         log.ODM_INFO("=======================================================")
         log.ODM_INFO("Reconstructing submodel {}".format(submodel_path))
         log.ODM_INFO("=======================================================")
@@ -37,6 +35,7 @@ class Reconstructor:
 
         run_command([self.command, 'create_tracks', submodel_path])
         run_command([self.command, 'reconstruct', submodel_path])
+        run_command([self.command, 'export_visualsfm', '--image_extension', 'png', '--scale_focal', '1.0', submodel_path])
 
         log.ODM_INFO("=======================================================")
         log.ODM_INFO("Submodel {} reconstructed".format(submodel_path))
@@ -69,22 +68,29 @@ class SMReconstructionCell(ecto.Cell):
 
         meta_data = metadataset.MetaDataSet(path)
 
-        if True: # util.check_rerun(args, 'sm_reconstruction'):
+        if sm_meta.progress < 3: # True: # util.check_rerun(args, 'sm_reconstruction'):
             submodel_paths = meta_data.get_submodel_paths()
             reconstructor = Reconstructor(command, args.run_matching)
+
+            # if not args.ignore_gsd:
+            #    image_scale = gsd.image_scale_factor(args.orthophoto_resolution, tree.opensfm_reconstruction)
+            # else:
+            #     image_scale = 1.0
+            image_scale = 1.0     #TODO: get the paths aboce to work right 
 
             processes = 1 # meta_data.config['processes']
             if processes == 1:
                 for submodel_path in submodel_paths:
-                    reconstructor(submodel_path)
+                    reconstructor(submodel_path, image_scale)
             else:
                 p = multiprocessing.Pool(processes)
-                p.map(reconstructor, submodel_paths)
+                p.map(reconstructor, submodel_paths, image_scale)
+
+            sm_meta.update_progress(3)
+            sm_meta.save_progress(tree.sm_progress)
         else:
             log.ODM_DEBUG("Skipping Reconstruction")
 
-        sm_meta.update_progress(3)
-        sm_meta.save_progress(tree.sm_progress)
         self.outputs.sm_meta = sm_meta
 
         return ecto.OK if args.end_with != 'sm_reconstruction' else ecto.QUIT
