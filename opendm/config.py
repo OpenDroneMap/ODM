@@ -53,12 +53,6 @@ def config():
                         help='resizes images by the largest side for opensfm. '
                              'Set to -1 to disable. Default:  %(default)s')
 
-    parser.add_argument('--start-with', '-s',
-                        metavar='<string>',
-                        default='resize',
-                        choices=processopts,
-                        help=('Can be one of: ' + ' | '.join(processopts)))
-
     parser.add_argument('--end-with', '-e',
                         metavar='<string>',
                         default='odm_orthophoto',
