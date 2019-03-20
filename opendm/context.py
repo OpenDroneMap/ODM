@@ -28,6 +28,8 @@ makescene_path = os.path.join(superbuild_path, 'src', 'elibs', 'mve', 'apps', 'm
 mve_path = os.path.join(superbuild_path, 'src', 'elibs', 'mve', 'apps', 'dmrecon', 'dmrecon')
 mve_path_pc = os.path.join(superbuild_path, 'src', 'elibs', 'mve', 'apps', 'scene2pset', 'scene2pset')
 
+pdal_path_pc = os.path.join(superbuild_path, 'install/bin/pdal')
+
 poisson_recon_path = os.path.join(superbuild_path, 'src', 'PoissonRecon', 'Bin', 'Linux', 'PoissonRecon')
 dem2mesh_path = os.path.join(superbuild_path, 'src', 'dem2mesh', 'dem2mesh')
 dem2points_path = os.path.join(superbuild_path, 'src', 'dem2points', 'dem2points')
