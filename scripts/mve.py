@@ -68,7 +68,7 @@ class ODMMveCell(ecto.Cell):
 
 
 
-            # config
+            #dmrecon config
             config = [
                 "-s%s" % args.mve_output_scale,
 		#"-s%s" % args.max_concurrency,
@@ -76,19 +76,33 @@ class ODMMveCell(ecto.Cell):
 
             ]
 
-            #run mve
-            system.run('%s %s %s' % (context.mve_path, ' '.join(config), tree.mve))
+            #run dmrecon
+           # system.run('%s %s %s' % (context.mve_path, ' '.join(config), tree.mve))
 
 
-	    #config
+	    #scene2pset config
 	    config = [
 		"-F1",
 		"--with-conf"
 
 		]
 
-            # run mve
+            # run scene2pset
             system.run('%s %s %s %s' % (context.mve_path_pc, ' '.join(config), tree.mve, tree.mve_model))
+
+ 	   #pdal config
+	    config = [
+	        'translate -i mve_dense_point_cloud.ply',
+ 	        '-o filtered.ply',
+	        '-f range range',
+	        '--filters.range.limits=confidence[0.25:1]'
+
+	       ]
+
+
+	    # run pdal
+            system.run('%s %s %s %s' % (context.pdal_path_pc, ' '.join(config), tree.mve, tree.mve_model))
+
            
             # find and rename the output file for simplicity
             mve_files = glob.glob(os.path.join(tree.mve, 'mve-*'))
