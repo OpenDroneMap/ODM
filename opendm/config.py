@@ -118,10 +118,10 @@ def config():
                              'matcher-neighbors and this to 0 to skip '
                              'pre-matching. Default: %(default)s')
 
-    # parser.add_argument('--use-fixed-camera-params',
-    #                     action='store_true',
-    #                     default=False,
-    #                     help='Turn off camera parameter optimization during bundler')
+    parser.add_argument('--use-fixed-camera-params',
+                        action='store_true',
+                        default=False,
+                        help='Turn off camera parameter optimization during bundler')
 
     parser.add_argument('--max-concurrency',
                         metavar='<positive integer>',
