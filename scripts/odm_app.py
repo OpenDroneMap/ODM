@@ -44,6 +44,7 @@ class ODMApp(ecto.BlackBox):
                                            processes=p.args.max_concurrency,
                                            matching_gps_neighbors=p.args.matcher_neighbors,
                                            matching_gps_distance=p.args.matcher_distance,
+                                           fixed_camera_params=p.args.use_fixed_camera_params,
                                            hybrid_bundle_adjustment=p.args.use_hybrid_bundle_adjustment),
                  'slam': ODMSlamCell(),
                  'smvs': ODMSmvsCell(alpha=p.args.smvs_alpha,
