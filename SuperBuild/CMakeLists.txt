@@ -71,7 +71,7 @@ SETUP_EXTERNAL_PROJECT(OpenCV ${ODM_OpenCV_Version} ${ODM_BUILD_OpenCV})
 # ---------------------------------------------------------------------------------------------
 # Point Cloud Library (PCL)
 #
-set(ODM_PCL_Version 1.7.2)
+set(ODM_PCL_Version 1.8.0)
 option(ODM_BUILD_PCL "Force to build PCL library" OFF)
 
 SETUP_EXTERNAL_PROJECT(PCL ${ODM_PCL_Version} ${ODM_BUILD_PCL})
