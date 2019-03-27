@@ -8,6 +8,8 @@ add_subdirectory(odm_extract_utm)
 add_subdirectory(odm_georef)
 add_subdirectory(odm_orthophoto)
 add_subdirectory(odm_cleanmesh)
+add_subdirectory(odm_filterpoints)
+
 if (ODM_BUILD_SLAM)
   add_subdirectory(odm_slam)
 endif ()

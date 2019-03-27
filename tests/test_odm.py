@@ -33,36 +33,12 @@ def setup_module():
 
 def teardown_module():
     # Delete generated test directories
-    dirnames = ['images_resize', 'opensfm', 'pmvs', 'odm_meshing',
+    dirnames = ['opensfm', 'odm_meshing',
                 'odm_texturing', 'odm_georeferencing', 'odm_orthophoto']
     for n in dirnames:
         rmpath = os.path.join(context.tests_data_path, n)
         if os.path.exists(rmpath):
             shutil.rmtree(rmpath)
-
-
-class TestResize(unittest.TestCase):
-    """
-    Tests the resize function
-    """
-
-    def setUp(self):
-        # rerun resize cell and set params
-        options.rerun = 'resize'
-        options.resize_to = 1600
-        # rebuild app
-        self.app, self.plasm = appSetup(options)
-        run_plasm(options, self.plasm)
-
-
-    def test_resize(self):
-        # assert each image is sized to the option.resize_to
-        self.assertEquals(max(self.app.resize.outputs.photos[0].height, self.app.resize.outputs.photos[0].width),
-                          options.resize_to)
-
-    def test_all_resized(self):
-        # assert the number of images in images == number of images in resize
-        self.assertEquals(len(self.app.resize.outputs.photos), len(self.app.dataset.outputs.photos))
 
 
 class TestOpenSfM(unittest.TestCase):
@@ -77,28 +53,6 @@ class TestOpenSfM(unittest.TestCase):
     def test_opensfm(self):
         # Test configuration
         self.assertTrue(os.path.isfile(self.app.opensfm.inputs.tree.opensfm_reconstruction))
-
-
-class TestCMVS(unittest.TestCase):
-
-    def setUp(self):
-        options.rerun = 'cmvs'
-        self.app, self.plasm = appSetup(options)
-        run_plasm(options, self.plasm)
-
-    def test_cmvs(self):
-        self.assertTrue(os.path.isfile(self.app.cmvs.inputs.tree.pmvs_bundle))
-
-
-class TestPMVS(unittest.TestCase):
-
-    def setUp(self):
-        options.rerun = 'pmvs'
-        self.app, self.plasm = appSetup(options)
-        run_plasm(options, self.plasm)
-
-    def test_pmvs(self):
-        self.assertTrue(os.path.isfile(self.app.pmvs.inputs.tree.pmvs_model))
 
 
 class TestMeshing(unittest.TestCase):
