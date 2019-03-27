@@ -77,7 +77,7 @@ class ODMMveCell(ecto.Cell):
             ]
 
             #run dmrecon
-           # system.run('%s %s %s' % (context.mve_path, ' '.join(config), tree.mve))
+            system.run('%s %s %s' % (context.mve_path, ' '.join(config), tree.mve))
 
 
 	    #scene2pset config
@@ -94,8 +94,8 @@ class ODMMveCell(ecto.Cell):
 	    config = [
 	        'translate -i mve_dense_point_cloud.ply',
  	        '-o filtered.ply',
-	        '-f range range',
-	        '--filters.range.limits=confidence[0.25:1]'
+	        '-f range',
+	        '--filters.range.limits="confidence[0.25:1]"'
 
 	       ]
 
