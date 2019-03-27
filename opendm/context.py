@@ -18,7 +18,6 @@ sys.path.append(pyopencv_path)
 
 # define opensfm path
 opensfm_path = os.path.join(superbuild_path, "src/opensfm")
-ccd_widths_path = os.path.join(opensfm_path, 'opensfm/data/sensor_data.json')
 
 # define orb_slam2 path
 orb_slam2_path = os.path.join(superbuild_path, "src/orb_slam2")

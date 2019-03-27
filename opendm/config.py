@@ -53,12 +53,6 @@ def config():
                         help='resizes images by the largest side for opensfm. '
                              'Set to -1 to disable. Default:  %(default)s')
 
-    parser.add_argument('--start-with', '-s',
-                        metavar='<string>',
-                        default='resize',
-                        choices=processopts,
-                        help=('Can be one of: ' + ' | '.join(processopts)))
-
     parser.add_argument('--end-with', '-e',
                         metavar='<string>',
                         default='odm_orthophoto',
@@ -91,20 +85,9 @@ def config():
                         metavar='<string>',
                         help='Path to config file for orb-slam')
 
-    parser.add_argument('--force-focal',
-                        metavar='<positive float>',
-                        type=float,
-                        help=('Override the focal length information for the '
-                              'images'))
-
     parser.add_argument('--proj',
                         metavar='<PROJ4 string>',
                         help='Projection used to transform the model into geographic coordinates')
-
-    parser.add_argument('--force-ccd',
-                        metavar='<positive float>',
-                        type=float,
-                        help='Override the ccd width information for the images')
 
     parser.add_argument('--min-num-features',
                         metavar='<integer>',
@@ -272,13 +255,10 @@ def config():
                           'Default: %(default)s'))
 
     parser.add_argument('--pc-classify',
-            metavar='<string>',
-            default='none',
-            choices=['none', 'smrf', 'pmf'],
-            help='Classify the .LAS point cloud output using either '
-            'a Simple Morphological Filter or a Progressive Morphological Filter. '
-            'If --dtm is set this parameter defaults to smrf. '
-            'You can control the behavior of both smrf and pmf by tweaking the --dem-* parameters. '
+            action='store_true',
+            default=False,
+            help='Classify the point cloud outputs using a Simple Morphological Filter. '
+            'You can control the behavior of this option by tweaking the --dem-* parameters. '
             'Default: '
             '%(default)s')
 
@@ -286,6 +266,19 @@ def config():
                         action='store_true',
                         default=False,
                         help='Export the georeferenced point cloud in CSV format. Default:  %(default)s')
+    
+    parser.add_argument('--pc-las',
+                action='store_true',
+                default=False,
+                help='Export the georeferenced point cloud in LAS format. Default:  %(default)s')
+
+    parser.add_argument('--pc-filter',
+                        metavar='<positive float>',
+                        type=float,
+                        default=2.5,
+                        help='Filters the point cloud by removing points that deviate more than N standard deviations from the local mean. Set to 0 to disable filtering.'
+                             '\nDefault: '
+                             '%(default)s')
 
     parser.add_argument('--texturing-data-term',
                         metavar='<string>',
@@ -393,39 +386,6 @@ def config():
                         help='DSM/DTM resolution in cm / pixel.'
                              '\nDefault: %(default)s')
 
-    parser.add_argument('--dem-maxangle',
-                        metavar='<positive float>',
-                        type=float,
-                        default=20,
-                        help='Points that are more than maxangle degrees off-nadir are discarded. '
-                             '\nDefault: '
-                             '%(default)s')
-
-    parser.add_argument('--dem-maxsd',
-                        metavar='<positive float>',
-                        type=float,
-                        default=2.5,
-                        help='Points that deviate more than maxsd standard deviations from the local mean '
-                             'are discarded. \nDefault: '
-                             '%(default)s')
-
-    parser.add_argument('--dem-initial-distance',
-                        metavar='<positive float>',
-                        type=float,
-                        default=0.15,
-                        help='Used to classify ground vs non-ground points. Set this value to account for Z noise in meters. '
-                             'If you have an uncertainty of around 15 cm, set this value large enough to not exclude these points. '
-                             'Too small of a value will exclude valid ground points, while too large of a value will misclassify non-ground points for ground ones. '
-                             '\nDefault: '
-                             '%(default)s')
-
-    parser.add_argument('--dem-approximate',
-                        action='store_true',
-                        default=False,
-                        help='Use this tag use the approximate progressive  '
-                             'morphological filter, which computes DEMs faster '
-                             'but is not as accurate.')
-
     parser.add_argument('--dem-decimation',
                         metavar='<positive integer>',
                         default=1,
@@ -434,31 +394,12 @@ def config():
                              '100 decimates ~99%% of the points. Useful for speeding up '
                              'generation.\nDefault=%(default)s')
 
-    parser.add_argument('--dem-terrain-type',
-                        metavar='<string>',
-                        choices=['FlatNonForest', 'FlatForest', 'ComplexNonForest', 'ComplexForest'],
-                        default='ComplexForest',
-                        help='One of: %(choices)s. Specifies the type of terrain. This mainly helps reduce processing time. '
-                             '\nFlatNonForest: Relatively flat region with little to no vegetation'
-                             '\nFlatForest: Relatively flat region that is forested'
-                             '\nComplexNonForest: Varied terrain with little to no vegetation'
-                             '\nComplexForest: Varied terrain that is forested'
-                             '\nDefault=%(default)s')
-
     parser.add_argument('--orthophoto-resolution',
                         metavar='<float > 0.0>',
                         default=5,
                         type=float,
                         help=('Orthophoto resolution in cm / pixel.\n'
                               'Default: %(default)s'))
-
-    parser.add_argument('--orthophoto-target-srs',
-                        metavar="<EPSG:XXXX>",
-                        type=str,
-                        default=None,
-                        help='Target spatial reference for orthophoto creation. '
-                             'Not implemented yet.\n'
-                             'Default: %(default)s')
 
     parser.add_argument('--orthophoto-no-tiled',
                         action='store_true',
@@ -489,11 +430,6 @@ def config():
                         action='store_true',
                         default=False,
                         help='Build orthophoto overviews using gdaladdo.')
-
-    parser.add_argument('--zip-results',
-                        action='store_true',
-                        default=False,
-                        help='compress the results using gunzip')
 
     parser.add_argument('--verbose', '-v',
                         action='store_true',
@@ -526,12 +462,12 @@ def config():
       log.ODM_INFO('Fast orthophoto is turned on, automatically setting --skip-3dmodel')
       args.skip_3dmodel = True
 
-    if args.dtm and args.pc_classify == 'none':
+    if args.dtm and not args.pc_classify:
       log.ODM_INFO("DTM is turned on, automatically turning on point cloud classification")
-      args.pc_classify = "smrf"
+      args.pc_classify = True
 
     if args.skip_3dmodel and args.use_3dmesh:
-      log.ODM_WARNING('--skip-3dmodel is set, but so is --use-3dmesh. You can\'t have both!')
-      sys.exit(1)
+      log.ODM_WARNING('--skip-3dmodel is set, but so is --use-3dmesh. --use_3dmesh will be ignored.')
+      args.use_3dmesh = False
 
     return args

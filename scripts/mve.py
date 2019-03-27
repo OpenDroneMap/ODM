@@ -4,6 +4,7 @@ from opendm import log
 from opendm import io
 from opendm import system
 from opendm import context
+from opendm import point_cloud
 
 
 class ODMMveCell(ecto.Cell):
@@ -77,7 +78,7 @@ class ODMMveCell(ecto.Cell):
             ]
 
             #run dmrecon
-           # system.run('%s %s %s' % (context.mve_path, ' '.join(config), tree.mve))
+            system.run('%s %s %s' % (context.mve_path, ' '.join(config), tree.mve))
 
 
 	    #scene2pset config
@@ -94,8 +95,8 @@ class ODMMveCell(ecto.Cell):
 	    config = [
 	        'translate -i mve_dense_point_cloud.ply',
  	        '-o filtered.ply',
-	        '-f range range',
-	        '--filters.range.limits=confidence[0.25:1]'
+	        '-f range',
+	        '--filters.range.limits="confidence[0.25:1]"'
 
 	       ]
 
@@ -111,6 +112,9 @@ class ODMMveCell(ecto.Cell):
                 old_file = mve_files[-1]
                 if not (io.rename_file(old_file, tree.mve_model)):
                     log.ODM_WARNING("File %s does not exist, cannot be renamed. " % old_file)
+
+                # Filter
+                point_cloud.filter(tree.smvs_model, standard_deviation=args.pc_filter, verbose=args.verbose)
             else:
                 log.ODM_WARNING("Cannot find a valid point cloud (mve-XX.ply) in %s. Check the console output for errors." % tree.mve)
         else:
