@@ -9,6 +9,7 @@ from opendm import types
 from opendm import system
 from opendm import context
 from opendm.cropper import Cropper
+from opendm import point_cloud
 
 
 class ODMGeoreferencingCell(ecto.Cell):
@@ -60,11 +61,15 @@ class ODMGeoreferencingCell(ecto.Cell):
             runs = []
 
         if not args.use_3dmesh:
-            runs += [{
+            # Make sure 2.5D mesh is georeferenced before the 3D mesh
+            # Because it will be used to calculate a transform
+            # for the point cloud. If we use the 3D model transform,
+            # DEMs and orthophoto might not align!
+            runs.insert(0, {
                     'georeferencing_dir': tree.odm_25dgeoreferencing,
                     'texturing_dir': tree.odm_25dtexturing,
                     'model': os.path.join(tree.odm_25dtexturing, tree.odm_textured_model_obj)
-                }]
+                })
 
         for r in runs:
             odm_georeferencing_model_obj_geo = os.path.join(r['texturing_dir'], tree.odm_georeferencing_model_obj_geo)
@@ -103,7 +108,7 @@ class ODMGeoreferencingCell(ecto.Cell):
                 if transformPointCloud:
                     kwargs['pc_params'] = '-inputPointCloudFile {input_pc_file} -outputPointCloudFile {output_pc_file}'.format(**kwargs)
 
-                    if geo_ref.projection and geo_ref.projection.srs:
+                    if geo_ref and geo_ref.projection and geo_ref.projection.srs:
                         kwargs['pc_params'] += ' -outputPointCloudSrs %s' % pipes.quote(geo_ref.projection.srs)
                     else:
                         log.ODM_WARNING('NO SRS: The output point cloud will not have a SRS.')
@@ -157,7 +162,16 @@ class ODMGeoreferencingCell(ecto.Cell):
                             "--writers.text.keep_unspecified=false ".format(
                                 tree.odm_georeferencing_model_laz,
                                 tree.odm_georeferencing_xyz_file))
-
+                    
+                    # LAS point cloud output
+                    if args.pc_las:
+                        log.ODM_INFO("Creating geo-referenced LAS file")
+                        
+                        system.run("pdal translate -i \"{}\" "
+                            "-o \"{}\" ".format(
+                                tree.odm_georeferencing_model_laz,
+                                tree.odm_georeferencing_model_las))
+                    
                     if args.crop > 0:
                         log.ODM_INFO("Calculating cropping area and generating bounds shapefile from point cloud")
                         cropper = Cropper(tree.odm_georeferencing, 'odm_georeferenced_model')
