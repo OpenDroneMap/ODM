@@ -4,6 +4,7 @@ from opendm import log
 from opendm import io
 from opendm import system
 from opendm import context
+from opendm import point_cloud
 
 
 class ODMMveCell(ecto.Cell):
@@ -111,6 +112,9 @@ class ODMMveCell(ecto.Cell):
                 old_file = mve_files[-1]
                 if not (io.rename_file(old_file, tree.mve_model)):
                     log.ODM_WARNING("File %s does not exist, cannot be renamed. " % old_file)
+
+                # Filter
+                point_cloud.filter(tree.smvs_model, standard_deviation=args.pc_filter, verbose=args.verbose)
             else:
                 log.ODM_WARNING("Cannot find a valid point cloud (mve-XX.ply) in %s. Check the console output for errors." % tree.mve)
         else:

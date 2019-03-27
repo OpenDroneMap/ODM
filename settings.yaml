@@ -5,7 +5,7 @@
 # or --force-ccd n will have to be set in the command line (if you need to)
 
 # This line is really important to set up properly
-project_path: '' # Example: '/home/user/ODMProjects
+project_path:  '' # Example: '/home/user/ODMProjects'
 
 # The rest of the settings will default to the values set unless you uncomment and change them
 #resize_to: 2048
