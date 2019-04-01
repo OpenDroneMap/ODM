@@ -7,12 +7,31 @@ from opendm import context
 from opendm import point_cloud
 
 
+#class PDAL(ecto.Cell):
+#
+#    def declare_params(self, params):
+#        params.declare("mve_filter_range", "min confidence value", 0.5)
+#
+#    def declare_io(self, params, inputs, outputs):
+#	
+#    #pdal confi
+#    config = [
+#    'translate -i %s',
+#    '-o %s',
+#    '-f range',
+#    '%s' % args.mve_filter_range
+#    #'--filters.range.limits="confidence[0.25:1]"'
+#	       ]
+#
+#    # run pdal
+#    system.run('%s %s %s %s' % (context.pdal_path_pc, ' '.join(config), tree.mve_model, tree.mve_model_output))
+
 class ODMMveCell(ecto.Cell):
 
     def declare_params(self, params):
         params.declare("mve_output_scale", "scale of optimization", 2)
         params.declare("max_concurrency", "max number of threads", 3)
-
+#        params.declare("mve_filter_range", "min confidence value", 0.5)
 
     def declare_io(self, params, inputs, outputs):
         inputs.declare("tree", "Struct with paths", [])
@@ -85,7 +104,6 @@ class ODMMveCell(ecto.Cell):
 	    config = [
 		"-F1",
 		"--with-conf"
-
 		]
 
             # run scene2pset
@@ -93,16 +111,16 @@ class ODMMveCell(ecto.Cell):
 
  	   #pdal config
 	    config = [
-	        'translate -i mve_dense_point_cloud.ply',
- 	        '-o filtered.ply',
-	        '-f range',
-	        '--filters.range.limits="confidence[0.25:1]"'
-
+	        "translate -i /home/useruser/ODMProjects/set16/mve/mve_dense_point_cloud.ply",
+ 	        "-o /home/useruser/ODMProjects/set16/mve",
+	        "-f range",
+	        #'%s' % args.mve_filter_range
+		'--filters.range.limits="confidence[0.25:1]"'
 	       ]
 
 
 	    # run pdal
-            system.run('%s %s %s %s' % (context.pdal_path_pc, ' '.join(config), tree.mve, tree.mve_model))
+            system.run('%s %s %s %s %s %s' % (context.pdal_path_pc, ' translate -i ', tree.mve_model, '-o ', tree.mve_model_output, ' -f range --filters.range.limits="confidence[0.25:1]"'))
 
            
             # find and rename the output file for simplicity
