@@ -49,7 +49,7 @@ class ODMeshingCell(ecto.Cell):
                      (args.rerun_from is not None and
                       'odm_meshing' in args.rerun_from)
 
-        infile = tree.mve_model
+        infile = tree.mve_model_output
         if args.fast_orthophoto:
           infile = os.path.join(tree.opensfm, 'reconstruction.ply')
         elif args.use_opensfm_dense:
