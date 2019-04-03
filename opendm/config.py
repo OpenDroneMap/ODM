@@ -171,6 +171,15 @@ def config():
                         help='Run local bundle adjustment for every image added to the reconstruction and a global '
                              'adjustment every 100 images. Speeds up reconstruction for very large datasets.')
 
+    parser.add_argument('--mve-confidence',
+                        metavar='<float: 0 <= x <= 1>',
+                        type=float,
+                        default=0.1,
+                        help=('Discard points that have less than a certain confidence threshold. '
+                              'This only affects dense reconstructions performed with MVE. '
+                              'Higher values discard more points. '
+                              'Default: %(default)s'))
+
     parser.add_argument('--use-3dmesh',
                     action='store_true',
                     default=False,
