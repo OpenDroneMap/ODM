@@ -59,29 +59,43 @@ class ODMMveCell(ecto.Cell):
             if not io.dir_exists(tree.mve_views):
                 system.run('%s %s %s' % (context.makescene_path, tree.mve_path, tree.mve))
 
+            # Compute mve output scale based on depthmap_resolution
+            max_width = 0
+            max_height = 0
+            for photo in photos:
+                max_width = max(photo.width, max_width)
+                max_height = max(photo.height, max_height)
+
+            min_depthmap_pixels = args.depthmap_resolution * args.depthmap_resolution
+            image_pixels = max_width * max_height
+
+            mve_output_scale = 0
+            while True:
+                image_pixels = int(image_pixels / 4)
+                if image_pixels <= min_depthmap_pixels: break
+                mve_output_scale += 1
+
+            # Can we get closer to the requested resolution by dividing one more time?
+            if abs(int(image_pixels / 4) - min_depthmap_pixels) < abs(image_pixels - min_depthmap_pixels):
+                mve_output_scale += 1
+
             dmrecon_config = [
-                "--max-pixels=%s" % int(args.depthmap_resolution * args.depthmap_resolution),
-                # "-s%s" % args.mve_output_scale,
+                "-s%s" % mve_output_scale,
 	            "--progress=silent",
                 "--force",
             ]
 
             # Run MVE's dmrecon
+            log.ODM_INFO("Running dense reconstruction. This might take a while. Please be patient, the process is not dead or hang.")
             system.run('%s %s %s' % (context.dmrecon_path, ' '.join(dmrecon_config), tree.mve))
 
             scene2pset_config = [
-                "-F1",
-                "--with-conf"
+                "-F%s" % mve_output_scale
             ]
 
             # run scene2pset
             system.run('%s %s "%s" "%s"' % (context.scene2pset_path, ' '.join(scene2pset_config), tree.mve, tree.mve_model))
 
-            # run pdal
-            # system.run('pdal translate -i {} '
-            #            ' -o {} '
-            #            ' -f range --filters.range.limits="confidence[0.25:1]'.format(tree.mve_model, tree.mve_model_output))
-        
             # find and rename the output file for simplicity
             mve_files = glob.glob(os.path.join(tree.mve, 'mve-*'))
             mve_files.sort(key=os.path.getmtime) # sort by last modified date

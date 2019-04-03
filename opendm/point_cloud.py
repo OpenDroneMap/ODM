@@ -3,7 +3,7 @@ from opendm import system
 from opendm import log
 from opendm import context
 
-def filter(inputPointCloud, outputPointCloud, standard_deviation=2.5, meank=16, verbose=False):
+def filter(inputPointCloud, outputPointCloud, standard_deviation=2.5, meank=16, confidence=None, verbose=False):
     """
     Filters a point cloud
     """
@@ -12,6 +12,8 @@ def filter(inputPointCloud, outputPointCloud, standard_deviation=2.5, meank=16, 
         return
 
     log.ODM_INFO("Filtering point cloud (statistical, meanK {}, standard deviation {})".format(meank, standard_deviation))
+    if confidence:
+        log.ODM_INFO("Keeping only points with > %s confidence" % confidence)
 
     if not os.path.exists(inputPointCloud):
         log.ODM_ERROR("{} does not exist, cannot filter point cloud. The program will now exit.".format(inputPointCloud))
@@ -29,13 +31,14 @@ def filter(inputPointCloud, outputPointCloud, standard_deviation=2.5, meank=16, 
       'outputFile': outputPointCloud,
       'sd': standard_deviation,
       'meank': meank,
-      'verbose': '--verbose' if verbose else '',
+      'verbose': '-verbose' if verbose else '',
+      'confidence': '-confidence %s' % confidence if confidence else '',
     }
 
     system.run('{bin} -inputFile {inputFile} '
          '-outputFile {outputFile} '
          '-sd {sd} '
-         '-meank {meank} {verbose} '.format(**filterArgs))
+         '-meank {meank} {confidence} {verbose} '.format(**filterArgs))
 
     # Remove input file, swap temp file
     if not os.path.exists(outputPointCloud):

@@ -41,8 +41,11 @@ class ODMFilterPoints(ecto.Cell):
             else:
                 inputPointCloud = tree.mve_model
 
-            # TODO add MVE filter
-            point_cloud.filter(inputPointCloud, tree.filtered_point_cloud, standard_deviation=args.pc_filter, verbose=args.verbose)
+            confidence = None
+            if not args.use_opensfm_dense and not args.fast_orthophoto:
+                confidence = args.mve_confidence
+
+            point_cloud.filter(inputPointCloud, tree.filtered_point_cloud, standard_deviation=args.pc_filter, confidence=confidence, verbose=args.verbose)
         else:
             log.ODM_WARNING('Found a valid point cloud file in: %s' %
                             tree.filtered_point_cloud)
