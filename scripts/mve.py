@@ -82,6 +82,7 @@ class ODMMveCell(ecto.Cell):
             dmrecon_config = [
                 "-s%s" % mve_output_scale,
 	            "--progress=silent",
+                "--local-neighbors=3",
                 "--force",
             ]
 
