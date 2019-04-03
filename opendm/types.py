@@ -252,8 +252,8 @@ class ODM_Tree(object):
         self.odm_25dtexturing = io.join_paths(self.root_path, 'odm_texturing_25d')
         self.odm_georeferencing = io.join_paths(self.root_path, 'odm_georeferencing')
         self.odm_25dgeoreferencing = io.join_paths(self.root_path, 'odm_25dgeoreferencing')
+        self.odm_filterpoints = io.join_paths(self.root_path, 'odm_filterpoints')
         self.odm_orthophoto = io.join_paths(self.root_path, 'odm_orthophoto')
-        self.odm_pdal = io.join_paths(self.root_path, 'pdal')
 
         # important files paths
 
@@ -277,6 +277,9 @@ class ODM_Tree(object):
         self.mve_image_list = io.join_paths(self.mve_path, 'list.txt')
         self.mve_bundle = io.join_paths(self.mve_path, 'bundle/bundle.out')
         self.mve_views = io.join_paths(self.mve, 'views')
+
+        # filter points
+        self.filtered_point_cloud = io.join_paths(self.odm_filterpoints, "point_cloud.ply")
 
         # odm_meshing
         self.odm_mesh = io.join_paths(self.odm_meshing, 'odm_mesh.ply')

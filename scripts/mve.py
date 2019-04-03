@@ -7,12 +7,6 @@ from opendm import context
 from opendm import point_cloud
 
 class ODMMveCell(ecto.Cell):
-
-    def declare_params(self, params):
-        params.declare("mve_output_scale", "scale of optimization", 2)
-        params.declare("max_concurrency", "max number of threads", 3)
-#        params.declare("mve_filter_range", "min confidence value", 0.5)
-
     def declare_io(self, params, inputs, outputs):
         inputs.declare("tree", "Struct with paths", [])
         inputs.declare("args", "The application arguments.", {})
@@ -20,7 +14,6 @@ class ODMMveCell(ecto.Cell):
         outputs.declare("reconstruction", "list of ODMReconstructions", [])
 
     def process(self, inputs, outputs):
-
         # Benchmarking
         start_time = system.now_raw()
 
@@ -66,32 +59,27 @@ class ODMMveCell(ecto.Cell):
             if not io.dir_exists(tree.mve_views):
                 system.run('%s %s %s' % (context.makescene_path, tree.mve_path, tree.mve))
 
-
-
-            #dmrecon config
-            config = [
+            dmrecon_config = [
                 "-s%s" % args.mve_output_scale,
-		#"-s%s" % args.max_concurrency,
-	        "--progress=silent"
-
+	            "--progress=silent"
             ]
 
-            #run dmrecon
-            system.run('%s %s %s' % (context.mve_path, ' '.join(config), tree.mve))
+            # Run MVE's dmrecon
+            system.run('%s %s %s' % (context.dmrecon_path, ' '.join(dmrecon_config), tree.mve))
 
-
-	    #scene2pset config
-	    config = [
-		"-F1",
-		"--with-conf"
-		]
+            scene2pset_config = [
+                "-F1",
+                "--with-conf"
+            ]
 
             # run scene2pset
-            system.run('%s %s %s %s' % (context.mve_path_pc, ' '.join(config), tree.mve, tree.mve_model))
+            system.run('%s %s "%s" "%s"' % (context.scene2pset_path, ' '.join(scene2pset_config), tree.mve, tree.mve_model))
 
-	    # run pdal
-            system.run('%s %s %s %s %s %s' % (context.pdal_path_pc, ' translate -i ', tree.mve_model, '-o ', tree.mve_model_output, ' -f range --filters.range.limits="confidence[0.25:1]"'))
-           
+            # run pdal
+            system.run('pdal translate -i {} '
+                       ' -o {} '
+                       ' -f range --filters.range.limits="confidence[0.25:1]'.format(tree.mve_model, tree.mve_model_output))
+        
             # find and rename the output file for simplicity
             mve_files = glob.glob(os.path.join(tree.mve, 'mve-*'))
             mve_files.sort(key=os.path.getmtime) # sort by last modified date
@@ -99,9 +87,6 @@ class ODMMveCell(ecto.Cell):
                 old_file = mve_files[-1]
                 if not (io.rename_file(old_file, tree.mve_model)):
                     log.ODM_WARNING("File %s does not exist, cannot be renamed. " % old_file)
-
-                # Filter
-                point_cloud.filter(tree.mve_model_output, standard_deviation=args.pc_filter, verbose=args.verbose)
             else:
                 log.ODM_WARNING("Cannot find a valid point cloud (mve-XX.ply) in %s. Check the console output for errors." % tree.mve)
         else:
