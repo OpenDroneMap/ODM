@@ -15,6 +15,7 @@ from mvstex import ODMMvsTexCell
 from odm_georeferencing import ODMGeoreferencingCell
 from odm_orthophoto import ODMOrthoPhotoCell
 from odm_dem import ODMDEMCell
+from odm_filterpoints import ODMFilterPoints
 
 
 class ODMApp(ecto.BlackBox):
@@ -48,8 +49,9 @@ class ODMApp(ecto.BlackBox):
                                            hybrid_bundle_adjustment=p.args.use_hybrid_bundle_adjustment),
                  'slam': ODMSlamCell(),
                  
-                 'mve': ODMMveCell(mve_output_scale=p.args.mve_output_scale,
-				   max_concurrency=p.args.max_concurrency),
+                 'mve': ODMMveCell(),
+
+                 'filterpoints': ODMFilterPoints(),
                  
                  'meshing': ODMeshingCell(max_vertex=p.args.mesh_size,
                                           oct_tree=p.args.mesh_octree_depth,
@@ -96,13 +98,6 @@ class ODMApp(ecto.BlackBox):
         if p.args.video:
             return self.slam_connections(p)
 
-        # define initial task
-        # TODO: What is this?
-        # initial_task = p.args['start_with']
-        # initial_task_id = config.processopts.index(initial_task)
-
-        # define the connections like you would for the plasm
-
         # load the dataset
         connections = [self.tree[:] >> self.dataset['tree'],
                        self.args[:] >> self.dataset['args']]
@@ -113,21 +108,25 @@ class ODMApp(ecto.BlackBox):
                         self.dataset['reconstruction'] >> self.opensfm['reconstruction']]
 
         if p.args.use_opensfm_dense or p.args.fast_orthophoto:
-            # create odm mesh from opensfm point cloud
-            connections += [self.tree[:] >> self.meshing['tree'],
-                            self.args[:] >> self.meshing['args'],
-                            self.opensfm['reconstruction'] >> self.meshing['reconstruction']]
+            # filter points from opensfm point cloud
+            connections += [self.tree[:] >> self.filterpoints['tree'],
+                            self.args[:] >> self.filterpoints['args'],
+                            self.opensfm['reconstruction'] >> self.filterpoints['reconstruction']]
         else:
             # run mve
-
             connections += [self.tree[:] >> self.mve['tree'],
                             self.args[:] >> self.mve['args'],
                             self.opensfm['reconstruction'] >> self.mve['reconstruction']]
 
-            # create odm mesh from mve point cloud
-            connections += [self.tree[:] >> self.meshing['tree'],
-                            self.args[:] >> self.meshing['args'],
-                            self.mve['reconstruction'] >> self.meshing['reconstruction']]
+            # filter points from mve point cloud
+            connections += [self.tree[:] >> self.filterpoints['tree'],
+                            self.args[:] >> self.filterpoints['args'],
+                            self.mve['reconstruction'] >> self.filterpoints['reconstruction']]
+
+        # create mesh
+        connections += [self.tree[:] >> self.meshing['tree'],
+                        self.args[:] >> self.meshing['args'],
+                        self.filterpoints['reconstruction'] >> self.meshing['reconstruction']]
 
         # create odm texture
         connections += [self.tree[:] >> self.texturing['tree'],

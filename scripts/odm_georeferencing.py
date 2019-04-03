@@ -83,6 +83,7 @@ class ODMGeoreferencingCell(ecto.Cell):
                 # odm_georeference definitions
                 kwargs = {
                     'bin': context.odm_modules_path,
+                    'input_pc_file': tree.filtered_point_cloud,
                     'bundle': tree.opensfm_bundle,
                     'imgs': tree.dataset_raw,
                     'imgs_list': tree.opensfm_bundle_list,
@@ -97,13 +98,6 @@ class ODMGeoreferencingCell(ecto.Cell):
                     'gcp': gcpfile,
                     'verbose': verbose
                 }
-
-                if args.fast_orthophoto:
-                    kwargs['input_pc_file'] = os.path.join(tree.opensfm, 'reconstruction.ply')
-                elif args.use_opensfm_dense:
-                    kwargs['input_pc_file'] = tree.opensfm_model
-                else:
-                    kwargs['input_pc_file'] = tree.mve_model
 
                 if transformPointCloud:
                     kwargs['pc_params'] = '-inputPointCloudFile {input_pc_file} -outputPointCloudFile {output_pc_file}'.format(**kwargs)
