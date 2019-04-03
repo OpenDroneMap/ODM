@@ -201,16 +201,6 @@ def config():
                         help=('The maximum vertex count of the output mesh. '
                               'Default: %(default)s'))
 
-    parser.add_argument('--mve-output-scale',
-                        metavar='<positive integer>',
-                        default=1,
-                        type=int,
-                        help='The scale of the optimization - the '
-                        'finest resolution of the bicubic patches will have the'
-                        ' size of the respective power of 2 (e.g. 2 will '
-                        'optimize patches covering down to 4x4 pixels). '
-                        'Default: %(default)s')
-    
     parser.add_argument('--mesh-octree-depth',
                         metavar='<positive integer>',
                         default=9,

@@ -60,8 +60,10 @@ class ODMMveCell(ecto.Cell):
                 system.run('%s %s %s' % (context.makescene_path, tree.mve_path, tree.mve))
 
             dmrecon_config = [
-                "-s%s" % args.mve_output_scale,
-	            "--progress=silent"
+                "--max-pixels=%s" % int(args.depthmap_resolution * args.depthmap_resolution),
+                # "-s%s" % args.mve_output_scale,
+	            "--progress=silent",
+                "--force",
             ]
 
             # Run MVE's dmrecon
@@ -76,9 +78,9 @@ class ODMMveCell(ecto.Cell):
             system.run('%s %s "%s" "%s"' % (context.scene2pset_path, ' '.join(scene2pset_config), tree.mve, tree.mve_model))
 
             # run pdal
-            system.run('pdal translate -i {} '
-                       ' -o {} '
-                       ' -f range --filters.range.limits="confidence[0.25:1]'.format(tree.mve_model, tree.mve_model_output))
+            # system.run('pdal translate -i {} '
+            #            ' -o {} '
+            #            ' -f range --filters.range.limits="confidence[0.25:1]'.format(tree.mve_model, tree.mve_model_output))
         
             # find and rename the output file for simplicity
             mve_files = glob.glob(os.path.join(tree.mve, 'mve-*'))
