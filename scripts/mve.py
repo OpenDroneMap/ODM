@@ -128,6 +128,7 @@ class ODMMveCell(ecto.Cell):
             log.ODM_INFO('                                     .**,                                      ')
             log.ODM_INFO('')
             log.ODM_INFO("Running dense reconstruction. This might take a while. Please be patient, the process is not dead or hung.")
+            log.ODM_INFO("                              Process is running")
             system.run('%s %s %s' % (context.dmrecon_path, ' '.join(dmrecon_config), tree.mve))
 
             scene2pset_config = [
