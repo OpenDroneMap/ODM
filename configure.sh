@@ -96,10 +96,7 @@ install() {
                          libboost-log-dev
 
     echo "Installing split-merge Dependencies"
-    pip install -U scipy shapely numpy pyproj
-
-    pip install -U https://github.com/gipit/gippy/archive/1.0.0.zip psutil
-
+    pip install -U scipy numpy==1.15.4 shapely pyproj https://github.com/OpenDroneMap/gippy/archive/numpyfix.zip psutil
 
     echo "Compiling SuperBuild"
     cd ${RUNPATH}/SuperBuild

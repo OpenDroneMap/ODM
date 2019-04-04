@@ -38,7 +38,7 @@ docker run -it --rm \
     -v "$(pwd)/images:/code/images" \
     -v "$(pwd)/odm_orthophoto:/code/odm_orthophoto" \
     -v "$(pwd)/odm_texturing:/code/odm_texturing" \
-    opendronemap/opendronemap
+    opendronemap/odm
 ```
 
 ### Native Install (Ubuntu 16.04)
@@ -167,7 +167,7 @@ instructions through "Create a Docker group". Once Docker is installed, the fast
         -v "$(pwd)/images:/code/images" \
         -v "$(pwd)/odm_orthophoto:/code/odm_orthophoto" \
         -v "$(pwd)/odm_texturing:/code/odm_texturing" \
-        opendronemap/opendronemap
+        opendronemap/odm
 
 If you want to build your own Docker image from sources, type:
 
@@ -200,7 +200,7 @@ If you want to get all intermediate outputs, run the following command:
         -v "$(pwd)/odm_texturing:/code/odm_texturing" \
         -v "$(pwd)/opensfm:/code/opensfm" \
         -v "$(pwd)/smvs:/code/smvs" \
-        opendronemap/opendronemap
+        opendronemap/odm
 
 To pass in custom parameters to the run.py script, simply pass it as arguments to the `docker run` command. For example:
 
@@ -208,7 +208,7 @@ To pass in custom parameters to the run.py script, simply pass it as arguments t
         -v "$(pwd)/images:/code/images" \
         -v "$(pwd)/odm_orthophoto:/code/odm_orthophoto" \
         -v "$(pwd)/odm_texturing:/code/odm_texturing" \
-        opendronemap/opendronemap --resize-to 1800 --force-ccd 6.16
+        opendronemap/odm --resize-to 1800
 
 If you want to pass in custom parameters using the settings.yaml file, you can pass it as a -v volume binding:
 
@@ -217,7 +217,7 @@ If you want to pass in custom parameters using the settings.yaml file, you can p
         -v "$(pwd)/odm_orthophoto:/code/odm_orthophoto" \
         -v "$(pwd)/odm_texturing:/code/odm_texturing" \
         -v "$(pwd)/settings.yaml:/code/settings.yaml" \
-        opendronemap/opendronemap
+        opendronemap/odm
 
 When building your own Docker image, if image size is of importance to you, you should use the ```--squash``` flag, like so:
 
