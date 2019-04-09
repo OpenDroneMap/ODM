@@ -120,21 +120,6 @@ class ODMLoadDatasetCell(ecto.Cell):
                 # Generate UTM from images
                 try:
                     if not io.file_exists(tree.odm_georeferencing_coords) or rerun_cell:
-                        verbose = '-verbose' if self.params.verbose else ''
-                        kwargs = {
-                            'bin': context.odm_modules_path,
-                            'imgs': tree.dataset_raw,
-                            'imgs_list': tree.dataset_list,
-                            'coords': tree.odm_georeferencing_coords + '.old.txt',
-                            'log': tree.odm_georeferencing_utm_log,
-                            'verbose': verbose
-                        }
-                        
-                        # TODO: remove call to odm_extract_utm
-                        system.run('{bin}/odm_extract_utm -imagesPath {imgs}/ '
-                                                            '-imageListFile {imgs_list} -outputCoordFile {coords} {verbose} '
-                                                            '-logFile {log}'.format(**kwargs))
-                        
                         location.extract_utm_coords(photos, tree.dataset_raw, tree.odm_georeferencing_coords)
                     else:
                         log.ODM_INFO("Coordinates file already exist: %s" % tree.odm_georeferencing_coords)
