@@ -12,8 +12,7 @@ def extract_utm_coords(photos, images_path, output_coords_file):
     :return None
     """
     if len(photos) == 0:
-        log.ODM_ERROR("No input images, cannot create coordinates file of GPS positions")
-        return
+        raise Exception("No input images, cannot create coordinates file of GPS positions")
     
     utm_zone = None
     hemisphere = None
