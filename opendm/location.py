@@ -32,7 +32,10 @@ def extract_utm_coords(photos, images_path, output_coords_file):
             raise Exception("Failed to convert GPS position to UTM for %s" % photo.filename)
         
         coords.append(coord)
-    
+
+    if utm_zone is None:
+        raise Exception("No images seem to have GPS information")
+        
     # Calculate average
     dx = 0.0
     dy = 0.0
