@@ -130,7 +130,6 @@ RUN rm -rf \
   /code/SuperBuild/build/opencv \
   /code/SuperBuild/download \
   /code/SuperBuild/src/ceres \
-  /code/SuperBuild/src/exiv2lib \
   /code/SuperBuild/src/mvstexturing \
   /code/SuperBuild/src/opencv \
   /code/SuperBuild/src/opengv \
