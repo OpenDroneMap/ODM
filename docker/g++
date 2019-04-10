@@ -9,4 +9,4 @@ do
     fi
 done
 
-/usr/bin/g++_real -march=core2 $args
+/usr/bin/g++_real -march=nehalem $args
