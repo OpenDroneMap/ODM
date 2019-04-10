@@ -155,6 +155,7 @@ def run_pipeline(json, verbose=False):
     cmd = [
         'pdal',
         'pipeline',
+        '--nostream',
         '-i %s' % jsonfile
     ]
     if verbose:

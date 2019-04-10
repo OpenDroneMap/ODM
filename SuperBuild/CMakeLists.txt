@@ -112,7 +112,6 @@ set(custom_libs OpenGV
 				Catkin
 				Ecto
 				LASzip
-                Exiv2
 				PDAL
 				MvsTexturing
 )
@@ -132,7 +131,7 @@ endforeach()
 
 externalproject_add(mve
     GIT_REPOSITORY  https://github.com/simonfuhrmann/mve.git
-    GIT_TAG         fb942b4458dbf8490c9a4c6b81b9b9f57c593c0f
+    GIT_TAG         4328bb4d1666113e919213daea4fe6b2ff9be588
     UPDATE_COMMAND  ""
     SOURCE_DIR      ${SB_SOURCE_DIR}/elibs/mve
     CONFIGURE_COMMAND ""

@@ -87,8 +87,11 @@ class ODMOpenSfMCell(ecto.Cell):
 
             if has_alt:
                 log.ODM_DEBUG("Altitude data detected, enabling it for GPS alignment")
-                config.append("use_altitude_tag: True")
+                config.append("use_altitude_tag: yes")
                 config.append("align_method: naive")
+            else:
+                config.append("align_method: orientation_prior")
+                config.append("align_orientation_prior: vertical")
 
             if args.use_hybrid_bundle_adjustment:
                 log.ODM_DEBUG("Enabling hybrid bundle adjustment")
