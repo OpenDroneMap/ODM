@@ -1,4 +1,4 @@
-import ecto, shutil, os, glob
+import ecto, shutil, os, glob, math
 
 from opendm import log
 from opendm import io
@@ -66,23 +66,17 @@ class ODMMveCell(ecto.Cell):
                 max_width = max(photo.width, max_width)
                 max_height = max(photo.height, max_height)
 
-            min_depthmap_pixels = args.depthmap_resolution * args.depthmap_resolution
-            image_pixels = max_width * max_height
-
-            mve_output_scale = 0
-            while True:
-                image_pixels = int(image_pixels / 4)
-                if image_pixels <= min_depthmap_pixels: break
-                mve_output_scale += 1
-
-            # Can we get closer to the requested resolution by dividing one more time?
-            if abs(int(image_pixels / 4) - min_depthmap_pixels) < abs(image_pixels - min_depthmap_pixels):
-                mve_output_scale += 1
+            max_pixels = args.depthmap_resolution * args.depthmap_resolution
+            if max_width * max_height <= max_pixels:
+                mve_output_scale = 0
+            else:
+                ratio = float(max_width * max_height) / float(max_pixels)
+                mve_output_scale = int(math.ceil(math.log(ratio) / math.log(4.0)))
 
             dmrecon_config = [
                 "-s%s" % mve_output_scale,
 	            "--progress=silent",
-                "--local-neighbors=3",
+                "--local-neighbors=2",
                 "--force",
             ]
 
@@ -137,16 +131,6 @@ class ODMMveCell(ecto.Cell):
 
             # run scene2pset
             system.run('%s %s "%s" "%s"' % (context.scene2pset_path, ' '.join(scene2pset_config), tree.mve, tree.mve_model))
-
-            # find and rename the output file for simplicity
-            mve_files = glob.glob(os.path.join(tree.mve, 'mve-*'))
-            mve_files.sort(key=os.path.getmtime) # sort by last modified date
-            if len(mve_files) > 0:
-                old_file = mve_files[-1]
-                if not (io.rename_file(old_file, tree.mve_model)):
-                    log.ODM_WARNING("File %s does not exist, cannot be renamed. " % old_file)
-            else:
-                log.ODM_WARNING("Cannot find a valid point cloud (mve-XX.ply) in %s. Check the console output for errors." % tree.mve)
         else:
             log.ODM_WARNING('Found a valid MVE reconstruction file in: %s' %
                             tree.mve_model)
