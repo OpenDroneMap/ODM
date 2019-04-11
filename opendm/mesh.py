@@ -24,14 +24,14 @@ def create_25dmesh(inPointCloud, outMesh, dsm_radius=0.07, dsm_resolution=0.05, 
 
     log.ODM_INFO('Creating DSM for 2.5D mesh')
 
-    commands.create_dems(
-            [inPointCloud],
+    commands.create_dem(
+            inPointCloud,
             'mesh_dsm',
-            radius=map(str, radius_steps),
+            output_type='max',
+            radiuses=map(str, radius_steps),
             gapfill=True,
             outdir=tmp_directory,
             resolution=dsm_resolution,
-            products=['max'],
             verbose=verbose,
             max_workers=get_max_concurrency_for_dem(available_cores, inPointCloud)
         )

@@ -86,11 +86,12 @@ class ODMDEMCell(ecto.Cell):
                     radius_steps.append(radius_steps[-1] * 2) # 2 is arbitrary, maybe there's a better value?
 
                 for product in products:
-                    commands.create_dems(
-                            [tree.odm_georeferencing_model_laz],
+                    commands.create_dem(
+                            tree.odm_georeferencing_model_laz,
                             product,
-                            radius=map(str, radius_steps),
-                            gapfill=True,
+                            output_type='idw' if product == 'dtm' else 'max'
+                            radiuses=map(str, radius_steps),
+                            gapfill=args.dem_gapfill_steps > 0,
                             outdir=odm_dem_root,
                             resolution=resolution / 100.0,
                             decimation=args.dem_decimation,
