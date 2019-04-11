@@ -174,7 +174,7 @@ def config():
     parser.add_argument('--mve-confidence',
                         metavar='<float: 0 <= x <= 1>',
                         type=float,
-                        default=0.25,
+                        default=0.60,
                         help=('Discard points that have less than a certain confidence threshold. '
                               'This only affects dense reconstructions performed with MVE. '
                               'Higher values discard more points. '
