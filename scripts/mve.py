@@ -57,7 +57,7 @@ class ODMMveCell(ecto.Cell):
 
             # run mve makescene
             if not io.dir_exists(tree.mve_views):
-                system.run('%s %s %s' % (context.makescene_path, tree.mve_path, tree.mve))
+                system.run('%s %s %s' % (context.makescene_path, tree.mve_path, tree.mve), env_vars={'OMP_NUM_THREADS': args.max_concurrency})
 
             # Compute mve output scale based on depthmap_resolution
             max_width = 0
@@ -123,14 +123,14 @@ class ODMMveCell(ecto.Cell):
             log.ODM_INFO('')
             log.ODM_INFO("Running dense reconstruction. This might take a while. Please be patient, the process is not dead or hung.")
             log.ODM_INFO("                              Process is running")
-            system.run('%s %s %s' % (context.dmrecon_path, ' '.join(dmrecon_config), tree.mve))
+            system.run('%s %s %s' % (context.dmrecon_path, ' '.join(dmrecon_config), tree.mve), env_vars={'OMP_NUM_THREADS': args.max_concurrency})
 
             scene2pset_config = [
                 "-F%s" % mve_output_scale
             ]
 
             # run scene2pset
-            system.run('%s %s "%s" "%s"' % (context.scene2pset_path, ' '.join(scene2pset_config), tree.mve, tree.mve_model))
+            system.run('%s %s "%s" "%s"' % (context.scene2pset_path, ' '.join(scene2pset_config), tree.mve, tree.mve_model), env_vars={'OMP_NUM_THREADS': args.max_concurrency})
         else:
             log.ODM_WARNING('Found a valid MVE reconstruction file in: %s' %
                             tree.mve_model)
