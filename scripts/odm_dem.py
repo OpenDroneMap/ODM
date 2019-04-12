@@ -9,7 +9,6 @@ from opendm import types
 from opendm import gsd
 from opendm.dem import commands
 from opendm.cropper import Cropper
-from opendm.concurrency import get_max_concurrency_for_dem
 
 class ODMDEMCell(ecto.Cell):
     def declare_params(self, params):
@@ -89,14 +88,14 @@ class ODMDEMCell(ecto.Cell):
                     commands.create_dem(
                             tree.odm_georeferencing_model_laz,
                             product,
-                            output_type='idw' if product == 'dtm' else 'max'
+                            output_type='idw' if product == 'dtm' else 'max',
                             radiuses=map(str, radius_steps),
                             gapfill=args.dem_gapfill_steps > 0,
                             outdir=odm_dem_root,
                             resolution=resolution / 100.0,
                             decimation=args.dem_decimation,
                             verbose=args.verbose,
-                            max_workers=get_max_concurrency_for_dem(args.max_concurrency,tree.odm_georeferencing_model_laz)
+                            max_workers=args.max_concurrency
                         )
 
                     if args.crop > 0:

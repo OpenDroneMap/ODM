@@ -5,7 +5,6 @@ from opendm.dem import commands
 from opendm import system
 from opendm import log
 from opendm import context
-from opendm.concurrency import get_max_concurrency_for_dem
 from scipy import signal, ndimage
 import numpy as np
 
@@ -33,7 +32,7 @@ def create_25dmesh(inPointCloud, outMesh, dsm_radius=0.07, dsm_resolution=0.05, 
             outdir=tmp_directory,
             resolution=dsm_resolution,
             verbose=verbose,
-            max_workers=get_max_concurrency_for_dem(available_cores, inPointCloud)
+            max_workers=available_cores
         )
 
     if method == 'gridded':
