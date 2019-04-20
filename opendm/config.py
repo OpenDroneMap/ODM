@@ -226,7 +226,7 @@ def config():
                               'and default value: %(default)s'))
 
     parser.add_argument('--mesh-point-weight',
-                        metavar='<interpolation weight>',
+                        metavar='<positive float>',
                         default=4,
                         type=float,
                         help=('This floating point value specifies the importance'
@@ -278,6 +278,38 @@ def config():
                         help='Filters the point cloud by removing points that deviate more than N standard deviations from the local mean. Set to 0 to disable filtering.'
                              '\nDefault: '
                              '%(default)s')
+
+    parser.add_argument('--smrf-scalar',
+                        metavar='<positive float>',
+                        type=float,
+                        default=1.25,
+                        help='Simple Morphological Filter elevation scalar parameter. '
+                             '\nDefault: '
+                             '%(default)s')
+
+    parser.add_argument('--smrf-slope',
+        metavar='<positive float>',
+        type=float,
+        default=0.15,
+        help='Simple Morphological Filter slope parameter (rise over run). '
+                '\nDefault: '
+                '%(default)s')
+    
+    parser.add_argument('--smrf-threshold',
+        metavar='<positive float>',
+        type=float,
+        default=0.5,
+        help='Simple Morphological Filter elevation threshold parameter (meters). '
+                '\nDefault: '
+                '%(default)s')
+    
+    parser.add_argument('--smrf-window',
+        metavar='<positive float>',
+        type=float,
+        default=18.0,
+        help='Simple Morphological Filter window radius parameter (meters). '
+                '\nDefault: '
+                '%(default)s')
 
     parser.add_argument('--texturing-data-term',
                         metavar='<string>',
@@ -359,14 +391,14 @@ def config():
     parser.add_argument('--dtm',
                         action='store_true',
                         default=False,
-                        help='Use this tag to build a DTM (Digital Terrain Model, ground only) using a progressive '
-                             'morphological filter. Check the --dem* parameters for fine tuning.')
+                        help='Use this tag to build a DTM (Digital Terrain Model, ground only) using a simple '
+                             'morphological filter. Check the --dem* and --smrf* parameters for finer tuning.')
 
     parser.add_argument('--dsm',
                         action='store_true',
                         default=False,
                         help='Use this tag to build a DSM (Digital Surface Model, ground + objects) using a progressive '
-                             'morphological filter. Check the --dem* parameters for fine tuning.')
+                             'morphological filter. Check the --dem* parameters for finer tuning.')
 
     parser.add_argument('--dem-gapfill-steps',
                         metavar='<positive integer>',

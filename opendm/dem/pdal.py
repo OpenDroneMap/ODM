@@ -163,7 +163,7 @@ def run_pipeline(json, verbose=False):
     os.remove(jsonfile)
 
 
-def run_pdaltranslate_smrf(fin, fout, slope, cellsize, maxWindowSize, verbose=False):
+def run_pdaltranslate_smrf(fin, fout, scalar, slope, threshold, window, verbose=False):
     """ Run PDAL translate  """
     cmd = [
         'pdal',
@@ -171,11 +171,11 @@ def run_pdaltranslate_smrf(fin, fout, slope, cellsize, maxWindowSize, verbose=Fa
         '-i %s' % fin,
         '-o %s' % fout,
         'smrf',
-        '--filters.smrf.cell=%s' % cellsize,
+        '--filters.smrf.scalar=%s' % scalar,
         '--filters.smrf.slope=%s' % slope,
+        '--filters.smrf.threshold=%s' % threshold,
+        '--filters.smrf.window=%s' % window,
     ]
-    if maxWindowSize is not None:
-        cmd.append('--filters.smrf.window=%s' % maxWindowSize)
 
     if verbose:
         print ' '.join(cmd)
