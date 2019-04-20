@@ -18,11 +18,11 @@ import threading
 
 from . import pdal
 
-def classify(lasFile, slope=0.15, cellsize=1, maxWindowSize=18, verbose=False):
+def classify(lasFile, scalar, slope, threshold, window, verbose=False):
     start = datetime.now()
 
     try:
-        pdal.run_pdaltranslate_smrf(lasFile, lasFile, slope, cellsize, maxWindowSize, verbose)
+        pdal.run_pdaltranslate_smrf(lasFile, lasFile, scalar, slope, threshold, window, verbose)
     except:
         raise Exception("Error creating classified file %s" % fout)
 
