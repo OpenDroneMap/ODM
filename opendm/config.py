@@ -7,7 +7,7 @@ from appsettings import SettingsParser
 import sys
 
 # parse arguments
-processopts = ['dataset', 'opensfm', 'slam', 'smvs',
+processopts = ['dataset', 'opensfm', 'slam', 'mve', 'odm_filterpoints',
                'odm_meshing', 'odm_25dmeshing', 'mvs_texturing', 'odm_georeferencing',
                'odm_dem', 'odm_orthophoto']
 
@@ -171,6 +171,15 @@ def config():
                         help='Run local bundle adjustment for every image added to the reconstruction and a global '
                              'adjustment every 100 images. Speeds up reconstruction for very large datasets.')
 
+    parser.add_argument('--mve-confidence',
+                        metavar='<float: 0 <= x <= 1>',
+                        type=float,
+                        default=0.60,
+                        help=('Discard points that have less than a certain confidence threshold. '
+                              'This only affects dense reconstructions performed with MVE. '
+                              'Higher values discard more points. '
+                              'Default: %(default)s'))
+
     parser.add_argument('--use-3dmesh',
                     action='store_true',
                     default=False,
@@ -193,41 +202,6 @@ def config():
                         'caps the maximum resolution of image outputs and '
                         'resizes images when necessary, resulting in faster processing and '
                         'lower memory usage. Since GSD is an estimate, sometimes ignoring it can result in slightly better image output quality.')
-
-    parser.add_argument('--smvs-alpha',
-                        metavar='<float>',
-                        default=1.0,
-                        type=float,
-                        help='Regularization parameter, a higher alpha leads to '
-                        'smoother surfaces. Default: %(default)s')
-
-    parser.add_argument('--smvs-output-scale',
-                        metavar='<positive integer>',
-                        default=1,
-                        type=int,
-                        help='The scale of the optimization - the '
-                        'finest resolution of the bicubic patches will have the'
-                        ' size of the respective power of 2 (e.g. 2 will '
-                        'optimize patches covering down to 4x4 pixels). '
-                        'Default: %(default)s')
-
-    parser.add_argument('--smvs-enable-shading',
-                        action='store_true',
-                        default=False,
-                        help='Use shading-based optimization. This model cannot '
-                        'handle complex scenes. Try to supply linear images to '
-                        'the reconstruction pipeline that are not tone mapped '
-                        'or altered as this can also have very negative effects '
-                        'on the reconstruction. If you have simple JPGs with SRGB '
-                        'gamma correction you can remove it with the --smvs-gamma-srgb '
-                        'option. Default: %(default)s')
-
-    parser.add_argument('--smvs-gamma-srgb',
-                        action='store_true',
-                        default=False,
-                        help='Apply inverse SRGB gamma correction. To be used '
-                        'with --smvs-enable-shading when you have simple JPGs with '
-                        'SRGB gamma correction. Default: %(default)s')
 
     parser.add_argument('--mesh-size',
                         metavar='<positive integer>',
@@ -252,7 +226,7 @@ def config():
                               'and default value: %(default)s'))
 
     parser.add_argument('--mesh-point-weight',
-                        metavar='<interpolation weight>',
+                        metavar='<positive float>',
                         default=4,
                         type=float,
                         help=('This floating point value specifies the importance'
@@ -304,6 +278,38 @@ def config():
                         help='Filters the point cloud by removing points that deviate more than N standard deviations from the local mean. Set to 0 to disable filtering.'
                              '\nDefault: '
                              '%(default)s')
+
+    parser.add_argument('--smrf-scalar',
+                        metavar='<positive float>',
+                        type=float,
+                        default=1.25,
+                        help='Simple Morphological Filter elevation scalar parameter. '
+                             '\nDefault: '
+                             '%(default)s')
+
+    parser.add_argument('--smrf-slope',
+        metavar='<positive float>',
+        type=float,
+        default=0.15,
+        help='Simple Morphological Filter slope parameter (rise over run). '
+                '\nDefault: '
+                '%(default)s')
+    
+    parser.add_argument('--smrf-threshold',
+        metavar='<positive float>',
+        type=float,
+        default=0.5,
+        help='Simple Morphological Filter elevation threshold parameter (meters). '
+                '\nDefault: '
+                '%(default)s')
+    
+    parser.add_argument('--smrf-window',
+        metavar='<positive float>',
+        type=float,
+        default=18.0,
+        help='Simple Morphological Filter window radius parameter (meters). '
+                '\nDefault: '
+                '%(default)s')
 
     parser.add_argument('--texturing-data-term',
                         metavar='<string>',
@@ -385,14 +391,14 @@ def config():
     parser.add_argument('--dtm',
                         action='store_true',
                         default=False,
-                        help='Use this tag to build a DTM (Digital Terrain Model, ground only) using a progressive '
-                             'morphological filter. Check the --dem* parameters for fine tuning.')
+                        help='Use this tag to build a DTM (Digital Terrain Model, ground only) using a simple '
+                             'morphological filter. Check the --dem* and --smrf* parameters for finer tuning.')
 
     parser.add_argument('--dsm',
                         action='store_true',
                         default=False,
                         help='Use this tag to build a DSM (Digital Surface Model, ground + objects) using a progressive '
-                             'morphological filter. Check the --dem* parameters for fine tuning.')
+                             'morphological filter. Check the --dem* parameters for finer tuning.')
 
     parser.add_argument('--dem-gapfill-steps',
                         metavar='<positive integer>',

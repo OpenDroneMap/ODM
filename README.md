@@ -109,7 +109,7 @@ or
 
     python run.py --rerun-from odm_meshing project-name
 
-The options for rerunning are: 'resize', 'opensfm', 'slam', 'smvs', 'odm_meshing', 'mvs_texturing', 'odm_georeferencing', 'odm_orthophoto'
+The options for rerunning are: 'resize', 'opensfm', 'slam', 'mve', 'odm_meshing', 'mvs_texturing', 'odm_georeferencing', 'odm_orthophoto'
 
 ### View Results
 
@@ -199,7 +199,7 @@ If you want to get all intermediate outputs, run the following command:
         -v "$(pwd)/odm_orthophoto:/code/odm_orthophoto" \
         -v "$(pwd)/odm_texturing:/code/odm_texturing" \
         -v "$(pwd)/opensfm:/code/opensfm" \
-        -v "$(pwd)/smvs:/code/smvs" \
+        -v "$(pwd)/mve:/code/mve" \
         opendronemap/odm
 
 To pass in custom parameters to the run.py script, simply pass it as arguments to the `docker run` command. For example:
