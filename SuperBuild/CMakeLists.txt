@@ -103,14 +103,10 @@ SETUP_EXTERNAL_PROJECT(Hexer 1.4 ON)
 # ---------------------------------------------------------------------------------------------
 # Open Geometric Vision (OpenGV)
 # Open Structure from Motion (OpenSfM)
-# Catkin
-# Ecto
 #
 
 set(custom_libs OpenGV
 				OpenSfM
-				Catkin
-				Ecto
 				LASzip
 				PDAL
 				MvsTexturing
