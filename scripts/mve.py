@@ -1,45 +1,27 @@
-import ecto, shutil, os, glob, math
+import shutil, os, glob, math
 
 from opendm import log
 from opendm import io
 from opendm import system
 from opendm import context
 from opendm import point_cloud
+from opendm import types
 
-class ODMMveCell(ecto.Cell):
-    def declare_io(self, params, inputs, outputs):
-        inputs.declare("tree", "Struct with paths", [])
-        inputs.declare("args", "The application arguments.", {})
-        inputs.declare("reconstruction", "ODMReconstruction", [])
-        outputs.declare("reconstruction", "list of ODMReconstructions", [])
-
-    def process(self, inputs, outputs):
-        # Benchmarking
-        start_time = system.now_raw()
-
-        log.ODM_INFO('Running MVE Cell')
-
+class ODMMveStage(types.ODM_Stage):
+    def process(self, args, outputs):
         # get inputs
-        tree = inputs.tree
-        args = inputs.args
-        reconstruction = inputs.reconstruction
+        tree = outputs['tree']
+        reconstruction = outputs['reconstruction']
         photos = reconstruction.photos
 
         if not photos:
             log.ODM_ERROR('Not enough photos in photos array to start MVE')
-            return ecto.QUIT
-
-        # check if we rerun cell or not
-        rerun_cell = (args.rerun is not None and
-                      args.rerun == 'mve') or \
-                     (args.rerun_all) or \
-                     (args.rerun_from is not None and
-                      'mve' in args.rerun_from)
+            exit(1)
 
         # check if reconstruction was done before
-        if not io.file_exists(tree.mve_model) or rerun_cell:
+        if not io.file_exists(tree.mve_model) or self.rerun():
             # cleanup if a rerun
-            if io.dir_exists(tree.mve_path) and rerun_cell:
+            if io.dir_exists(tree.mve_path) and self.rerun():
                 shutil.rmtree(tree.mve_path)
 
             # make bundle directory
@@ -134,11 +116,3 @@ class ODMMveCell(ecto.Cell):
         else:
             log.ODM_WARNING('Found a valid MVE reconstruction file in: %s' %
                             tree.mve_model)
-
-        outputs.reconstruction = reconstruction
-
-        if args.time:
-            system.benchmark(start_time, tree.benchmarking, 'MVE')
-
-        log.ODM_INFO('Running ODM MVE Cell - Finished')
-        return ecto.OK if args.end_with != 'mve' else ecto.QUIT

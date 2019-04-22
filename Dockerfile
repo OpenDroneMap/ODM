@@ -48,14 +48,11 @@ RUN apt-get install --no-install-recommends -y \
   libvtk6-dev \
   libxext-dev \
   python-dev \
-  python-empy \
   python-gdal \
   python-matplotlib \
   python-networkx \
-  python-nose \
   python-pip \
   python-pyproj \
-  python-pyside \
   python-software-properties \
   python-wheel \
   swig2.0
@@ -65,7 +62,6 @@ RUN pip install --upgrade pip
 RUN pip install setuptools
 RUN pip install -U \
   appsettings \
-  catkin-pkg \
   exifread \
   gpxpy \
   loky \
