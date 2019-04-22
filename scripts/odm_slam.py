@@ -2,40 +2,23 @@
 
 import os
 
-import ecto
-
 from opendm import log
 from opendm import io
 from opendm import system
 from opendm import context
+from opendm import types
 
-
-class ODMSlamCell(ecto.Cell):
+class ODMSlamStage(types.ODM_Stage):
     """Run odm_slam on a video and export to opensfm format."""
 
-    def declare_params(self, params):
-        """Cell parameters."""
-        pass
-
-    def declare_io(self, params, inputs, outputs):
-        """Cell inputs and outputs."""
-        inputs.declare("tree", "Struct with paths", [])
-        inputs.declare("args", "The application arguments.", {})
-        outputs.declare("reconstruction", "list of ODMReconstructions", [])
-
-    def process(self, inputs, outputs):
-        """Run the cell."""
-        log.ODM_INFO('Running OMD Slam Cell')
-
-        # get inputs
-        tree = self.inputs.tree
-        args = self.inputs.args
+    def process(self, args, outputs):
+        tree = outputs['tree']
         video = os.path.join(tree.root_path, args.video)
         slam_config = os.path.join(tree.root_path, args.slam_config)
 
         if not video:
             log.ODM_ERROR('No video provided')
-            return ecto.QUIT
+            exit(1)
 
         # create working directories
         system.mkdir_p(tree.opensfm)
@@ -46,11 +29,8 @@ class ODMSlamCell(ecto.Cell):
         trajectory = os.path.join(tree.opensfm, 'KeyFrameTrajectory.txt')
         map_points = os.path.join(tree.opensfm, 'MapPoints.txt')
 
-        # check if we rerun cell or not
-        rerun_cell = args.rerun == 'slam'
-
         # check if slam was run before
-        if not io.file_exists(trajectory) or rerun_cell:
+        if not io.file_exists(trajectory) or self.rerun():
             # run slam binary
             system.run(' '.join([
                 'cd {} &&'.format(tree.opensfm),
@@ -64,7 +44,7 @@ class ODMSlamCell(ecto.Cell):
                 trajectory))
 
         # check if trajectory was exported to opensfm before
-        if not io.file_exists(tree.opensfm_reconstruction) or rerun_cell:
+        if not io.file_exists(tree.opensfm_reconstruction) or self.rerun():
             # convert slam to opensfm
             system.run(' '.join([
                 'cd {} &&'.format(tree.opensfm),
@@ -85,7 +65,7 @@ class ODMSlamCell(ecto.Cell):
                 tree.opensfm_reconstruction))
 
         # check if reconstruction was exported to bundler before
-        if not io.file_exists(tree.opensfm_bundle_list) or rerun_cell:
+        if not io.file_exists(tree.opensfm_bundle_list) or self.rerun():
             # convert back to bundler's format
             system.run(
                 'PYTHONPATH={} {}/bin/export_bundler {}'.format(
@@ -95,5 +75,3 @@ class ODMSlamCell(ecto.Cell):
                 'Found a valid Bundler file in: {}'.format(
                     tree.opensfm_reconstruction))
 
-        log.ODM_INFO('Running OMD Slam Cell - Finished')
-        return ecto.OK if args.end_with != 'odm_slam' else ecto.QUIT

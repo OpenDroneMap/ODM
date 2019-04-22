@@ -1,4 +1,4 @@
-import ecto, os
+import os
 
 from opendm import io
 from opendm import log
@@ -10,45 +10,16 @@ from opendm.concurrency import get_max_memory
 from opendm.cropper import Cropper
 
 
-class ODMOrthoPhotoCell(ecto.Cell):
-    def declare_params(self, params):
-        params.declare("resolution", 'Orthophoto resolution in cm / pixel', 5)
-        params.declare("no_tiled", 'Do not tile tiff', False)
-        params.declare("compress", 'Compression type', 'DEFLATE')
-        params.declare("bigtiff", 'Make BigTIFF orthophoto', 'IF_SAFER')
-        params.declare("build_overviews", 'Build overviews', False)
-        params.declare("verbose", 'print additional messages to console', False)
-        params.declare("max_concurrency", "number of threads", context.num_cores)
-
-    def declare_io(self, params, inputs, outputs):
-        inputs.declare("tree", "Struct with paths", [])
-        inputs.declare("args", "The application arguments.", {})
-        inputs.declare("reconstruction", "list of ODMReconstructions", [])
-
-    def process(self, inputs, outputs):
-
-        # Benchmarking
-        start_time = system.now_raw()
-
-        log.ODM_INFO('Running ODM Orthophoto Cell')
-
-        # get inputs
-        args = self.inputs.args
-        tree = self.inputs.tree
-        reconstruction = inputs.reconstruction
-        verbose = '-verbose' if self.params.verbose else ''
+class ODMOrthoPhotoStage(types.ODM_Stage):
+    def process(self, args, outputs):
+        tree = outputs['tree']
+        reconstruction = outputs['reconstruction']
+        verbose = '-verbose' if self.params.get('verbose') else ''
 
         # define paths and create working directories
         system.mkdir_p(tree.odm_orthophoto)
 
-        # check if we rerun cell or not
-        rerun_cell = (args.rerun is not None and
-                      args.rerun == 'odm_orthophoto') or \
-                     (args.rerun_all) or \
-                     (args.rerun_from is not None and
-                      'odm_orthophoto' in args.rerun_from)
-
-        if not io.file_exists(tree.odm_orthophoto_file) or rerun_cell:
+        if not io.file_exists(tree.odm_orthophoto_file) or self.rerun():
 
             # odm_orthophoto definitions
             kwargs = {
@@ -56,7 +27,7 @@ class ODMOrthoPhotoCell(ecto.Cell):
                 'log': tree.odm_orthophoto_log,
                 'ortho': tree.odm_orthophoto_file,
                 'corners': tree.odm_orthophoto_corners,
-                'res': 1.0 / (gsd.cap_resolution(self.params.resolution, tree.opensfm_reconstruction, ignore_gsd=args.ignore_gsd) / 100.0),
+                'res': 1.0 / (gsd.cap_resolution(self.params.get('resolution'), tree.opensfm_reconstruction, ignore_gsd=args.ignore_gsd) / 100.0),
                 'verbose': verbose
             }
 
@@ -118,17 +89,17 @@ class ODMOrthoPhotoCell(ecto.Cell):
                     'uly': uly,
                     'lrx': lrx,
                     'lry': lry,
-                    'tiled': '' if self.params.no_tiled else '-co TILED=yes ',
-                    'compress': self.params.compress,
-                    'predictor': '-co PREDICTOR=2 ' if self.params.compress in
+                    'tiled': '' if self.params.get('no_tiled') else '-co TILED=yes ',
+                    'compress': self.params.get('compress'),
+                    'predictor': '-co PREDICTOR=2 ' if self.params.get('compress') in
                                                        ['LZW', 'DEFLATE'] else '',
                     'proj': georef.projection.srs,
-                    'bigtiff': self.params.bigtiff,
+                    'bigtiff': self.params.get('bigtiff'),
                     'png': tree.odm_orthophoto_file,
                     'tiff': tree.odm_orthophoto_tif,
                     'log': tree.odm_orthophoto_tif_log,
                     'max_memory': get_max_memory(),
-                    'threads': self.params.max_concurrency
+                    'threads': self.params.get('max_concurrency')
                 }
 
                 system.run('gdal_translate -a_ullr {ulx} {uly} {lrx} {lry} '
@@ -146,16 +117,16 @@ class ODMOrthoPhotoCell(ecto.Cell):
                 if args.crop > 0:
                     shapefile_path = os.path.join(tree.odm_georeferencing, 'odm_georeferenced_model.bounds.shp')
                     Cropper.crop(shapefile_path, tree.odm_orthophoto_tif, {
-                            'TILED': 'NO' if self.params.no_tiled else 'YES',
-                            'COMPRESS': self.params.compress,
-                            'PREDICTOR': '2' if self.params.compress in ['LZW', 'DEFLATE'] else '1',
-                            'BIGTIFF': self.params.bigtiff,
+                            'TILED': 'NO' if self.params.get('no_tiled') else 'YES',
+                            'COMPRESS': self.params.get('compress'),
+                            'PREDICTOR': '2' if self.params.get('compress') in ['LZW', 'DEFLATE'] else '1',
+                            'BIGTIFF': self.params.get('bigtiff'),
                             'BLOCKXSIZE': 512,
                             'BLOCKYSIZE': 512,
-                            'NUM_THREADS': self.params.max_concurrency
+                            'NUM_THREADS': self.params.get('max_concurrency')
                         })
 
-                if self.params.build_overviews:
+                if self.params.get('build_overviews'):
                     log.ODM_DEBUG("Building Overviews")
                     kwargs = {
                         'orthophoto': tree.odm_orthophoto_tif,
@@ -174,9 +145,3 @@ class ODMOrthoPhotoCell(ecto.Cell):
 
         else:
             log.ODM_WARNING('Found a valid orthophoto in: %s' % tree.odm_orthophoto_file)
-
-        if args.time:
-            system.benchmark(start_time, tree.benchmarking, 'Orthophoto')
-
-        log.ODM_INFO('Running ODM OrthoPhoto Cell - Finished')
-        return ecto.OK if args.end_with != 'odm_orthophoto' else ecto.QUIT

@@ -1,4 +1,4 @@
-import ecto, os, json
+import os, json
 from shutil import copyfile
 
 from opendm import io
@@ -10,33 +10,10 @@ from opendm import gsd
 from opendm.dem import commands
 from opendm.cropper import Cropper
 
-class ODMDEMCell(ecto.Cell):
-    def declare_params(self, params):
-        params.declare("verbose", 'print additional messages to console', False)
-        params.declare("max_concurrency", "Number of threads", context.num_cores)
-
-    def declare_io(self, params, inputs, outputs):
-        inputs.declare("tree", "Struct with paths", [])
-        inputs.declare("args", "The application arguments.", {})
-        inputs.declare("reconstruction", "list of ODMReconstructions", [])
-
-    def process(self, inputs, outputs):
-        # Benchmarking
-        start_time = system.now_raw()
-
-        log.ODM_INFO('Running ODM DEM Cell')
-
-        # get inputs
-        args = self.inputs.args
-        tree = self.inputs.tree
+class ODMDEMStage(types.ODM_Stage):
+    def process(self, args, outputs):
+        tree = outputs['tree']
         las_model_found = io.file_exists(tree.odm_georeferencing_model_laz)
-
-        # check if we rerun cell or not
-        rerun_cell = (args.rerun is not None and
-                      args.rerun == 'odm_dem') or \
-                     (args.rerun_all) or \
-                     (args.rerun_from is not None and
-                      'odm_dem' in args.rerun_from)
 
         log.ODM_INFO('Classify: ' + str(args.pc_classify))
         log.ODM_INFO('Create DSM: ' + str(args.dsm))
@@ -51,7 +28,7 @@ class ODMDEMCell(ecto.Cell):
         if args.pc_classify and las_model_found:
             pc_classify_marker = os.path.join(odm_dem_root, 'pc_classify_done.txt')
 
-            if not io.file_exists(pc_classify_marker) or rerun_cell:
+            if not io.file_exists(pc_classify_marker) or self.rerun():
                 log.ODM_INFO("Classifying {} using Simple Morphological Filter".format(tree.odm_georeferencing_model_laz))
                 commands.classify(tree.odm_georeferencing_model_laz,
                                   args.smrf_scalar, 
@@ -75,7 +52,7 @@ class ODMDEMCell(ecto.Cell):
 
             if (args.dtm and not io.file_exists(dtm_output_filename)) or \
                 (args.dsm and not io.file_exists(dsm_output_filename)) or \
-                rerun_cell:
+                self.rerun():
 
                 products = []
                 if args.dsm: products.append('dsm')
@@ -108,15 +85,9 @@ class ODMDEMCell(ecto.Cell):
                                 'COMPRESS': 'LZW',
                                 'BLOCKXSIZE': 512,
                                 'BLOCKYSIZE': 512,
-                                'NUM_THREADS': self.params.max_concurrency
+                                'NUM_THREADS': self.params.get('max_concurrency')
                             })
             else:
                 log.ODM_WARNING('Found existing outputs in: %s' % odm_dem_root)
         else:
             log.ODM_WARNING('DEM will not be generated')
-
-        if args.time:
-            system.benchmark(start_time, tree.benchmarking, 'Dem')
-
-        log.ODM_INFO('Running ODM DEM Cell - Finished')
-        return ecto.OK if args.end_with != 'odm_dem' else ecto.QUIT

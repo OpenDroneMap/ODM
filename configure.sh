@@ -80,12 +80,6 @@ install() {
                         loky \
                         repoze.lru
 
-    echo "Installing Ecto Dependencies"
-    pip install -U catkin-pkg
-    apt-get install -y -qq python-empy \
-                         python-nose \
-                         python-pyside
-
     echo "Installing OpenDroneMap Dependencies"
     apt-get install -y -qq python-scipy \
                          liblas-bin
