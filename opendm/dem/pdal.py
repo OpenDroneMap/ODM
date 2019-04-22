@@ -48,24 +48,23 @@ def json_base():
     return {'pipeline': []}
 
 
-def json_gdal_base(fout, output, radius, resolution=1):
+def json_gdal_base(filename, output_type, radius, resolution=1, bounds=None):
     """ Create initial JSON for PDAL pipeline containing a Writer element """
     json = json_base()
 
-    if len(output) > 1:
-        # TODO: we might want to create a multiband raster with max/min/idw
-        # in the future
-        print "More than 1 output, will only create {0}".format(output[0])
-        output = [output[0]]
-
-    json['pipeline'].insert(0, {
+    d = {
         'type': 'writers.gdal',
         'resolution': resolution,
         'radius': radius,
-        'filename': '{0}.{1}.tif'.format(fout, output[0]),
-        'output_type': output[0],
+        'filename': filename,
+        'output_type': output_type,
         'data_type': 'float'
-    })
+    }
+
+    if bounds is not None:
+        d['bounds'] = "([%s,%s],[%s,%s])" % (bounds['minx'], bounds['maxx'], bounds['miny'], bounds['maxy'])
+
+    json['pipeline'].insert(0, d)
 
     return json
 
@@ -155,7 +154,6 @@ def run_pipeline(json, verbose=False):
     cmd = [
         'pdal',
         'pipeline',
-        '--nostream',
         '-i %s' % jsonfile
     ]
     if verbose:
@@ -165,7 +163,7 @@ def run_pipeline(json, verbose=False):
     os.remove(jsonfile)
 
 
-def run_pdaltranslate_smrf(fin, fout, slope, cellsize, maxWindowSize, verbose=False):
+def run_pdaltranslate_smrf(fin, fout, scalar, slope, threshold, window, verbose=False):
     """ Run PDAL translate  """
     cmd = [
         'pdal',
@@ -173,11 +171,11 @@ def run_pdaltranslate_smrf(fin, fout, slope, cellsize, maxWindowSize, verbose=Fa
         '-i %s' % fin,
         '-o %s' % fout,
         'smrf',
-        '--filters.smrf.cell=%s' % cellsize,
+        '--filters.smrf.scalar=%s' % scalar,
         '--filters.smrf.slope=%s' % slope,
+        '--filters.smrf.threshold=%s' % threshold,
+        '--filters.smrf.window=%s' % window,
     ]
-    if maxWindowSize is not None:
-        cmd.append('--filters.smrf.window=%s' % maxWindowSize)
 
     if verbose:
         print ' '.join(cmd)

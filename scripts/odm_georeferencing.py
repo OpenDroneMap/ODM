@@ -83,6 +83,7 @@ class ODMGeoreferencingCell(ecto.Cell):
                 # odm_georeference definitions
                 kwargs = {
                     'bin': context.odm_modules_path,
+                    'input_pc_file': tree.filtered_point_cloud,
                     'bundle': tree.opensfm_bundle,
                     'imgs': tree.dataset_raw,
                     'imgs_list': tree.opensfm_bundle_list,
@@ -98,13 +99,6 @@ class ODMGeoreferencingCell(ecto.Cell):
                     'verbose': verbose
                 }
 
-                if args.fast_orthophoto:
-                    kwargs['input_pc_file'] = os.path.join(tree.opensfm, 'reconstruction.ply')
-                elif args.use_opensfm_dense:
-                    kwargs['input_pc_file'] = tree.opensfm_model
-                else:
-                    kwargs['input_pc_file'] = tree.smvs_model
-
                 if transformPointCloud:
                     kwargs['pc_params'] = '-inputPointCloudFile {input_pc_file} -outputPointCloudFile {output_pc_file}'.format(**kwargs)
 
@@ -114,7 +108,7 @@ class ODMGeoreferencingCell(ecto.Cell):
                         log.ODM_WARNING('NO SRS: The output point cloud will not have a SRS.')
                 else:
                     kwargs['pc_params'] = ''
-                    
+ 
                 # Check to see if the GCP file exists
 
                 if not self.params.use_exif and (self.params.gcp_file or tree.odm_georeferencing_gcp):

@@ -127,25 +127,13 @@ foreach(lib ${custom_libs})
 	SETUP_EXTERNAL_PROJECT_CUSTOM(${lib})
 endforeach()
 
-## Add smvs Build
+## Add mve Build
 
 externalproject_add(mve
     GIT_REPOSITORY  https://github.com/simonfuhrmann/mve.git
     GIT_TAG         4328bb4d1666113e919213daea4fe6b2ff9be588
     UPDATE_COMMAND  ""
     SOURCE_DIR      ${SB_SOURCE_DIR}/elibs/mve
-    CONFIGURE_COMMAND ""
-    BUILD_IN_SOURCE 1
-    BUILD_COMMAND   make
-    INSTALL_COMMAND ""
-)
-
-externalproject_add(smvs
-    DEPENDS         mve
-    GIT_REPOSITORY  https://github.com/flanggut/smvs.git
-    GIT_TAG         7cf59084329d494068c67bd57bfeae5660584ad3
-    UPDATE_COMMAND  ""
-    SOURCE_DIR      ${SB_SOURCE_DIR}/elibs/smvs
     CONFIGURE_COMMAND ""
     BUILD_IN_SOURCE 1
     BUILD_COMMAND   make

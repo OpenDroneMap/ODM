@@ -9,7 +9,6 @@ from opendm import types
 from opendm import gsd
 from opendm.dem import commands
 from opendm.cropper import Cropper
-from opendm.concurrency import get_max_concurrency_for_dem
 
 class ODMDEMCell(ecto.Cell):
     def declare_params(self, params):
@@ -44,8 +43,6 @@ class ODMDEMCell(ecto.Cell):
         log.ODM_INFO('Create DTM: ' + str(args.dtm))
         log.ODM_INFO('DEM input file {0} found: {1}'.format(tree.odm_georeferencing_model_laz, str(las_model_found)))
 
-        slope, cellsize = (0.15, 1)
-
         # define paths and create working directories
         odm_dem_root = tree.path('odm_dem')
         if not io.dir_exists(odm_dem_root):
@@ -57,15 +54,19 @@ class ODMDEMCell(ecto.Cell):
             if not io.file_exists(pc_classify_marker) or rerun_cell:
                 log.ODM_INFO("Classifying {} using Simple Morphological Filter".format(tree.odm_georeferencing_model_laz))
                 commands.classify(tree.odm_georeferencing_model_laz,
-                                  slope,
-                                  cellsize,
+                                  args.smrf_scalar, 
+                                  args.smrf_slope, 
+                                  args.smrf_threshold, 
+                                  args.smrf_window,
                                   verbose=args.verbose
                                 )
 
                 with open(pc_classify_marker, 'w') as f:
                     f.write('Classify: smrf\n')
-                    f.write('Slope: {}\n'.format(slope))
-                    f.write('Cellsize: {}\n'.format(cellsize))
+                    f.write('Scalar: {}\n'.format(args.smrf_scalar))
+                    f.write('Slope: {}\n'.format(args.smrf_slope))
+                    f.write('Threshold: {}\n'.format(args.smrf_threshold))
+                    f.write('Window: {}\n'.format(args.smrf_window))
 
         # Do we need to process anything here?
         if (args.dsm or args.dtm) and las_model_found:
@@ -86,16 +87,17 @@ class ODMDEMCell(ecto.Cell):
                     radius_steps.append(radius_steps[-1] * 2) # 2 is arbitrary, maybe there's a better value?
 
                 for product in products:
-                    commands.create_dems(
-                            [tree.odm_georeferencing_model_laz],
+                    commands.create_dem(
+                            tree.odm_georeferencing_model_laz,
                             product,
-                            radius=map(str, radius_steps),
-                            gapfill=True,
+                            output_type='idw' if product == 'dtm' else 'max',
+                            radiuses=map(str, radius_steps),
+                            gapfill=args.dem_gapfill_steps > 0,
                             outdir=odm_dem_root,
                             resolution=resolution / 100.0,
                             decimation=args.dem_decimation,
                             verbose=args.verbose,
-                            max_workers=get_max_concurrency_for_dem(args.max_concurrency,tree.odm_georeferencing_model_laz)
+                            max_workers=args.max_concurrency
                         )
 
                     if args.crop > 0:
