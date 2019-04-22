@@ -371,14 +371,12 @@ class ODM_Stage:
 
         # Last stage?
         if self.args.end_with == self.name:
-            exit(0)
+            log.ODM_INFO("No more stages to run")
+            return
 
         # Run next stage?
         elif self.next_stage is not None:
             self.next_stage.run(outputs)
-        
-        else:
-            log.ODM_INFO("No more stages to run")
 
     def process(self, args, outputs):
         raise NotImplementedError
