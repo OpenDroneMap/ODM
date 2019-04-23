@@ -7,6 +7,7 @@ from opendm import io
 from opendm import types
 from opendm import log
 from opendm import system
+from opendm import location
 from shutil import copyfile
 
 def save_images_database(photos, database_file):
@@ -116,24 +117,10 @@ class ODMLoadDatasetCell(ecto.Cell):
             if tree.odm_georeferencing_gcp:
                 outputs.reconstruction = types.ODM_Reconstruction(photos, coords_file=tree.odm_georeferencing_gcp)
             else:
-                verbose = '-verbose' if self.params.verbose else ''
                 # Generate UTM from images
-                # odm_georeference definitions
-                kwargs = {
-                    'bin': context.odm_modules_path,
-                    'imgs': tree.dataset_raw,
-                    'imgs_list': tree.dataset_list,
-                    'coords': tree.odm_georeferencing_coords,
-                    'log': tree.odm_georeferencing_utm_log,
-                    'verbose': verbose
-                }
-
-                # run UTM extraction binary
                 try:
                     if not io.file_exists(tree.odm_georeferencing_coords) or rerun_cell:
-                        system.run('{bin}/odm_extract_utm -imagesPath {imgs}/ '
-                                                            '-imageListFile {imgs_list} -outputCoordFile {coords} {verbose} '
-                                                            '-logFile {log}'.format(**kwargs))
+                        location.extract_utm_coords(photos, tree.dataset_raw, tree.odm_georeferencing_coords)
                     else:
                         log.ODM_INFO("Coordinates file already exist: %s" % tree.odm_georeferencing_coords)
                 except:

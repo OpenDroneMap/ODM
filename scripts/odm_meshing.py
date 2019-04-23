@@ -49,18 +49,12 @@ class ODMeshingCell(ecto.Cell):
                      (args.rerun_from is not None and
                       'odm_meshing' in args.rerun_from)
 
-        infile = tree.smvs_model
-        if args.fast_orthophoto:
-          infile = os.path.join(tree.opensfm, 'reconstruction.ply')
-        elif args.use_opensfm_dense:
-          infile = tree.opensfm_model
-
         # Create full 3D model unless --skip-3dmodel is set
         if not args.skip_3dmodel:
           if not io.file_exists(tree.odm_mesh) or rerun_cell:
               log.ODM_DEBUG('Writing ODM Mesh file in: %s' % tree.odm_mesh)
 
-              mesh.screened_poisson_reconstruction(infile,
+              mesh.screened_poisson_reconstruction(tree.filtered_point_cloud,
                 tree.odm_mesh,
                 depth=self.params.oct_tree,
                 samples=self.params.samples,
@@ -97,7 +91,7 @@ class ODMeshingCell(ecto.Cell):
 
               log.ODM_DEBUG('ODM 2.5D DSM resolution: %s' % dsm_resolution)
               
-              mesh.create_25dmesh(infile, tree.odm_25dmesh,
+              mesh.create_25dmesh(tree.filtered_point_cloud, tree.odm_25dmesh,
                     dsm_radius=dsm_radius,
                     dsm_resolution=dsm_resolution, 
                     depth=self.params.oct_tree,

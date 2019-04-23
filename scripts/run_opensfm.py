@@ -87,8 +87,11 @@ class ODMOpenSfMCell(ecto.Cell):
 
             if has_alt:
                 log.ODM_DEBUG("Altitude data detected, enabling it for GPS alignment")
-                config.append("use_altitude_tag: True")
+                config.append("use_altitude_tag: yes")
                 config.append("align_method: naive")
+            else:
+                config.append("align_method: orientation_prior")
+                config.append("align_orientation_prior: vertical")
 
             if args.use_hybrid_bundle_adjustment:
                 log.ODM_DEBUG("Enabling hybrid bundle adjustment")
@@ -172,9 +175,6 @@ class ODMOpenSfMCell(ecto.Cell):
             if args.fast_orthophoto:
                 system.run('PYTHONPATH=%s %s/bin/opensfm export_ply --no-cameras %s' %
                         (context.pyopencv_path, context.opensfm_path, tree.opensfm))
-
-                # Filter
-                point_cloud.filter(os.path.join(tree.opensfm, 'reconstruction.ply'), standard_deviation=args.pc_filter, verbose=args.verbose)
             elif args.use_opensfm_dense:
                 # Undistort images at full scale in JPG
                 # (TODO: we could compare the size of the PNGs if they are < than depthmap_resolution
@@ -183,9 +183,6 @@ class ODMOpenSfMCell(ecto.Cell):
                         (context.pyopencv_path, context.opensfm_path, tree.opensfm))
                 system.run('PYTHONPATH=%s %s/bin/opensfm compute_depthmaps %s' %
                         (context.pyopencv_path, context.opensfm_path, tree.opensfm))
-
-                # Filter
-                point_cloud.filter(tree.opensfm_model, standard_deviation=args.pc_filter, verbose=args.verbose)
         else:
             log.ODM_WARNING('Found a valid OpenSfM reconstruction file in: %s' %
                             tree.opensfm_reconstruction)
