@@ -329,3 +329,55 @@ class ODM_Tree(object):
 
     def path(self, *args):
         return io.join_paths(self.root_path, *args)
+
+
+class ODM_Stage:
+    def __init__(self, name, args, **params):
+        self.name = name
+        self.args = args
+        self.params = params
+        if self.params is None:
+            self.params = {}
+        self.next_stage = None
+
+    def connect(self, stage):
+        self.next_stage = stage
+        return stage
+
+    def rerun(self):
+        """
+        Does this stage need to be rerun?
+        """
+        return (self.args.rerun is not None and
+                      self.args.rerun == self.name) or \
+                     (self.args.rerun_all) or \
+                     (self.args.rerun_from is not None and
+                      self.name in self.args.rerun_from)
+    
+    def run(self, outputs = {}):
+        start_time = system.now_raw()
+        log.ODM_INFO('Running %s stage' % self.name)
+
+        self.process(self.args, outputs)
+
+        # The tree variable should always be populated at this point
+        if outputs.get('tree') is None:
+            raise Exception("Assert violation: tree variable is missing from outputs dictionary.")
+
+        if self.args.time:
+            system.benchmark(start_time, outputs['tree'].benchmarking, self.name)
+
+        log.ODM_INFO('Finished %s stage' % self.name)
+
+        # Last stage?
+        if self.args.end_with == self.name:
+            log.ODM_INFO("No more stages to run")
+            return
+
+        # Run next stage?
+        elif self.next_stage is not None:
+            self.next_stage.run(outputs)
+
+    def process(self, args, outputs):
+        raise NotImplementedError
+
