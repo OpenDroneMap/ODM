@@ -20,9 +20,6 @@ class ODMOpenSfMStage(types.ODM_Stage):
             log.ODM_ERROR('Not enough photos in photos array to start OpenSfM')
             exit(1)
 
-        # create working directories
-        system.mkdir_p(tree.opensfm)
-
         if args.fast_orthophoto:
             output_file = io.join_paths(tree.opensfm, 'reconstruction.ply')
         elif args.use_opensfm_dense:
@@ -33,20 +30,9 @@ class ODMOpenSfMStage(types.ODM_Stage):
         # check if reconstruction was done before
         if not io.file_exists(output_file) or self.rerun():
 
-            osfm.setup(args, self.params, tree.dataset_raw, tree.opensfm, photos, gcp_path=tree.odm_georeferencing_gcp)
+            osfm.setup(args, tree.dataset_raw, tree.opensfm, photos, gcp_path=tree.odm_georeferencing_gcp)
 
-            # run OpenSfM reconstruction
-            matched_done_file = io.join_paths(tree.opensfm, 'matching_done.txt')
-            if not io.file_exists(matched_done_file) or self.rerun():
-                osfm.run('extract_metadata', tree.opensfm)
-                osfm.run('detect_features', tree.opensfm)
-                osfm.run('match_features', tree.opensfm)
-
-                with open(matched_done_file, 'w') as fout:
-                    fout.write("Matching done!\n")
-            else:
-                log.ODM_WARNING('Found a feature matching done progress file in: %s' %
-                                matched_done_file)
+            osfm.run_feature_matching(tree.opensfm, self.rerun())
 
             if not io.file_exists(tree.opensfm_tracks) or self.rerun():
                 osfm.run('create_tracks', tree.opensfm)
@@ -102,12 +88,7 @@ class ODMOpenSfMStage(types.ODM_Stage):
                             tree.opensfm_reconstruction)
 
         # check if reconstruction was exported to bundler before
-        if not io.file_exists(tree.opensfm_bundle_list) or self.rerun():
-            # convert back to bundler's format
-            osfm.run('export_bundler', tree.opensfm)
-        else:
-            log.ODM_WARNING('Found a valid Bundler file in: %s' %
-                            tree.opensfm_reconstruction)
+        osfm.export_bundler(tree.opensfm, tree.opensfm_bundle_list, self.rerun())
 
         if reconstruction.georef:
             osfm.run('export_geocoords --transformation --proj \'%s\'' % reconstruction.georef.projection.srs, tree.opensfm)

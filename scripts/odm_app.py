@@ -16,6 +16,7 @@ from odm_georeferencing import ODMGeoreferencingStage
 from odm_orthophoto import ODMOrthoPhotoStage
 from odm_dem import ODMDEMStage
 from odm_filterpoints import ODMFilterPoints
+from splitmerge import ODMSplitStage
 
 
 class ODMApp:
@@ -27,15 +28,8 @@ class ODMApp:
         dataset = ODMLoadDatasetStage('dataset', args, 
                                           verbose=args.verbose,
                                           proj=args.proj)
-        opensfm = ODMOpenSfMStage('opensfm', args,
-                                    use_exif_size=False,
-                                    feature_process_size=args.resize_to,
-                                    feature_min_frames=args.min_num_features,
-                                    processes=args.max_concurrency,
-                                    matching_gps_neighbors=args.matcher_neighbors,
-                                    matching_gps_distance=args.matcher_distance,
-                                    fixed_camera_params=args.use_fixed_camera_params,
-                                    hybrid_bundle_adjustment=args.use_hybrid_bundle_adjustment)
+        split = ODMSplitStage('split', args)
+        opensfm = ODMOpenSfMStage('opensfm', args)
         slam = ODMSlamStage('slam', args)
         mve = ODMMveStage('mve', args)
         filterpoints = ODMFilterPoints('odm_filterpoints', args)
@@ -75,7 +69,7 @@ class ODMApp:
             # Normal pipeline
             self.first_stage = dataset
 
-            dataset.connect(opensfm)
+            dataset.connect(split).connect(opensfm)
 
             if args.use_opensfm_dense or args.fast_orthophoto:
                 opensfm.connect(filterpoints)
