@@ -479,6 +479,39 @@ def config():
                         version='OpenDroneMap {0}'.format(__version__),
                         help='Displays version number and exits. ')
 
+    parser.add_argument('--submodel-size',
+                        type=int,
+                        default=80,
+                        help='Average number of images per submodel. When '
+                                'splitting a large dataset into smaller '
+                                'submodels, images are grouped into clusters. '
+                                'This value regulates the number of images that '
+                                'each cluster should have on average.')
+
+     parser.add_argument('--large',
+                        help='Run large-scale split-merge process',
+                        action='store_true',
+                        default=False)
+
+     parser.add_argument('--submodel-overlap',
+                        type=float,
+                        metavar='<positive integer>',
+                        default=150,
+                        help='Radius of the overlap between submodels. '
+                        'After grouping images into clusters, images '
+                        'that are closer than this radius to a cluster '
+                        'are added to the cluster. This is done to ensure '
+                        'that neighboring submodels overlap.')
+
+     parser.add_argument('--run-matching',
+                        help='Run matching for each submodel',
+                        action='store_true')
+
+     parser.add_argument('--merge-overwrite',
+                        action='store_true',
+                        default=False,
+                        help='Force overwrite of generated files')
+
     args = parser.parse_args()
 
     # check that the project path setting has been set properly

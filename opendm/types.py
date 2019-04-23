@@ -327,9 +327,34 @@ class ODM_Tree(object):
         self.odm_orthophoto_tif_log = io.join_paths(self.odm_orthophoto, 'gdal_translate_log.txt')
         self.odm_orthophoto_gdaladdo_log = io.join_paths(self.odm_orthophoto, 'gdaladdo_log.txt')
 
+        # Split-merge 
+        self.submodels_path = io.join_paths(self.root_path, 'submodels')
+        self.out_tif = io.join_paths(self.root_path, "merged.tif")
+        self.addo_log = io.join_paths(self.root_path, "gdal_addo.log")
+        self.sm_progress = io.join_paths(self.root_path, "sm_progress.txt")
+
     def path(self, *args):
         return io.join_paths(self.root_path, *args)
 
+
+class SplitMerge(object):
+    """ docstring for SplitMerge"""
+    def __init__(self, project_name, progress):
+        self.project_name = project_name
+        self.progress = 0
+    def load_progress(self, sm_file):
+        with open(sm_file) as f:
+            prog = int(f.readline())
+            if prog in range(0, 6):
+                self.update_progress(prog)
+    def save_progress(self, sm_file):
+        with open(sm_file, 'w') as f:
+            f.write(str(self.progress))
+    def update_progress(self, progress):
+        if progress in range(0,6):
+            self.progress = progress
+        else: 
+            log.ODM_ERROR("Failed to save progress")
 
 class ODM_Stage:
     def __init__(self, name, args, **params):
