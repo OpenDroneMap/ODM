@@ -479,21 +479,16 @@ def config():
                         version='OpenDroneMap {0}'.format(__version__),
                         help='Displays version number and exits. ')
 
-    parser.add_argument('--submodel-size',
+    parser.add_argument('--split',
                         type=int,
-                        default=80,
+                        default=999999,
                         help='Average number of images per submodel. When '
                                 'splitting a large dataset into smaller '
                                 'submodels, images are grouped into clusters. '
                                 'This value regulates the number of images that '
                                 'each cluster should have on average.')
 
-     parser.add_argument('--large',
-                        help='Run large-scale split-merge process',
-                        action='store_true',
-                        default=False)
-
-     parser.add_argument('--submodel-overlap',
+    parser.add_argument('--split-overlap',
                         type=float,
                         metavar='<positive integer>',
                         default=150,
@@ -503,14 +498,13 @@ def config():
                         'are added to the cluster. This is done to ensure '
                         'that neighboring submodels overlap.')
 
-     parser.add_argument('--run-matching',
-                        help='Run matching for each submodel',
-                        action='store_true')
-
-     parser.add_argument('--merge-overwrite',
-                        action='store_true',
-                        default=False,
-                        help='Force overwrite of generated files')
+    parser.add_argument('--split-distributed',
+        action='store_true',
+        default=False,
+        help='Optimizes the split-merge workflow for a distributed computing environment. '
+                'When this is turned on, feature detection and matching on images is '
+                'performed independently on the submodels instead of being computed at once. '
+                'Default: %(default)s')
 
     args = parser.parse_args()
 
