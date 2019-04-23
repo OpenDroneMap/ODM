@@ -2,6 +2,7 @@
 OpenSfM related utils
 """
 
+import os
 from opendm import io
 from opendm import log
 from opendm import system
@@ -13,12 +14,37 @@ def run(command, opensfm_project_path):
 
 
 def export_bundler(opensfm_project_path, destination_bundle_file, rerun=False):
-    if not io.file_exists(destination_bundle_file) or self.rerun():
+    if not io.file_exists(destination_bundle_file) or rerun:
             # convert back to bundler's format
             system.run('%s/bin/export_bundler %s' %
                     (context.opensfm_path, opensfm_project_path))
     else:
         log.ODM_WARNING('Found a valid Bundler file in: %s' % destination_bundle_file)
+
+
+def reconstruct(opensfm_project_path, rerun=False):
+    tracks_file = os.path.join(opensfm_project_path, 'tracks.csv')
+    reconstruction_file = os.path.join(opensfm_project_path, 'reconstruction.json')
+
+    if not io.file_exists(tracks_file) or rerun:
+        run('create_tracks', opensfm_project_path)
+    else:
+        log.ODM_WARNING('Found a valid OpenSfM tracks file in: %s' % tracks_file)
+
+    if not io.file_exists(reconstruction_file) or rerun:
+        run('reconstruct', opensfm_project_path)
+    else:
+        log.ODM_WARNING('Found a valid OpenSfM reconstruction file in: %s' % reconstruction_file)
+
+    # Check that a reconstruction file has been created
+    if not io.file_exists(reconstruction_file):
+        log.ODM_ERROR("The program could not process this dataset using the current settings. "
+                        "Check that the images have enough overlap, "
+                        "that there are enough recognizable features "
+                        "and that the images are in focus. "
+                        "You could also try to increase the --min-num-features parameter."
+                        "The program will now exit.")
+        raise Exception("Reconstruction could not be generated")
 
 
 def setup(args, images_path, opensfm_path, photos, gcp_path=None, append_config = []):
@@ -82,7 +108,7 @@ def setup(args, images_path, opensfm_path, photos, gcp_path=None, append_config 
     with open(config_filename, 'w') as fout:
         fout.write("\n".join(config))
 
-def run_feature_matching(opensfm_project_path, rerun=False):
+def feature_matching(opensfm_project_path, rerun=False):
     matched_done_file = io.join_paths(opensfm_project_path, 'matching_done.txt')
     if not io.file_exists(matched_done_file) or rerun:
         run('extract_metadata', opensfm_project_path)

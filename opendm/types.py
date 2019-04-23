@@ -373,11 +373,9 @@ class ODM_Stage:
         """
         Does this stage need to be rerun?
         """
-        return (self.args.rerun is not None and
-                      self.args.rerun == self.name) or \
+        return (self.args.rerun is not None and self.args.rerun == self.name) or \
                      (self.args.rerun_all) or \
-                     (self.args.rerun_from is not None and
-                      self.name in self.args.rerun_from)
+                     (self.args.rerun_from is not None and self.name in self.args.rerun_from)
     
     def run(self, outputs = {}):
         start_time = system.now_raw()
