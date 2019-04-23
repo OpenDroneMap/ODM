@@ -1,6 +1,7 @@
 from opendm import log
 from opendm import osfm
 from opendm import types
+from opendm import io
 
 class ODMSplitStage(types.ODM_Stage):
     def process(self, args, outputs):
@@ -25,7 +26,15 @@ class ODMSplitStage(types.ODM_Stage):
             osfm.run_feature_matching(tree.opensfm, self.rerun())
 
             # Create submodels
-            osfm.run("create_submodels", tree.opensfm)
+            if not io.dir_exists(tree.submodels_path) or self.rerun():
+                if io.dir_exists(tree.submodels_path):
+                    log.ODM_WARNING("Removing existing submodels directory: %s" % tree.submodels_path)
+                    shutil.rmtree(tree.submodels_path)
+
+                osfm.run("create_submodels", tree.opensfm)
+            else:
+                log.ODM_WARNING("Submodels directory already exist at: %s" % tree.submodels_path)
+                
             exit(1)
         else:
             log.ODM_INFO("Normal dataset, will process all at once.")
