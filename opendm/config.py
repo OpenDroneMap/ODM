@@ -7,7 +7,7 @@ from appsettings import SettingsParser
 import sys
 
 # parse arguments
-processopts = ['dataset', 'opensfm', 'slam', 'mve', 'odm_filterpoints',
+processopts = ['dataset', 'split', 'opensfm', 'slam', 'mve', 'odm_filterpoints',
                'odm_meshing', 'odm_25dmeshing', 'mvs_texturing', 'odm_georeferencing',
                'odm_dem', 'odm_orthophoto']
 
