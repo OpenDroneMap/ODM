@@ -1,4 +1,5 @@
 #include <iostream>
+#include <algorithm>
 #include <pdal/filters/OutlierFilter.hpp>
 #include <pdal/filters/RangeFilter.hpp>
 #include "CmdLineParser.h"
@@ -13,12 +14,13 @@ cmdLineParameter< char* >
     OutputFile( "outputFile" );
 cmdLineParameter< float >
     StandardDeviation( "sd" ) ,
-    MeanK ( "meank" );
+    MeanK ( "meank" ) ,
+    Confidence ( "confidence" );
 cmdLineReadable
 	Verbose( "verbose" );
 
 cmdLineReadable* params[] = {
-    &InputFile , &OutputFile , &StandardDeviation, &MeanK, &Verbose ,
+    &InputFile , &OutputFile , &StandardDeviation, &MeanK, &Confidence, &Verbose ,
     NULL
 };
 
@@ -28,6 +30,7 @@ void help(char *ex){
               << "\t -" << OutputFile.name << " <output PLY point cloud>" << std::endl
               << "\t [-" << StandardDeviation.name << " <standard deviation threshold>]" << std::endl
               << "\t [-" << MeanK.name << " <mean number of neighbors >]" << std::endl
+              << "\t [-" << Confidence.name << " <lower bound filter for confidence property>]" << std::endl
 
               << "\t [-" << Verbose.name << "]" << std::endl;
     exit(EXIT_FAILURE);
@@ -65,13 +68,31 @@ int main(int argc, char **argv) {
     pdal::FloatPlyReader plyReader;
     plyReader.setOptions(inPlyOpts);
 
+    pdal::RangeFilter confidenceFilter;
+    if (Confidence.set){
+        pdal::Options confidenceFilterOpts;
+        float confidenceValue = std::min(1.0f, std::max(Confidence.value, 0.0f));
+        std::ostringstream confidenceLimit;
+        confidenceLimit << "confidence[" << confidenceValue << ":1]";
+        confidenceFilterOpts.add("limits", confidenceLimit.str());
+
+        confidenceFilter.setInput(plyReader);
+        confidenceFilter.setOptions(confidenceFilterOpts);
+    }
+
     pdal::Options outlierOpts;
     outlierOpts.add("method", "statistical");
     outlierOpts.add("mean_k", MeanK.value);
     outlierOpts.add("multiplier", StandardDeviation.value);
 
     pdal::OutlierFilter outlierFilter;
-    outlierFilter.setInput(plyReader);
+    if (Confidence.set){
+        logWriter("Filtering confidence\n");
+        outlierFilter.setInput(confidenceFilter);
+    }else{
+        outlierFilter.setInput(plyReader);
+
+    }
     outlierFilter.setOptions(outlierOpts);
 
     pdal::Options rangeOpts;

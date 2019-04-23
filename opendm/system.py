@@ -17,14 +17,16 @@ def get_ccd_widths():
     return dict(zip(map(string.lower, sensor_data.keys()), sensor_data.values()))
 
 
-def run(cmd, env_paths=[context.superbuild_bin_path]):
+def run(cmd, env_paths=[context.superbuild_bin_path], env_vars={}):
     """Run a system command"""
     log.ODM_DEBUG('running %s' % cmd)
 
-    env = None
+    env = os.environ.copy()
     if len(env_paths) > 0:
-        env = os.environ.copy()
         env["PATH"] = env["PATH"] + ":" + ":".join(env_paths)
+    
+    for k in env_vars:
+        env[k] = str(env_vars[k])
 
     retcode = subprocess.call(cmd, shell=True, env=env)
 
