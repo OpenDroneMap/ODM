@@ -28,34 +28,15 @@ class ODMOpenSfMStage(types.ODM_Stage):
             output_file = tree.opensfm_reconstruction
 
         # check if reconstruction was done before
+        # TODO: more granularity for each step (setup/featurematch/reconstruction/etc.)
+        
         if not io.file_exists(output_file) or self.rerun():
 
             osfm.setup(args, tree.dataset_raw, tree.opensfm, photos, gcp_path=tree.odm_georeferencing_gcp)
 
-            osfm.run_feature_matching(tree.opensfm, self.rerun())
+            osfm.feature_matching(tree.opensfm, self.rerun())
 
-            if not io.file_exists(tree.opensfm_tracks) or self.rerun():
-                osfm.run('create_tracks', tree.opensfm)
-            else:
-                log.ODM_WARNING('Found a valid OpenSfM tracks file in: %s' %
-                                tree.opensfm_tracks)
-
-            if not io.file_exists(tree.opensfm_reconstruction) or self.rerun():
-                osfm.run('reconstruct', tree.opensfm)
-            else:
-                log.ODM_WARNING('Found a valid OpenSfM reconstruction file in: %s' %
-                                tree.opensfm_reconstruction)
-
-            # Check that a reconstruction file has been created
-            if not io.file_exists(tree.opensfm_reconstruction):
-                log.ODM_ERROR("The program could not process this dataset using the current settings. "
-                                "Check that the images have enough overlap, "
-                                "that there are enough recognizable features "
-                                "and that the images are in focus. "
-                                "You could also try to increase the --min-num-features parameter."
-                                "The program will now exit.")
-                sys.exit(1)
-
+            osfm.reconstruction(tree.opensfm, self.rerun())
 
             # Always export VisualSFM's reconstruction and undistort images
             # as we'll use these for texturing (after GSD estimation and resizing)
