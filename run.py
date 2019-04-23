@@ -5,8 +5,8 @@ from opendm import config
 from opendm import system
 from opendm import io
 
-import ecto
 import os
+from pipes import quote
 
 from scripts.odm_app import ODMApp
 
@@ -23,28 +23,23 @@ if __name__ == '__main__':
         system.mkdir_p(os.path.abspath(args.project_path))
 
     # If user asks to rerun everything, delete all of the existing progress directories.
-    # TODO: Move this somewhere it's not hard-coded
     if args.rerun_all:
         log.ODM_DEBUG("Rerun all -- Removing old data")
-        os.system("rm -rf "
-                  + args.project_path + "/images_resize "
-                  + args.project_path + "/odm_georeferencing "
-                  + args.project_path + "/odm_meshing "
-                  + args.project_path + "/odm_orthophoto "
-                  + args.project_path + "/odm_texturing "
-                  + args.project_path + "/opensfm "
-                  + args.project_path + "/mve")
+        os.system("rm -rf " + 
+                    " ".join([
+                        quote(os.path.join(args.project_path, "odm_georeferencing")),
+                        quote(os.path.join(args.project_path, "odm_meshing")),
+                        quote(os.path.join(args.project_path, "odm_orthophoto")),
+                        quote(os.path.join(args.project_path, "odm_texturing")),
+                        quote(os.path.join(args.project_path, "opensfm")),
+                        quote(os.path.join(args.project_path, "odm_filterpoints")),
+                        quote(os.path.join(args.project_path, "odm_25dmeshing")),
+                        quote(os.path.join(args.project_path, "odm_25dtexturing")),
+                        quote(os.path.join(args.project_path, "mve")),
+                    ]) + "")
 
-    # create an instance of my App BlackBox
-    # internally configure all tasks
-    app = ODMApp(args=args)
-
-    # create a plasm that only contains the BlackBox
-    plasm = ecto.Plasm()
-    plasm.insert(app)
-
-    # execute the plasm
-    plasm.execute(niter=1)
+    app = ODMApp(args)
+    app.execute()
     
     log.ODM_INFO('MMMMMMMMMMMNNNMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMNNNMMMMMMMMMMM')
     log.ODM_INFO('MMMMMMdo:..---../sNMMMMMMMMMMMMMMMMMMMMMMMMMMNs/..---..:odMMMMMM')
