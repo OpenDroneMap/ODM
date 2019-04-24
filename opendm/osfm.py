@@ -141,6 +141,7 @@ def get_submodel_argv(args, submodels_path, submodel_name):
     """
     :return the same as argv, but removing references to --split, 
         setting/replacing --project-path and name
+        setting/replacing --crop to 0 (never crop on submodels)
     """
     argv = sys.argv
 
@@ -148,6 +149,7 @@ def get_submodel_argv(args, submodels_path, submodel_name):
     i = 1
     project_path_found = False
     project_name_added = False
+    crop_found = True
 
     # TODO: what about GCP paths?
 
@@ -168,6 +170,11 @@ def get_submodel_argv(args, submodels_path, submodel_name):
             result.append(submodels_path)
             project_path_found = True
             i += 2
+        elif arg == '--crop':
+            result.append(arg)
+            result.append('0')
+            crop_found = True
+            i += 2
         elif arg == '--split':
             i += 2
         else:
@@ -177,8 +184,28 @@ def get_submodel_argv(args, submodels_path, submodel_name):
     if not project_path_found:
         result.append('--project-path')
         result.append(submodel_project_path)
+    
+    if not crop_found:
+        result.append('--crop')
+        result.append('0')
 
     if not project_name_added:
         result.append(submodel_name)
     
+    return result
+
+
+def get_submodel_paths(submodels_path, *paths):
+    """
+    :return Existing paths for all submodels
+    """
+    result = []
+    for f in os.listdir(submodels_path):
+        if f.startswith('submodel'):
+            p = os.path.join(submodels_path, f, *paths) 
+            if os.path.exists(p):
+                result.append(p)
+            else:
+                log.ODM_WARNING("Missing %s from submodel %s" % (p, f))
+
     return result
