@@ -27,13 +27,8 @@ class ODMOpenSfMStage(types.ODM_Stage):
         else:
             output_file = tree.opensfm_reconstruction
 
-        # check if reconstruction was done before
-        # TODO: more granularity for each step (setup/featurematch/reconstruction/etc.)
-        
         osfm.setup(args, tree.dataset_raw, tree.opensfm, photos, gcp_path=tree.odm_georeferencing_gcp, rerun=self.rerun())
-
         osfm.feature_matching(tree.opensfm, self.rerun())
-
         osfm.reconstruct(tree.opensfm, self.rerun())
 
         if not io.file_exists(output_file) or self.rerun():

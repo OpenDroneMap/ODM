@@ -4,6 +4,7 @@ from opendm import osfm
 from opendm import types
 from opendm import io
 from opendm import system
+from opendm.dem import pdal
 from opensfm.large import metadataset
 from pipes import quote
 
@@ -52,11 +53,17 @@ class ODMSplitStage(types.ODM_Stage):
 
             for sp in submodel_paths:
                 log.ODM_INFO("Reconstructing %s" % sp)
-                #osfm.reconstruct(sp, self.rerun())
+                osfm.reconstruct(sp, self.rerun())
 
             # Align
-            log.ODM_INFO("Aligning submodels...")
-            #osfm.run('align_submodels', tree.opensfm)
+            alignment_file = io.join_paths(tree.opensfm, 'alignment_done.txt')
+            if not io.file_exists(alignment_file) or self.rerun():
+                log.ODM_INFO("Aligning submodels...")
+                osfm.run('align_submodels', tree.opensfm)
+                with open(alignment_file, 'w') as fout:
+                    fout.write("Alignment done!\n")
+            else:
+                log.ODM_WARNING('Found a alignment matching done progress file in: %s' % alignment_file)
 
             # Dense reconstruction for each submodel
             for sp in submodel_paths:
@@ -68,15 +75,14 @@ class ODMSplitStage(types.ODM_Stage):
 
                 submodel_name = os.path.basename(os.path.abspath(os.path.join(sp, "..")))
 
-                log.ODM_INFO("====================")
+                log.ODM_INFO("========================")
                 log.ODM_INFO("Processing %s" % submodel_name)
-                log.ODM_INFO("====================")
+                log.ODM_INFO("========================")
 
                 argv = osfm.get_submodel_argv(args, tree.submodels_path, submodel_name)
 
                 # Re-run the ODM toolchain on the submodel
                 system.run(" ".join(map(quote, argv)), env_vars=os.environ.copy())
-
         else:
             log.ODM_INFO("Normal dataset, will process all at once.")
 
@@ -87,6 +93,23 @@ class ODMMergeStage(types.ODM_Stage):
         reconstruction = outputs['reconstruction']
 
         if outputs['large']:
-            
+            # Merge point clouds
+            all_point_clouds = osfm.get_submodel_paths(tree.submodels_path, "odm_georeferencing", "odm_georeferenced_model.laz")
+            pdal.merge_point_clouds(all_point_clouds, tree.odm_georeferencing_model_laz, args.verbose)
+
+            # Merge orthophoto
+
+            # TODO: crop ortho if necessary
+
+            # Merge DEM
+
+            # TODO: crop DEM if necessary
+
+
+            # Stop the pipeline short! We're done.
+            self.next_stage = None
         else:
             log.ODM_INFO("Normal dataset, nothing to merge.")
+
+
+        
