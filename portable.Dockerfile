@@ -7,7 +7,7 @@ ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update -y \
   && apt-get install -y \
     software-properties-common \
-  && add-apt-repository -y ppa:ubuntugis/ppa \
+  && add-apt-repository -y ppa:ubuntugis/ubuntugis-unstable \
   && add-apt-repository -y ppa:george-edison55/cmake-3.x \
   && apt-get update -y
 
@@ -55,7 +55,8 @@ RUN apt-get install --no-install-recommends -y \
   python-pyproj \
   python-software-properties \
   python-wheel \
-  swig2.0
+  swig2.0 \
+  grass-core
 
 RUN apt-get remove libdc1394-22-dev
 RUN pip install --upgrade pip
