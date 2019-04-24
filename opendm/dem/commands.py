@@ -183,6 +183,7 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
     vrt_path = os.path.abspath(os.path.join(outdir, "merged.vrt"))
     run('gdalbuildvrt "%s" "%s"' % (vrt_path, '" "'.join(map(lambda t: t['filename'], tiles))))
 
+    geotiff_tmp_path = os.path.abspath(os.path.join(outdir, 'merged.tmp.tif'))
     geotiff_path = os.path.abspath(os.path.join(outdir, 'merged.tif'))
 
     # Build GeoTIFF
@@ -190,16 +191,25 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
         'max_memory': get_max_memory(),
         'threads': max_workers if max_workers else 'ALL_CPUS',
         'vrt': vrt_path,
-        'geotiff': geotiff_path
+        'geotiff': geotiff_path,
+        'geotiff_tmp': geotiff_tmp_path
     }
 
     if gapfill:
+        # Sometimes, for some reason gdal_fillnodata.py
+        # behaves strangely when reading data directly from a .VRT
+        # so we need to convert to GeoTIFF first.
+        run('gdal_translate '
+                '-co NUM_THREADS={threads} '
+                '--config GDAL_CACHEMAX {max_memory}% '
+                '{vrt} {geotiff_tmp}'.format(**kwargs))
+
         run('gdal_fillnodata.py '
             '-co NUM_THREADS={threads} '
             '--config GDAL_CACHEMAX {max_memory}% '
             '-b 1 '
             '-of GTiff '
-            '{vrt} {geotiff}'.format(**kwargs))
+            '{geotiff_tmp} {geotiff}'.format(**kwargs))
     else:
         run('gdal_translate '
                 '-co NUM_THREADS={threads} '
@@ -209,6 +219,7 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
     post_process(geotiff_path, output_path)
     os.remove(geotiff_path)
 
+    if os.path.exists(geotiff_tmp_path): os.remove(geotiff_tmp_path)
     if os.path.exists(vrt_path): os.remove(vrt_path)
     for t in tiles:
         if os.path.exists(t['filename']): os.remove(t['filename'])
