@@ -13,9 +13,7 @@ install() {
 
     ## Before installing
     echo "Updating the system"
-    apt-get update
-
-    add-apt-repository -y ppa:ubuntugis/ppa
+    add-apt-repository -y ppa:ubuntugis/ubuntugis-unstable
     apt-get update
 
     echo "Installing Required Requisites"
@@ -28,7 +26,8 @@ install() {
                          libgeotiff-dev \
                          pkg-config \
                          libjsoncpp-dev \
-                         python-gdal
+                         python-gdal \
+                         grass-core
 
     echo "Getting CMake 3.1 for MVS-Texturing"
     apt-get install -y software-properties-common python-software-properties

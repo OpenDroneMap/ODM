@@ -172,19 +172,6 @@ class ODM_GeoRef(object):
         self.transform = []
         self.gcps = []
 
-    def calculate_EPSG(self, _utm_zone, _pole):
-        """Calculate and return the EPSG"""
-        if _pole == 'S':
-            return 32700 + _utm_zone
-        elif _pole == 'N':
-            return 32600 + _utm_zone
-        else:
-            log.ODM_ERROR('Unknown pole format %s' % _pole)
-            return
-
-    def calculate_EPSG(self, proj):
-        return proj
-
     def coord_to_fractions(self, coord, refs):
         deg_dec = abs(float(coord))
         deg = int(deg_dec)

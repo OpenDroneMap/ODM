@@ -81,10 +81,10 @@ def mkdir_p(path):
         if exc.errno != errno.EEXIST or not os.path.isdir(path):
             raise
 
-
-def calculate_EPSG(utmZone, south):
-    """Calculate and return the EPSG"""
-    if south:
-        return 32700 + utmZone
-    else:
-        return 32600 + utmZone
+# Python2 shutil.which
+def which(program):
+    path=os.getenv('PATH')
+    for p in path.split(os.path.pathsep):
+        p=os.path.join(p,program)
+        if os.path.exists(p) and os.access(p,os.X_OK):
+            return p
