@@ -65,7 +65,7 @@ class ODMSplitStage(types.ODM_Stage):
                 
                 # We have already done matching
                 osfm.mark_feature_matching_done(sp)
-                
+
                 submodel_name = os.path.basename(os.path.abspath(os.path.join(sp, "..")))
 
                 log.ODM_INFO("====================")
@@ -73,11 +73,20 @@ class ODMSplitStage(types.ODM_Stage):
                 log.ODM_INFO("====================")
 
                 argv = osfm.get_submodel_argv(args, tree.submodels_path, submodel_name)
+
+                # Re-run the ODM toolchain on the submodel
                 system.run(" ".join(map(quote, argv)), env_vars=os.environ.copy())
 
-            exit(1)
         else:
             log.ODM_INFO("Normal dataset, will process all at once.")
 
 
+class ODMMergeStage(types.ODM_Stage):
+    def process(self, args, outputs):
+        tree = outputs['tree']
+        reconstruction = outputs['reconstruction']
 
+        if outputs['large']:
+            
+        else:
+            log.ODM_INFO("Normal dataset, nothing to merge.")
