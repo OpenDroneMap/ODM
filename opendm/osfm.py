@@ -149,6 +149,8 @@ def get_submodel_argv(args, submodels_path, submodel_name):
     project_path_found = False
     project_name_added = False
 
+    # TODO: what about GCP paths?
+
     while i < len(argv):
         arg = argv[i]
         
