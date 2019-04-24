@@ -1,9 +1,11 @@
-import os
+import os, sys
 from opendm import log
 from opendm import osfm
 from opendm import types
 from opendm import io
+from opendm import system
 from opensfm.large import metadataset
+from pipes import quote
 
 class ODMSplitStage(types.ODM_Stage):
     def process(self, args, outputs):
@@ -23,7 +25,7 @@ class ODMSplitStage(types.ODM_Stage):
                 "submodel_overlap: %s" % args.split_overlap,
             ]
             
-            osfm.setup(args, tree.dataset_raw, tree.opensfm, photos, gcp_path=tree.odm_georeferencing_gcp, append_config=config)
+            osfm.setup(args, tree.dataset_raw, tree.opensfm, photos, gcp_path=tree.odm_georeferencing_gcp, append_config=config, rerun=self.rerun())
         
             osfm.feature_matching(tree.opensfm, self.rerun())
 
@@ -50,14 +52,28 @@ class ODMSplitStage(types.ODM_Stage):
 
             for sp in submodel_paths:
                 log.ODM_INFO("Reconstructing %s" % sp)
-                osfm.reconstruct(sp, self.rerun())
+                #osfm.reconstruct(sp, self.rerun())
 
             # Align
             log.ODM_INFO("Aligning submodels...")
-            osfm.run('align_submodels', tree.opensfm)
+            #osfm.run('align_submodels', tree.opensfm)
 
             # Dense reconstruction for each submodel
-            # TODO
+            for sp in submodel_paths:
+
+                # TODO: network workflow
+                
+                # We have already done matching
+                osfm.mark_feature_matching_done(sp)
+                
+                submodel_name = os.path.basename(os.path.abspath(os.path.join(sp, "..")))
+
+                log.ODM_INFO("====================")
+                log.ODM_INFO("Processing %s" % submodel_name)
+                log.ODM_INFO("====================")
+
+                argv = osfm.get_submodel_argv(args, tree.submodels_path, submodel_name)
+                system.run(" ".join(map(quote, argv)), env_vars=os.environ.copy())
 
             exit(1)
         else:

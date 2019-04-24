@@ -30,14 +30,13 @@ class ODMOpenSfMStage(types.ODM_Stage):
         # check if reconstruction was done before
         # TODO: more granularity for each step (setup/featurematch/reconstruction/etc.)
         
+        osfm.setup(args, tree.dataset_raw, tree.opensfm, photos, gcp_path=tree.odm_georeferencing_gcp, rerun=self.rerun())
+
+        osfm.feature_matching(tree.opensfm, self.rerun())
+
+        osfm.reconstruct(tree.opensfm, self.rerun())
+
         if not io.file_exists(output_file) or self.rerun():
-
-            osfm.setup(args, tree.dataset_raw, tree.opensfm, photos, gcp_path=tree.odm_georeferencing_gcp)
-
-            osfm.feature_matching(tree.opensfm, self.rerun())
-
-            osfm.reconstruction(tree.opensfm, self.rerun())
-
             # Always export VisualSFM's reconstruction and undistort images
             # as we'll use these for texturing (after GSD estimation and resizing)
             if not args.ignore_gsd:
