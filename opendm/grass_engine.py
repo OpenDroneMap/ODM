@@ -89,8 +89,10 @@ class GrassContext:
 
         # Execute it
         log.ODM_INFO("Executing grass script from {}: {} -c {} location --exec sh script.sh".format(self.get_cwd(), self.grass_binary, self.location))
+        env = os.environ.copy()
+        env["GRASS_ADDON_PATH"] = env.get("GRASS_ADDON_PATH", "") + ":" + os.path.abspath(os.path.join("scripts/grass_addons"))
         p = subprocess.Popen([self.grass_binary, '-c', self.location, 'location', '--exec', 'sh', 'script.sh'],
-                             cwd=self.get_cwd(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                             cwd=self.get_cwd(), stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
         out, err = p.communicate()
 
         out = out.decode('utf-8').strip()

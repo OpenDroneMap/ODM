@@ -1,0 +1,37 @@
+# orthophoto_files: comma-separated GeoTIFF file paths
+# max_concurrency: maximum number of parallel processes to use
+# memory: maximum MB of memory to use
+# ------
+# output: If successful, prints the full path to the contours file. Otherwise it prints "error"
+
+# Split string using ',' separator
+IFS=',' read -ra DST <<< "${orthophoto_files}"
+ORTHOPHOTO_FILES=("$${DST[@]}")
+
+i=0
+existing_cutlines=""
+for orthophoto_file in "$${ORTHOPHOTO_FILES[@]}"; do
+
+    # Import orthophoto
+    r.external input=$$orthophoto_file output=ortho$$i --overwrite
+
+    # Generate cutlines
+    i.cutlines --overwrite input=ortho$$i output=cutline$$i number_lines=4 edge_detection=zc processes=${max_concurrency} memory=${memory}
+    
+    # Prepend cutline to list of cutlines
+    existing_cutlines="cutline$$i,$$existing_cutlines"
+
+    # Next
+    i=$$[i+1]
+done
+
+last_cutline="cutline$$[i-1]"
+
+# Export
+v.out.ogr input="$$last_cutline" output="cutline.gpkg" format=GPKG
+
+if [ -e "cutline.gpkg" ]; then
+    echo "$$(pwd)/cutline.gpkg"
+else
+    echo "error"
+fi
