@@ -2,7 +2,7 @@
 # max_concurrency: maximum number of parallel processes to use
 # memory: maximum MB of memory to use
 # ------
-# output: If successful, prints the full path to the contours file. Otherwise it prints "error"
+# output: If successful, prints the full path to the cutlines file. Otherwise it prints "error"
 
 # Split string using ',' separator
 IFS=',' read -ra DST <<< "${orthophoto_files}"
@@ -10,14 +10,40 @@ ORTHOPHOTO_FILES=("$${DST[@]}")
 
 i=0
 existing_cutlines=""
+current_rasters=""
+
 for orthophoto_file in "$${ORTHOPHOTO_FILES[@]}"; do
 
-    # Import orthophoto
-    r.external input=$$orthophoto_file output=ortho$$i --overwrite
+    # Import orthophoto (green band only)
+    r.external band=2 input="$$orthophoto_file" output=ortho$$i --overwrite
 
-    # Generate cutlines
-    i.cutlines --overwrite input=ortho$$i output=cutline$$i number_lines=4 edge_detection=zc processes=${max_concurrency} memory=${memory}
+    # Generate polygon area
+    gdal_polygonize.py -b 4 -f GeoPKG 
     
+    # Set nodata
+    r.null map=ortho$$i setnull=0
+
+    current_rasters="ortho$$i,$$current_rasters"
+    g.region raster="$$current_rasters"
+    
+    # Generate cutlines
+    i.cutlines.py --overwrite input=ortho$$i output=cutline$$i number_lines=4 edge_detection=zc existing_cutlines=$$existing_cutlines processes=${max_concurrency} memory=${memory}
+    
+    # TODO: use below for values (canny, etc.)
+    #i.cutlines.py --overwrite input=ortho2.blue@PERMANENT output=cutline number_lines=16 edge_detection=canny no_edge_friction=10 lane_border_multiplier=100 processes=1 memory=300
+
+
+    # TODO select only polygons within safe area
+    #v.select ainput=cutline -binput=area -output=result operator=within
+
+    # TODO add these too
+    # GRASS commands for dissolve don't seem to work as expected
+    #ogr2ogr -f GPKG -overwrite -explodecollections -dialect SQLite -sql "SELECT ST_Union(geom) FROM result" -nln dissolved dissolved.gpkg result.gpkg
+    #ogr2ogr -f GPKG -overwrite -dialect SQLITE -sql "SELECT * FROM dissolved ORDER BY ST_AREA(geom) DESC LIMIT 1" -nln cutline cutline.gpkg dissolved.gpkg
+
+    # Export
+    v.out.ogr input="cutline$$i" output="cutline$$i.gpkg" format=GPKG
+
     # Prepend cutline to list of cutlines
     existing_cutlines="cutline$$i,$$existing_cutlines"
 
@@ -25,13 +51,8 @@ for orthophoto_file in "$${ORTHOPHOTO_FILES[@]}"; do
     i=$$[i+1]
 done
 
-last_cutline="cutline$$[i-1]"
-
-# Export
-v.out.ogr input="$$last_cutline" output="cutline.gpkg" format=GPKG
-
-if [ -e "cutline.gpkg" ]; then
-    echo "$$(pwd)/cutline.gpkg"
+if [ -e "cutline0.gpkg" ]; then
+    echo "$$(pwd)/cutline0.gpkg"
 else
     echo "error"
 fi

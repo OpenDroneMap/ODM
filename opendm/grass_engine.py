@@ -2,6 +2,8 @@ import shutil
 import tempfile
 import subprocess
 import os
+import sys
+import time
 from opendm import log
 from opendm import system
 
@@ -88,20 +90,29 @@ class GrassContext:
             f.write(tmpl.substitute(self.template_args))
 
         # Execute it
-        log.ODM_INFO("Executing grass script from {}: {} -c {} location --exec sh script.sh".format(self.get_cwd(), self.grass_binary, self.location))
+        log.ODM_INFO("Executing grass script from {}: {} --tmp-location {} --exec bash script.sh".format(self.get_cwd(), self.grass_binary, self.location))
         env = os.environ.copy()
-        env["GRASS_ADDON_PATH"] = env.get("GRASS_ADDON_PATH", "") + ":" + os.path.abspath(os.path.join("scripts/grass_addons"))
-        p = subprocess.Popen([self.grass_binary, '-c', self.location, 'location', '--exec', 'sh', 'script.sh'],
-                             cwd=self.get_cwd(), stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
-        out, err = p.communicate()
+        env["GRASS_ADDON_PATH"] = env.get("GRASS_ADDON_PATH", "") + os.path.abspath(os.path.join("scripts/grass_addons"))
+        
+        filename = os.path.join(self.get_cwd(), 'output.log')
+        with open(filename, 'wb') as writer, open(filename, 'rb', 1) as reader:
+            p = subprocess.Popen([self.grass_binary, '--tmp-location', self.location, '--exec', 'bash', 'script.sh'],
+                                cwd=self.get_cwd(), stdout=subprocess.PIPE, stderr=writer, env=env)
+            
+            while p.poll() is None:
+                sys.stdout.write(reader.read())
+                time.sleep(0.5)
+            
+            # Read the remaining
+            sys.stdout.write(reader.read())
 
-        out = out.decode('utf-8').strip()
-        err = err.decode('utf-8').strip()
+            out, err = p.communicate()
+            out = out.decode('utf-8').strip()
 
-        if p.returncode == 0:
-            return out
-        else:
-            raise GrassEngineException("Could not execute GRASS script {} from {}: {}".format(script, self.get_cwd(), err))
+            if p.returncode == 0:
+                return out
+            else:
+                raise GrassEngineException("Could not execute GRASS script {} from {}: {}".format(script, self.get_cwd(), err))
 
     def serialize(self):
         return {

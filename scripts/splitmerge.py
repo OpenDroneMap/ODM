@@ -136,13 +136,17 @@ class ODMMergeStage(types.ODM_Stage):
             if len(all_orthophotos) > 1:
                 gctx = grass.create_context({'auto_cleanup' : False})
 
-                gctx.add_param('orthophoto_files', ",".join(map(quote, all_orthophotos)))
+                gctx.add_param('orthophoto_files', ",".join(all_orthophotos))
                 gctx.add_param('max_concurrency', args.max_concurrency)
-                gctx.add_param('memory', concurrency.get_max_memory_mb(300))
+                gctx.add_param('memory', int(concurrency.get_max_memory_mb(300)))
                 gctx.set_location(all_orthophotos[0])
 
                 cutline_file = gctx.execute(os.path.join("opendm", "grass", "generate_cutlines.grass"))
-            
+                if cutline_file != 'error':
+                    log.ODM_INFO("YAY")
+                    log.ODM_INFO(cutline_file)
+                else:
+                    log.ODM_WARNING("Could not generate orthophoto cutlines. An error occured when running GRASS. No orthophoto will be generated.")
             elif len(all_orthophotos) == 1:
                 # Simply copy
                 log.ODM_WARNING("A single orthophoto was found between all submodels.")
