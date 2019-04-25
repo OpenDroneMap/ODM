@@ -8,6 +8,8 @@ from opendm import log
 from opendm import system
 from opendm import context
 
+# TODO: refactor to use OpenSfM context class
+
 def run(command, opensfm_project_path):
     system.run('%s/bin/opensfm %s %s' %
                 (context.opensfm_path, command, opensfm_project_path))
@@ -123,7 +125,8 @@ def setup(args, images_path, opensfm_path, photos, gcp_path=None, append_config 
 
 
 def feature_matching(opensfm_project_path, rerun=False):
-    if not feature_matching_done(opensfm_project_path) or rerun:
+    if not io.file_exists(feature_matching_done_file(opensfm_project_path)) or rerun:
+        # TODO: put extract metadata into its own function
         run('extract_metadata', opensfm_project_path)
 
         # TODO: distributed workflow should do these two steps independently
@@ -142,14 +145,12 @@ def mark_feature_matching_done(opensfm_project_path):
     with open(feature_matching_done_file(opensfm_project_path), 'w') as fout:
         fout.write("Matching done!\n")
 
-def feature_matching_done(opensfm_project_path):
-    return io.file_exists(feature_matching_done_file(opensfm_project_path))
-
 def get_submodel_argv(args, submodels_path, submodel_name):
     """
     :return the same as argv, but removing references to --split, 
         setting/replacing --project-path and name
         setting/replacing --crop to 0 (never crop on submodels)
+        removing --rerun-from, --rerun, --rerun-all
     """
     argv = sys.argv
 
@@ -185,6 +186,12 @@ def get_submodel_argv(args, submodels_path, submodel_name):
             i += 2
         elif arg == '--split':
             i += 2
+        elif arg == '--rerun-from':
+            i += 2
+        elif arg == '--rerun':
+            i += 2
+        elif arg == '--rerun-all':
+            i += 1
         else:
             result.append(arg)
             i += 1
