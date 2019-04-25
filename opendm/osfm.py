@@ -57,9 +57,10 @@ def setup(args, images_path, opensfm_path, photos, gcp_path=None, append_config 
     if not io.dir_exists(opensfm_path):
         system.mkdir_p(opensfm_path)
 
-    # create file list
     list_path = io.join_paths(opensfm_path, 'image_list.txt')
     if not io.file_exists(list_path) or rerun:
+        
+        # create file list
         has_alt = True
         with open(list_path, 'w') as fout:
             for photo in photos:
@@ -111,8 +112,15 @@ def setup(args, images_path, opensfm_path, photos, gcp_path=None, append_config 
         config_filename = io.join_paths(opensfm_path, 'config.yaml')
         with open(config_filename, 'w') as fout:
             fout.write("\n".join(config))
+
+        # check for image_groups.txt (split-merge)
+        image_groups_file = os.path.join(args.project_path, "image_groups.txt")
+        if io.file_exists(image_groups_file):
+            log.ODM_DEBUG("Copied image_groups.txt to OpenSfM directory")
+            io.copy(image_groups_file, os.path.join(opensfm_path, "image_groups.txt"))
     else:
         log.ODM_WARNING("%s already exists, not rerunning OpenSfM setup" % list_path)
+
 
 def feature_matching(opensfm_project_path, rerun=False):
     if not feature_matching_done(opensfm_project_path) or rerun:

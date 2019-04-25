@@ -71,7 +71,7 @@ install() {
                          libboost-thread-dev \
                          python-pyproj
 
-    pip install -U PyYAML \
+    pip install -U PyYAML==3.13 \
                         exifread \
                         gpxpy \
                         xmltodict \
