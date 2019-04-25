@@ -7,6 +7,7 @@ from opendm import io
 from opendm import system
 from opendm.dem import pdal
 from opensfm.large import metadataset
+from opendm import concurrency
 from pipes import quote
 
 class ODMSplitStage(types.ODM_Stage):
@@ -84,7 +85,7 @@ class ODMSplitStage(types.ODM_Stage):
                     submodel_name = os.path.basename(os.path.abspath(sp_octx.path("..")))
 
                     # Aligned reconstruction is in reconstruction.aligned.json
-                    # We need to replace reconstruction.json with it
+                    # We need to rename it to reconstruction.json
 
                     aligned_recon = sp_octx.path('reconstruction.aligned.json')
                     main_recon = sp_octx.path('reconstruction.json')
@@ -94,7 +95,7 @@ class ODMSplitStage(types.ODM_Stage):
                                         "This could mean that the submodel could not be reconstructed "
                                         " (are there enough features to reconstruct it?). Skipping." % (submodel_name, aligned_recon))
                         continue
-                        
+
                     if io.file_exists(main_recon):
                         os.remove(main_recon)
 
@@ -120,17 +121,34 @@ class ODMSplitStage(types.ODM_Stage):
 
 class ODMMergeStage(types.ODM_Stage):
     def process(self, args, outputs):
-        from opendm import grass_engine
+        from opendm.grass_engine import grass 
 
         tree = outputs['tree']
         reconstruction = outputs['reconstruction']
 
         if outputs['large']:
             # Merge point clouds
-            all_point_clouds = get_submodel_paths(tree.submodels_path, "odm_georeferencing", "odm_georeferenced_model.laz")
-            pdal.merge_point_clouds(all_point_clouds, tree.odm_georeferencing_model_laz, args.verbose)
+            # all_point_clouds = get_submodel_paths(tree.submodels_path, "odm_georeferencing", "odm_georeferenced_model.laz")
+            # pdal.merge_point_clouds(all_point_clouds, tree.odm_georeferencing_model_laz, args.verbose)
 
-            # Merge orthophoto
+            # Merge orthophotos
+            all_orthophotos = get_submodel_paths(tree.submodels_path, "odm_orthophoto", "odm_orthophoto.tif")
+            if len(all_orthophotos) > 1:
+                gctx = grass.create_context({'auto_cleanup' : False})
+
+                gctx.add_param('orthophoto_files', ",".join(map(quote, all_orthophotos)))
+                gctx.add_param('max_concurrency', args.max_concurrency)
+                gctx.add_param('memory', concurrency.get_max_memory_mb(300))
+                gctx.set_location(all_orthophotos[0])
+
+                cutline_file = gctx.execute(os.path.join("opendm", "grass", "generate_cutlines.grass"))
+            
+            elif len(all_orthophotos) == 1:
+                # Simply copy
+                log.ODM_WARNING("A single orthophoto was found between all submodels.")
+                shutil.copyfile(all_orthophotos[0], tree.odm_orthophoto_tif)
+            else:
+                log.ODM_WARNING("No orthophotos were found in any of the submodels. No orthophoto will be generated.")
 
             # TODO: crop ortho if necessary
 
