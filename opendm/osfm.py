@@ -158,7 +158,7 @@ def get_submodel_argv(args, submodels_path, submodel_name):
     i = 1
     project_path_found = False
     project_name_added = False
-    crop_found = True
+    crop_found = False
 
     # TODO: what about GCP paths?
 
