@@ -69,7 +69,7 @@ RUN pip install -U \
   numpy==1.15.4 \
   psutil \
   pyproj \
-  PyYAML \
+  PyYAML==3.13 \
   repoze.lru \
   scipy \
   shapely \

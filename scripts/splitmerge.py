@@ -1,4 +1,5 @@
-import os, sys
+import os
+import shutil
 from opendm import log
 from opendm import osfm
 from opendm import types
@@ -43,7 +44,7 @@ class ODMSplitStage(types.ODM_Stage):
                     osfm.run("create_submodels", tree.opensfm)
                 else:
                     log.ODM_WARNING("Submodels directory already exist at: %s" % tree.submodels_path)
-                
+
                 # TODO: on a network workflow we probably stop here
                 # and let NodeODM take over
                 # exit(0)

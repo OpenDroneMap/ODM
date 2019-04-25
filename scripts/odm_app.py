@@ -65,7 +65,7 @@ class ODMApp:
                                             build_overviews=args.build_overviews,
                                             max_concurrency=args.max_concurrency,
                                             verbose=args.verbose)
-        
+
         if not args.video:
             # Normal pipeline
             self.first_stage = dataset
