@@ -1,7 +1,7 @@
 import os
 import shutil
 from opendm import log
-from opendm import osfm
+from opendm.osfm import OSFMContext, get_submodel_argv, get_submodel_paths
 from opendm import types
 from opendm import io
 from opendm import system
@@ -18,7 +18,8 @@ class ODMSplitStage(types.ODM_Stage):
         outputs['large'] = len(photos) > args.split
 
         if outputs['large']:
-            split_done_file = os.path.join(tree.opensfm, "split_done.txt")
+            octx = OSFMContext(tree.opensfm)
+            split_done_file = octx.path("split_done.txt")
 
             if not io.file_exists(split_done_file) or self.rerun():
 
@@ -30,10 +31,10 @@ class ODMSplitStage(types.ODM_Stage):
                     "submodel_size: %s" % args.split,
                     "submodel_overlap: %s" % args.split_overlap,
                 ]
-                
-                osfm.setup(args, tree.dataset_raw, tree.opensfm, photos, gcp_path=tree.odm_georeferencing_gcp, append_config=config, rerun=self.rerun())
+
+                octx.setup(args, tree.dataset_raw, photos, gcp_path=tree.odm_georeferencing_gcp, append_config=config, rerun=self.rerun())
             
-                osfm.feature_matching(tree.opensfm, self.rerun())
+                octx.feature_matching(self.rerun())
 
                 # Create submodels
                 if not io.dir_exists(tree.submodels_path) or self.rerun():
@@ -41,7 +42,7 @@ class ODMSplitStage(types.ODM_Stage):
                         log.ODM_WARNING("Removing existing submodels directory: %s" % tree.submodels_path)
                         shutil.rmtree(tree.submodels_path)
 
-                    osfm.run("create_submodels", tree.opensfm)
+                    octx.run("create_submodels")
                 else:
                     log.ODM_WARNING("Submodels directory already exist at: %s" % tree.submodels_path)
 
@@ -58,16 +59,14 @@ class ODMSplitStage(types.ODM_Stage):
 
                 for sp in submodel_paths:
                     log.ODM_INFO("Reconstructing %s" % sp)
-                    osfm.reconstruct(sp, self.rerun())
+                    OSFMContext(sp).reconstruct(self.rerun())
 
                 # Align
-                # TODO: what if you change OpenSfM's align command camera constraits from soft to hard?
-                # TODO: what about point constraints?
-
-                alignment_file = io.join_paths(tree.opensfm, 'alignment_done.txt')
+                alignment_file = octx.path('alignment_done.txt')
                 if not io.file_exists(alignment_file) or self.rerun():
                     log.ODM_INFO("Aligning submodels...")
-                    osfm.run('align_submodels', tree.opensfm)
+                    octx.run('align_submodels')
+
                     with open(alignment_file, 'w') as fout:
                         fout.write("Alignment done!\n")
                 else:
@@ -79,15 +78,34 @@ class ODMSplitStage(types.ODM_Stage):
                     # TODO: network workflow
                     
                     # We have already done matching
-                    osfm.mark_feature_matching_done(sp)
+                    sp_octx = OSFMContext(sp)
+                    sp_octx.mark_feature_matching_done()
 
-                    submodel_name = os.path.basename(os.path.abspath(os.path.join(sp, "..")))
+                    submodel_name = os.path.basename(os.path.abspath(sp_octx.path("..")))
+
+                    # Aligned reconstruction is in reconstruction.aligned.json
+                    # We need to replace reconstruction.json with it
+
+                    aligned_recon = sp_octx.path('reconstruction.aligned.json')
+                    main_recon = sp_octx.path('reconstruction.json')
+
+                    if not io.file_exists(aligned_recon):
+                        log.ODM_WARNING("Submodel %s does not have an aligned reconstruction (%s). "
+                                        "This could mean that the submodel could not be reconstructed "
+                                        " (are there enough features to reconstruct it?). Skipping." % (submodel_name, aligned_recon))
+                        continue
+                        
+                    if io.file_exists(main_recon):
+                        os.remove(main_recon)
+
+                    os.rename(aligned_recon, main_recon)
+                    log.ODM_DEBUG("%s is now %s" % (aligned_recon, main_recon))
 
                     log.ODM_INFO("========================")
                     log.ODM_INFO("Processing %s" % submodel_name)
                     log.ODM_INFO("========================")
 
-                    argv = osfm.get_submodel_argv(args, tree.submodels_path, submodel_name)
+                    argv = get_submodel_argv(args, tree.submodels_path, submodel_name)
 
                     # Re-run the ODM toolchain on the submodel
                     system.run(" ".join(map(quote, argv)), env_vars=os.environ.copy())
@@ -109,7 +127,7 @@ class ODMMergeStage(types.ODM_Stage):
 
         if outputs['large']:
             # Merge point clouds
-            all_point_clouds = osfm.get_submodel_paths(tree.submodels_path, "odm_georeferencing", "odm_georeferenced_model.laz")
+            all_point_clouds = get_submodel_paths(tree.submodels_path, "odm_georeferencing", "odm_georeferenced_model.laz")
             pdal.merge_point_clouds(all_point_clouds, tree.odm_georeferencing_model_laz, args.verbose)
 
             # Merge orthophoto

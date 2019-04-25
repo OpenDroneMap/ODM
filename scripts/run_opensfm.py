@@ -8,7 +8,7 @@ from opendm import context
 from opendm import gsd
 from opendm import point_cloud
 from opendm import types
-from opendm import osfm
+from opendm.osfm import OSFMContext
 
 class ODMOpenSfMStage(types.ODM_Stage):
     def process(self, args, outputs):
@@ -20,16 +20,17 @@ class ODMOpenSfMStage(types.ODM_Stage):
             log.ODM_ERROR('Not enough photos in photos array to start OpenSfM')
             exit(1)
 
+        octx = OSFMContext(tree.opensfm)
+        octx.setup(args, tree.dataset_raw, photos, gcp_path=tree.odm_georeferencing_gcp, rerun=self.rerun())
+        octx.feature_matching(self.rerun())
+        octx.reconstruct(self.rerun())
+
         if args.fast_orthophoto:
-            output_file = io.join_paths(tree.opensfm, 'reconstruction.ply')
+            output_file = octx.path('reconstruction.ply')
         elif args.use_opensfm_dense:
             output_file = tree.opensfm_model
         else:
             output_file = tree.opensfm_reconstruction
-
-        osfm.setup(args, tree.dataset_raw, tree.opensfm, photos, gcp_path=tree.odm_georeferencing_gcp, rerun=self.rerun())
-        osfm.feature_matching(tree.opensfm, self.rerun())
-        osfm.reconstruct(tree.opensfm, self.rerun())
 
         if not io.file_exists(output_file) or self.rerun():
             # Always export VisualSFM's reconstruction and undistort images
@@ -40,30 +41,30 @@ class ODMOpenSfMStage(types.ODM_Stage):
                 image_scale = 1.0
 
             if not io.file_exists(tree.opensfm_reconstruction_nvm) or self.rerun():
-                osfm.run('export_visualsfm --image_extension png --scale_focal %s' % image_scale, tree.opensfm)
+                octx.run('export_visualsfm --image_extension png --scale_focal %s' % image_scale)
             else:
                 log.ODM_WARNING('Found a valid OpenSfM NVM reconstruction file in: %s' %
                                 tree.opensfm_reconstruction_nvm)
 
             # These will be used for texturing
-            osfm.run('undistort --image_format png --image_scale %s' % image_scale, tree.opensfm)
+            octx.run('undistort --image_format png --image_scale %s' % image_scale)
 
             # Skip dense reconstruction if necessary and export
             # sparse reconstruction instead
             if args.fast_orthophoto:
-                osfm.run('export_ply --no-cameras' % image_scale, tree.opensfm)
+                octx.run('export_ply --no-cameras' % image_scale)
             elif args.use_opensfm_dense:
                 # Undistort images at full scale in JPG
                 # (TODO: we could compare the size of the PNGs if they are < than depthmap_resolution
                 # and use those instead of re-exporting full resolution JPGs)
-                osfm.run('undistort', tree.opensfm)
-                osfm.run('compute_depthmaps', tree.opensfm)
+                octx.run('undistort')
+                octx.run('compute_depthmaps')
         else:
             log.ODM_WARNING('Found a valid OpenSfM reconstruction file in: %s' %
                             tree.opensfm_reconstruction)
 
         # check if reconstruction was exported to bundler before
-        osfm.export_bundler(tree.opensfm, tree.opensfm_bundle_list, self.rerun())
+        octx.export_bundler(tree.opensfm_bundle_list, self.rerun())
 
         if reconstruction.georef:
-            osfm.run('export_geocoords --transformation --proj \'%s\'' % reconstruction.georef.projection.srs, tree.opensfm)
+            octx.run('export_geocoords --transformation --proj \'%s\'' % reconstruction.georef.projection.srs)
