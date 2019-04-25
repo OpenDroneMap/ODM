@@ -61,6 +61,9 @@ class ODMSplitStage(types.ODM_Stage):
                     osfm.reconstruct(sp, self.rerun())
 
                 # Align
+                # TODO: what if you change OpenSfM's align command camera constraits from soft to hard?
+                # TODO: what about point constraints?
+
                 alignment_file = io.join_paths(tree.opensfm, 'alignment_done.txt')
                 if not io.file_exists(alignment_file) or self.rerun():
                     log.ODM_INFO("Aligning submodels...")
