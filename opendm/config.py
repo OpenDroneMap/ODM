@@ -253,6 +253,15 @@ def config():
                           'Use 0 to disable cropping. '
                           'Default: %(default)s'))
 
+    parser.add_argument('--compute-cutline',
+            action='store_true',
+            default=False,
+            help='Generates a polygon around the cropping area '
+            'that cuts the orthophoto around the edges of features. This polygon '
+            'can be useful for stitching seamless mosaics with multiple overlapping orthophotos. '
+            'Default: '
+            '%(default)s')
+
     parser.add_argument('--pc-classify',
             action='store_true',
             default=False,
@@ -527,5 +536,9 @@ def config():
     if args.skip_3dmodel and args.use_3dmesh:
       log.ODM_WARNING('--skip-3dmodel is set, but so is --use-3dmesh. --use_3dmesh will be ignored.')
       args.use_3dmesh = False
+
+    if args.compute_cutline and not args.crop:
+      log.ODM_WARNING("--compute-cutline is set, but --crop is not. --crop will be set to 0.01")
+      args.crop = 0.01
 
     return args
