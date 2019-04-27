@@ -8,6 +8,7 @@ from opendm import types
 from opendm import gsd
 from opendm.concurrency import get_max_memory
 from opendm.cropper import Cropper
+from opendm.cutline import compute_cutline
 
 
 class ODMOrthoPhotoStage(types.ODM_Stage):
@@ -114,8 +115,17 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                            '--config GDAL_CACHEMAX {max_memory}% '
                            '{png} {tiff} > {log}'.format(**kwargs))
 
+                bounds_file_path = os.path.join(tree.odm_georeferencing, 'odm_georeferenced_model.bounds.gpkg')
+                    
+                # Cutline computation, before cropping
+                # We want to use the full orthophoto, not the cropped one.
+                if args.compute_cutline:
+                    compute_cutline(tree.odm_orthophoto_tif, 
+                                    bounds_file_path,
+                                    os.path.join(tree.odm_orthophoto, "cutline.gpkg"),
+                                    self.params.get('max_concurrency'))
+
                 if args.crop > 0:
-                    bounds_file_path = os.path.join(tree.odm_georeferencing, 'odm_georeferenced_model.bounds.gpkg')
                     Cropper.crop(bounds_file_path, tree.odm_orthophoto_tif, {
                             'TILED': 'NO' if self.params.get('no_tiled') else 'YES',
                             'COMPRESS': self.params.get('compress'),

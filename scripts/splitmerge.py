@@ -99,7 +99,7 @@ class ODMSplitStage(types.ODM_Stage):
                     if io.file_exists(main_recon):
                         os.remove(main_recon)
 
-                    os.rename(aligned_recon, main_recon)
+                    shutil.move(aligned_recon, main_recon)
                     log.ODM_DEBUG("%s is now %s" % (aligned_recon, main_recon))
 
                     log.ODM_INFO("========================")
@@ -121,8 +121,6 @@ class ODMSplitStage(types.ODM_Stage):
 
 class ODMMergeStage(types.ODM_Stage):
     def process(self, args, outputs):
-        from opendm.grass_engine import grass 
-
         tree = outputs['tree']
         reconstruction = outputs['reconstruction']
 
@@ -131,28 +129,19 @@ class ODMMergeStage(types.ODM_Stage):
             # all_point_clouds = get_submodel_paths(tree.submodels_path, "odm_georeferencing", "odm_georeferenced_model.laz")
             # pdal.merge_point_clouds(all_point_clouds, tree.odm_georeferencing_model_laz, args.verbose)
 
-            # 
-
             # Merge orthophotos
-            all_orthophotos = get_submodel_paths(tree.submodels_path, "odm_orthophoto", "odm_orthophoto.tif")
-            if len(all_orthophotos) > 1:
-                gctx = grass.create_context({'auto_cleanup' : False})
+            all_orthos_and_cutlines = get_all_submodel_paths(tree.submodels_path,
+                os.path.join("odm_orthophoto", "odm_orthophoto.tif"),
+                os.path.join("odm_orthophoto", "cutline.gpkg"),
+            )
 
-                gctx.add_param('orthophoto_files', ",".join(all_orthophotos))
-                gctx.add_param('max_concurrency', args.max_concurrency)
-                gctx.add_param('memory', int(concurrency.get_max_memory_mb(300)))
-                gctx.set_location(all_orthophotos[0])
-
-                cutline_file = gctx.execute(os.path.join("opendm", "grass", "generate_cutlines.grass"))
-                if cutline_file != 'error':
-                    log.ODM_INFO("YAY")
-                    log.ODM_INFO(cutline_file)
-                else:
-                    log.ODM_WARNING("Could not generate orthophoto cutlines. An error occured when running GRASS. No orthophoto will be generated.")
-            elif len(all_orthophotos) == 1:
+            if len(all_orthos_and_cutlines) > 1:
+                pass
+                
+            elif len(all_orthos_and_cutlines) == 1:
                 # Simply copy
                 log.ODM_WARNING("A single orthophoto was found between all submodels.")
-                shutil.copyfile(all_orthophotos[0], tree.odm_orthophoto_tif)
+                shutil.copyfile(all_orthos_and_cutlines[0][0], tree.odm_orthophoto_tif)
             else:
                 log.ODM_WARNING("No orthophotos were found in any of the submodels. No orthophoto will be generated.")
 

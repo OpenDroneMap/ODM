@@ -152,8 +152,9 @@ def get_submodel_argv(args, submodels_path, submodel_name):
     """
     :return the same as argv, but removing references to --split, 
         setting/replacing --project-path and name
-        setting/replacing --crop to 0.01 (always crop on submodels)
+        setting/replacing --crop (always crop on submodels)
         removing --rerun-from, --rerun, --rerun-all
+        adding --compute-cutline
     """
     argv = sys.argv
 
@@ -162,6 +163,7 @@ def get_submodel_argv(args, submodels_path, submodel_name):
     project_path_found = False
     project_name_added = False
     crop_found = False
+    compute_cutline_found = False
 
     # TODO: what about GCP paths?
 
@@ -184,9 +186,13 @@ def get_submodel_argv(args, submodels_path, submodel_name):
             i += 2
         elif arg == '--crop':
             result.append(arg)
-            result.append("0.01")
+            result.append(argv[i + 1])
             crop_found = True
             i += 2
+        elif arg == '--compute-cutline':
+            result.append(arg)
+            compute_cutline_found = True
+            i += 1
         elif arg == '--split':
             i += 2
         elif arg == '--rerun-from':
@@ -205,10 +211,13 @@ def get_submodel_argv(args, submodels_path, submodel_name):
     
     if not crop_found:
         result.append('--crop')
-        result.append('0.01')
+        result.append('3')
 
     if not project_name_added:
         result.append(submodel_name)
+
+    if not compute_cutline_found:
+        result.append("--compute-cutline")
     
     return result
 
@@ -225,5 +234,30 @@ def get_submodel_paths(submodels_path, *paths):
                 result.append(p)
             else:
                 log.ODM_WARNING("Missing %s from submodel %s" % (p, f))
+
+    return result
+
+def get_all_submodel_paths(submodels_path, *all_paths):
+    """
+    :return Existing, multiple paths for all submodels as a nested list (all or nothing for each submodel)
+        if a single file is missing from the submodule, no files are returned for that submodel.
+
+        (i.e. get_multi_submodel_paths("path/", "odm_orthophoto.tif", "dem.tif")) -->
+                [["path/submodel_0000/odm_orthophoto.tif", "path/submodel_0000/dem.tif"],
+                 ["path/submodel_0001/odm_orthophoto.tif", "path/submodel_0001/dem.tif"]]
+    """
+    result = []
+    for f in os.listdir(submodels_path):
+        if f.startswith('submodel'):
+            all_found = True
+
+            for ap in all_paths:
+                p = os.path.join(submodels_path, f, ap) 
+                if not os.path.exists(p):
+                    log.ODM_WARNING("Missing %s from submodel %s" % (p, f))
+                    all_found = False
+
+            if all_found:
+                result.append([os.path.join(submodels_path, f, ap) for ap in all_paths])
 
     return result

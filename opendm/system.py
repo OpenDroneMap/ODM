@@ -26,6 +26,8 @@ def exit_gracefully(signum, frame):
     for sp in running_subprocesses:
         log.ODM_WARNING("Sending TERM signal to PID %s..." % sp.pid)
         os.killpg(os.getpgid(sp.pid), signal.SIGTERM)
+    
+    exit(1)
 
 signal.signal(signal.SIGINT, exit_gracefully)
 signal.signal(signal.SIGTERM, exit_gracefully)
