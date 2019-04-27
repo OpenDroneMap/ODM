@@ -78,9 +78,9 @@ class ODMDEMStage(types.ODM_Stage):
                         )
 
                     if args.crop > 0:
-                        bounds_shapefile_path = os.path.join(tree.odm_georeferencing, 'odm_georeferenced_model.bounds.shp')
-                        if os.path.exists(bounds_shapefile_path):
-                            Cropper.crop(bounds_shapefile_path, os.path.join(odm_dem_root, "{}.tif".format(product)), {
+                        bounds_file_path = os.path.join(tree.odm_georeferencing, 'odm_georeferenced_model.bounds.gpkg')
+                        if os.path.exists(bounds_file_path):
+                            Cropper.crop(bounds_file_path, os.path.join(odm_dem_root, "{}.tif".format(product)), {
                                 'TILED': 'YES',
                                 'COMPRESS': 'LZW',
                                 'BLOCKXSIZE': 512,
