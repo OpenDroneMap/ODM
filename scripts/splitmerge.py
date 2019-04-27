@@ -131,6 +131,8 @@ class ODMMergeStage(types.ODM_Stage):
             # all_point_clouds = get_submodel_paths(tree.submodels_path, "odm_georeferencing", "odm_georeferenced_model.laz")
             # pdal.merge_point_clouds(all_point_clouds, tree.odm_georeferencing_model_laz, args.verbose)
 
+            # 
+
             # Merge orthophotos
             all_orthophotos = get_submodel_paths(tree.submodels_path, "odm_orthophoto", "odm_orthophoto.tif")
             if len(all_orthophotos) > 1:

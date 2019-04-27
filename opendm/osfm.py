@@ -152,7 +152,7 @@ def get_submodel_argv(args, submodels_path, submodel_name):
     """
     :return the same as argv, but removing references to --split, 
         setting/replacing --project-path and name
-        setting/replacing --crop to 0 (never crop on submodels)
+        setting/replacing --crop to 0.01 (always crop on submodels)
         removing --rerun-from, --rerun, --rerun-all
     """
     argv = sys.argv
@@ -184,7 +184,7 @@ def get_submodel_argv(args, submodels_path, submodel_name):
             i += 2
         elif arg == '--crop':
             result.append(arg)
-            result.append('0')
+            result.append("0.01")
             crop_found = True
             i += 2
         elif arg == '--split':
@@ -205,7 +205,7 @@ def get_submodel_argv(args, submodels_path, submodel_name):
     
     if not crop_found:
         result.append('--crop')
-        result.append('0')
+        result.append('0.01')
 
     if not project_name_added:
         result.append(submodel_name)

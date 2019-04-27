@@ -115,8 +115,8 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                            '{png} {tiff} > {log}'.format(**kwargs))
 
                 if args.crop > 0:
-                    shapefile_path = os.path.join(tree.odm_georeferencing, 'odm_georeferenced_model.bounds.shp')
-                    Cropper.crop(shapefile_path, tree.odm_orthophoto_tif, {
+                    bounds_file_path = os.path.join(tree.odm_georeferencing, 'odm_georeferenced_model.bounds.gpkg')
+                    Cropper.crop(bounds_file_path, tree.odm_orthophoto_tif, {
                             'TILED': 'NO' if self.params.get('no_tiled') else 'YES',
                             'COMPRESS': self.params.get('compress'),
                             'PREDICTOR': '2' if self.params.get('compress') in ['LZW', 'DEFLATE'] else '1',
