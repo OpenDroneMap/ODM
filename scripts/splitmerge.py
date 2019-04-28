@@ -9,7 +9,7 @@ from opendm import orthophoto
 from opendm.dem import pdal
 from opensfm.large import metadataset
 from opendm.cropper import Cropper
-from opendm.concurrency import get_max_memory
+from opendm.concurrency import get_max_memory, get_max_memory_mb
 from pipes import quote
 
 class ODMSplitStage(types.ODM_Stage):
@@ -158,11 +158,16 @@ class ODMMergeStage(types.ODM_Stage):
                 if len(all_orthos_and_cutlines) > 1:
                     log.ODM_DEBUG("Found %s submodels with valid orthophotos and cutlines" % len(all_orthos_and_cutlines))
                     
+                    # TODO: histogram matching via rasterio
+                    # currently parts have different color tones
+
                     merged_geotiff = os.path.join(tree.odm_orthophoto, "odm_orthophoto.merged.tif")
 
                     kwargs = {
                         'orthophoto_merged': merged_geotiff,
                         'input_files': ' '.join(map(lambda i: quote(i[0]), all_orthos_and_cutlines)),
+                        'max_memory': get_max_memory(),
+                        'max_memory_mb': get_max_memory_mb(300)
                     }
 
                     # use bounds as cutlines (blending)
@@ -170,19 +175,23 @@ class ODMMergeStage(types.ODM_Stage):
                         os.remove(merged_geotiff)
 
                     system.run('gdal_merge.py -o {orthophoto_merged} '
-                            '-createonly '
+                            #'-createonly '
                             '-co "BIGTIFF=YES" '
                             '-co "BLOCKXSIZE=512" '
                             '-co "BLOCKYSIZE=512" '
+                            '--config GDAL_CACHEMAX {max_memory}%'
                             '{input_files} '.format(**kwargs)
                             )
 
                     for ortho_cutline in all_orthos_and_cutlines:
                         kwargs['input_file'], kwargs['cutline'] = ortho_cutline
 
+                        # Note: cblend has a high performance penalty
                         system.run('gdalwarp -cutline {cutline} '
-                                #'-cblend 2 '
+                                '-cblend 20 '
                                 '-r lanczos -multi '
+                                '-wm {max_memory_mb} '
+                                '--config GDAL_CACHEMAX {max_memory}%'
                                 ' {input_file} {orthophoto_merged}'.format(**kwargs)
                         )
 
