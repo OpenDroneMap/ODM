@@ -14,7 +14,7 @@ v.in.ogr input="${crop_area_file}" output=crop_area --overwrite
 g.region vector=crop_area
 
 # Generate cutlines
-i.cutlines.py --overwrite input=ortho output=cutline number_lines=16 edge_detection=zc no_edge_friction=10 lane_border_multiplier=100 tile_width=1024 tile_height=1024 overlap=20 processes=${max_concurrency} memory=${memory}
+i.cutlines.py --overwrite input=ortho output=cutline number_lines=16 edge_detection=zc no_edge_friction=20 lane_border_multiplier=1000000 tile_width=1024 tile_height=1024 overlap=20 processes=${max_concurrency} memory=${memory}
 
 #v.out.ogr input=cutline output="cutline_raw.gpkg" format=GPKG
 
