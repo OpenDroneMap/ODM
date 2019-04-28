@@ -2,8 +2,9 @@
 
 ############################################################################
 #
-# MODULE:	i.cutlines
-# AUTHOR(S):	Moritz Lennert, with help of Stefanos Georganos
+# MODULE:	i.cutlines2
+# AUTHOR(S):	Moritz Lennert, with help of Stefanos Georganos, modified by
+#               Piero Toffanin
 #
 # PURPOSE:	Create tiles the borders of which do not cut across semantically
 #               meaningful objects
@@ -301,10 +302,10 @@ def main():
 
     if nsrange > ewrange:
         hnumber_lines = number_lines
-        vnumber_lines = int(number_lines * (ewrange / nsrange))
+        vnumber_lines = int(number_lines * (nsrange / ewrange))
     else:
         vnumber_lines = number_lines
-        hnumber_lines = int(number_lines * (nsrange / ewrange))
+        hnumber_lines = int(number_lines * (ewrange / nsrange))
 
     # Create the lines in horizonal direction
     nsstep = float(region.n - region.s - region.nsres) / hnumber_lines
