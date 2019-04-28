@@ -72,17 +72,19 @@ class Cropper:
         geomcol = ogr.Geometry(ogr.wkbGeometryCollection)
 
         driver = ogr.GetDriverByName('GPKG')
+        srs = None
 
         for input_bound_file in input_bound_files:
             ds = driver.Open(input_bound_file, 0) # ready-only
+
             layer = ds.GetLayer()
+            srs = layer.GetSpatialRef()
 
             # Collect all Geometry
             for feature in layer:
                 geomcol.AddGeometry(feature.GetGeometryRef())
-
-            # Close
-            ds = None 
+            
+            ds = None
 
         # Calculate convex hull
         convexhull = geomcol.ConvexHull()
@@ -102,7 +104,7 @@ class Cropper:
             driver.DeleteDataSource(output_bounds)
 
         out_ds = driver.CreateDataSource(output_bounds)
-        layer = out_ds.CreateLayer("convexhull", geom_type=ogr.wkbPolygon)
+        layer = out_ds.CreateLayer("convexhull", srs=srs, geom_type=ogr.wkbPolygon)
 
         feature_def = layer.GetLayerDefn()
         feature = ogr.Feature(feature_def)
@@ -112,7 +114,6 @@ class Cropper:
 
         # Save and close output data source
         out_ds = None
-
 
     def create_bounds_geojson(self, pointcloud_path, buffer_distance = 0, decimation_step=40):
         """

@@ -53,23 +53,23 @@ class ODMOpenSfMStage(types.ODM_Stage):
         else:
             log.ODM_WARNING("Found an undistorted directory in %s" % undistorted_images_path)
 
-            # Skip dense reconstruction if necessary and export
-            # sparse reconstruction instead
-            if args.fast_orthophoto:
-                if not io.file_exists(output_file) or self.rerun():
-                    octx.run('export_ply --no-cameras' % image_scale)
-                else:
-                    log.ODM_WARNING("Found a valid PLY reconstruction in %s" % output_file)
+        # Skip dense reconstruction if necessary and export
+        # sparse reconstruction instead
+        if args.fast_orthophoto:
+            if not io.file_exists(output_file) or self.rerun():
+                octx.run('export_ply --no-cameras' % image_scale)
+            else:
+                log.ODM_WARNING("Found a valid PLY reconstruction in %s" % output_file)
 
-            elif args.use_opensfm_dense:
-                # Undistort images at full scale in JPG
-                # (TODO: we could compare the size of the PNGs if they are < than depthmap_resolution
-                # and use those instead of re-exporting full resolution JPGs)
-                if not io.file_exists(output_file) or self.rerun():
-                    octx.run('undistort')
-                    octx.run('compute_depthmaps')
-                else:
-                    log.ODM_WARNING("Found a valid dense reconstruction in %s" % output_file)
+        elif args.use_opensfm_dense:
+            # Undistort images at full scale in JPG
+            # (TODO: we could compare the size of the PNGs if they are < than depthmap_resolution
+            # and use those instead of re-exporting full resolution JPGs)
+            if not io.file_exists(output_file) or self.rerun():
+                octx.run('undistort')
+                octx.run('compute_depthmaps')
+            else:
+                log.ODM_WARNING("Found a valid dense reconstruction in %s" % output_file)
 
         # check if reconstruction was exported to bundler before
         octx.export_bundler(tree.opensfm_bundle_list, self.rerun())

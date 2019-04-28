@@ -152,7 +152,6 @@ def get_submodel_argv(args, submodels_path, submodel_name):
     """
     :return the same as argv, but removing references to --split, 
         setting/replacing --project-path and name
-        setting/replacing --crop (always crop on submodels)
         removing --rerun-from, --rerun, --rerun-all
         adding --compute-cutline
     """
@@ -162,7 +161,6 @@ def get_submodel_argv(args, submodels_path, submodel_name):
     i = 1
     project_path_found = False
     project_name_added = False
-    crop_found = False
     compute_cutline_found = False
 
     # TODO: what about GCP paths?
@@ -184,11 +182,6 @@ def get_submodel_argv(args, submodels_path, submodel_name):
             result.append(submodels_path)
             project_path_found = True
             i += 2
-        elif arg == '--crop':
-            result.append(arg)
-            result.append(argv[i + 1])
-            crop_found = True
-            i += 2
         elif arg == '--compute-cutline':
             result.append(arg)
             compute_cutline_found = True
@@ -209,10 +202,6 @@ def get_submodel_argv(args, submodels_path, submodel_name):
         result.append('--project-path')
         result.append(submodel_project_path)
     
-    if not crop_found:
-        result.append('--crop')
-        result.append('3')
-
     if not project_name_added:
         result.append(submodel_name)
 
