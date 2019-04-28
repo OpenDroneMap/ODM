@@ -6,6 +6,7 @@ from opendm import system
 from opendm import context
 from opendm import types
 from opendm import gsd
+from opendm import orthophoto
 from opendm.concurrency import get_max_memory
 from opendm.cropper import Cropper
 from opendm.cutline import compute_cutline
@@ -15,7 +16,7 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
     def process(self, args, outputs):
         tree = outputs['tree']
         reconstruction = outputs['reconstruction']
-        verbose = '-verbose' if self.params.get('verbose') else ''
+        verbose = '-verbose' if args.verbose else ''
 
         # define paths and create working directories
         system.mkdir_p(tree.odm_orthophoto)
@@ -28,7 +29,7 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                 'log': tree.odm_orthophoto_log,
                 'ortho': tree.odm_orthophoto_file,
                 'corners': tree.odm_orthophoto_corners,
-                'res': 1.0 / (gsd.cap_resolution(self.params.get('resolution'), tree.opensfm_reconstruction, ignore_gsd=args.ignore_gsd) / 100.0),
+                'res': 1.0 / (gsd.cap_resolution(args.orthophoto_resolution, tree.opensfm_reconstruction, ignore_gsd=args.ignore_gsd) / 100.0),
                 'verbose': verbose
             }
 
@@ -85,32 +86,23 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                                     float(georef.utm_north_offset)
                 log.ODM_INFO('Creating GeoTIFF')
 
+                orthophoto_vars = orthophoto.get_orthophoto_vars(args)
+
                 kwargs = {
                     'ulx': ulx,
                     'uly': uly,
                     'lrx': lrx,
                     'lry': lry,
-                    'tiled': '' if self.params.get('no_tiled') else '-co TILED=yes ',
-                    'compress': self.params.get('compress'),
-                    'predictor': '-co PREDICTOR=2 ' if self.params.get('compress') in
-                                                       ['LZW', 'DEFLATE'] else '',
+                    'vars': ' '.join(['-co %s=%s' % (k, orthophoto_vars[k]) for k in orthophoto_vars]),
                     'proj': georef.projection.srs,
-                    'bigtiff': self.params.get('bigtiff'),
                     'png': tree.odm_orthophoto_file,
                     'tiff': tree.odm_orthophoto_tif,
                     'log': tree.odm_orthophoto_tif_log,
                     'max_memory': get_max_memory(),
-                    'threads': self.params.get('max_concurrency')
                 }
 
                 system.run('gdal_translate -a_ullr {ulx} {uly} {lrx} {lry} '
-                           '{tiled} '
-                           '-co BIGTIFF={bigtiff} '
-                           '-co COMPRESS={compress} '
-                           '{predictor} '
-                           '-co BLOCKXSIZE=512 '
-                           '-co BLOCKYSIZE=512 '
-                           '-co NUM_THREADS={threads} '
+                           '{vars} '
                            '-a_srs \"{proj}\" '
                            '--config GDAL_CACHEMAX {max_memory}% '
                            '{png} {tiff} > {log}'.format(**kwargs))
@@ -123,30 +115,13 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                     compute_cutline(tree.odm_orthophoto_tif, 
                                     bounds_file_path,
                                     os.path.join(tree.odm_orthophoto, "cutline.gpkg"),
-                                    self.params.get('max_concurrency'))
+                                    args.max_concurrency)
 
                 if args.crop > 0:
-                    Cropper.crop(bounds_file_path, tree.odm_orthophoto_tif, {
-                            'TILED': 'NO' if self.params.get('no_tiled') else 'YES',
-                            'COMPRESS': self.params.get('compress'),
-                            'PREDICTOR': '2' if self.params.get('compress') in ['LZW', 'DEFLATE'] else '1',
-                            'BIGTIFF': self.params.get('bigtiff'),
-                            'BLOCKXSIZE': 512,
-                            'BLOCKYSIZE': 512,
-                            'NUM_THREADS': self.params.get('max_concurrency')
-                        })
+                    Cropper.crop(bounds_file_path, tree.odm_orthophoto_tif, orthophoto_vars)
 
-                if self.params.get('build_overviews'):
-                    log.ODM_DEBUG("Building Overviews")
-                    kwargs = {
-                        'orthophoto': tree.odm_orthophoto_tif,
-                        'log': tree.odm_orthophoto_gdaladdo_log
-                    }
-                    # Run gdaladdo
-                    system.run('gdaladdo -ro -r average '
-                               '--config BIGTIFF_OVERVIEW IF_SAFER '
-                               '--config COMPRESS_OVERVIEW JPEG '
-                               '{orthophoto} 2 4 8 16 > {log}'.format(**kwargs))
+                if args.build_overviews:
+                    orthophoto.build_overviews(tree.odm_orthophoto_tif)
 
                 geotiffcreated = True
             if not geotiffcreated:

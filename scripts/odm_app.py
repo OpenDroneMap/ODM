@@ -57,14 +57,7 @@ class ODMApp:
         dem = ODMDEMStage('odm_dem', args,
                             max_concurrency=args.max_concurrency,
                             verbose=args.verbose)
-        orthophoto = ODMOrthoPhotoStage('odm_orthophoto', args,
-                                            resolution=args.orthophoto_resolution,
-                                            no_tiled=args.orthophoto_no_tiled,
-                                            compress=args.orthophoto_compression,
-                                            bigtiff=args.orthophoto_bigtiff,
-                                            build_overviews=args.build_overviews,
-                                            max_concurrency=args.max_concurrency,
-                                            verbose=args.verbose)
+        orthophoto = ODMOrthoPhotoStage('odm_orthophoto', args)
 
         if not args.video:
             # Normal pipeline
