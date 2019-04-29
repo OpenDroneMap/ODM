@@ -193,7 +193,7 @@ def get_submodel_argv(args, submodels_path, submodel_name):
     i = 1
     project_path_found = False
     project_name_added = False
-    compute_cutline_found = False
+    orthophoto_cutline_found = False
 
     # TODO: what about GCP paths?
 
@@ -214,9 +214,9 @@ def get_submodel_argv(args, submodels_path, submodel_name):
             result.append(submodels_path)
             project_path_found = True
             i += 2
-        elif arg == '--compute-cutline':
+        elif arg == '--orthophoto-cutline':
             result.append(arg)
-            compute_cutline_found = True
+            orthophoto_cutline_found = True
             i += 1
         elif arg == '--split':
             i += 2
@@ -237,8 +237,8 @@ def get_submodel_argv(args, submodels_path, submodel_name):
     if not project_name_added:
         result.append(submodel_name)
 
-    if not compute_cutline_found:
-        result.append("--compute-cutline")
+    if not orthophoto_cutline_found:
+        result.append("--orthophoto-cutline")
     
     return result
 

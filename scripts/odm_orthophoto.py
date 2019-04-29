@@ -111,7 +111,7 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                     
                 # Cutline computation, before cropping
                 # We want to use the full orthophoto, not the cropped one.
-                if args.compute_cutline:
+                if args.orthophoto_cutline:
                     compute_cutline(tree.odm_orthophoto_tif, 
                                     bounds_file_path,
                                     os.path.join(tree.odm_orthophoto, "cutline.gpkg"),
