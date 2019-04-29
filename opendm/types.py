@@ -1,6 +1,7 @@
 import cv2
 import exifread
 import re
+import os
 from fractions import Fraction
 from opensfm.exif import sensor_string
 from opendm import get_image_size
@@ -320,7 +321,7 @@ class ODM_Tree(object):
         self.sm_progress = io.join_paths(self.root_path, "sm_progress.txt")
 
     def path(self, *args):
-        return io.join_paths(self.root_path, *args)
+        return os.path.join(self.root_path, *args)
 
 
 class ODM_Stage:
