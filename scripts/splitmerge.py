@@ -46,6 +46,7 @@ class ODMSplitStage(types.ODM_Stage):
                         shutil.rmtree(tree.submodels_path)
 
                     octx.run("create_submodels")
+                    octx.set_image_list_absolute()
                 else:
                     log.ODM_WARNING("Submodels directory already exist at: %s" % tree.submodels_path)
 

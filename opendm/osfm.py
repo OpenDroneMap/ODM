@@ -147,6 +147,38 @@ class OSFMContext:
     def path(self, *paths):
         return os.path.join(self.opensfm_project_path, *paths)
 
+    def set_image_list_absolute(self):
+        """
+        Checks the image_list.txt file and makes sure that all paths
+        written in it are absolute paths and not relative paths.
+        If there are relative paths, they are changed to absolute paths.
+        """
+        image_list_file = self.path("image_list.txt")
+        tmp_list_file = self.path("image_list.txt.tmp")
+
+        if io.file_exists(image_list_file):
+            changed = False
+
+            with open(image_list_file, 'r') as f:
+                content = f.read()
+            
+            lines = []
+            for line in map(str.strip, content.split('\n')):
+                if line and not line.startswith("/"):
+                    changed = True
+                    line = os.path.abspath(os.path.join(self.opensfm_project_path, line))
+                lines.append(line)
+
+            if changed:
+                with open(tmp_list_file, 'w') as f:
+                    f.write("\n".join(lines))
+
+                os.remove(image_list_file)
+                os.rename(tmp_list_file, image_list_file)
+
+                log.ODM_DEBUG("%s now contains absolute paths" % image_list_file)
+        else:
+            log.ODM_WARNING("No %s found, cannot check for absolute paths." % image_list_file)
 
 def get_submodel_argv(args, submodels_path, submodel_name):
     """
