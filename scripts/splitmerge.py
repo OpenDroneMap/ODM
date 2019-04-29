@@ -6,7 +6,8 @@ from opendm import types
 from opendm import io
 from opendm import system
 from opendm import orthophoto
-from opendm.dem import pdal
+from opendm.dem import pdal, utils
+from opendm.dem.merge import euclidean_merge_dems
 from opensfm.large import metadataset
 from opendm.cropper import Cropper
 from opendm.concurrency import get_max_memory, get_max_memory_mb
@@ -237,10 +238,33 @@ class ODMMergeStage(types.ODM_Stage):
             else:
                 log.ODM_WARNING("Found merged orthophoto in %s" % tree.odm_orthophoto_tif)
 
-            # Merge DEM
+            # Merge DEMs
 
-            # TODO: crop DEM if necessary
+            def merge_dems(dem_filename, human_name):
+                dem_file = os.path.join(tree.path("odm_dem", dem_filename))
+                if not io.file_exists(dem_file) or self.rerun():
+                    all_dems = get_submodel_paths(tree.submodels_path, "odm_dem", dem_filename)
+                    log.ODM_INFO("Merging %ss" % human_name)
+                    
+                    # Merge
+                    dem_vars = utils.get_dem_vars(args)
+                    euclidean_merge_dems(all_dems, dem_file, dem_vars)
 
+                    if io.file_exists(dem_file):
+                        # Crop
+                        if args.crop > 0:
+                            Cropper.crop(merged_bounds_file, dem_file, dem_vars)
+                        log.ODM_INFO("Created %s" % dem_file)
+                    else:
+                        log.ODM_WARNING("Cannot merge %s, %s was not created" % (human_name, dem_file))
+                else:
+                    log.ODM_WARNING("Found merged %s in %s" % (human_name, dsm_file))
+
+            if args.dsm:
+                merge_dems("dsm.tif", "DSM")
+
+            if args.dtm:
+                merge_dems("dtm.tif", "DTM")
 
             # Stop the pipeline short! We're done.
             self.next_stage = None
