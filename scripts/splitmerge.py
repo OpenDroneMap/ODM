@@ -241,7 +241,7 @@ class ODMMergeStage(types.ODM_Stage):
             # Merge DEMs
 
             def merge_dems(dem_filename, human_name):
-                dem_file = os.path.join(tree.path("odm_dem", dem_filename))
+                dem_file = tree.path("odm_dem", dem_filename)
                 if not io.file_exists(dem_file) or self.rerun():
                     all_dems = get_submodel_paths(tree.submodels_path, "odm_dem", dem_filename)
                     log.ODM_INFO("Merging %ss" % human_name)
