@@ -46,7 +46,6 @@ class ODMSplitStage(types.ODM_Stage):
                         shutil.rmtree(tree.submodels_path)
 
                     octx.run("create_submodels")
-                    octx.set_image_list_absolute()
                 else:
                     log.ODM_WARNING("Submodels directory already exist at: %s" % tree.submodels_path)
 
@@ -57,6 +56,10 @@ class ODMSplitStage(types.ODM_Stage):
                 # Find paths of all submodels
                 mds = metadataset.MetaDataSet(tree.opensfm)
                 submodel_paths = [os.path.abspath(p) for p in mds.get_submodel_paths()]
+
+                # Make sure the image list file has absolute paths
+                for sp in submodel_paths:
+                    OSFMContext(sp).set_image_list_absolute()
 
                 # Reconstruct each submodel
                 log.ODM_INFO("Dataset has been split into %s submodels. Reconstructing each submodel..." % len(submodel_paths))
