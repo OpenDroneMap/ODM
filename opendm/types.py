@@ -360,7 +360,7 @@ class ODM_Stage:
         log.ODM_INFO('Finished %s stage' % self.name)
 
         # Last stage?
-        if self.args.end_with == self.name:
+        if self.args.end_with == self.name or self.args.rerun == self.name:
             log.ODM_INFO("No more stages to run")
             return
 
