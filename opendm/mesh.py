@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 import os, shutil, sys, struct, random, math
-from gippy import GeoImage
 from opendm.dem import commands
 from opendm import system
 from opendm import log

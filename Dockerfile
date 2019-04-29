@@ -74,7 +74,6 @@ RUN pip install -U \
   scipy \
   shapely \
   xmltodict \
-  https://github.com/OpenDroneMap/gippy/archive/numpyfix.zip \
   rasterio \
   attrs==19.1.0
 

@@ -41,10 +41,7 @@ def euclidean_merge_dems(input_dems, output_dem, creation_options={}):
         logging.disable(logging.DEBUG)
 
     with rasterio.open(existing_dems[0]) as first:
-        src_nodata = 0
-        nodatavals = first.get_nodatavals()
-        if len(nodatavals) > 0:
-            src_nodata = nodatavals[0]
+        src_nodata = first.nodatavals[0]
         res = first.res
         dtype = first.dtypes[0]
         profile = first.profile
@@ -148,10 +145,7 @@ def euclidean_merge_dems(input_dems, output_dem, creation_options={}):
                 # With rio merge this just adds an extra row, but when the
                 # imprecision occurs at each block, you get artifacts
 
-                nodata = 0
-                nodatavals = src_d.get_nodatavals()
-                if len(nodatavals) > 0:
-                    nodata = nodatavals[0]
+                nodata = src_d.nodatavals[0]
 
                 # Alternative, custom get_window using rounding
                 src_window = tuple(zip(rowcol(

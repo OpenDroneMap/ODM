@@ -1,6 +1,6 @@
 import os
 import sys
-import gippy
+import rasterio
 import numpy
 import math
 import time
@@ -236,35 +236,33 @@ def post_process(geotiff_path, output_path, smoothing_iterations=1):
 
     log.ODM_INFO('Starting post processing (smoothing)...')
 
-    img = gippy.GeoImage(geotiff_path)
-    nodata = img[0].nodata()
-    arr = img[0].read()
+    with rasterio.open(geotiff_path) as img:
+        nodata = img.nodatavals[0]
+        dtype = img.dtypes[0]
+        arr = img.read()[0]
 
-    # Median filter (careful, changing the value 5 might require tweaking)
-    # the lines below. There's another numpy function that takes care of 
-    # these edge cases, but it's slower.
-    for i in range(smoothing_iterations):
-        log.ODM_INFO("Smoothing iteration %s" % str(i + 1))
-        arr = signal.medfilt(arr, 5)
+        # Median filter (careful, changing the value 5 might require tweaking)
+        # the lines below. There's another numpy function that takes care of 
+        # these edge cases, but it's slower.
+        for i in range(smoothing_iterations):
+            log.ODM_INFO("Smoothing iteration %s" % str(i + 1))
+            arr = signal.medfilt(arr, 5)
+        
+        # Fill corner points with nearest value
+        if arr.shape >= (4, 4):
+            arr[0][:2] = arr[1][0] = arr[1][1]
+            arr[0][-2:] = arr[1][-1] = arr[2][-1]
+            arr[-1][:2] = arr[-2][0] = arr[-2][1]
+            arr[-1][-2:] = arr[-2][-1] = arr[-2][-2]
+
+        # Median filter leaves a bunch of zeros in nodata areas
+        locs = numpy.where(arr == 0.0)
+        arr[locs] = nodata
+
+        # write output
+        with rasterio.open(output_path, 'w', **img.profile) as imgout:
+            imgout.write(arr.astype(dtype), 1)
     
-    # Fill corner points with nearest value
-    if arr.shape >= (4, 4):
-        arr[0][:2] = arr[1][0] = arr[1][1]
-        arr[0][-2:] = arr[1][-1] = arr[2][-1]
-        arr[-1][:2] = arr[-2][0] = arr[-2][1]
-        arr[-1][-2:] = arr[-2][-1] = arr[-2][-2]
-
-    # Median filter leaves a bunch of zeros in nodata areas
-    locs = numpy.where(arr == 0.0)
-    arr[locs] = nodata
-
-    # write output
-    imgout = gippy.GeoImage.create_from(img, output_path)
-    imgout.set_nodata(nodata)
-    imgout[0].write(arr)
-    output_path = imgout.filename()
-    imgout = None
-
     log.ODM_INFO('Completed post processing to create %s in %s' % (os.path.relpath(output_path), datetime.now() - start))
 
     return output_path
