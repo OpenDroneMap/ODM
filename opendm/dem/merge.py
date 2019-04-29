@@ -9,7 +9,7 @@ import os
 
 from rasterio import logging
 
-def euclidean_merge_dems(input_dems, output_dem):
+def euclidean_merge_dems(input_dems, output_dem, creation_options={}):
     """
     Based on https://github.com/mapbox/rio-merge-rgba
     and ideas from Anna Petrasova
@@ -22,13 +22,7 @@ def euclidean_merge_dems(input_dems, output_dem):
     inputs = []
     bounds=None
     precision=7
-    creation_options={}
 
-    log_ = logging.getLogger()
-    debug_enabled = log_.isEnabledFor(logging.DEBUG)
-    if debug_enabled:
-        logging.disable(logging.DEBUG)
-    
     existing_dems = []
     for dem in input_dems:
         if not io.file_exists(dem):
@@ -39,6 +33,12 @@ def euclidean_merge_dems(input_dems, output_dem):
     if len(existing_dems) == 0:
         log.ODM_WARNING("No input DEMs, skipping euclidean merge.")
         return
+
+    # Suppress DEBUG logging for rasterio operations
+    log_ = logging.getLogger()
+    debug_enabled = log_.isEnabledFor(logging.DEBUG)
+    if debug_enabled:
+        logging.disable(logging.DEBUG)
 
     with rasterio.open(existing_dems[0]) as first:
         src_nodata = 0
@@ -110,10 +110,10 @@ def euclidean_merge_dems(input_dems, output_dem):
     profile["transform"] = output_transform
     profile["height"] = output_height
     profile["width"] = output_width
-    profile["tiled"] = True
-    profile["blockxsize"] = 512
-    profile["blockysize"] = 512
-    profile["compress"] = 'lzw'
+    profile["tiled"] = creation_options.get('TILED', 'YES') == 'YES'
+    profile["blockxsize"] = creation_options.get('BLOCKXSIZE', 512)
+    profile["blockysize"] = creation_options.get('BLOCKYSIZE', 512)
+    profile["compress"] = creation_options.get('COMPRESS', 'LZW')
     profile["nodata"] = src_nodata
 
     # Creation opts
@@ -133,14 +133,10 @@ def euclidean_merge_dems(input_dems, output_dem):
             dst_count = first.count
             dst_shape = (dst_count, dst_rows, dst_cols)
             log.ODM_DEBUG("Temp shape: %r", dst_shape)
-            # dstarr = np.full(dst_shape, src_nodata, dtype=dtype)
 
             dstarr = np.zeros(dst_shape, dtype=dtype)
             distsum = np.zeros(dst_shape, dtype=dtype)
 
-            # Read up srcs until
-            # a. everything is data; i.e. no nodata
-            # b. no sources left
             for src_d, src_e in sources:
                 # The full_cover behavior is problematic here as it includes
                 # extra pixels along the bottom right when the sources are
@@ -187,5 +183,9 @@ def euclidean_merge_dems(input_dems, output_dem):
     for _, euclidean_geotiff in inputs:
         if io.file_exists(euclidean_geotiff):
             os.remove(euclidean_geotiff)
-
+    
+    # Restore logging
+    if debug_enabled:
+        logging.disable(logging.NOTSET)
+    
     return output_dem

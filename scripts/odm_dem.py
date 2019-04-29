@@ -7,7 +7,7 @@ from opendm import system
 from opendm import context
 from opendm import types
 from opendm import gsd
-from opendm.dem import commands
+from opendm.dem import commands, utils
 from opendm.cropper import Cropper
 
 class ODMDEMStage(types.ODM_Stage):
@@ -80,13 +80,7 @@ class ODMDEMStage(types.ODM_Stage):
                     if args.crop > 0:
                         bounds_file_path = os.path.join(tree.odm_georeferencing, 'odm_georeferenced_model.bounds.gpkg')
                         if os.path.exists(bounds_file_path):
-                            Cropper.crop(bounds_file_path, os.path.join(odm_dem_root, "{}.tif".format(product)), {
-                                'TILED': 'YES',
-                                'COMPRESS': 'LZW',
-                                'BLOCKXSIZE': 512,
-                                'BLOCKYSIZE': 512,
-                                'NUM_THREADS': self.params.get('max_concurrency')
-                            })
+                            Cropper.crop(bounds_file_path, os.path.join(odm_dem_root, "{}.tif".format(product)), utils.get_dem_vars(args))
             else:
                 log.ODM_WARNING('Found existing outputs in: %s' % odm_dem_root)
         else:
