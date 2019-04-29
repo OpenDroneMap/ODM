@@ -77,7 +77,9 @@ install() {
                         xmltodict \
                         appsettings \
                         loky \
-                        repoze.lru
+                        repoze.lru \
+                        rasterio \
+                        attrs==19.1.0
 
     echo "Installing OpenDroneMap Dependencies"
     apt-get install -y -qq python-scipy \
