@@ -74,7 +74,9 @@ RUN pip install -U \
   scipy \
   shapely \
   xmltodict \
-  https://github.com/OpenDroneMap/gippy/archive/numpyfix.zip
+  https://github.com/OpenDroneMap/gippy/archive/numpyfix.zip \
+  rasterio \
+  attrs==19.1.0
 
 ENV PYTHONPATH="$PYTHONPATH:/code/SuperBuild/install/lib/python2.7/dist-packages"
 ENV PYTHONPATH="$PYTHONPATH:/code/SuperBuild/src/opensfm"
