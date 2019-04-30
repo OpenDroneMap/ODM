@@ -185,7 +185,8 @@ def get_submodel_argv(args, submodels_path, submodel_name):
     :return the same as argv, but removing references to --split, 
         setting/replacing --project-path and name
         removing --rerun-from, --rerun, --rerun-all
-        adding --compute-cutline
+        adding --orthophoto-cutline
+        adding --dem-euclidean-map
         adding --skip-3dmodel (split-merge does not support 3D model merging)
     """
     argv = sys.argv
@@ -195,6 +196,8 @@ def get_submodel_argv(args, submodels_path, submodel_name):
     project_path_found = False
     project_name_added = False
     orthophoto_cutline_found = False
+    dem_euclidean_map_found = False
+
     skip_3dmodel_found = False
 
     # TODO: what about GCP paths?
@@ -219,6 +222,10 @@ def get_submodel_argv(args, submodels_path, submodel_name):
         elif arg == '--orthophoto-cutline':
             result.append(arg)
             orthophoto_cutline_found = True
+            i += 1
+        elif arg == '--dem-euclidean-map':
+            result.append(arg)
+            dem_euclidean_map_found = True
             i += 1
         elif arg == '--skip-3dmodel':
             result.append(arg)
@@ -245,6 +252,9 @@ def get_submodel_argv(args, submodels_path, submodel_name):
 
     if not orthophoto_cutline_found:
         result.append("--orthophoto-cutline")
+    
+    if not dem_euclidean_map_found:
+        result.append("--dem-euclidean-map")
     
     if not skip_3dmodel_found:
         result.append("--skip-3dmodel")
