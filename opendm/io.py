@@ -56,3 +56,20 @@ def rename_file(src, dst):
 def find(filename, folder):
     for root, dirs, files in os.walk(folder):
         return '/'.join((root, filename)) if filename in files else None
+
+
+def related_file_path(input_file_path, prefix="", postfix=""):
+    """
+    For example: related_file_path("/path/to/file.ext", "a.", ".b")
+     --> "/path/to/a.file.b.ext"
+    """
+    path, filename = os.path.split(input_file_path)
+
+    # path = path/to
+    # filename = file.ext
+
+    basename, ext = os.path.splitext(filename)
+    # basename = file
+    # ext = .ext
+
+    return os.path.join(path, "{}{}{}{}".format(prefix, basename, postfix, ext))

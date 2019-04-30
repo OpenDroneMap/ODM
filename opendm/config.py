@@ -430,9 +430,8 @@ def config():
             default=False,
             help='Computes an euclidean raster map for each DEM. '
             'The map reports the distance from each cell to the nearest '
-            'NODATA value (before any nearest neighbor hole filling takes place). '
-            'This can be useful to isolate the areas that have been filled with '
-            'nearest neighbor interpolation. '
+            'NODATA value (before any hole filling takes place). '
+            'This can be useful to isolate the areas that have been filled. '
             'Default: '
             '%(default)s')
 
@@ -525,6 +524,15 @@ def config():
                 'When this is turned on, feature detection and matching on images is '
                 'performed independently on the submodels instead of being computed at once. '
                 'Default: %(default)s')
+
+    parser.add_argument('--merge',
+                    metavar='<string>',
+                    default='all',
+                    choices=['all', 'pointcloud', 'orthophoto', 'dem'],
+                    help=('Choose what to merge in the merge step in a split dataset. '
+                          'By default all available outputs are merged. '
+                          'Default: '
+                            '%(default)s'))
 
     args = parser.parse_args()
 

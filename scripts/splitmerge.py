@@ -133,12 +133,12 @@ class ODMMergeStage(types.ODM_Stage):
 
         if outputs['large']:
             # Merge point clouds
-            if not io.file_exists(tree.odm_georeferencing_model_laz) or self.rerun():
-                pass
-                # all_point_clouds = get_submodel_paths(tree.submodels_path, "odm_georeferencing", "odm_georeferenced_model.laz")
-                # pdal.merge_point_clouds(all_point_clouds, tree.odm_georeferencing_model_laz, args.verbose)
-            else:
-                log.ODM_WARNING("Found merged point cloud in %s" % tree.odm_georeferencing_model_laz)
+            if args.merge in ['all', 'pointcloud']:
+                if not io.file_exists(tree.odm_georeferencing_model_laz) or self.rerun():
+                    all_point_clouds = get_submodel_paths(tree.submodels_path, "odm_georeferencing", "odm_georeferenced_model.laz")
+                    pdal.merge_point_clouds(all_point_clouds, tree.odm_georeferencing_model_laz, args.verbose)
+                else:
+                    log.ODM_WARNING("Found merged point cloud in %s" % tree.odm_georeferencing_model_laz)
             
             # Merge crop bounds
             merged_bounds_file = os.path.join(tree.odm_georeferencing, 'odm_georeferenced_model.bounds.gpkg')
@@ -154,92 +154,92 @@ class ODMMergeStage(types.ODM_Stage):
                     log.ODM_WARNING("No bounds found for any submodel.")
 
             # Merge orthophotos
-            if not io.file_exists(tree.odm_orthophoto_tif) or self.rerun():
-                all_orthos_and_cutlines = get_all_submodel_paths(tree.submodels_path,
-                    os.path.join("odm_orthophoto", "odm_orthophoto.tif"),
-                    os.path.join("odm_orthophoto", "cutline.gpkg"),
-                )
+            if args.merge in ['all', 'orthophoto']:
+                if not io.file_exists(tree.odm_orthophoto_tif) or self.rerun():
+                    all_orthos_and_cutlines = get_all_submodel_paths(tree.submodels_path,
+                        os.path.join("odm_orthophoto", "odm_orthophoto.tif"),
+                        os.path.join("odm_orthophoto", "cutline.gpkg"),
+                    )
 
-                if len(all_orthos_and_cutlines) > 1:
-                    log.ODM_DEBUG("Found %s submodels with valid orthophotos and cutlines" % len(all_orthos_and_cutlines))
-                    
-                    # TODO: histogram matching via rasterio
-                    # currently parts have different color tones
+                    if len(all_orthos_and_cutlines) > 1:
+                        log.ODM_DEBUG("Found %s submodels with valid orthophotos and cutlines" % len(all_orthos_and_cutlines))
+                        
+                        # TODO: histogram matching via rasterio
+                        # currently parts have different color tones
 
-                    merged_geotiff = os.path.join(tree.odm_orthophoto, "odm_orthophoto.merged.tif")
+                        merged_geotiff = os.path.join(tree.odm_orthophoto, "odm_orthophoto.merged.tif")
 
-                    kwargs = {
-                        'orthophoto_merged': merged_geotiff,
-                        'input_files': ' '.join(map(lambda i: quote(i[0]), all_orthos_and_cutlines)),
-                        'max_memory': get_max_memory(),
-                        'max_memory_mb': get_max_memory_mb(300)
-                    }
+                        kwargs = {
+                            'orthophoto_merged': merged_geotiff,
+                            'input_files': ' '.join(map(lambda i: quote(i[0]), all_orthos_and_cutlines)),
+                            'max_memory': get_max_memory(),
+                            'max_memory_mb': get_max_memory_mb(300)
+                        }
 
-                    # use bounds as cutlines (blending)
-                    if io.file_exists(merged_geotiff):
-                        os.remove(merged_geotiff)
+                        # use bounds as cutlines (blending)
+                        if io.file_exists(merged_geotiff):
+                            os.remove(merged_geotiff)
 
-                    system.run('gdal_merge.py -o {orthophoto_merged} '
-                            #'-createonly '
-                            '-co "BIGTIFF=YES" '
-                            '-co "BLOCKXSIZE=512" '
-                            '-co "BLOCKYSIZE=512" '
-                            '--config GDAL_CACHEMAX {max_memory}%'
-                            '{input_files} '.format(**kwargs)
+                        system.run('gdal_merge.py -o {orthophoto_merged} '
+                                #'-createonly '
+                                '-co "BIGTIFF=YES" '
+                                '-co "BLOCKXSIZE=512" '
+                                '-co "BLOCKYSIZE=512" '
+                                '--config GDAL_CACHEMAX {max_memory}%'
+                                '{input_files} '.format(**kwargs)
+                                )
+
+                        for ortho_cutline in all_orthos_and_cutlines:
+                            kwargs['input_file'], kwargs['cutline'] = ortho_cutline
+
+                            # Note: cblend has a high performance penalty
+                            system.run('gdalwarp -cutline {cutline} '
+                                    '-cblend 20 '
+                                    '-r lanczos -multi '
+                                    '-wm {max_memory_mb} '
+                                    '--config GDAL_CACHEMAX {max_memory}%'
+                                    ' {input_file} {orthophoto_merged}'.format(**kwargs)
                             )
 
-                    for ortho_cutline in all_orthos_and_cutlines:
-                        kwargs['input_file'], kwargs['cutline'] = ortho_cutline
+                        # Apply orthophoto settings (compression, tiling, etc.)
+                        orthophoto_vars = orthophoto.get_orthophoto_vars(args)
 
-                        # Note: cblend has a high performance penalty
-                        system.run('gdalwarp -cutline {cutline} '
-                                '-cblend 20 '
-                                '-r lanczos -multi '
-                                '-wm {max_memory_mb} '
-                                '--config GDAL_CACHEMAX {max_memory}%'
-                                ' {input_file} {orthophoto_merged}'.format(**kwargs)
-                        )
+                        if io.file_exists(tree.odm_orthophoto_tif):
+                            os.remove(tree.odm_orthophoto_tif)
 
-                    # Apply orthophoto settings (compression, tiling, etc.)
-                    orthophoto_vars = orthophoto.get_orthophoto_vars(args)
+                        kwargs = {
+                            'vars': ' '.join(['-co %s=%s' % (k, orthophoto_vars[k]) for k in orthophoto_vars]),
+                            'max_memory': get_max_memory(),
+                            'merged': merged_geotiff,
+                            'log': tree.odm_orthophoto_tif_log,
+                            'orthophoto': tree.odm_orthophoto_tif,
+                        }
 
-                    if io.file_exists(tree.odm_orthophoto_tif):
-                        os.remove(tree.odm_orthophoto_tif)
+                        system.run('gdal_translate '
+                            '{vars} '
+                            '--config GDAL_CACHEMAX {max_memory}% '
+                            '{merged} {orthophoto} > {log}'.format(**kwargs))
 
-                    kwargs = {
-                        'vars': ' '.join(['-co %s=%s' % (k, orthophoto_vars[k]) for k in orthophoto_vars]),
-                        'max_memory': get_max_memory(),
-                        'merged': merged_geotiff,
-                        'log': tree.odm_orthophoto_tif_log,
-                        'orthophoto': tree.odm_orthophoto_tif,
-                    }
+                        os.remove(merged_geotiff)
 
-                    system.run('gdal_translate '
-                           '{vars} '
-                           '--config GDAL_CACHEMAX {max_memory}% '
-                           '{merged} {orthophoto} > {log}'.format(**kwargs))
+                        # Crop
+                        if args.crop > 0:
+                            Cropper.crop(merged_bounds_file, tree.odm_orthophoto_tif, orthophoto_vars)
 
-                    os.remove(merged_geotiff)
-
-                    # Crop
-                    if args.crop > 0:
-                        Cropper.crop(merged_bounds_file, tree.odm_orthophoto_tif, orthophoto_vars)
-
-                    # Overviews
-                    if args.build_overviews:
-                        orthophoto.build_overviews(tree.odm_orthophoto_tif) 
-                    
-                elif len(all_orthos_and_cutlines) == 1:
-                    # Simply copy
-                    log.ODM_WARNING("A single orthophoto/cutline pair was found between all submodels.")
-                    shutil.copyfile(all_orthos_and_cutlines[0][0], tree.odm_orthophoto_tif)
+                        # Overviews
+                        if args.build_overviews:
+                            orthophoto.build_overviews(tree.odm_orthophoto_tif) 
+                        
+                    elif len(all_orthos_and_cutlines) == 1:
+                        # Simply copy
+                        log.ODM_WARNING("A single orthophoto/cutline pair was found between all submodels.")
+                        shutil.copyfile(all_orthos_and_cutlines[0][0], tree.odm_orthophoto_tif)
+                    else:
+                        log.ODM_WARNING("No orthophoto/cutline pairs were found in any of the submodels. No orthophoto will be generated.")
                 else:
-                    log.ODM_WARNING("No orthophoto/cutline pairs were found in any of the submodels. No orthophoto will be generated.")
-            else:
-                log.ODM_WARNING("Found merged orthophoto in %s" % tree.odm_orthophoto_tif)
+                    log.ODM_WARNING("Found merged orthophoto in %s" % tree.odm_orthophoto_tif)
 
             # Merge DEMs
-
             def merge_dems(dem_filename, human_name):
                 dem_file = tree.path("odm_dem", dem_filename)
                 if not io.file_exists(dem_file) or self.rerun():
@@ -260,10 +260,10 @@ class ODMMergeStage(types.ODM_Stage):
                 else:
                     log.ODM_WARNING("Found merged %s in %s" % (human_name, dsm_file))
 
-            if args.dsm:
+            if args.merge in ['all', 'dem'] and args.dsm:
                 merge_dems("dsm.tif", "DSM")
 
-            if args.dtm:
+            if args.merge in ['all', 'dem'] and args.dtm:
                 merge_dems("dtm.tif", "DTM")
 
             # Stop the pipeline short! We're done.

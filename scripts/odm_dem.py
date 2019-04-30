@@ -74,13 +74,27 @@ class ODMDEMStage(types.ODM_Stage):
                             resolution=resolution / 100.0,
                             decimation=args.dem_decimation,
                             verbose=args.verbose,
-                            max_workers=args.max_concurrency
+                            max_workers=args.max_concurrency,
+                            keep_unfilled_copy=args.dem_euclidean_map
                         )
 
+                    dem_geotiff_path = os.path.join(odm_dem_root, "{}.tif".format(product))
+                    bounds_file_path = os.path.join(tree.odm_georeferencing, 'odm_georeferenced_model.bounds.gpkg')
+
                     if args.crop > 0:
-                        bounds_file_path = os.path.join(tree.odm_georeferencing, 'odm_georeferenced_model.bounds.gpkg')
-                        if os.path.exists(bounds_file_path):
-                            Cropper.crop(bounds_file_path, os.path.join(odm_dem_root, "{}.tif".format(product)), utils.get_dem_vars(args))
+                        # Crop DEM
+                        Cropper.crop(bounds_file_path, dem_geotiff_path, utils.get_dem_vars(args))
+
+                    if args.dem_euclidean_map:
+                        unfilled_dem_path = io.related_file_path(dem_geotiff_path, postfix=".unfilled")
+                        
+                        if args.crop > 0:
+                            # Crop unfilled DEM
+                            Cropper.crop(bounds_file_path, unfilled_dem_path, utils.get_dem_vars(args))
+
+                        commands.compute_euclidean_map(unfilled_dem_path, 
+                                            io.related_file_path(dem_geotiff_path, postfix=".euclideand"), 
+                                            overwrite=True)
             else:
                 log.ODM_WARNING('Found existing outputs in: %s' % odm_dem_root)
         else:
