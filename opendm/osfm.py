@@ -186,6 +186,7 @@ def get_submodel_argv(args, submodels_path, submodel_name):
         setting/replacing --project-path and name
         removing --rerun-from, --rerun, --rerun-all
         adding --compute-cutline
+        adding --skip-3dmodel (split-merge does not support 3D model merging)
     """
     argv = sys.argv
 
@@ -194,6 +195,7 @@ def get_submodel_argv(args, submodels_path, submodel_name):
     project_path_found = False
     project_name_added = False
     orthophoto_cutline_found = False
+    skip_3dmodel_found = False
 
     # TODO: what about GCP paths?
 
@@ -218,6 +220,10 @@ def get_submodel_argv(args, submodels_path, submodel_name):
             result.append(arg)
             orthophoto_cutline_found = True
             i += 1
+        elif arg == '--skip-3dmodel':
+            result.append(arg)
+            skip_3dmodel_found = True
+            i += 1
         elif arg == '--split':
             i += 2
         elif arg == '--rerun-from':
@@ -239,6 +245,9 @@ def get_submodel_argv(args, submodels_path, submodel_name):
 
     if not orthophoto_cutline_found:
         result.append("--orthophoto-cutline")
+    
+    if not skip_3dmodel_found:
+        result.append("--skip-3dmodel")
     
     return result
 

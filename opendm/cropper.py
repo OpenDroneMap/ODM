@@ -22,6 +22,8 @@ class Cropper:
             log.ODM_WARNING("Either {} or {} does not exist, will skip cropping.".format(gpkg_path, geotiff_path))
             return geotiff_path
 
+        log.ODM_INFO("Cropping %s" % geotiff_path)
+
         # Rename original file
         # path/to/odm_orthophoto.tif --> path/to/odm_orthophoto.original.tif
         

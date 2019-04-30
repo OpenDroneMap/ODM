@@ -6,6 +6,7 @@ import math
 import time
 from opendm.system import run
 from opendm import point_cloud
+from opendm import io
 from opendm.concurrency import get_max_memory
 from scipy import ndimage, signal
 from datetime import datetime
@@ -33,7 +34,7 @@ error = None
 
 def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56'], gapfill=True,
                 outdir='', resolution=0.1, max_workers=1, max_tile_size=2048,
-                verbose=False, decimation=None):
+                verbose=False, decimation=None, keep_unfilled_copy=False):
     """ Create DEM from multiple radii, and optionally gapfill """
     global error
     error = None
@@ -215,16 +216,44 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
                 '-co NUM_THREADS={threads} '
                 '--config GDAL_CACHEMAX {max_memory}% '
                 '{vrt} {geotiff}'.format(**kwargs))
+        
 
     post_process(geotiff_path, output_path)
     os.remove(geotiff_path)
 
-    if os.path.exists(geotiff_tmp_path): os.remove(geotiff_tmp_path)
+    if os.path.exists(geotiff_tmp_path):
+        if not keep_unfilled_copy: 
+            os.remove(geotiff_tmp_path)
+        else:
+            os.rename(geotiff_tmp_path, io.related_file_path(output_path, postfix=".unfilled"))
+            
     if os.path.exists(vrt_path): os.remove(vrt_path)
     for t in tiles:
         if os.path.exists(t['filename']): os.remove(t['filename'])
     
     log.ODM_INFO('Completed %s in %s' % (output_file, datetime.now() - start))
+
+
+def compute_euclidean_map(geotiff_path, output_path, overwrite=False):
+    if not os.path.exists(geotiff_path):
+        log.ODM_WARNING("Cannot compute euclidean map (file does not exist: %s)" % geotiff_path)
+        return
+
+    nodata = -9999
+    with rasterio.open(geotiff_path) as f:
+        nodata = f.nodatavals[0]
+
+    if not os.path.exists(output_path) or overwrite:
+        log.ODM_INFO("Computing euclidean distance: %s" % output_path)
+        run('gdal_proximity.py "%s" "%s" -values %s' % (geotiff_path, output_path, nodata))
+
+        if os.path.exists(output_path):
+            return output_path
+        else:
+            log.ODM_WARNING("Cannot compute euclidean distance file: %s" % output_path)
+    else:
+        log.ODM_WARNING("Already found a euclidean distance map: %s" % output_path)
+        return output_path
 
 
 def post_process(geotiff_path, output_path, smoothing_iterations=1):

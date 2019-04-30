@@ -3,6 +3,7 @@ import numpy as np
 import rasterio
 from rasterio.transform import Affine, rowcol
 from opendm import system
+from opendm.dem.commands import compute_euclidean_map
 from opendm import log
 from opendm import io
 import os
@@ -15,9 +16,9 @@ def euclidean_merge_dems(input_dems, output_dem, creation_options={}):
     and ideas from Anna Petrasova
     implementation by Piero Toffanin
 
-    Computes a merged DEM by computing a euclidean distance map for all DEMs 
-    to all NODATA cells (how far from the edge of the DEM cells are) and then blending
-    all overlapping DEM cells by a weighted average based on such euclidean distance.
+    Computes a merged DEM by computing/using a euclidean 
+    distance to NODATA cells map for all DEMs and then blending all overlapping DEM cells 
+    by a weighted average based on such euclidean distance.
     """
     inputs = []
     bounds=None
@@ -47,23 +48,9 @@ def euclidean_merge_dems(input_dems, output_dem, creation_options={}):
         profile = first.profile
 
     for dem in existing_dems:
-        # Compute euclidean distance support files
-        path, filename = os.path.split(dem)
-        # path = path/to
-        # filename = dsm.tif
-
-        basename, ext = os.path.splitext(filename)
-        # basename = dsm
-        # ext = .tif
-
-        euclidean_geotiff = os.path.join(path, "{}.euclideand{}".format(basename, ext))
-        log.ODM_INFO("Computing euclidean distance: %s" % euclidean_geotiff)
-        system.run('gdal_proximity.py "%s" "%s" -values -9999' % (dem, euclidean_geotiff))
-
-        if io.file_exists(euclidean_geotiff):
-            inputs.append((dem, euclidean_geotiff))
-        else:
-            log.ODM_WARNING("Cannot compute euclidean distance file: %s" % euclidean_geotiff)
+        eumap = compute_euclidean_map(dem, io.related_file_path(dem, postfix=".euclideand"), overwrite=False)
+        if eumap and io.file_exists(eumap):
+            inputs.append((dem, eumap))
 
     log.ODM_INFO("%s valid DEM rasters to merge" % len(inputs))
 
@@ -164,20 +151,24 @@ def euclidean_merge_dems(input_dems, output_dem, creation_options={}):
                     out=temp_e, window=src_window, boundless=True, masked=False
                 )
 
+                # Set NODATA areas in the euclidean map to a very low value
+                # so that:
+                #  - Areas with overlap prioritize DEM layers' cells that 
+                #    are far away from NODATA areas
+                #  - Areas that have no overlap are included in the final result
+                #    even if they are very close to a NODATA cell
+                temp_e[temp_e==0] = 0.001953125
+                temp_e[temp_d==nodata] = 0
+
                 np.multiply(temp_d, temp_e, out=temp_d)
                 np.add(dstarr, temp_d, out=dstarr)
                 np.add(distsum, temp_e, out=distsum)
 
             np.divide(dstarr, distsum, out=dstarr, where=distsum[0] != 0.0)
             dstarr[dstarr == 0.0] = src_nodata
-            
+
             dstrast.write(dstarr, window=dst_window)
 
-    # Cleanup
-    for _, euclidean_geotiff in inputs:
-        if io.file_exists(euclidean_geotiff):
-            os.remove(euclidean_geotiff)
-    
     # Restore logging
     if debug_enabled:
         logging.disable(logging.NOTSET)
