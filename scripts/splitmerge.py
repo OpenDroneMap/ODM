@@ -6,6 +6,7 @@ from opendm import types
 from opendm import io
 from opendm import system
 from opendm import orthophoto
+from opendm.gcp import GCPFile
 from opendm.dem import pdal, utils
 from opendm.dem.merge import euclidean_merge_dems
 from opensfm.large import metadataset
@@ -54,18 +55,26 @@ class ODMSplitStage(types.ODM_Stage):
                 mds = metadataset.MetaDataSet(tree.opensfm)
                 submodel_paths = [os.path.abspath(p) for p in mds.get_submodel_paths()]
 
+                gcp_file = GCPFile(tree.odm_georeferencing_gcp)
+
                 # Make sure the image list file has absolute paths
                 for sp in submodel_paths:
                     sp_octx = OSFMContext(sp)
                     sp_octx.set_image_list_absolute()
 
-                    # Copy GCP file if needed
-                    # One in OpenSfM's directory, one in the project directory
-                    if tree.odm_georeferencing_gcp:
-                        log.ODM_DEBUG("Copying GCP file to %s" % os.path.basename(os.path.abspath(sp_octx.path(".."))))
-                        io.copy(tree.odm_georeferencing_gcp, os.path.abspath(sp_octx.path("..", "gcp_list.txt")))
-                        io.copy(tree.odm_georeferencing_gcp, os.path.abspath(sp_octx.path("gcp_list.txt")))
-                
+                    # Copy filtered GCP file if needed
+                    # One in OpenSfM's directory, one in the submodel project directory
+                    if gcp_file.exists():
+                        submodel_gcp_file = os.path.abspath(sp_octx.path("..", "gcp_list.txt"))
+                        submodel_images_dir = os.path.abspath(sp_octx.path("..", "images"))
+                        submodel_name = os.path.basename(os.path.abspath(sp_octx.path("..")))
+
+                        if gcp_file.make_filtered_copy(submodel_gcp_file, submodel_images_dir):
+                            log.ODM_DEBUG("Copied filtered GCP file to %s" % submodel_gcp_file)
+                            io.copy(submodel_gcp_file, os.path.abspath(sp_octx.path("gcp_list.txt")))
+                        else:
+                            log.ODM_DEBUG("No GCP will be copied for %s, not enough images in the submodel are referenced by the GCP" % submodel_name)
+                        
                 # Reconstruct each submodel
                 log.ODM_INFO("Dataset has been split into %s submodels. Reconstructing each submodel..." % len(submodel_paths))
 
@@ -167,6 +176,9 @@ class ODMMergeStage(types.ODM_Stage):
 
             # Merge orthophotos
             if args.merge in ['all', 'orthophoto']:
+                if not io.dir_exists(tree.odm_orthophoto):
+                    system.mkdir_p(tree.odm_orthophoto)
+
                 if not io.file_exists(tree.odm_orthophoto_tif) or self.rerun():
                     all_orthos_and_cutlines = get_all_submodel_paths(tree.submodels_path,
                         os.path.join("odm_orthophoto", "odm_orthophoto.tif"),
@@ -209,8 +221,8 @@ class ODMMergeStage(types.ODM_Stage):
                                     '-cblend 20 '
                                     '-r lanczos -multi '
                                     '-wm {max_memory_mb} '
-                                    '--config GDAL_CACHEMAX {max_memory}%'
-                                    ' {input_file} {orthophoto_merged}'.format(**kwargs)
+                                    '--config GDAL_CACHEMAX {max_memory}% '
+                                    '{input_file} {orthophoto_merged}'.format(**kwargs)
                             )
 
                         # Apply orthophoto settings (compression, tiling, etc.)
@@ -253,6 +265,9 @@ class ODMMergeStage(types.ODM_Stage):
 
             # Merge DEMs
             def merge_dems(dem_filename, human_name):
+                if not io.dir_exists(tree.path('odm_dem')):
+                    system.mkdir_p(tree.path('odm_dem'))
+
                 dem_file = tree.path("odm_dem", dem_filename)
                 if not io.file_exists(dem_file) or self.rerun():
                     all_dems = get_submodel_paths(tree.submodels_path, "odm_dem", dem_filename)
