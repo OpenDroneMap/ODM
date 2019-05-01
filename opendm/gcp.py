@@ -45,7 +45,7 @@ class GCPFile:
         return "{x} {y} {z} {px} {py} {filename} {extras}".format(**entry).rstrip()
     
     def exists(self):
-        return os.path.exists(self.gcp_path)
+        return self.gcp_path and os.path.exists(self.gcp_path)
 
     def make_filtered_copy(self, gcp_file_output, images_dir, min_images=3):
         """
