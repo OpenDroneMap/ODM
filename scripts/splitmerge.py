@@ -50,20 +50,28 @@ class ODMSplitStage(types.ODM_Stage):
                 else:
                     log.ODM_WARNING("Submodels directory already exist at: %s" % tree.submodels_path)
 
-                # TODO: on a network workflow we probably stop here
-                # and let NodeODM take over
-                # exit(0)
-
                 # Find paths of all submodels
                 mds = metadataset.MetaDataSet(tree.opensfm)
                 submodel_paths = [os.path.abspath(p) for p in mds.get_submodel_paths()]
 
                 # Make sure the image list file has absolute paths
                 for sp in submodel_paths:
-                    OSFMContext(sp).set_image_list_absolute()
+                    sp_octx = OSFMContext(sp)
+                    sp_octx.set_image_list_absolute()
 
+                    # Copy GCP file if needed
+                    # One in OpenSfM's directory, one in the project directory
+                    if tree.odm_georeferencing_gcp:
+                        log.ODM_DEBUG("Copying GCP file to %s" % os.path.basename(os.path.abspath(sp_octx.path(".."))))
+                        io.copy(tree.odm_georeferencing_gcp, os.path.abspath(sp_octx.path("..", "gcp_list.txt")))
+                        io.copy(tree.odm_georeferencing_gcp, os.path.abspath(sp_octx.path("gcp_list.txt")))
+                
                 # Reconstruct each submodel
                 log.ODM_INFO("Dataset has been split into %s submodels. Reconstructing each submodel..." % len(submodel_paths))
+
+                # TODO: on a network workflow we probably stop here
+                # and let NodeODM take over
+                # exit(0)
 
                 for sp in submodel_paths:
                     log.ODM_INFO("Reconstructing %s" % sp)
@@ -132,6 +140,10 @@ class ODMMergeStage(types.ODM_Stage):
         reconstruction = outputs['reconstruction']
 
         if outputs['large']:
+            if not os.path.exists(tree.submodels_path):
+                log.ODM_ERROR("We reached the merge stage, but %s folder does not exist. Something must have gone wrong at an earlier stage. Check the log and fix possible problem before restarting?" % tree.submodels_path)
+                exit(1)
+
             # Merge point clouds
             if args.merge in ['all', 'pointcloud']:
                 if not io.file_exists(tree.odm_georeferencing_model_laz) or self.rerun():
@@ -185,7 +197,7 @@ class ODMMergeStage(types.ODM_Stage):
                                 '-co "BIGTIFF=YES" '
                                 '-co "BLOCKXSIZE=512" '
                                 '-co "BLOCKYSIZE=512" '
-                                '--config GDAL_CACHEMAX {max_memory}%'
+                                '--config GDAL_CACHEMAX {max_memory}% '
                                 '{input_files} '.format(**kwargs)
                                 )
 
