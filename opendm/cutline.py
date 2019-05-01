@@ -4,12 +4,16 @@ from opendm import log
 from opendm import io
 from opendm import concurrency 
 from opendm import get_image_size
+from opendm import system
 import math
 
-def compute_cutline(orthophoto_file, crop_area_file, destination, max_concurrency=1):
+def compute_cutline(orthophoto_file, crop_area_file, destination, max_concurrency=1, tmpdir=None):
     if io.file_exists(orthophoto_file) and io.file_exists(crop_area_file):
         from opendm.grass_engine import grass
         log.ODM_DEBUG("Computing cutline")
+
+        if not io.dir_exists(tmpdir):
+            system.mkdir_p(tmpdir)
 
         try:
             ortho_width,ortho_height = get_image_size.get_image_size(orthophoto_file)
@@ -21,7 +25,7 @@ def compute_cutline(orthophoto_file, crop_area_file, destination, max_concurrenc
         
         log.ODM_DEBUG("Number of lines: %s" % number_lines)
 
-        gctx = grass.create_context({'auto_cleanup' : False})
+        gctx = grass.create_context({'auto_cleanup' : False, 'tmpdir': tmpdir})
         gctx.add_param('orthophoto_file', orthophoto_file)
         gctx.add_param('crop_area_file', crop_area_file)
         gctx.add_param('number_lines', number_lines)

@@ -115,7 +115,8 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                     compute_cutline(tree.odm_orthophoto_tif, 
                                     bounds_file_path,
                                     os.path.join(tree.odm_orthophoto, "cutline.gpkg"),
-                                    args.max_concurrency)
+                                    args.max_concurrency,
+                                    tmpdir=os.path.join(tree.odm_orthophoto, "grass_cutline_tmpdir"))
 
                 if args.crop > 0:
                     Cropper.crop(bounds_file_path, tree.odm_orthophoto_tif, orthophoto_vars)
