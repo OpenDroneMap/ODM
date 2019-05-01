@@ -188,19 +188,17 @@ def get_submodel_argv(args, submodels_path, submodel_name):
         adding --orthophoto-cutline
         adding --dem-euclidean-map
         adding --skip-3dmodel (split-merge does not support 3D model merging)
+        removing --gcp (the GCP path if specified is always "gcp_list.txt")
     """
+    assure_always = ['--orthophoto-cutline', '--dem-euclidean-map', '--skip-3dmodel']
+    remove_always_2 = ['--split', '--rerun-from', '--rerun', '--gcp']
+    remove_always_1 = ['--rerun-all']
+
     argv = sys.argv
 
     result = [argv[0]]
     i = 1
-    project_path_found = False
-    project_name_added = False
-    orthophoto_cutline_found = False
-    dem_euclidean_map_found = False
-
-    skip_3dmodel_found = False
-
-    # TODO: what about GCP paths?
+    found_args = {}
 
     while i < len(argv):
         arg = argv[i]
@@ -210,55 +208,38 @@ def get_submodel_argv(args, submodels_path, submodel_name):
             # Project name?
             if arg == args.name:
                 result.append(submodel_name)
-                project_name_added = True
+                found_args['project_name'] = True
             else:
                 result.append(arg)
             i += 1
         elif arg == '--project-path':
             result.append(arg)
             result.append(submodels_path)
-            project_path_found = True
+            found_args[arg] = True
             i += 2
-        elif arg == '--orthophoto-cutline':
+        elif arg in assure_always:
             result.append(arg)
-            orthophoto_cutline_found = True
+            found_args[arg] = True
             i += 1
-        elif arg == '--dem-euclidean-map':
-            result.append(arg)
-            dem_euclidean_map_found = True
-            i += 1
-        elif arg == '--skip-3dmodel':
-            result.append(arg)
-            skip_3dmodel_found = True
-            i += 1
-        elif arg == '--split':
+        elif arg in remove_always_2:
             i += 2
-        elif arg == '--rerun-from':
-            i += 2
-        elif arg == '--rerun':
-            i += 2
-        elif arg == '--rerun-all':
+        elif arg in remove_always_1:
             i += 1
         else:
             result.append(arg)
             i += 1
     
-    if not project_path_found:
+    if not found_args.get('--project-path'):
         result.append('--project-path')
         result.append(submodels_path)
     
-    if not project_name_added:
+    if not found_args.get('project_name'):
         result.append(submodel_name)
 
-    if not orthophoto_cutline_found:
-        result.append("--orthophoto-cutline")
-    
-    if not dem_euclidean_map_found:
-        result.append("--dem-euclidean-map")
-    
-    if not skip_3dmodel_found:
-        result.append("--skip-3dmodel")
-    
+    for arg in assure_always:
+        if not found_args.get(arg):
+            result.append(arg)
+
     return result
 
 
@@ -267,6 +248,9 @@ def get_submodel_paths(submodels_path, *paths):
     :return Existing paths for all submodels
     """
     result = []
+    if not os.path.exists(submodels_path):
+        return result
+
     for f in os.listdir(submodels_path):
         if f.startswith('submodel'):
             p = os.path.join(submodels_path, f, *paths) 
@@ -287,6 +271,9 @@ def get_all_submodel_paths(submodels_path, *all_paths):
                  ["path/submodel_0001/odm_orthophoto.tif", "path/submodel_0001/dem.tif"]]
     """
     result = []
+    if not os.path.exists(submodels_path):
+        return result
+
     for f in os.listdir(submodels_path):
         if f.startswith('submodel'):
             all_found = True
