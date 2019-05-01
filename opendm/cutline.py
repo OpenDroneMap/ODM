@@ -34,7 +34,7 @@ def compute_cutline(orthophoto_file, crop_area_file, destination, max_concurrenc
             if io.file_exists(cutline_file):
                 shutil.move(cutline_file, destination)
                 log.ODM_INFO("Generated cutline file: %s --> %s" % (cutline_file, destination))
-                # gctx.cleanup()
+                gctx.cleanup()
                 return destination
             else:
                 log.ODM_WARNING("Unexpected script result: %s. No cutline file has been generated." % cutline_file)
