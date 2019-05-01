@@ -12,7 +12,7 @@ def compute_cutline(orthophoto_file, crop_area_file, destination, max_concurrenc
         from opendm.grass_engine import grass
         log.ODM_DEBUG("Computing cutline")
 
-        if not io.dir_exists(tmpdir):
+        if tmpdir and not io.dir_exists(tmpdir):
             system.mkdir_p(tmpdir)
 
         try:
