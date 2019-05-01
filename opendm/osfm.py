@@ -245,7 +245,7 @@ def get_submodel_argv(args, submodels_path, submodel_name):
     
     if not project_path_found:
         result.append('--project-path')
-        result.append(submodel_project_path)
+        result.append(submodels_path)
     
     if not project_name_added:
         result.append(submodel_name)
