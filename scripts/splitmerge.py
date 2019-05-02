@@ -11,7 +11,7 @@ from opendm.dem import pdal, utils
 from opendm.dem.merge import euclidean_merge_dems
 from opensfm.large import metadataset
 from opendm.cropper import Cropper
-from opendm.concurrency import get_max_memory, get_max_memory_mb
+from opendm.concurrency import get_max_memory
 from pipes import quote
 
 class ODMSplitStage(types.ODM_Stage):
@@ -196,8 +196,7 @@ class ODMMergeStage(types.ODM_Stage):
                         kwargs = {
                             'orthophoto_merged': merged_geotiff,
                             'input_files': ' '.join(map(lambda i: quote(i[0]), all_orthos_and_cutlines)),
-                            'max_memory': get_max_memory(),
-                            'max_memory_mb': get_max_memory_mb(300)
+                            'max_memory': get_max_memory()
                         }
 
                         # use bounds as cutlines (blending)
@@ -220,7 +219,6 @@ class ODMMergeStage(types.ODM_Stage):
                             system.run('gdalwarp -cutline {cutline} '
                                     '-cblend 20 '
                                     '-r lanczos -multi '
-                                    '-wm {max_memory_mb} '
                                     '--config GDAL_CACHEMAX {max_memory}% '
                                     '{input_file} {orthophoto_merged}'.format(**kwargs)
                             )
