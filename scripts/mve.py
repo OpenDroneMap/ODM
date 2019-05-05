@@ -119,9 +119,9 @@ class ODMMveStage(types.ODM_Stage):
                     system.run('%s %s %s' % (context.dmrecon_path, ' '.join(dmrecon_config), tree.mve), env_vars={'OMP_NUM_THREADS': args.max_concurrency})
                     break
                 except Exception as e:
-                    if str(e) == "Child returned 134":
+                    if str(e) == "Child returned 134" or str(e) == "Child returned 1":
                         retry_count += 1
-                        log.ODM_WARNING("Caught 134 error code, retrying attempt #%s" % retry_count)
+                        log.ODM_WARNING("Caught error code, retrying attempt #%s" % retry_count)
                     else:
                         raise e
 
