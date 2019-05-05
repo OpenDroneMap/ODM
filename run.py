@@ -11,7 +11,7 @@ from pipes import quote
 from scripts.odm_app import ODMApp
 
 if __name__ == '__main__':
-
+    log.init()
     args = config.config()
 
     log.ODM_INFO('Initializing OpenDroneMap app - %s' % system.now())
