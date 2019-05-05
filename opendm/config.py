@@ -22,6 +22,20 @@ def alphanumeric_string(string):
         raise argparse.ArgumentTypeError(msg)
     return string
 
+# Django URL validation regex
+def url_string(string):
+    import re
+    regex = re.compile(
+        r'^(?:http|ftp)s?://' # http:// or https://
+        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' #domain...
+        r'localhost|' #localhost...
+        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # ...or ip
+        r'(?::\d+)?' # optional port
+        r'(?:/?|[/?]\S+)$', re.IGNORECASE)
+        
+    if re.match(regex, string) is None:
+        raise argparse.ArgumentTypeError("%s is not a valid URL. The URL must be in the format: http(s)://host[:port]/[?token=]" % string)
+    return string
 
 class RerunFrom(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
@@ -517,13 +531,14 @@ def config():
                         'are added to the cluster. This is done to ensure '
                         'that neighboring submodels overlap.')
 
-    parser.add_argument('--split-distributed',
-        action='store_true',
-        default=False,
-        help='Optimizes the split-merge workflow for a distributed computing environment. '
-                'When this is turned on, feature detection and matching on images is '
-                'performed independently on the submodels instead of being computed at once. '
-                'Default: %(default)s')
+    parser.add_argument('--sm-cluster',
+                        metavar='<string>',
+                        type=url_string,
+                        default=None,
+                        help='URL to a nodeodm-proxy instance '
+                            'for distributing a split-merge workflow on '
+                            'multiple nodes in parallel. '
+                            'Default: %(default)s')
 
     parser.add_argument('--merge',
                     metavar='<string>',
