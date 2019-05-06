@@ -6,6 +6,7 @@ from opendm import system
 from opendm import context
 from opendm import point_cloud
 from opendm import types
+from opendm.osfm import OSFMContext
 
 class ODMMveStage(types.ODM_Stage):
     def process(self, args, outputs):
@@ -28,7 +29,9 @@ class ODMMveStage(types.ODM_Stage):
             if not io.file_exists(tree.mve_bundle):
                 system.mkdir_p(tree.mve_path)
                 system.mkdir_p(io.join_paths(tree.mve_path, 'bundle'))
-                io.copy(tree.opensfm_image_list, tree.mve_image_list)
+
+                octx = OSFMContext(tree.opensfm)
+                octx.save_absolute_image_list_to(tree.mve_image_list)
                 io.copy(tree.opensfm_bundle, tree.mve_bundle)
 
             # mve makescene wants the output directory

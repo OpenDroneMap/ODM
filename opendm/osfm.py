@@ -123,62 +123,55 @@ class OSFMContext:
         else:
             log.ODM_WARNING("%s already exists, not rerunning OpenSfM setup" % list_path)
 
-
-    def feature_matching(self, rerun=False):
-        if not io.file_exists(self.feature_matching_done_file()) or rerun:
-            # TODO: put extract metadata into its own function
+    def extract_metadata(self, rerun=False):
+        metadata_dir = self.path("exif")
+        if not io.dir_exists(metadata_dir) or rerun:
             self.run('extract_metadata')
 
-            # TODO: distributed workflow should do these two steps independently
+    def feature_matching(self, rerun=False):
+        features_dir = self.path("features")
+        matches_dir = self.path("matches")
+        
+        if not io.dir_exists(features_dir) or rerun:
             self.run('detect_features')
-            self.run('match_features')
-
-            self.mark_feature_matching_done()
         else:
-            log.ODM_WARNING('Found a feature matching done progress file in: %s' % self.feature_matching_done_file())
+            log.ODM_WARNING('Detect features already done: %s exists' % features_dir)
 
-    def feature_matching_done_file(self):
-        return io.join_paths(self.opensfm_project_path, 'matching_done.txt')
+        if not io.dir_exists(matches_dir) or rerun:
+            self.run('match_features')
+        else:
+            log.ODM_WARNING('Match features already done: %s exists' % matches_dir)
 
-    def mark_feature_matching_done(self):
-        with open(self.feature_matching_done_file(), 'w') as fout:
-            fout.write("Matching done!\n")
-    
+        
     def path(self, *paths):
         return os.path.join(self.opensfm_project_path, *paths)
 
-    def set_image_list_absolute(self):
+    def save_absolute_image_list_to(self, file):
         """
-        Checks the image_list.txt file and makes sure that all paths
+        Writes a copy of the image_list.txt file and makes sure that all paths
         written in it are absolute paths and not relative paths.
-        If there are relative paths, they are changed to absolute paths.
         """
         image_list_file = self.path("image_list.txt")
-        tmp_list_file = self.path("image_list.txt.tmp")
 
         if io.file_exists(image_list_file):
-            changed = False
-
             with open(image_list_file, 'r') as f:
                 content = f.read()
             
             lines = []
             for line in map(str.strip, content.split('\n')):
                 if line and not line.startswith("/"):
-                    changed = True
                     line = os.path.abspath(os.path.join(self.opensfm_project_path, line))
                 lines.append(line)
 
-            if changed:
-                with open(tmp_list_file, 'w') as f:
-                    f.write("\n".join(lines))
+            with open(file, 'w') as f:
+                f.write("\n".join(lines))
 
-                os.remove(image_list_file)
-                os.rename(tmp_list_file, image_list_file)
-
-                log.ODM_DEBUG("%s now contains absolute paths" % image_list_file)
+            log.ODM_DEBUG("Wrote %s with absolute paths" % file)
         else:
-            log.ODM_WARNING("No %s found, cannot check for absolute paths." % image_list_file)
+            log.ODM_WARNING("No %s found, cannot create %s" % (image_list_file, file))
+    
+    def name(self):
+        return os.path.basename(os.path.abspath(self.path("..")))
 
 def get_submodel_argv(args, submodels_path, submodel_name):
     """
