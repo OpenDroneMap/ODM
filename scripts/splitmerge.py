@@ -12,6 +12,7 @@ from opendm.dem.merge import euclidean_merge_dems
 from opensfm.large import metadataset
 from opendm.cropper import Cropper
 from opendm.concurrency import get_max_memory
+from opendm.remote import HybridDistributedExecutor
 from pipes import quote
 
 class ODMSplitStage(types.ODM_Stage):
@@ -23,6 +24,9 @@ class ODMSplitStage(types.ODM_Stage):
         outputs['large'] = len(photos) > args.split
 
         if outputs['large']:
+            # If we have a cluster address, we'll use a distributed workflow
+            local_workflow = not bool(args.sm_cluster)
+
             octx = OSFMContext(tree.opensfm)
             split_done_file = octx.path("split_done.txt")
 
@@ -38,8 +42,10 @@ class ODMSplitStage(types.ODM_Stage):
                 ]
 
                 octx.setup(args, tree.dataset_raw, photos, gcp_path=tree.odm_georeferencing_gcp, append_config=config, rerun=self.rerun())
-            
-                octx.feature_matching(self.rerun())
+                octx.extract_metadata(self.rerun())
+
+                if local_workflow:
+                    octx.feature_matching(self.rerun())
 
                 # Create submodels
                 if not io.dir_exists(tree.submodels_path) or self.rerun():
@@ -57,34 +63,32 @@ class ODMSplitStage(types.ODM_Stage):
 
                 gcp_file = GCPFile(tree.odm_georeferencing_gcp)
 
-                # Make sure the image list file has absolute paths
                 for sp in submodel_paths:
                     sp_octx = OSFMContext(sp)
-                    sp_octx.set_image_list_absolute()
 
                     # Copy filtered GCP file if needed
                     # One in OpenSfM's directory, one in the submodel project directory
                     if gcp_file.exists():
                         submodel_gcp_file = os.path.abspath(sp_octx.path("..", "gcp_list.txt"))
                         submodel_images_dir = os.path.abspath(sp_octx.path("..", "images"))
-                        submodel_name = os.path.basename(os.path.abspath(sp_octx.path("..")))
 
                         if gcp_file.make_filtered_copy(submodel_gcp_file, submodel_images_dir):
                             log.ODM_DEBUG("Copied filtered GCP file to %s" % submodel_gcp_file)
                             io.copy(submodel_gcp_file, os.path.abspath(sp_octx.path("gcp_list.txt")))
                         else:
-                            log.ODM_DEBUG("No GCP will be copied for %s, not enough images in the submodel are referenced by the GCP" % submodel_name)
+                            log.ODM_DEBUG("No GCP will be copied for %s, not enough images in the submodel are referenced by the GCP" % sp_octx.name())
                         
                 # Reconstruct each submodel
                 log.ODM_INFO("Dataset has been split into %s submodels. Reconstructing each submodel..." % len(submodel_paths))
 
-                # TODO: on a network workflow we probably stop here
-                # and let NodeODM take over
-                # exit(0)
-
-                for sp in submodel_paths:
-                    log.ODM_INFO("Reconstructing %s" % sp)
-                    OSFMContext(sp).reconstruct(self.rerun())
+                if local_workflow:
+                    for sp in submodel_paths:
+                        log.ODM_INFO("Reconstructing %s" % sp)
+                        OSFMContext(sp).reconstruct(self.rerun())
+                else:
+                    de = HybridDistributedExecutor(args.sm_cluster)
+                    de.set_projects([os.path.abspath(os.path.join(p, "..")) for p in submodel_paths])
+                    de.run_reconstruct()
 
                 # Align
                 alignment_file = octx.path('alignment_done.txt')
@@ -97,19 +101,11 @@ class ODMSplitStage(types.ODM_Stage):
                 else:
                     log.ODM_WARNING('Found a alignment matching done progress file in: %s' % alignment_file)
 
-                # Dense reconstruction for each submodel
+                # Aligned reconstruction is in reconstruction.aligned.json
+                # We need to rename it to reconstruction.json
+                remove_paths = []
                 for sp in submodel_paths:
-
-                    # TODO: network workflow
-                    
-                    # We have already done matching
                     sp_octx = OSFMContext(sp)
-                    sp_octx.mark_feature_matching_done()
-
-                    submodel_name = os.path.basename(os.path.abspath(sp_octx.path("..")))
-
-                    # Aligned reconstruction is in reconstruction.aligned.json
-                    # We need to rename it to reconstruction.json
 
                     aligned_recon = sp_octx.path('reconstruction.aligned.json')
                     main_recon = sp_octx.path('reconstruction.json')
@@ -117,7 +113,8 @@ class ODMSplitStage(types.ODM_Stage):
                     if not io.file_exists(aligned_recon):
                         log.ODM_WARNING("Submodel %s does not have an aligned reconstruction (%s). "
                                         "This could mean that the submodel could not be reconstructed "
-                                        " (are there enough features to reconstruct it?). Skipping." % (submodel_name, aligned_recon))
+                                        " (are there enough features to reconstruct it?). Skipping." % (sp_octx.name(), aligned_recon))
+                        remove_paths.append(sp)
                         continue
 
                     if io.file_exists(main_recon):
@@ -126,14 +123,25 @@ class ODMSplitStage(types.ODM_Stage):
                     shutil.move(aligned_recon, main_recon)
                     log.ODM_DEBUG("%s is now %s" % (aligned_recon, main_recon))
 
-                    log.ODM_INFO("========================")
-                    log.ODM_INFO("Processing %s" % submodel_name)
-                    log.ODM_INFO("========================")
+                # Remove invalid submodels
+                submodel_paths = [p for p in submodel_paths if not p in remove_paths]
 
-                    argv = get_submodel_argv(args, tree.submodels_path, submodel_name)
+                # Run ODM toolchain for each submodel
+                if local_workflow:
+                    for sp in submodel_paths:
+                        sp_octx = OSFMContext(sp)
 
-                    # Re-run the ODM toolchain on the submodel
-                    system.run(" ".join(map(quote, argv)), env_vars=os.environ.copy())
+                        log.ODM_INFO("========================")
+                        log.ODM_INFO("Processing %s" % sp_octx.name())
+                        log.ODM_INFO("========================")
+
+                        argv = get_submodel_argv(args, tree.submodels_path, sp_octx.name())
+
+                        # Re-run the ODM toolchain on the submodel
+                        system.run(" ".join(map(quote, argv)), env_vars=os.environ.copy())
+                else:
+                    de.set_projects([os.path.abspath(os.path.join(p, "..")) for p in submodel_paths])
+                    de.run_toolchain()
 
                 with open(split_done_file, 'w') as fout: 
                     fout.write("Split done!\n")
