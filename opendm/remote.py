@@ -22,7 +22,10 @@ class HybridDistributedExecutor:
         if not self.project_paths:
             return
         
-        
+        # TODO: build queue
+
+        # TODO: local thread worker
+
 
 
 
