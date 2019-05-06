@@ -92,7 +92,7 @@ class GrassContext:
         # Execute it
         log.ODM_INFO("Executing grass script from {}: {} --tmp-location {} --exec bash script.sh".format(self.get_cwd(), self.grass_binary, self.location))
         env = os.environ.copy()
-        env["GRASS_ADDON_PATH"] = env.get("GRASS_ADDON_PATH", "") + os.path.abspath(os.path.join("scripts/grass_addons"))
+        env["GRASS_ADDON_PATH"] = env.get("GRASS_ADDON_PATH", "") + os.path.abspath(os.path.join("opendm/grass/addons"))
         
         filename = os.path.join(self.get_cwd(), 'output.log')
         with open(filename, 'wb') as writer, open(filename, 'rb', 1) as reader:

@@ -8,7 +8,7 @@ from opendm import io
 import os
 from pipes import quote
 
-from scripts.odm_app import ODMApp
+from stages.odm_app import ODMApp
 
 if __name__ == '__main__':
     log.init()

@@ -4,8 +4,8 @@ from opendm import io
 import multiprocessing
 
 # Define some needed locations
-scripts_path = os.path.abspath(os.path.dirname(__file__))
-root_path, _ = os.path.split(scripts_path)
+current_path = os.path.abspath(os.path.dirname(__file__))
+root_path, _ = os.path.split(current_path)
 
 superbuild_path = os.path.join(root_path, 'SuperBuild')
 superbuild_bin_path = os.path.join(superbuild_path, 'install', 'bin')
