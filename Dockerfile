@@ -75,7 +75,8 @@ RUN pip install -U \
   shapely \
   xmltodict \
   rasterio \
-  attrs==19.1.0
+  attrs==19.1.0 \
+  pyodm==1.5.0
 
 ENV PYTHONPATH="$PYTHONPATH:/code/SuperBuild/install/lib/python2.7/dist-packages"
 ENV PYTHONPATH="$PYTHONPATH:/code/SuperBuild/src/opensfm"

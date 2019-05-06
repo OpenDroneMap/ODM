@@ -165,7 +165,11 @@ class ODMMergeStage(types.ODM_Stage):
             if args.merge in ['all', 'pointcloud']:
                 if not io.file_exists(tree.odm_georeferencing_model_laz) or self.rerun():
                     all_point_clouds = get_submodel_paths(tree.submodels_path, "odm_georeferencing", "odm_georeferenced_model.laz")
-                    pdal.merge_point_clouds(all_point_clouds, tree.odm_georeferencing_model_laz, args.verbose)
+                    
+                    try:
+                        pdal.merge_point_clouds(all_point_clouds, tree.odm_georeferencing_model_laz, args.verbose)
+                    except Exception as e:
+                        log.ODM_WARNING("Could not merge point cloud: %s (skipping)" % str(e))
                 else:
                     log.ODM_WARNING("Found merged point cloud in %s" % tree.odm_georeferencing_model_laz)
             

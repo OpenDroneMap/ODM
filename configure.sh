@@ -79,7 +79,8 @@ install() {
                         loky \
                         repoze.lru \
                         rasterio \
-                        attrs==19.1.0
+                        attrs==19.1.0 \
+                        pyodm==1.5.0
 
     echo "Installing OpenDroneMap Dependencies"
     apt-get install -y -qq python-scipy \
