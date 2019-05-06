@@ -167,6 +167,9 @@ class ODMMergeStage(types.ODM_Stage):
                     all_point_clouds = get_submodel_paths(tree.submodels_path, "odm_georeferencing", "odm_georeferenced_model.laz")
                     
                     try:
+                        # TODO: use entwine to create a tileset instead of 
+                        # merging, which is memory inefficient and creates
+                        # monster files.
                         pdal.merge_point_clouds(all_point_clouds, tree.odm_georeferencing_model_laz, args.verbose)
                     except Exception as e:
                         log.ODM_WARNING("Could not merge point cloud: %s (skipping)" % str(e))
@@ -208,7 +211,8 @@ class ODMMergeStage(types.ODM_Stage):
                         kwargs = {
                             'orthophoto_merged': merged_geotiff,
                             'input_files': ' '.join(map(lambda i: quote(i[0]), all_orthos_and_cutlines)),
-                            'max_memory': get_max_memory()
+                            'max_memory': get_max_memory(),
+                            'threads': args.max_concurrency,
                         }
 
                         # use bounds as cutlines (blending)
@@ -231,6 +235,7 @@ class ODMMergeStage(types.ODM_Stage):
                             system.run('gdalwarp -cutline {cutline} '
                                     '-cblend 20 '
                                     '-r lanczos -multi '
+                                    '-wo NUM_THREADS={threads} '
                                     '--config GDAL_CACHEMAX {max_memory}% '
                                     '{input_file} {orthophoto_merged}'.format(**kwargs)
                             )
