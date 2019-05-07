@@ -127,7 +127,7 @@ endforeach()
 
 externalproject_add(mve
     GIT_REPOSITORY  https://github.com/simonfuhrmann/mve.git
-    GIT_TAG         4328bb4d1666113e919213daea4fe6b2ff9be588
+    GIT_TAG         55eb94f34f82694e0f25a7f235c25a06acc0bfae
     UPDATE_COMMAND  ""
     SOURCE_DIR      ${SB_SOURCE_DIR}/elibs/mve
     CONFIGURE_COMMAND ""
