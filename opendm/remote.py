@@ -10,7 +10,7 @@ from opendm import log
 from pyodm import Node, exceptions
 from pyodm.utils import AtomicCounter
 from pyodm.types import TaskStatus
-from osfm import OSFMContext
+from osfm import OSFMContext, get_submodel_args_dict
 
 try:
     import queue
@@ -27,7 +27,9 @@ class LocalRemoteExecutor:
     """
     def __init__(self, nodeUrl):
         self.node = Node.from_url(nodeUrl)
-        self.node.tasks = []
+        self.params = {
+            'tasks': []
+        }
         self.node_online = True
 
         log.ODM_INFO("LRE: Initializing using cluster node %s:%s" % (self.node.host, self.node.port))
@@ -60,11 +62,11 @@ class LocalRemoteExecutor:
         q = queue.Queue()
         for pp in self.project_paths:
             log.ODM_DEBUG("LRE: Adding to queue %s" % pp)
-            q.put(ReconstructionTask(pp, self.node))
+            q.put(ReconstructionTask(pp, self.node, self.params))
         
         def cleanup_remote_tasks_and_exit():
             log.ODM_WARNING("LRE: Attempting to cleanup remote tasks")
-            for task in self.node.tasks:
+            for task in self.params['tasks']:
                 log.ODM_DEBUG("Removing remote task %s... %s" % (task.uuid, task.remove()))
             os._exit(1)
 
@@ -166,21 +168,28 @@ class LocalRemoteExecutor:
         signal.signal(signal.SIGTERM, original_sigterm_handler)
 
         if nonloc.error is not None:
-            raise nonloc.error
+            # Try not to leak access token
+            if isinstance(nonloc.error, exceptions.NodeConnectionError):
+                raise exceptions.NodeConnectionError("A connection error happened. Check the connection to the processing node and try again.")
+            else:
+                raise nonloc.error
 
 
     def run_toolchain(self):
         if not self.project_paths:
             return
+        print("TODO!")
+        exit(1)
         
 
 class NodeTaskLimitReachedException(Exception):
     pass
 
 class Task:
-    def __init__(self, project_path, node, max_retries=10, retry_timeout=10):
+    def __init__(self, project_path, node, params, max_retries=10, retry_timeout=10):
         self.project_path = project_path
         self.node = node
+        self.params = params
         self.wait_until = datetime.datetime.now() # Don't run this task until a certain time
         self.max_retries = max_retries
         self.retries = 0
@@ -276,23 +285,22 @@ class ReconstructionTask(Task):
         images.append(seed_file)
 
         def print_progress(percentage):
-            # if percentage % 10 == 0:
-            log.ODM_DEBUG("LRE: Upload of %s at [%s%]" % (self, percentage))
+            if percentage % 10 == 0:
+                log.ODM_DEBUG("LRE: Upload of %s at [%s%%]" % (self, int(percentage)))
         
         # Upload task
         task = self.node.create_task(images, 
-                {'dsm': True, 'orthophoto-resolution': 4}, # TODO
+                get_submodel_args_dict(),
                 progress_callback=print_progress,
                 skip_post_processing=True,
-                outputs=["opensfm/matches", 
-                        "opensfm/features",])
+                outputs=["opensfm/matches", "opensfm/features"])
 
         # Keep track of tasks for cleanup
-        self.node.tasks.append(task)
+        self.params['tasks'].append(task)
 
         # Check status
         info = task.info()
-        if info.status == TaskStatus.RUNNING:
+        if info.status in [TaskStatus.RUNNING, TaskStatus.COMPLETED]:
             def monitor():
                 # If a task switches from RUNNING to QUEUED, then we need to 
                 # stop the process and re-add the task to the queue.
@@ -303,11 +311,12 @@ class ReconstructionTask(Task):
                         done(NodeTaskLimitReachedException("Delayed task limit reached"), partial=True)
 
                 try:
-                    def print_progress(progress):
-                        log.ODM_DEBUG("LRE: Download of %s at [%s%]" % (self, percentage))
+                    def print_progress(percentage):
+                        if percentage % 10 == 0:
+                            log.ODM_DEBUG("LRE: Download of %s at [%s%%]" % (self, int(percentage)))
 
                     task.wait_for_completion(status_callback=status_callback)
-                    log.ODM_DEBUG("Downloading assets for %s" % self)
+                    log.ODM_DEBUG("LRE: Downloading assets for %s" % self)
                     task.download_assets(self.project_path, progress_callback=print_progress)
                     done()
                 except Exception as e:
@@ -318,22 +327,6 @@ class ReconstructionTask(Task):
         elif info.status == TaskStatus.QUEUED:
             raise NodeTaskLimitReachedException("Task limit reached")
         else:
-            raise Exception("Could not send task to node, task status set to %s" % str(info.status))
+            raise Exception("Could not send task to node, task status is %s" % str(info.status))
 
-
-        # def test():
-        #     time.sleep(4)
-        #     done()
-
-        # if self.project_path == '/datasets/brighton/opensfm/submodels/submodel_0001':
-        #     done(Exception("TEST EXCEPTION!" + self.project_path))
-        # elif self.project_path == '/datasets/brighton/opensfm/submodels/submodel_0002':
-        #     done(NodeTaskLimitReachedException("Limit reached"))
-        # elif self.project_path == '/datasets/brighton/opensfm/submodels/submodel_0003':
-        #     threading.Thread(target=test).start()
-        # elif self.project_path == '/datasets/brighton/opensfm/submodels/submodel_0004':
-        #     threading.Thread(target=test).start()
-        # else:
-        #     print("Process remote: " + self.project_path) 
-        #     done()
 

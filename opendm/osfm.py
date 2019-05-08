@@ -171,8 +171,13 @@ class OSFMContext:
     def name(self):
         return os.path.basename(os.path.abspath(self.path("..")))
 
-def get_submodel_argv(args, submodels_path, submodel_name):
+def get_submodel_argv(args = None, submodels_path = None, submodel_name = None):
     """
+    Gets argv for a submodel starting from the argv passed to the application startup.
+    Additionally, if args, submodels_path and submodel_name are passed, the function
+    handles the <project name> value and --project-path detection / override.
+    When all arguments are set to None, --project-path and project name are always removed.
+
     :return the same as argv, but removing references to --split, 
         setting/replacing --project-path and name
         removing --rerun-from, --rerun, --rerun-all
@@ -182,7 +187,7 @@ def get_submodel_argv(args, submodels_path, submodel_name):
         removing --gcp (the GCP path if specified is always "gcp_list.txt")
     """
     assure_always = ['--orthophoto-cutline', '--dem-euclidean-map', '--skip-3dmodel']
-    remove_always_2 = ['--split', '--rerun-from', '--rerun', '--gcp']
+    remove_always_2 = ['--split', '--rerun-from', '--rerun', '--gcp', '--end-with']
     remove_always_1 = ['--rerun-all']
 
     argv = sys.argv
@@ -197,16 +202,17 @@ def get_submodel_argv(args, submodels_path, submodel_name):
         # Last?
         if i == len(argv) - 1:
             # Project name?
-            if arg == args.name:
+            if args and submodel_name and arg == args.name:
                 result.append(submodel_name)
                 found_args['project_name'] = True
-            else:
+            elif arg.startswith("--"):
                 result.append(arg)
             i += 1
         elif arg == '--project-path':
-            result.append(arg)
-            result.append(submodels_path)
-            found_args[arg] = True
+            if submodels_path:
+                result.append(arg)
+                result.append(submodels_path)
+                found_args[arg] = True
             i += 2
         elif arg in assure_always:
             result.append(arg)
@@ -220,16 +226,37 @@ def get_submodel_argv(args, submodels_path, submodel_name):
             result.append(arg)
             i += 1
     
-    if not found_args.get('--project-path'):
+    if not found_args.get('--project-path') and submodels_path:
         result.append('--project-path')
         result.append(submodels_path)
     
-    if not found_args.get('project_name'):
+    if not found_args.get('project_name') and submodel_name:
         result.append(submodel_name)
 
     for arg in assure_always:
         if not found_args.get(arg):
             result.append(arg)
+
+    return result
+
+def get_submodel_args_dict():
+    submodel_argv = get_submodel_argv()
+    result = {}
+
+    i = 0
+    while i < len(submodel_argv):
+        arg = submodel_argv[i]
+        next_arg = None if i == len(submodel_argv) - 1 else submodel_argv[i + 1]
+
+        if next_arg and arg.startswith("--"):
+            if next_arg.startswith("--"):
+                result[arg[2:]] = True
+            else:
+                result[arg[2:]] = next_arg
+                i += 1
+        elif arg.startswith("--"):
+            result[arg[2:]] = True
+        i += 1
 
     return result
 
