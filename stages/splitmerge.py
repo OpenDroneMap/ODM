@@ -88,7 +88,7 @@ class ODMSplitStage(types.ODM_Stage):
                 else:
                     de = HybridDistributedExecutor(args.sm_cluster)
                     de.set_projects([os.path.abspath(os.path.join(p, "..")) for p in submodel_paths])
-                    de.run_reconstruct()
+                    de.run_reconstruct(self.rerun())
 
                 # Align
                 alignment_file = octx.path('alignment_done.txt')

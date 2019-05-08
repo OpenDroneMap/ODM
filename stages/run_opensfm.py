@@ -26,6 +26,9 @@ class ODMOpenSfMStage(types.ODM_Stage):
         octx.feature_matching(self.rerun())
         octx.reconstruct(self.rerun())
 
+        # TODO: add special logic for distributed large workflow
+        # and terminate stage early
+
         if args.fast_orthophoto:
             output_file = octx.path('reconstruction.ply')
         elif args.use_opensfm_dense:
