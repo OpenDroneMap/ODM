@@ -8,8 +8,6 @@ from opendm import log
 from opendm import io
 import os
 
-from rasterio import logging
-
 def euclidean_merge_dems(input_dems, output_dem, creation_options={}):
     """
     Based on https://github.com/mapbox/rio-merge-rgba
@@ -34,12 +32,6 @@ def euclidean_merge_dems(input_dems, output_dem, creation_options={}):
     if len(existing_dems) == 0:
         log.ODM_WARNING("No input DEMs, skipping euclidean merge.")
         return
-
-    # Suppress DEBUG logging for rasterio operations
-    log_ = logging.getLogger()
-    debug_enabled = log_.isEnabledFor(logging.DEBUG)
-    if debug_enabled:
-        logging.disable(logging.DEBUG)
 
     with rasterio.open(existing_dems[0]) as first:
         src_nodata = first.nodatavals[0]
@@ -169,8 +161,4 @@ def euclidean_merge_dems(input_dems, output_dem, creation_options={}):
 
             dstrast.write(dstarr, window=dst_window)
 
-    # Restore logging
-    if debug_enabled:
-        logging.disable(logging.NOTSET)
-    
     return output_dem

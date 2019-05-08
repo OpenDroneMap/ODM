@@ -5,9 +5,11 @@ import sys
 import threading
 import signal
 import zipfile
+import glob
 from opendm import log
 from pyodm import Node, exceptions
 from pyodm.utils import AtomicCounter
+from pyodm.types import TaskStatus
 from osfm import OSFMContext
 
 try:
@@ -26,6 +28,7 @@ class LocalRemoteExecutor:
     def __init__(self, nodeUrl):
         self.node = Node.from_url(nodeUrl)
         self.node.tasks = []
+        self.node_online = True
 
         log.ODM_INFO("LRE: Initializing using cluster node %s:%s" % (self.node.host, self.node.port))
         try:
@@ -33,6 +36,7 @@ class LocalRemoteExecutor:
             log.ODM_INFO("LRE: Node is online and running ODM version: %s"  % odm_version)
         except exceptions.NodeConnectionError:
             log.ODM_WARNING("LRE: The node seems to be offline! We'll still process the dataset, but it's going to run entirely locally.")
+            self.node_online = False
         except Exception as e:
             log.ODM_ERROR("LRE: An unexpected problem happened while opening the node connection: %s" % str(e))
             exit(1)
@@ -61,11 +65,10 @@ class LocalRemoteExecutor:
         def cleanup_remote_tasks_and_exit():
             log.ODM_WARNING("LRE: Attempting to cleanup remote tasks")
             for task in self.node.tasks:
-                pass # TODO!!!
-                #task.cancel()
+                log.ODM_DEBUG("Removing remote task %s... %s" % (task.uuid, task.remove()))
             os._exit(1)
 
-        def handle_result(task, local, error = None):
+        def handle_result(task, local, error = None, partial=False):
             if error:
                 if isinstance(error, NodeTaskLimitReachedException) and not nonloc.semaphore:
                     nonloc.semaphore = threading.Semaphore(node_task_limit.value)
@@ -90,10 +93,11 @@ class LocalRemoteExecutor:
                 else:
                     nonloc.error = error
             else:
-                if not local:
+                if not local and not partial:
                     node_task_limit.increment(-1)
 
-                log.ODM_INFO("LRE: %s finished successfully" % task)
+                if not partial:
+                    log.ODM_INFO("LRE: %s finished successfully" % task)
 
             if local:
                 nonloc.local_is_processing = False              
@@ -113,7 +117,7 @@ class LocalRemoteExecutor:
                     if nonloc.semaphore: nonloc.semaphore.release()
                     break
 
-                if not nonloc.local_is_processing:
+                if not nonloc.local_is_processing or not self.node_online:
                     # Process local
                     try:
                         nonloc.local_is_processing = True
@@ -184,8 +188,8 @@ class Task:
         self.local = None
 
     def process(self, local, done):
-        def handle_result(error = None):
-            done(self, local, error)
+        def handle_result(error = None, partial=False):
+            done(self, local, error, partial)
 
         log.ODM_INFO("LRE: About to process %s %s" % (self, 'locally' if local else 'remotely'))
         
@@ -204,9 +208,12 @@ class Task:
             # perhaps this wouldn't be a big speedup.
             self._process_remote(handle_result) # Block until upload is complete
 
-    def create_seed_payload(self, paths):
-        paths = filter(os.path.exists, map(lambda p: os.path.join(self.project_path, p), paths))
-        outfile = os.path.join(self.project_path, "seed.zip")
+    def path(self, *paths):
+        return os.path.join(self.project_path, *paths)
+
+    def create_seed_payload(self, paths, touch_files=[]):
+        paths = filter(os.path.exists, map(lambda p: self.path(p), paths))
+        outfile = self.path("seed.zip")
 
         with zipfile.ZipFile(outfile, "w", compression=zipfile.ZIP_DEFLATED) as zf:
             for p in paths:
@@ -218,21 +225,27 @@ class Task:
                             zf.write(filename, os.path.relpath(filename, self.project_path))
                 else:
                     zf.write(p, os.path.relpath(p, self.project_path))
+
+            for tf in touch_files:
+                zf.writestr(tf, "")
+
         return outfile
 
     def _process_local(self, done):
         try:
-            self.process_local(done)
+            self.process_local()
+            done()
         except Exception as e:
             done(e)
     
     def _process_remote(self, done):
         try:
             self.process_remote(done)
+            done(error=None, partial=True) # Upload is completed, but processing is not (partial)
         except Exception as e:
             done(e)
     
-    def process_local(self, done):
+    def process_local(self):
         raise NotImplementedError()
     
     def process_remote(self, done):
@@ -242,33 +255,85 @@ class Task:
         return os.path.basename(self.project_path)
 
 class ReconstructionTask(Task):
-    def process_local(self, done):
-        octx = OSFMContext(os.path.join(self.project_path, "opensfm"))
+    def process_local(self):
+        octx = OSFMContext(self.path("opensfm"))
         octx.feature_matching()
         octx.reconstruct()
-        done()
     
     def process_remote(self, done):
+        seed_file = self.create_seed_payload(["opensfm/exif", 
+                                            "opensfm/camera_models.json",
+                                            "opensfm/reference_lla.json"], touch_files=["opensfm/split_merge_stop_at_reconstruction.txt"])
+        
+        # Find all images
+        images = glob.glob(self.path("images/**"))
 
-        def test():
-            time.sleep(4)
-            done()
+        # Add GCP (optional)
+        if os.path.exists(self.path("gcp_list.txt")):
+            images.append(self.path("gcp_list.txt"))
+        
+        # Add seed file
+        images.append(seed_file)
 
-        self.create_seed_payload(["opensfm/exif", 
-                                  "opensfm/matches", 
-                                  "opensfm/features",
-                                  "opensfm/camera_models.json",
-                                  "opensfm/reference_lla.json"])
+        def print_progress(percentage):
+            # if percentage % 10 == 0:
+            log.ODM_DEBUG("LRE: Upload of %s at [%s%]" % (self, percentage))
+        
+        # Upload task
+        task = self.node.create_task(images, 
+                {'dsm': True, 'orthophoto-resolution': 4}, # TODO
+                progress_callback=print_progress,
+                skip_post_processing=True,
+                outputs=["opensfm/matches", 
+                        "opensfm/features",])
 
-        if self.project_path == '/datasets/brighton/opensfm/submodels/submodel_0001':
-            done(Exception("TEST EXCEPTION!" + self.project_path))
-        elif self.project_path == '/datasets/brighton/opensfm/submodels/submodel_0002':
-            done(NodeTaskLimitReachedException("Limit reached"))
-        elif self.project_path == '/datasets/brighton/opensfm/submodels/submodel_0003':
-            threading.Thread(target=test).start()
-        elif self.project_path == '/datasets/brighton/opensfm/submodels/submodel_0004':
-            threading.Thread(target=test).start()
+        # Keep track of tasks for cleanup
+        self.node.tasks.append(task)
+
+        # Check status
+        info = task.info()
+        if info.status == TaskStatus.RUNNING:
+            def monitor():
+                # If a task switches from RUNNING to QUEUED, then we need to 
+                # stop the process and re-add the task to the queue.
+                def status_callback(info):
+                    if info.status == TaskStatus.QUEUED:
+                        log.ODM_WARNING("%s (%s) turned from RUNNING to QUEUED. Re-adding to back of the queue." % (self, task.uuid))
+                        task.remove()
+                        done(NodeTaskLimitReachedException("Delayed task limit reached"), partial=True)
+
+                try:
+                    def print_progress(progress):
+                        log.ODM_DEBUG("LRE: Download of %s at [%s%]" % (self, percentage))
+
+                    task.wait_for_completion(status_callback=status_callback)
+                    log.ODM_DEBUG("Downloading assets for %s" % self)
+                    task.download_assets(self.project_path, progress_callback=print_progress)
+                    done()
+                except Exception as e:
+                    done(e)
+
+            # Launch monitor thread and return
+            threading.Thread(target=monitor).start()
+        elif info.status == TaskStatus.QUEUED:
+            raise NodeTaskLimitReachedException("Task limit reached")
         else:
-            print("Process remote: " + self.project_path) 
-            done()
+            raise Exception("Could not send task to node, task status set to %s" % str(info.status))
+
+
+        # def test():
+        #     time.sleep(4)
+        #     done()
+
+        # if self.project_path == '/datasets/brighton/opensfm/submodels/submodel_0001':
+        #     done(Exception("TEST EXCEPTION!" + self.project_path))
+        # elif self.project_path == '/datasets/brighton/opensfm/submodels/submodel_0002':
+        #     done(NodeTaskLimitReachedException("Limit reached"))
+        # elif self.project_path == '/datasets/brighton/opensfm/submodels/submodel_0003':
+        #     threading.Thread(target=test).start()
+        # elif self.project_path == '/datasets/brighton/opensfm/submodels/submodel_0004':
+        #     threading.Thread(target=test).start()
+        # else:
+        #     print("Process remote: " + self.project_path) 
+        #     done()
 

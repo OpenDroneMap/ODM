@@ -70,8 +70,6 @@ class OSFMContext:
                         has_alt = False
                     fout.write('%s\n' % io.join_paths(images_path, photo.filename))
 
-                    # TODO: does this need to be a relative path?
-
             # create config file for OpenSfM
             config = [
                 "use_exif_size: no",
@@ -105,7 +103,7 @@ class OSFMContext:
 
             if gcp_path:
                 config.append("bundle_use_gcp: yes")
-                io.copy(gcp_path, self.opensfm_project_path)
+                io.copy(gcp_path, self.path("gcp_list.txt"))
             
             config = config + append_config
 

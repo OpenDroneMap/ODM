@@ -12,7 +12,7 @@ from opendm.dem.merge import euclidean_merge_dems
 from opensfm.large import metadataset
 from opendm.cropper import Cropper
 from opendm.concurrency import get_max_memory
-from opendm.remote import HybridDistributedExecutor
+from opendm.remote import LocalRemoteExecutor
 from pipes import quote
 
 class ODMSplitStage(types.ODM_Stage):
@@ -86,9 +86,9 @@ class ODMSplitStage(types.ODM_Stage):
                         log.ODM_INFO("Reconstructing %s" % sp)
                         OSFMContext(sp).reconstruct(self.rerun())
                 else:
-                    de = HybridDistributedExecutor(args.sm_cluster)
-                    de.set_projects([os.path.abspath(os.path.join(p, "..")) for p in submodel_paths])
-                    de.run_reconstruct(self.rerun())
+                    lre = LocalRemoteExecutor(args.sm_cluster)
+                    lre.set_projects([os.path.abspath(os.path.join(p, "..")) for p in submodel_paths])
+                    lre.run_reconstruct()
 
                 # Align
                 alignment_file = octx.path('alignment_done.txt')
