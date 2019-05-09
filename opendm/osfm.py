@@ -171,10 +171,10 @@ class OSFMContext:
     def name(self):
         return os.path.basename(os.path.abspath(self.path("..")))
 
-def get_submodel_argv(args = None, submodels_path = None, submodel_name = None):
+def get_submodel_argv(project_name = None, submodels_path = None, submodel_name = None):
     """
     Gets argv for a submodel starting from the argv passed to the application startup.
-    Additionally, if args, submodels_path and submodel_name are passed, the function
+    Additionally, if project_name, submodels_path and submodel_name are passed, the function
     handles the <project name> value and --project-path detection / override.
     When all arguments are set to None, --project-path and project name are always removed.
 
@@ -202,7 +202,7 @@ def get_submodel_argv(args = None, submodels_path = None, submodel_name = None):
         # Last?
         if i == len(argv) - 1:
             # Project name?
-            if args and submodel_name and arg == args.name:
+            if project_name and submodel_name and arg == project_name:
                 result.append(submodel_name)
                 found_args['project_name'] = True
             elif arg.startswith("--"):
