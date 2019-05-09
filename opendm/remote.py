@@ -208,7 +208,7 @@ class NodeTaskLimitReachedException(Exception):
     pass
 
 class Task:
-    def __init__(self, project_path, node, params, max_retries=10, retry_timeout=10):
+    def __init__(self, project_path, node, params, max_retries=5, retry_timeout=10):
         self.project_path = project_path
         self.node = node
         self.params = params
