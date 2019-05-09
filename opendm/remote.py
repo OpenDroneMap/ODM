@@ -205,7 +205,6 @@ class Task:
         self.max_retries = max_retries
         self.retries = 0
         self.retry_timeout = retry_timeout
-        self.local = None
         self.finished = False
 
     def process(self, local, done):
@@ -306,7 +305,10 @@ class ReconstructionTask(Task):
                 get_submodel_args_dict(),
                 progress_callback=print_progress,
                 skip_post_processing=True,
-                outputs=["opensfm/matches", "opensfm/features", "opensfm/reconstruction.aligned.json"])
+                outputs=["opensfm/matches", "opensfm/features", "opensfm/reconstruction.json"])
+
+        # Cleanup seed file
+        os.remove(seed_file)
 
         # Keep track of tasks for cleanup
         self.params['tasks'].append(task)
