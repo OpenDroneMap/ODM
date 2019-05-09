@@ -64,8 +64,9 @@ class LocalRemoteExecutor:
             error = None
             local_is_processing = False
             semaphore = None
-            handle_result_mutex = threading.Lock()
         
+        handle_result_mutex = threading.Lock()
+        unfinished_tasks = AtomicCounter(len(self.project_paths))
         node_task_limit = AtomicCounter(0)
 
         # Create queue
@@ -86,7 +87,7 @@ class LocalRemoteExecutor:
 
         def handle_result(task, local, error = None, partial=False):
             try:
-                nonloc.handle_result_mutex.acquire()
+                handle_result_mutex.acquire()
                 release_semaphore = True
 
                 if error:
@@ -119,16 +120,17 @@ class LocalRemoteExecutor:
 
                     if not partial:
                         log.ODM_INFO("LRE: %s finished successfully" % task)
+                        unfinished_tasks.increment(-1)
 
                 if local:
                     nonloc.local_is_processing = False
                 
                 if not task.finished:
                     if nonloc.semaphore and release_semaphore: nonloc.semaphore.release()
-                    q.task_done()
                     task.finished = True
+                    q.task_done()
             finally:
-                nonloc.handle_result_mutex.release()
+                handle_result_mutex.release()
 
         def worker():
             while True:
@@ -177,7 +179,7 @@ class LocalRemoteExecutor:
 
         # block until all tasks are done (or CTRL+C)
         try:
-            while q.unfinished_tasks > 0:
+            while unfinished_tasks.value > 0:
                 time.sleep(0.5)
         except KeyboardInterrupt:
             log.ODM_WARNING("LRE: CTRL+C")
