@@ -277,7 +277,7 @@ class Task:
         except Exception as e:
             done(e)
 
-    def execute_remote_task(self, seed_files = [], seed_touch_files = [], outputs = []):
+    def execute_remote_task(self, done, seed_files = [], seed_touch_files = [], outputs = []):
         """
         Run a task by creating a seed file with all files in seed_files, optionally
         creating empty files (for flag checks) specified in seed_touch_files
@@ -316,14 +316,22 @@ class Task:
         info = task.info()
         if info.status in [TaskStatus.RUNNING, TaskStatus.COMPLETED]:
             def monitor():
-                # If a task switches from RUNNING to QUEUED, then we need to 
-                # stop the process and re-add the task to the queue.
+                class nonloc:
+                    status_callback_calls = 0
+
                 def status_callback(info):
+                    # If a task switches from RUNNING to QUEUED, then we need to 
+                    # stop the process and re-add the task to the queue.
                     if info.status == TaskStatus.QUEUED:
                         log.ODM_WARNING("LRE: %s (%s) turned from RUNNING to QUEUED. Re-adding to back of the queue." % (self, task.uuid))
                         task.remove()
                         done(NodeTaskLimitReachedException("Delayed task limit reached"), partial=True)
-
+                    elif info.status == TaskStatus.RUNNING:
+                        # Print a status message once in a while
+                        nonloc.status_callback_calls += 1
+                        if nonloc.status_callback_calls > 30:
+                            log.ODM_DEBUG("LRE: %s (%s) is still running" % (self, task.uuid))
+                            nonloc.status_callback_calls = 0
                 try:
                     def print_progress(percentage):
                         if percentage % 10 == 0:
@@ -376,7 +384,7 @@ class ReconstructionTask(Task):
         octx.reconstruct()
     
     def process_remote(self, done):
-        self.execute_remote_task(seed_files=["opensfm/exif", 
+        self.execute_remote_task(done, seed_files=["opensfm/exif", 
                                             "opensfm/camera_models.json",
                                             "opensfm/reference_lla.json"],
                                  seed_touch_files=["opensfm/split_merge_stop_at_reconstruction.txt"],
@@ -393,14 +401,14 @@ class ToolchainTask(Task):
         submodel_name = os.path.basename(self.project_path)
         submodels_path = os.path.abspath(self.path(".."))
         project_name = os.path.basename(os.path.abspath(os.path.join(submodels_path, "..")))
-        argv = get_submodel_argv(args, submodels_path, submodel_name)
+        argv = get_submodel_argv(project_name, submodels_path, submodel_name)
 
         # Re-run the ODM toolchain on the submodel
         system.run(" ".join(map(quote, argv)), env_vars=os.environ.copy())
 
     
     def process_remote(self, done):
-        self.execute_remote_task(seed_files=["opensfm/exif", 
+        self.execute_remote_task(done, seed_files=["opensfm/exif", 
                                             "opensfm/camera_models.json",
                                             "opensfm/reference_lla.json",
                                             "opensfm/features",
