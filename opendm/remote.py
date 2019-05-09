@@ -105,8 +105,9 @@ class LocalRemoteExecutor:
                     # by canceling the task.
                     if str(error) == "Child was terminated by signal 15":
                         cleanup_remote_tasks_and_exit()
-                        
-                    if task.retries < task.max_retries:
+                    
+                    # Retry, but only if the error is not related to a task failure
+                    if task.retries < task.max_retries and not isinstance(error, exceptions.TaskFailedError):
                         # Put task back in queue
                         task.retries += 1
                         task.wait_until = datetime.datetime.now() + datetime.timedelta(seconds=task.retries * task.retry_timeout)
@@ -114,6 +115,7 @@ class LocalRemoteExecutor:
                         q.put(task)
                     else:
                         nonloc.error = error
+                        unfinished_tasks.increment(-1)
                 else:
                     if not local and not partial:
                         node_task_limit.increment(-1)
