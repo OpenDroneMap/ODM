@@ -28,7 +28,8 @@ class LocalRemoteExecutor:
     def __init__(self, nodeUrl):
         self.node = Node.from_url(nodeUrl)
         self.params = {
-            'tasks': []
+            'tasks': [],
+            'threads': []
         }
         self.node_online = True
 
@@ -65,9 +66,13 @@ class LocalRemoteExecutor:
             q.put(ReconstructionTask(pp, self.node, self.params))
         
         def cleanup_remote_tasks_and_exit():
-            log.ODM_WARNING("LRE: Attempting to cleanup remote tasks")
+            if self.params['tasks']:
+                log.ODM_WARNING("LRE: Attempting to cleanup remote tasks")
+            else:
+                log.ODM_WARNING("LRE: No remote tasks to cleanup")
+
             for task in self.params['tasks']:
-                log.ODM_DEBUG("Removing remote task %s... %s" % (task.uuid, task.remove()))
+                log.ODM_DEBUG("Removing remote task %s... %s" % (task.uuid, 'OK' if task.remove() else 'FAILED'))
             os._exit(1)
 
         def handle_result(task, local, error = None, partial=False):
@@ -102,10 +107,12 @@ class LocalRemoteExecutor:
                     log.ODM_INFO("LRE: %s finished successfully" % task)
 
             if local:
-                nonloc.local_is_processing = False              
-
-            if nonloc.semaphore: nonloc.semaphore.release()
-            q.task_done()
+                nonloc.local_is_processing = False
+            
+            if not task.finished:
+                if nonloc.semaphore: nonloc.semaphore.release()
+                q.task_done()
+                task.finished = True
 
         def worker():
             while True:
@@ -134,7 +141,7 @@ class LocalRemoteExecutor:
                     except Exception as e:
                         handle_result(task, False, e)
         
-        # Define thread
+        # Create queue thread
         t = threading.Thread(target=worker)
 
         # Capture SIGTERM so that we can 
@@ -161,8 +168,12 @@ class LocalRemoteExecutor:
         # stop workers
         q.put(None)
 
-        # Wait for thread
+        # Wait for queue thread
         t.join()
+
+        # Wait for all remains threads
+        for thrds in self.params['threads']:
+            thrds.join()
 
         # restore SIGTERM handler
         signal.signal(signal.SIGTERM, original_sigterm_handler)
@@ -195,6 +206,7 @@ class Task:
         self.retries = 0
         self.retry_timeout = retry_timeout
         self.local = None
+        self.finished = False
 
     def process(self, local, done):
         def handle_result(error = None, partial=False):
@@ -204,6 +216,7 @@ class Task:
         
         if local:
             t = threading.Thread(target=self._process_local, args=(handle_result, ))
+            self.params['threads'].append(t)
             t.start()
         else:
             now = datetime.datetime.now()
@@ -293,7 +306,7 @@ class ReconstructionTask(Task):
                 get_submodel_args_dict(),
                 progress_callback=print_progress,
                 skip_post_processing=True,
-                outputs=["opensfm/matches", "opensfm/features"])
+                outputs=["opensfm/matches", "opensfm/features", "opensfm/reconstruction.aligned.json"])
 
         # Keep track of tasks for cleanup
         self.params['tasks'].append(task)
@@ -318,12 +331,24 @@ class ReconstructionTask(Task):
                     task.wait_for_completion(status_callback=status_callback)
                     log.ODM_DEBUG("LRE: Downloading assets for %s" % self)
                     task.download_assets(self.project_path, progress_callback=print_progress)
+                    log.ODM_DEBUG("LRE: Downloaded and extracted assets for %s" % self)
                     done()
+                except exceptions.TaskFailedError as e:
+                    # Try to get output
+                    try:
+                        log.ODM_WARNING("LRE: %s failed with task output:" % self)
+                        log.ODM_WARNING("\n".join(task.output()[-10:]))
+                    except:
+                        log.ODM_WARNING("LRE: Could not retrieve task output for %s" % self)
+                        pass
+                    done(e)
                 except Exception as e:
                     done(e)
 
             # Launch monitor thread and return
-            threading.Thread(target=monitor).start()
+            t = threading.Thread(target=monitor)
+            self.params['threads'].append(t)
+            t.start()
         elif info.status == TaskStatus.QUEUED:
             raise NodeTaskLimitReachedException("Task limit reached")
         else:
