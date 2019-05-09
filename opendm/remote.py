@@ -76,12 +76,15 @@ class LocalRemoteExecutor:
             os._exit(1)
 
         def handle_result(task, local, error = None, partial=False):
+            release_semaphore = True
+
             if error:
-                if isinstance(error, NodeTaskLimitReachedException) and not nonloc.semaphore:
+                if isinstance(error, NodeTaskLimitReachedException) and not nonloc.semaphore and node_task_limit.value > 0:
                     nonloc.semaphore = threading.Semaphore(node_task_limit.value)
                     log.ODM_DEBUG("LRE: Node task limit reached. Setting semaphore to %s" % node_task_limit.value)
                     for i in range(node_task_limit.value):
                         nonloc.semaphore.acquire()
+                    release_semaphore = False
                 
                 log.ODM_WARNING("LRE: %s failed with: %s" % (task, str(error)))
 
@@ -110,7 +113,7 @@ class LocalRemoteExecutor:
                 nonloc.local_is_processing = False
             
             if not task.finished:
-                if nonloc.semaphore: nonloc.semaphore.release()
+                if nonloc.semaphore and release_semaphore: nonloc.semaphore.release()
                 q.task_done()
                 task.finished = True
 

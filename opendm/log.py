@@ -1,3 +1,4 @@
+import sys
 HEADER = '\033[95m'
 OKBLUE = '\033[94m'
 OKGREEN = '\033[92m'
@@ -10,6 +11,7 @@ class ODMLogger:
     def log(self, startc, msg, level_name):
         level = ("[" + level_name + "]").ljust(9)
         print("%s%s %s%s" % (startc, level, msg, ENDC))
+        sys.stdout.flush()
 
     def info(self, msg):
         self.log(OKBLUE, msg, "INFO")
