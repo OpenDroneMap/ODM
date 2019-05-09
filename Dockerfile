@@ -91,10 +91,9 @@ COPY CMakeLists.txt /code/CMakeLists.txt
 COPY configure.sh /code/configure.sh
 COPY /modules/ /code/modules/
 COPY /opendm/ /code/opendm/
-COPY /patched_files/ /code/patched_files/
 COPY run.py /code/run.py
 COPY run.sh /code/run.sh
-COPY /scripts/ /code/scripts/
+COPY /stages/ /code/stages/
 COPY /SuperBuild/cmake/ /code/SuperBuild/cmake/
 COPY /SuperBuild/CMakeLists.txt /code/SuperBuild/CMakeLists.txt
 COPY docker.settings.yaml /code/settings.yaml
