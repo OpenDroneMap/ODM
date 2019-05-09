@@ -29,6 +29,7 @@ class ODMOpenSfMStage(types.ODM_Stage):
         # If we find a special flag file for split/merge we stop right here
         if os.path.exists(octx.path("split_merge_stop_at_reconstruction.txt")):
             log.ODM_INFO("Stopping OpenSfM early because we found: %s" % octx.path("split_merge_stop_at_reconstruction.txt"))
+            self.next_stage = None
             return
 
         if args.fast_orthophoto:

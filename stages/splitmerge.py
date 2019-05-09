@@ -88,7 +88,7 @@ class ODMSplitStage(types.ODM_Stage):
                 else:
                     lre = LocalRemoteExecutor(args.sm_cluster)
                     lre.set_projects([os.path.abspath(os.path.join(p, "..")) for p in submodel_paths])
-                    lre.run_reconstruct()
+                    lre.run_reconstruction()
 
                 # Align
                 alignment_file = octx.path('alignment_done.txt')
@@ -140,8 +140,8 @@ class ODMSplitStage(types.ODM_Stage):
                         # Re-run the ODM toolchain on the submodel
                         system.run(" ".join(map(quote, argv)), env_vars=os.environ.copy())
                 else:
-                    de.set_projects([os.path.abspath(os.path.join(p, "..")) for p in submodel_paths])
-                    de.run_toolchain()
+                    lre.set_projects([os.path.abspath(os.path.join(p, "..")) for p in submodel_paths])
+                    lre.run_toolchain()
 
                 with open(split_done_file, 'w') as fout: 
                     fout.write("Split done!\n")
