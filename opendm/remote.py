@@ -125,6 +125,8 @@ class LocalRemoteExecutor:
                     q.task_done()
                     if nonloc.semaphore: nonloc.semaphore.release()
                     break
+                
+                task.finished = False
 
                 if not nonloc.local_is_processing or not self.node_online:
                     # Process local
@@ -305,7 +307,10 @@ class ReconstructionTask(Task):
                 get_submodel_args_dict(),
                 progress_callback=print_progress,
                 skip_post_processing=True,
-                outputs=["opensfm/matches", "opensfm/features", "opensfm/reconstruction.json"])
+                outputs=["opensfm/matches", "opensfm/features", 
+                         "opensfm/reconstruction.json",
+                         "opensfm/tracks.csv",
+                         ])
 
         # Cleanup seed file
         os.remove(seed_file)
