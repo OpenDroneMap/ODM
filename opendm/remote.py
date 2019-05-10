@@ -82,30 +82,31 @@ class LocalRemoteExecutor:
                 log.ODM_WARNING("LRE: No remote tasks to cleanup")
 
             for task in self.params['tasks']:
-                log.ODM_DEBUG("Removing remote task %s... %s" % (task.uuid, 'OK' if task.remove() else 'FAILED'))
-            os._exit(1)
+                try:
+                    removed = task.remove()
+                except exceptions.OdmError:
+                    removed = False
+                log.ODM_DEBUG("Removing remote task %s... %s" % (task.uuid, 'OK' if removed else 'NO'))
 
         def handle_result(task, local, error = None, partial=False):
             try:
                 handle_result_mutex.acquire()
-                release_semaphore = True
 
                 if error:
-                    if isinstance(error, NodeTaskLimitReachedException) and not nonloc.semaphore and node_task_limit.value > 0:
-                        sem_value = max(1, node_task_limit.value - 1)
-                        nonloc.semaphore = threading.Semaphore(sem_value)
-                        log.ODM_DEBUG("LRE: Node task limit reached. Setting semaphore to %s" % sem_value)
-                        for i in range(sem_value):
-                            nonloc.semaphore.acquire()
-                        release_semaphore = False
-                    
                     log.ODM_WARNING("LRE: %s failed with: %s" % (task, str(error)))
-
+                    
                     # Special case in which the error is caused by a SIGTERM signal
                     # this means a local processing was terminated either by CTRL+C or 
                     # by canceling the task.
                     if str(error) == "Child was terminated by signal 15":
                         cleanup_remote_tasks_and_exit()
+
+                    if isinstance(error, NodeTaskLimitReachedException) and not nonloc.semaphore and node_task_limit.value > 0:
+                        sem_value = max(1, node_task_limit.value - 1)
+                        nonloc.semaphore = threading.Semaphore(sem_value)
+                        log.ODM_DEBUG("LRE: Node task limit reached. Setting semaphore to %s and waiting..." % sem_value)
+                        for i in range(sem_value + 1):
+                            nonloc.semaphore.acquire() # This will block until a task has finished
                     
                     # Retry, but only if the error is not related to a task failure
                     if task.retries < task.max_retries and not isinstance(error, exceptions.TaskFailedError):
@@ -132,7 +133,7 @@ class LocalRemoteExecutor:
                     nonloc.local_is_processing = False
                 
                 if not task.finished:
-                    if nonloc.semaphore and release_semaphore: nonloc.semaphore.release()
+                    if nonloc.semaphore: nonloc.semaphore.release()
                     task.finished = True
                     q.task_done()
             finally:
@@ -143,8 +144,10 @@ class LocalRemoteExecutor:
                 # If we've found a limit on the maximum number of tasks
                 # a node can process, we block until some tasks have completed
                 if nonloc.semaphore: nonloc.semaphore.acquire()
-
+                
+                # Block until a new queue item is available
                 task = q.get()
+
                 if task is None or nonloc.error is not None:
                     q.task_done()
                     if nonloc.semaphore: nonloc.semaphore.release()
@@ -170,15 +173,7 @@ class LocalRemoteExecutor:
         # Create queue thread
         t = threading.Thread(target=worker)
 
-        # Capture SIGTERM so that we can 
-        # attempt to cleanup if the process is terminated
-        original_sigterm_handler = signal.getsignal(signal.SIGTERM)
-
-        def sigterm_handler(signum, frame):
-            log.ODM_WARNING("LRE: Caught SIGTERM")
-            cleanup_remote_tasks_and_exit()
-
-        signal.signal(signal.SIGTERM, sigterm_handler)
+        system.add_cleanup_callback(cleanup_remote_tasks_and_exit)
 
         # Start worker process
         t.start()
@@ -189,7 +184,7 @@ class LocalRemoteExecutor:
                 time.sleep(0.5)
         except KeyboardInterrupt:
             log.ODM_WARNING("LRE: CTRL+C")
-            cleanup_remote_tasks_and_exit()
+            system.exit_gracefully()
         
         # stop workers
         q.put(None)
@@ -200,9 +195,8 @@ class LocalRemoteExecutor:
         # Wait for all remains threads
         for thrds in self.params['threads']:
             thrds.join()
-
-        # restore SIGTERM handler
-        signal.signal(signal.SIGTERM, original_sigterm_handler)
+        
+        system.remove_cleanup_callback(cleanup_remote_tasks_and_exit)
 
         if nonloc.error is not None:
             # Try not to leak access token

@@ -568,8 +568,8 @@ def config():
       args.pc_classify = True
 
     if args.skip_3dmodel and args.use_3dmesh:
-      log.ODM_WARNING('--skip-3dmodel is set, but so is --use-3dmesh. --use_3dmesh will be ignored.')
-      args.use_3dmesh = False
+      log.ODM_WARNING('--skip-3dmodel is set, but so is --use-3dmesh. --skip-3dmodel will be ignored.')
+      args.skip_3dmodel = False
 
     if args.orthophoto_cutline and not args.crop:
       log.ODM_WARNING("--orthophoto-cutline is set, but --crop is not. --crop will be set to 0.01")
