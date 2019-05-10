@@ -75,7 +75,7 @@ class LocalRemoteExecutor:
             log.ODM_DEBUG("LRE: Adding to queue %s" % pp)
             q.put(taskClass(pp, self.node, self.params))
         
-        def cleanup_remote_tasks_and_exit():
+        def cleanup_remote_tasks():
             if self.params['tasks']:
                 log.ODM_WARNING("LRE: Attempting to cleanup remote tasks")
             else:
@@ -99,7 +99,7 @@ class LocalRemoteExecutor:
                     # this means a local processing was terminated either by CTRL+C or 
                     # by canceling the task.
                     if str(error) == "Child was terminated by signal 15":
-                        cleanup_remote_tasks_and_exit()
+                        system.exit_gracefully()
 
                     if isinstance(error, NodeTaskLimitReachedException) and not nonloc.semaphore and node_task_limit.value > 0:
                         sem_value = max(1, node_task_limit.value - 1)
@@ -173,7 +173,7 @@ class LocalRemoteExecutor:
         # Create queue thread
         t = threading.Thread(target=worker)
 
-        system.add_cleanup_callback(cleanup_remote_tasks_and_exit)
+        system.add_cleanup_callback(cleanup_remote_tasks)
 
         # Start worker process
         t.start()
@@ -196,7 +196,7 @@ class LocalRemoteExecutor:
         for thrds in self.params['threads']:
             thrds.join()
         
-        system.remove_cleanup_callback(cleanup_remote_tasks_and_exit)
+        system.remove_cleanup_callback(cleanup_remote_tasks)
 
         if nonloc.error is not None:
             # Try not to leak access token
