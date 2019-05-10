@@ -31,6 +31,7 @@ class ODMSplitStage(types.ODM_Stage):
             split_done_file = octx.path("split_done.txt")
 
             if not io.file_exists(split_done_file) or self.rerun():
+                orig_max_concurrency = args.max_concurrency
                 if not local_workflow:
                     args.max_concurrency = max(1, args.max_concurrency - 1)
                     log.ODM_INFO("Setting max-concurrency to %s to better handle remote splits" % args.max_concurrency)
@@ -145,6 +146,9 @@ class ODMSplitStage(types.ODM_Stage):
                 else:
                     lre.set_projects([os.path.abspath(os.path.join(p, "..")) for p in submodel_paths])
                     lre.run_toolchain()
+
+                # Restore max_concurrency value
+                args.max_concurrency = orig_max_concurrency
 
                 with open(split_done_file, 'w') as fout: 
                     fout.write("Split done!\n")

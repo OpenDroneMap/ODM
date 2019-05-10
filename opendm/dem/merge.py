@@ -66,12 +66,10 @@ def euclidean_merge_dems(input_dems, output_dem, creation_options={}):
             if src_d.profile["count"] != 1 or src_e.profile["count"] != 1:
                 raise ValueError("Inputs must be 1-band rasters")
         dst_w, dst_s, dst_e, dst_n = min(xs), min(ys), max(xs), max(ys)
-    log.ODM_INFO("Output bounds: %r", (dst_w, dst_s, dst_e, dst_n))
-    output_transform = Affine.translation(dst_w, dst_n)
-    log.ODM_INFO("Output transform, before scaling: %r", output_transform)
+    log.ODM_INFO("Output bounds: %r %r %r %r" % (dst_w, dst_s, dst_e, dst_n))
 
+    output_transform = Affine.translation(dst_w, dst_n)
     output_transform *= Affine.scale(res[0], -res[1])
-    log.ODM_INFO("Output transform, after scaling: %r", output_transform)
 
     # Compute output array shape. We guarantee it will cover the output
     # bounds completely.
@@ -80,8 +78,8 @@ def euclidean_merge_dems(input_dems, output_dem, creation_options={}):
 
     # Adjust bounds to fit.
     dst_e, dst_s = output_transform * (output_width, output_height)
-    log.ODM_INFO("Output width: %d, height: %d", output_width, output_height)
-    log.ODM_INFO("Adjusted bounds: %r", (dst_w, dst_s, dst_e, dst_n))
+    log.ODM_INFO("Output width: %d, height: %d" % (output_width, output_height))
+    log.ODM_INFO("Adjusted bounds: %r %r %r %r" % (dst_w, dst_s, dst_e, dst_n))
 
     profile["transform"] = output_transform
     profile["height"] = output_height
@@ -108,7 +106,6 @@ def euclidean_merge_dems(input_dems, output_dem, creation_options={}):
             # initialize array destined for the block
             dst_count = first.count
             dst_shape = (dst_count, dst_rows, dst_cols)
-            log.ODM_DEBUG("Temp shape: %r", dst_shape)
 
             dstarr = np.zeros(dst_shape, dtype=dtype)
             distsum = np.zeros(dst_shape, dtype=dtype)
