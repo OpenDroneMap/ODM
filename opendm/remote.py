@@ -329,7 +329,7 @@ class Task:
                     if info.status == TaskStatus.QUEUED:
                         log.ODM_WARNING("LRE: %s (%s) turned from RUNNING to QUEUED. Re-adding to back of the queue." % (self, task.uuid))
                         task.remove()
-                        done(NodeTaskLimitReachedException("Delayed task limit reached"), partial=True)
+                        raise NodeTaskLimitReachedException("Delayed task limit reached")
                     elif info.status == TaskStatus.RUNNING:
                         # Print a status message once in a while
                         nonloc.status_callback_calls += 1
