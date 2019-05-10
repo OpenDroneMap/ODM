@@ -31,6 +31,9 @@ class ODMSplitStage(types.ODM_Stage):
             split_done_file = octx.path("split_done.txt")
 
             if not io.file_exists(split_done_file) or self.rerun():
+                if not local_workflow:
+                    args.max_concurrency = max(1, args.max_concurrency - 1)
+                    log.ODM_INFO("Setting max-concurrency to %s to better handle remote splits" % args.max_concurrency)
 
                 log.ODM_INFO("Large dataset detected (%s photos) and split set at %s. Preparing split merge." % (len(photos), args.split))
                 config = [
