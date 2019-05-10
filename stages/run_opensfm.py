@@ -64,7 +64,7 @@ class ODMOpenSfMStage(types.ODM_Stage):
         # sparse reconstruction instead
         if args.fast_orthophoto:
             if not io.file_exists(output_file) or self.rerun():
-                octx.run('export_ply --no-cameras' % image_scale)
+                octx.run('export_ply --no-cameras')
             else:
                 log.ODM_WARNING("Found a valid PLY reconstruction in %s" % output_file)
 
