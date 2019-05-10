@@ -94,7 +94,7 @@ class LocalRemoteExecutor:
                     if isinstance(error, NodeTaskLimitReachedException) and not nonloc.semaphore and node_task_limit.value > 0:
                         sem_value = max(1, node_task_limit.value - 1)
                         nonloc.semaphore = threading.Semaphore(sem_value)
-                        log.ODM_DEBUG("LRE: Node task limit reached. Setting semaphore to %s" % node_task_limit.value)
+                        log.ODM_DEBUG("LRE: Node task limit reached. Setting semaphore to %s" % sem_value)
                         for i in range(sem_value):
                             nonloc.semaphore.acquire()
                         release_semaphore = False
@@ -353,10 +353,10 @@ class Task:
                 except exceptions.TaskFailedError as e:
                     # Try to get output
                     try:
-                        msg = "LRE: %s failed with task output: %s" % (self, "\n".join(task.output()[-10:]))
+                        msg = "(%s) failed with task output: %s" % (task.uuid, "\n".join(task.output()[-10:]))
                         done(exceptions.TaskFailedError(msg))
                     except:
-                        log.ODM_WARNING("LRE: Could not retrieve task output for %s" % self)
+                        log.ODM_WARNING("LRE: Could not retrieve task output for %s (%s)" % (self, task.uuid))
                         done(e)
                 except Exception as e:
                     done(e)

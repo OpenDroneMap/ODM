@@ -55,7 +55,8 @@ RUN apt-get install --no-install-recommends -y \
   python-pyproj \
   python-software-properties \
   python-wheel \
-  swig2.0
+  swig2.0 \
+  grass-core
 
 RUN apt-get remove libdc1394-22-dev
 RUN pip install --upgrade pip
@@ -116,15 +117,6 @@ RUN cd SuperBuild \
   && cd build \
   && cmake .. \
   && make -j$(nproc)
-
-RUN apt-get -y remove \
-  git \
-  build-essential \
-  cmake \
-  libgl1-mesa-dri \
-  python-pip
-
-RUN apt-get install -y libvtk6-dev grass-core
 
 # Cleanup APT
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* 
