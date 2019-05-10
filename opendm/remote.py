@@ -92,9 +92,10 @@ class LocalRemoteExecutor:
 
                 if error:
                     if isinstance(error, NodeTaskLimitReachedException) and not nonloc.semaphore and node_task_limit.value > 0:
-                        nonloc.semaphore = threading.Semaphore(node_task_limit.value)
+                        sem_value = max(1, node_task_limit.value - 1)
+                        nonloc.semaphore = threading.Semaphore(sem_value)
                         log.ODM_DEBUG("LRE: Node task limit reached. Setting semaphore to %s" % node_task_limit.value)
-                        for i in range(node_task_limit.value):
+                        for i in range(sem_value):
                             nonloc.semaphore.acquire()
                         release_semaphore = False
                     
@@ -109,7 +110,10 @@ class LocalRemoteExecutor:
                     # Retry, but only if the error is not related to a task failure
                     if task.retries < task.max_retries and not isinstance(error, exceptions.TaskFailedError):
                         # Put task back in queue
-                        task.retries += 1
+                        # Don't increment the retry counter if this task simply reached the task
+                        # limit count.
+                        if not isinstance(error, NodeTaskLimitReachedException):
+                            task.retries += 1
                         task.wait_until = datetime.datetime.now() + datetime.timedelta(seconds=task.retries * task.retry_timeout)
                         log.ODM_DEBUG("LRE: Re-queueing %s (retries: %s)" % (task, task.retries))
                         q.put(task)
@@ -349,12 +353,11 @@ class Task:
                 except exceptions.TaskFailedError as e:
                     # Try to get output
                     try:
-                        log.ODM_WARNING("LRE: %s failed with task output:" % self)
-                        log.ODM_WARNING("\n".join(task.output()[-10:]))
+                        msg = "LRE: %s failed with task output: %s" % (self, "\n".join(task.output()[-10:]))
+                        done(exceptions.TaskFailedError(msg))
                     except:
                         log.ODM_WARNING("LRE: Could not retrieve task output for %s" % self)
-                        pass
-                    done(e)
+                        done(e)
                 except Exception as e:
                     done(e)
 
