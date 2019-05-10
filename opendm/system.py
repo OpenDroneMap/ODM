@@ -18,19 +18,40 @@ def get_ccd_widths():
     return dict(zip(map(string.lower, sensor_data.keys()), sensor_data.values()))
 
 running_subprocesses = []
-def exit_gracefully(signum, frame):
+cleanup_callbacks = []
+
+def add_cleanup_callback(func):
+    global cleanup_callbacks
+    cleanup_callbacks.append(func)
+
+def remove_cleanup_callback(func):
+    global cleanup_callbacks
+
+    try:
+        cleanup_callbacks.remove(func)
+    except ValueError as e:
+        log.ODM_EXCEPTION("Tried to remove %s from cleanup_callbacks but got: %s" % (str(func), str(e)))
+
+def exit_gracefully():
     global running_subprocesses
+    global cleanup_callbacks
 
     log.ODM_WARNING("Caught TERM/INT signal, attempting to exit gracefully...")
+
+    for cb in cleanup_callbacks:
+        cb()
 
     for sp in running_subprocesses:
         log.ODM_WARNING("Sending TERM signal to PID %s..." % sp.pid)
         os.killpg(os.getpgid(sp.pid), signal.SIGTERM)
     
-    exit(1)
+    os._exit(1)
 
-signal.signal(signal.SIGINT, exit_gracefully)
-signal.signal(signal.SIGTERM, exit_gracefully)
+def sighandler(signum, frame):
+    exit_gracefully()
+
+signal.signal(signal.SIGINT, sighandler)
+signal.signal(signal.SIGTERM, sighandler)
 
 def run(cmd, env_paths=[context.superbuild_bin_path], env_vars={}):
     """Run a system command"""

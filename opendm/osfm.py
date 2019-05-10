@@ -187,7 +187,7 @@ def get_submodel_argv(project_name = None, submodels_path = None, submodel_name 
         removing --gcp (the GCP path if specified is always "gcp_list.txt")
     """
     assure_always = ['--orthophoto-cutline', '--dem-euclidean-map', '--skip-3dmodel']
-    remove_always_2 = ['--split', '--rerun-from', '--rerun', '--gcp', '--end-with', '--sm-cluster']
+    remove_always_2 = ['--split', '--split-overlap', '--rerun-from', '--rerun', '--gcp', '--end-with', '--sm-cluster']
     remove_always_1 = ['--rerun-all']
 
     argv = sys.argv
