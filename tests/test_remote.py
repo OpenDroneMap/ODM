@@ -3,6 +3,7 @@ import unittest
 import threading
 from opendm.remote import LocalRemoteExecutor, Task, NodeTaskLimitReachedException
 from pyodm import Node
+from pyodm.types import TaskStatus
 
 class TestRemote(unittest.TestCase):
     def setUp(self):
@@ -26,29 +27,48 @@ class TestRemote(unittest.TestCase):
         MAX_QUEUE = 2
         class nonloc:
             local_task_check = False
-            remote_queue = 0
+            remote_queue = 1
+
+        class OdmTaskMock:
+            def __init__(self, running, queue_num):
+                self.running = running
+                self.queue_num = queue_num
+                self.uuid = 'xxxxx-xxxxx-xxxxx-xxxxx-xxxx' + str(queue_num)
+            
+            def info(self):
+                class StatusMock:
+                    status = TaskStatus.RUNNING if self.running else TaskStatus.QUEUED
+                return StatusMock()
+
+            def remove(self):
+                return True
 
         class TaskMock(Task):
             def process_local(self):
-                # First task should be submodel_0000
-                if not nonloc.local_task_check: nonloc.local_task_check = self.project_path.endswith("0000")
-                time.sleep(3)
+                # First task should be 0000 or 0001
+                if not nonloc.local_task_check: nonloc.local_task_check = self.project_path.endswith("0000") or self.project_path.endswith("0001")
+                time.sleep(1)
 
             def process_remote(self, done):
-                time.sleep(0.2)
+                time.sleep(0.05) # file upload
+
+                self.remote_task = OdmTaskMock(nonloc.remote_queue <= MAX_QUEUE, nonloc.remote_queue)
+                self.params['tasks'].append(self.remote_task)
+                nonloc.remote_queue += 1
 
                 # Upload successful
                 done(error=None, partial=True)
 
                 # Async processing
                 def monitor():
-                    nonloc.remote_queue += 1
-                    time.sleep(0.3)
+                    time.sleep(0.2)
 
                     try:
-                        if nonloc.remote_queue > MAX_QUEUE:
-                            nonloc.remote_queue = 0
+                        if self.remote_task.queue_num > MAX_QUEUE:
+                            nonloc.remote_queue -= 1
                             raise NodeTaskLimitReachedException("Delayed task limit reached")
+                        time.sleep(0.5)
+                        nonloc.remote_queue -= 1
                         done()
                     except Exception as e:
                         done(e)
