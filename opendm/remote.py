@@ -62,91 +62,116 @@ class LocalRemoteExecutor:
         # Shared variables across threads
         class nonloc:
             error = None
-            local_is_processing = False
             semaphore = None
         
-        handle_result_mutex = threading.Lock()
-        unfinished_tasks = AtomicCounter(len(self.project_paths))
-        node_task_limit = AtomicCounter(0)
+        calculate_task_limit_lock = threading.Lock()
+        finished_tasks = AtomicCounter(0)
 
         # Create queue
         q = queue.Queue()
         for pp in self.project_paths:
             log.ODM_DEBUG("LRE: Adding to queue %s" % pp)
             q.put(taskClass(pp, self.node, self.params))
+
+        def remove_task_safe(task):
+            try:
+                removed = task.remove()
+            except exceptions.OdmError:
+                removed = False
+            return removed
         
         def cleanup_remote_tasks():
             if self.params['tasks']:
                 log.ODM_WARNING("LRE: Attempting to cleanup remote tasks")
             else:
-                log.ODM_WARNING("LRE: No remote tasks to cleanup")
+                log.ODM_INFO("LRE: No remote tasks to cleanup")
 
             for task in self.params['tasks']:
-                try:
-                    removed = task.remove()
-                except exceptions.OdmError:
-                    removed = False
-                log.ODM_DEBUG("Removing remote task %s... %s" % (task.uuid, 'OK' if removed else 'NO'))
+                log.ODM_DEBUG("Removing remote task %s... %s" % (task.uuid, 'OK' if remove_task_safe(task) else 'NO'))
 
         def handle_result(task, local, error = None, partial=False):
-            try:
-                handle_result_mutex.acquire()
-                acquire_semaphore_on_exit = False
+            def cleanup_remote():
+                if not partial and task.remote_task:
+                    log.ODM_DEBUG("Cleaning up remote task (%s)... %s" % (task.remote_task.uuid, 'OK' if remove_task_safe(task.remote_task) else 'NO'))
+                    self.params['tasks'].remove(task.remote_task)
+                    task.remote_task = None
 
-                if error:
-                    log.ODM_WARNING("LRE: %s failed with: %s" % (task, str(error)))
-                    
-                    # Special case in which the error is caused by a SIGTERM signal
-                    # this means a local processing was terminated either by CTRL+C or 
-                    # by canceling the task.
-                    if str(error) == "Child was terminated by signal 15":
-                        system.exit_gracefully()
+            if error:
+                log.ODM_WARNING("LRE: %s failed with: %s" % (task, str(error)))
+                
+                # Special case in which the error is caused by a SIGTERM signal
+                # this means a local processing was terminated either by CTRL+C or 
+                # by canceling the task.
+                if str(error) == "Child was terminated by signal 15":
+                    system.exit_gracefully()
 
-                    if isinstance(error, NodeTaskLimitReachedException) and not nonloc.semaphore and node_task_limit.value > 0:
-                        sem_value = max(1, node_task_limit.value)
+                if isinstance(error, NodeTaskLimitReachedException) and not nonloc.semaphore:
+                    # Estimate the maximum number of tasks based on how many tasks
+                    # are currently running
+                    with calculate_task_limit_lock:
+                        node_task_limit = 0
+                        for t in self.params['tasks']:
+                            try:
+                                info = t.info()
+                                if info.status == TaskStatus.RUNNING:
+                                    node_task_limit += 1
+                            except exceptions.OdmError:
+                                pass
+
+                        sem_value = max(1, node_task_limit)
                         nonloc.semaphore = threading.Semaphore(sem_value)
                         log.ODM_DEBUG("LRE: Node task limit reached. Setting semaphore to %s" % sem_value)
                         for i in range(sem_value):
                             nonloc.semaphore.acquire()
-                        acquire_semaphore_on_exit = True
 
-                    # Retry, but only if the error is not related to a task failure
-                    if task.retries < task.max_retries and not isinstance(error, exceptions.TaskFailedError):
-                        # Put task back in queue
-                        # Don't increment the retry counter if this task simply reached the task
-                        # limit count.
-                        if not isinstance(error, NodeTaskLimitReachedException):
-                            task.retries += 1
-                        task.wait_until = datetime.datetime.now() + datetime.timedelta(seconds=task.retries * task.retry_timeout)
-                        log.ODM_DEBUG("LRE: Re-queueing %s (retries: %s)" % (task, task.retries))
-                        q.put(task)
-                    else:
-                        nonloc.error = error
-                        unfinished_tasks.increment(-1)
-                else:
-                    if not local and not partial:
-                        node_task_limit.increment(-1)
-
-                    if not partial:
-                        log.ODM_INFO("LRE: %s finished successfully" % task)
-                        unfinished_tasks.increment(-1)
-
-                if local:
-                    nonloc.local_is_processing = False
-                
-                if not task.finished:
-                    if not acquire_semaphore_on_exit and nonloc.semaphore: nonloc.semaphore.release()
-                    task.finished = True
+                # Retry, but only if the error is not related to a task failure
+                if task.retries < task.max_retries and not isinstance(error, exceptions.TaskFailedError):
+                    # Put task back in queue
+                    # Don't increment the retry counter if this task simply reached the task
+                    # limit count.
+                    if not isinstance(error, NodeTaskLimitReachedException):
+                        task.retries += 1
+                    task.wait_until = datetime.datetime.now() + datetime.timedelta(seconds=task.retries * task.retry_timeout)
+                    cleanup_remote()
                     q.task_done()
-            finally:
-                handle_result_mutex.release()
-                if acquire_semaphore_on_exit and nonloc.semaphore: 
-                    log.ODM_INFO("LRE: Waiting...")
-                    nonloc.semaphore.acquire()
 
-        def worker():
+                    log.ODM_DEBUG("LRE: Re-queueing %s (retries: %s)" % (task, task.retries))
+                    q.put(task)
+                    return
+                else:
+                    nonloc.error = error
+                    finished_tasks.increment()
+            else:
+                if not partial:
+                    log.ODM_INFO("LRE: %s finished successfully" % task)
+                    finished_tasks.increment()
+
+            cleanup_remote()
+
+            if not local and not partial and nonloc.semaphore: nonloc.semaphore.release()
+            if not partial: q.task_done()
+
+        def local_worker():
             while True:
-                # If we've found a limit on the maximum number of tasks
+                # Block until a new queue item is available
+                task = q.get()
+
+                if task is None or nonloc.error is not None:
+                    q.task_done()
+                    break
+
+                # Process local
+                try:
+                    task.process(True, handle_result)
+                except Exception as e:
+                    handle_result(task, True, e)
+
+
+        def remote_worker():
+            while True:
+                had_semaphore = bool(nonloc.semaphore)
+
+                # If we've found an estimate of the limit on the maximum number of tasks
                 # a node can process, we block until some tasks have completed
                 if nonloc.semaphore: nonloc.semaphore.acquire()
 
@@ -157,35 +182,35 @@ class LocalRemoteExecutor:
                     q.task_done()
                     if nonloc.semaphore: nonloc.semaphore.release()
                     break
-                
-                task.finished = False
 
-                if not nonloc.local_is_processing or not self.node_online:
-                    # Process local
-                    try:
-                        nonloc.local_is_processing = True
-                        task.process(True, handle_result)
-                    except Exception as e:
-                        handle_result(task, True, e)
-                else:
-                    # Process remote
-                    try:
-                        task.process(False, handle_result)
-                        node_task_limit.increment() # Called after upload, but before processing is started
-                    except Exception as e:
-                        handle_result(task, False, e)
+                # Special case in which we've just created a semaphore
+                if not had_semaphore and nonloc.semaphore:
+                    log.ODM_INFO("Just found semaphore, sending %s back to the queue" % task)
+                    q.put(task)
+                    q.task_done()
+                    continue
+
+                # Process remote
+                try:
+                    task.process(False, handle_result)
+                except Exception as e:
+                    handle_result(task, False, e)
         
         # Create queue thread
-        t = threading.Thread(target=worker)
+        local_thread = threading.Thread(target=local_worker)
+        if self.node_online:
+            remote_thread = threading.Thread(target=remote_worker)
 
         system.add_cleanup_callback(cleanup_remote_tasks)
 
-        # Start worker process
-        t.start()
+        # Start workers
+        local_thread.start()
+        if self.node_online:
+            remote_thread.start()
 
         # block until all tasks are done (or CTRL+C)
         try:
-            while unfinished_tasks.value > 0:
+            while finished_tasks.value < len(self.project_paths):
                 time.sleep(0.5)
         except KeyboardInterrupt:
             log.ODM_WARNING("LRE: CTRL+C")
@@ -194,15 +219,20 @@ class LocalRemoteExecutor:
         # stop workers
         if nonloc.semaphore: nonloc.semaphore.release()
         q.put(None)
+        if self.node_online:
+            q.put(None)
 
         # Wait for queue thread
-        t.join()
+        local_thread.join()
+        if self.node_online:
+            remote_thread.join()
 
         # Wait for all remains threads
         for thrds in self.params['threads']:
             thrds.join()
         
         system.remove_cleanup_callback(cleanup_remote_tasks)
+        cleanup_remote_tasks()
 
         if nonloc.error is not None:
             # Try not to leak access token
@@ -224,7 +254,7 @@ class Task:
         self.max_retries = max_retries
         self.retries = 0
         self.retry_timeout = retry_timeout
-        self.finished = False
+        self.remote_task = None
 
     def process(self, local, done):
         def handle_result(error = None, partial=False):
@@ -233,9 +263,7 @@ class Task:
         log.ODM_INFO("LRE: About to process %s %s" % (self, 'locally' if local else 'remotely'))
         
         if local:
-            t = threading.Thread(target=self._process_local, args=(handle_result, ))
-            self.params['threads'].append(t)
-            t.start()
+            self._process_local(handle_result) # Block until complete
         else:
             now = datetime.datetime.now()
             if self.wait_until > now:
@@ -313,6 +341,7 @@ class Task:
                 progress_callback=print_progress,
                 skip_post_processing=True,
                 outputs=outputs)
+        self.remote_task = task
 
         # Cleanup seed file
         os.remove(seed_file)
@@ -332,7 +361,6 @@ class Task:
                     # stop the process and re-add the task to the queue.
                     if info.status == TaskStatus.QUEUED:
                         log.ODM_WARNING("LRE: %s (%s) turned from RUNNING to QUEUED. Re-adding to back of the queue." % (self, task.uuid))
-                        task.remove()
                         raise NodeTaskLimitReachedException("Delayed task limit reached")
                     elif info.status == TaskStatus.RUNNING:
                         # Print a status message once in a while
