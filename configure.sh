@@ -82,6 +82,11 @@ install() {
                         attrs==19.1.0 \
                         pyodm==1.5.0
 
+    # Fix:  /usr/local/lib/python2.7/dist-packages/requests/__init__.py:83: RequestsDependencyWarning: Old version of cryptography ([1, 2, 3]) may cause slowdown.
+    pip install --upgrade cryptography
+    python -m easy_install --upgrade pyOpenSSL
+
+
     echo "Installing OpenDroneMap Dependencies"
     apt-get install -y -qq python-scipy \
                          liblas-bin

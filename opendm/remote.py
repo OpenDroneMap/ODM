@@ -91,6 +91,7 @@ class LocalRemoteExecutor:
         def handle_result(task, local, error = None, partial=False):
             try:
                 handle_result_mutex.acquire()
+                acquire_semaphore_on_exit = False
 
                 if error:
                     log.ODM_WARNING("LRE: %s failed with: %s" % (task, str(error)))
@@ -102,12 +103,13 @@ class LocalRemoteExecutor:
                         system.exit_gracefully()
 
                     if isinstance(error, NodeTaskLimitReachedException) and not nonloc.semaphore and node_task_limit.value > 0:
-                        sem_value = max(1, node_task_limit.value - 1)
+                        sem_value = max(1, node_task_limit.value)
                         nonloc.semaphore = threading.Semaphore(sem_value)
-                        log.ODM_DEBUG("LRE: Node task limit reached. Setting semaphore to %s and waiting..." % sem_value)
-                        for i in range(sem_value + 1):
-                            nonloc.semaphore.acquire() # This will block until a task has finished
-                    
+                        log.ODM_DEBUG("LRE: Node task limit reached. Setting semaphore to %s" % sem_value)
+                        for i in range(sem_value):
+                            nonloc.semaphore.acquire()
+                        acquire_semaphore_on_exit = True
+
                     # Retry, but only if the error is not related to a task failure
                     if task.retries < task.max_retries and not isinstance(error, exceptions.TaskFailedError):
                         # Put task back in queue
@@ -133,18 +135,21 @@ class LocalRemoteExecutor:
                     nonloc.local_is_processing = False
                 
                 if not task.finished:
-                    if nonloc.semaphore: nonloc.semaphore.release()
+                    if not acquire_semaphore_on_exit and nonloc.semaphore: nonloc.semaphore.release()
                     task.finished = True
                     q.task_done()
             finally:
                 handle_result_mutex.release()
+                if acquire_semaphore_on_exit and nonloc.semaphore: 
+                    log.ODM_INFO("LRE: Waiting...")
+                    nonloc.semaphore.acquire()
 
         def worker():
             while True:
                 # If we've found a limit on the maximum number of tasks
                 # a node can process, we block until some tasks have completed
                 if nonloc.semaphore: nonloc.semaphore.acquire()
-                
+
                 # Block until a new queue item is available
                 task = q.get()
 
@@ -187,6 +192,7 @@ class LocalRemoteExecutor:
             system.exit_gracefully()
         
         # stop workers
+        if nonloc.semaphore: nonloc.semaphore.release()
         q.put(None)
 
         # Wait for queue thread

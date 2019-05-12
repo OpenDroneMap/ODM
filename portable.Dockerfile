@@ -78,6 +78,8 @@ RUN pip install -U \
   attrs==19.1.0 \
   pyodm==1.5.0
 
+RUN pip install --upgrade cryptography && python -m easy_install --upgrade pyOpenSSL
+
 ENV PYTHONPATH="$PYTHONPATH:/code/SuperBuild/install/lib/python2.7/dist-packages"
 ENV PYTHONPATH="$PYTHONPATH:/code/SuperBuild/src/opensfm"
 ENV LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/code/SuperBuild/install/lib"
