@@ -2,7 +2,7 @@
 
 ############################################################################
 #
-# MODULE:	i.cutlines2
+# MODULE:	i.cutlinesmod
 # AUTHOR(S):	Moritz Lennert, with help of Stefanos Georganos, modified by
 #               Piero Toffanin
 #
