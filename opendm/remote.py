@@ -63,6 +63,7 @@ class LocalRemoteExecutor:
         class nonloc:
             error = None
             semaphore = None
+            local_processing = False
         
         calculate_task_limit_lock = threading.Lock()
         finished_tasks = AtomicCounter(0)
@@ -87,12 +88,12 @@ class LocalRemoteExecutor:
                 log.ODM_INFO("LRE: No remote tasks to cleanup")
 
             for task in self.params['tasks']:
-                log.ODM_DEBUG("Removing remote task %s... %s" % (task.uuid, 'OK' if remove_task_safe(task) else 'NO'))
+                log.ODM_DEBUG("LRE: Removing remote task %s... %s" % (task.uuid, 'OK' if remove_task_safe(task) else 'NO'))
 
         def handle_result(task, local, error = None, partial=False):
             def cleanup_remote():
                 if not partial and task.remote_task:
-                    log.ODM_DEBUG("Cleaning up remote task (%s)... %s" % (task.remote_task.uuid, 'OK' if remove_task_safe(task.remote_task) else 'NO'))
+                    log.ODM_DEBUG("LRE: Cleaning up remote task (%s)... %s" % (task.remote_task.uuid, 'OK' if remove_task_safe(task.remote_task) else 'NO'))
                     self.params['tasks'].remove(task.remote_task)
                     task.remote_task = None
 
@@ -113,7 +114,7 @@ class LocalRemoteExecutor:
                         for t in self.params['tasks']:
                             try:
                                 info = t.info()
-                                if info.status == TaskStatus.RUNNING:
+                                if info.status == TaskStatus.RUNNING and info.processing_time >= 0:
                                     node_task_limit += 1
                             except exceptions.OdmError:
                                 pass
@@ -150,7 +151,7 @@ class LocalRemoteExecutor:
 
             if not local and not partial and nonloc.semaphore: nonloc.semaphore.release()
             if not partial: q.task_done()
-
+            
         def local_worker():
             while True:
                 # Block until a new queue item is available
@@ -162,9 +163,12 @@ class LocalRemoteExecutor:
 
                 # Process local
                 try:
+                    nonloc.local_processing = True
                     task.process(True, handle_result)
                 except Exception as e:
                     handle_result(task, True, e)
+                finally:
+                    nonloc.local_processing = False
 
 
         def remote_worker():
@@ -182,12 +186,21 @@ class LocalRemoteExecutor:
                     q.task_done()
                     if nonloc.semaphore: nonloc.semaphore.release()
                     break
-
+                
                 # Special case in which we've just created a semaphore
                 if not had_semaphore and nonloc.semaphore:
-                    log.ODM_INFO("Just found semaphore, sending %s back to the queue" % task)
+                    log.ODM_INFO("LRE: Just found semaphore, sending %s back to the queue" % task)
                     q.put(task)
                     q.task_done()
+                    continue
+
+                # Yield to local processing
+                if not nonloc.local_processing:
+                    log.ODM_DEBUG("LRE: Yielding to local processing, sending %s back to the queue" % task)
+                    q.put(task)
+                    q.task_done()
+                    if nonloc.semaphore: nonloc.semaphore.release()
+                    time.sleep(0.05)
                     continue
 
                 # Process remote
@@ -210,7 +223,7 @@ class LocalRemoteExecutor:
 
         # block until all tasks are done (or CTRL+C)
         try:
-            while finished_tasks.value < len(self.project_paths):
+            while finished_tasks.value < len(self.project_paths) and nonloc.error is None:
                 time.sleep(0.5)
         except KeyboardInterrupt:
             log.ODM_WARNING("LRE: CTRL+C")
