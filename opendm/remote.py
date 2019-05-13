@@ -296,7 +296,7 @@ class Task:
         paths = filter(os.path.exists, map(lambda p: self.path(p), paths))
         outfile = self.path("seed.zip")
 
-        with zipfile.ZipFile(outfile, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+        with zipfile.ZipFile(outfile, "w", compression=zipfile.ZIP_DEFLATED, allowZip64=True) as zf:
             for p in paths:
                 if os.path.isdir(p):
                     for root, _, filenames in os.walk(p):
@@ -456,15 +456,14 @@ class ToolchainTask(Task):
 
     
     def process_remote(self, done):
-        self.execute_remote_task(done, seed_files=["opensfm/exif", 
-                                            "opensfm/camera_models.json",
+        self.execute_remote_task(done, seed_files=["opensfm/camera_models.json",
                                             "opensfm/reference_lla.json",
-                                            "opensfm/features",
-                                            "opensfm/matches",
                                             "opensfm/reconstruction.json",
                                             "opensfm/tracks.csv"],
-                            seed_touch_files=[],
+                            seed_touch_files=["opensfm/features/empty",
+                                              "opensfm/matches/empty",
+                                              "opensfm/exif/empty"],
                             outputs=["odm_orthophoto/odm_orthophoto.tif",
-                                    "odm_orthophoto/cutline.gpkg", 
+                                    "odm_orthophoto/cutline.gpkg",
                                     "odm_dem", 
                                     "odm_georeferencing"])
