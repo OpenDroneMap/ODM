@@ -275,8 +275,12 @@ def post_process(geotiff_path, output_path, smoothing_iterations=1):
         # these edge cases, but it's slower.
         for i in range(smoothing_iterations):
             log.ODM_INFO("Smoothing iteration %s" % str(i + 1))
-            arr = signal.medfilt(arr, 5)
-        
+            try:
+                arr = signal.medfilt(arr, 5)
+            except MemoryError:
+                log.ODM_WARNING("medfilt ran out of memory, switching to slower median_filter")
+                arr = ndimage.median_filter(arr, size=5)
+
         # Fill corner points with nearest value
         if arr.shape >= (4, 4):
             arr[0][:2] = arr[1][0] = arr[1][1]

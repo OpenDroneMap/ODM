@@ -2,7 +2,7 @@ import time
 import unittest
 import threading
 from opendm.remote import LocalRemoteExecutor, Task, NodeTaskLimitReachedException
-from pyodm import Node
+from pyodm import Node, exceptions
 from pyodm.types import TaskStatus
 
 class TestRemote(unittest.TestCase):
@@ -28,6 +28,7 @@ class TestRemote(unittest.TestCase):
         class nonloc:
             local_task_check = False
             remote_queue = 1
+            should_fail = False
 
         class OdmTaskMock:
             def __init__(self, running, queue_num):
@@ -38,6 +39,7 @@ class TestRemote(unittest.TestCase):
             def info(self):
                 class StatusMock:
                     status = TaskStatus.RUNNING if self.running else TaskStatus.QUEUED
+                    processing_time = 1
                 return StatusMock()
 
             def remove(self):
@@ -54,6 +56,11 @@ class TestRemote(unittest.TestCase):
 
                 self.remote_task = OdmTaskMock(nonloc.remote_queue <= MAX_QUEUE, nonloc.remote_queue)
                 self.params['tasks'].append(self.remote_task)
+                
+                if nonloc.should_fail:
+                    if self.project_path.endswith("0006"):
+                        raise exceptions.TaskFailedError("FAIL #6")
+
                 nonloc.remote_queue += 1
 
                 # Upload successful
@@ -80,3 +87,9 @@ class TestRemote(unittest.TestCase):
         self.lre.run(TaskMock)
         self.assertTrue(nonloc.local_task_check)
 
+        nonloc.should_fail = True
+        with self.assertRaises(exceptions.TaskFailedError):
+            self.lre.run(TaskMock)
+
+if __name__ == '__main__':
+    unittest.main()
