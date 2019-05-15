@@ -95,15 +95,7 @@ class ODMSplitStage(types.ODM_Stage):
                     lre.run_reconstruction()
 
                 # Align
-                alignment_file = octx.path('alignment_done.txt')
-                if not io.file_exists(alignment_file) or self.rerun():
-                    log.ODM_INFO("Aligning submodels...")
-                    octx.run('align_submodels')
-
-                    with open(alignment_file, 'w') as fout:
-                        fout.write("Alignment done!\n")
-                else:
-                    log.ODM_WARNING('Found a alignment matching done progress file in: %s' % alignment_file)
+                octx.align_reconstructions(self.rerun())
 
                 # Aligned reconstruction is in reconstruction.aligned.json
                 # We need to rename it to reconstruction.json

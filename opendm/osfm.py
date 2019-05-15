@@ -7,6 +7,8 @@ from opendm import io
 from opendm import log
 from opendm import system
 from opendm import context
+from opensfm.large import metadataset
+from opensfm.large import tools
 
 class OSFMContext:
     def __init__(self, opensfm_project_path):
@@ -140,7 +142,20 @@ class OSFMContext:
         else:
             log.ODM_WARNING('Match features already done: %s exists' % matches_dir)
 
-        
+    def align_reconstructions(self, rerun):
+        alignment_file = self.path('alignment_done.txt')
+        if not io.file_exists(alignment_file) or rerun:
+            log.ODM_INFO("Aligning submodels...")
+            meta_data = metadataset.MetaDataSet(self.opensfm_project_path)
+            reconstruction_shots = tools.load_reconstruction_shots(meta_data)
+            transformations = tools.align_reconstructions(reconstruction_shots, use_points_constraints=False)
+            tools.apply_transformations(transformations)
+
+            with open(alignment_file, 'w') as fout:
+                fout.write("Alignment done!\n")
+        else:
+            log.ODM_WARNING('Found a alignment done progress file in: %s' % alignment_file)
+
     def path(self, *paths):
         return os.path.join(self.opensfm_project_path, *paths)
 
