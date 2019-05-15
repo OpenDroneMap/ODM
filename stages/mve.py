@@ -44,6 +44,8 @@ class ODMMveStage(types.ODM_Stage):
             if not io.dir_exists(tree.mve_views):
                 system.run('%s %s %s' % (context.makescene_path, tree.mve_path, tree.mve), env_vars={'OMP_NUM_THREADS': args.max_concurrency})
 
+            self.update_progress(10)
+
             # Compute mve output scale based on depthmap_resolution
             max_width = 0
             max_height = 0
@@ -108,25 +110,9 @@ class ODMMveStage(types.ODM_Stage):
             log.ODM_INFO("Running dense reconstruction. This might take a while. Please be patient, the process is not dead or hung.")
             log.ODM_INFO("                              Process is running")
             
-            # TODO: find out why MVE is crashing at random
-            # https://gist.github.com/pierotofy/c49447e86a187e8ede50fb302cf5a47b
-            # MVE *seems* to have a race condition, triggered randomly, regardless of dataset
-            # size. Core dump stack trace points to patch_sampler.cc:109.
-            # Hard to reproduce. Removing -03 optimizations from dmrecon 
-            # seems to reduce the chances of hitting the bug. 
-            # Temporary workaround is to retry the reconstruction until we get it right
-            # (up to a certain number of retries).
-            retry_count = 1
-            while retry_count < 10:
-                try:
-                    system.run('%s %s %s' % (context.dmrecon_path, ' '.join(dmrecon_config), tree.mve), env_vars={'OMP_NUM_THREADS': args.max_concurrency})
-                    break
-                except Exception as e:
-                    if str(e) == "Child returned 134" or str(e) == "Child returned 1":
-                        retry_count += 1
-                        log.ODM_WARNING("Caught error code, retrying attempt #%s" % retry_count)
-                    else:
-                        raise e
+            system.run('%s %s %s' % (context.dmrecon_path, ' '.join(dmrecon_config), tree.mve), env_vars={'OMP_NUM_THREADS': args.max_concurrency})
+            
+            self.update_progress(90)
 
             scene2pset_config = [
                 "-F%s" % mve_output_scale

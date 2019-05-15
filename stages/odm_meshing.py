@@ -33,6 +33,8 @@ class ODMeshingStage(types.ODM_Stage):
           else:
               log.ODM_WARNING('Found a valid ODM Mesh file in: %s' %
                               tree.odm_mesh)
+        
+        self.update_progress(50)
 
         # Always generate a 2.5D mesh
         # unless --use-3dmesh is set.

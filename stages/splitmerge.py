@@ -48,8 +48,12 @@ class ODMSplitStage(types.ODM_Stage):
                 octx.setup(args, tree.dataset_raw, photos, gcp_path=tree.odm_georeferencing_gcp, append_config=config, rerun=self.rerun())
                 octx.extract_metadata(self.rerun())
 
+                self.update_progress(5)
+
                 if local_workflow:
                     octx.feature_matching(self.rerun())
+
+                self.update_progress(20)
 
                 # Create submodels
                 if not io.dir_exists(tree.submodels_path) or self.rerun():
@@ -84,6 +88,7 @@ class ODMSplitStage(types.ODM_Stage):
                         
                 # Reconstruct each submodel
                 log.ODM_INFO("Dataset has been split into %s submodels. Reconstructing each submodel..." % len(submodel_paths))
+                self.update_progress(25)
 
                 if local_workflow:
                     for sp in submodel_paths:
@@ -94,8 +99,12 @@ class ODMSplitStage(types.ODM_Stage):
                     lre.set_projects([os.path.abspath(os.path.join(p, "..")) for p in submodel_paths])
                     lre.run_reconstruction()
 
+                self.update_progress(50)
+
                 # Align
                 octx.align_reconstructions(self.rerun())
+
+                self.update_progress(55)
 
                 # Aligned reconstruction is in reconstruction.aligned.json
                 # We need to rename it to reconstruction.json
@@ -176,6 +185,8 @@ class ODMMergeStage(types.ODM_Stage):
                 else:
                     log.ODM_WARNING("Found merged point cloud in %s" % tree.odm_georeferencing_model_laz)
             
+            self.update_progress(25)
+
             # Merge crop bounds
             merged_bounds_file = os.path.join(tree.odm_georeferencing, 'odm_georeferenced_model.bounds.gpkg')
             if not io.file_exists(merged_bounds_file) or self.rerun():
@@ -277,6 +288,8 @@ class ODMMergeStage(types.ODM_Stage):
                         log.ODM_WARNING("No orthophoto/cutline pairs were found in any of the submodels. No orthophoto will be generated.")
                 else:
                     log.ODM_WARNING("Found merged orthophoto in %s" % tree.odm_orthophoto_tif)
+
+            self.update_progress(75)
 
             # Merge DEMs
             def merge_dems(dem_filename, human_name):
