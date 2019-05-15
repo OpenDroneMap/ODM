@@ -8,6 +8,7 @@ from opendm import log
 from opendm import system
 from opendm import location
 from shutil import copyfile
+from opendm import progress
 
 def save_images_database(photos, database_file):
     with open(database_file, 'w') as f:
@@ -123,4 +124,3 @@ class ODMLoadDatasetStage(types.ODM_Stage):
         if outputs['reconstruction'].projection:
             with open(io.join_paths(tree.odm_georeferencing, tree.odm_georeferencing_proj), 'w') as f:
                 f.write(outputs['reconstruction'].projection.srs)
-

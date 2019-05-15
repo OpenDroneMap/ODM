@@ -12,6 +12,7 @@ import io
 import system
 import context
 import logging
+from opendm.progress import progressbc
 
 class ODM_Photo:
     """   ODMPhoto - a class for ODMPhotos
@@ -325,16 +326,19 @@ class ODM_Tree(object):
 
 
 class ODM_Stage:
-    def __init__(self, name, args, **params):
+    def __init__(self, name, args, progress=0.0, **params):
         self.name = name
         self.args = args
+        self.progress = progress
         self.params = params
         if self.params is None:
             self.params = {}
         self.next_stage = None
+        self.prev_stage = None
 
     def connect(self, stage):
         self.next_stage = stage
+        stage.prev_stage = self
         return stage
 
     def rerun(self):
@@ -359,6 +363,7 @@ class ODM_Stage:
             system.benchmark(start_time, outputs['tree'].benchmarking, self.name)
 
         log.ODM_INFO('Finished %s stage' % self.name)
+        self.update_progress_end()
 
         # Last stage?
         if self.args.end_with == self.name or self.args.rerun == self.name:
@@ -368,6 +373,27 @@ class ODM_Stage:
         # Run next stage?
         elif self.next_stage is not None:
             self.next_stage.run(outputs)
+
+    def delta_progress(self):
+        if self.prev_stage:
+            return max(0.0, self.progress - self.prev_stage.progress)
+        else:
+            return max(0.0, self.progress)
+    
+    def previous_stages_progress(self):
+        sum = 0
+        stage = self.prev_stage
+        while stage:
+            sum += stage.delta_progress()
+            stage = stage.prev_stage
+        return sum
+
+    def update_progress_end(self):
+        self.update_progress(100.0)
+
+    def update_progress(self, progress):
+        progressbc.send_update(self.previous_stages_progress() + 
+                                (self.delta_progress() / 100.0) * float(progress), progress, self.name)
 
     def process(self, args, outputs):
         raise NotImplementedError
