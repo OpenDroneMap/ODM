@@ -94,6 +94,8 @@ class ODMMvsTexStage(types.ODM_Stage):
                            '{keepUnseenFaces} '
                            '{nadirMode} '
                            '-n {nadirWeight}'.format(**kwargs))
+                
+                self.update_progress(50)
             else:
                 log.ODM_WARNING('Found a valid ODM Texture file in: %s'
                                 % odm_textured_model_obj)

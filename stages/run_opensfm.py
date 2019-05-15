@@ -23,8 +23,11 @@ class ODMOpenSfMStage(types.ODM_Stage):
         octx = OSFMContext(tree.opensfm)
         octx.setup(args, tree.dataset_raw, photos, gcp_path=tree.odm_georeferencing_gcp, rerun=self.rerun())
         octx.extract_metadata(self.rerun())
+        self.update_progress(20)
         octx.feature_matching(self.rerun())
+        self.update_progress(30)
         octx.reconstruct(self.rerun())
+        self.update_progress(70)
 
         # If we find a special flag file for split/merge we stop right here
         if os.path.exists(octx.path("split_merge_stop_at_reconstruction.txt")):
@@ -60,6 +63,8 @@ class ODMOpenSfMStage(types.ODM_Stage):
         else:
             log.ODM_WARNING("Found an undistorted directory in %s" % undistorted_images_path)
 
+        self.update_progress(80)
+
         # Skip dense reconstruction if necessary and export
         # sparse reconstruction instead
         if args.fast_orthophoto:
@@ -80,6 +85,8 @@ class ODMOpenSfMStage(types.ODM_Stage):
 
         # check if reconstruction was exported to bundler before
         octx.export_bundler(tree.opensfm_bundle_list, self.rerun())
+
+        self.update_progress(90)
 
         if reconstruction.georef and (not io.file_exists(tree.opensfm_transformation) or self.rerun()):
             octx.run('export_geocoords --transformation --proj \'%s\'' % reconstruction.georef.projection.srs)

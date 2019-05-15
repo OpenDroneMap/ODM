@@ -44,6 +44,9 @@ class ODMDEMStage(types.ODM_Stage):
                     f.write('Slope: {}\n'.format(args.smrf_slope))
                     f.write('Threshold: {}\n'.format(args.smrf_threshold))
                     f.write('Window: {}\n'.format(args.smrf_window))
+            
+        progress = 20
+        self.update_progress(progress)
 
         # Do we need to process anything here?
         if (args.dsm or args.dtm) and las_model_found:
@@ -95,6 +98,9 @@ class ODMDEMStage(types.ODM_Stage):
                         commands.compute_euclidean_map(unfilled_dem_path, 
                                             io.related_file_path(dem_geotiff_path, postfix=".euclideand"), 
                                             overwrite=True)
+                    
+                    progress += 30
+                    self.update_progress(progress)
             else:
                 log.ODM_WARNING('Found existing outputs in: %s' % odm_dem_root)
         else:

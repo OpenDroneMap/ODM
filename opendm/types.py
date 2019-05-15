@@ -392,6 +392,7 @@ class ODM_Stage:
         self.update_progress(100.0)
 
     def update_progress(self, progress):
+        progress = max(0.0, min(100.0, progress))
         progressbc.send_update(self.previous_stages_progress() + 
                                 (self.delta_progress() / 100.0) * float(progress), progress, self.name)
 
