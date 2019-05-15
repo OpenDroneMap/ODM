@@ -4,6 +4,7 @@ from opendm import log
 from opendm import config
 from opendm import system
 from opendm import io
+from opendm.progress import progressbc
 
 import os
 from pipes import quote
@@ -14,6 +15,8 @@ if __name__ == '__main__':
     args = config.config()
 
     log.ODM_INFO('Initializing OpenDroneMap app - %s' % system.now())
+
+    progressbc.set_project_name(args.name)
 
     # Add project dir if doesn't exist
     args.project_path = io.join_paths(args.project_path, args.name)

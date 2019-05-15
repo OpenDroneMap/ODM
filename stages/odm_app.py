@@ -25,23 +25,23 @@ class ODMApp:
         Initializes the application and defines the ODM application pipeline stages
         """
         
-        dataset = ODMLoadDatasetStage('dataset', args, 
+        dataset = ODMLoadDatasetStage('dataset', args, progress=5.0,
                                           verbose=args.verbose,
                                           proj=args.proj)
-        split = ODMSplitStage('split', args)
-        merge = ODMMergeStage('merge', args)
-        opensfm = ODMOpenSfMStage('opensfm', args)
+        split = ODMSplitStage('split', args, progress=75.0)
+        merge = ODMMergeStage('merge', args, progress=100.0)
+        opensfm = ODMOpenSfMStage('opensfm', args, progress=25.0)
         slam = ODMSlamStage('slam', args)
-        mve = ODMMveStage('mve', args)
-        filterpoints = ODMFilterPoints('odm_filterpoints', args)
-        meshing = ODMeshingStage('odm_meshing', args,
+        mve = ODMMveStage('mve', args, progress=50.0)
+        filterpoints = ODMFilterPoints('odm_filterpoints', args, progress=52.0)
+        meshing = ODMeshingStage('odm_meshing', args, progress=60.0,
                                     max_vertex=args.mesh_size,
                                     oct_tree=args.mesh_octree_depth,
                                     samples=args.mesh_samples,
                                     point_weight=args.mesh_point_weight,
                                     max_concurrency=args.max_concurrency,
                                     verbose=args.verbose)
-        texturing = ODMMvsTexStage('mvs_texturing', args,
+        texturing = ODMMvsTexStage('mvs_texturing', args, progress=70.0,
                                     data_term=args.texturing_data_term,
                                     outlier_rem_type=args.texturing_outlier_removal_type,
                                     skip_vis_test=args.texturing_skip_visibility_test,
@@ -50,14 +50,14 @@ class ODMApp:
                                     skip_hole_fill=args.texturing_skip_hole_filling,
                                     keep_unseen_faces=args.texturing_keep_unseen_faces,
                                     tone_mapping=args.texturing_tone_mapping)
-        georeferencing = ODMGeoreferencingStage('odm_georeferencing', args,
+        georeferencing = ODMGeoreferencingStage('odm_georeferencing', args, progress=80.0,
                                                     gcp_file=args.gcp,
                                                     use_exif=args.use_exif,
                                                     verbose=args.verbose)
-        dem = ODMDEMStage('odm_dem', args,
+        dem = ODMDEMStage('odm_dem', args, progress=90.0,
                             max_concurrency=args.max_concurrency,
                             verbose=args.verbose)
-        orthophoto = ODMOrthoPhotoStage('odm_orthophoto', args)
+        orthophoto = ODMOrthoPhotoStage('odm_orthophoto', args, progress=100.0)
 
         if not args.video:
             # Normal pipeline

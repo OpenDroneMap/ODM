@@ -148,6 +148,7 @@ class ODMSplitStage(types.ODM_Stage):
                 log.ODM_WARNING('Found a split done file in: %s' % split_done_file)
         else:
             log.ODM_INFO("Normal dataset, will process all at once.")
+            self.progress = 0.0
 
 
 class ODMMergeStage(types.ODM_Stage):
@@ -311,6 +312,6 @@ class ODMMergeStage(types.ODM_Stage):
             self.next_stage = None
         else:
             log.ODM_INFO("Normal dataset, nothing to merge.")
-
+            self.progress = 0.0
 
         
