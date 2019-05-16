@@ -79,11 +79,12 @@ class OSFMContext:
                 "feature_min_frames: %s" % args.min_num_features,
                 "processes: %s" % args.max_concurrency,
                 "matching_gps_neighbors: %s" % args.matcher_neighbors,
+                "matching_gps_distance: %s" % args.matcher_distance,
                 "depthmap_method: %s" % args.opensfm_depthmap_method,
                 "depthmap_resolution: %s" % args.depthmap_resolution,
                 "depthmap_min_patch_sd: %s" % args.opensfm_depthmap_min_patch_sd,
                 "depthmap_min_consistent_views: %s" % args.opensfm_depthmap_min_consistent_views,
-                "optimize_camera_parameters: %s" % ('no' if args.use_fixed_camera_params else 'yes')
+                "optimize_camera_parameters: %s" % ('no' if args.use_fixed_camera_params else 'yes'),
             ]
 
             if has_alt:
@@ -99,9 +100,6 @@ class OSFMContext:
                 config.append("bundle_interval: 100")          # Bundle after adding 'bundle_interval' cameras
                 config.append("bundle_new_points_ratio: 1.2")  # Bundle when (new points) / (bundled points) > bundle_new_points_ratio
                 config.append("local_bundle_radius: 1")        # Max image graph distance for images to be included in local bundle adjustment
-
-            if args.matcher_distance > 0:
-                config.append("matching_gps_distance: %s" % args.matcher_distance)
 
             if gcp_path:
                 config.append("bundle_use_gcp: yes")
