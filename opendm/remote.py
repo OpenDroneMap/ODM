@@ -106,24 +106,27 @@ class LocalRemoteExecutor:
                 if str(error) == "Child was terminated by signal 15":
                     system.exit_gracefully()
 
-                if isinstance(error, NodeTaskLimitReachedException) and not nonloc.semaphore:
+                created_semaphore = False
+                if isinstance(error, NodeTaskLimitReachedException):
                     # Estimate the maximum number of tasks based on how many tasks
                     # are currently running
                     with calculate_task_limit_lock:
-                        node_task_limit = 0
-                        for t in self.params['tasks']:
-                            try:
-                                info = t.info()
-                                if info.status == TaskStatus.RUNNING and info.processing_time >= 0:
-                                    node_task_limit += 1
-                            except exceptions.OdmError:
-                                pass
+                        if not nonloc.semaphore:
+                            node_task_limit = 0
+                            for t in self.params['tasks']:
+                                try:
+                                    info = t.info()
+                                    if info.status == TaskStatus.RUNNING and info.processing_time >= 0:
+                                        node_task_limit += 1
+                                except exceptions.OdmError:
+                                    pass
 
-                        sem_value = max(1, node_task_limit)
-                        nonloc.semaphore = threading.Semaphore(sem_value)
-                        log.ODM_DEBUG("LRE: Node task limit reached. Setting semaphore to %s" % sem_value)
-                        for i in range(sem_value):
-                            nonloc.semaphore.acquire()
+                            sem_value = max(1, node_task_limit)
+                            nonloc.semaphore = threading.Semaphore(sem_value)
+                            log.ODM_DEBUG("LRE: Node task limit reached. Setting semaphore to %s" % sem_value)
+                            for i in range(sem_value):
+                                nonloc.semaphore.acquire()
+                            created_semaphore = True
 
                 # Retry, but only if the error is not related to a task failure
                 if task.retries < task.max_retries and not isinstance(error, exceptions.TaskFailedError):
@@ -137,6 +140,7 @@ class LocalRemoteExecutor:
                     q.task_done()
 
                     log.ODM_DEBUG("LRE: Re-queueing %s (retries: %s)" % (task, task.retries))
+                    if not created_semaphore and nonloc.semaphore: nonloc.semaphore.release()
                     q.put(task)
                     return
                 else:
