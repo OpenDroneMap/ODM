@@ -1,6 +1,7 @@
 import time
 import unittest
 import threading
+import random
 from opendm.remote import LocalRemoteExecutor, Task, NodeTaskLimitReachedException
 from pyodm import Node, exceptions
 from pyodm.types import TaskStatus
@@ -8,14 +9,11 @@ from pyodm.types import TaskStatus
 class TestRemote(unittest.TestCase):
     def setUp(self):
         self.lre = LocalRemoteExecutor('http://invalid-host:3000')
-        self.lre.set_projects(['/submodels/submodel_0000', 
-                               '/submodels/submodel_0001',
-                               '/submodels/submodel_0002',
-                               '/submodels/submodel_0003',
-                               '/submodels/submodel_0004',
-                               '/submodels/submodel_0005',
-                               '/submodels/submodel_0006',
-                            ])
+
+        projects = []
+        for i in range(9):
+            projects.append('/submodels/submodel_00' + str(i).rjust(2, '0'))
+        self.lre.set_projects(projects)
 
     def test_lre_init(self):
         self.assertFalse(self.lre.node_online)
@@ -29,6 +27,7 @@ class TestRemote(unittest.TestCase):
             local_task_check = False
             remote_queue = 1
             should_fail = False
+            task_limit_reached = False
 
         class OdmTaskMock:
             def __init__(self, running, queue_num):
@@ -60,7 +59,7 @@ class TestRemote(unittest.TestCase):
                 if nonloc.should_fail:
                     if self.project_path.endswith("0006"):
                         raise exceptions.TaskFailedError("FAIL #6")
-
+                    
                 nonloc.remote_queue += 1
 
                 # Upload successful
@@ -68,11 +67,14 @@ class TestRemote(unittest.TestCase):
 
                 # Async processing
                 def monitor():
-                    time.sleep(0.2)
-
                     try:
-                        if self.remote_task.queue_num > MAX_QUEUE:
+                        if nonloc.task_limit_reached and random.randint(0, 4) == 0:
                             nonloc.remote_queue -= 1
+                            raise NodeTaskLimitReachedException("Random fail!")
+
+                        if not nonloc.task_limit_reached and self.remote_task.queue_num > MAX_QUEUE:
+                            nonloc.remote_queue -= 1
+                            nonloc.task_limit_reached = True
                             raise NodeTaskLimitReachedException("Delayed task limit reached")
                         time.sleep(0.5)
                         nonloc.remote_queue -= 1
@@ -88,6 +90,9 @@ class TestRemote(unittest.TestCase):
         self.assertTrue(nonloc.local_task_check)
 
         nonloc.should_fail = True
+        nonloc.remote_queue = 1
+        nonloc.task_limit_reached = False
+
         with self.assertRaises(exceptions.TaskFailedError):
             self.lre.run(TaskMock)
 
