@@ -16,6 +16,17 @@ if __name__ == '__main__':
 
     log.ODM_INFO('Initializing OpenDroneMap app - %s' % system.now())
 
+    # Print args
+    args_dict = vars(args)
+    log.ODM_DEBUG('==============')
+    for k in sorted(args_dict.keys()):
+        # Don't leak token
+        if k == 'sm_cluster' and args_dict[k] is not None:
+            log.ODM_DEBUG('%s: True')
+        else:
+            log.ODM_DEBUG('%s: %s' % (k, args_dict[k]))
+    log.ODM_DEBUG('==============')
+
     progressbc.set_project_name(args.name)
 
     # Add project dir if doesn't exist

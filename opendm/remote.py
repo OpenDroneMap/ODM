@@ -398,7 +398,14 @@ class Task:
                 except exceptions.TaskFailedError as e:
                     # Try to get output
                     try:
-                        msg = "(%s) failed with task output: %s" % (task.uuid, "\n".join(task.output()[-10:]))
+                        output_lines = task.output()
+
+                        # Save to file
+                        error_log_path = self.path("error.log")
+                        with open(error_log_path, 'w') as f:
+                            f.write('\n'.join(output_lines) + '\n')
+
+                        msg = "(%s) failed with task output: %s\nFull log saved at %s" % (task.uuid, "\n".join(output_lines[-10:]), error_log_path)
                         done(exceptions.TaskFailedError(msg))
                     except:
                         log.ODM_WARNING("LRE: Could not retrieve task output for %s (%s)" % (self, task.uuid))
