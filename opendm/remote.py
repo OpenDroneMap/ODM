@@ -37,8 +37,8 @@ class LocalRemoteExecutor:
 
         log.ODM_INFO("LRE: Initializing using cluster node %s:%s" % (self.node.host, self.node.port))
         try:
-            odm_version = self.node.info().odm_version
-            log.ODM_INFO("LRE: Node is online and running ODM version: %s"  % odm_version)
+            info = self.node.info()
+            log.ODM_INFO("LRE: Node is online and running %s version %s"  % (info.engine, info.engine_version))
         except exceptions.NodeConnectionError:
             log.ODM_WARNING("LRE: The node seems to be offline! We'll still process the dataset, but it's going to run entirely locally.")
             self.node_online = False
