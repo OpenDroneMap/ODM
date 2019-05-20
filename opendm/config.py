@@ -3,6 +3,7 @@ from opendm import context
 from opendm import io
 from opendm import log
 from appsettings import SettingsParser
+from pyodm import Node, exceptions
 
 import sys
 
@@ -27,7 +28,7 @@ def url_string(string):
     import re
     regex = re.compile(
         r'^(?:http|ftp)s?://' # http:// or https://
-        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' #domain...
+        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.?)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' #domain...
         r'localhost|' #localhost...
         r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # ...or ip
         r'(?::\d+)?' # optional port
@@ -574,5 +575,12 @@ def config():
     if args.orthophoto_cutline and not args.crop:
       log.ODM_WARNING("--orthophoto-cutline is set, but --crop is not. --crop will be set to 0.01")
       args.crop = 0.01
+
+    if args.sm_cluster:
+        try:
+            Node.from_url(args.sm_cluster).info()
+        except exceptions.NodeConnectionError as e:
+            log.ODM_ERROR("Cluster node seems to be offline: %s"  % str(e))
+            sys.exit(1)
 
     return args

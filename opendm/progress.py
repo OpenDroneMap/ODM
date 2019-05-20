@@ -18,7 +18,7 @@ class Broadcaster:
     def set_project_name(self, project_name):
         self.project_name = project_name
 
-    def send_update(self, global_progress, stage_progress, stage):
+    def send_update(self, global_progress):
         """
         Update any listener on the pipeline progress (in percentage terms)
         """
@@ -32,7 +32,7 @@ class Broadcaster:
             global_progress = 100
 
         try:
-            sock.sendto("PGUP/{}/{}/{}/{}/{}".format(self.pid, self.project_name, float(global_progress), float(stage_progress), stage).encode('utf-8'), (UDP_IP, self.port))
+            sock.sendto("PGUP/{}/{}/{}".format(self.pid, self.project_name, float(global_progress)).encode('utf-8'), (UDP_IP, self.port))
         except:
             log.ODM_WARNING("Failed to broadcast progress update on UDP port %s" % str(self.port))
 
