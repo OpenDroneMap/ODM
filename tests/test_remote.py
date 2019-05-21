@@ -8,7 +8,7 @@ from pyodm.types import TaskStatus
 
 class TestRemote(unittest.TestCase):
     def setUp(self):
-        self.lre = LocalRemoteExecutor('http://invalid-host:3000')
+        self.lre = LocalRemoteExecutor('http://localhost:9001')
 
         projects = []
         for i in range(9):
@@ -48,6 +48,11 @@ class TestRemote(unittest.TestCase):
             def process_local(self):
                 # First task should be 0000 or 0001
                 if not nonloc.local_task_check: nonloc.local_task_check = self.project_path.endswith("0000") or self.project_path.endswith("0001")
+                
+                if nonloc.should_fail:
+                    if self.project_path.endswith("0006"):
+                        raise exceptions.TaskFailedError("FAIL #6")
+                        
                 time.sleep(1)
 
             def process_remote(self, done):
