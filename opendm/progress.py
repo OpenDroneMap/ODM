@@ -28,7 +28,7 @@ class Broadcaster:
         UDP_IP = "127.0.0.1"
 
         if global_progress > 100:
-            log.ODM_WARNING("Global progress is > 100, please contact the developers.")
+            log.ODM_WARNING("Global progress is > 100 (%s), please contact the developers." % global_progress)
             global_progress = 100
 
         try:

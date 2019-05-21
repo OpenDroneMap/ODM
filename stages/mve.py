@@ -110,8 +110,23 @@ class ODMMveStage(types.ODM_Stage):
             log.ODM_INFO("Running dense reconstruction. This might take a while. Please be patient, the process is not dead or hung.")
             log.ODM_INFO("                              Process is running")
             
-            system.run('%s %s %s' % (context.dmrecon_path, ' '.join(dmrecon_config), tree.mve), env_vars={'OMP_NUM_THREADS': args.max_concurrency})
-            
+            # TODO: find out why MVE is crashing at random
+            # MVE *seems* to have a race condition, triggered randomly, regardless of dataset
+            # https://gist.github.com/pierotofy/6c9ce93194ba510b61e42e3698cfbb89
+            # Temporary workaround is to retry the reconstruction until we get it right
+            # (up to a certain number of retries).
+            retry_count = 1
+            while retry_count < 10:
+                try:
+                    system.run('%s %s %s' % (context.dmrecon_path, ' '.join(dmrecon_config), tree.mve), env_vars={'OMP_NUM_THREADS': args.max_concurrency})
+                    break
+                except Exception as e:
+                    if str(e) == "Child returned 134":
+                        retry_count += 1
+                        log.ODM_WARNING("Caught error code, retrying attempt #%s" % retry_count)
+                    else:
+                        raise e
+
             self.update_progress(90)
 
             scene2pset_config = [
