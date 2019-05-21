@@ -22,7 +22,7 @@ if __name__ == '__main__':
     for k in sorted(args_dict.keys()):
         # Don't leak token
         if k == 'sm_cluster' and args_dict[k] is not None:
-            log.ODM_DEBUG('%s: True')
+            log.ODM_DEBUG('%s: True' % k)
         else:
             log.ODM_DEBUG('%s: %s' % (k, args_dict[k]))
     log.ODM_DEBUG('==============')

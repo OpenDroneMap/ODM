@@ -381,12 +381,10 @@ class ODM_Stage:
             return max(0.0, self.progress)
     
     def previous_stages_progress(self):
-        sum = 0
-        stage = self.prev_stage
-        while stage:
-            sum += stage.delta_progress()
-            stage = stage.prev_stage
-        return sum
+        if self.prev_stage:
+            return max(0.0, self.prev_stage.progress)
+        else:
+            return 0.0
 
     def update_progress_end(self):
         self.update_progress(100.0)
