@@ -516,6 +516,7 @@ def config():
     parser.add_argument('--split',
                         type=int,
                         default=999999,
+                        metavar='<positive integer>',
                         help='Average number of images per submodel. When '
                                 'splitting a large dataset into smaller '
                                 'submodels, images are grouped into clusters. '
