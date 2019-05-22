@@ -537,7 +537,7 @@ def config():
                         metavar='<string>',
                         type=url_string,
                         default=None,
-                        help='URL to a nodeodm-proxy instance '
+                        help='URL to a ClusterODM instance '
                             'for distributing a split-merge workflow on '
                             'multiple nodes in parallel. '
                             'Default: %(default)s')
