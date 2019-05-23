@@ -1,5 +1,4 @@
 import os
-import ecto
 import json
 
 from opendm import context
@@ -9,6 +8,7 @@ from opendm import log
 from opendm import system
 from opendm import location
 from shutil import copyfile
+from opendm import progress
 
 def save_images_database(photos, database_file):
     with open(database_file, 'w') as f:
@@ -37,18 +37,18 @@ def load_images_database(database_file):
 
     return result
 
-class ODMLoadDatasetCell(ecto.Cell):
+class ODMLoadDatasetStage(types.ODM_Stage):
+    def process(self, args, outputs):
+        # Load tree
+        tree = types.ODM_Tree(args.project_path, args.images, args.gcp)
+        outputs['tree'] = tree
 
-    def declare_params(self, params):
-        params.declare("verbose", 'indicate verbosity', False)
-        params.declare("proj", 'Geographic projection', None)
-
-    def declare_io(self, params, inputs, outputs):
-        inputs.declare("tree", "Struct with paths", [])
-        outputs.declare("reconstruction", "ODMReconstruction", [])
-        inputs.declare("args", "The application arguments.", {})
-
-    def process(self, inputs, outputs):
+        if args.time and io.file_exists(tree.benchmarking):
+            # Delete the previously made file
+            os.remove(tree.benchmarking)
+            with open(tree.benchmarking, 'a') as b:
+                b.write('ODM Benchmarking file created %s\nNumber of Cores: %s\n\n' % (system.now(), context.num_cores))
+    
         # check if the extension is supported
         def supported_extension(file_name):
             (pathfn, ext) = os.path.splitext(file_name)
@@ -59,12 +59,6 @@ class ODMLoadDatasetCell(ecto.Cell):
             # filter images for its extension type
             log.ODM_DEBUG(in_dir)
             return [f for f in io.get_files_list(in_dir) if supported_extension(f)]
-
-        log.ODM_INFO('Running ODM Load Dataset Cell')
-
-        # get inputs
-        tree = self.inputs.tree
-        args = self.inputs.args
 
         # get images directory
         input_dir = tree.input_images
@@ -82,14 +76,8 @@ class ODMLoadDatasetCell(ecto.Cell):
         log.ODM_DEBUG('Loading dataset from: %s' % images_dir)
 
         # check if we rerun cell or not
-        rerun_cell = (args.rerun is not None and
-                      args.rerun == 'dataset') or \
-                     (args.rerun_all) or \
-                     (args.rerun_from is not None and
-                      'dataset' in args.rerun_from)
-        
         images_database_file = io.join_paths(tree.root_path, 'images.json')
-        if not io.file_exists(images_database_file) or rerun_cell:
+        if not io.file_exists(images_database_file) or self.rerun():
             files = get_images(images_dir)
             if files:
                 # create ODMPhoto list
@@ -105,7 +93,7 @@ class ODMLoadDatasetCell(ecto.Cell):
                 save_images_database(photos, images_database_file)
             else:
                 log.ODM_ERROR('Not enough supported images in %s' % images_dir)
-                return ecto.QUIT
+                exit(1)
         else:
             # We have an images database, just load it
             photos = load_images_database(images_database_file)
@@ -113,13 +101,13 @@ class ODMLoadDatasetCell(ecto.Cell):
         log.ODM_INFO('Found %s usable images' % len(photos))
 
         # append photos to cell output
-        if not self.params.proj:
+        if not self.params.get('proj'):
             if tree.odm_georeferencing_gcp:
-                outputs.reconstruction = types.ODM_Reconstruction(photos, coords_file=tree.odm_georeferencing_gcp)
+                outputs['reconstruction'] = types.ODM_Reconstruction(photos, coords_file=tree.odm_georeferencing_gcp)
             else:
                 # Generate UTM from images
                 try:
-                    if not io.file_exists(tree.odm_georeferencing_coords) or rerun_cell:
+                    if not io.file_exists(tree.odm_georeferencing_coords) or self.rerun():
                         location.extract_utm_coords(photos, tree.dataset_raw, tree.odm_georeferencing_coords)
                     else:
                         log.ODM_INFO("Coordinates file already exist: %s" % tree.odm_georeferencing_coords)
@@ -127,15 +115,12 @@ class ODMLoadDatasetCell(ecto.Cell):
                     log.ODM_WARNING('Could not generate coordinates file. '
                                     'Ignore if there is a GCP file')
 
-                outputs.reconstruction = types.ODM_Reconstruction(photos, coords_file=tree.odm_georeferencing_coords)
+                outputs['reconstruction'] = types.ODM_Reconstruction(photos, coords_file=tree.odm_georeferencing_coords)
         else:
-            outputs.reconstruction = types.ODM_Reconstruction(photos, projstring=self.params.proj)
+            outputs['reconstruction'] = types.ODM_Reconstruction(photos, projstring=self.params.get('proj'))
 
         # Save proj to file for future use (unless this 
         # dataset is not georeferenced)
-        if outputs.reconstruction.projection:
+        if outputs['reconstruction'].projection:
             with open(io.join_paths(tree.odm_georeferencing, tree.odm_georeferencing_proj), 'w') as f:
-                f.write(outputs.reconstruction.projection.srs)
-
-        log.ODM_INFO('Running ODM Load Dataset Cell - Finished')
-        return ecto.OK if args.end_with != 'dataset' else ecto.QUIT
+                f.write(outputs['reconstruction'].projection.srs)
