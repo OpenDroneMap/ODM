@@ -71,7 +71,7 @@ RUN pip install -U \
   pyproj \
   PyYAML==3.13 \
   repoze.lru \
-  scipy \
+  scipy==1.2.1 \
   shapely \
   xmltodict \
   rasterio \
