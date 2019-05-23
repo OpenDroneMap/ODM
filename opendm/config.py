@@ -3,12 +3,13 @@ from opendm import context
 from opendm import io
 from opendm import log
 from appsettings import SettingsParser
+from pyodm import Node, exceptions
 
 import sys
 
 # parse arguments
-processopts = ['dataset', 'opensfm', 'slam', 'mve', 'odm_filterpoints',
-               'odm_meshing', 'odm_25dmeshing', 'mvs_texturing', 'odm_georeferencing',
+processopts = ['dataset', 'split', 'merge', 'opensfm', 'mve', 'odm_filterpoints',
+               'odm_meshing', 'mvs_texturing', 'odm_georeferencing',
                'odm_dem', 'odm_orthophoto']
 
 with open(io.join_paths(context.root_path, 'VERSION')) as version_file:
@@ -22,6 +23,20 @@ def alphanumeric_string(string):
         raise argparse.ArgumentTypeError(msg)
     return string
 
+# Django URL validation regex
+def url_string(string):
+    import re
+    regex = re.compile(
+        r'^(?:http|ftp)s?://' # http:// or https://
+        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.?)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' #domain...
+        r'localhost|' #localhost...
+        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # ...or ip
+        r'(?::\d+)?' # optional port
+        r'(?:/?|[/?]\S+)$', re.IGNORECASE)
+        
+    if re.match(regex, string) is None:
+        raise argparse.ArgumentTypeError("%s is not a valid URL. The URL must be in the format: http(s)://host[:port]/[?token=]" % string)
+    return string
 
 class RerunFrom(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
@@ -424,6 +439,16 @@ def config():
                         help='Decimate the points before generating the DEM. 1 is no decimation (full quality). '
                              '100 decimates ~99%% of the points. Useful for speeding up '
                              'generation.\nDefault=%(default)s')
+    
+    parser.add_argument('--dem-euclidean-map',
+            action='store_true',
+            default=False,
+            help='Computes an euclidean raster map for each DEM. '
+            'The map reports the distance from each cell to the nearest '
+            'NODATA value (before any hole filling takes place). '
+            'This can be useful to isolate the areas that have been filled. '
+            'Default: '
+            '%(default)s')
 
     parser.add_argument('--orthophoto-resolution',
                         metavar='<float > 0.0>',
@@ -456,6 +481,15 @@ def config():
                              '4GiB of data. Options are %(choices)s. See GDAL specs: '
                              'https://www.gdal.org/frmt_gtiff.html for more info. '
                              '\nDefault: %(default)s')
+    
+    parser.add_argument('--orthophoto-cutline',
+            action='store_true',
+            default=False,
+            help='Generates a polygon around the cropping area '
+            'that cuts the orthophoto around the edges of features. This polygon '
+            'can be useful for stitching seamless mosaics with multiple overlapping orthophotos. '
+            'Default: '
+            '%(default)s')
 
     parser.add_argument('--build-overviews',
                         action='store_true',
@@ -479,6 +513,44 @@ def config():
                         version='OpenDroneMap {0}'.format(__version__),
                         help='Displays version number and exits. ')
 
+    parser.add_argument('--split',
+                        type=int,
+                        default=999999,
+                        metavar='<positive integer>',
+                        help='Average number of images per submodel. When '
+                                'splitting a large dataset into smaller '
+                                'submodels, images are grouped into clusters. '
+                                'This value regulates the number of images that '
+                                'each cluster should have on average.')
+
+    parser.add_argument('--split-overlap',
+                        type=float,
+                        metavar='<positive integer>',
+                        default=150,
+                        help='Radius of the overlap between submodels. '
+                        'After grouping images into clusters, images '
+                        'that are closer than this radius to a cluster '
+                        'are added to the cluster. This is done to ensure '
+                        'that neighboring submodels overlap.')
+
+    parser.add_argument('--sm-cluster',
+                        metavar='<string>',
+                        type=url_string,
+                        default=None,
+                        help='URL to a ClusterODM instance '
+                            'for distributing a split-merge workflow on '
+                            'multiple nodes in parallel. '
+                            'Default: %(default)s')
+
+    parser.add_argument('--merge',
+                    metavar='<string>',
+                    default='all',
+                    choices=['all', 'pointcloud', 'orthophoto', 'dem'],
+                    help=('Choose what to merge in the merge step in a split dataset. '
+                          'By default all available outputs are merged. '
+                          'Default: '
+                            '%(default)s'))
+
     args = parser.parse_args()
 
     # check that the project path setting has been set properly
@@ -498,7 +570,18 @@ def config():
       args.pc_classify = True
 
     if args.skip_3dmodel and args.use_3dmesh:
-      log.ODM_WARNING('--skip-3dmodel is set, but so is --use-3dmesh. --use_3dmesh will be ignored.')
-      args.use_3dmesh = False
+      log.ODM_WARNING('--skip-3dmodel is set, but so is --use-3dmesh. --skip-3dmodel will be ignored.')
+      args.skip_3dmodel = False
+
+    if args.orthophoto_cutline and not args.crop:
+      log.ODM_WARNING("--orthophoto-cutline is set, but --crop is not. --crop will be set to 0.01")
+      args.crop = 0.01
+
+    if args.sm_cluster:
+        try:
+            Node.from_url(args.sm_cluster).info()
+        except exceptions.NodeConnectionError as e:
+            log.ODM_ERROR("Cluster node seems to be offline: %s"  % str(e))
+            sys.exit(1)
 
     return args

@@ -1,4 +1,3 @@
-import ecto
 import os
 import struct
 import pipes
@@ -12,44 +11,16 @@ from opendm.cropper import Cropper
 from opendm import point_cloud
 
 
-class ODMGeoreferencingCell(ecto.Cell):
-    def declare_params(self, params):
-        params.declare("gcp_file", 'path to the file containing the ground control '
-                            'points used for georeferencing.The file needs to '
-                            'be on the following line format: \neasting '
-                            'northing height pixelrow pixelcol imagename', 'gcp_list.txt')
-        params.declare("use_exif", 'use exif', False)
-        params.declare("verbose", 'print additional messages to console', False)
+class ODMGeoreferencingStage(types.ODM_Stage):
+    def process(self, args, outputs):
+        tree = outputs['tree']
+        reconstruction = outputs['reconstruction']
 
-    def declare_io(self, params, inputs, outputs):
-        inputs.declare("tree", "Struct with paths", [])
-        inputs.declare("args", "The application arguments.", {})
-        inputs.declare("reconstruction", "list of ODMReconstructions", [])
-        outputs.declare("reconstruction", "list of ODMReconstructions", [])
-
-    def process(self, inputs, outputs):
-
-        # Benchmarking
-        start_time = system.now_raw()
-
-        log.ODM_INFO('Running ODM Georeferencing Cell')
-
-        # get inputs
-        args = inputs.args
-        tree = inputs.tree
-        reconstruction = inputs.reconstruction
         gcpfile = tree.odm_georeferencing_gcp
         doPointCloudGeo = True
         transformPointCloud = True
-        verbose = '-verbose' if self.params.verbose else ''
+        verbose = '-verbose' if self.params.get('verbose') else ''
         geo_ref = reconstruction.georef
-
-        # check if we rerun cell or not
-        rerun_cell = (args.rerun is not None and
-                      args.rerun == 'odm_georeferencing') or \
-                     (args.rerun_all) or \
-                     (args.rerun_from is not None and
-                      'odm_georeferencing' in args.rerun_from)
 
         runs = [{
             'georeferencing_dir': tree.odm_georeferencing,
@@ -78,7 +49,7 @@ class ODMGeoreferencingCell(ecto.Cell):
             odm_georeferencing_model_txt_geo_file = os.path.join(r['georeferencing_dir'], tree.odm_georeferencing_model_txt_geo)
 
             if not io.file_exists(odm_georeferencing_model_obj_geo) or \
-               not io.file_exists(tree.odm_georeferencing_model_laz) or rerun_cell:
+               not io.file_exists(tree.odm_georeferencing_model_laz) or self.rerun():
 
                 # odm_georeference definitions
                 kwargs = {
@@ -111,7 +82,7 @@ class ODMGeoreferencingCell(ecto.Cell):
  
                 # Check to see if the GCP file exists
 
-                if not self.params.use_exif and (self.params.gcp_file or tree.odm_georeferencing_gcp):
+                if not self.params.get('use_exif') and (self.params.get('gcp_file') or tree.odm_georeferencing_gcp):
                    log.ODM_INFO('Found %s' % gcpfile)
                    try:
                        system.run('{bin}/odm_georef -bundleFile {bundle} -imagesPath {imgs} -imagesListPath {imgs_list} '
@@ -121,7 +92,7 @@ class ODMGeoreferencingCell(ecto.Cell):
                                   '-outputCoordFile {coords}'.format(**kwargs))
                    except Exception:
                        log.ODM_EXCEPTION('Georeferencing failed. ')
-                       return ecto.QUIT
+                       exit(1)
                 elif io.file_exists(tree.opensfm_transformation) and io.file_exists(tree.odm_georeferencing_coords):
                     log.ODM_INFO('Running georeferencing with OpenSfM transformation matrix')
                     system.run('{bin}/odm_georef -bundleFile {bundle} -inputTransformFile {input_trans_file} -inputCoordFile {coords} '
@@ -176,9 +147,8 @@ class ODMGeoreferencingCell(ecto.Cell):
                         if not args.fast_orthophoto:
                             decimation_step *= int(len(reconstruction.photos) / 1000) + 1
 
-                        cropper.create_bounds_shapefile(tree.odm_georeferencing_model_laz, args.crop, 
-                                                    decimation_step=decimation_step,
-                                                    outlier_radius=20 if args.fast_orthophoto else 2)
+                        cropper.create_bounds_gpkg(tree.odm_georeferencing_model_laz, args.crop, 
+                                                    decimation_step=decimation_step)
 
                     # Do not execute a second time, since
                     # We might be doing georeferencing for
@@ -188,11 +158,3 @@ class ODMGeoreferencingCell(ecto.Cell):
             else:
                 log.ODM_WARNING('Found a valid georeferenced model in: %s'
                                 % tree.odm_georeferencing_model_laz)
-
-        outputs.reconstruction = reconstruction
-
-        if args.time:
-            system.benchmark(start_time, tree.benchmarking, 'Georeferencing')
-
-        log.ODM_INFO('Running ODM Georeferencing Cell - Finished')
-        return ecto.OK if args.end_with != 'odm_georeferencing' else ecto.QUIT

@@ -1,11 +1,12 @@
 import os
 import sys
-import gippy
+import rasterio
 import numpy
 import math
 import time
 from opendm.system import run
 from opendm import point_cloud
+from opendm import io
 from opendm.concurrency import get_max_memory
 from scipy import ndimage, signal
 from datetime import datetime
@@ -33,7 +34,7 @@ error = None
 
 def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56'], gapfill=True,
                 outdir='', resolution=0.1, max_workers=1, max_tile_size=2048,
-                verbose=False, decimation=None):
+                verbose=False, decimation=None, keep_unfilled_copy=False):
     """ Create DEM from multiple radii, and optionally gapfill """
     global error
     error = None
@@ -215,16 +216,44 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
                 '-co NUM_THREADS={threads} '
                 '--config GDAL_CACHEMAX {max_memory}% '
                 '{vrt} {geotiff}'.format(**kwargs))
+        
 
     post_process(geotiff_path, output_path)
     os.remove(geotiff_path)
 
-    if os.path.exists(geotiff_tmp_path): os.remove(geotiff_tmp_path)
+    if os.path.exists(geotiff_tmp_path):
+        if not keep_unfilled_copy: 
+            os.remove(geotiff_tmp_path)
+        else:
+            os.rename(geotiff_tmp_path, io.related_file_path(output_path, postfix=".unfilled"))
+            
     if os.path.exists(vrt_path): os.remove(vrt_path)
     for t in tiles:
         if os.path.exists(t['filename']): os.remove(t['filename'])
     
     log.ODM_INFO('Completed %s in %s' % (output_file, datetime.now() - start))
+
+
+def compute_euclidean_map(geotiff_path, output_path, overwrite=False):
+    if not os.path.exists(geotiff_path):
+        log.ODM_WARNING("Cannot compute euclidean map (file does not exist: %s)" % geotiff_path)
+        return
+
+    nodata = -9999
+    with rasterio.open(geotiff_path) as f:
+        nodata = f.nodatavals[0]
+
+    if not os.path.exists(output_path) or overwrite:
+        log.ODM_INFO("Computing euclidean distance: %s" % output_path)
+        run('gdal_proximity.py "%s" "%s" -values %s' % (geotiff_path, output_path, nodata))
+
+        if os.path.exists(output_path):
+            return output_path
+        else:
+            log.ODM_WARNING("Cannot compute euclidean distance file: %s" % output_path)
+    else:
+        log.ODM_WARNING("Already found a euclidean distance map: %s" % output_path)
+        return output_path
 
 
 def post_process(geotiff_path, output_path, smoothing_iterations=1):
@@ -236,35 +265,37 @@ def post_process(geotiff_path, output_path, smoothing_iterations=1):
 
     log.ODM_INFO('Starting post processing (smoothing)...')
 
-    img = gippy.GeoImage(geotiff_path)
-    nodata = img[0].nodata()
-    arr = img[0].read()
+    with rasterio.open(geotiff_path) as img:
+        nodata = img.nodatavals[0]
+        dtype = img.dtypes[0]
+        arr = img.read()[0]
 
-    # Median filter (careful, changing the value 5 might require tweaking)
-    # the lines below. There's another numpy function that takes care of 
-    # these edge cases, but it's slower.
-    for i in range(smoothing_iterations):
-        log.ODM_INFO("Smoothing iteration %s" % str(i + 1))
-        arr = signal.medfilt(arr, 5)
+        # Median filter (careful, changing the value 5 might require tweaking)
+        # the lines below. There's another numpy function that takes care of 
+        # these edge cases, but it's slower.
+        for i in range(smoothing_iterations):
+            log.ODM_INFO("Smoothing iteration %s" % str(i + 1))
+            try:
+                arr = signal.medfilt(arr, 5)
+            except MemoryError:
+                log.ODM_WARNING("medfilt ran out of memory, switching to slower median_filter")
+                arr = ndimage.median_filter(arr, size=5)
+
+        # Fill corner points with nearest value
+        if arr.shape >= (4, 4):
+            arr[0][:2] = arr[1][0] = arr[1][1]
+            arr[0][-2:] = arr[1][-1] = arr[2][-1]
+            arr[-1][:2] = arr[-2][0] = arr[-2][1]
+            arr[-1][-2:] = arr[-2][-1] = arr[-2][-2]
+
+        # Median filter leaves a bunch of zeros in nodata areas
+        locs = numpy.where(arr == 0.0)
+        arr[locs] = nodata
+
+        # write output
+        with rasterio.open(output_path, 'w', **img.profile) as imgout:
+            imgout.write(arr.astype(dtype), 1)
     
-    # Fill corner points with nearest value
-    if arr.shape >= (4, 4):
-        arr[0][:2] = arr[1][0] = arr[1][1]
-        arr[0][-2:] = arr[1][-1] = arr[2][-1]
-        arr[-1][:2] = arr[-2][0] = arr[-2][1]
-        arr[-1][-2:] = arr[-2][-1] = arr[-2][-2]
-
-    # Median filter leaves a bunch of zeros in nodata areas
-    locs = numpy.where(arr == 0.0)
-    arr[locs] = nodata
-
-    # write output
-    imgout = gippy.GeoImage.create_from(img, output_path)
-    imgout.set_nodata(nodata)
-    imgout[0].write(arr)
-    output_path = imgout.filename()
-    imgout = None
-
     log.ODM_INFO('Completed post processing to create %s in %s' % (os.path.relpath(output_path), datetime.now() - start))
 
     return output_path

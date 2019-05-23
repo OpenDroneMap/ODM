@@ -1,52 +1,37 @@
-import ecto, shutil, os, glob, math
+import shutil, os, glob, math
 
 from opendm import log
 from opendm import io
 from opendm import system
 from opendm import context
 from opendm import point_cloud
+from opendm import types
+from opendm.osfm import OSFMContext
 
-class ODMMveCell(ecto.Cell):
-    def declare_io(self, params, inputs, outputs):
-        inputs.declare("tree", "Struct with paths", [])
-        inputs.declare("args", "The application arguments.", {})
-        inputs.declare("reconstruction", "ODMReconstruction", [])
-        outputs.declare("reconstruction", "list of ODMReconstructions", [])
-
-    def process(self, inputs, outputs):
-        # Benchmarking
-        start_time = system.now_raw()
-
-        log.ODM_INFO('Running MVE Cell')
-
+class ODMMveStage(types.ODM_Stage):
+    def process(self, args, outputs):
         # get inputs
-        tree = inputs.tree
-        args = inputs.args
-        reconstruction = inputs.reconstruction
+        tree = outputs['tree']
+        reconstruction = outputs['reconstruction']
         photos = reconstruction.photos
 
         if not photos:
             log.ODM_ERROR('Not enough photos in photos array to start MVE')
-            return ecto.QUIT
-
-        # check if we rerun cell or not
-        rerun_cell = (args.rerun is not None and
-                      args.rerun == 'mve') or \
-                     (args.rerun_all) or \
-                     (args.rerun_from is not None and
-                      'mve' in args.rerun_from)
+            exit(1)
 
         # check if reconstruction was done before
-        if not io.file_exists(tree.mve_model) or rerun_cell:
+        if not io.file_exists(tree.mve_model) or self.rerun():
             # cleanup if a rerun
-            if io.dir_exists(tree.mve_path) and rerun_cell:
+            if io.dir_exists(tree.mve_path) and self.rerun():
                 shutil.rmtree(tree.mve_path)
 
             # make bundle directory
             if not io.file_exists(tree.mve_bundle):
                 system.mkdir_p(tree.mve_path)
                 system.mkdir_p(io.join_paths(tree.mve_path, 'bundle'))
-                io.copy(tree.opensfm_image_list, tree.mve_image_list)
+
+                octx = OSFMContext(tree.opensfm)
+                octx.save_absolute_image_list_to(tree.mve_image_list)
                 io.copy(tree.opensfm_bundle, tree.mve_bundle)
 
             # mve makescene wants the output directory
@@ -58,6 +43,8 @@ class ODMMveCell(ecto.Cell):
             # run mve makescene
             if not io.dir_exists(tree.mve_views):
                 system.run('%s %s %s' % (context.makescene_path, tree.mve_path, tree.mve), env_vars={'OMP_NUM_THREADS': args.max_concurrency})
+
+            self.update_progress(10)
 
             # Compute mve output scale based on depthmap_resolution
             max_width = 0
@@ -77,7 +64,6 @@ class ODMMveCell(ecto.Cell):
                 "-s%s" % mve_output_scale,
 	            "--progress=silent",
                 "--local-neighbors=2",
-                "--force",
             ]
 
             # Run MVE's dmrecon
@@ -123,7 +109,25 @@ class ODMMveCell(ecto.Cell):
             log.ODM_INFO('')
             log.ODM_INFO("Running dense reconstruction. This might take a while. Please be patient, the process is not dead or hung.")
             log.ODM_INFO("                              Process is running")
-            system.run('%s %s %s' % (context.dmrecon_path, ' '.join(dmrecon_config), tree.mve), env_vars={'OMP_NUM_THREADS': args.max_concurrency})
+            
+            # TODO: find out why MVE is crashing at random
+            # MVE *seems* to have a race condition, triggered randomly, regardless of dataset
+            # https://gist.github.com/pierotofy/6c9ce93194ba510b61e42e3698cfbb89
+            # Temporary workaround is to retry the reconstruction until we get it right
+            # (up to a certain number of retries).
+            retry_count = 1
+            while retry_count < 10:
+                try:
+                    system.run('%s %s %s' % (context.dmrecon_path, ' '.join(dmrecon_config), tree.mve), env_vars={'OMP_NUM_THREADS': args.max_concurrency})
+                    break
+                except Exception as e:
+                    if str(e) == "Child returned 134":
+                        retry_count += 1
+                        log.ODM_WARNING("Caught error code, retrying attempt #%s" % retry_count)
+                    else:
+                        raise e
+
+            self.update_progress(90)
 
             scene2pset_config = [
                 "-F%s" % mve_output_scale
@@ -134,11 +138,3 @@ class ODMMveCell(ecto.Cell):
         else:
             log.ODM_WARNING('Found a valid MVE reconstruction file in: %s' %
                             tree.mve_model)
-
-        outputs.reconstruction = reconstruction
-
-        if args.time:
-            system.benchmark(start_time, tree.benchmarking, 'MVE')
-
-        log.ODM_INFO('Running ODM MVE Cell - Finished')
-        return ecto.OK if args.end_with != 'mve' else ecto.QUIT

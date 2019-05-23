@@ -1,6 +1,7 @@
 import cv2
 import exifread
 import re
+import os
 from fractions import Fraction
 from opensfm.exif import sensor_string
 from opendm import get_image_size
@@ -11,6 +12,7 @@ import io
 import system
 import context
 import logging
+from opendm.progress import progressbc
 
 class ODM_Photo:
     """   ODMPhoto - a class for ODMPhotos
@@ -172,19 +174,6 @@ class ODM_GeoRef(object):
         self.transform = []
         self.gcps = []
 
-    def calculate_EPSG(self, _utm_zone, _pole):
-        """Calculate and return the EPSG"""
-        if _pole == 'S':
-            return 32700 + _utm_zone
-        elif _pole == 'N':
-            return 32600 + _utm_zone
-        else:
-            log.ODM_ERROR('Unknown pole format %s' % _pole)
-            return
-
-    def calculate_EPSG(self, proj):
-        return proj
-
     def coord_to_fractions(self, coord, refs):
         deg_dec = abs(float(coord))
         deg = int(deg_dec)
@@ -325,7 +314,86 @@ class ODM_Tree(object):
         self.odm_orthophoto_corners = io.join_paths(self.odm_orthophoto, 'odm_orthophoto_corners.txt')
         self.odm_orthophoto_log = io.join_paths(self.odm_orthophoto, 'odm_orthophoto_log.txt')
         self.odm_orthophoto_tif_log = io.join_paths(self.odm_orthophoto, 'gdal_translate_log.txt')
-        self.odm_orthophoto_gdaladdo_log = io.join_paths(self.odm_orthophoto, 'gdaladdo_log.txt')
+
+        # Split-merge 
+        self.submodels_path = io.join_paths(self.root_path, 'submodels')
+        self.out_tif = io.join_paths(self.root_path, "merged.tif")
+        self.addo_log = io.join_paths(self.root_path, "gdal_addo.log")
+        self.sm_progress = io.join_paths(self.root_path, "sm_progress.txt")
 
     def path(self, *args):
-        return io.join_paths(self.root_path, *args)
+        return os.path.join(self.root_path, *args)
+
+
+class ODM_Stage:
+    def __init__(self, name, args, progress=0.0, **params):
+        self.name = name
+        self.args = args
+        self.progress = progress
+        self.params = params
+        if self.params is None:
+            self.params = {}
+        self.next_stage = None
+        self.prev_stage = None
+
+    def connect(self, stage):
+        self.next_stage = stage
+        stage.prev_stage = self
+        return stage
+
+    def rerun(self):
+        """
+        Does this stage need to be rerun?
+        """
+        return (self.args.rerun is not None and self.args.rerun == self.name) or \
+                     (self.args.rerun_all) or \
+                     (self.args.rerun_from is not None and self.name in self.args.rerun_from)
+    
+    def run(self, outputs = {}):
+        start_time = system.now_raw()
+        log.ODM_INFO('Running %s stage' % self.name)
+
+        self.process(self.args, outputs)
+
+        # The tree variable should always be populated at this point
+        if outputs.get('tree') is None:
+            raise Exception("Assert violation: tree variable is missing from outputs dictionary.")
+
+        if self.args.time:
+            system.benchmark(start_time, outputs['tree'].benchmarking, self.name)
+
+        log.ODM_INFO('Finished %s stage' % self.name)
+        self.update_progress_end()
+
+        # Last stage?
+        if self.args.end_with == self.name or self.args.rerun == self.name:
+            log.ODM_INFO("No more stages to run")
+            return
+
+        # Run next stage?
+        elif self.next_stage is not None:
+            self.next_stage.run(outputs)
+
+    def delta_progress(self):
+        if self.prev_stage:
+            return max(0.0, self.progress - self.prev_stage.progress)
+        else:
+            return max(0.0, self.progress)
+    
+    def previous_stages_progress(self):
+        if self.prev_stage:
+            return max(0.0, self.prev_stage.progress)
+        else:
+            return 0.0
+
+    def update_progress_end(self):
+        self.update_progress(100.0)
+
+    def update_progress(self, progress):
+        progress = max(0.0, min(100.0, progress))
+        progressbc.send_update(self.previous_stages_progress() + 
+                              (self.delta_progress() / 100.0) * float(progress))
+
+    def process(self, args, outputs):
+        raise NotImplementedError
+

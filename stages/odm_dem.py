@@ -1,4 +1,4 @@
-import ecto, os, json
+import os, json
 from shutil import copyfile
 
 from opendm import io
@@ -7,36 +7,13 @@ from opendm import system
 from opendm import context
 from opendm import types
 from opendm import gsd
-from opendm.dem import commands
+from opendm.dem import commands, utils
 from opendm.cropper import Cropper
 
-class ODMDEMCell(ecto.Cell):
-    def declare_params(self, params):
-        params.declare("verbose", 'print additional messages to console', False)
-        params.declare("max_concurrency", "Number of threads", context.num_cores)
-
-    def declare_io(self, params, inputs, outputs):
-        inputs.declare("tree", "Struct with paths", [])
-        inputs.declare("args", "The application arguments.", {})
-        inputs.declare("reconstruction", "list of ODMReconstructions", [])
-
-    def process(self, inputs, outputs):
-        # Benchmarking
-        start_time = system.now_raw()
-
-        log.ODM_INFO('Running ODM DEM Cell')
-
-        # get inputs
-        args = self.inputs.args
-        tree = self.inputs.tree
+class ODMDEMStage(types.ODM_Stage):
+    def process(self, args, outputs):
+        tree = outputs['tree']
         las_model_found = io.file_exists(tree.odm_georeferencing_model_laz)
-
-        # check if we rerun cell or not
-        rerun_cell = (args.rerun is not None and
-                      args.rerun == 'odm_dem') or \
-                     (args.rerun_all) or \
-                     (args.rerun_from is not None and
-                      'odm_dem' in args.rerun_from)
 
         log.ODM_INFO('Classify: ' + str(args.pc_classify))
         log.ODM_INFO('Create DSM: ' + str(args.dsm))
@@ -51,7 +28,7 @@ class ODMDEMCell(ecto.Cell):
         if args.pc_classify and las_model_found:
             pc_classify_marker = os.path.join(odm_dem_root, 'pc_classify_done.txt')
 
-            if not io.file_exists(pc_classify_marker) or rerun_cell:
+            if not io.file_exists(pc_classify_marker) or self.rerun():
                 log.ODM_INFO("Classifying {} using Simple Morphological Filter".format(tree.odm_georeferencing_model_laz))
                 commands.classify(tree.odm_georeferencing_model_laz,
                                   args.smrf_scalar, 
@@ -67,6 +44,9 @@ class ODMDEMCell(ecto.Cell):
                     f.write('Slope: {}\n'.format(args.smrf_slope))
                     f.write('Threshold: {}\n'.format(args.smrf_threshold))
                     f.write('Window: {}\n'.format(args.smrf_window))
+            
+        progress = 20
+        self.update_progress(progress)
 
         # Do we need to process anything here?
         if (args.dsm or args.dtm) and las_model_found:
@@ -75,7 +55,7 @@ class ODMDEMCell(ecto.Cell):
 
             if (args.dtm and not io.file_exists(dtm_output_filename)) or \
                 (args.dsm and not io.file_exists(dsm_output_filename)) or \
-                rerun_cell:
+                self.rerun():
 
                 products = []
                 if args.dsm: products.append('dsm')
@@ -97,26 +77,31 @@ class ODMDEMCell(ecto.Cell):
                             resolution=resolution / 100.0,
                             decimation=args.dem_decimation,
                             verbose=args.verbose,
-                            max_workers=args.max_concurrency
+                            max_workers=args.max_concurrency,
+                            keep_unfilled_copy=args.dem_euclidean_map
                         )
 
+                    dem_geotiff_path = os.path.join(odm_dem_root, "{}.tif".format(product))
+                    bounds_file_path = os.path.join(tree.odm_georeferencing, 'odm_georeferenced_model.bounds.gpkg')
+
                     if args.crop > 0:
-                        bounds_shapefile_path = os.path.join(tree.odm_georeferencing, 'odm_georeferenced_model.bounds.shp')
-                        if os.path.exists(bounds_shapefile_path):
-                            Cropper.crop(bounds_shapefile_path, os.path.join(odm_dem_root, "{}.tif".format(product)), {
-                                'TILED': 'YES',
-                                'COMPRESS': 'LZW',
-                                'BLOCKXSIZE': 512,
-                                'BLOCKYSIZE': 512,
-                                'NUM_THREADS': self.params.max_concurrency
-                            })
+                        # Crop DEM
+                        Cropper.crop(bounds_file_path, dem_geotiff_path, utils.get_dem_vars(args))
+
+                    if args.dem_euclidean_map:
+                        unfilled_dem_path = io.related_file_path(dem_geotiff_path, postfix=".unfilled")
+                        
+                        if args.crop > 0:
+                            # Crop unfilled DEM
+                            Cropper.crop(bounds_file_path, unfilled_dem_path, utils.get_dem_vars(args))
+
+                        commands.compute_euclidean_map(unfilled_dem_path, 
+                                            io.related_file_path(dem_geotiff_path, postfix=".euclideand"), 
+                                            overwrite=True)
+                    
+                    progress += 30
+                    self.update_progress(progress)
             else:
                 log.ODM_WARNING('Found existing outputs in: %s' % odm_dem_root)
         else:
             log.ODM_WARNING('DEM will not be generated')
-
-        if args.time:
-            system.benchmark(start_time, tree.benchmarking, 'Dem')
-
-        log.ODM_INFO('Running ODM DEM Cell - Finished')
-        return ecto.OK if args.end_with != 'odm_dem' else ecto.QUIT

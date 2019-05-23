@@ -13,9 +13,7 @@ install() {
 
     ## Before installing
     echo "Updating the system"
-    apt-get update
-
-    add-apt-repository -y ppa:ubuntugis/ppa
+    add-apt-repository -y ppa:ubuntugis/ubuntugis-unstable
     apt-get update
 
     echo "Installing Required Requisites"
@@ -28,7 +26,8 @@ install() {
                          libgeotiff-dev \
                          pkg-config \
                          libjsoncpp-dev \
-                         python-gdal
+                         python-gdal \
+                         grass-core
 
     echo "Getting CMake 3.1 for MVS-Texturing"
     apt-get install -y software-properties-common python-software-properties
@@ -72,19 +71,21 @@ install() {
                          libboost-thread-dev \
                          python-pyproj
 
-    pip install -U PyYAML \
+    pip install -U PyYAML==3.13 \
                         exifread \
                         gpxpy \
                         xmltodict \
                         appsettings \
                         loky \
-                        repoze.lru
+                        repoze.lru \
+                        rasterio \
+                        attrs==19.1.0 \
+                        pyodm==1.5.1
 
-    echo "Installing Ecto Dependencies"
-    pip install -U catkin-pkg
-    apt-get install -y -qq python-empy \
-                         python-nose \
-                         python-pyside
+    # Fix:  /usr/local/lib/python2.7/dist-packages/requests/__init__.py:83: RequestsDependencyWarning: Old version of cryptography ([1, 2, 3]) may cause slowdown.
+    pip install --upgrade cryptography
+    python -m easy_install --upgrade pyOpenSSL
+
 
     echo "Installing OpenDroneMap Dependencies"
     apt-get install -y -qq python-scipy \
@@ -96,7 +97,7 @@ install() {
                          libboost-log-dev
 
     echo "Installing split-merge Dependencies"
-    pip install -U scipy==1.2.1 numpy==1.15.4 shapely pyproj https://github.com/OpenDroneMap/gippy/archive/numpyfix.zip psutil
+    pip install -U scipy==1.2.1 numpy==1.15.4 shapely pyproj psutil
 
     echo "Compiling SuperBuild"
     cd ${RUNPATH}/SuperBuild
