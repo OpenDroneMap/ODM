@@ -74,7 +74,7 @@ RUN pip install -U \
   pyproj \
   PyYAML \
   repoze.lru \
-  scipy \
+  scipy==1.2.1 \
   shapely \
   xmltodict \
   https://github.com/OpenDroneMap/gippy/archive/numpyfix.zip
