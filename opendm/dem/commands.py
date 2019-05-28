@@ -252,7 +252,7 @@ def compute_euclidean_map(geotiff_path, output_path, overwrite=False):
         else:
             log.ODM_WARNING("Cannot compute euclidean distance file: %s" % output_path)
     else:
-        log.ODM_WARNING("Already found a euclidean distance map: %s" % output_path)
+        log.ODM_INFO("Found a euclidean distance map: %s" % output_path)
         return output_path
 
 

@@ -245,7 +245,7 @@ class ODMMergeStage(types.ODM_Stage):
                             # Note: cblend has a high performance penalty
                             system.run('gdalwarp -cutline {cutline} '
                                     '-cblend 20 '
-                                    '-r lanczos -multi '
+                                    '-r bilinear -multi '
                                     '-wo NUM_THREADS={threads} '
                                     '--config GDAL_CACHEMAX {max_memory}% '
                                     '{input_file} {orthophoto_merged}'.format(**kwargs)
