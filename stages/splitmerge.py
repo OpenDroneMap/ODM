@@ -113,6 +113,7 @@ class ODMSplitStage(types.ODM_Stage):
                     sp_octx = OSFMContext(sp)
 
                     aligned_recon = sp_octx.path('reconstruction.aligned.json')
+                    unaligned_recon = sp_octx.path('reconstruction.unaligned.json')
                     main_recon = sp_octx.path('reconstruction.json')
 
                     if not io.file_exists(aligned_recon):
@@ -123,7 +124,7 @@ class ODMSplitStage(types.ODM_Stage):
                         continue
 
                     if io.file_exists(main_recon):
-                        os.remove(main_recon)
+                        shutil.move(main_recon, unaligned_recon)
 
                     shutil.move(aligned_recon, main_recon)
                     log.ODM_DEBUG("%s is now %s" % (aligned_recon, main_recon))
