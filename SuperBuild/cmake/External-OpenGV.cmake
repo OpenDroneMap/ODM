@@ -1,21 +1,23 @@
 set(_proj_name opengv)
 set(_SB_BINARY_DIR "${SB_BINARY_DIR}/${_proj_name}")
 
+message("AAA ${_SB_BINARY_DIR}")
 ExternalProject_Add(${_proj_name}
   PREFIX            ${_SB_BINARY_DIR}
   TMP_DIR           ${_SB_BINARY_DIR}/tmp
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
-  URL               https://github.com/paulinus/opengv/archive/7436794df04d85433a966395088e38b107e69fc2.zip
-  URL_MD5           9B303C3AB9F210B242941E851572D2C8
+  GIT_REPOSITORY    https://github.com/paulinus/opengv/
+  GIT_TAG           306a54e6c6b94e2048f820cdf77ef5281d4b48ad
   #--Update/Patch step----------
-  UPDATE_COMMAND    ""
+  UPDATE_COMMAND    git submodule update --init --recursive
   #--Configure step-------------
   SOURCE_DIR        ${SB_SOURCE_DIR}/${_proj_name}
   CMAKE_ARGS
     -DBUILD_TESTS=OFF 
     -DBUILD_PYTHON=ON
+    -DPYBIND11_PYTHON_VERSION=2.7
     -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
   #--Build step-----------------
   BINARY_DIR        ${_SB_BINARY_DIR}
