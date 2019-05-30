@@ -7,8 +7,8 @@ ExternalProject_Add(${_proj_name}
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
-  URL               https://github.com/gflags/gflags/archive/v2.1.2.zip
-  URL_MD5           5cb0a1b38740ed596edb7f86cd5b3bd8
+  GIT_REPOSITORY  https://github.com/gflags/gflags
+  GIT_TAG         28f50e0fed19872e0fd50dd23ce2ee8cd759338e
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   #--Configure step-------------
