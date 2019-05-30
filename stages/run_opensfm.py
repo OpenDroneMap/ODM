@@ -72,7 +72,6 @@ class ODMOpenSfMStage(types.ODM_Stage):
 
         elif args.use_opensfm_dense:
             if not io.file_exists(output_file) or self.rerun():
-                #octx.run('undistort') # TODO can we use PNGs here?
                 octx.run('compute_depthmaps')
             else:
                 log.ODM_WARNING("Found a valid dense reconstruction in %s" % output_file)

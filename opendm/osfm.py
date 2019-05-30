@@ -151,8 +151,11 @@ class OSFMContext:
             log.ODM_INFO("Aligning submodels...")
             meta_data = metadataset.MetaDataSet(self.opensfm_project_path)
             reconstruction_shots = tools.load_reconstruction_shots(meta_data)
-            transformations = tools.align_reconstructions(reconstruction_shots, use_points_constraints=False)
+            transformations = tools.align_reconstructions(reconstruction_shots,
+                                            tools.partial_reconstruction_name,
+                                            True)
             tools.apply_transformations(transformations)
+
 
             with open(alignment_file, 'w') as fout:
                 fout.write("Alignment done!\n")
