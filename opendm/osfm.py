@@ -3,6 +3,7 @@ OpenSfM related utils
 """
 
 import os, shutil, sys
+import yaml
 from opendm import io
 from opendm import log
 from opendm import system
@@ -85,6 +86,7 @@ class OSFMContext:
                 "depthmap_min_patch_sd: %s" % args.opensfm_depthmap_min_patch_sd,
                 "depthmap_min_consistent_views: %s" % args.opensfm_depthmap_min_consistent_views,
                 "optimize_camera_parameters: %s" % ('no' if args.use_fixed_camera_params else 'yes'),
+                "undistorted_image_format: png" # mvs-texturing exhibits artifacts with JPG
             ]
 
             if has_alt:
@@ -109,7 +111,7 @@ class OSFMContext:
 
             # write config file
             log.ODM_DEBUG(config)
-            config_filename = io.join_paths(self.opensfm_project_path, 'config.yaml')
+            config_filename = self.get_config_file_path()
             with open(config_filename, 'w') as fout:
                 fout.write("\n".join(config))
 
@@ -120,6 +122,9 @@ class OSFMContext:
                 io.copy(image_groups_file, os.path.join(self.opensfm_project_path, "image_groups.txt"))
         else:
             log.ODM_WARNING("%s already exists, not rerunning OpenSfM setup" % list_path)
+
+    def get_config_file_path(self):
+        return io.join_paths(self.opensfm_project_path, 'config.yaml')
 
     def extract_metadata(self, rerun=False):
         metadata_dir = self.path("exif")
@@ -156,6 +161,23 @@ class OSFMContext:
 
     def path(self, *paths):
         return os.path.join(self.opensfm_project_path, *paths)
+
+    def update_config(self, cfg_dict):
+        cfg_file = self.get_config_file_path()
+        log.ODM_DEBUG("Updating %s" % cfg_file)
+        if os.path.exists(cfg_file):
+            try:
+                with open(cfg_file) as fin:
+                    cfg = yaml.safe_load(fin)
+                for k, v in cfg_dict.items():
+                    cfg[k] = v
+                    log.ODM_DEBUG("%s: %s" % (k, v))
+                with open(cfg_file, 'w') as fout:
+                    fout.write(yaml.dump(cfg, default_flow_style=False))
+            except Exception as e:
+                log.ODM_WARNING("Cannot update configuration file %s: %s" % (cfg_file, str(e)))
+        else:
+            log.ODM_WARNING("Tried to update configuration, but %s does not exist." % cfg_file)
 
     def save_absolute_image_list_to(self, file):
         """

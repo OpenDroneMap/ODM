@@ -42,28 +42,25 @@ class ODMOpenSfMStage(types.ODM_Stage):
         else:
             output_file = tree.opensfm_reconstruction
 
-        # Always export VisualSFM's reconstruction and undistort images
-        # as we'll use these for texturing (after GSD estimation and resizing)
-        if not args.ignore_gsd:
-            image_scale = gsd.image_scale_factor(args.orthophoto_resolution, tree.opensfm_reconstruction)
-        else:
-            image_scale = 1.0
-
-        if not io.file_exists(tree.opensfm_reconstruction_nvm) or self.rerun():
-            octx.run('export_visualsfm --image_extension png --scale_focal %s' % image_scale)
-        else:
-            log.ODM_WARNING('Found a valid OpenSfM NVM reconstruction file in: %s' %
-                            tree.opensfm_reconstruction_nvm)
+        octx.update_config({'undistorted_image_max_size': gsd.image_max_size(photos, args.orthophoto_resolution, tree.opensfm_reconstruction, ignore_gsd=args.ignore_gsd)})
 
         # These will be used for texturing
         undistorted_images_path = octx.path("undistorted")
 
         if not io.dir_exists(undistorted_images_path) or self.rerun():
-            octx.run('undistort --image_format png --image_scale %s' % image_scale)
+            octx.run('undistort')
         else:
             log.ODM_WARNING("Found an undistorted directory in %s" % undistorted_images_path)
 
         self.update_progress(80)
+
+        if not io.file_exists(tree.opensfm_reconstruction_nvm) or self.rerun():
+            octx.run('export_visualsfm')
+        else:
+            log.ODM_WARNING('Found a valid OpenSfM NVM reconstruction file in: %s' %
+                            tree.opensfm_reconstruction_nvm)
+
+        self.update_progress(85)
 
         # Skip dense reconstruction if necessary and export
         # sparse reconstruction instead
@@ -74,11 +71,8 @@ class ODMOpenSfMStage(types.ODM_Stage):
                 log.ODM_WARNING("Found a valid PLY reconstruction in %s" % output_file)
 
         elif args.use_opensfm_dense:
-            # Undistort images at full scale in JPG
-            # (TODO: we could compare the size of the PNGs if they are < than depthmap_resolution
-            # and use those instead of re-exporting full resolution JPGs)
             if not io.file_exists(output_file) or self.rerun():
-                octx.run('undistort')
+                #octx.run('undistort') # TODO can we use PNGs here?
                 octx.run('compute_depthmaps')
             else:
                 log.ODM_WARNING("Found a valid dense reconstruction in %s" % output_file)
