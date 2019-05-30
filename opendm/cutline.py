@@ -7,13 +7,33 @@ from opendm import get_image_size
 from opendm import system
 import math
 
-def compute_cutline(orthophoto_file, crop_area_file, destination, max_concurrency=1, tmpdir=None):
+def compute_cutline(orthophoto_file, crop_area_file, destination, max_concurrency=1, tmpdir=None, scale=1):
     if io.file_exists(orthophoto_file) and io.file_exists(crop_area_file):
         from opendm.grass_engine import grass
         log.ODM_DEBUG("Computing cutline")
 
         if tmpdir and not io.dir_exists(tmpdir):
             system.mkdir_p(tmpdir)
+
+        scale = max(0.0001, min(1, scale))
+        scaled_orthophoto = None
+
+        if scale < 1:
+            log.ODM_DEBUG("Scaling orthophoto to %s%% to compute cutline" % (scale * 100))
+
+            scaled_orthophoto = os.path.join(tmpdir, os.path.basename(io.related_file_path(orthophoto_file, postfix=".scaled")))
+            # Scale orthophoto before computing cutline
+            system.run("gdal_translate -outsize {}% 0 "
+                "-co NUM_THREADS={} "
+                "--config GDAL_CACHEMAX {}% "
+                "{} {}".format(
+                scale * 100,
+                max_concurrency,
+                concurrency.get_max_memory(),
+                orthophoto_file,
+                scaled_orthophoto
+            ))
+            orthophoto_file = scaled_orthophoto
 
         try:
             ortho_width,ortho_height = get_image_size.get_image_size(orthophoto_file)
