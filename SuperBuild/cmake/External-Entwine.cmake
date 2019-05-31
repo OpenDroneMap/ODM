@@ -8,7 +8,7 @@ ExternalProject_Add(${_proj_name}
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
-  URL               https://github.com/connormanning/entwine/archive/098c1ee82cf5b08dcd15ce9b6b910a179c85c6fb.zip
+  URL               https://github.com/connormanning/entwine/archive/d0ed334514a00b234a6fd60b97e1b04353b560f0.zip
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   #--Configure step-------------
