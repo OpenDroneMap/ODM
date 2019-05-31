@@ -12,11 +12,9 @@ ExternalProject_Add(${_proj_name}
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   #--Configure step-------------
-  SOURCE_DIR        ${SB_SOURCE_DIR}/${_proj_name}/build/cmake
-  CMAKE_ARGS
-    -DZSTD_BUILD_PROGRAMS=OFF
-    -DCMAKE_BUILD_TYPE:STRING=Release
-    -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
+  SOURCE_DIR        ${SB_SOURCE_DIR}/${_proj_name}
+  CONFIGURE_COMMAND ${CMAKE_COMMAND} -DZSTD_BUILD_PROGRAMS=OFF -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
+        <SOURCE_DIR>/build/cmake
   #--Build step-----------------
   BINARY_DIR        ${_SB_BINARY_DIR}
   #--Install step---------------
