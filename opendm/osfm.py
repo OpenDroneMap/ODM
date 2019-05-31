@@ -219,6 +219,7 @@ def get_submodel_argv(project_name = None, submodels_path = None, submodel_name 
     :return the same as argv, but removing references to --split, 
         setting/replacing --project-path and name
         removing --rerun-from, --rerun, --rerun-all, --sm-cluster
+        removing --pc-las, --pc-csv, --pc-ept flags (processing these is wasteful)
         adding --orthophoto-cutline
         adding --dem-euclidean-map
         adding --skip-3dmodel (split-merge does not support 3D model merging)
@@ -226,7 +227,7 @@ def get_submodel_argv(project_name = None, submodels_path = None, submodel_name 
     """
     assure_always = ['--orthophoto-cutline', '--dem-euclidean-map', '--skip-3dmodel']
     remove_always_2 = ['--split', '--split-overlap', '--rerun-from', '--rerun', '--gcp', '--end-with', '--sm-cluster']
-    remove_always_1 = ['--rerun-all']
+    remove_always_1 = ['--rerun-all', '--pc-csv', '--pc-las', '--pc-ept']
 
     argv = sys.argv
 
