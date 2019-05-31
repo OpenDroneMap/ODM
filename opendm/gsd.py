@@ -21,7 +21,7 @@ def rounded_gsd(reconstruction_json, default_value=None, ndigits=0, ignore_gsd=F
         return default_value
 
 
-def image_max_size(photos, target_resolution, reconstruction_json, gsd_error_estimate = 0.1, ignore_gsd=False):
+def image_max_size(photos, target_resolution, reconstruction_json, gsd_error_estimate = 0.5, ignore_gsd=False):
     """
     :param photos images database
     :param target_resolution resolution the user wants have in cm / pixel
@@ -44,7 +44,7 @@ def image_max_size(photos, target_resolution, reconstruction_json, gsd_error_est
 
     return int(math.ceil(max(max_width, max_height) * isf))
 
-def image_scale_factor(target_resolution, reconstruction_json, gsd_error_estimate = 0.1):
+def image_scale_factor(target_resolution, reconstruction_json, gsd_error_estimate = 0.5):
     """
     :param target_resolution resolution the user wants have in cm / pixel
     :param reconstruction_json path to OpenSfM's reconstruction.json

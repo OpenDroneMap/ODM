@@ -317,9 +317,6 @@ class ODM_Tree(object):
 
         # Split-merge 
         self.submodels_path = io.join_paths(self.root_path, 'submodels')
-        self.out_tif = io.join_paths(self.root_path, "merged.tif")
-        self.addo_log = io.join_paths(self.root_path, "gdal_addo.log")
-        self.sm_progress = io.join_paths(self.root_path, "sm_progress.txt")
 
     def path(self, *args):
         return os.path.join(self.root_path, *args)
