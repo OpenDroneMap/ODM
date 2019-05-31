@@ -179,7 +179,7 @@ class ODMMergeStage(types.ODM_Stage):
                     
                     try:
                         # pdal.merge_point_clouds(all_point_clouds, tree.odm_georeferencing_model_laz, args.verbose)
-                        entwine.build(all_point_clouds, tree.entwine_pointcloud, max_concurrency=args.max_concurrency)
+                        entwine.build(all_point_clouds, tree.entwine_pointcloud, max_concurrency=args.max_concurrency, rerun=self.rerun())
                     except Exception as e:
                         log.ODM_WARNING("Could not merge point cloud: %s (skipping)" % str(e))
                 else:
