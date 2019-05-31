@@ -1,4 +1,4 @@
-set(_proj_name opengv)
+set(_proj_name zstd)
 set(_SB_BINARY_DIR "${SB_BINARY_DIR}/${_proj_name}")
 
 ExternalProject_Add(${_proj_name}
@@ -7,16 +7,15 @@ ExternalProject_Add(${_proj_name}
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
-  GIT_REPOSITORY    https://github.com/paulinus/opengv/
-  GIT_TAG           306a54e6c6b94e2048f820cdf77ef5281d4b48ad
+  GIT_REPOSITORY  https://github.com/facebook/zstd
+  GIT_TAG         b84274da0f641907dfe472d5da132d872202e9b8
   #--Update/Patch step----------
-  UPDATE_COMMAND    git submodule update --init --recursive
+  UPDATE_COMMAND    ""
   #--Configure step-------------
-  SOURCE_DIR        ${SB_SOURCE_DIR}/${_proj_name}
+  SOURCE_DIR        ${SB_SOURCE_DIR}/${_proj_name}/build/cmake
   CMAKE_ARGS
-    -DBUILD_TESTS=OFF 
-    -DBUILD_PYTHON=ON
-    -DPYBIND11_PYTHON_VERSION=2.7
+    -DZSTD_BUILD_PROGRAMS=OFF
+    -DCMAKE_BUILD_TYPE:STRING=Release
     -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
   #--Build step-----------------
   BINARY_DIR        ${_SB_BINARY_DIR}
@@ -27,4 +26,3 @@ ExternalProject_Add(${_proj_name}
   LOG_CONFIGURE     OFF
   LOG_BUILD         OFF
 )
-
