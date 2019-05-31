@@ -13,6 +13,7 @@ from opensfm.large import metadataset
 from opendm.cropper import Cropper
 from opendm.concurrency import get_max_memory
 from opendm.remote import LocalRemoteExecutor
+from opendm import entwine
 from pipes import quote
 
 class ODMSplitStage(types.ODM_Stage):
@@ -177,10 +178,8 @@ class ODMMergeStage(types.ODM_Stage):
                     all_point_clouds = get_submodel_paths(tree.submodels_path, "odm_georeferencing", "odm_georeferenced_model.laz")
                     
                     try:
-                        # TODO: use entwine to create a tileset instead of 
-                        # merging, which is memory inefficient and creates
-                        # monster files.
-                        pdal.merge_point_clouds(all_point_clouds, tree.odm_georeferencing_model_laz, args.verbose)
+                        # pdal.merge_point_clouds(all_point_clouds, tree.odm_georeferencing_model_laz, args.verbose)
+                        entwine.build(all_point_clouds, tree.path("entwine_pointcloud"), max_concurrency=args.max_concurrency)
                     except Exception as e:
                         log.ODM_WARNING("Could not merge point cloud: %s (skipping)" % str(e))
                 else:
