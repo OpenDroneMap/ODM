@@ -4,6 +4,7 @@ import rasterio
 import numpy
 import math
 import time
+import shutil
 from opendm.system import run
 from opendm import point_cloud
 from opendm import io
@@ -181,19 +182,25 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
             raise Exception("Error creating %s, %s failed to be created" % (output_file, t['filename']))
     
     # Create virtual raster
-    vrt_path = os.path.abspath(os.path.join(outdir, "merged.vrt"))
-    run('gdalbuildvrt "%s" "%s"' % (vrt_path, '" "'.join(map(lambda t: t['filename'], tiles))))
+    tiles_vrt_path = os.path.abspath(os.path.join(outdir, "tiles.vrt"))
+    run('gdalbuildvrt "%s" "%s"' % (tiles_vrt_path, '" "'.join(map(lambda t: t['filename'], tiles))))
 
-    geotiff_tmp_path = os.path.abspath(os.path.join(outdir, 'merged.tmp.tif'))
-    geotiff_path = os.path.abspath(os.path.join(outdir, 'merged.tif'))
+    merged_vrt_path = os.path.abspath(os.path.join(outdir, "merged.vrt"))
+    geotiff_tmp_path = os.path.abspath(os.path.join(outdir, 'tiles.tmp.tif'))
+    geotiff_small_path = os.path.abspath(os.path.join(outdir, 'tiles.small.tif'))
+    geotiff_small_filled_path = os.path.abspath(os.path.join(outdir, 'tiles.small_filled.tif'))
+    geotiff_path = os.path.abspath(os.path.join(outdir, 'tiles.tif'))
 
     # Build GeoTIFF
     kwargs = {
         'max_memory': get_max_memory(),
         'threads': max_workers if max_workers else 'ALL_CPUS',
-        'vrt': vrt_path,
+        'tiles_vrt': tiles_vrt_path,
+        'merged_vrt': merged_vrt_path,
         'geotiff': geotiff_path,
-        'geotiff_tmp': geotiff_tmp_path
+        'geotiff_tmp': geotiff_tmp_path,
+        'geotiff_small': geotiff_small_path,
+        'geotiff_small_filled': geotiff_small_filled_path
     }
 
     if gapfill:
@@ -203,21 +210,35 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
         run('gdal_translate '
                 '-co NUM_THREADS={threads} '
                 '--config GDAL_CACHEMAX {max_memory}% '
-                '{vrt} {geotiff_tmp}'.format(**kwargs))
+                '{tiles_vrt} {geotiff_tmp}'.format(**kwargs))
 
+        # Scale to 10% size
+        run('gdal_translate '
+            '-co NUM_THREADS={threads} '
+            '--config GDAL_CACHEMAX {max_memory}% '
+            '-outsize 10% 0 '
+            '{geotiff_tmp} {geotiff_small}'.format(**kwargs))
+
+        # Fill scaled
         run('gdal_fillnodata.py '
             '-co NUM_THREADS={threads} '
             '--config GDAL_CACHEMAX {max_memory}% '
             '-b 1 '
             '-of GTiff '
-            '{geotiff_tmp} {geotiff}'.format(**kwargs))
+            '{geotiff_small} {geotiff_small_filled}'.format(**kwargs))
+
+        # Merge filled scaled DEM with unfilled DEM using bilinear interpolation
+        run('gdalbuildvrt -resolution highest -r bilinear "%s" "%s" "%s"' % (merged_vrt_path, geotiff_small_filled_path, geotiff_tmp_path))
+        run('gdal_translate '
+            '-co NUM_THREADS={threads} '
+            '--config GDAL_CACHEMAX {max_memory}% '
+            '{merged_vrt} {geotiff}'.format(**kwargs))
     else:
         run('gdal_translate '
                 '-co NUM_THREADS={threads} '
                 '--config GDAL_CACHEMAX {max_memory}% '
-                '{vrt} {geotiff}'.format(**kwargs))
+                '{tiles_vrt} {geotiff}'.format(**kwargs))
         
-
     post_process(geotiff_path, output_path)
     os.remove(geotiff_path)
 
@@ -226,8 +247,9 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
             os.remove(geotiff_tmp_path)
         else:
             os.rename(geotiff_tmp_path, io.related_file_path(output_path, postfix=".unfilled"))
-            
-    if os.path.exists(vrt_path): os.remove(vrt_path)
+    
+    for cleanup_file in [tiles_vrt_path, merged_vrt_path, geotiff_small_path, geotiff_small_filled_path]:
+        if os.path.exists(cleanup_file): os.remove(cleanup_file)
     for t in tiles:
         if os.path.exists(t['filename']): os.remove(t['filename'])
     
