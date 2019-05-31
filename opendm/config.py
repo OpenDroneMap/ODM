@@ -286,6 +286,11 @@ def config():
                 default=False,
                 help='Export the georeferenced point cloud in LAS format. Default:  %(default)s')
 
+    parser.add_argument('--pc-ept',
+                action='store_true',
+                default=False,
+                help='Export the georeferenced point cloud in Entwine Point Tile (EPT) format. Default:  %(default)s')
+
     parser.add_argument('--pc-filter',
                         metavar='<positive float>',
                         type=float,

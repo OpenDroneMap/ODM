@@ -318,6 +318,9 @@ class ODM_Tree(object):
         # Split-merge 
         self.submodels_path = io.join_paths(self.root_path, 'submodels')
 
+        # Tiles
+        self.entwine_pointcloud = self.path("entwine_pointcloud")
+
     def path(self, *args):
         return os.path.join(self.root_path, *args)
 
