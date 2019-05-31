@@ -140,7 +140,7 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                     # EPT point cloud output
                     if args.pc_ept:
                         log.ODM_INFO("Creating geo-referenced Entwine Point Tile output")
-                        entwine.build([tree.odm_georeferencing_model_laz], tree.entwine_pointcloud, max_concurrency=args.max_concurrency)
+                        entwine.build([tree.odm_georeferencing_model_laz], tree.entwine_pointcloud, max_concurrency=args.max_concurrency, rerun=self.rerun())
                     
                     if args.crop > 0:
                         log.ODM_INFO("Calculating cropping area and generating bounds shapefile from point cloud")
