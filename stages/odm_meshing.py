@@ -27,7 +27,7 @@ class ODMeshingStage(types.ODM_Stage):
                 samples=self.params.get('samples'),
                 maxVertexCount=self.params.get('max_vertex'),
                 pointWeight=self.params.get('point_weight'),
-                threads=self.params.get('max_concurrency'),
+                threads=max(1, self.params.get('max_concurrency') - 1), # poissonrecon can get stuck on some machines if --threads == all cores
                 verbose=self.params.get('verbose'))
 
           else:
