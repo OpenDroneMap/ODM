@@ -182,6 +182,12 @@ class ODMMergeStage(types.ODM_Stage):
                         entwine.build(all_point_clouds, tree.entwine_pointcloud, max_concurrency=args.max_concurrency, rerun=self.rerun())
                     except Exception as e:
                         log.ODM_WARNING("Could not merge point cloud: %s (skipping)" % str(e))
+                
+                    if io.dir_exists(tree.entwine_pointcloud):
+                        try:
+                            system.run('pdal translate "ept://{}" "{}"'.format(tree.entwine_pointcloud, tree.odm_georeferencing_model_laz))
+                        except Exception as e:
+                            log.ODM_WARNING("Cannot export EPT dataset to LAZ: %s" % str(e))
                 else:
                     log.ODM_WARNING("Found merged point cloud in %s" % tree.odm_georeferencing_model_laz)
             
