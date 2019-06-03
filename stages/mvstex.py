@@ -77,23 +77,37 @@ class ODMMvsTexStage(types.ODM_Stage):
                     'nvm_file': io.join_paths(tree.opensfm, "reconstruction.nvm")
                 }
 
-                # Make sure tmp directory is empty
                 mvs_tmp_dir = os.path.join(r['out_dir'], 'tmp')
-                if io.dir_exists(mvs_tmp_dir):
-                    log.ODM_INFO("Removing old tmp directory {}".format(mvs_tmp_dir))
-                    shutil.rmtree(mvs_tmp_dir)
 
-                # run texturing binary
-                system.run('{bin} {nvm_file} {model} {out_dir} '
-                           '-d {dataTerm} -o {outlierRemovalType} '
-                           '-t {toneMapping} '
-                           '{skipGeometricVisibilityTest} '
-                           '{skipGlobalSeamLeveling} '
-                           '{skipLocalSeamLeveling} '
-                           '{skipHoleFilling} '
-                           '{keepUnseenFaces} '
-                           '{nadirMode} '
-                           '-n {nadirWeight}'.format(**kwargs))
+                # TODO: find out why mvs-texturing is rarely crashing at random
+                # Temporary workaround is to retry the command until we get it right
+                # (up to a certain number of retries).
+                retry_count = 1
+                while retry_count < 5:
+                    try:
+                        # Make sure tmp directory is empty
+                        if io.dir_exists(mvs_tmp_dir):
+                            log.ODM_INFO("Removing old tmp directory {}".format(mvs_tmp_dir))
+                            shutil.rmtree(mvs_tmp_dir)
+
+                        # run texturing binary
+                        system.run('{bin} {nvm_file} {model} {out_dir} '
+                                '-d {dataTerm} -o {outlierRemovalType} '
+                                '-t {toneMapping} '
+                                '{skipGeometricVisibilityTest} '
+                                '{skipGlobalSeamLeveling} '
+                                '{skipLocalSeamLeveling} '
+                                '{skipHoleFilling} '
+                                '{keepUnseenFaces} '
+                                '{nadirMode} '
+                                '-n {nadirWeight}'.format(**kwargs))
+                        break
+                    except Exception as e:
+                        if str(e) == "Child returned 134":
+                            retry_count += 1
+                            log.ODM_WARNING("Caught error code, retrying attempt #%s" % retry_count)
+                        else:
+                            raise e
                 
                 self.update_progress(50)
             else:
