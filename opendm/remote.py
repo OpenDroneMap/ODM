@@ -339,10 +339,14 @@ class Task:
         # Add seed file
         images.append(seed_file)
 
+        class nonloc:
+            last_update = 0
+
         def print_progress(percentage):
-            if percentage % 10 == 0:
+            if (time.time() - nonloc.last_update >= 2) or int(percentage) == 100:
                 log.ODM_DEBUG("LRE: Upload of %s at [%s%%]" % (self, int(percentage)))
-        
+                nonloc.last_update = time.time()
+
         # Upload task
         task = self.node.create_task(images, 
                 get_submodel_args_dict(),
@@ -363,6 +367,7 @@ class Task:
             def monitor():
                 class nonloc:
                     status_callback_calls = 0
+                    last_update = 0
 
                 def status_callback(info):
                     # If a task switches from RUNNING to QUEUED, then we need to 
@@ -378,8 +383,9 @@ class Task:
                             nonloc.status_callback_calls = 0
                 try:
                     def print_progress(percentage):
-                        if percentage % 10 == 0:
+                        if (time.time() - nonloc.last_update >= 2) or int(percentage) == 100:
                             log.ODM_DEBUG("LRE: Download of %s at [%s%%]" % (self, int(percentage)))
+                            nonloc.last_update = time.time()
 
                     task.wait_for_completion(status_callback=status_callback)
                     log.ODM_DEBUG("LRE: Downloading assets for %s" % self)
