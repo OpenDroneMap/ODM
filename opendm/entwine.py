@@ -20,7 +20,7 @@ def build(input_point_cloud_files, output_path, max_concurrency=8, rerun=False):
     kwargs = {
         'threads': max_concurrency,
         'tmpdir': tmpdir,
-        'input': "-i " + ", -i ".join(map(quote, input_point_cloud_files)),
+        'input': "-i " + " ".join(map(quote, input_point_cloud_files)),
         'outputdir': output_path
     }
 
