@@ -156,11 +156,13 @@ class OSFMContext:
                                             True)
             tools.apply_transformations(transformations)
 
-
-            with open(alignment_file, 'w') as fout:
-                fout.write("Alignment done!\n")
+            self.touch(alignment_file)
         else:
             log.ODM_WARNING('Found a alignment done progress file in: %s' % alignment_file)
+
+    def touch(self, file):
+        with open(file, 'w') as fout:
+            fout.write("Done!\n")
 
     def path(self, *paths):
         return os.path.join(self.opensfm_project_path, *paths)
