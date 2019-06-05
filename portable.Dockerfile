@@ -76,7 +76,7 @@ RUN pip install -U \
   xmltodict \
   rasterio \
   attrs==19.1.0 \
-  pyodm==1.5.2 \
+  pyodm==1.5.2b1 \
   Pillow
 
 RUN pip install --upgrade cryptography && python -m easy_install --upgrade pyOpenSSL
