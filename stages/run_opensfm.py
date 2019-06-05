@@ -42,7 +42,10 @@ class ODMOpenSfMStage(types.ODM_Stage):
         else:
             output_file = tree.opensfm_reconstruction
 
-        octx.update_config({'undistorted_image_max_size': gsd.image_max_size(photos, args.orthophoto_resolution, tree.opensfm_reconstruction, ignore_gsd=args.ignore_gsd)})
+        updated_config_flag_file = octx.path('updated_config.txt')
+        if not io.file_exists(updated_config_flag_file) or self.rerun():
+            octx.update_config({'undistorted_image_max_size': gsd.image_max_size(photos, args.orthophoto_resolution, tree.opensfm_reconstruction, ignore_gsd=args.ignore_gsd)})
+            octx.touch(updated_config_flag_file)
 
         # These will be used for texturing
         undistorted_images_path = octx.path("undistorted")
