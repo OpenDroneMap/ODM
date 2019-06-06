@@ -27,6 +27,12 @@ class OSFMContext:
         else:
             log.ODM_WARNING('Found a valid Bundler file in: %s' % destination_bundle_file)
 
+    def is_reconstruction_done(self):
+        tracks_file = os.path.join(self.opensfm_project_path, 'tracks.csv')
+        reconstruction_file = os.path.join(self.opensfm_project_path, 'reconstruction.json')
+
+        return io.file_exists(tracks_file) and io.file_exists(reconstruction_file)
+
     def reconstruct(self, rerun=False):
         tracks_file = os.path.join(self.opensfm_project_path, 'tracks.csv')
         reconstruction_file = os.path.join(self.opensfm_project_path, 'reconstruction.json')
@@ -130,6 +136,12 @@ class OSFMContext:
         metadata_dir = self.path("exif")
         if not io.dir_exists(metadata_dir) or rerun:
             self.run('extract_metadata')
+
+    def is_feature_matching_done(self):
+        features_dir = self.path("features")
+        matches_dir = self.path("matches")
+
+        return io.dir_exists(features_dir) and io.dir_exists(matches_dir)
 
     def feature_matching(self, rerun=False):
         features_dir = self.path("features")

@@ -96,7 +96,7 @@ class ODMSplitStage(types.ODM_Stage):
                         log.ODM_INFO("Reconstructing %s" % sp)
                         OSFMContext(sp).reconstruct(self.rerun())
                 else:
-                    lre = LocalRemoteExecutor(args.sm_cluster)
+                    lre = LocalRemoteExecutor(args.sm_cluster, self.rerun())
                     lre.set_projects([os.path.abspath(os.path.join(p, "..")) for p in submodel_paths])
                     lre.run_reconstruction()
 
@@ -116,6 +116,10 @@ class ODMSplitStage(types.ODM_Stage):
                     aligned_recon = sp_octx.path('reconstruction.aligned.json')
                     unaligned_recon = sp_octx.path('reconstruction.unaligned.json')
                     main_recon = sp_octx.path('reconstruction.json')
+
+                    if io.file_exists(main_recon) and io.file_exists(unaligned_recon) and not self.rerun():
+                        log.ODM_INFO("Submodel %s has already been aligned." % sp_octx.name())
+                        continue
 
                     if not io.file_exists(aligned_recon):
                         log.ODM_WARNING("Submodel %s does not have an aligned reconstruction (%s). "
@@ -153,8 +157,7 @@ class ODMSplitStage(types.ODM_Stage):
                 # Restore max_concurrency value
                 args.max_concurrency = orig_max_concurrency
 
-                with open(split_done_file, 'w') as fout: 
-                    fout.write("Split done!\n")
+                octx.touch(split_done_file)
             else:
                 log.ODM_WARNING('Found a split done file in: %s' % split_done_file)
         else:
