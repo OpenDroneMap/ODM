@@ -68,7 +68,8 @@ class ODMeshingStage(types.ODM_Stage):
                     samples=self.params.get('samples'),
                     verbose=self.params.get('verbose'),
                     available_cores=args.max_concurrency,
-                    method='poisson' if args.fast_orthophoto else 'gridded')
+                    method='poisson' if args.fast_orthophoto else 'gridded',
+                    smooth_dsm=not args.fast_orthophoto)
           else:
               log.ODM_WARNING('Found a valid ODM 2.5D Mesh file in: %s' %
                               tree.odm_25dmesh)
