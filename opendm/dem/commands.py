@@ -35,7 +35,8 @@ error = None
 
 def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56'], gapfill=True,
                 outdir='', resolution=0.1, max_workers=1, max_tile_size=2048,
-                verbose=False, decimation=None, keep_unfilled_copy=False):
+                verbose=False, decimation=None, keep_unfilled_copy=False,
+                apply_smoothing=True):
     """ Create DEM from multiple radii, and optionally gapfill """
     global error
     error = None
@@ -238,9 +239,12 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
                 '-co NUM_THREADS={threads} '
                 '--config GDAL_CACHEMAX {max_memory}% '
                 '{tiles_vrt} {geotiff}'.format(**kwargs))
-        
-    post_process(geotiff_path, output_path)
-    os.remove(geotiff_path)
+
+    if apply_smoothing:
+        median_smoothing(geotiff_path, output_path)
+        os.remove(geotiff_path)
+    else:
+        os.rename(geotiff_path, output_path)
 
     if os.path.exists(geotiff_tmp_path):
         if not keep_unfilled_copy: 
@@ -278,14 +282,14 @@ def compute_euclidean_map(geotiff_path, output_path, overwrite=False):
         return output_path
 
 
-def post_process(geotiff_path, output_path, smoothing_iterations=1):
+def median_smoothing(geotiff_path, output_path, smoothing_iterations=1):
     """ Apply median smoothing """
     start = datetime.now()
 
     if not os.path.exists(geotiff_path):
         raise Exception('File %s does not exist!' % geotiff_path)
 
-    log.ODM_INFO('Starting post processing (smoothing)...')
+    log.ODM_INFO('Starting smoothing...')
 
     with rasterio.open(geotiff_path) as img:
         nodata = img.nodatavals[0]
@@ -324,6 +328,6 @@ def post_process(geotiff_path, output_path, smoothing_iterations=1):
             else:
                 imgout.write(arr.astype(dtype), 1)
     
-    log.ODM_INFO('Completed post processing to create %s in %s' % (os.path.relpath(output_path), datetime.now() - start))
+    log.ODM_INFO('Completed smoothing to create %s in %s' % (os.path.relpath(output_path), datetime.now() - start))
 
     return output_path
