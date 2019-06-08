@@ -295,13 +295,15 @@ def post_process(geotiff_path, output_path, smoothing_iterations=1):
         # Median filter (careful, changing the value 5 might require tweaking)
         # the lines below. There's another numpy function that takes care of 
         # these edge cases, but it's slower.
+        used_fallback = False
         for i in range(smoothing_iterations):
             log.ODM_INFO("Smoothing iteration %s" % str(i + 1))
             try:
                 arr = signal.medfilt(arr, 5)
             except MemoryError:
                 log.ODM_WARNING("medfilt ran out of memory, switching to slower median_filter")
-                arr = ndimage.median_filter(arr, size=5)
+                used_fallback = True
+                arr = ndimage.median_filter(arr, size=5, output=dtype)
 
         # Fill corner points with nearest value
         if arr.shape >= (4, 4):
@@ -316,7 +318,11 @@ def post_process(geotiff_path, output_path, smoothing_iterations=1):
 
         # write output
         with rasterio.open(output_path, 'w', **img.profile) as imgout:
-            imgout.write(arr.astype(dtype), 1)
+            # No need to cast if we used the fallback filter (save memory)
+            if used_fallback:
+                imgout.write(arr, 1)
+            else:
+                imgout.write(arr.astype(dtype), 1)
     
     log.ODM_INFO('Completed post processing to create %s in %s' % (os.path.relpath(output_path), datetime.now() - start))
 
