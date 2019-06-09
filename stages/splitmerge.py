@@ -13,6 +13,7 @@ from opensfm.large import metadataset
 from opendm.cropper import Cropper
 from opendm.concurrency import get_max_memory
 from opendm.remote import LocalRemoteExecutor
+from opendm import entwine
 from pipes import quote
 
 class ODMSplitStage(types.ODM_Stage):
@@ -95,7 +96,7 @@ class ODMSplitStage(types.ODM_Stage):
                         log.ODM_INFO("Reconstructing %s" % sp)
                         OSFMContext(sp).reconstruct(self.rerun())
                 else:
-                    lre = LocalRemoteExecutor(args.sm_cluster)
+                    lre = LocalRemoteExecutor(args.sm_cluster, self.rerun())
                     lre.set_projects([os.path.abspath(os.path.join(p, "..")) for p in submodel_paths])
                     lre.run_reconstruction()
 
@@ -113,7 +114,12 @@ class ODMSplitStage(types.ODM_Stage):
                     sp_octx = OSFMContext(sp)
 
                     aligned_recon = sp_octx.path('reconstruction.aligned.json')
+                    unaligned_recon = sp_octx.path('reconstruction.unaligned.json')
                     main_recon = sp_octx.path('reconstruction.json')
+
+                    if io.file_exists(main_recon) and io.file_exists(unaligned_recon) and not self.rerun():
+                        log.ODM_INFO("Submodel %s has already been aligned." % sp_octx.name())
+                        continue
 
                     if not io.file_exists(aligned_recon):
                         log.ODM_WARNING("Submodel %s does not have an aligned reconstruction (%s). "
@@ -123,7 +129,7 @@ class ODMSplitStage(types.ODM_Stage):
                         continue
 
                     if io.file_exists(main_recon):
-                        os.remove(main_recon)
+                        shutil.move(main_recon, unaligned_recon)
 
                     shutil.move(aligned_recon, main_recon)
                     log.ODM_DEBUG("%s is now %s" % (aligned_recon, main_recon))
@@ -151,8 +157,7 @@ class ODMSplitStage(types.ODM_Stage):
                 # Restore max_concurrency value
                 args.max_concurrency = orig_max_concurrency
 
-                with open(split_done_file, 'w') as fout: 
-                    fout.write("Split done!\n")
+                octx.touch(split_done_file)
             else:
                 log.ODM_WARNING('Found a split done file in: %s' % split_done_file)
         else:
@@ -176,12 +181,16 @@ class ODMMergeStage(types.ODM_Stage):
                     all_point_clouds = get_submodel_paths(tree.submodels_path, "odm_georeferencing", "odm_georeferenced_model.laz")
                     
                     try:
-                        # TODO: use entwine to create a tileset instead of 
-                        # merging, which is memory inefficient and creates
-                        # monster files.
-                        pdal.merge_point_clouds(all_point_clouds, tree.odm_georeferencing_model_laz, args.verbose)
+                        # pdal.merge_point_clouds(all_point_clouds, tree.odm_georeferencing_model_laz, args.verbose)
+                        entwine.build(all_point_clouds, tree.entwine_pointcloud, max_concurrency=args.max_concurrency, rerun=self.rerun())
                     except Exception as e:
                         log.ODM_WARNING("Could not merge point cloud: %s (skipping)" % str(e))
+                
+                    if io.dir_exists(tree.entwine_pointcloud):
+                        try:
+                            system.run('pdal translate "ept://{}" "{}"'.format(tree.entwine_pointcloud, tree.odm_georeferencing_model_laz))
+                        except Exception as e:
+                            log.ODM_WARNING("Cannot export EPT dataset to LAZ: %s" % str(e))
                 else:
                     log.ODM_WARNING("Found merged point cloud in %s" % tree.odm_georeferencing_model_laz)
             

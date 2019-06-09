@@ -3,6 +3,7 @@ OpenSfM related utils
 """
 
 import os, shutil, sys
+import yaml
 from opendm import io
 from opendm import log
 from opendm import system
@@ -25,6 +26,12 @@ class OSFMContext:
                         (context.opensfm_path, self.opensfm_project_path))
         else:
             log.ODM_WARNING('Found a valid Bundler file in: %s' % destination_bundle_file)
+
+    def is_reconstruction_done(self):
+        tracks_file = os.path.join(self.opensfm_project_path, 'tracks.csv')
+        reconstruction_file = os.path.join(self.opensfm_project_path, 'reconstruction.json')
+
+        return io.file_exists(tracks_file) and io.file_exists(reconstruction_file)
 
     def reconstruct(self, rerun=False):
         tracks_file = os.path.join(self.opensfm_project_path, 'tracks.csv')
@@ -85,6 +92,7 @@ class OSFMContext:
                 "depthmap_min_patch_sd: %s" % args.opensfm_depthmap_min_patch_sd,
                 "depthmap_min_consistent_views: %s" % args.opensfm_depthmap_min_consistent_views,
                 "optimize_camera_parameters: %s" % ('no' if args.use_fixed_camera_params else 'yes'),
+                "undistorted_image_format: png" # mvs-texturing exhibits artifacts with JPG
             ]
 
             if has_alt:
@@ -109,7 +117,7 @@ class OSFMContext:
 
             # write config file
             log.ODM_DEBUG(config)
-            config_filename = io.join_paths(self.opensfm_project_path, 'config.yaml')
+            config_filename = self.get_config_file_path()
             with open(config_filename, 'w') as fout:
                 fout.write("\n".join(config))
 
@@ -121,10 +129,19 @@ class OSFMContext:
         else:
             log.ODM_WARNING("%s already exists, not rerunning OpenSfM setup" % list_path)
 
+    def get_config_file_path(self):
+        return io.join_paths(self.opensfm_project_path, 'config.yaml')
+
     def extract_metadata(self, rerun=False):
         metadata_dir = self.path("exif")
         if not io.dir_exists(metadata_dir) or rerun:
             self.run('extract_metadata')
+
+    def is_feature_matching_done(self):
+        features_dir = self.path("features")
+        matches_dir = self.path("matches")
+
+        return io.dir_exists(features_dir) and io.dir_exists(matches_dir)
 
     def feature_matching(self, rerun=False):
         features_dir = self.path("features")
@@ -146,16 +163,38 @@ class OSFMContext:
             log.ODM_INFO("Aligning submodels...")
             meta_data = metadataset.MetaDataSet(self.opensfm_project_path)
             reconstruction_shots = tools.load_reconstruction_shots(meta_data)
-            transformations = tools.align_reconstructions(reconstruction_shots, use_points_constraints=False)
+            transformations = tools.align_reconstructions(reconstruction_shots,
+                                            tools.partial_reconstruction_name,
+                                            True)
             tools.apply_transformations(transformations)
 
-            with open(alignment_file, 'w') as fout:
-                fout.write("Alignment done!\n")
+            self.touch(alignment_file)
         else:
             log.ODM_WARNING('Found a alignment done progress file in: %s' % alignment_file)
 
+    def touch(self, file):
+        with open(file, 'w') as fout:
+            fout.write("Done!\n")
+
     def path(self, *paths):
         return os.path.join(self.opensfm_project_path, *paths)
+
+    def update_config(self, cfg_dict):
+        cfg_file = self.get_config_file_path()
+        log.ODM_DEBUG("Updating %s" % cfg_file)
+        if os.path.exists(cfg_file):
+            try:
+                with open(cfg_file) as fin:
+                    cfg = yaml.safe_load(fin)
+                for k, v in cfg_dict.items():
+                    cfg[k] = v
+                    log.ODM_DEBUG("%s: %s" % (k, v))
+                with open(cfg_file, 'w') as fout:
+                    fout.write(yaml.dump(cfg, default_flow_style=False))
+            except Exception as e:
+                log.ODM_WARNING("Cannot update configuration file %s: %s" % (cfg_file, str(e)))
+        else:
+            log.ODM_WARNING("Tried to update configuration, but %s does not exist." % cfg_file)
 
     def save_absolute_image_list_to(self, file):
         """
@@ -194,6 +233,7 @@ def get_submodel_argv(project_name = None, submodels_path = None, submodel_name 
     :return the same as argv, but removing references to --split, 
         setting/replacing --project-path and name
         removing --rerun-from, --rerun, --rerun-all, --sm-cluster
+        removing --pc-las, --pc-csv, --pc-ept flags (processing these is wasteful)
         adding --orthophoto-cutline
         adding --dem-euclidean-map
         adding --skip-3dmodel (split-merge does not support 3D model merging)
@@ -201,7 +241,7 @@ def get_submodel_argv(project_name = None, submodels_path = None, submodel_name 
     """
     assure_always = ['--orthophoto-cutline', '--dem-euclidean-map', '--skip-3dmodel']
     remove_always_2 = ['--split', '--split-overlap', '--rerun-from', '--rerun', '--gcp', '--end-with', '--sm-cluster']
-    remove_always_1 = ['--rerun-all']
+    remove_always_1 = ['--rerun-all', '--pc-csv', '--pc-las', '--pc-ept']
 
     argv = sys.argv
 

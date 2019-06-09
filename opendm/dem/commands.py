@@ -4,6 +4,7 @@ import rasterio
 import numpy
 import math
 import time
+import shutil
 from opendm.system import run
 from opendm import point_cloud
 from opendm import io
@@ -34,7 +35,8 @@ error = None
 
 def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56'], gapfill=True,
                 outdir='', resolution=0.1, max_workers=1, max_tile_size=2048,
-                verbose=False, decimation=None, keep_unfilled_copy=False):
+                verbose=False, decimation=None, keep_unfilled_copy=False,
+                apply_smoothing=True):
     """ Create DEM from multiple radii, and optionally gapfill """
     global error
     error = None
@@ -181,19 +183,25 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
             raise Exception("Error creating %s, %s failed to be created" % (output_file, t['filename']))
     
     # Create virtual raster
-    vrt_path = os.path.abspath(os.path.join(outdir, "merged.vrt"))
-    run('gdalbuildvrt "%s" "%s"' % (vrt_path, '" "'.join(map(lambda t: t['filename'], tiles))))
+    tiles_vrt_path = os.path.abspath(os.path.join(outdir, "tiles.vrt"))
+    run('gdalbuildvrt "%s" "%s"' % (tiles_vrt_path, '" "'.join(map(lambda t: t['filename'], tiles))))
 
-    geotiff_tmp_path = os.path.abspath(os.path.join(outdir, 'merged.tmp.tif'))
-    geotiff_path = os.path.abspath(os.path.join(outdir, 'merged.tif'))
+    merged_vrt_path = os.path.abspath(os.path.join(outdir, "merged.vrt"))
+    geotiff_tmp_path = os.path.abspath(os.path.join(outdir, 'tiles.tmp.tif'))
+    geotiff_small_path = os.path.abspath(os.path.join(outdir, 'tiles.small.tif'))
+    geotiff_small_filled_path = os.path.abspath(os.path.join(outdir, 'tiles.small_filled.tif'))
+    geotiff_path = os.path.abspath(os.path.join(outdir, 'tiles.tif'))
 
     # Build GeoTIFF
     kwargs = {
         'max_memory': get_max_memory(),
         'threads': max_workers if max_workers else 'ALL_CPUS',
-        'vrt': vrt_path,
+        'tiles_vrt': tiles_vrt_path,
+        'merged_vrt': merged_vrt_path,
         'geotiff': geotiff_path,
-        'geotiff_tmp': geotiff_tmp_path
+        'geotiff_tmp': geotiff_tmp_path,
+        'geotiff_small': geotiff_small_path,
+        'geotiff_small_filled': geotiff_small_filled_path
     }
 
     if gapfill:
@@ -203,31 +211,49 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
         run('gdal_translate '
                 '-co NUM_THREADS={threads} '
                 '--config GDAL_CACHEMAX {max_memory}% '
-                '{vrt} {geotiff_tmp}'.format(**kwargs))
+                '{tiles_vrt} {geotiff_tmp}'.format(**kwargs))
 
+        # Scale to 10% size
+        run('gdal_translate '
+            '-co NUM_THREADS={threads} '
+            '--config GDAL_CACHEMAX {max_memory}% '
+            '-outsize 10% 0 '
+            '{geotiff_tmp} {geotiff_small}'.format(**kwargs))
+
+        # Fill scaled
         run('gdal_fillnodata.py '
             '-co NUM_THREADS={threads} '
             '--config GDAL_CACHEMAX {max_memory}% '
             '-b 1 '
             '-of GTiff '
-            '{geotiff_tmp} {geotiff}'.format(**kwargs))
+            '{geotiff_small} {geotiff_small_filled}'.format(**kwargs))
+
+        # Merge filled scaled DEM with unfilled DEM using bilinear interpolation
+        run('gdalbuildvrt -resolution highest -r bilinear "%s" "%s" "%s"' % (merged_vrt_path, geotiff_small_filled_path, geotiff_tmp_path))
+        run('gdal_translate '
+            '-co NUM_THREADS={threads} '
+            '--config GDAL_CACHEMAX {max_memory}% '
+            '{merged_vrt} {geotiff}'.format(**kwargs))
     else:
         run('gdal_translate '
                 '-co NUM_THREADS={threads} '
                 '--config GDAL_CACHEMAX {max_memory}% '
-                '{vrt} {geotiff}'.format(**kwargs))
-        
+                '{tiles_vrt} {geotiff}'.format(**kwargs))
 
-    post_process(geotiff_path, output_path)
-    os.remove(geotiff_path)
+    if apply_smoothing:
+        median_smoothing(geotiff_path, output_path)
+        os.remove(geotiff_path)
+    else:
+        os.rename(geotiff_path, output_path)
 
     if os.path.exists(geotiff_tmp_path):
         if not keep_unfilled_copy: 
             os.remove(geotiff_tmp_path)
         else:
             os.rename(geotiff_tmp_path, io.related_file_path(output_path, postfix=".unfilled"))
-            
-    if os.path.exists(vrt_path): os.remove(vrt_path)
+    
+    for cleanup_file in [tiles_vrt_path, merged_vrt_path, geotiff_small_path, geotiff_small_filled_path]:
+        if os.path.exists(cleanup_file): os.remove(cleanup_file)
     for t in tiles:
         if os.path.exists(t['filename']): os.remove(t['filename'])
     
@@ -256,14 +282,14 @@ def compute_euclidean_map(geotiff_path, output_path, overwrite=False):
         return output_path
 
 
-def post_process(geotiff_path, output_path, smoothing_iterations=1):
+def median_smoothing(geotiff_path, output_path, smoothing_iterations=1):
     """ Apply median smoothing """
     start = datetime.now()
 
     if not os.path.exists(geotiff_path):
         raise Exception('File %s does not exist!' % geotiff_path)
 
-    log.ODM_INFO('Starting post processing (smoothing)...')
+    log.ODM_INFO('Starting smoothing...')
 
     with rasterio.open(geotiff_path) as img:
         nodata = img.nodatavals[0]
@@ -273,13 +299,15 @@ def post_process(geotiff_path, output_path, smoothing_iterations=1):
         # Median filter (careful, changing the value 5 might require tweaking)
         # the lines below. There's another numpy function that takes care of 
         # these edge cases, but it's slower.
+        used_fallback = False
         for i in range(smoothing_iterations):
             log.ODM_INFO("Smoothing iteration %s" % str(i + 1))
             try:
                 arr = signal.medfilt(arr, 5)
             except MemoryError:
                 log.ODM_WARNING("medfilt ran out of memory, switching to slower median_filter")
-                arr = ndimage.median_filter(arr, size=5)
+                used_fallback = True
+                arr = ndimage.median_filter(arr, size=5, output=dtype)
 
         # Fill corner points with nearest value
         if arr.shape >= (4, 4):
@@ -294,8 +322,12 @@ def post_process(geotiff_path, output_path, smoothing_iterations=1):
 
         # write output
         with rasterio.open(output_path, 'w', **img.profile) as imgout:
-            imgout.write(arr.astype(dtype), 1)
+            # No need to cast if we used the fallback filter (save memory)
+            if used_fallback:
+                imgout.write(arr, 1)
+            else:
+                imgout.write(arr.astype(dtype), 1)
     
-    log.ODM_INFO('Completed post processing to create %s in %s' % (os.path.relpath(output_path), datetime.now() - start))
+    log.ODM_INFO('Completed smoothing to create %s in %s' % (os.path.relpath(output_path), datetime.now() - start))
 
     return output_path
