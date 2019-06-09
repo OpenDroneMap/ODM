@@ -27,11 +27,12 @@ class LocalRemoteExecutor:
     to use the processing power of the current machine as well as offloading tasks to a 
     network node.
     """
-    def __init__(self, nodeUrl):
+    def __init__(self, nodeUrl, rerun = False):
         self.node = Node.from_url(nodeUrl)
         self.params = {
             'tasks': [],
-            'threads': []
+            'threads': [],
+            'rerun': rerun
         }
         self.node_online = True
 
@@ -287,6 +288,10 @@ class Task:
     def path(self, *paths):
         return os.path.join(self.project_path, *paths)
 
+    def touch(self, file):
+        with open(file, 'w') as fout:
+            fout.write("Done!\n")
+
     def create_seed_payload(self, paths, touch_files=[]):
         paths = filter(os.path.exists, map(lambda p: self.path(p), paths))
         outfile = self.path("seed.zip")
@@ -321,7 +326,7 @@ class Task:
         except Exception as e:
             done(e)
 
-    def execute_remote_task(self, done, seed_files = [], seed_touch_files = [], outputs = []):
+    def execute_remote_task(self, done, seed_files = [], seed_touch_files = [], outputs = [], ):
         """
         Run a task by creating a seed file with all files in seed_files, optionally
         creating empty files (for flag checks) specified in seed_touch_files
@@ -339,10 +344,14 @@ class Task:
         # Add seed file
         images.append(seed_file)
 
+        class nonloc:
+            last_update = 0
+
         def print_progress(percentage):
-            if percentage % 10 == 0:
+            if (time.time() - nonloc.last_update >= 2) or int(percentage) == 100:
                 log.ODM_DEBUG("LRE: Upload of %s at [%s%%]" % (self, int(percentage)))
-        
+                nonloc.last_update = time.time()
+
         # Upload task
         task = self.node.create_task(images, 
                 get_submodel_args_dict(),
@@ -363,6 +372,7 @@ class Task:
             def monitor():
                 class nonloc:
                     status_callback_calls = 0
+                    last_update = 0
 
                 def status_callback(info):
                     # If a task switches from RUNNING to QUEUED, then we need to 
@@ -378,8 +388,9 @@ class Task:
                             nonloc.status_callback_calls = 0
                 try:
                     def print_progress(percentage):
-                        if percentage % 10 == 0:
+                        if (time.time() - nonloc.last_update >= 2) or int(percentage) == 100:
                             log.ODM_DEBUG("LRE: Download of %s at [%s%%]" % (self, int(percentage)))
+                            nonloc.last_update = time.time()
 
                     task.wait_for_completion(status_callback=status_callback)
                     log.ODM_DEBUG("LRE: Downloading assets for %s" % self)
@@ -430,42 +441,67 @@ class ReconstructionTask(Task):
         log.ODM_INFO("==================================")
         log.ODM_INFO("Local Reconstruction %s" % octx.name())
         log.ODM_INFO("==================================")
-        octx.feature_matching()
-        octx.reconstruct()
+        octx.feature_matching(self.params['rerun'])
+        octx.reconstruct(self.params['rerun'])
     
     def process_remote(self, done):
-        self.execute_remote_task(done, seed_files=["opensfm/exif", 
-                                            "opensfm/camera_models.json",
-                                            "opensfm/reference_lla.json"],
-                                 seed_touch_files=["opensfm/split_merge_stop_at_reconstruction.txt"],
-                                 outputs=["opensfm/matches", "opensfm/features", 
-                                          "opensfm/reconstruction.json",
-                                          "opensfm/tracks.csv"])
+        octx = OSFMContext(self.path("opensfm"))
+        if not octx.is_feature_matching_done() or not octx.is_reconstruction_done() or self.params['rerun']:
+            self.execute_remote_task(done, seed_files=["opensfm/exif", 
+                                                "opensfm/camera_models.json",
+                                                "opensfm/reference_lla.json"],
+                                    seed_touch_files=["opensfm/split_merge_stop_at_reconstruction.txt"],
+                                    outputs=["opensfm/matches", "opensfm/features", 
+                                            "opensfm/reconstruction.json",
+                                            "opensfm/tracks.csv"])
+        else:
+            log.ODM_INFO("Already processed feature matching and reconstruction for %s" % octx.name())
+            done()
 
 class ToolchainTask(Task):
     def process_local(self):
-        log.ODM_INFO("=============================")
-        log.ODM_INFO("Local Toolchain %s" % self)
-        log.ODM_INFO("=============================")
-
+        completed_file = self.path("toolchain_completed.txt")
         submodel_name = os.path.basename(self.project_path)
-        submodels_path = os.path.abspath(self.path(".."))
-        project_name = os.path.basename(os.path.abspath(os.path.join(submodels_path, "..")))
-        argv = get_submodel_argv(project_name, submodels_path, submodel_name)
+        
+        if not os.path.exists(completed_file) or self.params['rerun']:
+            log.ODM_INFO("=============================")
+            log.ODM_INFO("Local Toolchain %s" % self)
+            log.ODM_INFO("=============================")
 
-        # Re-run the ODM toolchain on the submodel
-        system.run(" ".join(map(quote, argv)), env_vars=os.environ.copy())
+            submodels_path = os.path.abspath(self.path(".."))
+            project_name = os.path.basename(os.path.abspath(os.path.join(submodels_path, "..")))
+            argv = get_submodel_argv(project_name, submodels_path, submodel_name)
 
+            # Re-run the ODM toolchain on the submodel
+            system.run(" ".join(map(quote, argv)), env_vars=os.environ.copy())
+
+            # This will only get executed if the command above succeeds
+            self.touch(completed_file)
+        else:
+            log.ODM_INFO("Already processed toolchain for %s" % submodel_name)
     
     def process_remote(self, done):
-        self.execute_remote_task(done, seed_files=["opensfm/camera_models.json",
-                                            "opensfm/reference_lla.json",
-                                            "opensfm/reconstruction.json",
-                                            "opensfm/tracks.csv"],
-                            seed_touch_files=["opensfm/features/empty",
-                                              "opensfm/matches/empty",
-                                              "opensfm/exif/empty"],
-                            outputs=["odm_orthophoto/odm_orthophoto.tif",
-                                    "odm_orthophoto/cutline.gpkg",
-                                    "odm_dem", 
-                                    "odm_georeferencing"])
+        completed_file = self.path("toolchain_completed.txt")
+        submodel_name = os.path.basename(self.project_path)
+
+        def handle_result(error = None):
+            # Mark task as completed if no error
+            if error is None:
+                self.touch(completed_file)
+            done(error=error)
+
+        if not os.path.exists(completed_file) or self.params['rerun']:
+            self.execute_remote_task(handle_result, seed_files=["opensfm/camera_models.json",
+                                                "opensfm/reference_lla.json",
+                                                "opensfm/reconstruction.json",
+                                                "opensfm/tracks.csv"],
+                                seed_touch_files=["opensfm/features/empty",
+                                                "opensfm/matches/empty",
+                                                "opensfm/exif/empty"],
+                                outputs=["odm_orthophoto/odm_orthophoto.tif",
+                                        "odm_orthophoto/cutline.gpkg",
+                                        "odm_dem", 
+                                        "odm_georeferencing"])
+        else:
+            log.ODM_INFO("Already processed toolchain for %s" % submodel_name)
+            handle_result()

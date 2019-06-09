@@ -8,8 +8,7 @@ ExternalProject_Add(${_proj_name}
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
-  URL               http://ceres-solver.org/ceres-solver-1.10.0.tar.gz
-  URL_MD5           dbf9f452bd46e052925b835efea9ab16
+  URL               http://ceres-solver.org/ceres-solver-1.14.0.tar.gz
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   #--Configure step-------------

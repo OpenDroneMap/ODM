@@ -1,6 +1,7 @@
 import os
 import json
 import numpy as np
+import math
 from repoze.lru import lru_cache
 from opendm import log
 
@@ -20,7 +21,30 @@ def rounded_gsd(reconstruction_json, default_value=None, ndigits=0, ignore_gsd=F
         return default_value
 
 
-def image_scale_factor(target_resolution, reconstruction_json, gsd_error_estimate = 0.1):
+def image_max_size(photos, target_resolution, reconstruction_json, gsd_error_estimate = 0.5, ignore_gsd=False):
+    """
+    :param photos images database
+    :param target_resolution resolution the user wants have in cm / pixel
+    :param reconstruction_json path to OpenSfM's reconstruction.json
+    :param gsd_error_estimate percentage of estimated error in the GSD calculation to set an upper bound on resolution.
+    :param ignore_gsd if set to True, simply return the largest side of the largest image in the images database.
+    :return A dimension in pixels calculated by taking the image_scale_factor and applying it to the size of the largest image.
+        Returned value is never higher than the size of the largest side of the largest image.
+    """
+    max_width = 0
+    max_height = 0
+    if ignore_gsd:
+        isf = 1.0
+    else:
+        isf = image_scale_factor(target_resolution, reconstruction_json, gsd_error_estimate)
+
+    for p in photos:
+        max_width = max(p.width, max_width)
+        max_height = max(p.height, max_height)
+
+    return int(math.ceil(max(max_width, max_height) * isf))
+
+def image_scale_factor(target_resolution, reconstruction_json, gsd_error_estimate = 0.5):
     """
     :param target_resolution resolution the user wants have in cm / pixel
     :param reconstruction_json path to OpenSfM's reconstruction.json

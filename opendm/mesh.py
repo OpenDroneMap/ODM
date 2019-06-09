@@ -7,7 +7,7 @@ from opendm import context
 from scipy import signal, ndimage
 import numpy as np
 
-def create_25dmesh(inPointCloud, outMesh, dsm_radius=0.07, dsm_resolution=0.05, depth=8, samples=1, maxVertexCount=100000, verbose=False, available_cores=None, method='gridded'):
+def create_25dmesh(inPointCloud, outMesh, dsm_radius=0.07, dsm_resolution=0.05, depth=8, samples=1, maxVertexCount=100000, verbose=False, available_cores=None, method='gridded', smooth_dsm=True):
     # Create DSM from point cloud
 
     # Create temporary directory
@@ -31,7 +31,8 @@ def create_25dmesh(inPointCloud, outMesh, dsm_radius=0.07, dsm_resolution=0.05, 
             outdir=tmp_directory,
             resolution=dsm_resolution,
             verbose=verbose,
-            max_workers=available_cores
+            max_workers=available_cores,
+            apply_smoothing=smooth_dsm
         )
 
     if method == 'gridded':
@@ -41,7 +42,7 @@ def create_25dmesh(inPointCloud, outMesh, dsm_radius=0.07, dsm_resolution=0.05, 
         mesh = screened_poisson_reconstruction(dsm_points, outMesh, depth=depth, 
                                     samples=samples, 
                                     maxVertexCount=maxVertexCount, 
-                                    threads=available_cores,
+                                    threads=max(1, available_cores - 1), # poissonrecon can get stuck on some machines if --threads == all cores
                                     verbose=verbose)
     else:
         raise 'Not a valid method: ' + method
