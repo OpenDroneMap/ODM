@@ -97,6 +97,7 @@ def dem_to_mesh_gridded(inGeotiff, outMesh, maxVertexCount, verbose=False):
 
     system.run('{bin} -inputFile {infile} '
          '-outputFile {outfile} '
+         '-maxTileLength 4000 '
          '-maxVertexCount {maxVertexCount} '
          ' {verbose} '.format(**kwargs))
 
