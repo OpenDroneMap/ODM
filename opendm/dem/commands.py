@@ -34,7 +34,7 @@ def classify(lasFile, scalar, slope, threshold, window, verbose=False):
 error = None
 
 def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56'], gapfill=True,
-                outdir='', resolution=0.1, max_workers=1, max_tile_size=2048,
+                outdir='', resolution=0.1, max_workers=1, max_tile_size=4096,
                 verbose=False, decimation=None, keep_unfilled_copy=False,
                 apply_smoothing=True):
     """ Create DEM from multiple radii, and optionally gapfill """
