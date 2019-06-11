@@ -67,14 +67,7 @@ class ODM_Photo:
         if self.camera_make and self.camera_model:
             self.make_model = sensor_string(self.camera_make, self.camera_model)
 
-        # needed to do that since sometimes metadata contains wrong data
-        try:
-            self.width, self.height = get_image_size.get_image_size(_path_file)
-        except get_image_size.UnknownImageFormat:
-            # Fallback to slower cv2
-            img = cv2.imread(_path_file)
-            self.width = img.shape[1]
-            self.height = img.shape[0]
+        self.width, self.height = get_image_size.get_image_size(_path_file)
 
     def dms_to_decimal(self, dms, sign):
         """Converts dms coords to decimal degrees"""
