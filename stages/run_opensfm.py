@@ -58,7 +58,7 @@ class ODMOpenSfMStage(types.ODM_Stage):
         self.update_progress(80)
 
         if not io.file_exists(tree.opensfm_reconstruction_nvm) or self.rerun():
-            octx.run('export_visualsfm')
+            octx.run('export_visualsfm --undistorted')
         else:
             log.ODM_WARNING('Found a valid OpenSfM NVM reconstruction file in: %s' %
                             tree.opensfm_reconstruction_nvm)
