@@ -21,12 +21,22 @@ def build(input_point_cloud_files, output_path, max_concurrency=8, rerun=False):
     kwargs = {
         'threads': max_concurrency,
         'tmpdir': tmpdir,
+        'all_inputs': "-i " + " ".join(map(quote, input_point_cloud_files)),
         'outputdir': output_path
     }
 
-    for in_file in input_point_cloud_files:
-        kwargs['input'] = in_file
-        system.run('entwine build --threads {threads} --tmp "{tmpdir}" -i "{input}" -o "{outputdir}"'.format(**kwargs))
+    # Run scan to compute dataset bounds
+    system.run('entwine scan --threads {threads} --tmp "{tmpdir}" {all_inputs} -o "{outputdir}"'.format(**kwargs))
+    scan_json = os.path.join(output_path, "scan.json")
+
+    if os.path.exists(scan_json):
+        kwargs['input'] = scan_json
+        for _ in range(num_files):
+            # One at a time
+            system.run('entwine build --threads {threads} --tmp "{tmpdir}" -i "{input}" -o "{outputdir}" --run 1'.format(**kwargs))
+    else:
+        log.ODM_WARNING("%s does not exist, no point cloud will be built." % scan_json)
+        
         
     if os.path.exists(tmpdir):
         shutil.rmtree(tmpdir)
