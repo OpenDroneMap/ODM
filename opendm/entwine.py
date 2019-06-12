@@ -26,8 +26,6 @@ def build(input_point_cloud_files, output_path, max_concurrency=8, rerun=False):
 
     for in_file in input_point_cloud_files:
         kwargs['input'] = in_file
-
-        # Single run
         system.run('entwine build --threads {threads} --tmp "{tmpdir}" -i "{input}" -o "{outputdir}"'.format(**kwargs))
         
     if os.path.exists(tmpdir):
