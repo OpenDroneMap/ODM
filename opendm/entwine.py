@@ -5,9 +5,19 @@ from opendm import io
 from opendm import log
 from opendm import system
 from opendm import concurrency
+import math
+
+def closest_power_of_4(x):  
+    if x <= 0:
+        return 1
+    n = 1
+    while n < x:
+        n *= 4
+    return n
 
 def build(input_point_cloud_files, output_path, max_concurrency=8, rerun=False):
-    if len(input_point_cloud_files) == 0:
+    num_files = len(input_point_cloud_files)
+    if num_files == 0:
         log.ODM_WARNING("No input point cloud files to process")
         return
 
@@ -24,7 +34,20 @@ def build(input_point_cloud_files, output_path, max_concurrency=8, rerun=False):
         'outputdir': output_path
     }
 
-    system.run("entwine build --threads {threads} --tmp {tmpdir} {input} -o {outputdir}".format(**kwargs))
+    entwine_cmd = "entwine build --threads {threads} --tmp {tmpdir} {input} -o {outputdir}".format(**kwargs)
 
+    # Need to split into subsets?
+    if num_files > 1:
+        subsets = closest_power_of_4(num_files)
+        for s in range(1, subsets + 1):
+            system.run(entwine_cmd + " --subset %s %s" % (s, subsets))
+
+        # Merge
+        # TODO: add --tmp {tmpdir}
+        system.run("entwine merge --threads {threads} -o {outputdir}".format(**kwargs))
+    else:
+        # Single run
+        system.run(entwine_cmd)
+        
     if os.path.exists(tmpdir):
         shutil.rmtree(tmpdir)
