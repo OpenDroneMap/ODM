@@ -237,9 +237,10 @@ def get_submodel_argv(project_name = None, submodels_path = None, submodel_name 
         adding --orthophoto-cutline
         adding --dem-euclidean-map
         adding --skip-3dmodel (split-merge does not support 3D model merging)
+        adding --use-fixed-camera-params (to mitigate bowl effect)
         removing --gcp (the GCP path if specified is always "gcp_list.txt")
     """
-    assure_always = ['--orthophoto-cutline', '--dem-euclidean-map', '--skip-3dmodel']
+    assure_always = ['--orthophoto-cutline', '--dem-euclidean-map', '--skip-3dmodel', '--use-fixed-camera-params']
     remove_always_2 = ['--split', '--split-overlap', '--rerun-from', '--rerun', '--gcp', '--end-with', '--sm-cluster']
     remove_always_1 = ['--rerun-all', '--pc-csv', '--pc-las', '--pc-ept']
 
