@@ -78,6 +78,19 @@ class OSFMContext:
                     if not photo.altitude:
                         has_alt = False
                     fout.write('%s\n' % io.join_paths(images_path, photo.filename))
+            
+            # check for image_groups.txt (split-merge)
+            image_groups_file = os.path.join(args.project_path, "image_groups.txt")
+            if io.file_exists(image_groups_file):
+                log.ODM_DEBUG("Copied image_groups.txt to OpenSfM directory")
+                io.copy(image_groups_file, os.path.join(self.opensfm_project_path, "image_groups.txt"))
+        
+            # check for camera_models.json
+            camera_models_file = os.path.join(args.project_path, "camera_models.json")
+            has_camera_calibration = io.file_exists(camera_models_file)
+            if has_camera_calibration:
+                log.ODM_DEBUG("Copied camera_models.json to OpenSfM directory (camera_models_overrides.json)")
+                io.copy(camera_models_file, os.path.join(self.opensfm_project_path, "camera_models_overrides.json"))
 
             # create config file for OpenSfM
             config = [
@@ -91,7 +104,7 @@ class OSFMContext:
                 "depthmap_resolution: %s" % args.depthmap_resolution,
                 "depthmap_min_patch_sd: %s" % args.opensfm_depthmap_min_patch_sd,
                 "depthmap_min_consistent_views: %s" % args.opensfm_depthmap_min_consistent_views,
-                "optimize_camera_parameters: %s" % ('no' if args.use_fixed_camera_params else 'yes'),
+                "optimize_camera_parameters: %s" % ('no' if args.use_fixed_camera_params or has_camera_calibration else 'yes'),
                 "undistorted_image_format: png" # mvs-texturing exhibits artifacts with JPG
             ]
 
@@ -120,12 +133,6 @@ class OSFMContext:
             config_filename = self.get_config_file_path()
             with open(config_filename, 'w') as fout:
                 fout.write("\n".join(config))
-
-            # check for image_groups.txt (split-merge)
-            image_groups_file = os.path.join(args.project_path, "image_groups.txt")
-            if io.file_exists(image_groups_file):
-                log.ODM_DEBUG("Copied image_groups.txt to OpenSfM directory")
-                io.copy(image_groups_file, os.path.join(self.opensfm_project_path, "image_groups.txt"))
         else:
             log.ODM_WARNING("%s already exists, not rerunning OpenSfM setup" % list_path)
 
