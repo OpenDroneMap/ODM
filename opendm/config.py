@@ -65,8 +65,9 @@ def config():
                         metavar='<integer>',
                         default=2048,
                         type=int,
-                        help='resizes images by the largest side for opensfm. '
-                             'Set to -1 to disable. Default:  %(default)s')
+                        help='Resizes images by the largest side for feature extraction. '
+                             'Set to -1 to disable. This does not affect the final orthophoto '
+                             ' resolution quality. Default:  %(default)s')
 
     parser.add_argument('--end-with', '-e',
                         metavar='<string>',
