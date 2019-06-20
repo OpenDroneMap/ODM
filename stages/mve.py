@@ -64,6 +64,7 @@ class ODMMveStage(types.ODM_Stage):
                 "-s%s" % mve_output_scale,
 	            "--progress=silent",
                 "--local-neighbors=2",
+                "--filter-width=3",
             ]
 
             # Run MVE's dmrecon
