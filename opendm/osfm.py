@@ -106,6 +106,7 @@ class OSFMContext:
                 "depthmap_min_consistent_views: %s" % args.opensfm_depthmap_min_consistent_views,
                 "optimize_camera_parameters: %s" % ('no' if args.use_fixed_camera_params or has_camera_calibration else 'yes'),
                 "undistorted_image_format: png", # mvs-texturing exhibits artifacts with JPG
+                "bundle_outlier_filtering_type: AUTO",
             ]
 
             if has_alt:
