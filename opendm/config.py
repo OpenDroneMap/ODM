@@ -59,6 +59,8 @@ def config():
     parser.add_argument('name',
                         metavar='<project name>',
                         type=alphanumeric_string,
+                        default='code',
+                        nargs='?',
                         help='Name of Project (i.e subdirectory of projects folder)')
 
     parser.add_argument('--resize-to',

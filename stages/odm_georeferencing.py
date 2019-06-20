@@ -80,20 +80,7 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                 else:
                     kwargs['pc_params'] = ''
  
-                # Check to see if the GCP file exists
-
-                if not self.params.get('use_exif') and (self.params.get('gcp_file') or tree.odm_georeferencing_gcp):
-                   log.ODM_INFO('Found %s' % gcpfile)
-                   try:
-                       system.run('{bin}/odm_georef -bundleFile {bundle} -imagesPath {imgs} -imagesListPath {imgs_list} '
-                                  '-inputFile {model} -outputFile {model_geo} '
-                                  '{pc_params} {verbose} '
-                                  '-logFile {log} -outputTransformFile {transform_file} -georefFileOutputPath {geo_sys} -gcpFile {gcp} '
-                                  '-outputCoordFile {coords}'.format(**kwargs))
-                   except Exception:
-                       log.ODM_EXCEPTION('Georeferencing failed. ')
-                       exit(1)
-                elif io.file_exists(tree.opensfm_transformation) and io.file_exists(tree.odm_georeferencing_coords):
+                if io.file_exists(tree.opensfm_transformation) and io.file_exists(tree.odm_georeferencing_coords):
                     log.ODM_INFO('Running georeferencing with OpenSfM transformation matrix')
                     system.run('{bin}/odm_georef -bundleFile {bundle} -inputTransformFile {input_trans_file} -inputCoordFile {coords} '
                                '-inputFile {model} -outputFile {model_geo} '
