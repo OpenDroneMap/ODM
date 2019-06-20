@@ -1,12 +1,15 @@
 import glob
 import os
 from opendm import log
+from opendm import location
+from pyproj import CRS
 
 class GCPFile:
     def __init__(self, gcp_path):
         self.gcp_path = gcp_path
         self.entries = []
-        self.srs = ""
+        self.raw_srs = ""
+        self.srs = None
         self.read()
     
     def read(self):
@@ -16,7 +19,8 @@ class GCPFile:
     
             lines = map(str.strip, contents.split('\n'))
             if lines:
-                self.srs = lines[0] # SRS
+                self.raw_srs = lines[0] # SRS
+                self.srs = location.parse_srs_header(self.raw_srs)
 
                 for line in lines[1:]:
                     if line != "" and line[0] != "#":
@@ -47,6 +51,18 @@ class GCPFile:
     def exists(self):
         return self.gcp_path and os.path.exists(self.gcp_path)
 
+    def wgs84_utm_zone(self):
+        """
+        Finds the UTM zone where the first point of the GCP falls into
+        :return utm zone string valid for a coordinates header
+        """
+        if len(self.entries) > 0:
+            point = list(self.entries_dict())[0]
+            longlat = CRS.from_epsg("4326")
+            lat, lon = location.transform(self.srs, longlat, point['x'], point['y'])
+            utm_zone, hemisphere = location.get_utm_zone_and_hemisphere_from(lon, lat)
+            return "WGS84 UTM %s%s" % (utm_zone, hemisphere)
+
     def make_filtered_copy(self, gcp_file_output, images_dir, min_images=3):
         """
         Creates a new GCP file from an existing GCP file includes
@@ -62,7 +78,7 @@ class GCPFile:
 
         files = map(os.path.basename, glob.glob(os.path.join(images_dir, "*")))
 
-        output = [self.srs]
+        output = [self.raw_srs]
         files_found = 0
         
         for entry in self.entries_dict():

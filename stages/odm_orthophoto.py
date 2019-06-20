@@ -38,19 +38,17 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
 
             # Check if the georef object is initialized
             # (during a --rerun this might not be)
-            # TODO: we should move this to a more central
-            # location (perhaps during the dataset initialization)
-            if georef and not georef.utm_east_offset:
+            # TODO: this should be moved to a more central location?
+            if reconstruction.is_georeferenced() and not reconstruction.georef.valid_utm_offsets():
                 georeferencing_dir = tree.odm_georeferencing if args.use_3dmesh and not args.skip_3dmodel else tree.odm_25dgeoreferencing
                 odm_georeferencing_model_txt_geo_file = os.path.join(georeferencing_dir, tree.odm_georeferencing_model_txt_geo)
 
                 if io.file_exists(odm_georeferencing_model_txt_geo_file):
-                    georef.extract_offsets(odm_georeferencing_model_txt_geo_file)
+                    reconstruction.georef.extract_offsets(odm_georeferencing_model_txt_geo_file)
                 else:
                     log.ODM_WARNING('Cannot read UTM offset from {}. An orthophoto will not be generated.'.format(odm_georeferencing_model_txt_geo_file))
 
-
-            if georef:
+            if reconstruction.is_georeferenced():
                 if args.use_3dmesh:
                     kwargs['model_geo'] = os.path.join(tree.odm_texturing, tree.odm_georeferencing_model_obj_geo)
                 else:
@@ -69,7 +67,7 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
             # Create georeferenced GeoTiff
             geotiffcreated = False
 
-            if georef and georef.projection and georef.utm_east_offset and georef.utm_north_offset:
+            if reconstruction.is_georeferenced() and reconstruction.georef.valid_utm_offsets():
                 ulx = uly = lrx = lry = 0.0
                 with open(tree.odm_orthophoto_corners) as f:
                     for lineNumber, line in enumerate(f):
@@ -77,13 +75,13 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                             tokens = line.split(' ')
                             if len(tokens) == 4:
                                 ulx = float(tokens[0]) + \
-                                    float(georef.utm_east_offset)
+                                    float(reconstruction.georef.utm_east_offset)
                                 lry = float(tokens[1]) + \
-                                    float(georef.utm_north_offset)
+                                    float(reconstruction.georef.utm_north_offset)
                                 lrx = float(tokens[2]) + \
-                                    float(georef.utm_east_offset)
+                                    float(reconstruction.georef.utm_east_offset)
                                 uly = float(tokens[3]) + \
-                                    float(georef.utm_north_offset)
+                                    float(reconstruction.georef.utm_north_offset)
                 log.ODM_INFO('Creating GeoTIFF')
 
                 orthophoto_vars = orthophoto.get_orthophoto_vars(args)
@@ -94,7 +92,7 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                     'lrx': lrx,
                     'lry': lry,
                     'vars': ' '.join(['-co %s=%s' % (k, orthophoto_vars[k]) for k in orthophoto_vars]),
-                    'proj': georef.projection.srs,
+                    'proj': reconstruction.georef.proj4(),
                     'png': tree.odm_orthophoto_file,
                     'tiff': tree.odm_orthophoto_tif,
                     'log': tree.odm_orthophoto_tif_log,
