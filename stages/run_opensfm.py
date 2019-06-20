@@ -84,7 +84,7 @@ class ODMOpenSfMStage(types.ODM_Stage):
 
         self.update_progress(90)
 
-        if reconstruction.georef and (not io.file_exists(tree.opensfm_transformation) or self.rerun()):
-            octx.run('export_geocoords --transformation --proj \'%s\'' % reconstruction.georef.projection.srs)
+        if reconstruction.is_georeferenced() and (not io.file_exists(tree.opensfm_transformation) or self.rerun()):
+            octx.run('export_geocoords --transformation --proj \'%s\'' % reconstruction.georef.proj4())
         else:
             log.ODM_WARNING("Will skip exporting %s" % tree.opensfm_transformation)

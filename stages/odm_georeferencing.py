@@ -20,7 +20,6 @@ class ODMGeoreferencingStage(types.ODM_Stage):
         doPointCloudGeo = True
         transformPointCloud = True
         verbose = '-verbose' if self.params.get('verbose') else ''
-        geo_ref = reconstruction.georef
 
         runs = [{
             'georeferencing_dir': tree.odm_georeferencing,
@@ -73,8 +72,8 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                 if transformPointCloud:
                     kwargs['pc_params'] = '-inputPointCloudFile {input_pc_file} -outputPointCloudFile {output_pc_file}'.format(**kwargs)
 
-                    if geo_ref and geo_ref.projection and geo_ref.projection.srs:
-                        kwargs['pc_params'] += ' -outputPointCloudSrs %s' % pipes.quote(geo_ref.projection.srs)
+                    if reconstruction.is_georeferenced():
+                        kwargs['pc_params'] += ' -outputPointCloudSrs %s' % pipes.quote(reconstruction.georef.proj4())
                     else:
                         log.ODM_WARNING('NO SRS: The output point cloud will not have a SRS.')
                 else:
@@ -99,9 +98,7 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                     doPointCloudGeo = False # skip the rest of the georeferencing
 
                 if doPointCloudGeo:
-                    # update images metadata
-                    geo_ref.extract_offsets(odm_georeferencing_model_txt_geo_file)
-                    reconstruction.georef = geo_ref
+                    reconstruction.georef.extract_offsets(odm_georeferencing_model_txt_geo_file)
 
                     # XYZ point cloud output
                     if args.pc_csv:
