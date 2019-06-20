@@ -124,6 +124,7 @@ class OSFMContext:
 
             if gcp_path:
                 config.append("bundle_use_gcp: yes")
+                config.append("bundle_use_gps: no")
                 io.copy(gcp_path, self.path("gcp_list.txt"))
             
             config = config + append_config
