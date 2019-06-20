@@ -64,7 +64,7 @@ class ODMMveStage(types.ODM_Stage):
                 "-s%s" % mve_output_scale,
 	            "--progress=silent",
                 "--local-neighbors=2",
-                "--filter-width=3",
+                # "--filter-width=3",
             ]
 
             # Run MVE's dmrecon
@@ -136,6 +136,17 @@ class ODMMveStage(types.ODM_Stage):
 
             # run scene2pset
             system.run('%s %s "%s" "%s"' % (context.scene2pset_path, ' '.join(scene2pset_config), tree.mve, tree.mve_model), env_vars={'OMP_NUM_THREADS': args.max_concurrency})
+        
+            # run cleanmesh (filter points by MVE confidence threshold)
+            if args.mve_confidence > 0:
+                mve_filtered_model = io.related_file_path(tree.mve_model, postfix=".filtered")
+                system.run('%s -t%s --no-clean --component-size=0 "%s" "%s"' % (context.meshclean_path, min(1.0, args.mve_confidence), tree.mve_model, mve_filtered_model), env_vars={'OMP_NUM_THREADS': args.max_concurrency})
+
+                if io.file_exists(mve_filtered_model):
+                    os.remove(tree.mve_model)
+                    os.rename(mve_filtered_model, tree.mve_model)
+                else:
+                    log.ODM_WARNING("Couldn't filter MVE model (%s does not exist)." % mve_filtered_model)
         else:
             log.ODM_WARNING('Found a valid MVE reconstruction file in: %s' %
                             tree.mve_model)
