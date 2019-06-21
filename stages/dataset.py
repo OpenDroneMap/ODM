@@ -101,11 +101,16 @@ class ODMLoadDatasetStage(types.ODM_Stage):
 
         # Create reconstruction object
         reconstruction = types.ODM_Reconstruction(photos)
-
+        
         if tree.odm_georeferencing_gcp:
-            reconstruction.georeference_with_gcp(tree.odm_georeferencing_gcp, tree.odm_georeferencing_coords, reload_coords=self.rerun())
+            reconstruction.georeference_with_gcp(tree.odm_georeferencing_gcp,
+                                                 tree.odm_georeferencing_coords,
+                                                 tree.odm_georeferencing_gcp_utm,
+                                                 rerun=self.rerun())
         else:
-            reconstruction.georeference_with_gps(tree.dataset_raw, tree.odm_georeferencing_coords, reload_coords=self.rerun())
+            reconstruction.georeference_with_gps(tree.dataset_raw, 
+                                                 tree.odm_georeferencing_coords, 
+                                                 rerun=self.rerun())
 
         reconstruction.save_proj_srs(io.join_paths(tree.odm_georeferencing, tree.odm_georeferencing_proj))
         outputs['reconstruction'] = reconstruction

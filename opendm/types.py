@@ -92,31 +92,53 @@ class ODM_Reconstruction(object):
     def __init__(self, photos):
         self.photos = photos
         self.georef = None
+        self.gcp = None
 
     def is_georeferenced(self):
         return self.georef is not None
 
-    def georeference_with_gcp(self, gcp_file, output_coords_file, reload_coords=False):
-        if not io.file_exists(output_coords_file) or reload_coords:
+    def georeference_with_gcp(self, gcp_file, output_coords_file, output_gcp_file, rerun=False):
+        if not io.file_exists(output_coords_file) or not io.file_exists(output_gcp_file) or rerun:
             gcp = GCPFile(gcp_file)
             if gcp.exists():
-                # Create coords file
+                # Create coords file, we'll be using this later
+                # during georeferencing
                 with open(output_coords_file, 'w') as f:
                     coords_header = gcp.wgs84_utm_zone()
                     f.write(coords_header + "\n")
                     log.ODM_DEBUG("Generated coords file from GCP: %s" % coords_header)
+
+                # Convert GCP file to a UTM projection since the rest of the pipeline
+                # does not handle other SRS well.
+                rejected_entries = []
+                utm_gcp = GCPFile(gcp.create_utm_copy(output_gcp_file, filenames=[p.filename for p in self.photos], rejected_entries=rejected_entries))
+                
+                if not utm_gcp.exists():
+                    raise RuntimeError("Could not project GCP file to UTM. Please double check your GCP file for mistakes.")
+                
+                for re in rejected_entries:
+                    log.ODM_WARNING("GCP line ignored (image not found): %s" % str(re))
+                
+                if utm_gcp.entries_count() > 0:
+                    log.ODM_INFO("%s GCP points will be used for georeferencing" % utm_gcp.entries_count())
+                else:
+                    raise RuntimeError("A GCP file was provided, but no valid GCP entries could be used. Note that the GCP file is case sensitive (\".JPG\" is not the same as \".jpg\").")
+
+                self.gcp = utm_gcp
             else:
                 log.ODM_WARNING("GCP file does not exist: %s" % gcp_file)
                 return
         else:
             log.ODM_INFO("Coordinates file already exist: %s" % output_coords_file)
+            log.ODM_INFO("GCP file already exist: %s" % output_gcp_file)
+            self.gcp = GCPFile(output_gcp_file)
         
         self.georef = ODM_GeoRef.FromCoordsFile(output_coords_file)
         return self.georef
 
-    def georeference_with_gps(self, images_path, output_coords_file, reload_coords=False):
+    def georeference_with_gps(self, images_path, output_coords_file, rerun=False):
         try:
-            if not io.file_exists(output_coords_file) or reload_coords:
+            if not io.file_exists(output_coords_file) or rerun:
                 location.extract_utm_coords(photos, tree.dataset_raw, output_coords_file)
             else:
                 log.ODM_INFO("Coordinates file already exist: %s" % output_coords_file)
@@ -267,6 +289,7 @@ class ODM_Tree(object):
         self.odm_georeferencing_coords = io.join_paths(
             self.odm_georeferencing, 'coords.txt')
         self.odm_georeferencing_gcp = gcp_file or io.find('gcp_list.txt', self.root_path)
+        self.odm_georeferencing_gcp_utm = io.join_paths(self.odm_georeferencing, 'gcp_list_utm.txt')
         self.odm_georeferencing_utm_log = io.join_paths(
             self.odm_georeferencing, 'odm_georeferencing_utm_log.txt')
         self.odm_georeferencing_log = 'odm_georeferencing_log.txt'

@@ -16,7 +16,6 @@ class ODMGeoreferencingStage(types.ODM_Stage):
         tree = outputs['tree']
         reconstruction = outputs['reconstruction']
 
-        gcpfile = tree.odm_georeferencing_gcp
         doPointCloudGeo = True
         transformPointCloud = True
         verbose = '-verbose' if self.params.get('verbose') else ''
@@ -65,7 +64,6 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                     'output_pc_file': tree.odm_georeferencing_model_laz,
                     'geo_sys': odm_georeferencing_model_txt_geo_file,
                     'model_geo': odm_georeferencing_model_obj_geo,
-                    'gcp': gcpfile,
                     'verbose': verbose
                 }
 

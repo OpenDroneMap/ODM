@@ -50,7 +50,7 @@ class ODMSplitStage(types.ODM_Stage):
                     "submodel_overlap: %s" % args.split_overlap,
                 ]
 
-                octx.setup(args, tree.dataset_raw, photos, gcp_path=tree.odm_georeferencing_gcp, append_config=config, rerun=self.rerun())
+                octx.setup(args, tree.dataset_raw, photos, gcp_path=reconstruction.gcp.gcp_path, append_config=config, rerun=self.rerun())
                 octx.extract_metadata(self.rerun())
 
                 self.update_progress(5)
@@ -74,18 +74,16 @@ class ODMSplitStage(types.ODM_Stage):
                 mds = metadataset.MetaDataSet(tree.opensfm)
                 submodel_paths = [os.path.abspath(p) for p in mds.get_submodel_paths()]
 
-                gcp_file = GCPFile(tree.odm_georeferencing_gcp)
-
                 for sp in submodel_paths:
                     sp_octx = OSFMContext(sp)
 
                     # Copy filtered GCP file if needed
                     # One in OpenSfM's directory, one in the submodel project directory
-                    if gcp_file.exists():
+                    if reconstruction.gcp and reconstruction.gcp.exists():
                         submodel_gcp_file = os.path.abspath(sp_octx.path("..", "gcp_list.txt"))
                         submodel_images_dir = os.path.abspath(sp_octx.path("..", "images"))
 
-                        if gcp_file.make_filtered_copy(submodel_gcp_file, submodel_images_dir):
+                        if reconstruction.gcp.make_filtered_copy(submodel_gcp_file, submodel_images_dir):
                             log.ODM_DEBUG("Copied filtered GCP file to %s" % submodel_gcp_file)
                             io.copy(submodel_gcp_file, os.path.abspath(sp_octx.path("gcp_list.txt")))
                         else:
