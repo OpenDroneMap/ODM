@@ -139,7 +139,7 @@ class ODM_Reconstruction(object):
     def georeference_with_gps(self, images_path, output_coords_file, rerun=False):
         try:
             if not io.file_exists(output_coords_file) or rerun:
-                location.extract_utm_coords(photos, tree.dataset_raw, output_coords_file)
+                location.extract_utm_coords(self.photos, images_path, output_coords_file)
             else:
                 log.ODM_INFO("Coordinates file already exist: %s" % output_coords_file)
             
