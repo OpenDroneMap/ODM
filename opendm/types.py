@@ -147,6 +147,7 @@ class ODM_Reconstruction(object):
         except:
             log.ODM_WARNING('Could not generate coordinates file. An orthophoto will not be generated.')
 
+        self.gcp = GCPFile(None)
         return self.georef
 
     def save_proj_srs(self, file):

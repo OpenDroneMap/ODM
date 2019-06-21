@@ -6,9 +6,6 @@ from pyproj import CRS
 
 class GCPFile:
     def __init__(self, gcp_path):
-        if not gcp_path:
-            raise RuntimeError("gcp_path must be specified")
-
         self.gcp_path = gcp_path
         self.entries = []
         self.raw_srs = ""

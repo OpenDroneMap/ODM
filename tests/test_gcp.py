@@ -53,5 +53,9 @@ class TestGcp(unittest.TestCase):
         self.assertTrue(copy.exists())
         self.assertEqual(copy.entries_count(), 1)
 
+    def test_null_gcp(self):
+        gcp = GCPFile(None)
+        self.assertFalse(gcp.exists())
+
 if __name__ == '__main__':
     unittest.main()
