@@ -18,7 +18,7 @@ class GCPFile:
     def read(self):
         if self.exists():
             with open(self.gcp_path, 'r') as f:
-                contents = f.read().strip()
+                contents = f.read().decode('utf-8-sig').encode('utf-8').strip()
     
             lines = map(str.strip, contents.split('\n'))
             if lines:
@@ -33,12 +33,9 @@ class GCPFile:
                         else:
                             log.ODM_WARNING("Malformed GCP line: %s" % line)
 
-    def iter_entries(self, allowed_filenames=None):
+    def iter_entries(self):
         for entry in self.entries:
-            pe = self.parse_entry(entry)
-
-            if allowed_filenames is None or pe.filename in allowed_filenames:
-                yield pe
+            yield self.parse_entry(entry)
     
     def parse_entry(self, entry):
         if entry:
@@ -69,11 +66,12 @@ class GCPFile:
             utm_zone, hemisphere = location.get_utm_zone_and_hemisphere_from(lon, lat)
             return "WGS84 UTM %s%s" % (utm_zone, hemisphere)
 
-    def create_utm_copy(self, gcp_file_output, filenames=None):
+    def create_utm_copy(self, gcp_file_output, filenames=None, rejected_entries=None):
         """
         Creates a new GCP file from an existing GCP file
         by optionally including only filenames and reprojecting each point to 
-        a UTM CRS
+        a UTM CRS. Rejected entries can recorded by passing a list object to 
+        rejected_entries.
         """
         if os.path.exists(gcp_file_output):
             os.remove(gcp_file_output)
@@ -82,9 +80,12 @@ class GCPFile:
         target_srs = location.parse_srs_header(output[0])
         transformer = location.transformer(self.srs, target_srs)
 
-        for entry in self.iter_entries(filenames):
-            entry.x, entry.y, entry.z = transformer.TransformPoint(entry.x, entry.y, entry.z)
-            output.append(str(entry))
+        for entry in self.iter_entries():
+            if filenames is None or entry.filename in filenames:
+                entry.x, entry.y, entry.z = transformer.TransformPoint(entry.x, entry.y, entry.z)
+                output.append(str(entry))
+            elif isinstance(rejected_entries, list):
+                rejected_entries.append(entry)
 
         with open(gcp_file_output, 'w') as f:
             f.write('\n'.join(output) + '\n')

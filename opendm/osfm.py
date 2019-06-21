@@ -58,7 +58,7 @@ class OSFMContext:
             raise Exception("Reconstruction could not be generated")
 
 
-    def setup(self, args, images_path, photos, gcp_path=None, append_config = [], rerun=False): #georeferenced=True, 
+    def setup(self, args, images_path, photos, gcp_path=None, append_config = [], rerun=False):
         """
         Setup a OpenSfM project
         """
@@ -109,6 +109,8 @@ class OSFMContext:
                 "bundle_outlier_filtering_type: AUTO",
             ]
 
+            # TODO: add BOW matching when dataset is not georeferenced (no gps)
+
             if has_alt:
                 log.ODM_DEBUG("Altitude data detected, enabling it for GPS alignment")
                 config.append("use_altitude_tag: yes")
@@ -117,10 +119,6 @@ class OSFMContext:
                 config.append("align_method: orientation_prior")
                 config.append("align_orientation_prior: vertical")
             
-            # if not georeferenced:
-            #     config.append("")
-
-
             if args.use_hybrid_bundle_adjustment:
                 log.ODM_DEBUG("Enabling hybrid bundle adjustment")
                 config.append("bundle_interval: 100")          # Bundle after adding 'bundle_interval' cameras

@@ -21,7 +21,7 @@ class ODMOpenSfMStage(types.ODM_Stage):
             exit(1)
 
         octx = OSFMContext(tree.opensfm)
-        octx.setup(args, tree.dataset_raw, photos, gcp_path=tree.odm_georeferencing_gcp, rerun=self.rerun())
+        octx.setup(args, tree.dataset_raw, photos, gcp_path=reconstruction.gcp.gcp_path, rerun=self.rerun())
         octx.extract_metadata(self.rerun())
         self.update_progress(20)
         octx.feature_matching(self.rerun())
