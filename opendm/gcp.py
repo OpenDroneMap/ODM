@@ -6,6 +6,9 @@ from pyproj import CRS
 
 class GCPFile:
     def __init__(self, gcp_path):
+        if not gcp_path:
+            raise RuntimeError("gcp_path must be specified")
+
         self.gcp_path = gcp_path
         self.entries = []
         self.raw_srs = ""
@@ -30,38 +33,63 @@ class GCPFile:
                         else:
                             log.ODM_WARNING("Malformed GCP line: %s" % line)
 
-    def entries_dict(self):
+    def iter_entries(self, allowed_filenames=None):
         for entry in self.entries:
+            pe = self.parse_entry(entry)
+
+            if allowed_filenames is None or pe.filename in allowed_filenames:
+                yield pe
+    
+    def parse_entry(self, entry):
+        if entry:
             parts = entry.split()
             x, y, z, px, py, filename = parts[:6]
             extras = " ".join(parts[6:])
-            yield {
-                'x': x,
-                'y': y,
-                'z': z,
-                'px': px,
-                'py': py,
-                'filename': filename,
-                'extras': extras
-            }
-    
-    def entry_dict_to_s(self, entry):
-        return "{x} {y} {z} {px} {py} {filename} {extras}".format(**entry).rstrip()
-    
+            return GCPEntry(float(x), float(y), float(z), int(px), int(py), filename, extras)
+
+    def get_entry(self, n):
+        if n < self.entries_count():
+            return self.parse_entry(self.entries[n])
+
+    def entries_count(self):
+        return len(self.entries)
+   
     def exists(self):
-        return self.gcp_path and os.path.exists(self.gcp_path)
+        return bool(self.gcp_path and os.path.exists(self.gcp_path))
 
     def wgs84_utm_zone(self):
         """
         Finds the UTM zone where the first point of the GCP falls into
         :return utm zone string valid for a coordinates header
         """
-        if len(self.entries) > 0:
-            point = list(self.entries_dict())[0]
+        if self.entries_count() > 0:
+            entry = self.get_entry(0)
             longlat = CRS.from_epsg("4326")
-            lat, lon = location.transform(self.srs, longlat, point['x'], point['y'])
+            lon, lat = location.transform2(self.srs, longlat, entry.x, entry.y)
             utm_zone, hemisphere = location.get_utm_zone_and_hemisphere_from(lon, lat)
             return "WGS84 UTM %s%s" % (utm_zone, hemisphere)
+
+    def create_utm_copy(self, gcp_file_output, filenames=None):
+        """
+        Creates a new GCP file from an existing GCP file
+        by optionally including only filenames and reprojecting each point to 
+        a UTM CRS
+        """
+        if os.path.exists(gcp_file_output):
+            os.remove(gcp_file_output)
+
+        output = [self.wgs84_utm_zone()]
+        target_srs = location.parse_srs_header(output[0])
+        transformer = location.transformer(self.srs, target_srs)
+
+        for entry in self.iter_entries(filenames):
+            entry.x, entry.y, entry.z = transformer.TransformPoint(entry.x, entry.y, entry.z)
+            output.append(str(entry))
+
+        with open(gcp_file_output, 'w') as f:
+            f.write('\n'.join(output) + '\n')
+
+        return gcp_file_output
 
     def make_filtered_copy(self, gcp_file_output, images_dir, min_images=3):
         """
@@ -81,9 +109,9 @@ class GCPFile:
         output = [self.raw_srs]
         files_found = 0
         
-        for entry in self.entries_dict():
-            if entry['filename'] in files:
-                output.append(self.entry_dict_to_s(entry))
+        for entry in self.iter_entries():
+            if entry.filename in files:
+                output.append(str(entry))
                 files_found += 1
 
         if files_found >= min_images:
@@ -91,3 +119,19 @@ class GCPFile:
                 f.write('\n'.join(output) + '\n')
 
             return gcp_file_output
+
+class GCPEntry:
+    def __init__(self, x, y, z, px, py, filename, extras=""):
+        self.x = x
+        self.y = y
+        self.z = z
+        self.px = px
+        self.py = py
+        self.filename = filename
+        self.extras = extras
+    
+    def __str__(self):
+        return "{} {} {} {} {} {} {}".format(self.x, self.y, self.z, 
+                                             self.px, self.py, 
+                                             self.filename, 
+                                             self.extras).rstrip()

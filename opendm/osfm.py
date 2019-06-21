@@ -58,7 +58,7 @@ class OSFMContext:
             raise Exception("Reconstruction could not be generated")
 
 
-    def setup(self, args, images_path, photos, gcp_path=None, append_config = [], rerun=False):
+    def setup(self, args, images_path, photos, gcp_path=None, append_config = [], rerun=False): #georeferenced=True, 
         """
         Setup a OpenSfM project
         """
@@ -116,6 +116,10 @@ class OSFMContext:
             else:
                 config.append("align_method: orientation_prior")
                 config.append("align_orientation_prior: vertical")
+            
+            # if not georeferenced:
+            #     config.append("")
+
 
             if args.use_hybrid_bundle_adjustment:
                 log.ODM_DEBUG("Enabling hybrid bundle adjustment")

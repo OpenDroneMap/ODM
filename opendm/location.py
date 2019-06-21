@@ -1,6 +1,7 @@
 import math
 from opendm import log
 from pyproj import Proj, Transformer, CRS
+from osgeo import osr
 
 def extract_utm_coords(photos, images_path, output_coords_file):
     """
@@ -54,10 +55,32 @@ def extract_utm_coords(photos, images_path, output_coords_file):
         for coord in coords:
             f.write("%s %s %s\n" % (coord[0] - dx, coord[1] - dy, coord[2]))
     
-def transform(from_srs, to_srs, x, y):
-    transformer = Transformer.from_crs(from_srs, to_srs)
-    return transformer.transform(x, y)
+def transform2(from_srs, to_srs, x, y):
+    return transformer(from_srs, to_srs).TransformPoint(x, y, 0)[:2]
 
+def transform3(from_srs, to_srs, x, y, z):
+    return transformer(from_srs, to_srs).TransformPoint(x, y, z)
+
+def proj_srs_convert(srs):
+    """
+    Convert a Proj SRS object to osr SRS object
+    """
+    res = osr.SpatialReference()
+    epsg = srs.to_epsg()
+
+    if epsg:
+        res.ImportFromEPSG(epsg)
+    else:
+        proj4 = srs.to_proj4()
+        res.ImportFromProj4(proj4)
+    
+    return res
+
+def transformer(from_srs, to_srs):
+    src = proj_srs_convert(from_srs)
+    tgt = proj_srs_convert(to_srs)
+    return osr.CoordinateTransformation(src, tgt)
+    
 def get_utm_zone_and_hemisphere_from(lon, lat):
     """
     Calculate the UTM zone and hemisphere that a longitude/latitude pair falls on
@@ -107,7 +130,7 @@ def parse_srs_header(header):
                 'datum': datum
             }
 
-            proj4 = '+proj=utm +zone={zone} +datum={datum} +no_defs=True'
+            proj4 = '+proj=utm +zone={zone} +datum={datum} +units=m +no_defs=True'
             if utm_pole == 'S':
                 proj4 += ' +south=True'
 
