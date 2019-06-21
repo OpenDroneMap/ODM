@@ -103,7 +103,7 @@ class ODMLoadDatasetStage(types.ODM_Stage):
         reconstruction = types.ODM_Reconstruction(photos)
 
         if tree.odm_georeferencing_gcp:
-            reconstruction.georeference_with_gcp(tree.odm_georeferencing_gcp, tree.odm_georeferencing_coords)
+            reconstruction.georeference_with_gcp(tree.odm_georeferencing_gcp, tree.odm_georeferencing_coords, reload_coords=self.rerun())
         else:
             reconstruction.georeference_with_gps(tree.dataset_raw, tree.odm_georeferencing_coords, reload_coords=self.rerun())
 

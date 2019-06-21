@@ -95,17 +95,13 @@ def config():
                        choices=processopts,
                        help=('Can be one of:' + ' | '.join(processopts)))
 
-    parser.add_argument('--video',
-                        metavar='<string>',
-                        help='Path to the video file to process')
+    # parser.add_argument('--video',
+    #                     metavar='<string>',
+    #                     help='Path to the video file to process')
 
-    parser.add_argument('--slam-config',
-                        metavar='<string>',
-                        help='Path to config file for orb-slam')
-
-    parser.add_argument('--proj',
-                        metavar='<PROJ4 string>',
-                        help='Projection used to transform the model into geographic coordinates')
+    # parser.add_argument('--slam-config',
+    #                     metavar='<string>',
+    #                     help='Path to config file for orb-slam')
 
     parser.add_argument('--min-num-features',
                         metavar='<integer>',
