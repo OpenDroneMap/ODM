@@ -114,6 +114,8 @@ class OSFMContext:
             if has_alt:
                 log.ODM_DEBUG("Altitude data detected, enabling it for GPS alignment")
                 config.append("use_altitude_tag: yes")
+
+            if has_alt or gcp_path:
                 config.append("align_method: naive")
             else:
                 config.append("align_method: orientation_prior")
