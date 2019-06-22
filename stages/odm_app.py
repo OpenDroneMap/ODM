@@ -26,8 +26,7 @@ class ODMApp:
         """
         
         dataset = ODMLoadDatasetStage('dataset', args, progress=5.0,
-                                          verbose=args.verbose,
-                                          proj=args.proj)
+                                          verbose=args.verbose)
         split = ODMSplitStage('split', args, progress=75.0)
         merge = ODMMergeStage('merge', args, progress=100.0)
         opensfm = ODMOpenSfMStage('opensfm', args, progress=25.0)
@@ -59,36 +58,34 @@ class ODMApp:
                             verbose=args.verbose)
         orthophoto = ODMOrthoPhotoStage('odm_orthophoto', args, progress=100.0)
 
-        if not args.video:
-            # Normal pipeline
-            self.first_stage = dataset
+        # Normal pipeline
+        self.first_stage = dataset
 
-            dataset.connect(split) \
-                   .connect(merge) \
-                   .connect(opensfm)
+        dataset.connect(split) \
+                .connect(merge) \
+                .connect(opensfm)
 
-            if args.use_opensfm_dense or args.fast_orthophoto:
-                opensfm.connect(filterpoints)
-            else:
-                opensfm.connect(mve) \
-                       .connect(filterpoints)
-            
-            filterpoints \
-                .connect(meshing) \
-                .connect(texturing) \
-                .connect(georeferencing) \
-                .connect(dem) \
-                .connect(orthophoto)
-                
+        if args.use_opensfm_dense or args.fast_orthophoto:
+            opensfm.connect(filterpoints)
         else:
-            # SLAM pipeline
-            # TODO: this is broken and needs work
-            log.ODM_WARNING("SLAM module is currently broken. We could use some help fixing this. If you know Python, get in touch at https://community.opendronemap.org.")
-            self.first_stage = slam
+            opensfm.connect(mve) \
+                    .connect(filterpoints)
+        
+        filterpoints \
+            .connect(meshing) \
+            .connect(texturing) \
+            .connect(georeferencing) \
+            .connect(dem) \
+            .connect(orthophoto)
+                
+        # # SLAM pipeline
+        # # TODO: this is broken and needs work
+        # log.ODM_WARNING("SLAM module is currently broken. We could use some help fixing this. If you know Python, get in touch at https://community.opendronemap.org.")
+        # self.first_stage = slam
 
-            slam.connect(mve) \
-                .connect(meshing) \
-                .connect(texturing)
+        # slam.connect(mve) \
+        #     .connect(meshing) \
+        #     .connect(texturing)
 
     def execute(self):
         self.first_stage.run()

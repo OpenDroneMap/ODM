@@ -5,7 +5,9 @@ import os
 from fractions import Fraction
 from opensfm.exif import sensor_string
 from opendm import get_image_size
-from pyproj import Proj
+from opendm import location
+from opendm.gcp import GCPFile
+from pyproj import CRS
 
 import log
 import io
@@ -67,14 +69,7 @@ class ODM_Photo:
         if self.camera_make and self.camera_model:
             self.make_model = sensor_string(self.camera_make, self.camera_model)
 
-        # needed to do that since sometimes metadata contains wrong data
-        try:
-            self.width, self.height = get_image_size.get_image_size(_path_file)
-        except get_image_size.UnknownImageFormat:
-            # Fallback to slower cv2
-            img = cv2.imread(_path_file)
-            self.width = img.shape[1]
-            self.height = img.shape[0]
+        self.width, self.height = get_image_size.get_image_size(_path_file)
 
     def dms_to_decimal(self, dms, sign):
         """Converts dms coords to decimal degrees"""
@@ -94,121 +89,126 @@ class ODM_Photo:
 
 
 class ODM_Reconstruction(object):
-    """docstring for ODMReconstruction"""
-
-    def __init__(self, photos, projstring = None, coords_file = None):
-        self.photos = photos    # list of ODM_Photos
-        self.projection = None  # Projection system the whole project will be in
+    def __init__(self, photos):
+        self.photos = photos
         self.georef = None
-        if projstring:
-            self.projection = self.set_projection(projstring)
-            self.georef = ODM_GeoRef(self.projection)
-        else:
-            self.projection = self.parse_coordinate_system(coords_file)
-            if self.projection:
-                self.georef = ODM_GeoRef(self.projection)
+        self.gcp = None
 
-    def parse_coordinate_system(self, _file):
-        """Write attributes to jobOptions from coord file"""
+    def is_georeferenced(self):
+        return self.georef is not None
+
+    def georeference_with_gcp(self, gcp_file, output_coords_file, output_gcp_file, rerun=False):
+        if not io.file_exists(output_coords_file) or not io.file_exists(output_gcp_file) or rerun:
+            gcp = GCPFile(gcp_file)
+            if gcp.exists():
+                # Create coords file, we'll be using this later
+                # during georeferencing
+                with open(output_coords_file, 'w') as f:
+                    coords_header = gcp.wgs84_utm_zone()
+                    f.write(coords_header + "\n")
+                    log.ODM_DEBUG("Generated coords file from GCP: %s" % coords_header)
+
+                # Convert GCP file to a UTM projection since the rest of the pipeline
+                # does not handle other SRS well.
+                rejected_entries = []
+                utm_gcp = GCPFile(gcp.create_utm_copy(output_gcp_file, filenames=[p.filename for p in self.photos], rejected_entries=rejected_entries))
+                
+                if not utm_gcp.exists():
+                    raise RuntimeError("Could not project GCP file to UTM. Please double check your GCP file for mistakes.")
+                
+                for re in rejected_entries:
+                    log.ODM_WARNING("GCP line ignored (image not found): %s" % str(re))
+                
+                if utm_gcp.entries_count() > 0:
+                    log.ODM_INFO("%s GCP points will be used for georeferencing" % utm_gcp.entries_count())
+                else:
+                    raise RuntimeError("A GCP file was provided, but no valid GCP entries could be used. Note that the GCP file is case sensitive (\".JPG\" is not the same as \".jpg\").")
+
+                self.gcp = utm_gcp
+            else:
+                log.ODM_WARNING("GCP file does not exist: %s" % gcp_file)
+                return
+        else:
+            log.ODM_INFO("Coordinates file already exist: %s" % output_coords_file)
+            log.ODM_INFO("GCP file already exist: %s" % output_gcp_file)
+            self.gcp = GCPFile(output_gcp_file)
+        
+        self.georef = ODM_GeoRef.FromCoordsFile(output_coords_file)
+        return self.georef
+
+    def georeference_with_gps(self, images_path, output_coords_file, rerun=False):
+        try:
+            if not io.file_exists(output_coords_file) or rerun:
+                location.extract_utm_coords(self.photos, images_path, output_coords_file)
+            else:
+                log.ODM_INFO("Coordinates file already exist: %s" % output_coords_file)
+            
+            self.georef = ODM_GeoRef.FromCoordsFile(output_coords_file)
+        except:
+            log.ODM_WARNING('Could not generate coordinates file. An orthophoto will not be generated.')
+
+        self.gcp = GCPFile(None)
+        return self.georef
+
+    def save_proj_srs(self, file):
+        # Save proj to file for future use (unless this 
+        # dataset is not georeferenced)
+        if self.is_georeferenced():
+            with open(file, 'w') as f:
+                f.write(self.georef.proj4())
+
+class ODM_GeoRef(object):
+    @staticmethod
+    def FromProj(projstring):
+        return ODM_GeoRef(CRS.from_proj4(projstring))
+
+    @staticmethod
+    def FromCoordsFile(coords_file):
         # check for coordinate file existence
-        if not io.file_exists(_file):
-            log.ODM_WARNING('Could not find file %s' % _file)
+        if not io.file_exists(coords_file):
+            log.ODM_WARNING('Could not find file %s' % coords_file)
             return
 
-        with open(_file) as f:
+        srs = None
+
+        with open(coords_file) as f:
             # extract reference system and utm zone from first line.
             # We will assume the following format:
             # 'WGS84 UTM 17N' or 'WGS84 UTM 17N \n'
             line = f.readline().rstrip()
-            log.ODM_DEBUG('Line: %s' % line)
-            ref = line.split(' ')
-            # match_wgs_utm = re.search('WGS84 UTM (\d{1,2})(N|S)', line, re.I)
-            try:
-                if ref[0] == 'WGS84' and ref[1] == 'UTM':  # match_wgs_utm:
-                    datum = ref[0]
-                    utm_pole = (ref[2][len(ref[2]) - 1]).upper()
-                    utm_zone = int(ref[2][:len(ref[2]) - 1])
+            srs = location.parse_srs_header(line)
 
-                    proj_args = {
-                        'proj': "utm", 
-                        'zone': utm_zone, 
-                        'datum': datum,
-                        'no_defs': True
-                    }
-                    if utm_pole == 'S':
-                        proj_args['south'] = True
+        return ODM_GeoRef(srs)
 
-                    return Proj(**proj_args)
-                elif '+proj' in line:
-                    return Proj(line.strip('\''))
-                elif 'epsg' in line.lower():
-                    return Proj(init=line)
-                else:
-                    log.ODM_ERROR('Could not parse coordinates. Bad CRS supplied: %s' % line)
-            except RuntimeError as e:
-                log.ODM_ERROR('Uh oh! There seems to be a problem with your GCP file.\n\n'
-                                    'The line: %s\n\n'
-                                    'Is not valid. Projections that are valid include:\n'
-                                    ' - EPSG:*****\n'
-                                    ' - WGS84 UTM **(N|S)\n'
-                                    ' - Any valid proj4 string (for example, +proj=utm +zone=32 +north +ellps=WGS84 +datum=WGS84 +units=m +no_defs)\n\n'
-                                    'Modify your GCP file and try again.' % line)
-                raise RuntimeError(e)
-
-
-    def set_projection(self, projstring):
-        try:
-            return Proj(projstring)
-        except RuntimeError:
-            log.ODM_EXCEPTION('Could not set projection. Please use a proj4 string')
-
-
-class ODM_GeoRef(object):
-    """docstring for ODMUtmZone"""
-
-    def __init__(self, projection):
-        self.projection = projection
-        self.epsg = None
+    def __init__(self, srs):
+        self.srs = srs
         self.utm_east_offset = 0
         self.utm_north_offset = 0
         self.transform = []
-        self.gcps = []
 
-    def coord_to_fractions(self, coord, refs):
-        deg_dec = abs(float(coord))
-        deg = int(deg_dec)
-        minute_dec = (deg_dec - deg) * 60
-        minute = int(minute_dec)
+    def proj4(self):
+        return self.srs.to_proj4()
+    
+    def valid_utm_offsets(self):
+        return self.utm_east_offset and self.utm_north_offset
 
-        sec_dec = (minute_dec - minute) * 60
-        sec_dec = round(sec_dec, 3)
-        sec_denominator = 1000
-        sec_numerator = int(sec_dec * sec_denominator)
-        if float(coord) >= 0:
-            latRef = refs[0]
-        else:
-            latRef = refs[1]
-
-        output = str(deg) + '/1 ' + str(minute) + '/1 ' + str(sec_numerator) + '/' + str(sec_denominator)
-        return output, latRef
-
-    def extract_offsets(self, _file):
-        if not io.file_exists(_file):
-            log.ODM_ERROR('Could not find file %s' % _file)
+    def extract_offsets(self, geo_sys_file):
+        if not io.file_exists(geo_sys_file):
+            log.ODM_ERROR('Could not find file %s' % geo_sys_file)
             return
 
-        with open(_file) as f:
+        with open(geo_sys_file) as f:
             offsets = f.readlines()[1].split(' ')
             self.utm_east_offset = float(offsets[0])
             self.utm_north_offset = float(offsets[1])
 
-    def parse_transformation_matrix(self, _file):
-        if not io.file_exists(_file):
-            log.ODM_ERROR('Could not find file %s' % _file)
+    def parse_transformation_matrix(self, matrix_file):
+        if not io.file_exists(matrix_file):
+            log.ODM_ERROR('Could not find file %s' % matrix_file)
             return
 
         # Create a nested list for the transformation matrix
-        with open(_file) as f:
+        with open(matrix_file) as f:
             for line in f:
                 # Handle matrix formats that either
                 # have leading or trailing brakets or just plain numbers.
@@ -290,6 +290,7 @@ class ODM_Tree(object):
         self.odm_georeferencing_coords = io.join_paths(
             self.odm_georeferencing, 'coords.txt')
         self.odm_georeferencing_gcp = gcp_file or io.find('gcp_list.txt', self.root_path)
+        self.odm_georeferencing_gcp_utm = io.join_paths(self.odm_georeferencing, 'gcp_list_utm.txt')
         self.odm_georeferencing_utm_log = io.join_paths(
             self.odm_georeferencing, 'odm_georeferencing_utm_log.txt')
         self.odm_georeferencing_log = 'odm_georeferencing_log.txt'

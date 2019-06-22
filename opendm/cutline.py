@@ -36,10 +36,10 @@ def compute_cutline(orthophoto_file, crop_area_file, destination, max_concurrenc
             orthophoto_file = scaled_orthophoto
 
         try:
-            ortho_width,ortho_height = get_image_size.get_image_size(orthophoto_file)
+            ortho_width,ortho_height = get_image_size.get_image_size(orthophoto_file, fallback_on_error=False)
             log.ODM_DEBUG("Orthophoto dimensions are %sx%s" % (ortho_width, ortho_height))
             number_lines = int(max(8, math.ceil(min(ortho_width, ortho_height) / 256.0)))
-        except get_image_size.UnknownImageFormat:
+        except:
             log.ODM_DEBUG("Cannot compute orthophoto dimensions, setting arbitrary number of lines.")
             number_lines = 32
         

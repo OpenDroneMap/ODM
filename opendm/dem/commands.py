@@ -9,7 +9,7 @@ from opendm.system import run
 from opendm import point_cloud
 from opendm import io
 from opendm.concurrency import get_max_memory
-from scipy import ndimage, signal
+from scipy import ndimage
 from datetime import datetime
 from opendm import log
 try:
@@ -299,15 +299,9 @@ def median_smoothing(geotiff_path, output_path, smoothing_iterations=1):
         # Median filter (careful, changing the value 5 might require tweaking)
         # the lines below. There's another numpy function that takes care of 
         # these edge cases, but it's slower.
-        used_fallback = False
         for i in range(smoothing_iterations):
             log.ODM_INFO("Smoothing iteration %s" % str(i + 1))
-            try:
-                arr = signal.medfilt2d(arr, 5)
-            except MemoryError:
-                log.ODM_WARNING("medfilt2d ran out of memory, switching to slower median_filter")
-                used_fallback = True
-                arr = ndimage.median_filter(arr, size=5, output=dtype)
+            arr = ndimage.median_filter(arr, size=5, output=dtype)
 
         # Fill corner points with nearest value
         if arr.shape >= (4, 4):

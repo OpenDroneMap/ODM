@@ -129,5 +129,5 @@ RUN rm -rf \
   /code/SuperBuild/src/pdal
 
 # Entry point
-ENTRYPOINT ["python", "/code/run.py", "code"]
+ENTRYPOINT ["python", "/code/run.py"]
 

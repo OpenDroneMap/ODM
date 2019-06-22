@@ -78,6 +78,19 @@ class OSFMContext:
                     if not photo.altitude:
                         has_alt = False
                     fout.write('%s\n' % io.join_paths(images_path, photo.filename))
+            
+            # check for image_groups.txt (split-merge)
+            image_groups_file = os.path.join(args.project_path, "image_groups.txt")
+            if io.file_exists(image_groups_file):
+                log.ODM_DEBUG("Copied image_groups.txt to OpenSfM directory")
+                io.copy(image_groups_file, os.path.join(self.opensfm_project_path, "image_groups.txt"))
+        
+            # check for camera_models.json
+            camera_models_file = os.path.join(args.project_path, "camera_models.json")
+            has_camera_calibration = io.file_exists(camera_models_file)
+            if has_camera_calibration:
+                log.ODM_DEBUG("Copied camera_models.json to OpenSfM directory (camera_models_overrides.json)")
+                io.copy(camera_models_file, os.path.join(self.opensfm_project_path, "camera_models_overrides.json"))
 
             # create config file for OpenSfM
             config = [
@@ -91,18 +104,23 @@ class OSFMContext:
                 "depthmap_resolution: %s" % args.depthmap_resolution,
                 "depthmap_min_patch_sd: %s" % args.opensfm_depthmap_min_patch_sd,
                 "depthmap_min_consistent_views: %s" % args.opensfm_depthmap_min_consistent_views,
-                "optimize_camera_parameters: %s" % ('no' if args.use_fixed_camera_params else 'yes'),
-                "undistorted_image_format: png" # mvs-texturing exhibits artifacts with JPG
+                "optimize_camera_parameters: %s" % ('no' if args.use_fixed_camera_params or has_camera_calibration else 'yes'),
+                "undistorted_image_format: png", # mvs-texturing exhibits artifacts with JPG
+                "bundle_outlier_filtering_type: AUTO",
             ]
+
+            # TODO: add BOW matching when dataset is not georeferenced (no gps)
 
             if has_alt:
                 log.ODM_DEBUG("Altitude data detected, enabling it for GPS alignment")
                 config.append("use_altitude_tag: yes")
+
+            if has_alt or gcp_path:
                 config.append("align_method: naive")
             else:
                 config.append("align_method: orientation_prior")
                 config.append("align_orientation_prior: vertical")
-
+            
             if args.use_hybrid_bundle_adjustment:
                 log.ODM_DEBUG("Enabling hybrid bundle adjustment")
                 config.append("bundle_interval: 100")          # Bundle after adding 'bundle_interval' cameras
@@ -111,6 +129,7 @@ class OSFMContext:
 
             if gcp_path:
                 config.append("bundle_use_gcp: yes")
+                config.append("bundle_use_gps: no")
                 io.copy(gcp_path, self.path("gcp_list.txt"))
             
             config = config + append_config
@@ -120,12 +139,6 @@ class OSFMContext:
             config_filename = self.get_config_file_path()
             with open(config_filename, 'w') as fout:
                 fout.write("\n".join(config))
-
-            # check for image_groups.txt (split-merge)
-            image_groups_file = os.path.join(args.project_path, "image_groups.txt")
-            if io.file_exists(image_groups_file):
-                log.ODM_DEBUG("Copied image_groups.txt to OpenSfM directory")
-                io.copy(image_groups_file, os.path.join(self.opensfm_project_path, "image_groups.txt"))
         else:
             log.ODM_WARNING("%s already exists, not rerunning OpenSfM setup" % list_path)
 
@@ -237,9 +250,10 @@ def get_submodel_argv(project_name = None, submodels_path = None, submodel_name 
         adding --orthophoto-cutline
         adding --dem-euclidean-map
         adding --skip-3dmodel (split-merge does not support 3D model merging)
+        adding --use-fixed-camera-params (to mitigate bowl effect)
         removing --gcp (the GCP path if specified is always "gcp_list.txt")
     """
-    assure_always = ['--orthophoto-cutline', '--dem-euclidean-map', '--skip-3dmodel']
+    assure_always = ['--orthophoto-cutline', '--dem-euclidean-map', '--skip-3dmodel', '--use-fixed-camera-params']
     remove_always_2 = ['--split', '--split-overlap', '--rerun-from', '--rerun', '--gcp', '--end-with', '--sm-cluster']
     remove_always_1 = ['--rerun-all', '--pc-csv', '--pc-las', '--pc-ept']
 

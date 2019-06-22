@@ -6,7 +6,6 @@ from opendm import io
 from opendm import types
 from opendm import log
 from opendm import system
-from opendm import location
 from shutil import copyfile
 from opendm import progress
 
@@ -100,27 +99,18 @@ class ODMLoadDatasetStage(types.ODM_Stage):
 
         log.ODM_INFO('Found %s usable images' % len(photos))
 
-        # append photos to cell output
-        if not self.params.get('proj'):
-            if tree.odm_georeferencing_gcp:
-                outputs['reconstruction'] = types.ODM_Reconstruction(photos, coords_file=tree.odm_georeferencing_gcp)
-            else:
-                # Generate UTM from images
-                try:
-                    if not io.file_exists(tree.odm_georeferencing_coords) or self.rerun():
-                        location.extract_utm_coords(photos, tree.dataset_raw, tree.odm_georeferencing_coords)
-                    else:
-                        log.ODM_INFO("Coordinates file already exist: %s" % tree.odm_georeferencing_coords)
-                except:
-                    log.ODM_WARNING('Could not generate coordinates file. '
-                                    'Ignore if there is a GCP file')
-
-                outputs['reconstruction'] = types.ODM_Reconstruction(photos, coords_file=tree.odm_georeferencing_coords)
+        # Create reconstruction object
+        reconstruction = types.ODM_Reconstruction(photos)
+        
+        if tree.odm_georeferencing_gcp:
+            reconstruction.georeference_with_gcp(tree.odm_georeferencing_gcp,
+                                                 tree.odm_georeferencing_coords,
+                                                 tree.odm_georeferencing_gcp_utm,
+                                                 rerun=self.rerun())
         else:
-            outputs['reconstruction'] = types.ODM_Reconstruction(photos, projstring=self.params.get('proj'))
+            reconstruction.georeference_with_gps(tree.dataset_raw, 
+                                                 tree.odm_georeferencing_coords, 
+                                                 rerun=self.rerun())
 
-        # Save proj to file for future use (unless this 
-        # dataset is not georeferenced)
-        if outputs['reconstruction'].projection:
-            with open(io.join_paths(tree.odm_georeferencing, tree.odm_georeferencing_proj), 'w') as f:
-                f.write(outputs['reconstruction'].projection.srs)
+        reconstruction.save_proj_srs(io.join_paths(tree.odm_georeferencing, tree.odm_georeferencing_proj))
+        outputs['reconstruction'] = reconstruction
