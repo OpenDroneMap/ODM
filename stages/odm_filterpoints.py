@@ -23,11 +23,7 @@ class ODMFilterPoints(types.ODM_Stage):
             else:
                 inputPointCloud = tree.mve_model
 
-            confidence = None
-            if not args.use_opensfm_dense and not args.fast_orthophoto:
-                confidence = args.mve_confidence
-
-            point_cloud.filter(inputPointCloud, tree.filtered_point_cloud, standard_deviation=args.pc_filter, confidence=confidence, verbose=args.verbose)
+            point_cloud.filter(inputPointCloud, tree.filtered_point_cloud, standard_deviation=args.pc_filter, confidence=None, verbose=args.verbose)
         else:
             log.ODM_WARNING('Found a valid point cloud file in: %s' %
                             tree.filtered_point_cloud)

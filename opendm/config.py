@@ -59,14 +59,17 @@ def config():
     parser.add_argument('name',
                         metavar='<project name>',
                         type=alphanumeric_string,
+                        default='code',
+                        nargs='?',
                         help='Name of Project (i.e subdirectory of projects folder)')
 
     parser.add_argument('--resize-to',
                         metavar='<integer>',
                         default=2048,
                         type=int,
-                        help='resizes images by the largest side for opensfm. '
-                             'Set to -1 to disable. Default:  %(default)s')
+                        help='Resizes images by the largest side for feature extraction. '
+                             'Set to -1 to disable. This does not affect the final orthophoto '
+                             ' resolution quality. Default:  %(default)s')
 
     parser.add_argument('--end-with', '-e',
                         metavar='<string>',
@@ -92,17 +95,13 @@ def config():
                        choices=processopts,
                        help=('Can be one of:' + ' | '.join(processopts)))
 
-    parser.add_argument('--video',
-                        metavar='<string>',
-                        help='Path to the video file to process')
+    # parser.add_argument('--video',
+    #                     metavar='<string>',
+    #                     help='Path to the video file to process')
 
-    parser.add_argument('--slam-config',
-                        metavar='<string>',
-                        help='Path to config file for orb-slam')
-
-    parser.add_argument('--proj',
-                        metavar='<PROJ4 string>',
-                        help='Projection used to transform the model into geographic coordinates')
+    # parser.add_argument('--slam-config',
+    #                     metavar='<string>',
+    #                     help='Path to config file for orb-slam')
 
     parser.add_argument('--min-num-features',
                         metavar='<integer>',

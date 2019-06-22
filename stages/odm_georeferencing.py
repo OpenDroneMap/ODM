@@ -16,11 +16,9 @@ class ODMGeoreferencingStage(types.ODM_Stage):
         tree = outputs['tree']
         reconstruction = outputs['reconstruction']
 
-        gcpfile = tree.odm_georeferencing_gcp
         doPointCloudGeo = True
         transformPointCloud = True
         verbose = '-verbose' if self.params.get('verbose') else ''
-        geo_ref = reconstruction.georef
 
         runs = [{
             'georeferencing_dir': tree.odm_georeferencing,
@@ -66,34 +64,20 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                     'output_pc_file': tree.odm_georeferencing_model_laz,
                     'geo_sys': odm_georeferencing_model_txt_geo_file,
                     'model_geo': odm_georeferencing_model_obj_geo,
-                    'gcp': gcpfile,
                     'verbose': verbose
                 }
 
                 if transformPointCloud:
                     kwargs['pc_params'] = '-inputPointCloudFile {input_pc_file} -outputPointCloudFile {output_pc_file}'.format(**kwargs)
 
-                    if geo_ref and geo_ref.projection and geo_ref.projection.srs:
-                        kwargs['pc_params'] += ' -outputPointCloudSrs %s' % pipes.quote(geo_ref.projection.srs)
+                    if reconstruction.is_georeferenced():
+                        kwargs['pc_params'] += ' -outputPointCloudSrs %s' % pipes.quote(reconstruction.georef.proj4())
                     else:
                         log.ODM_WARNING('NO SRS: The output point cloud will not have a SRS.')
                 else:
                     kwargs['pc_params'] = ''
  
-                # Check to see if the GCP file exists
-
-                if not self.params.get('use_exif') and (self.params.get('gcp_file') or tree.odm_georeferencing_gcp):
-                   log.ODM_INFO('Found %s' % gcpfile)
-                   try:
-                       system.run('{bin}/odm_georef -bundleFile {bundle} -imagesPath {imgs} -imagesListPath {imgs_list} '
-                                  '-inputFile {model} -outputFile {model_geo} '
-                                  '{pc_params} {verbose} '
-                                  '-logFile {log} -outputTransformFile {transform_file} -georefFileOutputPath {geo_sys} -gcpFile {gcp} '
-                                  '-outputCoordFile {coords}'.format(**kwargs))
-                   except Exception:
-                       log.ODM_EXCEPTION('Georeferencing failed. ')
-                       exit(1)
-                elif io.file_exists(tree.opensfm_transformation) and io.file_exists(tree.odm_georeferencing_coords):
+                if io.file_exists(tree.opensfm_transformation) and io.file_exists(tree.odm_georeferencing_coords):
                     log.ODM_INFO('Running georeferencing with OpenSfM transformation matrix')
                     system.run('{bin}/odm_georef -bundleFile {bundle} -inputTransformFile {input_trans_file} -inputCoordFile {coords} '
                                '-inputFile {model} -outputFile {model_geo} '
@@ -112,9 +96,7 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                     doPointCloudGeo = False # skip the rest of the georeferencing
 
                 if doPointCloudGeo:
-                    # update images metadata
-                    geo_ref.extract_offsets(odm_georeferencing_model_txt_geo_file)
-                    reconstruction.georef = geo_ref
+                    reconstruction.georef.extract_offsets(odm_georeferencing_model_txt_geo_file)
 
                     # XYZ point cloud output
                     if args.pc_csv:
