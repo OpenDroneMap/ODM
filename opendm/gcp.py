@@ -63,7 +63,7 @@ class GCPFile:
             utm_zone, hemisphere = location.get_utm_zone_and_hemisphere_from(lon, lat)
             return "WGS84 UTM %s%s" % (utm_zone, hemisphere)
 
-    def create_utm_copy(self, gcp_file_output, filenames=None, rejected_entries=None):
+    def create_utm_copy(self, gcp_file_output, filenames=None, rejected_entries=None, include_extras=True):
         """
         Creates a new GCP file from an existing GCP file
         by optionally including only filenames and reprojecting each point to 
@@ -80,6 +80,8 @@ class GCPFile:
         for entry in self.iter_entries():
             if filenames is None or entry.filename in filenames:
                 entry.x, entry.y, entry.z = transformer.TransformPoint(entry.x, entry.y, entry.z)
+                if not include_extras:
+                    entry.extras = ''
                 output.append(str(entry))
             elif isinstance(rejected_entries, list):
                 rejected_entries.append(entry)
