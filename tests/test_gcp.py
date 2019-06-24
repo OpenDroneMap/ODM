@@ -57,5 +57,13 @@ class TestGcp(unittest.TestCase):
         gcp = GCPFile(None)
         self.assertFalse(gcp.exists())
 
+    def test_gcp_extras(self):
+        gcp = GCPFile('tests/assets/gcp_extras.txt')
+        self.assertEqual(gcp.get_entry(0).extras, 'gcp1')
+
+        copy = GCPFile(gcp.create_utm_copy("tests/assets/output/gcp_utm_no_extras.txt", include_extras=False))
+        self.assertTrue(copy.exists())
+        self.assertEqual(copy.get_entry(0).extras, '')
+
 if __name__ == '__main__':
     unittest.main()
