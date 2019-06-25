@@ -8,6 +8,7 @@ from opendm import io
 from opendm import log
 from opendm import system
 from opendm import context
+from opendm import camera
 from opensfm.large import metadataset
 from opensfm.large import tools
 
@@ -85,13 +86,14 @@ class OSFMContext:
                 log.ODM_DEBUG("Copied image_groups.txt to OpenSfM directory")
                 io.copy(image_groups_file, os.path.join(self.opensfm_project_path, "image_groups.txt"))
         
-            # check for cameras.json
-            # TODO: use config.cameras
-            camera_models_file = os.path.join(args.project_path, "cameras.json")
-            has_camera_calibration = io.file_exists(camera_models_file)
-            if has_camera_calibration:
-                log.ODM_DEBUG("Copied cameras.json to OpenSfM directory (camera_models_overrides.json)")
-                io.copy(camera_models_file, os.path.join(self.opensfm_project_path, "camera_models_overrides.json"))
+            # check for cameras
+            if args.cameras:
+                try:
+                    with open(os.path.join(self.opensfm_project_path, "camera_models_overrides.json"), 'r') as f:
+                        f.write(json.dumps(camera.get_opensfm_camera_models(args.cameras)))
+                    log.ODM_DEBUG("Wrote camera_models_overrides.json to OpenSfM directory (camera_models_overrides.json)")
+                except Exception as e:
+                    log.ODM_WARNING("Cannot set camera_models_overrides.json: %s" % str(e))
 
             # create config file for OpenSfM
             config = [
@@ -196,30 +198,11 @@ class OSFMContext:
     def extract_cameras(self, output, rerun=False):
         reconstruction_file = self.path("reconstruction.json")
         if not os.path.exists(output) or rerun:
-            if os.path.exists(reconstruction_file):
-                result = {}
-                with open(reconstruction_file, 'r') as fin:
-                    json_f = json.loads(fin.read())
-                    for recon in json_f:
-                        if 'cameras' in recon:
-                            for camera_id in recon['cameras']:
-                                # Strip "v2" from OpenSfM camera IDs
-                                new_camera_id = camera_id
-                                if new_camera_id.startswith("v2 "):
-                                    new_camera_id = new_camera_id[3:]
-
-                                result[new_camera_id] = recon['cameras'][camera_id]
-                                
-                                # Remove "_prior" keys
-                                keys = list(result[new_camera_id].keys())
-                                for k in keys:
-                                    if k.endswith('_prior'):
-                                        result[new_camera_id].pop(k)
-
+            try:
                 with open(output, 'w') as fout:
-                    fout.write(json.dumps(result))
-            else:
-                log.ODM_WARNING("Cannot export cameras to %s. reconstruction.json does not exist." % output)
+                    fout.write(json.dumps(camera.get_cameras_from_opensfm(reconstruction_file)))
+            except Exception as e:
+                log.ODM_WARNING("Cannot export cameras to %s. %s." % (output, str(e)))
         else:
             log.ODM_INFO("Already extracted cameras")
 
