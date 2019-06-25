@@ -27,6 +27,7 @@ class ODMOpenSfMStage(types.ODM_Stage):
         octx.feature_matching(self.rerun())
         self.update_progress(30)
         octx.reconstruct(self.rerun())
+        octx.extract_cameras(tree.path("cameras.json"), self.rerun())
         self.update_progress(70)
 
         # If we find a special flag file for split/merge we stop right here
