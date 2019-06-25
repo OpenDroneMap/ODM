@@ -200,7 +200,7 @@ class OSFMContext:
             try:
                 reconstruction_file = self.path("reconstruction.json")
                 with open(output, 'w') as fout:
-                    fout.write(json.dumps(camera.get_cameras_from_opensfm(reconstruction_file)))
+                    fout.write(json.dumps(camera.get_cameras_from_opensfm(reconstruction_file), indent=4))
             except Exception as e:
                 log.ODM_WARNING("Cannot export cameras to %s. %s." % (output, str(e)))
         else:
