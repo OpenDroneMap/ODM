@@ -89,8 +89,9 @@ class OSFMContext:
             # check for cameras
             if args.cameras:
                 try:
+                    camera_overrides = camera.get_opensfm_camera_models(args.cameras)
                     with open(os.path.join(self.opensfm_project_path, "camera_models_overrides.json"), 'w') as f:
-                        f.write(json.dumps(camera.get_opensfm_camera_models(args.cameras)))
+                        f.write(json.dumps(camera_overrides))
                     log.ODM_DEBUG("Wrote camera_models_overrides.json to OpenSfM directory")
                 except Exception as e:
                     log.ODM_WARNING("Cannot set camera_models_overrides.json: %s" % str(e))
