@@ -27,7 +27,7 @@ def alphanumeric_string(string):
 def path_or_json_string(string):
     if string == "":
         return {}
-        
+
     if string.startswith("[") or string.startswith("{"):
         try:
             return json.loads(string)
@@ -586,8 +586,6 @@ def config():
                             '%(default)s'))
 
     args = parser.parse_args()
-    print(args.cameras)
-    exit(1)
 
     # check that the project path setting has been set properly
     if not args.project_path:
