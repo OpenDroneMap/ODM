@@ -1,4 +1,5 @@
 import argparse
+import json
 from opendm import context
 from opendm import io
 from opendm import log
@@ -22,6 +23,25 @@ def alphanumeric_string(string):
         msg = '{0} is not a valid name. Must use alphanumeric characters.'.format(string)
         raise argparse.ArgumentTypeError(msg)
     return string
+
+def path_or_json_string(string):
+    if string == "":
+        return {}
+        
+    if string.startswith("[") or string.startswith("{"):
+        try:
+            return json.loads(string)
+        except:
+            raise argparse.ArgumentTypeError("{0} is not a valid JSON string.".format(string))
+    elif io.file_exists(string):
+        try:
+            with open(string, 'r') as f:
+                return json.loads(f.read())
+        except:
+            raise argparse.ArgumentTypeError("{0} is not a valid JSON file.".format(string))
+    else:
+        raise argparse.ArgumentTypeError("{0} is not a valid JSON file or string.".format(string))
+
 
 # Django URL validation regex
 def url_string(string):
@@ -136,6 +156,16 @@ def config():
                         action='store_true',
                         default=False,
                         help='Turn off camera parameter optimization during bundler')
+
+    parser.add_argument('--cameras',
+                        default='',
+                        metavar='<string>',
+                        type=path_or_json_string,
+                        help='Use the camera parameters computed from '
+                             'another dataset instead of calculating them. '
+                             'Can be specified either as path to a cameras.json file or as a '
+                             'JSON string representing the contents of a '
+                             'cameras.json file. Default: %(default)s')
 
     parser.add_argument('--max-concurrency',
                         metavar='<positive integer>',
@@ -556,6 +586,8 @@ def config():
                             '%(default)s'))
 
     args = parser.parse_args()
+    print(args.cameras)
+    exit(1)
 
     # check that the project path setting has been set properly
     if not args.project_path:
