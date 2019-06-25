@@ -159,7 +159,7 @@ def config():
 
     parser.add_argument('--cameras',
                         default='',
-                        metavar='<string>',
+                        metavar='<json>',
                         type=path_or_json_string,
                         help='Use the camera parameters computed from '
                              'another dataset instead of calculating them. '
