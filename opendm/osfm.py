@@ -2,7 +2,7 @@
 OpenSfM related utils
 """
 
-import os, shutil, sys
+import os, shutil, sys, json
 import yaml
 from opendm import io
 from opendm import log
@@ -85,11 +85,12 @@ class OSFMContext:
                 log.ODM_DEBUG("Copied image_groups.txt to OpenSfM directory")
                 io.copy(image_groups_file, os.path.join(self.opensfm_project_path, "image_groups.txt"))
         
-            # check for camera_models.json
-            camera_models_file = os.path.join(args.project_path, "camera_models.json")
+            # check for cameras.json
+            # TODO: use config.cameras
+            camera_models_file = os.path.join(args.project_path, "cameras.json")
             has_camera_calibration = io.file_exists(camera_models_file)
             if has_camera_calibration:
-                log.ODM_DEBUG("Copied camera_models.json to OpenSfM directory (camera_models_overrides.json)")
+                log.ODM_DEBUG("Copied cameras.json to OpenSfM directory (camera_models_overrides.json)")
                 io.copy(camera_models_file, os.path.join(self.opensfm_project_path, "camera_models_overrides.json"))
 
             # create config file for OpenSfM
@@ -191,6 +192,36 @@ class OSFMContext:
 
     def path(self, *paths):
         return os.path.join(self.opensfm_project_path, *paths)
+
+    def extract_cameras(self, output, rerun=False):
+        reconstruction_file = self.path("reconstruction.json")
+        if not os.path.exists(output) or rerun:
+            if os.path.exists(reconstruction_file):
+                result = {}
+                with open(reconstruction_file, 'r') as fin:
+                    json_f = json.loads(fin.read())
+                    for recon in json_f:
+                        if 'cameras' in recon:
+                            for camera_id in recon['cameras']:
+                                # Strip "v2" from OpenSfM camera IDs
+                                new_camera_id = camera_id
+                                if new_camera_id.startswith("v2 "):
+                                    new_camera_id = new_camera_id[3:]
+
+                                result[new_camera_id] = recon['cameras'][camera_id]
+                                
+                                # Remove "_prior" keys
+                                keys = list(result[new_camera_id].keys())
+                                for k in keys:
+                                    if k.endswith('_prior'):
+                                        result[new_camera_id].pop(k)
+
+                with open(output, 'w') as fout:
+                    fout.write(json.dumps(result))
+            else:
+                log.ODM_WARNING("Cannot export cameras to %s. reconstruction.json does not exist." % output)
+        else:
+            log.ODM_INFO("Already extracted cameras")
 
     def update_config(self, cfg_dict):
         cfg_file = self.get_config_file_path()
