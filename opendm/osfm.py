@@ -89,9 +89,9 @@ class OSFMContext:
             # check for cameras
             if args.cameras:
                 try:
-                    with open(os.path.join(self.opensfm_project_path, "camera_models_overrides.json"), 'r') as f:
+                    with open(os.path.join(self.opensfm_project_path, "camera_models_overrides.json"), 'w') as f:
                         f.write(json.dumps(camera.get_opensfm_camera_models(args.cameras)))
-                    log.ODM_DEBUG("Wrote camera_models_overrides.json to OpenSfM directory (camera_models_overrides.json)")
+                    log.ODM_DEBUG("Wrote camera_models_overrides.json to OpenSfM directory")
                 except Exception as e:
                     log.ODM_WARNING("Cannot set camera_models_overrides.json: %s" % str(e))
 
@@ -107,7 +107,7 @@ class OSFMContext:
                 "depthmap_resolution: %s" % args.depthmap_resolution,
                 "depthmap_min_patch_sd: %s" % args.opensfm_depthmap_min_patch_sd,
                 "depthmap_min_consistent_views: %s" % args.opensfm_depthmap_min_consistent_views,
-                "optimize_camera_parameters: %s" % ('no' if args.use_fixed_camera_params or has_camera_calibration else 'yes'),
+                "optimize_camera_parameters: %s" % ('no' if args.use_fixed_camera_params or args.cameras else 'yes'),
                 "undistorted_image_format: png", # mvs-texturing exhibits artifacts with JPG
                 "bundle_outlier_filtering_type: AUTO",
             ]
@@ -196,9 +196,9 @@ class OSFMContext:
         return os.path.join(self.opensfm_project_path, *paths)
 
     def extract_cameras(self, output, rerun=False):
-        reconstruction_file = self.path("reconstruction.json")
         if not os.path.exists(output) or rerun:
             try:
+                reconstruction_file = self.path("reconstruction.json")
                 with open(output, 'w') as fout:
                     fout.write(json.dumps(camera.get_cameras_from_opensfm(reconstruction_file)))
             except Exception as e:
