@@ -1,0 +1,23 @@
+[
+    {
+        "reference_lla": {
+            "latitude": 46.84265666666667, 
+            "altitude": 0, 
+            "longitude": -91.99400802469134
+        }, 
+        "cameras": {
+            "v2 dji fc300s 4000 2250 perspective 0.5555": {
+                "focal_prior": 0.5555555555555556, 
+                "width": 4000, 
+                "k1": 0.0052219633739416784, 
+                "k2": 0.015202301516716735, 
+                "k1_prior": 0.0, 
+                "k2_prior": 0.0, 
+                "projection_type": "perspective", 
+                "focal": 0.5614307793062748, 
+                "height": 2250
+            }
+        }, 
+        "shots": {}
+    }
+]
