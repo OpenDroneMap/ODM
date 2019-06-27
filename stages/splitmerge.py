@@ -25,10 +25,6 @@ class ODMSplitStage(types.ODM_Stage):
         outputs['large'] = len(photos) > args.split
 
         if outputs['large']:
-            # Split-merge is on, always use --use_fixed_camera_params
-            log.ODM_INFO("--use-fixed-camera-params will be turned ON")
-            args.use_fixed_camera_params = True
-
             # If we have a cluster address, we'll use a distributed workflow
             local_workflow = not bool(args.sm_cluster)
 
