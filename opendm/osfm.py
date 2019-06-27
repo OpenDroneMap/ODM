@@ -2,12 +2,13 @@
 OpenSfM related utils
 """
 
-import os, shutil, sys
+import os, shutil, sys, json
 import yaml
 from opendm import io
 from opendm import log
 from opendm import system
 from opendm import context
+from opendm import camera
 from opensfm.large import metadataset
 from opensfm.large import tools
 
@@ -85,12 +86,15 @@ class OSFMContext:
                 log.ODM_DEBUG("Copied image_groups.txt to OpenSfM directory")
                 io.copy(image_groups_file, os.path.join(self.opensfm_project_path, "image_groups.txt"))
         
-            # check for camera_models.json
-            camera_models_file = os.path.join(args.project_path, "camera_models.json")
-            has_camera_calibration = io.file_exists(camera_models_file)
-            if has_camera_calibration:
-                log.ODM_DEBUG("Copied camera_models.json to OpenSfM directory (camera_models_overrides.json)")
-                io.copy(camera_models_file, os.path.join(self.opensfm_project_path, "camera_models_overrides.json"))
+            # check for cameras
+            if args.cameras:
+                try:
+                    camera_overrides = camera.get_opensfm_camera_models(args.cameras)
+                    with open(os.path.join(self.opensfm_project_path, "camera_models_overrides.json"), 'w') as f:
+                        f.write(json.dumps(camera_overrides))
+                    log.ODM_DEBUG("Wrote camera_models_overrides.json to OpenSfM directory")
+                except Exception as e:
+                    log.ODM_WARNING("Cannot set camera_models_overrides.json: %s" % str(e))
 
             # create config file for OpenSfM
             config = [
@@ -104,7 +108,7 @@ class OSFMContext:
                 "depthmap_resolution: %s" % args.depthmap_resolution,
                 "depthmap_min_patch_sd: %s" % args.opensfm_depthmap_min_patch_sd,
                 "depthmap_min_consistent_views: %s" % args.opensfm_depthmap_min_consistent_views,
-                "optimize_camera_parameters: %s" % ('no' if args.use_fixed_camera_params or has_camera_calibration else 'yes'),
+                "optimize_camera_parameters: %s" % ('no' if args.use_fixed_camera_params or args.cameras else 'yes'),
                 "undistorted_image_format: png", # mvs-texturing exhibits artifacts with JPG
                 "bundle_outlier_filtering_type: AUTO",
             ]
@@ -191,6 +195,17 @@ class OSFMContext:
 
     def path(self, *paths):
         return os.path.join(self.opensfm_project_path, *paths)
+
+    def extract_cameras(self, output, rerun=False):
+        if not os.path.exists(output) or rerun:
+            try:
+                reconstruction_file = self.path("reconstruction.json")
+                with open(output, 'w') as fout:
+                    fout.write(json.dumps(camera.get_cameras_from_opensfm(reconstruction_file), indent=4))
+            except Exception as e:
+                log.ODM_WARNING("Cannot export cameras to %s. %s." % (output, str(e)))
+        else:
+            log.ODM_INFO("Already extracted cameras")
 
     def update_config(self, cfg_dict):
         cfg_file = self.get_config_file_path()

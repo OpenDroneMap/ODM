@@ -14,7 +14,7 @@ def get_image_size(file_path, fallback_on_error=True):
             width, height = img.size
     except Exception as e:
         if fallback_on_error:
-            log.warning("Cannot read %s with PIL, fallback to cv2: %s" % (file_path, str(e)))
+            log.ODM_WARNING("Cannot read %s with PIL, fallback to cv2: %s" % (file_path, str(e)))
             img = cv2.imread(file_path)
             width = img.shape[1]
             height = img.shape[0]
