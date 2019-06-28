@@ -329,7 +329,7 @@ def get_submodel_argv(project_name = None, submodels_path = None, submodel_name 
             result.append(arg)
 
     if not found_args.get('project_name') and submodel_name:
-        result.append(submodel_name)            
+        result.append(submodel_name)
 
     return result
 
