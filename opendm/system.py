@@ -57,7 +57,7 @@ def run(cmd, env_paths=[context.superbuild_bin_path], env_vars={}):
     """Run a system command"""
     global running_subprocesses
 
-    log.ODM_DEBUG('running %s' % cmd)
+    log.ODM_INFO('running %s' % cmd)
 
     env = os.environ.copy()
     if len(env_paths) > 0:

@@ -83,7 +83,7 @@ class OSFMContext:
             # check for image_groups.txt (split-merge)
             image_groups_file = os.path.join(args.project_path, "image_groups.txt")
             if io.file_exists(image_groups_file):
-                log.ODM_DEBUG("Copied image_groups.txt to OpenSfM directory")
+                log.ODM_INFO("Copied image_groups.txt to OpenSfM directory")
                 io.copy(image_groups_file, os.path.join(self.opensfm_project_path, "image_groups.txt"))
         
             # check for cameras
@@ -92,7 +92,7 @@ class OSFMContext:
                     camera_overrides = camera.get_opensfm_camera_models(args.cameras)
                     with open(os.path.join(self.opensfm_project_path, "camera_models_overrides.json"), 'w') as f:
                         f.write(json.dumps(camera_overrides))
-                    log.ODM_DEBUG("Wrote camera_models_overrides.json to OpenSfM directory")
+                    log.ODM_INFO("Wrote camera_models_overrides.json to OpenSfM directory")
                 except Exception as e:
                     log.ODM_WARNING("Cannot set camera_models_overrides.json: %s" % str(e))
 
@@ -116,7 +116,7 @@ class OSFMContext:
             # TODO: add BOW matching when dataset is not georeferenced (no gps)
 
             if has_alt:
-                log.ODM_DEBUG("Altitude data detected, enabling it for GPS alignment")
+                log.ODM_INFO("Altitude data detected, enabling it for GPS alignment")
                 config.append("use_altitude_tag: yes")
 
             if has_alt or gcp_path:
@@ -126,7 +126,7 @@ class OSFMContext:
                 config.append("align_orientation_prior: vertical")
             
             if args.use_hybrid_bundle_adjustment:
-                log.ODM_DEBUG("Enabling hybrid bundle adjustment")
+                log.ODM_INFO("Enabling hybrid bundle adjustment")
                 config.append("bundle_interval: 100")          # Bundle after adding 'bundle_interval' cameras
                 config.append("bundle_new_points_ratio: 1.2")  # Bundle when (new points) / (bundled points) > bundle_new_points_ratio
                 config.append("local_bundle_radius: 1")        # Max image graph distance for images to be included in local bundle adjustment
@@ -139,7 +139,7 @@ class OSFMContext:
             config = config + append_config
 
             # write config file
-            log.ODM_DEBUG(config)
+            log.ODM_INFO(config)
             config_filename = self.get_config_file_path()
             with open(config_filename, 'w') as fout:
                 fout.write("\n".join(config))
@@ -209,14 +209,14 @@ class OSFMContext:
 
     def update_config(self, cfg_dict):
         cfg_file = self.get_config_file_path()
-        log.ODM_DEBUG("Updating %s" % cfg_file)
+        log.ODM_INFO("Updating %s" % cfg_file)
         if os.path.exists(cfg_file):
             try:
                 with open(cfg_file) as fin:
                     cfg = yaml.safe_load(fin)
                 for k, v in cfg_dict.items():
                     cfg[k] = v
-                    log.ODM_DEBUG("%s: %s" % (k, v))
+                    log.ODM_INFO("%s: %s" % (k, v))
                 with open(cfg_file, 'w') as fout:
                     fout.write(yaml.dump(cfg, default_flow_style=False))
             except Exception as e:
@@ -244,7 +244,7 @@ class OSFMContext:
             with open(file, 'w') as f:
                 f.write("\n".join(lines))
 
-            log.ODM_DEBUG("Wrote %s with absolute paths" % file)
+            log.ODM_INFO("Wrote %s with absolute paths" % file)
         else:
             log.ODM_WARNING("No %s found, cannot create %s" % (image_list_file, file))
     
@@ -266,10 +266,12 @@ def get_submodel_argv(project_name = None, submodels_path = None, submodel_name 
         adding --dem-euclidean-map
         adding --skip-3dmodel (split-merge does not support 3D model merging)
         removing --gcp (the GCP path if specified is always "gcp_list.txt")
+        reading the contents of --cameras
     """
     assure_always = ['--orthophoto-cutline', '--dem-euclidean-map', '--skip-3dmodel']
     remove_always_2 = ['--split', '--split-overlap', '--rerun-from', '--rerun', '--gcp', '--end-with', '--sm-cluster']
     remove_always_1 = ['--rerun-all', '--pc-csv', '--pc-las', '--pc-ept']
+    read_json_always = ['--cameras']
 
     argv = sys.argv
 
@@ -300,6 +302,17 @@ def get_submodel_argv(project_name = None, submodels_path = None, submodel_name 
             result.append(arg)
             found_args[arg] = True
             i += 1
+        elif arg in read_json_always:
+            try:
+                jsond = io.path_or_json_string_to_dict(argv[i + 1])
+                result.append(arg)
+                result.append(json.dumps(jsond))
+                found_args[arg] = True
+            except ValueError as e:
+                log.ODM_WARNING("Cannot parse/read JSON: {}".format(str(e)))
+                pass
+            finally:
+                i += 2
         elif arg in remove_always_2:
             i += 2
         elif arg in remove_always_1:
@@ -317,7 +330,7 @@ def get_submodel_argv(project_name = None, submodels_path = None, submodel_name 
             result.append(arg)
 
     if not found_args.get('project_name') and submodel_name:
-        result.append(submodel_name)
+        result.append(submodel_name)            
 
     return result
 

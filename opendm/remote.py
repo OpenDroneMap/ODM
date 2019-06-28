@@ -73,7 +73,7 @@ class LocalRemoteExecutor:
         # Create queue
         q = queue.Queue()
         for pp in self.project_paths:
-            log.ODM_DEBUG("LRE: Adding to queue %s" % pp)
+            log.ODM_INFO("LRE: Adding to queue %s" % pp)
             q.put(taskClass(pp, self.node, self.params))
 
         def remove_task_safe(task):
@@ -90,12 +90,12 @@ class LocalRemoteExecutor:
                 log.ODM_INFO("LRE: No remote tasks left to cleanup")
 
             for task in self.params['tasks']:
-                log.ODM_DEBUG("LRE: Removing remote task %s... %s" % (task.uuid, 'OK' if remove_task_safe(task) else 'NO'))
+                log.ODM_INFO("LRE: Removing remote task %s... %s" % (task.uuid, 'OK' if remove_task_safe(task) else 'NO'))
 
         def handle_result(task, local, error = None, partial=False):
             def cleanup_remote():
                 if not partial and task.remote_task:
-                    log.ODM_DEBUG("LRE: Cleaning up remote task (%s)... %s" % (task.remote_task.uuid, 'OK' if remove_task_safe(task.remote_task) else 'NO'))
+                    log.ODM_INFO("LRE: Cleaning up remote task (%s)... %s" % (task.remote_task.uuid, 'OK' if remove_task_safe(task.remote_task) else 'NO'))
                     self.params['tasks'].remove(task.remote_task)
                     task.remote_task = None
 
@@ -124,7 +124,7 @@ class LocalRemoteExecutor:
                                     pass
 
                             nonloc.max_remote_tasks = max(1, node_task_limit)
-                            log.ODM_DEBUG("LRE: Node task limit reached. Setting max remote tasks to %s" % node_task_limit)
+                            log.ODM_INFO("LRE: Node task limit reached. Setting max remote tasks to %s" % node_task_limit)
                                 
 
                 # Retry, but only if the error is not related to a task failure
@@ -138,7 +138,7 @@ class LocalRemoteExecutor:
                     cleanup_remote()
                     q.task_done()
 
-                    log.ODM_DEBUG("LRE: Re-queueing %s (retries: %s)" % (task, task.retries))
+                    log.ODM_INFO("LRE: Re-queueing %s (retries: %s)" % (task, task.retries))
                     q.put(task)
                     if not local: remote_running_tasks.increment(-1)
                     return
@@ -185,7 +185,7 @@ class LocalRemoteExecutor:
                 
                 # Yield to local processing
                 if not nonloc.local_processing:
-                    log.ODM_DEBUG("LRE: Yielding to local processing, sending %s back to the queue" % task)
+                    log.ODM_INFO("LRE: Yielding to local processing, sending %s back to the queue" % task)
                     q.put(task)
                     q.task_done()
                     time.sleep(0.05)
@@ -277,7 +277,7 @@ class Task:
             now = datetime.datetime.now()
             if self.wait_until > now:
                 wait_for = (self.wait_until - now).seconds + 1
-                log.ODM_DEBUG("LRE: Waiting %s seconds before processing %s" % (wait_for, self))
+                log.ODM_INFO("LRE: Waiting %s seconds before processing %s" % (wait_for, self))
                 time.sleep(wait_for)
 
             # TODO: we could consider uploading multiple tasks
@@ -349,7 +349,7 @@ class Task:
 
         def print_progress(percentage):
             if (time.time() - nonloc.last_update >= 2) or int(percentage) == 100:
-                log.ODM_DEBUG("LRE: Upload of %s at [%s%%]" % (self, int(percentage)))
+                log.ODM_INFO("LRE: Upload of %s at [%s%%]" % (self, int(percentage)))
                 nonloc.last_update = time.time()
 
         # Upload task
@@ -384,18 +384,18 @@ class Task:
                         # Print a status message once in a while
                         nonloc.status_callback_calls += 1
                         if nonloc.status_callback_calls > 30:
-                            log.ODM_DEBUG("LRE: %s (%s) is still running" % (self, task.uuid))
+                            log.ODM_INFO("LRE: %s (%s) is still running" % (self, task.uuid))
                             nonloc.status_callback_calls = 0
                 try:
                     def print_progress(percentage):
                         if (time.time() - nonloc.last_update >= 2) or int(percentage) == 100:
-                            log.ODM_DEBUG("LRE: Download of %s at [%s%%]" % (self, int(percentage)))
+                            log.ODM_INFO("LRE: Download of %s at [%s%%]" % (self, int(percentage)))
                             nonloc.last_update = time.time()
 
                     task.wait_for_completion(status_callback=status_callback)
-                    log.ODM_DEBUG("LRE: Downloading assets for %s" % self)
+                    log.ODM_INFO("LRE: Downloading assets for %s" % self)
                     task.download_assets(self.project_path, progress_callback=print_progress)
-                    log.ODM_DEBUG("LRE: Downloaded and extracted assets for %s" % self)
+                    log.ODM_INFO("LRE: Downloaded and extracted assets for %s" % self)
                     done()
                 except exceptions.TaskFailedError as e:
                     # Try to get output

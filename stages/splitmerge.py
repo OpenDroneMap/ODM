@@ -80,10 +80,10 @@ class ODMSplitStage(types.ODM_Stage):
                         submodel_images_dir = os.path.abspath(sp_octx.path("..", "images"))
 
                         if reconstruction.gcp.make_filtered_copy(submodel_gcp_file, submodel_images_dir):
-                            log.ODM_DEBUG("Copied filtered GCP file to %s" % submodel_gcp_file)
+                            log.ODM_INFO("Copied filtered GCP file to %s" % submodel_gcp_file)
                             io.copy(submodel_gcp_file, os.path.abspath(sp_octx.path("gcp_list.txt")))
                         else:
-                            log.ODM_DEBUG("No GCP will be copied for %s, not enough images in the submodel are referenced by the GCP" % sp_octx.name())
+                            log.ODM_INFO("No GCP will be copied for %s, not enough images in the submodel are referenced by the GCP" % sp_octx.name())
                         
                 # Reconstruct each submodel
                 log.ODM_INFO("Dataset has been split into %s submodels. Reconstructing each submodel..." % len(submodel_paths))
@@ -130,7 +130,7 @@ class ODMSplitStage(types.ODM_Stage):
                         shutil.move(main_recon, unaligned_recon)
 
                     shutil.move(aligned_recon, main_recon)
-                    log.ODM_DEBUG("%s is now %s" % (aligned_recon, main_recon))
+                    log.ODM_INFO("%s is now %s" % (aligned_recon, main_recon))
 
                 # Remove invalid submodels
                 submodel_paths = [p for p in submodel_paths if not p in remove_paths]
@@ -141,7 +141,7 @@ class ODMSplitStage(types.ODM_Stage):
                         sp_octx = OSFMContext(sp)
 
                         log.ODM_INFO("========================")
-                        log.ODM_INFO("Processing %s" % sp_octx.name())
+                        log.ODM_INFO("Processing %s" % sp_octx.name()) 
                         log.ODM_INFO("========================")
 
                         argv = get_submodel_argv(args.name, tree.submodels_path, sp_octx.name())
@@ -198,7 +198,7 @@ class ODMMergeStage(types.ODM_Stage):
             merged_bounds_file = os.path.join(tree.odm_georeferencing, 'odm_georeferenced_model.bounds.gpkg')
             if not io.file_exists(merged_bounds_file) or self.rerun():
                 all_bounds = get_submodel_paths(tree.submodels_path, 'odm_georeferencing', 'odm_georeferenced_model.bounds.gpkg')
-                log.ODM_DEBUG("Merging all crop bounds: %s" % all_bounds)
+                log.ODM_INFO("Merging all crop bounds: %s" % all_bounds)
                 if len(all_bounds) > 0:
                     # Calculate a new crop area
                     # based on the convex hull of all crop areas of all submodels
@@ -219,7 +219,7 @@ class ODMMergeStage(types.ODM_Stage):
                     )
 
                     if len(all_orthos_and_cutlines) > 1:
-                        log.ODM_DEBUG("Found %s submodels with valid orthophotos and cutlines" % len(all_orthos_and_cutlines))
+                        log.ODM_INFO("Found %s submodels with valid orthophotos and cutlines" % len(all_orthos_and_cutlines))
                         
                         # TODO: histogram matching via rasterio
                         # currently parts have different color tones
