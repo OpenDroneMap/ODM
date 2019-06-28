@@ -18,14 +18,14 @@ if __name__ == '__main__':
 
     # Print args
     args_dict = vars(args)
-    log.ODM_DEBUG('==============')
+    log.ODM_INFO('==============')
     for k in sorted(args_dict.keys()):
         # Don't leak token
         if k == 'sm_cluster' and args_dict[k] is not None:
-            log.ODM_DEBUG('%s: True' % k)
+            log.ODM_INFO('%s: True' % k)
         else:
-            log.ODM_DEBUG('%s: %s' % (k, args_dict[k]))
-    log.ODM_DEBUG('==============')
+            log.ODM_INFO('%s: %s' % (k, args_dict[k]))
+    log.ODM_INFO('==============')
 
     progressbc.set_project_name(args.name)
 
@@ -37,7 +37,7 @@ if __name__ == '__main__':
 
     # If user asks to rerun everything, delete all of the existing progress directories.
     if args.rerun_all:
-        log.ODM_DEBUG("Rerun all -- Removing old data")
+        log.ODM_INFO("Rerun all -- Removing old data")
         os.system("rm -rf " + 
                     " ".join([
                         quote(os.path.join(args.project_path, "odm_georeferencing")),

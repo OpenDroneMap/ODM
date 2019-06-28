@@ -72,7 +72,7 @@ class ODMLoadDatasetStage(types.ODM_Stage):
         system.mkdir_p(tree.odm_georeferencing)
         if not args.use_3dmesh: system.mkdir_p(tree.odm_25dgeoreferencing)
 
-        log.ODM_DEBUG('Loading dataset from: %s' % images_dir)
+        log.ODM_INFO('Loading dataset from: %s' % images_dir)
 
         # check if we rerun cell or not
         images_database_file = io.join_paths(tree.root_path, 'images.json')
@@ -84,6 +84,7 @@ class ODMLoadDatasetStage(types.ODM_Stage):
 
                 photos = []
                 with open(tree.dataset_list, 'w') as dataset_list:
+                    log.ODM_INFO("Loading %s images" % len(path_files))
                     for f in path_files:
                         photos += [types.ODM_Photo(f)]
                         dataset_list.write(photos[-1].filename + '\n')

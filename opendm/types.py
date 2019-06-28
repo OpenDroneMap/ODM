@@ -106,7 +106,7 @@ class ODM_Reconstruction(object):
                 with open(output_coords_file, 'w') as f:
                     coords_header = gcp.wgs84_utm_zone()
                     f.write(coords_header + "\n")
-                    log.ODM_DEBUG("Generated coords file from GCP: %s" % coords_header)
+                    log.ODM_INFO("Generated coords file from GCP: %s" % coords_header)
 
                 # Convert GCP file to a UTM projection since the rest of the pipeline
                 # does not handle other SRS well.

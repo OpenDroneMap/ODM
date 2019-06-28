@@ -24,6 +24,8 @@ class ODMApp:
         """
         Initializes the application and defines the ODM application pipeline stages
         """
+        if args.debug:
+            log.logger.show_debug = True
         
         dataset = ODMLoadDatasetStage('dataset', args, progress=5.0,
                                           verbose=args.verbose)

@@ -13,7 +13,7 @@ def get_orthophoto_vars(args):
     }
 
 def build_overviews(orthophoto_file):
-    log.ODM_DEBUG("Building Overviews")
+    log.ODM_INFO("Building Overviews")
     kwargs = {'orthophoto': orthophoto_file}
     
     # Run gdaladdo
