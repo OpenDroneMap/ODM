@@ -310,7 +310,6 @@ def get_submodel_argv(project_name = None, submodels_path = None, submodel_name 
                 found_args[arg] = True
             except ValueError as e:
                 log.ODM_WARNING("Cannot parse/read JSON: {}".format(str(e)))
-                pass
             finally:
                 i += 2
         elif arg in remove_always_2:
