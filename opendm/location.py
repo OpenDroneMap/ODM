@@ -116,7 +116,7 @@ def parse_srs_header(header):
     :param header (str) line
     :return Proj object
     """
-    log.ODM_DEBUG('Parsing SRS header: %s' % header)
+    log.ODM_INFO('Parsing SRS header: %s' % header)
     header = header.strip()
     ref = header.split(' ')
     try:

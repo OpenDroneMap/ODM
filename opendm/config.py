@@ -25,23 +25,10 @@ def alphanumeric_string(string):
     return string
 
 def path_or_json_string(string):
-    if string == "":
-        return {}
-
-    if string.startswith("[") or string.startswith("{"):
-        try:
-            return json.loads(string)
-        except:
-            raise argparse.ArgumentTypeError("{0} is not a valid JSON string.".format(string))
-    elif io.file_exists(string):
-        try:
-            with open(string, 'r') as f:
-                return json.loads(f.read())
-        except:
-            raise argparse.ArgumentTypeError("{0} is not a valid JSON file.".format(string))
-    else:
-        raise argparse.ArgumentTypeError("{0} is not a valid JSON file or string.".format(string))
-
+    try:
+        return io.path_or_json_string_to_dict(string)
+    except ValueError as e:
+        raise argparse.ArgumentTypeError("{0}".format(str(e)))
 
 # Django URL validation regex
 def url_string(string):
@@ -540,6 +527,12 @@ def config():
                         action='store_true',
                         default=False,
                         help='Generates a benchmark file with runtime info\n'
+                             'Default: %(default)s')
+    
+    parser.add_argument('--debug',
+                        action='store_true',
+                        default=False,
+                        help='Print debug messages\n'
                              'Default: %(default)s')
 
     parser.add_argument('--version',

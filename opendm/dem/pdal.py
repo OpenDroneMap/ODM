@@ -178,7 +178,7 @@ def run_pdaltranslate_smrf(fin, fout, scalar, slope, threshold, window, verbose=
     ]
 
     if verbose:
-        log.ODM_DEBUG(' '.join(cmd))
+        log.ODM_INFO(' '.join(cmd))
 
     system.run(' '.join(cmd))
 
@@ -194,7 +194,7 @@ def merge_point_clouds(input_files, output_file, verbose=False):
     ]
 
     if verbose:
-        log.ODM_DEBUG(' '.join(cmd))
+        log.ODM_INFO(' '.join(cmd))
     
     system.run(' '.join(cmd))
 

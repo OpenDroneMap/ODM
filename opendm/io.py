@@ -1,6 +1,6 @@
 import os
 import shutil, errno
-
+import json
 
 def get_files_list(path_dir):
     return os.listdir(path_dir)
@@ -73,3 +73,21 @@ def related_file_path(input_file_path, prefix="", postfix=""):
     # ext = .ext
 
     return os.path.join(path, "{}{}{}{}".format(prefix, basename, postfix, ext))
+
+def path_or_json_string_to_dict(string):
+    if string == "":
+        return {}
+
+    if string.startswith("[") or string.startswith("{"):
+        try:
+            return json.loads(string)
+        except:
+            raise ValueError("{0} is not a valid JSON string.".format(string))
+    elif file_exists(string):
+        try:
+            with open(string, 'r') as f:
+                return json.loads(f.read())
+        except:
+            raise ValueError("{0} is not a valid JSON file.".format(string))
+    else:
+        raise ValueError("{0} is not a valid JSON file or string.".format(string))
