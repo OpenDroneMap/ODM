@@ -19,7 +19,7 @@ class ODMeshingStage(types.ODM_Stage):
         # Create full 3D model unless --skip-3dmodel is set
         if not args.skip_3dmodel:
           if not io.file_exists(tree.odm_mesh) or self.rerun():
-              log.ODM_DEBUG('Writing ODM Mesh file in: %s' % tree.odm_mesh)
+              log.ODM_INFO('Writing ODM Mesh file in: %s' % tree.odm_mesh)
 
               mesh.screened_poisson_reconstruction(tree.filtered_point_cloud,
                 tree.odm_mesh,
@@ -41,7 +41,7 @@ class ODMeshingStage(types.ODM_Stage):
         if not args.use_3dmesh:
           if not io.file_exists(tree.odm_25dmesh) or self.rerun():
 
-              log.ODM_DEBUG('Writing ODM 2.5D Mesh file in: %s' % tree.odm_25dmesh)
+              log.ODM_INFO('Writing ODM 2.5D Mesh file in: %s' % tree.odm_25dmesh)
               ortho_resolution = gsd.cap_resolution(args.orthophoto_resolution, tree.opensfm_reconstruction, ignore_gsd=args.ignore_gsd) / 100.0 
               
               dsm_multiplier = max(1.0, gsd.rounded_gsd(tree.opensfm_reconstruction, default_value=4, ndigits=3, ignore_gsd=args.ignore_gsd))
@@ -58,7 +58,7 @@ class ODMeshingStage(types.ODM_Stage):
               if args.fast_orthophoto:
                   dsm_radius *= 2
 
-              log.ODM_DEBUG('ODM 2.5D DSM resolution: %s' % dsm_resolution)
+              log.ODM_INFO('ODM 2.5D DSM resolution: %s' % dsm_resolution)
               
               mesh.create_25dmesh(tree.filtered_point_cloud, tree.odm_25dmesh,
                     dsm_radius=dsm_radius,

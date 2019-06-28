@@ -35,7 +35,7 @@ class ODMMvsTexStage(types.ODM_Stage):
             odm_textured_model_obj = os.path.join(r['out_dir'], tree.odm_textured_model_obj)
 
             if not io.file_exists(odm_textured_model_obj) or self.rerun():
-                log.ODM_DEBUG('Writing MVS Textured file in: %s'
+                log.ODM_INFO('Writing MVS Textured file in: %s'
                               % odm_textured_model_obj)
 
                 # Format arguments to fit Mvs-Texturing app

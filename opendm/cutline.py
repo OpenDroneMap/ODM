@@ -10,7 +10,7 @@ import math
 def compute_cutline(orthophoto_file, crop_area_file, destination, max_concurrency=1, tmpdir=None, scale=1):
     if io.file_exists(orthophoto_file) and io.file_exists(crop_area_file):
         from opendm.grass_engine import grass
-        log.ODM_DEBUG("Computing cutline")
+        log.ODM_INFO("Computing cutline")
 
         if tmpdir and not io.dir_exists(tmpdir):
             system.mkdir_p(tmpdir)
@@ -19,7 +19,7 @@ def compute_cutline(orthophoto_file, crop_area_file, destination, max_concurrenc
         scaled_orthophoto = None
 
         if scale < 1:
-            log.ODM_DEBUG("Scaling orthophoto to %s%% to compute cutline" % (scale * 100))
+            log.ODM_INFO("Scaling orthophoto to %s%% to compute cutline" % (scale * 100))
 
             scaled_orthophoto = os.path.join(tmpdir, os.path.basename(io.related_file_path(orthophoto_file, postfix=".scaled")))
             # Scale orthophoto before computing cutline
@@ -37,13 +37,13 @@ def compute_cutline(orthophoto_file, crop_area_file, destination, max_concurrenc
 
         try:
             ortho_width,ortho_height = get_image_size.get_image_size(orthophoto_file, fallback_on_error=False)
-            log.ODM_DEBUG("Orthophoto dimensions are %sx%s" % (ortho_width, ortho_height))
+            log.ODM_INFO("Orthophoto dimensions are %sx%s" % (ortho_width, ortho_height))
             number_lines = int(max(8, math.ceil(min(ortho_width, ortho_height) / 256.0)))
         except:
-            log.ODM_DEBUG("Cannot compute orthophoto dimensions, setting arbitrary number of lines.")
+            log.ODM_INFO("Cannot compute orthophoto dimensions, setting arbitrary number of lines.")
             number_lines = 32
         
-        log.ODM_DEBUG("Number of lines: %s" % number_lines)
+        log.ODM_INFO("Number of lines: %s" % number_lines)
 
         gctx = grass.create_context({'auto_cleanup' : False, 'tmpdir': tmpdir})
         gctx.add_param('orthophoto_file', orthophoto_file)
