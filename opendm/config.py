@@ -55,10 +55,6 @@ parser = SettingsParser(description='OpenDroneMap',
                         yaml_file=open(context.settings_path))
 
 def config():
-    parser.add_argument('--images', '-i',
-                        metavar='<path>',
-                        help='Path to input images'),
-
     parser.add_argument('--project-path',
                         metavar='<path>',
                         help='Path to the project folder')
