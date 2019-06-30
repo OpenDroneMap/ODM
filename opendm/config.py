@@ -571,7 +571,7 @@ def config():
                     choices=['all', 'pointcloud', 'orthophoto', 'dem'],
                     help=('Choose what to merge in the merge step in a split dataset. '
                           'By default all available outputs are merged. '
-                          'Default: '
+                          'Options: %(choices)s. Default: '
                             '%(default)s'))
 
     args = parser.parse_args()
