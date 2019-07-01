@@ -55,10 +55,6 @@ parser = SettingsParser(description='OpenDroneMap',
                         yaml_file=open(context.settings_path))
 
 def config():
-    parser.add_argument('--images', '-i',
-                        metavar='<path>',
-                        help='Path to input images'),
-
     parser.add_argument('--project-path',
                         metavar='<path>',
                         help='Path to the project folder')
@@ -575,7 +571,7 @@ def config():
                     choices=['all', 'pointcloud', 'orthophoto', 'dem'],
                     help=('Choose what to merge in the merge step in a split dataset. '
                           'By default all available outputs are merged. '
-                          'Default: '
+                          'Options: %(choices)s. Default: '
                             '%(default)s'))
 
     args = parser.parse_args()

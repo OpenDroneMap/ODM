@@ -39,7 +39,7 @@ def load_images_database(database_file):
 class ODMLoadDatasetStage(types.ODM_Stage):
     def process(self, args, outputs):
         # Load tree
-        tree = types.ODM_Tree(args.project_path, args.images, args.gcp)
+        tree = types.ODM_Tree(args.project_path, args.gcp)
         outputs['tree'] = tree
 
         if args.time and io.file_exists(tree.benchmarking):
