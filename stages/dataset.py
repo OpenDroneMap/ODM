@@ -103,7 +103,7 @@ class ODMLoadDatasetStage(types.ODM_Stage):
         # Create reconstruction object
         reconstruction = types.ODM_Reconstruction(photos)
         
-        if tree.odm_georeferencing_gcp:
+        if tree.odm_georeferencing_gcp and not args.use_exif:
             reconstruction.georeference_with_gcp(tree.odm_georeferencing_gcp,
                                                  tree.odm_georeferencing_coords,
                                                  tree.odm_georeferencing_gcp_utm,

@@ -53,7 +53,6 @@ class ODMApp:
                                     tone_mapping=args.texturing_tone_mapping)
         georeferencing = ODMGeoreferencingStage('odm_georeferencing', args, progress=80.0,
                                                     gcp_file=args.gcp,
-                                                    use_exif=args.use_exif,
                                                     verbose=args.verbose)
         dem = ODMDEMStage('odm_dem', args, progress=90.0,
                             max_concurrency=args.max_concurrency,
