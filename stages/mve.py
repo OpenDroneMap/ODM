@@ -42,7 +42,7 @@ class ODMMveStage(types.ODM_Stage):
 
             # run mve makescene
             if not io.dir_exists(tree.mve_views):
-                system.run('%s %s %s' % (context.makescene_path, tree.mve_path, tree.mve), env_vars={'OMP_NUM_THREADS': args.max_concurrency})
+                system.run('%s "%s" "%s"' % (context.makescene_path, tree.mve_path, tree.mve), env_vars={'OMP_NUM_THREADS': args.max_concurrency})
 
             self.update_progress(10)
 
