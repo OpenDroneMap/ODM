@@ -119,7 +119,7 @@ class ODMMveStage(types.ODM_Stage):
             retry_count = 1
             while retry_count < 10:
                 try:
-                    system.run('%s "%s" "%s"' % (context.dmrecon_path, ' '.join(dmrecon_config), tree.mve), env_vars={'OMP_NUM_THREADS': args.max_concurrency})
+                    system.run('%s %s "%s"' % (context.dmrecon_path, ' '.join(dmrecon_config), tree.mve), env_vars={'OMP_NUM_THREADS': args.max_concurrency})
                     break
                 except Exception as e:
                     if str(e) == "Child returned 134" or str(e) == "Child returned 1":
