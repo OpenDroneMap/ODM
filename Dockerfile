@@ -56,7 +56,8 @@ RUN apt-get install --no-install-recommends -y \
   python-software-properties \
   python-wheel \
   swig2.0 \
-  grass-core
+  grass-core \
+  libssl-dev
 
 RUN apt-get remove libdc1394-22-dev
 RUN pip install --upgrade pip

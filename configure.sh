@@ -27,7 +27,8 @@ install() {
                          pkg-config \
                          libjsoncpp-dev \
                          python-gdal \
-                         grass-core
+                         grass-core \
+                         libssl-dev
 
     echo "Getting CMake 3.1 for MVS-Texturing"
     apt-get install -y software-properties-common python-software-properties
