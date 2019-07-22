@@ -320,7 +320,7 @@ class ODMMergeStage(types.ODM_Stage):
                     else:
                         log.ODM_WARNING("Cannot merge %s, %s was not created" % (human_name, dem_file))
                 else:
-                    log.ODM_WARNING("Found merged %s in %s" % (human_name, dsm_file))
+                    log.ODM_WARNING("Found merged %s in %s" % (human_name, dem_filename))
 
             if args.merge in ['all', 'dem'] and args.dsm:
                 merge_dems("dsm.tif", "DSM")
