@@ -117,8 +117,8 @@ class LocalRemoteExecutor:
                             node_task_limit = 0
                             for t in self.params['tasks']:
                                 try:
-                                    info = t.info()
-                                    if info.status == TaskStatus.RUNNING and info.processing_time >= 0:
+                                    info = t.info(with_output=-3)
+                                    if info.status == TaskStatus.RUNNING and info.processing_time >= 0 and len(info.output) >= 3:
                                         node_task_limit += 1
                                 except exceptions.OdmError:
                                     pass
