@@ -118,8 +118,11 @@ def opensfm_reconstruction_average_gsd(reconstruction_json):
             camera = reconstruction['cameras'][shot['camera']]
 
             shot_height = shot['translation'][2]
-            focal_ratio = camera['focal']
-
+            focal_ratio = camera.get('focal', camera.get('focal_x'))
+            if not focal_ratio:
+                log.ODM_WARNING("Cannot parse focal values from %s. This is likely an unsupported camera model." % reconstruction_json)
+                return None
+                
             gsds.append(calculate_gsd_from_focal_ratio(focal_ratio, 
                                                         shot_height - ground_height, 
                                                         camera['width']))
