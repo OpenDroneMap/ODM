@@ -82,7 +82,8 @@ install() {
                         rasterio \
                         attrs==19.1.0 \
                         pyodm==1.5.2b1 \
-                        Pillow
+                        Pillow \
+                        joblib
 
     # Fix:  /usr/local/lib/python2.7/dist-packages/requests/__init__.py:83: RequestsDependencyWarning: Old version of cryptography ([1, 2, 3]) may cause slowdown.
     pip install --upgrade cryptography
