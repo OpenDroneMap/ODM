@@ -133,7 +133,8 @@ class OSFMContext:
 
             if gcp_path:
                 config.append("bundle_use_gcp: yes")
-                config.append("bundle_use_gps: no")
+                if not args.force_gps:
+                    config.append("bundle_use_gps: no")
                 io.copy(gcp_path, self.path("gcp_list.txt"))
             
             config = config + append_config
