@@ -74,10 +74,13 @@ class OSFMContext:
             
             # create file list
             has_alt = True
+            has_gps = False
             with open(list_path, 'w') as fout:
                 for photo in photos:
                     if not photo.altitude:
                         has_alt = False
+                    if photo.latitude is not None and photo.longitude is not None:
+                        has_gps = True
                     fout.write('%s\n' % io.join_paths(images_path, photo.filename))
             
             # check for image_groups.txt (split-merge)
@@ -113,7 +116,10 @@ class OSFMContext:
                 "bundle_outlier_filtering_type: AUTO",
             ]
 
-            # TODO: add BOW matching when dataset is not georeferenced (no gps)
+            if not has_gps:
+                log.ODM_INFO("No GPS information, using BOW matching")
+                config.append("matcher_type: WORDS")
+                config.append("matching_bow_neighbors: %s" % args.matcher_neighbors)
 
             if has_alt:
                 log.ODM_INFO("Altitude data detected, enabling it for GPS alignment")
