@@ -61,3 +61,4 @@ project_path:  '' # Example: '/home/user/ODMProjects'
 #orthophoto_bigtiff: IF_SAFER # Options are [YES, NO, IF_NEEDED, IF_SAFER]
 #build_overviews: FALSE
 #pc-classify: none
+#force_gps: False

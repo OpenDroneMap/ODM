@@ -574,6 +574,12 @@ def config():
                           'Options: %(choices)s. Default: '
                             '%(default)s'))
 
+    parser.add_argument('--force-gps',
+                    action='store_true',
+                    default=False,
+                    help=('Use images\' gps exif data for reconstruction, even if there are gcps present.'
+                          'This flag is useful if you have high precision gps measurements.'))
+
     args = parser.parse_args()
 
     # check that the project path setting has been set properly
