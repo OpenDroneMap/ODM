@@ -119,11 +119,11 @@ class OSFMContext:
                 log.ODM_INFO("Altitude data detected, enabling it for GPS alignment")
                 config.append("use_altitude_tag: yes")
 
-            # if has_alt or gcp_path:
-            #     config.append("align_method: naive")
-            # else:
-            config.append("align_method: orientation_prior")
-            config.append("align_orientation_prior: vertical")
+            if has_alt or gcp_path:
+                config.append("align_method: naive")
+            else:
+                config.append("align_method: orientation_prior")
+                config.append("align_orientation_prior: vertical")
             
             if args.use_hybrid_bundle_adjustment:
                 log.ODM_INFO("Enabling hybrid bundle adjustment")
