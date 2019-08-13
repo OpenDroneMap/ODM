@@ -577,8 +577,9 @@ def config():
     parser.add_argument('--force-gps',
                     action='store_true',
                     default=False,
-                    help=('Use images\' gps exif data for reconstruction, even if there are gcps present.'
-                          'This flag is useful if you have high precision gps measurements.'))
+                    help=('Use images\' GPS exif data for reconstruction, even if there are GCPs present.'
+                          'This flag is useful if you have high precision GPS measurements. '
+                          'If there are no GCPs, this flag does nothing. Default: %(default)s'))
 
     args = parser.parse_args()
 
