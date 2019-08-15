@@ -116,6 +116,9 @@ class OSFMContext:
                 "bundle_outlier_filtering_type: AUTO",
             ]
 
+            if args.camera_model != 'auto':
+                config.append("camera_projection_type: %s" % args.camera_model.upper())
+
             if not has_gps:
                 log.ODM_INFO("No GPS information, using BOW matching")
                 config.append("matcher_type: WORDS")
