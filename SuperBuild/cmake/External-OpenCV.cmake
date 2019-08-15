@@ -7,8 +7,7 @@ ExternalProject_Add(${_proj_name}
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
-  URL               https://github.com/Itseez/opencv/archive/2.4.11.zip
-  URL_MD5           b517e83489c709eee1d8be76b16976a7
+  URL               https://github.com/opencv/opencv/archive/3.4.6.zip
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   #--Configure step-------------

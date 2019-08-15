@@ -70,9 +70,9 @@ def config():
                         metavar='<integer>',
                         default=2048,
                         type=int,
-                        help='Resizes images by the largest side for feature extraction. '
+                        help='Resizes images by the largest side for feature extraction purposes only. '
                              'Set to -1 to disable. This does not affect the final orthophoto '
-                             ' resolution quality. Default:  %(default)s')
+                             ' resolution quality and will not resize the original images. Default:  %(default)s')
 
     parser.add_argument('--end-with', '-e',
                         metavar='<string>',
@@ -153,11 +153,11 @@ def config():
     parser.add_argument('--camera-model',
             metavar='<string>',
             default='auto',
-            choices=['auto', 'perspective', 'brown', 'fisheye'],
+            choices=['auto', 'perspective', 'brown', 'fisheye', 'spherical'],
             help=('Set a camera projection type. Manually setting a value '
                 'can help improve geometric undistortion. By default the application '
                 'tries to determine a projection type from the images metadata. Can be '
-                'set to one of: [auto, perspective, brown, fisheye]. Default: '
+                'set to one of: [auto, perspective, brown, fisheye, spherical]. Default: '
                 '%(default)s'))
 
     parser.add_argument('--max-concurrency',

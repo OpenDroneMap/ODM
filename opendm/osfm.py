@@ -23,7 +23,7 @@ class OSFMContext:
     def export_bundler(self, destination_bundle_file, rerun=False):
         if not io.file_exists(destination_bundle_file) or rerun:
                 # convert back to bundler's format
-                system.run('%s/bin/export_bundler "%s"' %
+                system.run('%s/bin/export_bundler --undistorted "%s"' %
                         (context.opensfm_path, self.opensfm_project_path))
         else:
             log.ODM_WARNING('Found a valid Bundler file in: %s' % destination_bundle_file)
@@ -122,7 +122,6 @@ class OSFMContext:
             if not has_gps:
                 log.ODM_INFO("No GPS information, using BOW matching")
                 config.append("matcher_type: WORDS")
-                config.append("matching_bow_neighbors: %s" % args.matcher_neighbors)
 
             if has_alt:
                 log.ODM_INFO("Altitude data detected, enabling it for GPS alignment")
@@ -234,30 +233,6 @@ class OSFMContext:
         else:
             log.ODM_WARNING("Tried to update configuration, but %s does not exist." % cfg_file)
 
-    def save_absolute_image_list_to(self, file):
-        """
-        Writes a copy of the image_list.txt file and makes sure that all paths
-        written in it are absolute paths and not relative paths.
-        """
-        image_list_file = self.path("image_list.txt")
-
-        if io.file_exists(image_list_file):
-            with open(image_list_file, 'r') as f:
-                content = f.read()
-            
-            lines = []
-            for line in map(str.strip, content.split('\n')):
-                if line and not line.startswith("/"):
-                    line = os.path.abspath(os.path.join(self.opensfm_project_path, line))
-                lines.append(line)
-
-            with open(file, 'w') as f:
-                f.write("\n".join(lines))
-
-            log.ODM_INFO("Wrote %s with absolute paths" % file)
-        else:
-            log.ODM_WARNING("No %s found, cannot create %s" % (image_list_file, file))
-    
     def name(self):
         return os.path.basename(os.path.abspath(self.path("..")))
 
