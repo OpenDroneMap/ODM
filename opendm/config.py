@@ -150,13 +150,13 @@ def config():
                              'JSON string representing the contents of a '
                              'cameras.json file. Default: %(default)s')
     
-    parser.add_argument('--camera-model',
+    parser.add_argument('--camera-lens',
             metavar='<string>',
             default='auto',
             choices=['auto', 'perspective', 'brown', 'fisheye', 'spherical'],
             help=('Set a camera projection type. Manually setting a value '
                 'can help improve geometric undistortion. By default the application '
-                'tries to determine a projection type from the images metadata. Can be '
+                'tries to determine a lens type from the images metadata. Can be '
                 'set to one of: [auto, perspective, brown, fisheye, spherical]. Default: '
                 '%(default)s'))
 
