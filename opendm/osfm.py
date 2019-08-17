@@ -20,14 +20,6 @@ class OSFMContext:
         system.run('%s/bin/opensfm %s "%s"' %
                     (context.opensfm_path, command, self.opensfm_project_path))
 
-    def export_bundler(self, destination_bundle_file, rerun=False):
-        if not io.file_exists(destination_bundle_file) or rerun:
-                # convert back to bundler's format
-                system.run('%s/bin/export_bundler --undistorted "%s"' %
-                        (context.opensfm_path, self.opensfm_project_path))
-        else:
-            log.ODM_WARNING('Found a valid Bundler file in: %s' % destination_bundle_file)
-
     def is_reconstruction_done(self):
         tracks_file = os.path.join(self.opensfm_project_path, 'tracks.csv')
         reconstruction_file = os.path.join(self.opensfm_project_path, 'reconstruction.json')
@@ -114,6 +106,7 @@ class OSFMContext:
                 "optimize_camera_parameters: %s" % ('no' if args.use_fixed_camera_params or args.cameras else 'yes'),
                 "undistorted_image_format: png", # mvs-texturing exhibits artifacts with JPG
                 "bundle_outlier_filtering_type: AUTO",
+                "align_orientation_prior: vertical",
             ]
 
             if args.camera_lens != 'auto':
@@ -128,10 +121,9 @@ class OSFMContext:
                 config.append("use_altitude_tag: yes")
 
             if has_alt or gcp_path:
-                config.append("align_method: naive")
+                config.append("align_method: auto")
             else:
                 config.append("align_method: orientation_prior")
-                config.append("align_orientation_prior: vertical")
             
             if args.use_hybrid_bundle_adjustment:
                 log.ODM_INFO("Enabling hybrid bundle adjustment")

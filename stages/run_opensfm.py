@@ -88,9 +88,6 @@ class ODMOpenSfMStage(types.ODM_Stage):
             else:
                 log.ODM_WARNING("Found a valid dense reconstruction in %s" % output_file)
 
-        # check if reconstruction was exported to bundler before
-        octx.export_bundler(tree.opensfm_bundle_list, self.rerun())
-
         self.update_progress(90)
 
         if reconstruction.is_georeferenced() and (not io.file_exists(tree.opensfm_transformation) or self.rerun()):
