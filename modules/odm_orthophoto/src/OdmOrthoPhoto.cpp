@@ -400,7 +400,7 @@ void OdmOrthoPhoto::createOrthoPhoto()
         photo_ = cv::Mat::zeros(rowRes, colRes, CV_8UC4) + cv::Scalar(255, 255, 255, 0);
         depth_ = cv::Mat::zeros(rowRes, colRes, CV_32F) - std::numeric_limits<float>::infinity();
     }catch(const cv::Exception &e){
-        std::cerr << "Couldn't allocate enough memory to render the orthophoto (" << colRes << "x" << rowRes << " cells = " << ((long long)colRes * (long long)rowRes * 4) << " bytes). Try to reduce the -resolution parameter or add more RAM.\n";
+        std::cerr << "Couldn't allocate enough memory to render the orthophoto (" << colRes << "x" << rowRes << " cells = " << ((long long)colRes * (long long)rowRes * 4) << " bytes). Try to increase the --orthophoto-resolution parameter to a larger integer or add more RAM.\n";
         exit(1);
     }
 
