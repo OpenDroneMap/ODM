@@ -28,7 +28,11 @@ install() {
                          libjsoncpp-dev \
                          python-gdal \
                          grass-core \
-                         libssl-dev
+                         libssl-dev \
+                         liblas-bin \
+                         swig2.0 \
+                         python-wheel \
+                         libboost-log-dev
 
     echo "Getting CMake 3.1 for MVS-Texturing"
     apt-get install -y software-properties-common python-software-properties
@@ -42,7 +46,6 @@ install() {
                          libavformat-dev \
                          libswscale-dev \
                          python-dev \
-                         python-numpy \
                          libtbb2 \
                          libtbb-dev \
                          libjpeg-dev \
@@ -59,18 +62,15 @@ install() {
     echo "Removing libdc1394-22-dev due to python opencv issue"
     apt-get remove libdc1394-22-dev
 
-    ## Installing OpenSfM Requisites
     echo "Installing OpenSfM Dependencies"
-    apt-get install -y -qq python-networkx \
-                         libgoogle-glog-dev \
+    apt-get install -y -qq libgoogle-glog-dev \
                          libsuitesparse-dev \
                          libboost-filesystem-dev \
                          libboost-iostreams-dev \
                          libboost-regex-dev \
                          libboost-python-dev \
                          libboost-date-time-dev \
-                         libboost-thread-dev \
-                         python-pyproj
+                         libboost-thread-dev
 
     pip install -U PyYAML==3.13 \
                         exifread \
@@ -83,24 +83,17 @@ install() {
                         attrs==19.1.0 \
                         pyodm==1.5.2b1 \
                         Pillow \
+                        networkx \
+                        scipy==1.2.1 \
+                        numpy==1.15.4 \
+                        shapely \
+                        pyproj \
+                        psutil \
                         joblib
 
     # Fix:  /usr/local/lib/python2.7/dist-packages/requests/__init__.py:83: RequestsDependencyWarning: Old version of cryptography ([1, 2, 3]) may cause slowdown.
     pip install --upgrade cryptography
     python -m easy_install --upgrade pyOpenSSL
-
-
-    echo "Installing OpenDroneMap Dependencies"
-    apt-get install -y -qq python-scipy \
-                         liblas-bin
-
-    echo "Installing lidar2dems Dependencies"
-    apt-get install -y -qq swig2.0 \
-                         python-wheel \
-                         libboost-log-dev
-
-    echo "Installing split-merge Dependencies"
-    pip install -U scipy==1.2.1 numpy==1.15.4 shapely pyproj psutil
 
     echo "Compiling SuperBuild"
     cd ${RUNPATH}/SuperBuild
