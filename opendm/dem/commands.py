@@ -52,13 +52,32 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
     ext_width = extent['maxx'] - extent['minx']
     ext_height = extent['maxy'] - extent['miny']
 
-    final_dem_resolution = (int(math.ceil(ext_width / float(resolution))),
-                            int(math.ceil(ext_height / float(resolution))))
-    final_dem_pixels = final_dem_resolution[0] * final_dem_resolution[1]
+    w, h = (int(math.ceil(ext_width / float(resolution))),
+            int(math.ceil(ext_height / float(resolution))))
+
+    # Set a floor, no matter the resolution parameter
+    # (sometimes a wrongly estimated scale of the model can cause the resolution
+    # to be set unrealistically low, causing errors)
+    RES_FLOOR = 64
+    if w < RES_FLOOR and h < RES_FLOOR:
+        prev_w, prev_h = w, h
+        
+        if w >= h:
+            w, h = (RES_FLOOR, int(math.ceil(ext_height / ext_width * RES_FLOOR)))
+        else:
+            w, h = (int(math.ceil(ext_width / ext_height * RES_FLOOR)), RES_FLOOR)
+        
+        floor_ratio = prev_w / float(w)
+        resolution *= floor_ratio
+        radiuses = [str(float(r) * floor_ratio) for r in radiuses]
+
+        log.ODM_WARNING("Really low resolution DEM requested %s will set floor at %s pixels. Resolution changed to %s. The scale of this reconstruction might be off." % ((prev_w, prev_h), RES_FLOOR, resolution))
+        
+    final_dem_pixels = w * h
 
     num_splits = int(max(1, math.ceil(math.log(math.ceil(final_dem_pixels / float(max_tile_size * max_tile_size)))/math.log(2))))
     num_tiles = num_splits * num_splits
-    log.ODM_INFO("DEM resolution is %s, max tile size is %s, will split DEM generation into %s tiles" % (final_dem_resolution, max_tile_size, num_tiles))
+    log.ODM_INFO("DEM resolution is %s, max tile size is %s, will split DEM generation into %s tiles" % ((h, w), max_tile_size, num_tiles))
 
     tile_bounds_width = ext_width / float(num_splits)
     tile_bounds_height = ext_height / float(num_splits)
