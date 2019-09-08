@@ -130,7 +130,9 @@ class OSFMContext:
                 config.append("bundle_interval: 100")          # Bundle after adding 'bundle_interval' cameras
                 config.append("bundle_new_points_ratio: 1.2")  # Bundle when (new points) / (bundled points) > bundle_new_points_ratio
                 config.append("local_bundle_radius: 1")        # Max image graph distance for images to be included in local bundle adjustment
-
+            else:
+                config.append("local_bundle_radius: 0")
+                
             if gcp_path:
                 config.append("bundle_use_gcp: yes")
                 if not args.force_gps:
