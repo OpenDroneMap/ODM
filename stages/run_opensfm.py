@@ -44,11 +44,19 @@ class ODMOpenSfMStage(types.ODM_Stage):
             output_file = tree.opensfm_reconstruction
 
         updated_config_flag_file = octx.path('updated_config.txt')
+
+        # Make sure it's capped by the depthmap-resolution arg,
+        # since the undistorted images are used for MVS
+        outputs['undist_image_max_size'] = max(
+            gsd.image_max_size(photos, args.orthophoto_resolution, tree.opensfm_reconstruction, ignore_gsd=args.ignore_gsd),
+            args.depthmap_resolution
+        )
+
         if not io.file_exists(updated_config_flag_file) or self.rerun():
-            octx.update_config({'undistorted_image_max_size': gsd.image_max_size(photos, args.orthophoto_resolution, tree.opensfm_reconstruction, ignore_gsd=args.ignore_gsd)})
+            octx.update_config({'undistorted_image_max_size': outputs['undist_image_max_size']})
             octx.touch(updated_config_flag_file)
 
-        # These will be used for texturing
+        # These will be used for texturing / MVS
         undistorted_images_path = octx.path("undistorted")
 
         if not io.dir_exists(undistorted_images_path) or self.rerun():
@@ -59,7 +67,7 @@ class ODMOpenSfMStage(types.ODM_Stage):
         self.update_progress(80)
 
         if not io.file_exists(tree.opensfm_reconstruction_nvm) or self.rerun():
-            octx.run('export_visualsfm --undistorted')
+            octx.run('export_visualsfm --undistorted --points')
         else:
             log.ODM_WARNING('Found a valid OpenSfM NVM reconstruction file in: %s' %
                             tree.opensfm_reconstruction_nvm)
@@ -79,9 +87,6 @@ class ODMOpenSfMStage(types.ODM_Stage):
                 octx.run('compute_depthmaps')
             else:
                 log.ODM_WARNING("Found a valid dense reconstruction in %s" % output_file)
-
-        # check if reconstruction was exported to bundler before
-        octx.export_bundler(tree.opensfm_bundle_list, self.rerun())
 
         self.update_progress(90)
 

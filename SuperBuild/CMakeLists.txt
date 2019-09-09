@@ -140,7 +140,7 @@ externalproject_add(mve
 
 externalproject_add(poissonrecon
     GIT_REPOSITORY    https://github.com/mkazhdan/PoissonRecon.git
-    GIT_TAG           20b17f5fb49312a4f765a6bcae55d9c4919932f3
+    GIT_TAG           ce5005ae3094d902d551a65a8b3131e06f45e7cf
     SOURCE_DIR        ${SB_SOURCE_DIR}/PoissonRecon
     UPDATE_COMMAND    ""
     CONFIGURE_COMMAND ""

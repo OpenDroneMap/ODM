@@ -21,19 +21,6 @@ class ODMMveStage(types.ODM_Stage):
 
         # check if reconstruction was done before
         if not io.file_exists(tree.mve_model) or self.rerun():
-            # cleanup if a rerun
-            if io.dir_exists(tree.mve_path) and self.rerun():
-                shutil.rmtree(tree.mve_path)
-
-            # make bundle directory
-            if not io.file_exists(tree.mve_bundle):
-                system.mkdir_p(tree.mve_path)
-                system.mkdir_p(io.join_paths(tree.mve_path, 'bundle'))
-
-                octx = OSFMContext(tree.opensfm)
-                octx.save_absolute_image_list_to(tree.mve_image_list)
-                io.copy(tree.opensfm_bundle, tree.mve_bundle)
-
             # mve makescene wants the output directory
             # to not exists before executing it (otherwise it
             # will prompt the user for confirmation)
@@ -42,22 +29,16 @@ class ODMMveStage(types.ODM_Stage):
 
             # run mve makescene
             if not io.dir_exists(tree.mve_views):
-                system.run('%s "%s" "%s"' % (context.makescene_path, tree.mve_path, tree.mve), env_vars={'OMP_NUM_THREADS': args.max_concurrency})
+                system.run('%s "%s" "%s"' % (context.makescene_path, tree.opensfm_reconstruction_nvm, tree.mve), env_vars={'OMP_NUM_THREADS': args.max_concurrency})
 
             self.update_progress(10)
 
             # Compute mve output scale based on depthmap_resolution
-            max_width = 0
-            max_height = 0
-            for photo in photos:
-                max_width = max(photo.width, max_width)
-                max_height = max(photo.height, max_height)
-
             max_pixels = args.depthmap_resolution * args.depthmap_resolution
-            if max_width * max_height <= max_pixels:
+            if outputs['undist_image_max_size'] * outputs['undist_image_max_size'] <= max_pixels:
                 mve_output_scale = 0
             else:
-                ratio = float(max_width * max_height) / float(max_pixels)
+                ratio = float(outputs['undist_image_max_size'] * outputs['undist_image_max_size']) / float(max_pixels)
                 mve_output_scale = int(math.ceil(math.log(ratio) / math.log(4.0)))
 
             dmrecon_config = [

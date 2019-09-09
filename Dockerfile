@@ -50,9 +50,7 @@ RUN apt-get install --no-install-recommends -y \
   python-dev \
   python-gdal \
   python-matplotlib \
-  python-networkx \
   python-pip \
-  python-pyproj \
   python-software-properties \
   python-wheel \
   swig2.0 \
@@ -67,18 +65,20 @@ RUN pip install -U \
   exifread \
   gpxpy \
   loky \
-  numpy==1.15.4 \
-  psutil \
-  pyproj \
   PyYAML==3.13 \
   repoze.lru \
-  scipy==1.2.1 \
-  shapely \
   xmltodict \
   rasterio \
   attrs==19.1.0 \
   pyodm==1.5.2b1 \
-  Pillow
+  Pillow \
+  networkx \
+  scipy==1.2.1 \
+  numpy==1.15.4 \
+  shapely \
+  pyproj \
+  psutil \
+  joblib
 
 RUN pip install --upgrade cryptography && python -m easy_install --upgrade pyOpenSSL
 

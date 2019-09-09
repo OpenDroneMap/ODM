@@ -259,9 +259,6 @@ class ODM_Tree(object):
 
         # mve
         self.mve_model = io.join_paths(self.mve, 'mve_dense_point_cloud.ply')
-        self.mve_path = io.join_paths(self.opensfm, 'mve')
-        self.mve_image_list = io.join_paths(self.mve_path, 'list.txt')
-        self.mve_bundle = io.join_paths(self.mve_path, 'bundle/bundle.out')
         self.mve_views = io.join_paths(self.mve, 'views')
 
         # filter points
