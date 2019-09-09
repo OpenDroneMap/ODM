@@ -33,9 +33,6 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                 'verbose': verbose
             }
 
-            # Have geo coordinates?
-            georef = reconstruction.georef
-
             # Check if the georef object is initialized
             # (during a --rerun this might not be)
             # TODO: this should be moved to a more central location?
