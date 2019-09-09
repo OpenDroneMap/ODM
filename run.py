@@ -49,6 +49,7 @@ if __name__ == '__main__':
                         quote(os.path.join(args.project_path, "odm_25dmeshing")),
                         quote(os.path.join(args.project_path, "odm_25dtexturing")),
                         quote(os.path.join(args.project_path, "mve")),
+                        quote(os.path.join(args.project_path, "entwine_pointcloud")),
                         quote(os.path.join(args.project_path, "submodels")),
                     ]))
 
