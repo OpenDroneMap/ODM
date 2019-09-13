@@ -453,7 +453,8 @@ class ReconstructionTask(Task):
                                     seed_touch_files=["opensfm/split_merge_stop_at_reconstruction.txt"],
                                     outputs=["opensfm/matches", "opensfm/features", 
                                             "opensfm/reconstruction.json",
-                                            "opensfm/tracks.csv"])
+                                            "opensfm/tracks.csv",
+                                            "cameras.json"])
         else:
             log.ODM_INFO("Already processed feature matching and reconstruction for %s" % octx.name())
             done()
@@ -500,7 +501,7 @@ class ToolchainTask(Task):
                                                 "opensfm/exif/empty"],
                                 outputs=["odm_orthophoto/odm_orthophoto.tif",
                                         "odm_orthophoto/cutline.gpkg",
-                                        "odm_dem", 
+                                        "odm_dem",
                                         "odm_georeferencing"])
         else:
             log.ODM_INFO("Already processed toolchain for %s" % submodel_name)
