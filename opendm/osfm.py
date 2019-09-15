@@ -244,6 +244,7 @@ def get_submodel_argv(project_name = None, submodels_path = None, submodel_name 
         adding --orthophoto-cutline
         adding --dem-euclidean-map
         adding --skip-3dmodel (split-merge does not support 3D model merging)
+        tweaking --crop if necessary (DEM merging makes assumption about the area of DEMs and their euclidean maps that require cropping. If cropping is skipped, this leads to errors.)
         removing --gcp (the GCP path if specified is always "gcp_list.txt")
         reading the contents of --cameras
     """
@@ -282,6 +283,14 @@ def get_submodel_argv(project_name = None, submodels_path = None, submodel_name 
             result.append(arg)
             found_args[arg] = True
             i += 1
+        elif arg == '--crop':
+            result.append(arg)
+            crop_value = float(argv[i + 1])
+            if crop_value == 0:
+                crop_value = 0.015625
+            result.append(crop_value)
+            found_args[arg] = True
+            i += 2
         elif arg in read_json_always:
             try:
                 jsond = io.path_or_json_string_to_dict(argv[i + 1])
@@ -307,7 +316,7 @@ def get_submodel_argv(project_name = None, submodels_path = None, submodel_name 
     for arg in assure_always:
         if not found_args.get(arg):
             result.append(arg)
-
+    
     if not found_args.get('project_name') and submodel_name:
         result.append(submodel_name)
 
