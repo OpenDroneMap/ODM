@@ -76,7 +76,7 @@ RUN pip install -U \
   scipy==1.2.1 \
   numpy==1.15.4 \
   shapely \
-  pyproj \
+  pyproj==2.2.2 \
   psutil \
   joblib
 
