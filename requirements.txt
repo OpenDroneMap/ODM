@@ -43,7 +43,6 @@ pyOpenSSL==19.0.0
 pyparsing==2.4.0
 pyproj==2.2.2
 Pyste==0.9.10
-python-apt==1.1.0b1+ubuntu0.16.4.4
 python-dateutil==2.4.2
 python-snappy==0.5
 pytz==2014.10
