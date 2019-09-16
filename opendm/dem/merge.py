@@ -57,7 +57,7 @@ def euclidean_merge_dems(input_dems, output_dem, creation_options={}):
         xs = []
         ys = []
         for src_d, src_e in sources:
-            if src_d.bounds != src_e.bounds:
+            if not same_bounds(src_d, src_e):
                 raise ValueError("DEM and euclidean file must have the same bounds")
 
             left, bottom, right, top = src_d.bounds
@@ -159,3 +159,17 @@ def euclidean_merge_dems(input_dems, output_dem, creation_options={}):
             dstrast.write(dstarr, window=dst_window)
 
     return output_dem
+
+def same_bounds(rast_a, rast_b, EPS = 1E-5):
+    """
+    Compares two raster bounds and returns true if they are equal
+    (up to a float precision threshold)
+    """
+    a = rast_a.bounds
+    b = rast_b.bounds
+
+    return (abs(a.bottom - b.bottom) < EPS) and \
+           (abs(a.top - b.top) < EPS) and \
+           (abs(a.left - b.left) < EPS) and \
+           (abs(a.right - b.right) < EPS)
+           
