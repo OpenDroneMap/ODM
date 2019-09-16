@@ -60,31 +60,6 @@ RUN apt-get install --no-install-recommends -y \
 RUN apt-get remove libdc1394-22-dev
 RUN pip install --upgrade pip
 RUN pip install setuptools
-RUN pip install -U \
-  appsettings \
-  exifread \
-  gpxpy \
-  loky \
-  PyYAML==3.13 \
-  repoze.lru \
-  xmltodict \
-  rasterio \
-  attrs==19.1.0 \
-  pyodm==1.5.2b1 \
-  Pillow \
-  networkx \
-  scipy==1.2.1 \
-  numpy==1.15.4 \
-  shapely \
-  pyproj==2.2.2 \
-  psutil \
-  joblib
-
-RUN pip install --upgrade cryptography && python -m easy_install --upgrade pyOpenSSL
-
-ENV PYTHONPATH="$PYTHONPATH:/code/SuperBuild/install/lib/python2.7/dist-packages"
-ENV PYTHONPATH="$PYTHONPATH:/code/SuperBuild/src/opensfm"
-ENV LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/code/SuperBuild/install/lib"
 
 # Prepare directories
 RUN mkdir /code
@@ -102,6 +77,14 @@ COPY /SuperBuild/cmake/ /code/SuperBuild/cmake/
 COPY /SuperBuild/CMakeLists.txt /code/SuperBuild/CMakeLists.txt
 COPY docker.settings.yaml /code/settings.yaml
 COPY VERSION /code/VERSION
+COPY requirements.txt /code/requirements.txt
+
+RUN pip install -r requirements.txt
+RUN pip install --upgrade cryptography && python -m easy_install --upgrade pyOpenSSL
+
+ENV PYTHONPATH="$PYTHONPATH:/code/SuperBuild/install/lib/python2.7/dist-packages"
+ENV PYTHONPATH="$PYTHONPATH:/code/SuperBuild/src/opensfm"
+ENV LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/code/SuperBuild/install/lib"
 
 # Compile code in SuperBuild and root directories
 RUN cd SuperBuild \
