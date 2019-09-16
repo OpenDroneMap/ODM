@@ -72,24 +72,7 @@ install() {
                          libboost-date-time-dev \
                          libboost-thread-dev
 
-    pip install -U PyYAML==3.13 \
-                        exifread \
-                        gpxpy \
-                        xmltodict \
-                        appsettings \
-                        loky \
-                        repoze.lru \
-                        rasterio \
-                        attrs==19.1.0 \
-                        pyodm==1.5.2b1 \
-                        Pillow \
-                        networkx \
-                        scipy==1.2.1 \
-                        numpy==1.15.4 \
-                        shapely \
-                        pyproj==2.2.2 \
-                        psutil \
-                        joblib
+    pip install -r "${RUNPATH}/requirements.txt"
 
     # Fix:  /usr/local/lib/python2.7/dist-packages/requests/__init__.py:83: RequestsDependencyWarning: Old version of cryptography ([1, 2, 3]) may cause slowdown.
     pip install --upgrade cryptography
