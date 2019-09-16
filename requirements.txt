@@ -1,0 +1,17 @@
+PyYAML==3.13
+ExifRead==2.1.2
+gpxpy==1.3.5
+xmltodict==0.12.0
+appsettings==0.8
+loky==2.5.1
+repoze.lru==0.7
+rasterio==1.0.28
+attrs==19.1.0
+pyodm==1.5.2b1
+Pillow==6.1.0
+networkx==2.2
+scipy==1.2.1
+numpy==1.15.4
+pyproj==2.2.2
+psutil==5.6.3
+joblib==0.13.2
