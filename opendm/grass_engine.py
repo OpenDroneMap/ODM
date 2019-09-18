@@ -15,7 +15,8 @@ class GrassEngine:
                             system.which('grass72') or \
                             system.which('grass74') or \
                             system.which('grass76') or \
-                            system.which('grass78')
+                            shutil.which('grass78') or \
+                            shutil.which('grass80')
 
         if self.grass_binary is None:
             log.ODM_WARNING("Could not find a GRASS 7 executable. GRASS scripts will not work.")
