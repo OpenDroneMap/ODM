@@ -150,13 +150,25 @@ class GCPFile:
         target_srs = location.parse_srs_header(utm_zone)
         transformer = location.transformer(self.srs, target_srs)
 
+        gcps = {}
+        for entry in self.iter_entries():
+            utm_x, utm_y, utm_z = transformer.TransformPoint(entry.x, entry.y, entry.z)
+            k = "{} {} {}".format(utm_x, utm_y, utm_z)
+            if not k in gcps:
+                gcps[k] = [entry]
+            else:
+                gcps[k].append(entry)
+            
+
         with open(gcp_3d_file, 'w') as f3:
             with open(gcp_2d_file, 'w') as f2:
                 gcp_n = 1
-                for entry in self.iter_entries():
-                    utm_x, utm_y, utm_z = transformer.TransformPoint(entry.x, entry.y, entry.z)
-                    f3.write("GCP{} {} {} {} {} {}\n".format(gcp_n, utm_x, utm_y, utm_z, precisionxy, precisionz))
-                    f2.write("GCP{} {} {} {}\n".format(gcp_n, entry.filename, entry.px, entry.py))
+                for k in gcps:
+                    f3.write("GCP{} {} {} {}\n".format(gcp_n, k, precisionxy, precisionz))
+
+                    for entry in gcps[k]:
+                        f2.write("GCP{} {} {} {}\n".format(gcp_n, entry.filename, entry.px, entry.py))
+                    
                     gcp_n += 1
             
         return (gcp_3d_file, gcp_2d_file)
