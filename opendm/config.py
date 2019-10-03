@@ -1,14 +1,16 @@
 import argparse
+import json
 from opendm import context
 from opendm import io
 from opendm import log
 from appsettings import SettingsParser
+from pyodm import Node, exceptions
 
 import sys
 
 # parse arguments
-processopts = ['dataset', 'opensfm', 'slam', 'mve', 'odm_filterpoints',
-               'odm_meshing', 'odm_25dmeshing', 'mvs_texturing', 'odm_georeferencing',
+processopts = ['dataset', 'split', 'merge', 'opensfm', 'mve', 'odm_filterpoints',
+               'odm_meshing', 'mvs_texturing', 'odm_georeferencing',
                'odm_dem', 'odm_orthophoto']
 
 with open(io.join_paths(context.root_path, 'VERSION')) as version_file:
@@ -22,6 +24,26 @@ def alphanumeric_string(string):
         raise argparse.ArgumentTypeError(msg)
     return string
 
+def path_or_json_string(string):
+    try:
+        return io.path_or_json_string_to_dict(string)
+    except ValueError as e:
+        raise argparse.ArgumentTypeError("{0}".format(str(e)))
+
+# Django URL validation regex
+def url_string(string):
+    import re
+    regex = re.compile(
+        r'^(?:http|ftp)s?://' # http:// or https://
+        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.?)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' #domain...
+        r'localhost|' #localhost...
+        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # ...or ip
+        r'(?::\d+)?' # optional port
+        r'(?:/?|[/?]\S+)$', re.IGNORECASE)
+        
+    if re.match(regex, string) is None:
+        raise argparse.ArgumentTypeError("%s is not a valid URL. The URL must be in the format: http(s)://host[:port]/[?token=]" % string)
+    return string
 
 class RerunFrom(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
@@ -33,10 +55,6 @@ parser = SettingsParser(description='OpenDroneMap',
                         yaml_file=open(context.settings_path))
 
 def config():
-    parser.add_argument('--images', '-i',
-                        metavar='<path>',
-                        help='Path to input images'),
-
     parser.add_argument('--project-path',
                         metavar='<path>',
                         help='Path to the project folder')
@@ -44,14 +62,17 @@ def config():
     parser.add_argument('name',
                         metavar='<project name>',
                         type=alphanumeric_string,
+                        default='code',
+                        nargs='?',
                         help='Name of Project (i.e subdirectory of projects folder)')
 
     parser.add_argument('--resize-to',
                         metavar='<integer>',
                         default=2048,
                         type=int,
-                        help='resizes images by the largest side for opensfm. '
-                             'Set to -1 to disable. Default:  %(default)s')
+                        help='Resizes images by the largest side for feature extraction purposes only. '
+                             'Set to -1 to disable. This does not affect the final orthophoto '
+                             ' resolution quality and will not resize the original images. Default:  %(default)s')
 
     parser.add_argument('--end-with', '-e',
                         metavar='<string>',
@@ -77,17 +98,13 @@ def config():
                        choices=processopts,
                        help=('Can be one of:' + ' | '.join(processopts)))
 
-    parser.add_argument('--video',
-                        metavar='<string>',
-                        help='Path to the video file to process')
+    # parser.add_argument('--video',
+    #                     metavar='<string>',
+    #                     help='Path to the video file to process')
 
-    parser.add_argument('--slam-config',
-                        metavar='<string>',
-                        help='Path to config file for orb-slam')
-
-    parser.add_argument('--proj',
-                        metavar='<PROJ4 string>',
-                        help='Projection used to transform the model into geographic coordinates')
+    # parser.add_argument('--slam-config',
+    #                     metavar='<string>',
+    #                     help='Path to config file for orb-slam')
 
     parser.add_argument('--min-num-features',
                         metavar='<integer>',
@@ -122,6 +139,26 @@ def config():
                         action='store_true',
                         default=False,
                         help='Turn off camera parameter optimization during bundler')
+
+    parser.add_argument('--cameras',
+                        default='',
+                        metavar='<json>',
+                        type=path_or_json_string,
+                        help='Use the camera parameters computed from '
+                             'another dataset instead of calculating them. '
+                             'Can be specified either as path to a cameras.json file or as a '
+                             'JSON string representing the contents of a '
+                             'cameras.json file. Default: %(default)s')
+    
+    parser.add_argument('--camera-lens',
+            metavar='<string>',
+            default='auto',
+            choices=['auto', 'perspective', 'brown', 'fisheye', 'spherical'],
+            help=('Set a camera projection type. Manually setting a value '
+                'can help improve geometric undistortion. By default the application '
+                'tries to determine a lens type from the images metadata. Can be '
+                'set to one of: [auto, perspective, brown, fisheye, spherical]. Default: '
+                '%(default)s'))
 
     parser.add_argument('--max-concurrency',
                         metavar='<positive integer>',
@@ -270,6 +307,11 @@ def config():
                 action='store_true',
                 default=False,
                 help='Export the georeferenced point cloud in LAS format. Default:  %(default)s')
+
+    parser.add_argument('--pc-ept',
+                action='store_true',
+                default=False,
+                help='Export the georeferenced point cloud in Entwine Point Tile (EPT) format. Default:  %(default)s')
 
     parser.add_argument('--pc-filter',
                         metavar='<positive float>',
@@ -424,6 +466,16 @@ def config():
                         help='Decimate the points before generating the DEM. 1 is no decimation (full quality). '
                              '100 decimates ~99%% of the points. Useful for speeding up '
                              'generation.\nDefault=%(default)s')
+    
+    parser.add_argument('--dem-euclidean-map',
+            action='store_true',
+            default=False,
+            help='Computes an euclidean raster map for each DEM. '
+            'The map reports the distance from each cell to the nearest '
+            'NODATA value (before any hole filling takes place). '
+            'This can be useful to isolate the areas that have been filled. '
+            'Default: '
+            '%(default)s')
 
     parser.add_argument('--orthophoto-resolution',
                         metavar='<float > 0.0>',
@@ -446,16 +498,15 @@ def config():
                         help='Set the compression to use. Note that this could '
                              'break gdal_translate if you don\'t know what you '
                              'are doing. Options: %(choices)s.\nDefault: %(default)s')
-
-    parser.add_argument('--orthophoto-bigtiff',
-                        type=str,
-                        choices=['YES', 'NO','IF_NEEDED','IF_SAFER'],
-                        default='IF_SAFER',
-                        help='Control whether the created orthophoto is a BigTIFF or '
-                             'classic TIFF. BigTIFF is a variant for files larger than '
-                             '4GiB of data. Options are %(choices)s. See GDAL specs: '
-                             'https://www.gdal.org/frmt_gtiff.html for more info. '
-                             '\nDefault: %(default)s')
+    
+    parser.add_argument('--orthophoto-cutline',
+            action='store_true',
+            default=False,
+            help='Generates a polygon around the cropping area '
+            'that cuts the orthophoto around the edges of features. This polygon '
+            'can be useful for stitching seamless mosaics with multiple overlapping orthophotos. '
+            'Default: '
+            '%(default)s')
 
     parser.add_argument('--build-overviews',
                         action='store_true',
@@ -473,11 +524,62 @@ def config():
                         default=False,
                         help='Generates a benchmark file with runtime info\n'
                              'Default: %(default)s')
+    
+    parser.add_argument('--debug',
+                        action='store_true',
+                        default=False,
+                        help='Print debug messages\n'
+                             'Default: %(default)s')
 
     parser.add_argument('--version',
                         action='version',
                         version='OpenDroneMap {0}'.format(__version__),
                         help='Displays version number and exits. ')
+
+    parser.add_argument('--split',
+                        type=int,
+                        default=999999,
+                        metavar='<positive integer>',
+                        help='Average number of images per submodel. When '
+                                'splitting a large dataset into smaller '
+                                'submodels, images are grouped into clusters. '
+                                'This value regulates the number of images that '
+                                'each cluster should have on average.')
+
+    parser.add_argument('--split-overlap',
+                        type=float,
+                        metavar='<positive integer>',
+                        default=150,
+                        help='Radius of the overlap between submodels. '
+                        'After grouping images into clusters, images '
+                        'that are closer than this radius to a cluster '
+                        'are added to the cluster. This is done to ensure '
+                        'that neighboring submodels overlap.')
+
+    parser.add_argument('--sm-cluster',
+                        metavar='<string>',
+                        type=url_string,
+                        default=None,
+                        help='URL to a ClusterODM instance '
+                            'for distributing a split-merge workflow on '
+                            'multiple nodes in parallel. '
+                            'Default: %(default)s')
+
+    parser.add_argument('--merge',
+                    metavar='<string>',
+                    default='all',
+                    choices=['all', 'pointcloud', 'orthophoto', 'dem'],
+                    help=('Choose what to merge in the merge step in a split dataset. '
+                          'By default all available outputs are merged. '
+                          'Options: %(choices)s. Default: '
+                            '%(default)s'))
+
+    parser.add_argument('--force-gps',
+                    action='store_true',
+                    default=False,
+                    help=('Use images\' GPS exif data for reconstruction, even if there are GCPs present.'
+                          'This flag is useful if you have high precision GPS measurements. '
+                          'If there are no GCPs, this flag does nothing. Default: %(default)s'))
 
     args = parser.parse_args()
 
@@ -498,7 +600,18 @@ def config():
       args.pc_classify = True
 
     if args.skip_3dmodel and args.use_3dmesh:
-      log.ODM_WARNING('--skip-3dmodel is set, but so is --use-3dmesh. --use_3dmesh will be ignored.')
-      args.use_3dmesh = False
+      log.ODM_WARNING('--skip-3dmodel is set, but so is --use-3dmesh. --skip-3dmodel will be ignored.')
+      args.skip_3dmodel = False
+
+    if args.orthophoto_cutline and not args.crop:
+      log.ODM_WARNING("--orthophoto-cutline is set, but --crop is not. --crop will be set to 0.01")
+      args.crop = 0.01
+
+    if args.sm_cluster:
+        try:
+            Node.from_url(args.sm_cluster).info()
+        except exceptions.NodeConnectionError as e:
+            log.ODM_ERROR("Cluster node seems to be offline: %s"  % str(e))
+            sys.exit(1)
 
     return args

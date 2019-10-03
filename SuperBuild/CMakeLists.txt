@@ -103,16 +103,14 @@ SETUP_EXTERNAL_PROJECT(Hexer 1.4 ON)
 # ---------------------------------------------------------------------------------------------
 # Open Geometric Vision (OpenGV)
 # Open Structure from Motion (OpenSfM)
-# Catkin
-# Ecto
 #
 
 set(custom_libs OpenGV
 				OpenSfM
-				Catkin
-				Ecto
 				LASzip
+                Zstd
 				PDAL
+                Entwine
 				MvsTexturing
 )
 
@@ -130,8 +128,8 @@ endforeach()
 ## Add mve Build
 
 externalproject_add(mve
-    GIT_REPOSITORY  https://github.com/simonfuhrmann/mve.git
-    GIT_TAG         4328bb4d1666113e919213daea4fe6b2ff9be588
+    GIT_REPOSITORY  https://github.com/OpenDroneMap/mve.git
+    GIT_TAG         070
     UPDATE_COMMAND  ""
     SOURCE_DIR      ${SB_SOURCE_DIR}/elibs/mve
     CONFIGURE_COMMAND ""

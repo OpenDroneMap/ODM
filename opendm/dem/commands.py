@@ -1,13 +1,15 @@
 import os
 import sys
-import gippy
+import rasterio
 import numpy
 import math
 import time
+import shutil
 from opendm.system import run
 from opendm import point_cloud
+from opendm import io
 from opendm.concurrency import get_max_memory
-from scipy import ndimage, signal
+from scipy import ndimage
 from datetime import datetime
 from opendm import log
 try:
@@ -32,8 +34,9 @@ def classify(lasFile, scalar, slope, threshold, window, verbose=False):
 error = None
 
 def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56'], gapfill=True,
-                outdir='', resolution=0.1, max_workers=1, max_tile_size=2048,
-                verbose=False, decimation=None):
+                outdir='', resolution=0.1, max_workers=1, max_tile_size=4096,
+                verbose=False, decimation=None, keep_unfilled_copy=False,
+                apply_smoothing=True):
     """ Create DEM from multiple radii, and optionally gapfill """
     global error
     error = None
@@ -49,13 +52,32 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
     ext_width = extent['maxx'] - extent['minx']
     ext_height = extent['maxy'] - extent['miny']
 
-    final_dem_resolution = (int(math.ceil(ext_width / float(resolution))),
-                            int(math.ceil(ext_height / float(resolution))))
-    final_dem_pixels = final_dem_resolution[0] * final_dem_resolution[1]
+    w, h = (int(math.ceil(ext_width / float(resolution))),
+            int(math.ceil(ext_height / float(resolution))))
+
+    # Set a floor, no matter the resolution parameter
+    # (sometimes a wrongly estimated scale of the model can cause the resolution
+    # to be set unrealistically low, causing errors)
+    RES_FLOOR = 64
+    if w < RES_FLOOR and h < RES_FLOOR:
+        prev_w, prev_h = w, h
+        
+        if w >= h:
+            w, h = (RES_FLOOR, int(math.ceil(ext_height / ext_width * RES_FLOOR)))
+        else:
+            w, h = (int(math.ceil(ext_width / ext_height * RES_FLOOR)), RES_FLOOR)
+        
+        floor_ratio = prev_w / float(w)
+        resolution *= floor_ratio
+        radiuses = [str(float(r) * floor_ratio) for r in radiuses]
+
+        log.ODM_WARNING("Really low resolution DEM requested %s will set floor at %s pixels. Resolution changed to %s. The scale of this reconstruction might be off." % ((prev_w, prev_h), RES_FLOOR, resolution))
+        
+    final_dem_pixels = w * h
 
     num_splits = int(max(1, math.ceil(math.log(math.ceil(final_dem_pixels / float(max_tile_size * max_tile_size)))/math.log(2))))
     num_tiles = num_splits * num_splits
-    log.ODM_INFO("DEM resolution is %s, max tile size is %s, will split DEM generation into %s tiles" % (final_dem_resolution, max_tile_size, num_tiles))
+    log.ODM_INFO("DEM resolution is %s, max tile size is %s, will split DEM generation into %s tiles" % ((h, w), max_tile_size, num_tiles))
 
     tile_bounds_width = ext_width / float(num_splits)
     tile_bounds_height = ext_height / float(num_splits)
@@ -180,80 +202,141 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
             raise Exception("Error creating %s, %s failed to be created" % (output_file, t['filename']))
     
     # Create virtual raster
-    vrt_path = os.path.abspath(os.path.join(outdir, "merged.vrt"))
-    run('gdalbuildvrt "%s" "%s"' % (vrt_path, '" "'.join(map(lambda t: t['filename'], tiles))))
+    tiles_vrt_path = os.path.abspath(os.path.join(outdir, "tiles.vrt"))
+    run('gdalbuildvrt "%s" "%s"' % (tiles_vrt_path, '" "'.join(map(lambda t: t['filename'], tiles))))
 
-    geotiff_path = os.path.abspath(os.path.join(outdir, 'merged.tif'))
+    merged_vrt_path = os.path.abspath(os.path.join(outdir, "merged.vrt"))
+    geotiff_tmp_path = os.path.abspath(os.path.join(outdir, 'tiles.tmp.tif'))
+    geotiff_small_path = os.path.abspath(os.path.join(outdir, 'tiles.small.tif'))
+    geotiff_small_filled_path = os.path.abspath(os.path.join(outdir, 'tiles.small_filled.tif'))
+    geotiff_path = os.path.abspath(os.path.join(outdir, 'tiles.tif'))
 
     # Build GeoTIFF
     kwargs = {
         'max_memory': get_max_memory(),
         'threads': max_workers if max_workers else 'ALL_CPUS',
-        'vrt': vrt_path,
-        'geotiff': geotiff_path
+        'tiles_vrt': tiles_vrt_path,
+        'merged_vrt': merged_vrt_path,
+        'geotiff': geotiff_path,
+        'geotiff_tmp': geotiff_tmp_path,
+        'geotiff_small': geotiff_small_path,
+        'geotiff_small_filled': geotiff_small_filled_path
     }
 
     if gapfill:
+        # Sometimes, for some reason gdal_fillnodata.py
+        # behaves strangely when reading data directly from a .VRT
+        # so we need to convert to GeoTIFF first.
+        run('gdal_translate '
+                '-co NUM_THREADS={threads} '
+                '--config GDAL_CACHEMAX {max_memory}% '
+                '{tiles_vrt} {geotiff_tmp}'.format(**kwargs))
+
+        # Scale to 10% size
+        run('gdal_translate '
+            '-co NUM_THREADS={threads} '
+            '--config GDAL_CACHEMAX {max_memory}% '
+            '-outsize 10% 0 '
+            '{geotiff_tmp} {geotiff_small}'.format(**kwargs))
+
+        # Fill scaled
         run('gdal_fillnodata.py '
             '-co NUM_THREADS={threads} '
             '--config GDAL_CACHEMAX {max_memory}% '
             '-b 1 '
             '-of GTiff '
-            '{vrt} {geotiff}'.format(**kwargs))
+            '{geotiff_small} {geotiff_small_filled}'.format(**kwargs))
+
+        # Merge filled scaled DEM with unfilled DEM using bilinear interpolation
+        run('gdalbuildvrt -resolution highest -r bilinear "%s" "%s" "%s"' % (merged_vrt_path, geotiff_small_filled_path, geotiff_tmp_path))
+        run('gdal_translate '
+            '-co NUM_THREADS={threads} '
+            '--config GDAL_CACHEMAX {max_memory}% '
+            '{merged_vrt} {geotiff}'.format(**kwargs))
     else:
         run('gdal_translate '
                 '-co NUM_THREADS={threads} '
                 '--config GDAL_CACHEMAX {max_memory}% '
-                '{vrt} {geotiff}'.format(**kwargs))
+                '{tiles_vrt} {geotiff}'.format(**kwargs))
 
-    post_process(geotiff_path, output_path)
-    os.remove(geotiff_path)
+    if apply_smoothing:
+        median_smoothing(geotiff_path, output_path)
+        os.remove(geotiff_path)
+    else:
+        os.rename(geotiff_path, output_path)
 
-    if os.path.exists(vrt_path): os.remove(vrt_path)
+    if os.path.exists(geotiff_tmp_path):
+        if not keep_unfilled_copy: 
+            os.remove(geotiff_tmp_path)
+        else:
+            os.rename(geotiff_tmp_path, io.related_file_path(output_path, postfix=".unfilled"))
+    
+    for cleanup_file in [tiles_vrt_path, merged_vrt_path, geotiff_small_path, geotiff_small_filled_path]:
+        if os.path.exists(cleanup_file): os.remove(cleanup_file)
     for t in tiles:
         if os.path.exists(t['filename']): os.remove(t['filename'])
     
     log.ODM_INFO('Completed %s in %s' % (output_file, datetime.now() - start))
 
 
-def post_process(geotiff_path, output_path, smoothing_iterations=1):
+def compute_euclidean_map(geotiff_path, output_path, overwrite=False):
+    if not os.path.exists(geotiff_path):
+        log.ODM_WARNING("Cannot compute euclidean map (file does not exist: %s)" % geotiff_path)
+        return
+
+    nodata = -9999
+    with rasterio.open(geotiff_path) as f:
+        nodata = f.nodatavals[0]
+
+    if not os.path.exists(output_path) or overwrite:
+        log.ODM_INFO("Computing euclidean distance: %s" % output_path)
+        run('gdal_proximity.py "%s" "%s" -values %s' % (geotiff_path, output_path, nodata))
+
+        if os.path.exists(output_path):
+            return output_path
+        else:
+            log.ODM_WARNING("Cannot compute euclidean distance file: %s" % output_path)
+    else:
+        log.ODM_INFO("Found a euclidean distance map: %s" % output_path)
+        return output_path
+
+
+def median_smoothing(geotiff_path, output_path, smoothing_iterations=1):
     """ Apply median smoothing """
     start = datetime.now()
 
     if not os.path.exists(geotiff_path):
         raise Exception('File %s does not exist!' % geotiff_path)
 
-    log.ODM_INFO('Starting post processing (smoothing)...')
+    log.ODM_INFO('Starting smoothing...')
 
-    img = gippy.GeoImage(geotiff_path)
-    nodata = img[0].nodata()
-    arr = img[0].read()
+    with rasterio.open(geotiff_path) as img:
+        nodata = img.nodatavals[0]
+        dtype = img.dtypes[0]
+        arr = img.read()[0]
 
-    # Median filter (careful, changing the value 5 might require tweaking)
-    # the lines below. There's another numpy function that takes care of 
-    # these edge cases, but it's slower.
-    for i in range(smoothing_iterations):
-        log.ODM_INFO("Smoothing iteration %s" % str(i + 1))
-        arr = signal.medfilt(arr, 5)
+        # Median filter (careful, changing the value 5 might require tweaking)
+        # the lines below. There's another numpy function that takes care of 
+        # these edge cases, but it's slower.
+        for i in range(smoothing_iterations):
+            log.ODM_INFO("Smoothing iteration %s" % str(i + 1))
+            arr = ndimage.median_filter(arr, size=5, output=dtype)
+
+        # Fill corner points with nearest value
+        if arr.shape >= (4, 4):
+            arr[0][:2] = arr[1][0] = arr[1][1]
+            arr[0][-2:] = arr[1][-1] = arr[2][-1]
+            arr[-1][:2] = arr[-2][0] = arr[-2][1]
+            arr[-1][-2:] = arr[-2][-1] = arr[-2][-2]
+
+        # Median filter leaves a bunch of zeros in nodata areas
+        locs = numpy.where(arr == 0.0)
+        arr[locs] = nodata
+
+        # write output
+        with rasterio.open(output_path, 'w', **img.profile) as imgout:
+            imgout.write(arr, 1)
     
-    # Fill corner points with nearest value
-    if arr.shape >= (4, 4):
-        arr[0][:2] = arr[1][0] = arr[1][1]
-        arr[0][-2:] = arr[1][-1] = arr[2][-1]
-        arr[-1][:2] = arr[-2][0] = arr[-2][1]
-        arr[-1][-2:] = arr[-2][-1] = arr[-2][-2]
-
-    # Median filter leaves a bunch of zeros in nodata areas
-    locs = numpy.where(arr == 0.0)
-    arr[locs] = nodata
-
-    # write output
-    imgout = gippy.GeoImage.create_from(img, output_path)
-    imgout.set_nodata(nodata)
-    imgout[0].write(arr)
-    output_path = imgout.filename()
-    imgout = None
-
-    log.ODM_INFO('Completed post processing to create %s in %s' % (os.path.relpath(output_path), datetime.now() - start))
+    log.ODM_INFO('Completed smoothing to create %s in %s' % (os.path.relpath(output_path), datetime.now() - start))
 
     return output_path

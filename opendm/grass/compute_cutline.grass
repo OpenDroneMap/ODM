@@ -1,0 +1,38 @@
+# orthophoto_file: input GeoTIFF raster file
+# crop_area_file: input vector polygon file delimiting the safe area for processing
+# number_lines: number of cutlines on the smallest side of the orthophoto for computing the final cutline
+# max_concurrency: maximum number of parallel processes to use
+# memory: maximum MB of memory to use
+# ------
+# output: If successful, prints the full path to the cutlines file. Otherwise it prints "error"
+
+# Import orthophoto (green band only)
+r.external band=2 input="${orthophoto_file}" output=ortho --overwrite
+
+# Import crop area
+v.in.ogr input="${crop_area_file}" output=crop_area --overwrite
+
+g.region vector=crop_area
+
+# Generate cutlines
+i.cutlinesmod.py --overwrite input=ortho output=cutline number_lines=${number_lines} edge_detection=zc no_edge_friction=20 lane_border_multiplier=1000000 tile_width=1024 tile_height=1024 overlap=20 processes=${max_concurrency} memory=${memory}
+
+#v.out.ogr input=cutline output="cutline_raw.gpkg" format=GPKG
+
+# Select cutlines that are within crop area
+v.select ainput=cutline binput=crop_area output=result operator=within
+
+# Export
+v.out.ogr input=result output="result.gpkg" format=GPKG
+
+# Merge all geometries, select only the largest one (remove islands)
+ogr2ogr -f GPKG -overwrite -explodecollections -dialect SQLite -sql "SELECT ST_Union(geom) FROM result ORDER BY ST_AREA(geom) DESC LIMIT 1" cutline.gpkg result.gpkg
+
+# Add new line output in case the last command didn't.
+echo ""
+
+if [ -e "cutline.gpkg" ]; then
+    echo "$$(pwd)/cutline.gpkg"
+else
+    echo "error"
+fi

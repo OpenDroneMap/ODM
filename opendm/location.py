@@ -1,6 +1,7 @@
 import math
 from opendm import log
-from pyproj import Proj
+from pyproj import Proj, Transformer, CRS
+from osgeo import osr
 
 def extract_utm_coords(photos, images_path, output_coords_file):
     """
@@ -54,7 +55,32 @@ def extract_utm_coords(photos, images_path, output_coords_file):
         for coord in coords:
             f.write("%s %s %s\n" % (coord[0] - dx, coord[1] - dy, coord[2]))
     
+def transform2(from_srs, to_srs, x, y):
+    return transformer(from_srs, to_srs).TransformPoint(x, y, 0)[:2]
 
+def transform3(from_srs, to_srs, x, y, z):
+    return transformer(from_srs, to_srs).TransformPoint(x, y, z)
+
+def proj_srs_convert(srs):
+    """
+    Convert a Proj SRS object to osr SRS object
+    """
+    res = osr.SpatialReference()
+    epsg = srs.to_epsg()
+
+    if epsg:
+        res.ImportFromEPSG(epsg)
+    else:
+        proj4 = srs.to_proj4()
+        res.ImportFromProj4(proj4)
+    
+    return res
+
+def transformer(from_srs, to_srs):
+    src = proj_srs_convert(from_srs)
+    tgt = proj_srs_convert(to_srs)
+    return osr.CoordinateTransformation(src, tgt)
+    
 def get_utm_zone_and_hemisphere_from(lon, lat):
     """
     Calculate the UTM zone and hemisphere that a longitude/latitude pair falls on
@@ -84,3 +110,45 @@ def convert_to_utm(lon, lat, alt, utm_zone, hemisphere):
     x,y = p(lon, lat)
     return [x, y, alt]
 
+def parse_srs_header(header):
+    """
+    Parse a header coming from GCP or coordinate file
+    :param header (str) line
+    :return Proj object
+    """
+    log.ODM_INFO('Parsing SRS header: %s' % header)
+    header = header.strip()
+    ref = header.split(' ')
+    try:
+        if ref[0] == 'WGS84' and ref[1] == 'UTM':
+            datum = ref[0]
+            utm_pole = (ref[2][len(ref[2]) - 1]).upper()
+            utm_zone = int(ref[2][:len(ref[2]) - 1])
+            
+            proj_args = {
+                'zone': utm_zone, 
+                'datum': datum
+            }
+
+            proj4 = '+proj=utm +zone={zone} +datum={datum} +units=m +no_defs=True'
+            if utm_pole == 'S':
+                proj4 += ' +south=True'
+
+            srs = CRS.from_proj4(proj4.format(**proj_args))
+        elif '+proj' in header:
+            srs = CRS.from_proj4(header.strip('\''))
+        elif header.lower().startswith("epsg:"):
+            srs = CRS.from_epsg(header.lower()[5:])
+        else:
+            log.ODM_ERROR('Could not parse coordinates. Bad SRS supplied: %s' % header)
+    except RuntimeError as e:
+        log.ODM_ERROR('Uh oh! There seems to be a problem with your coordinates/GCP file.\n\n'
+                            'The line: %s\n\n'
+                            'Is not valid. Projections that are valid include:\n'
+                            ' - EPSG:*****\n'
+                            ' - WGS84 UTM **(N|S)\n'
+                            ' - Any valid proj4 string (for example, +proj=utm +zone=32 +north +ellps=WGS84 +datum=WGS84 +units=m +no_defs)\n\n'
+                            'Modify your input and try again.' % header)
+        raise RuntimeError(e)
+    
+    return srs

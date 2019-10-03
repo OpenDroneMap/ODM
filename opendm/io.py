@@ -1,6 +1,6 @@
 import os
 import shutil, errno
-
+import json
 
 def get_files_list(path_dir):
     return os.listdir(path_dir)
@@ -56,3 +56,38 @@ def rename_file(src, dst):
 def find(filename, folder):
     for root, dirs, files in os.walk(folder):
         return '/'.join((root, filename)) if filename in files else None
+
+
+def related_file_path(input_file_path, prefix="", postfix=""):
+    """
+    For example: related_file_path("/path/to/file.ext", "a.", ".b")
+     --> "/path/to/a.file.b.ext"
+    """
+    path, filename = os.path.split(input_file_path)
+
+    # path = path/to
+    # filename = file.ext
+
+    basename, ext = os.path.splitext(filename)
+    # basename = file
+    # ext = .ext
+
+    return os.path.join(path, "{}{}{}{}".format(prefix, basename, postfix, ext))
+
+def path_or_json_string_to_dict(string):
+    if string == "":
+        return {}
+
+    if string.startswith("[") or string.startswith("{"):
+        try:
+            return json.loads(string)
+        except:
+            raise ValueError("{0} is not a valid JSON string.".format(string))
+    elif file_exists(string):
+        try:
+            with open(string, 'r') as f:
+                return json.loads(f.read())
+        except:
+            raise ValueError("{0} is not a valid JSON file.".format(string))
+    else:
+        raise ValueError("{0} is not a valid JSON file or string.".format(string))

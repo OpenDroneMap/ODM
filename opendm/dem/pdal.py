@@ -34,10 +34,10 @@ import os
 import json as jsonlib
 import tempfile
 from opendm import system
+from opendm import log
 
-import glob
 from datetime import datetime
-import uuid
+from pipes import quote
 
 
 """ JSON Functions """
@@ -134,7 +134,7 @@ def json_add_readers(json, filenames):
 
 def json_print(json):
     """ Pretty print JSON """
-    print jsonlib.dumps(json, indent=4, separators=(',', ': '))
+    log.ODM_DEBUG(jsonlib.dumps(json, indent=4, separators=(',', ': ')))
 
 
 """ Run PDAL commands """
@@ -147,7 +147,7 @@ def run_pipeline(json, verbose=False):
     # write to temp file
     f, jsonfile = tempfile.mkstemp(suffix='.json')
     if verbose:
-        print 'Pipeline file: %s' % jsonfile
+        log.ODM_INFO('Pipeline file: %s' % jsonfile)
     os.write(f, jsonlib.dumps(json))
     os.close(f)
 
@@ -157,9 +157,9 @@ def run_pipeline(json, verbose=False):
         '-i %s' % jsonfile
     ]
     if verbose:
-        out = system.run(' '.join(cmd))
+        system.run(' '.join(cmd))
     else:
-        out = system.run(' '.join(cmd) + ' > /dev/null 2>&1')
+        system.run(' '.join(cmd) + ' > /dev/null 2>&1')
     os.remove(jsonfile)
 
 
@@ -178,9 +178,23 @@ def run_pdaltranslate_smrf(fin, fout, scalar, slope, threshold, window, verbose=
     ]
 
     if verbose:
-        print ' '.join(cmd)
+        log.ODM_INFO(' '.join(cmd))
 
-    out = system.run(' '.join(cmd))
+    system.run(' '.join(cmd))
+
+def merge_point_clouds(input_files, output_file, verbose=False):
+    if len(input_files) == 0:
+        log.ODM_WARNING("Cannot merge point clouds, no point clouds to merge.")
+        return
+
+    cmd = [
+        'pdal',
+        'merge',
+        ' '.join(map(quote, input_files + [output_file])),
+    ]
+
     if verbose:
-        print out
+        log.ODM_INFO(' '.join(cmd))
+    
+    system.run(' '.join(cmd))
 

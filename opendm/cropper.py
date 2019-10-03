@@ -17,10 +17,12 @@ class Cropper:
         return os.path.join(self.storage_dir, '{}.{}'.format(self.files_prefix, suffix))
 
     @staticmethod
-    def crop(shapefile_path, geotiff_path, gdal_options, keep_original=True):
-        if not os.path.exists(shapefile_path) or not os.path.exists(geotiff_path):
-            log.ODM_WARNING("Either {} or {} does not exist, will skip cropping.".format(shapefile_path, geotiff_path))
+    def crop(gpkg_path, geotiff_path, gdal_options, keep_original=True):
+        if not os.path.exists(gpkg_path) or not os.path.exists(geotiff_path):
+            log.ODM_WARNING("Either {} or {} does not exist, will skip cropping.".format(gpkg_path, geotiff_path))
             return geotiff_path
+
+        log.ODM_INFO("Cropping %s" % geotiff_path)
 
         # Rename original file
         # path/to/odm_orthophoto.tif --> path/to/odm_orthophoto.original.tif
@@ -38,14 +40,14 @@ class Cropper:
 
         try:
             kwargs = {
-                'shapefile_path': shapefile_path,
+                'gpkg_path': gpkg_path,
                 'geotiffInput': original_geotiff,
                 'geotiffOutput': geotiff_path,
                 'options': ' '.join(map(lambda k: '-co {}={}'.format(k, gdal_options[k]), gdal_options)),
                 'max_memory': get_max_memory()
             }
 
-            run('gdalwarp -cutline {shapefile_path} '
+            run('gdalwarp -cutline {gpkg_path} '
                 '-crop_to_cutline '
                 '{options} '
                 '{geotiffInput} '
@@ -63,7 +65,59 @@ class Cropper:
 
         return geotiff_path
 
-    def create_bounds_geojson(self, pointcloud_path, buffer_distance = 0, decimation_step=40, outlier_radius=20):
+    @staticmethod
+    def merge_bounds(input_bound_files, output_bounds, buffer_distance = 0):
+        """
+        Merge multiple bound files into a single bound computed from the convex hull
+        of all bounds (minus a buffer distance in meters)
+        """
+        geomcol = ogr.Geometry(ogr.wkbGeometryCollection)
+
+        driver = ogr.GetDriverByName('GPKG')
+        srs = None
+
+        for input_bound_file in input_bound_files:
+            ds = driver.Open(input_bound_file, 0) # ready-only
+
+            layer = ds.GetLayer()
+            srs = layer.GetSpatialRef()
+
+            # Collect all Geometry
+            for feature in layer:
+                geomcol.AddGeometry(feature.GetGeometryRef())
+            
+            ds = None
+
+        # Calculate convex hull
+        convexhull = geomcol.ConvexHull()
+
+        # If buffer distance is specified
+        # Create two buffers, one shrinked by
+        # N + 3 and then that buffer expanded by 3
+        # so that we get smooth corners. \m/
+        BUFFER_SMOOTH_DISTANCE = 3
+
+        if buffer_distance > 0:
+            convexhull = convexhull.Buffer(-(buffer_distance + BUFFER_SMOOTH_DISTANCE))
+            convexhull = convexhull.Buffer(BUFFER_SMOOTH_DISTANCE)
+
+        # Save to a new file
+        if os.path.exists(output_bounds):
+            driver.DeleteDataSource(output_bounds)
+
+        out_ds = driver.CreateDataSource(output_bounds)
+        layer = out_ds.CreateLayer("convexhull", srs=srs, geom_type=ogr.wkbPolygon)
+
+        feature_def = layer.GetLayerDefn()
+        feature = ogr.Feature(feature_def)
+        feature.SetGeometry(convexhull)
+        layer.CreateFeature(feature)
+        feature = None
+
+        # Save and close output data source
+        out_ds = None
+
+    def create_bounds_geojson(self, pointcloud_path, buffer_distance = 0, decimation_step=40):
         """
         Compute a buffered polygon around the data extents (not just a bounding box)
         of the given point cloud.
@@ -71,23 +125,19 @@ class Cropper:
         @return filename to GeoJSON containing the polygon
         """
         if not os.path.exists(pointcloud_path):
-            log.ODM_WARNING('Point cloud does not exist, cannot generate shapefile bounds {}'.format(pointcloud_path))
+            log.ODM_WARNING('Point cloud does not exist, cannot generate bounds {}'.format(pointcloud_path))
             return ''
 
-        # Do basic outlier removal prior to extracting boundary information
-        filtered_pointcloud_path = self.path('filtered.las')
+        # Do decimation prior to extracting boundary information
+        decimated_pointcloud_path = self.path('decimated.las')
 
         run("pdal translate -i \"{}\" "
             "-o \"{}\" "
-            "decimation outlier range "
-            "--filters.decimation.step={} "
-            "--filters.outlier.method=radius "
-            "--filters.outlier.radius={} "
-            "--filters.outlier.min_k=2 "
-            "--filters.range.limits='Classification![7:7]'".format(pointcloud_path, filtered_pointcloud_path, decimation_step, outlier_radius))
+            "decimation "
+            "--filters.decimation.step={} ".format(pointcloud_path, decimated_pointcloud_path, decimation_step))
 
-        if not os.path.exists(filtered_pointcloud_path):
-            log.ODM_WARNING('Could not filter point cloud, cannot generate shapefile bounds {}'.format(filtered_pointcloud_path))
+        if not os.path.exists(decimated_pointcloud_path):
+            log.ODM_WARNING('Could not decimate point cloud, thus cannot generate GPKG bounds {}'.format(decimated_pointcloud_path))
             return ''
 
         # Use PDAL to dump boundary information
@@ -95,7 +145,7 @@ class Cropper:
 
         boundary_file_path = self.path('boundary.json')
 
-        run('pdal info --boundary --filters.hexbin.edge_length=1 --filters.hexbin.threshold=0 {0} > {1}'.format(filtered_pointcloud_path,  boundary_file_path))
+        run('pdal info --boundary --filters.hexbin.edge_size=1 --filters.hexbin.threshold=0 {0} > {1}'.format(decimated_pointcloud_path,  boundary_file_path))
         
         pc_geojson_boundary_feature = None
 
@@ -157,25 +207,25 @@ class Cropper:
         # Save and close data sources
         out_ds = ds = None
 
-        # Remove filtered point cloud
-        if os.path.exists(filtered_pointcloud_path):
-            os.remove(filtered_pointcloud_path)
+        # Remove decimated point cloud
+        if os.path.exists(decimated_pointcloud_path):
+            os.remove(decimated_pointcloud_path)
 
         return bounds_geojson_path
 
 
-    def create_bounds_shapefile(self, pointcloud_path, buffer_distance = 0, decimation_step=40, outlier_radius=20):
+    def create_bounds_gpkg(self, pointcloud_path, buffer_distance = 0, decimation_step=40):
         """
         Compute a buffered polygon around the data extents (not just a bounding box)
         of the given point cloud.
         
-        @return filename to Shapefile containing the polygon
+        @return filename to Geopackage containing the polygon
         """
         if not os.path.exists(pointcloud_path):
-            log.ODM_WARNING('Point cloud does not exist, cannot generate shapefile bounds {}'.format(pointcloud_path))
+            log.ODM_WARNING('Point cloud does not exist, cannot generate GPKG bounds {}'.format(pointcloud_path))
             return ''
 
-        bounds_geojson_path = self.create_bounds_geojson(pointcloud_path, buffer_distance, decimation_step, outlier_radius)
+        bounds_geojson_path = self.create_bounds_geojson(pointcloud_path, buffer_distance, decimation_step)
 
         summary_file_path = os.path.join(self.storage_dir, '{}.summary.json'.format(self.files_prefix))
         run('pdal info --summary {0} > {1}'.format(pointcloud_path, summary_file_path))
@@ -187,16 +237,16 @@ class Cropper:
 
         if pc_proj4 is None: raise RuntimeError("Could not determine point cloud proj4 declaration")
 
-        bounds_shapefile_path = os.path.join(self.storage_dir, '{}.bounds.shp'.format(self.files_prefix))
+        bounds_gpkg_path = os.path.join(self.storage_dir, '{}.bounds.gpkg'.format(self.files_prefix))
 
-        # Convert bounds to Shapefile
+        # Convert bounds to GPKG
         kwargs = {
             'input': bounds_geojson_path,
-            'output': bounds_shapefile_path,
+            'output': bounds_gpkg_path,
             'proj4': pc_proj4
         }
 
-        run('ogr2ogr -overwrite -a_srs "{proj4}" {output} {input}'.format(**kwargs))
+        run('ogr2ogr -overwrite -f GPKG -a_srs "{proj4}" {output} {input}'.format(**kwargs))
 
-        return bounds_shapefile_path
+        return bounds_gpkg_path
 

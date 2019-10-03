@@ -4,8 +4,8 @@ from opendm import io
 import multiprocessing
 
 # Define some needed locations
-scripts_path = os.path.abspath(os.path.dirname(__file__))
-root_path, _ = os.path.split(scripts_path)
+current_path = os.path.abspath(os.path.dirname(__file__))
+root_path, _ = os.path.split(current_path)
 
 superbuild_path = os.path.join(root_path, 'SuperBuild')
 superbuild_bin_path = os.path.join(superbuild_path, 'install', 'bin')
@@ -26,6 +26,7 @@ orb_slam2_path = os.path.join(superbuild_path, "src/orb_slam2")
 makescene_path = os.path.join(superbuild_path, 'src', 'elibs', 'mve', 'apps', 'makescene', 'makescene') #TODO: don't install in source
 dmrecon_path = os.path.join(superbuild_path, 'src', 'elibs', 'mve', 'apps', 'dmrecon', 'dmrecon')
 scene2pset_path = os.path.join(superbuild_path, 'src', 'elibs', 'mve', 'apps', 'scene2pset', 'scene2pset')
+meshclean_path = os.path.join(superbuild_path, 'src', 'elibs', 'mve', 'apps', 'meshclean', 'meshclean')
 
 poisson_recon_path = os.path.join(superbuild_path, 'src', 'PoissonRecon', 'Bin', 'Linux', 'PoissonRecon')
 dem2mesh_path = os.path.join(superbuild_path, 'src', 'dem2mesh', 'dem2mesh')
