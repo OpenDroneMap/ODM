@@ -120,6 +120,59 @@ class GCPFile:
 
             return gcp_file_output
 
+    def make_micmac_copy(self, output_dir, precisionxy=1, precisionz=1, utm_zone = None):
+        """
+        Convert this GCP file in a format compatible with MicMac.
+        :param output_dir directory where to save the two MicMac GCP files. The directory must exist.
+        :param utm_zone UTM zone to use for output coordinates (UTM string, PROJ4 or EPSG definition). 
+            If one is not specified, the nearest UTM zone will be selected.
+        :param precisionxy horizontal precision of GCP measurements in meters.
+        :param precisionz vertical precision of GCP measurements in meters.
+        """
+        if not os.path.isdir(output_dir):
+            raise IOError("{} does not exist.".format(output_dir))
+        if not isinstance(precisionxy, float) and not isinstance(precisionxy, int):
+            raise AssertionError("precisionxy must be a number")
+        if not isinstance(precisionz, float) and not isinstance(precisionz, int):
+            raise AssertionError("precisionz must be a number")
+
+        gcp_3d_file = os.path.join(output_dir, '3d_gcp.txt')
+        gcp_2d_file = os.path.join(output_dir, '2d_gcp.txt')
+
+        if os.path.exists(gcp_3d_file):
+            os.remove(gcp_3d_file)
+        if os.path.exists(gcp_2d_file):
+            os.remove(gcp_2d_file)
+
+        if utm_zone is None:
+            utm_zone = self.wgs84_utm_zone()
+
+        target_srs = location.parse_srs_header(utm_zone)
+        transformer = location.transformer(self.srs, target_srs)
+
+        gcps = {}
+        for entry in self.iter_entries():
+            utm_x, utm_y, utm_z = transformer.TransformPoint(entry.x, entry.y, entry.z)
+            k = "{} {} {}".format(utm_x, utm_y, utm_z)
+            if not k in gcps:
+                gcps[k] = [entry]
+            else:
+                gcps[k].append(entry)
+            
+
+        with open(gcp_3d_file, 'w') as f3:
+            with open(gcp_2d_file, 'w') as f2:
+                gcp_n = 1
+                for k in gcps:
+                    f3.write("GCP{} {} {} {}\n".format(gcp_n, k, precisionxy, precisionz))
+
+                    for entry in gcps[k]:
+                        f2.write("GCP{} {} {} {}\n".format(gcp_n, entry.filename, entry.px, entry.py))
+                    
+                    gcp_n += 1
+            
+        return (gcp_3d_file, gcp_2d_file)
+
 class GCPEntry:
     def __init__(self, x, y, z, px, py, filename, extras=""):
         self.x = x
