@@ -140,7 +140,7 @@ def parse_srs_header(header):
         elif header.lower().startswith("epsg:"):
             srs = CRS.from_epsg(header.lower()[5:])
         else:
-            log.ODM_ERROR('Could not parse coordinates. Bad SRS supplied: %s' % header)
+            raise RuntimeError('Could not parse coordinates. Bad SRS supplied: %s' % header)
     except RuntimeError as e:
         log.ODM_ERROR('Uh oh! There seems to be a problem with your coordinates/GCP file.\n\n'
                             'The line: %s\n\n'
