@@ -46,7 +46,7 @@ odm_modules_src_path = os.path.join(root_path, "modules")
 settings_path = os.path.join(root_path, 'settings.yaml')
 
 # Define supported image extensions
-supported_extensions = {'.jpg','.jpeg','.png'}
+supported_extensions = {'.jpg','.jpeg','.png', '.tif', '.tiff'}
 
 # Define the number of cores
 num_cores = multiprocessing.cpu_count()
