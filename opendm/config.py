@@ -242,14 +242,14 @@ def config():
 
     parser.add_argument('--mesh-size',
                         metavar='<positive integer>',
-                        default=100000,
+                        default=200000,
                         type=int,
                         help=('The maximum vertex count of the output mesh. '
                               'Default: %(default)s'))
 
     parser.add_argument('--mesh-octree-depth',
                         metavar='<positive integer>',
-                        default=9,
+                        default=11,
                         type=int,
                         help=('Oct-tree depth used in the mesh reconstruction, '
                               'increase to get more vertices, recommended '
