@@ -489,6 +489,12 @@ def config():
                         default=False,
                         help='Set this parameter if you want a stripped geoTIFF.\n'
                              'Default: %(default)s')
+    
+    parser.add_argument('--orthophoto-png',
+                        action='store_true',
+                        default=False,
+                        help='Set this parameter if you want to generate a PNG rendering of the orthophoto.\n'
+                             'Default: %(default)s')
 
     parser.add_argument('--orthophoto-compression',
                         metavar='<string>',

@@ -21,13 +21,13 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
         # define paths and create working directories
         system.mkdir_p(tree.odm_orthophoto)
 
-        if not io.file_exists(tree.odm_orthophoto_file) or self.rerun():
+        if not io.file_exists(tree.odm_orthophoto_tif) or self.rerun():
 
             # odm_orthophoto definitions
             kwargs = {
                 'bin': context.odm_modules_path,
                 'log': tree.odm_orthophoto_log,
-                'ortho': tree.odm_orthophoto_file,
+                'ortho': tree.odm_orthophoto_render,
                 'corners': tree.odm_orthophoto_corners,
                 'res': 1.0 / (gsd.cap_resolution(args.orthophoto_resolution, tree.opensfm_reconstruction, ignore_gsd=args.ignore_gsd) / 100.0),
                 'verbose': verbose
@@ -90,8 +90,8 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                     'lry': lry,
                     'vars': ' '.join(['-co %s=%s' % (k, orthophoto_vars[k]) for k in orthophoto_vars]),
                     'proj': reconstruction.georef.proj4(),
-                    'png': tree.odm_orthophoto_file,
-                    'tiff': tree.odm_orthophoto_tif,
+                    'input': tree.odm_orthophoto_render,
+                    'output': tree.odm_orthophoto_tif,
                     'log': tree.odm_orthophoto_tif_log,
                     'max_memory': get_max_memory(),
                 }
@@ -100,7 +100,7 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                            '{vars} '
                            '-a_srs \"{proj}\" '
                            '--config GDAL_CACHEMAX {max_memory}% '
-                           '{png} {tiff} > {log}'.format(**kwargs))
+                           '{input} {output} > {log}'.format(**kwargs))
 
                 bounds_file_path = os.path.join(tree.odm_georeferencing, 'odm_georeferenced_model.bounds.gpkg')
                     
@@ -126,4 +126,4 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                                 'to missing geo-referencing or corner coordinates.')
 
         else:
-            log.ODM_WARNING('Found a valid orthophoto in: %s' % tree.odm_orthophoto_file)
+            log.ODM_WARNING('Found a valid orthophoto in: %s' % tree.odm_orthophoto_tif)
