@@ -15,7 +15,7 @@ if [ "$1" = "--setup" ]; then
         chown -R $3:$4 /code /var/www
     fi
 
-    echo "echo '' && echo '' && echo '' && echo '##################################' && echo 'ODM Dev Environment Ready. Hack on!' && echo '##################################' && echo '' && cd /code" > $HOME/.bashrc
+    echo "echo '' && echo '' && echo '' && echo '###################################' && echo 'ODM Dev Environment Ready. Hack on!' && echo '###################################' && echo '' && cd /code" > $HOME/.bashrc
 
     # Install qt creator
     if hash qtcreator 2>/dev/null; then
@@ -32,6 +32,7 @@ if [ "$1" = "--setup" ]; then
     fi
     
     if [ -e "$HOME/liquidprompt" ]; then
+        echo "export LP_PS1_PREFIX='(odmdev)'" >> $HOME/.bashrc
         echo "source $HOME/liquidprompt/liquidprompt" >> $HOME/.bashrc
     fi
 
@@ -81,7 +82,6 @@ if [ -z "$DATA" ]; then
 fi
 
 
-
 echo "Starting development environment..."
 echo "Datasets path: $DATA"
 echo "NodeODM port: $PORT"
@@ -95,5 +95,5 @@ USER_ID=$(id -u)
 GROUP_ID=$(id -g)
 USER=$(id -un)
 xhost +
-docker run --rm -ti --entrypoint bash --name odmdev -v $(pwd):/code -v "$DATA":/datasets -p $PORT:3000 --privileged -e DISPLAY -e LANG=C.UTF-8 -e LC_ALL=C.UTF-8 -v="/etc/passwd:/etc/passwd:ro" -v="/tmp/.X11-unix:/tmp/.X11-unix:rw" -v="$HOME/.odm-dev-home:/home/$USER" opendronemap/nodeodm -c "/code/start-dev-env.sh --setup $USER $USER_ID $GROUP_ID $QTC"
+docker run -ti --entrypoint bash --name odmdev -v $(pwd):/code -v "$DATA":/datasets -p $PORT:3000 --privileged -e DISPLAY -e LANG=C.UTF-8 -e LC_ALL=C.UTF-8 -v="/etc/passwd:/etc/passwd:ro" -v="/tmp/.X11-unix:/tmp/.X11-unix:rw" -v="$HOME/.odm-dev-home:/home/$USER" opendronemap/nodeodm -c "/code/start-dev-env.sh --setup $USER $USER_ID $GROUP_ID $QTC"
 exit 0
