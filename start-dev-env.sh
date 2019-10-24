@@ -15,6 +15,11 @@ if [ "$1" = "--setup" ]; then
         chown -R $3:$4 /code /var/www
     fi
 
+    echo "Adding $2 to /etc/passwd"
+    echo "$2:x:$3:$4::/home/$2:/bin/bash" >> /etc/passwd
+    echo "Adding $2 to /etc/group"
+    echo "$2:x:$4:" >> /etc/group
+
     echo "echo '' && echo '' && echo '' && echo '###################################' && echo 'ODM Dev Environment Ready. Hack on!' && echo '###################################' && echo '' && cd /code" > $HOME/.bashrc
 
     # Install qt creator
@@ -32,8 +37,8 @@ if [ "$1" = "--setup" ]; then
     fi
     
     if [ -e "$HOME/liquidprompt" ]; then
-        echo "export LP_PS1_PREFIX='(odmdev)'" >> $HOME/.bashrc
         echo "source $HOME/liquidprompt/liquidprompt" >> $HOME/.bashrc
+        echo "export LP_PS1_PREFIX='(odmdev)'" >> $HOME/.bashrc
     fi
 
     # Colors
@@ -95,5 +100,5 @@ USER_ID=$(id -u)
 GROUP_ID=$(id -g)
 USER=$(id -un)
 xhost +
-docker run -ti --entrypoint bash --name odmdev -v $(pwd):/code -v "$DATA":/datasets -p $PORT:3000 --privileged -e DISPLAY -e LANG=C.UTF-8 -e LC_ALL=C.UTF-8 -v="/etc/passwd:/etc/passwd:ro" -v="/tmp/.X11-unix:/tmp/.X11-unix:rw" -v="$HOME/.odm-dev-home:/home/$USER" opendronemap/nodeodm -c "/code/start-dev-env.sh --setup $USER $USER_ID $GROUP_ID $QTC"
+docker run -ti --entrypoint bash --name odmdev -v $(pwd):/code -v "$DATA":/datasets -p $PORT:3000 --privileged -e DISPLAY -e LANG=C.UTF-8 -e LC_ALL=C.UTF-8 -v="/tmp/.X11-unix:/tmp/.X11-unix:rw" -v="$HOME/.odm-dev-home:/home/$USER" opendronemap/nodeodm -c "/code/start-dev-env.sh --setup $USER $USER_ID $GROUP_ID $QTC"
 exit 0

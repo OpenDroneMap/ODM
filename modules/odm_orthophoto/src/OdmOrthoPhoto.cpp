@@ -1075,8 +1075,11 @@ void OdmOrthoPhoto::renderPixel(int row, int col, float s, float t, const cv::Ma
     b += static_cast<float>(tr[0]) * dl * db;
     b += static_cast<float>(bl[0]) * dr * dt;
     b += static_cast<float>(br[0]) * dl * dt;
-    
-    photo_.at<cv::Vec<T, 4> >(row,col) = cv::Vec<T, 4>(static_cast<T>(b), static_cast<T>(g), static_cast<T>(r), static_cast<T>(maxRange<T>()));
+
+    photo_.at<cv::Vec<T, 4> >(row,col) = cv::Vec<T, 4>(static_cast<T>(b),
+                                                       static_cast<T>(g),
+                                                       static_cast<T>(r),
+                                                       static_cast<T>(maxRange<T>()));
 }
 
 void OdmOrthoPhoto::getBarycentricCoordinates(pcl::PointXYZ v1, pcl::PointXYZ v2, pcl::PointXYZ v3, float x, float y, float &l1, float &l2, float &l3) const
