@@ -304,7 +304,7 @@ class ODM_Tree(object):
             self.odm_georeferencing, 'odm_georeferencing_model_dem.tif')
 
         # odm_orthophoto
-        self.odm_orthophoto_file = io.join_paths(self.odm_orthophoto, 'odm_orthophoto.png')
+        self.odm_orthophoto_render = io.join_paths(self.odm_orthophoto, 'odm_orthophoto_render.tif')
         self.odm_orthophoto_tif = io.join_paths(self.odm_orthophoto, 'odm_orthophoto.tif')
         self.odm_orthophoto_corners = io.join_paths(self.odm_orthophoto, 'odm_orthophoto_corners.txt')
         self.odm_orthophoto_log = io.join_paths(self.odm_orthophoto, 'odm_orthophoto_log.txt')
