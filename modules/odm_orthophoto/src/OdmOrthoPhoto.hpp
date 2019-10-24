@@ -135,6 +135,7 @@ private:
       * \param uvs Contains the texture coordinates for the active material.
       * \param faceIndex The index of the face.
       */
+    template <typename T>
     void drawTexturedTriangle(const cv::Mat &texture, const pcl::Vertices &polygon, const pcl::PointCloud<pcl::PointXYZ>::Ptr &meshCloud, const std::vector<Eigen::Vector2f> &uvs, size_t faceIndex);
     
     /*!
@@ -146,6 +147,7 @@ private:
       * \param t The v texture-coordinate, multiplied with the number of rows in the texture.
       * \param texture The texture from which to get the color.
       **/
+    template <typename T>
     void renderPixel(int row, int col, float u, float v, const cv::Mat &texture);
 
     /*!

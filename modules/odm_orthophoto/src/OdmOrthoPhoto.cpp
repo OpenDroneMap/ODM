@@ -269,7 +269,7 @@ void OdmOrthoPhoto::printHelp()
 {
     log_.setIsPrintingInCout(true);
 
-    log_ << "OpenDroneMapOrthoPhoto.exe\n\n";
+    log_ << "odm_orthophoto\n\n";
 
     log_ << "Purpose\n";
     log_ << "Create an orthograpical photo from an oriented textured mesh.\n\n";
@@ -304,6 +304,11 @@ void OdmOrthoPhoto::printHelp()
     log_ << "\"Describes the area which should be covered in the ortho photo. The area will be a bounding box with corners at MinX, MinY and MaxX, MaxY. The points should be given in the same georeference system as the model.\n\n";
 
     log_.setIsPrintingInCout(false);
+}
+
+template <typename T>
+inline int maxRange(){
+    return static_cast<int>(pow(2, sizeof(T) * 8) - 1);
 }
 
 void OdmOrthoPhoto::createOrthoPhoto()
@@ -395,15 +400,6 @@ void OdmOrthoPhoto::createOrthoPhoto()
         log_ << "New ortho photo resolution, width x height : " << colRes << "x" << rowRes << '\n';
     }
 
-    // Init ortho photo
-    try{
-        photo_ = cv::Mat::zeros(rowRes, colRes, CV_8UC4) + cv::Scalar(255, 255, 255, 0);
-        depth_ = cv::Mat::zeros(rowRes, colRes, CV_32F) - std::numeric_limits<float>::infinity();
-    }catch(const cv::Exception &e){
-        std::cerr << "Couldn't allocate enough memory to render the orthophoto (" << colRes << "x" << rowRes << " cells = " << ((long long)colRes * (long long)rowRes * 4) << " bytes). Try to increase the --orthophoto-resolution parameter to a larger integer or add more RAM.\n";
-        exit(1);
-    }
-
     // Contains the vertices of the mesh.
     pcl::PointCloud<pcl::PointXYZ>::Ptr meshCloud (new pcl::PointCloud<pcl::PointXYZ>);
     pcl::fromPCLPointCloud2 (mesh.cloud, *meshCloud);
@@ -489,11 +485,36 @@ void OdmOrthoPhoto::createOrthoPhoto()
     log_ << "Rendering the ortho photo...\n";
 
     // Iterate over each part of the mesh (one per material).
+    int textureDepth = -1;
+
     for(size_t t = 0; t < mesh.tex_materials.size(); ++t)
     {
         // The material of the current submesh.
         pcl::TexMaterial material = mesh.tex_materials[t];
-        texture = cv::imread(material.tex_file);
+        texture = cv::imread(material.tex_file, cv::IMREAD_COLOR | cv::IMREAD_ANYDEPTH);
+
+        // The first material determines the bit depth
+        // Init ortho photo
+        if (textureDepth == -1){
+            try{
+                textureDepth = texture.depth();
+                log_ << "Texture depth is " << textureDepth << "bit\n";
+
+                if (textureDepth == CV_8U){
+                    photo_ = cv::Mat::zeros(rowRes, colRes, CV_8UC4) + cv::Scalar(255, 255, 255, 0);
+                }else if (textureDepth == CV_16U){
+                    photo_ = cv::Mat::zeros(rowRes, colRes, CV_16UC4) + cv::Scalar(65535, 65535, 65535, 0);
+                }else{
+                    std::cerr << "Unsupported bit depth value: " << textureDepth;
+                    exit(1);
+                }
+
+                depth_ = cv::Mat::zeros(rowRes, colRes, CV_32F) - std::numeric_limits<float>::infinity();
+            }catch(const cv::Exception &e){
+                std::cerr << "Couldn't allocate enough memory to render the orthophoto (" << colRes << "x" << rowRes << " cells = " << ((long long)colRes * (long long)rowRes * 4) << " bytes). Try to increase the --orthophoto-resolution parameter to a larger integer or add more RAM.\n";
+                exit(1);
+            }
+        }
 
         // Check for missing files.
         if(texture.empty())
@@ -514,7 +535,11 @@ void OdmOrthoPhoto::createOrthoPhoto()
             pcl::Vertices polygon = faces[faceIndex];
 
             // ... and draw it into the ortho photo.
-            drawTexturedTriangle(texture, polygon, meshCloud, uvs, faceIndex+faceOff);
+            if (textureDepth == CV_8U){
+                drawTexturedTriangle<unsigned char>(texture, polygon, meshCloud, uvs, faceIndex+faceOff);
+            }else if (textureDepth == CV_16U){
+                drawTexturedTriangle<unsigned short>(texture, polygon, meshCloud, uvs, faceIndex+faceOff);
+            }
         }
         faceOff += faces.size();
         log_ << "Material " << t << " rendered.\n";
@@ -737,6 +762,7 @@ Eigen::Transform<float, 3, Eigen::Affine> OdmOrthoPhoto::readTransform(std::stri
     return transform;
 }
 
+template <typename T>
 void OdmOrthoPhoto::drawTexturedTriangle(const cv::Mat &texture, const pcl::Vertices &polygon, const pcl::PointCloud<pcl::PointXYZ>::Ptr &meshCloud, const std::vector<Eigen::Vector2f> &uvs, size_t faceIndex)
 {
     // The index to the vertices of the polygon.
@@ -934,7 +960,7 @@ void OdmOrthoPhoto::drawTexturedTriangle(const cv::Mat &texture, const pcl::Vert
                 u = v1u*l1+v2u*l2+v3u*l3;
                 v = v1v*l1+v2v*l2+v3v*l3;
                 
-                renderPixel(rq, cq, u*fCols, (1.0f-v)*fRows, texture);
+                renderPixel<T>(rq, cq, u*fCols, (1.0f-v)*fRows, texture);
                 
                 // Update depth buffer.
                 depth_.at<float>(rq, cq) = z;
@@ -992,7 +1018,7 @@ void OdmOrthoPhoto::drawTexturedTriangle(const cv::Mat &texture, const pcl::Vert
                 u = v1u*l1+v2u*l2+v3u*l3;
                 v = v1v*l1+v2v*l2+v3v*l3;
 
-                renderPixel(rq, cq, u*fCols, (1.0f-v)*fRows, texture);
+                renderPixel<T>(rq, cq, u*fCols, (1.0f-v)*fRows, texture);
 
                 // Update depth buffer.
                 depth_.at<float>(rq, cq) = z;
@@ -1001,10 +1027,11 @@ void OdmOrthoPhoto::drawTexturedTriangle(const cv::Mat &texture, const pcl::Vert
     }
 }
 
+template <typename T>
 void OdmOrthoPhoto::renderPixel(int row, int col, float s, float t, const cv::Mat &texture)
 {
     // The colors of the texture pixels. tl : top left, tr : top right, bl : bottom left, br : bottom right.
-    cv::Vec3b tl, tr, bl, br;
+    cv::Vec<T,3> tl, tr, bl, br;
     
     // The offset of the texture coordinate from its pixel positions.
     float leftF, topF;
@@ -1023,10 +1050,10 @@ void OdmOrthoPhoto::renderPixel(int row, int col, float s, float t, const cv::Ma
     left = static_cast<int>(leftF);
     top = static_cast<int>(topF);
     
-    tl = texture.at<cv::Vec3b>(top, left);
-    tr = texture.at<cv::Vec3b>(top, left+1);
-    bl = texture.at<cv::Vec3b>(top+1, left);
-    br = texture.at<cv::Vec3b>(top+1, left+1);
+    tl = texture.at<cv::Vec<T,3> >(top, left);
+    tr = texture.at<cv::Vec<T,3> >(top, left+1);
+    bl = texture.at<cv::Vec<T,3> >(top+1, left);
+    br = texture.at<cv::Vec<T,3> >(top+1, left+1);
     
     // The interpolated color values.
     float r = 0.0f, g = 0.0f, b = 0.0f;
@@ -1049,7 +1076,7 @@ void OdmOrthoPhoto::renderPixel(int row, int col, float s, float t, const cv::Ma
     b += static_cast<float>(bl[0]) * dr * dt;
     b += static_cast<float>(br[0]) * dl * dt;
     
-    photo_.at<cv::Vec4b>(row,col) = cv::Vec4b(static_cast<unsigned char>(b), static_cast<unsigned char>(g), static_cast<unsigned char>(r), 255);
+    photo_.at<cv::Vec<T, 4> >(row,col) = cv::Vec<T, 4>(static_cast<T>(b), static_cast<T>(g), static_cast<T>(r), static_cast<T>(maxRange<T>()));
 }
 
 void OdmOrthoPhoto::getBarycentricCoordinates(pcl::PointXYZ v1, pcl::PointXYZ v2, pcl::PointXYZ v3, float x, float y, float &l1, float &l2, float &l3) const
