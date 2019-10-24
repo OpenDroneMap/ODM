@@ -283,14 +283,7 @@ class ODMMergeStage(types.ODM_Stage):
 
                         os.remove(merged_geotiff)
 
-                        # Crop
-                        if args.crop > 0:
-                            Cropper.crop(merged_bounds_file, tree.odm_orthophoto_tif, orthophoto_vars)
-
-                        # Overviews
-                        if args.build_overviews:
-                            orthophoto.build_overviews(tree.odm_orthophoto_tif) 
-                        
+                        orthophoto.post_orthophoto_steps(args, merged_bounds_file, tree.odm_orthophoto_tif)
                     elif len(all_orthos_and_cutlines) == 1:
                         # Simply copy
                         log.ODM_WARNING("A single orthophoto/cutline pair was found between all submodels.")

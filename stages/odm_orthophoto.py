@@ -8,7 +8,6 @@ from opendm import types
 from opendm import gsd
 from opendm import orthophoto
 from opendm.concurrency import get_max_memory
-from opendm.cropper import Cropper
 from opendm.cutline import compute_cutline
 
 
@@ -98,8 +97,10 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
 
                 system.run('gdal_translate -a_ullr {ulx} {uly} {lrx} {lry} '
                            '{vars} '
+                           '-b 1 -b 2 -b 3 -mask 4 '
                            '-a_srs \"{proj}\" '
                            '--config GDAL_CACHEMAX {max_memory}% '
+                           '--config GDAL_TIFF_INTERNAL_MASK YES '
                            '{input} {output} > {log}'.format(**kwargs))
 
                 bounds_file_path = os.path.join(tree.odm_georeferencing, 'odm_georeferenced_model.bounds.gpkg')
@@ -114,11 +115,7 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                                     tmpdir=os.path.join(tree.odm_orthophoto, "grass_cutline_tmpdir"),
                                     scale=0.25)
 
-                if args.crop > 0:
-                    Cropper.crop(bounds_file_path, tree.odm_orthophoto_tif, orthophoto_vars)
-
-                if args.build_overviews:
-                    orthophoto.build_overviews(tree.odm_orthophoto_tif)
+                orthophoto.post_orthophoto_steps(args, bounds_file_path, tree.odm_orthophoto_tif)
 
                 geotiffcreated = True
             if not geotiffcreated:
