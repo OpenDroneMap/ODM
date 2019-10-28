@@ -501,6 +501,7 @@ class ToolchainTask(Task):
                                                 "opensfm/exif/empty"],
                                 outputs=["odm_orthophoto/odm_orthophoto.tif",
                                         "odm_orthophoto/cutline.gpkg",
+                                        "odm_orthophoto/odm_orthophoto_cut.tif",
                                         "odm_dem",
                                         "odm_georeferencing"])
         else:

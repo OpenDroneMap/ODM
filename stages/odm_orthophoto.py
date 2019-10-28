@@ -108,12 +108,18 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                 # Cutline computation, before cropping
                 # We want to use the full orthophoto, not the cropped one.
                 if args.orthophoto_cutline:
+                    cutline_file = os.path.join(tree.odm_orthophoto, "cutline.gpkg")
+
                     compute_cutline(tree.odm_orthophoto_tif, 
                                     bounds_file_path,
-                                    os.path.join(tree.odm_orthophoto, "cutline.gpkg"),
+                                    cutline_file,
                                     args.max_concurrency,
                                     tmpdir=os.path.join(tree.odm_orthophoto, "grass_cutline_tmpdir"),
                                     scale=0.25)
+
+                    orthophoto.compute_mask_raster(tree.odm_orthophoto_tif, cutline_file, 
+                                           os.path.join(tree.odm_orthophoto, "odm_orthophoto_cut.tif"),
+                                           blend_distance=20, only_max_coords_feature=True)
 
                 orthophoto.post_orthophoto_steps(args, bounds_file_path, tree.odm_orthophoto_tif)
 
