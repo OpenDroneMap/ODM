@@ -102,6 +102,7 @@ def merge(input_ortho_and_ortho_cuts, output_orthophoto, orthophoto_vars={}):
     inputs = []
     bounds=None
     precision=7
+    divider=255.0
 
     for o, c in input_ortho_and_ortho_cuts:
         if not io.file_exists(o):
@@ -120,6 +121,10 @@ def merge(input_ortho_and_ortho_cuts, output_orthophoto, orthophoto_vars={}):
         res = first.res
         dtype = first.dtypes[0]
         profile = first.profile
+
+        # Handle 16bit rasters
+        if dtype == 'uint16':
+            divider = 65535.0
 
     log.ODM_INFO("%s valid orthophoto rasters to merge" % len(inputs))
     sources = [(rasterio.open(o), rasterio.open(c)) for o,c in inputs]
@@ -214,7 +219,7 @@ def merge(input_ortho_and_ortho_cuts, output_orthophoto, orthophoto_vars={}):
                 # For each band, average alpha values between
                 # destination raster and cut raster
                 for b in range(0, 3):
-                    blended = temp[3] / 255.0 * temp[b] + (1 - temp[3] / 255.0) * dstarr[b]
+                    blended = temp[3] / divider * temp[b] + (1 - temp[3] / divider) * dstarr[b]
                     np.copyto(dstarr[b], blended, casting='unsafe', where=temp[3]!=0)
 
             dstrast.write(dstarr, window=dst_window)

@@ -306,11 +306,6 @@ void OdmOrthoPhoto::printHelp()
     log_.setIsPrintingInCout(false);
 }
 
-template <typename T>
-inline int maxRange(){
-    return static_cast<int>(pow(2, sizeof(T) * 8) - 1);
-}
-
 void OdmOrthoPhoto::createOrthoPhoto()
 {
     if(inputFile_.empty())
@@ -1079,7 +1074,7 @@ void OdmOrthoPhoto::renderPixel(int row, int col, float s, float t, const cv::Ma
     photo_.at<cv::Vec<T, 4> >(row,col) = cv::Vec<T, 4>(static_cast<T>(b),
                                                        static_cast<T>(g),
                                                        static_cast<T>(r),
-                                                       static_cast<T>(maxRange<T>()));
+                                                       static_cast<T>(255)); // Alpha should always be in the 255 range
 }
 
 void OdmOrthoPhoto::getBarycentricCoordinates(pcl::PointXYZ v1, pcl::PointXYZ v2, pcl::PointXYZ v3, float x, float y, float &l1, float &l2, float &l3) const
