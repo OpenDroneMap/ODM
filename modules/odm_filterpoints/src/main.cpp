@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <pdal/filters/OutlierFilter.hpp>
 #include <pdal/filters/RangeFilter.hpp>
+#include <pdal/filters/SampleFilter.hpp>
 #include "CmdLineParser.h"
 #include "Logger.h"
 #include "FloatPlyReader.hpp"
@@ -15,12 +16,13 @@ cmdLineParameter< char* >
 cmdLineParameter< float >
     StandardDeviation( "sd" ) ,
     MeanK ( "meank" ) ,
-    Confidence ( "confidence" );
+    Confidence ( "confidence" ) ,
+    Sample ( "sample" );
 cmdLineReadable
 	Verbose( "verbose" );
 
 cmdLineReadable* params[] = {
-    &InputFile , &OutputFile , &StandardDeviation, &MeanK, &Confidence, &Verbose ,
+    &InputFile , &OutputFile , &StandardDeviation, &MeanK, &Confidence, &Sample, &Verbose ,
     NULL
 };
 
@@ -66,18 +68,32 @@ int main(int argc, char **argv) {
 
     pdal::PointTable table;
     pdal::FloatPlyReader plyReader;
+    pdal::Stage *currentStage = &plyReader;
     plyReader.setOptions(inPlyOpts);
 
     pdal::RangeFilter confidenceFilter;
     if (Confidence.set){
+        logWriter("Filtering confidence\n");
+
         pdal::Options confidenceFilterOpts;
         float confidenceValue = std::min(1.0f, std::max(Confidence.value, 0.0f));
         std::ostringstream confidenceLimit;
         confidenceLimit << "confidence[" << confidenceValue << ":1]";
         confidenceFilterOpts.add("limits", confidenceLimit.str());
 
-        confidenceFilter.setInput(plyReader);
+        confidenceFilter.setInput(*currentStage);
+        currentStage = &confidenceFilter;
         confidenceFilter.setOptions(confidenceFilterOpts);
+    }
+
+    pdal::SampleFilter sampleFilter;
+    if (Sample.set && Sample.value > 0.0f){
+        logWriter("Radius sampling\n");
+        pdal::Options sampleFilterOpts;
+        sampleFilterOpts.add("radius", Sample.value);
+        sampleFilter.setOptions(sampleFilterOpts);
+        sampleFilter.setInput(*currentStage);
+        currentStage = &sampleFilter;
     }
 
     pdal::Options outlierOpts;
@@ -86,13 +102,7 @@ int main(int argc, char **argv) {
     outlierOpts.add("multiplier", StandardDeviation.value);
 
     pdal::OutlierFilter outlierFilter;
-    if (Confidence.set){
-        logWriter("Filtering confidence\n");
-        outlierFilter.setInput(confidenceFilter);
-    }else{
-        outlierFilter.setInput(plyReader);
-
-    }
+    outlierFilter.setInput(*currentStage);
     outlierFilter.setOptions(outlierOpts);
 
     pdal::Options rangeOpts;
