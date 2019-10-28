@@ -6,7 +6,10 @@ from opendm.concurrency import get_max_memory
 import math
 import numpy as np
 import rasterio
+import fiona
+from scipy import ndimage
 from rasterio.transform import Affine, rowcol
+from rasterio.mask import mask
 from opendm import io
 
 def get_orthophoto_vars(args):
@@ -49,7 +52,49 @@ def post_orthophoto_steps(args, bounds_file_path, orthophoto_file):
     if args.orthophoto_png:
         generate_png(orthophoto_file)
 
-def merge(input_ortho_and_cutlines, output_orthophoto, blend_distance=20, orthophoto_vars={}):
+
+def compute_mask_raster(input_raster, vector_mask, output_raster, blend_distance=20, only_max_coords_feature=False):
+    if not os.path.exists(input_raster):
+        log.ODM_WARNING("Cannot mask raster, %s does not exist" % input_raster)
+        return
+    
+    if not os.path.exists(vector_mask):
+        log.ODM_WARNING("Cannot mask raster, %s does not exist" % vector_mask)
+        return
+
+    with rasterio.open(input_raster, 'r') as rast:
+        with fiona.open(vector_mask) as src:
+            burn_features = src
+
+            if only_max_coords_feature:
+                max_coords_count = 0
+                max_coords_feature = None
+                for feature in src:
+                    if feature is not None:
+                        # No complex shapes
+                        if len(feature['geometry']['coordinates'][0]) > max_coords_count:
+                            max_coords_count = len(feature['geometry']['coordinates'][0])
+                            max_coords_feature = feature
+                if max_coords_feature is not None:
+                    burn_features = [max_coords_feature]
+            
+            shapes = [feature["geometry"] for feature in burn_features]
+            out_image, out_transform = mask(rast, shapes, nodata=0)
+
+            if blend_distance > 0:
+                alpha_band = out_image[3]
+                dist_t = ndimage.distance_transform_edt(alpha_band)
+                dist_t[dist_t <= blend_distance] /= blend_distance
+                dist_t[dist_t > blend_distance] = 1
+                np.multiply(alpha_band, dist_t, out=alpha_band, casting="unsafe")
+
+            with rasterio.open(output_raster, 'w', **rast.profile) as dst:
+                dst.write(out_image)
+
+            return output_raster
+
+
+def merge(input_ortho_and_ortho_cuts, output_orthophoto, orthophoto_vars={}):
     """
     Based on https://github.com/mapbox/rio-merge-rgba/
     Merge orthophotos around cutlines using a blend buffer.
@@ -58,7 +103,7 @@ def merge(input_ortho_and_cutlines, output_orthophoto, blend_distance=20, orthop
     bounds=None
     precision=7
 
-    for o, c in input_ortho_and_cutlines:
+    for o, c in input_ortho_and_ortho_cuts:
         if not io.file_exists(o):
             log.ODM_WARNING("%s does not exist. Will skip from merged orthophoto." % o)
             continue
@@ -72,24 +117,23 @@ def merge(input_ortho_and_cutlines, output_orthophoto, blend_distance=20, orthop
         return
 
     with rasterio.open(inputs[0][0]) as first:
-        src_nodata = first.nodatavals[0] # TODO: this is None
         res = first.res
         dtype = first.dtypes[0]
         profile = first.profile
 
     log.ODM_INFO("%s valid orthophoto rasters to merge" % len(inputs))
-    sources = [(rasterio.open(o)) for o,_ in inputs]
+    sources = [(rasterio.open(o), rasterio.open(c)) for o,c in inputs]
 
     # scan input files.
     # while we're at it, validate assumptions about inputs
     xs = []
     ys = []
-    for src in sources:
+    for src, _ in sources:
         left, bottom, right, top = src.bounds
         xs.extend([left, right])
         ys.extend([bottom, top])
-        # if src.profile["count"] != 1 or src.profile["count"] != 1:
-        #     raise ValueError("Inputs must be 1-band rasters")
+        if src.profile["count"] != 4:
+            raise ValueError("Inputs must be 4-band rasters")
     dst_w, dst_s, dst_e, dst_n = min(xs), min(ys), max(xs), max(ys)
     log.ODM_INFO("Output bounds: %r %r %r %r" % (dst_w, dst_s, dst_e, dst_n))
 
@@ -115,7 +159,6 @@ def merge(input_ortho_and_cutlines, output_orthophoto, blend_distance=20, orthop
     profile["compress"] = orthophoto_vars.get('COMPRESS', 'LZW')
     profile["predictor"] = orthophoto_vars.get('PREDICTOR', '2')
     profile["bigtiff"] = orthophoto_vars.get('BIGTIFF', 'IF_SAFER')
-    profile["nodata"] = src_nodata
     profile.update()
 
     # create destination file
@@ -130,23 +173,10 @@ def merge(input_ortho_and_cutlines, output_orthophoto, blend_distance=20, orthop
             dst_count = first.count
             dst_shape = (dst_count, dst_rows, dst_cols)
 
+            # First pass, write all rasters naively
             dstarr = np.zeros(dst_shape, dtype=dtype)
-            distsum = np.zeros(dst_shape, dtype=dtype)
 
-            for src in sources:
-                # The full_cover behavior is problematic here as it includes
-                # extra pixels along the bottom right when the sources are
-                # slightly misaligned
-                #
-                # src_window = get_window(left, bottom, right, top,
-                #                         src.transform, precision=precision)
-                #
-                # With rio merge this just adds an extra row, but when the
-                # imprecision occurs at each block, you get artifacts
-
-                nodata = src.nodatavals[0]
-
-                # Alternative, custom get_window using rounding
+            for src, _ in sources:
                 src_window = tuple(zip(rowcol(
                         src.transform, left, top, op=round, precision=precision
                     ), rowcol(
@@ -167,6 +197,25 @@ def merge(input_ortho_and_cutlines, output_orthophoto, blend_distance=20, orthop
                 # check if dest has any nodata pixels available
                 if np.count_nonzero(dstarr[3]) == blocksize:
                     break
+
+            # Second pass, write cut rasters
+            for _, cut in sources:
+                src_window = tuple(zip(rowcol(
+                        cut.transform, left, top, op=round, precision=precision
+                    ), rowcol(
+                        cut.transform, right, bottom, op=round, precision=precision
+                    )))
+
+                temp = np.zeros(dst_shape, dtype=dtype)
+                temp = cut.read(
+                    out=temp, window=src_window, boundless=True, masked=False
+                )
+
+                # For each band, average alpha values between
+                # destination raster and cut raster
+                for b in range(0, 3):
+                    blended = temp[3] / 255.0 * temp[b] + (1 - temp[3] / 255.0) * dstarr[b]
+                    np.copyto(dstarr[b], blended, casting='unsafe', where=temp[3]!=0)
 
             dstrast.write(dstarr, window=dst_window)
 

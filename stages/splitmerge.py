@@ -217,72 +217,22 @@ class ODMMergeStage(types.ODM_Stage):
                     system.mkdir_p(tree.odm_orthophoto)
 
                 if not io.file_exists(tree.odm_orthophoto_tif) or self.rerun():
-                    all_orthos_and_cutlines = get_all_submodel_paths(tree.submodels_path,
+                    all_orthos_and_ortho_cuts = get_all_submodel_paths(tree.submodels_path,
                         os.path.join("odm_orthophoto", "odm_orthophoto.tif"),
-                        os.path.join("odm_orthophoto", "cutline.gpkg"),
+                        os.path.join("odm_orthophoto", "odm_orthophoto_cut.tif"),
                     )
 
-                    if len(all_orthos_and_cutlines) > 1:
+                    if len(all_orthos_and_ortho_cuts) > 1:
                         log.ODM_INFO("Found %s submodels with valid orthophotos and cutlines" % len(all_orthos_and_cutlines))
                         
                         # TODO: histogram matching via rasterio
                         # currently parts have different color tones
 
-                        merged_geotiff = os.path.join(tree.odm_orthophoto, "odm_orthophoto.merged.tif")
-
-                        kwargs = {
-                            'orthophoto_merged': merged_geotiff,
-                            'input_files': ' '.join(map(lambda i: quote(i[0]), all_orthos_and_cutlines)),
-                            'max_memory': get_max_memory(),
-                            'threads': args.max_concurrency,
-                        }
-
-                        # use bounds as cutlines (blending)
-                        if io.file_exists(merged_geotiff):
-                            os.remove(merged_geotiff)
-
-                        system.run('gdal_merge.py -o {orthophoto_merged} '
-                                #'-createonly '
-                                '-co "BIGTIFF=YES" '
-                                '-co "BLOCKXSIZE=512" '
-                                '-co "BLOCKYSIZE=512" '
-                                '--config GDAL_CACHEMAX {max_memory}% '
-                                '{input_files} '.format(**kwargs)
-                                )
-
-                        for ortho_cutline in all_orthos_and_cutlines:
-                            kwargs['input_file'], kwargs['cutline'] = ortho_cutline
-
-                            # Note: cblend has a high performance penalty
-                            system.run('gdalwarp -cutline {cutline} '
-                                    '-cblend 20 '
-                                    '-r bilinear -multi '
-                                    '-wo NUM_THREADS={threads} '
-                                    '--config GDAL_CACHEMAX {max_memory}% '
-                                    '{input_file} {orthophoto_merged}'.format(**kwargs)
-                            )
-
-                        # Apply orthophoto settings (compression, tiling, etc.)
-                        orthophoto_vars = orthophoto.get_orthophoto_vars(args)
-
                         if io.file_exists(tree.odm_orthophoto_tif):
                             os.remove(tree.odm_orthophoto_tif)
 
-                        kwargs = {
-                            'vars': ' '.join(['-co %s=%s' % (k, orthophoto_vars[k]) for k in orthophoto_vars]),
-                            'max_memory': get_max_memory(),
-                            'merged': merged_geotiff,
-                            'log': tree.odm_orthophoto_tif_log,
-                            'orthophoto': tree.odm_orthophoto_tif,
-                        }
-
-                        system.run('gdal_translate '
-                            '{vars} '
-                            '--config GDAL_CACHEMAX {max_memory}% '
-                            '{merged} {orthophoto} > {log}'.format(**kwargs))
-
-                        os.remove(merged_geotiff)
-
+                        orthophoto_vars = orthophoto.get_orthophoto_vars(args)
+                        orthophoto.merge(all_orthos_and_ortho_cuts, tree.odm_orthophoto_tif, orthophoto_vars)
                         orthophoto.post_orthophoto_steps(args, merged_bounds_file, tree.odm_orthophoto_tif)
                     elif len(all_orthos_and_cutlines) == 1:
                         # Simply copy
