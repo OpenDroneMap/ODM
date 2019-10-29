@@ -1,33 +1,10 @@
 import os
-import json
 import shutil
 from pipes import quote
 from opendm import io
 from opendm import log
 from opendm import system
 from opendm import concurrency
-import math
-
-def closest_power_of_4(x):  
-    if x <= 0:
-        return 1
-    n = 1
-    while n < x:
-        n *= 4
-    return n
-
-def get_num_points(scan_file):
-    if not os.path.exists(scan_file):
-        log.ODM_WARNING("%s does not exist, cannot get number of points." % scan_file)
-        return 0
-
-    with open(scan_file, "r") as f:
-        scan = json.loads(f.read())
-        if not 'points' in scan:
-            log.ODM_WARNING("Cannot find number of points in point clouds (points key missing from scan.json). Returning 0")
-            return 0
-
-        return scan['points']
 
 def build(input_point_cloud_files, output_path, max_concurrency=8, rerun=False):
     num_files = len(input_point_cloud_files)
@@ -45,29 +22,20 @@ def build(input_point_cloud_files, output_path, max_concurrency=8, rerun=False):
         'threads': max_concurrency,
         'tmpdir': tmpdir,
         'all_inputs': "-i " + " ".join(map(quote, input_point_cloud_files)),
-        'outputdir': output_path,
-        'scan_file': os.path.join(output_path, "scan.json")
+        'outputdir': output_path
     }
 
-    # Run scan to compute number of points
+    # Run scan to compute dataset bounds
     system.run('entwine scan --threads {threads} --tmp "{tmpdir}" {all_inputs} -o "{outputdir}"'.format(**kwargs))
-    num_points = get_num_points(kwargs['scan_file'])
+    scan_json = os.path.join(output_path, "scan.json")
 
-    # TODO: choose subset
-    
-    entwine_cmd = "entwine build --threads {threads} --tmp {tmpdir} -i {scan_file} -o {outputdir}".format(**kwargs)
-
-    # Need to split into subsets?
-    if num_files > 1:
-        subsets = closest_power_of_4(num_files)
-        for s in range(1, subsets + 1):
-            system.run(entwine_cmd + " --subset %s %s" % (s, subsets))
-
-        # Merge
-        system.run("entwine merge --threads {threads} --tmp {tmpdir} -o {outputdir}".format(**kwargs))
+    if os.path.exists(scan_json):
+        kwargs['input'] = scan_json
+        for _ in range(num_files):
+            # One at a time
+            system.run('entwine build --threads {threads} --tmp "{tmpdir}" -i "{input}" -o "{outputdir}" --run 1'.format(**kwargs))
     else:
-        # Single run
-        system.run(entwine_cmd)
+        log.ODM_WARNING("%s does not exist, no point cloud will be built." % scan_json)
         
         
     if os.path.exists(tmpdir):
