@@ -9,7 +9,6 @@ from opendm import system
 from opendm import context
 from opendm.cropper import Cropper
 from opendm import point_cloud
-from opendm import entwine
 
 class ODMGeoreferencingStage(types.ODM_Stage):
     def process(self, args, outputs):
@@ -97,32 +96,7 @@ class ODMGeoreferencingStage(types.ODM_Stage):
 
                 if doPointCloudGeo:
                     reconstruction.georef.extract_offsets(odm_georeferencing_model_txt_geo_file)
-
-                    # XYZ point cloud output
-                    if args.pc_csv:
-                        log.ODM_INFO("Creating geo-referenced CSV file (XYZ format)")
-                        
-                        system.run("pdal translate -i \"{}\" "
-                            "-o \"{}\" "
-                            "--writers.text.format=csv "
-                            "--writers.text.order=\"X,Y,Z\" "
-                            "--writers.text.keep_unspecified=false ".format(
-                                tree.odm_georeferencing_model_laz,
-                                tree.odm_georeferencing_xyz_file))
-                    
-                    # LAS point cloud output
-                    if args.pc_las:
-                        log.ODM_INFO("Creating geo-referenced LAS file")
-                        
-                        system.run("pdal translate -i \"{}\" "
-                            "-o \"{}\" ".format(
-                                tree.odm_georeferencing_model_laz,
-                                tree.odm_georeferencing_model_las))
-
-                    # EPT point cloud output
-                    if args.pc_ept:
-                        log.ODM_INFO("Creating geo-referenced Entwine Point Tile output")
-                        entwine.build([tree.odm_georeferencing_model_laz], tree.entwine_pointcloud, max_concurrency=args.max_concurrency, rerun=self.rerun())
+                    point_cloud.post_point_cloud_steps(args, tree)
                     
                     if args.crop > 0:
                         log.ODM_INFO("Calculating cropping area and generating bounds shapefile from point cloud")

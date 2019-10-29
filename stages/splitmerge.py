@@ -13,7 +13,7 @@ from opensfm.large import metadataset
 from opendm.cropper import Cropper
 from opendm.concurrency import get_max_memory
 from opendm.remote import LocalRemoteExecutor
-from opendm import entwine
+from opendm import point_cloud
 from pipes import quote
 
 class ODMSplitStage(types.ODM_Stage):
@@ -175,26 +175,17 @@ class ODMMergeStage(types.ODM_Stage):
 
             # Merge point clouds
             if args.merge in ['all', 'pointcloud']:
-                if not io.dir_exists(tree.entwine_pointcloud) or self.rerun():
+                if not io.file_exists(tree.odm_georeferencing_model_laz) or self.rerun():
                     all_point_clouds = get_submodel_paths(tree.submodels_path, "odm_georeferencing", "odm_georeferenced_model.laz")
                     
                     try:
-                        entwine.build(all_point_clouds, tree.entwine_pointcloud, max_concurrency=args.max_concurrency, rerun=self.rerun())
+                        point_cloud.merge(all_point_clouds, tree.odm_georeferencing_model_laz, rerun=self.rerun())
+                        point_cloud.post_point_cloud_steps(args, tree)
                     except Exception as e:
-                        log.ODM_WARNING("Could not merge EPT point cloud: %s (skipping)" % str(e))
-                else:
-                    log.ODM_WARNING("Found merged EPT point cloud in %s" % tree.entwine_pointcloud)
-                
-                if not io.file_exists(tree.odm_georeferencing_model_laz) or self.rerun():
-                    if io.dir_exists(tree.entwine_pointcloud):
-                        try:
-                            system.run('pdal translate "ept://{}" "{}"'.format(tree.entwine_pointcloud, tree.odm_georeferencing_model_laz))
-                        except Exception as e:
-                            log.ODM_WARNING("Cannot export EPT dataset to LAZ: %s" % str(e))
-                    else:
-                        log.ODM_WARNING("No EPT point cloud found (%s), skipping LAZ conversion)" % tree.entwine_pointcloud)
+                        log.ODM_WARNING("Could not merge point cloud: %s (skipping)" % str(e))
                 else:
                     log.ODM_WARNING("Found merged point cloud in %s" % tree.odm_georeferencing_model_laz)
+                
             
             self.update_progress(25)
 
