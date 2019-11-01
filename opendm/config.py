@@ -320,6 +320,14 @@ def config():
                         help='Filters the point cloud by removing points that deviate more than N standard deviations from the local mean. Set to 0 to disable filtering.'
                              '\nDefault: '
                              '%(default)s')
+    
+    parser.add_argument('--pc-sample',
+                        metavar='<positive float>',
+                        type=float,
+                        default=0,
+                        help='Filters the point cloud by keeping only a single point around a radius N (in meters). This can be useful to limit the output resolution of the point cloud. Set to 0 to disable sampling.'
+                             '\nDefault: '
+                             '%(default)s')
 
     parser.add_argument('--smrf-scalar',
                         metavar='<positive float>',
