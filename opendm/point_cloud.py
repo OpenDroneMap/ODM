@@ -7,17 +7,22 @@ from opendm import entwine
 from opendm import io
 from pipes import quote
 
-def filter(input_point_cloud, output_point_cloud, standard_deviation=2.5, meank=16, confidence=None, verbose=False):
+def filter(input_point_cloud, output_point_cloud, standard_deviation=2.5, meank=16, confidence=None, sample_radius=0, verbose=False):
     """
     Filters a point cloud
     """
-    if standard_deviation <= 0 or meank <= 0:
+    if (standard_deviation <= 0 or meank <= 0) and sample_radius <= 0:
         log.ODM_INFO("Skipping point cloud filtering")
         return
 
-    log.ODM_INFO("Filtering point cloud (statistical, meanK {}, standard deviation {})".format(meank, standard_deviation))
+    if standard_deviation > 0 and meank > 0:
+        log.ODM_INFO("Filtering point cloud (statistical, meanK {}, standard deviation {})".format(meank, standard_deviation))
+    
     if confidence:
         log.ODM_INFO("Keeping only points with > %s confidence" % confidence)
+
+    if sample_radius > 0:
+        log.ODM_INFO("Sampling points around a %sm radius" % sample_radius)
 
     if not os.path.exists(input_point_cloud):
         log.ODM_ERROR("{} does not exist, cannot filter point cloud. The program will now exit.".format(input_point_cloud))
@@ -37,12 +42,15 @@ def filter(input_point_cloud, output_point_cloud, standard_deviation=2.5, meank=
       'meank': meank,
       'verbose': '-verbose' if verbose else '',
       'confidence': '-confidence %s' % confidence if confidence else '',
+      'sample': max(0, sample_radius)
     }
 
     system.run('{bin} -inputFile {inputFile} '
          '-outputFile {outputFile} '
          '-sd {sd} '
-         '-meank {meank} {confidence} {verbose} '.format(**filterArgs))
+         '-meank {meank} '
+         '-sample {sample} '
+         '{confidence} {verbose} '.format(**filterArgs))
 
     # Remove input file, swap temp file
     if not os.path.exists(output_point_cloud):
