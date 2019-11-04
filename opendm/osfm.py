@@ -41,14 +41,14 @@ class OSFMContext:
             log.ODM_WARNING('Found a valid OpenSfM reconstruction file in: %s' % reconstruction_file)
 
         # Check that a reconstruction file has been created
-        if not io.file_exists(reconstruction_file):
+        if not self.reconstructed():
             log.ODM_ERROR("The program could not process this dataset using the current settings. "
                             "Check that the images have enough overlap, "
                             "that there are enough recognizable features "
                             "and that the images are in focus. "
                             "You could also try to increase the --min-num-features parameter."
                             "The program will now exit.")
-            raise Exception("Reconstruction could not be generated")
+            exit(1)
 
 
     def setup(self, args, images_path, photos, gcp_path=None, append_config = [], rerun=False):
@@ -151,6 +151,13 @@ class OSFMContext:
 
     def get_config_file_path(self):
         return io.join_paths(self.opensfm_project_path, 'config.yaml')
+
+    def reconstructed(self):
+        if not io.file_exists(self.path("reconstruction.json")):
+            return False
+        
+        with open(self.path("reconstruction.json"), 'r') as f:
+            return f.readline().strip() != "[]"
 
     def extract_metadata(self, rerun=False):
         metadata_dir = self.path("exif")
