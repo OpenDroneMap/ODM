@@ -314,7 +314,14 @@ class ODMMergeStage(types.ODM_Stage):
                     
                     # Merge
                     dem_vars = utils.get_dem_vars(args)
-                    euclidean_merge_dems(all_dems, dem_file, dem_vars)
+                    eu_map_source = None # Default
+
+                    # Use DSM's euclidean map for DTMs
+                    # (requires the DSM to be computed)
+                    if human_name == "DTM":
+                        eu_map_source = "dsm"
+
+                    euclidean_merge_dems(all_dems, dem_file, dem_vars, euclidean_map_source=eu_map_source)
 
                     if io.file_exists(dem_file):
                         # Crop
