@@ -1,5 +1,6 @@
 import math
 import numpy as np
+from scipy import ndimage
 import rasterio
 from rasterio.transform import Affine, rowcol
 from opendm import system
@@ -8,7 +9,7 @@ from opendm import log
 from opendm import io
 import os
 
-def euclidean_merge_dems(input_dems, output_dem, creation_options={}):
+def euclidean_merge_dems(input_dems, output_dem, creation_options={}, euclidean_map_source=None):
     """
     Based on https://github.com/mapbox/rio-merge-rgba
     and ideas from Anna Petrasova
@@ -40,7 +41,7 @@ def euclidean_merge_dems(input_dems, output_dem, creation_options={}):
         profile = first.profile
 
     for dem in existing_dems:
-        eumap = compute_euclidean_map(dem, io.related_file_path(dem, postfix=".euclideand"), overwrite=False)
+        eumap = compute_euclidean_map(dem, io.related_file_path(dem, postfix=".euclideand", replace_base=euclidean_map_source), overwrite=False)
         if eumap and io.file_exists(eumap):
             inputs.append((dem, eumap))
 
@@ -57,9 +58,6 @@ def euclidean_merge_dems(input_dems, output_dem, creation_options={}):
         xs = []
         ys = []
         for src_d, src_e in sources:
-            if not same_bounds(src_d, src_e):
-                raise ValueError("DEM and euclidean file must have the same bounds")
-
             left, bottom, right, top = src_d.bounds
             xs.extend([left, right])
             ys.extend([bottom, top])
@@ -109,6 +107,7 @@ def euclidean_merge_dems(input_dems, output_dem, creation_options={}):
 
             dstarr = np.zeros(dst_shape, dtype=dtype)
             distsum = np.zeros(dst_shape, dtype=dtype)
+            small_distance = 0.001953125
 
             for src_d, src_e in sources:
                 # The full_cover behavior is problematic here as it includes
@@ -124,20 +123,26 @@ def euclidean_merge_dems(input_dems, output_dem, creation_options={}):
                 nodata = src_d.nodatavals[0]
 
                 # Alternative, custom get_window using rounding
-                src_window = tuple(zip(rowcol(
+                src_window_d = tuple(zip(rowcol(
                         src_d.transform, left, top, op=round, precision=precision
                     ), rowcol(
                         src_d.transform, right, bottom, op=round, precision=precision
                     )))
 
+                src_window_e = tuple(zip(rowcol(
+                        src_e.transform, left, top, op=round, precision=precision
+                    ), rowcol(
+                        src_e.transform, right, bottom, op=round, precision=precision
+                    )))
+
                 temp_d = np.zeros(dst_shape, dtype=dtype)
                 temp_d = src_d.read(
-                    out=temp_d, window=src_window, boundless=True, masked=False
+                    out=temp_d, window=src_window_d, boundless=True, masked=False
                 )
 
                 temp_e = np.zeros(dst_shape, dtype=dtype)
                 temp_e = src_e.read(
-                    out=temp_e, window=src_window, boundless=True, masked=False
+                    out=temp_e, window=src_window_e, boundless=True, masked=False
                 )
 
                 # Set NODATA areas in the euclidean map to a very low value
@@ -146,7 +151,7 @@ def euclidean_merge_dems(input_dems, output_dem, creation_options={}):
                 #    are far away from NODATA areas
                 #  - Areas that have no overlap are included in the final result
                 #    even if they are very close to a NODATA cell
-                temp_e[temp_e==0] = 0.001953125
+                temp_e[temp_e==0] = small_distance
                 temp_e[temp_d==nodata] = 0
 
                 np.multiply(temp_d, temp_e, out=temp_d)
@@ -154,22 +159,17 @@ def euclidean_merge_dems(input_dems, output_dem, creation_options={}):
                 np.add(distsum, temp_e, out=distsum)
 
             np.divide(dstarr, distsum, out=dstarr, where=distsum[0] != 0.0)
+
+            # Perform nearest neighbor interpolation on areas where two or more rasters overlap
+            # but where both rasters have only interpolated data. This prevents the creation
+            # of artifacts that average areas of interpolation.
+            indices = ndimage.distance_transform_edt(np.logical_and(distsum < 1, distsum > small_distance), 
+                                                return_distances=False, 
+                                                return_indices=True)
+            dstarr = dstarr[tuple(indices)]
+
             dstarr[dstarr == 0.0] = src_nodata
 
             dstrast.write(dstarr, window=dst_window)
 
     return output_dem
-
-def same_bounds(rast_a, rast_b, EPS = 1E-5):
-    """
-    Compares two raster bounds and returns true if they are equal
-    (up to a float precision threshold)
-    """
-    a = rast_a.bounds
-    b = rast_b.bounds
-
-    return (abs(a.bottom - b.bottom) < EPS) and \
-           (abs(a.top - b.top) < EPS) and \
-           (abs(a.left - b.left) < EPS) and \
-           (abs(a.right - b.right) < EPS)
-           

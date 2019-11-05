@@ -58,7 +58,7 @@ def find(filename, folder):
         return '/'.join((root, filename)) if filename in files else None
 
 
-def related_file_path(input_file_path, prefix="", postfix=""):
+def related_file_path(input_file_path, prefix="", postfix="", replace_base=None):
     """
     For example: related_file_path("/path/to/file.ext", "a.", ".b")
      --> "/path/to/a.file.b.ext"
@@ -71,6 +71,9 @@ def related_file_path(input_file_path, prefix="", postfix=""):
     basename, ext = os.path.splitext(filename)
     # basename = file
     # ext = .ext
+
+    if replace_base is not None:
+        basename = replace_base
 
     return os.path.join(path, "{}{}{}{}".format(prefix, basename, postfix, ext))
 
