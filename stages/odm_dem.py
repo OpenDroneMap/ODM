@@ -58,7 +58,8 @@ class ODMDEMStage(types.ODM_Stage):
                 self.rerun():
 
                 products = []
-                if args.dsm: products.append('dsm')
+
+                if args.dsm or (args.dtm and args.dem_euclidean_map): products.append('dsm')
                 if args.dtm: products.append('dtm')
                 
                 resolution = gsd.cap_resolution(args.dem_resolution, tree.opensfm_reconstruction, gsd_error_estimate=-3, ignore_gsd=args.ignore_gsd)
