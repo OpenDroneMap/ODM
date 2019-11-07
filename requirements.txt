@@ -15,3 +15,4 @@ numpy==1.15.4
 pyproj==2.2.2
 psutil==5.6.3
 joblib==0.13.2
+Fiona==1.8.9.post2
