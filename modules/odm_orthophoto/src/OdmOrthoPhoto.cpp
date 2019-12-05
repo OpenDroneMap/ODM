@@ -319,6 +319,10 @@ void OdmOrthoPhoto::saveTIFF(const std::string &filename, GDALDataType dataType)
 
     for (size_t i = 0; i < bands.size(); i++){
         hBand = GDALGetRasterBand( hDstDS, static_cast<int>(i) + 1 );
+
+        // Set alpha band
+        if (i == 3) GDALSetRasterColorInterpretation(hBand, GCI_AlphaBand );
+
         if (GDALRasterIO( hBand, GF_Write, 0, 0, width, height,
                     bands[i], width, height, dataType, 0, 0 ) != CE_None){
             std::cerr << "Cannot write TIFF to " << filename << std::endl;
