@@ -306,6 +306,50 @@ void OdmOrthoPhoto::printHelp()
     log_.setIsPrintingInCout(false);
 }
 
+void OdmOrthoPhoto::saveTIFF(const std::string &filename, GDALDataType dataType){
+    GDALAllRegister();
+    GDALDriverH hDriver = GDALGetDriverByName( "GTiff" );
+    if (!hDriver){
+        std::cerr << "Cannot initialize GeoTIFF driver. Check your GDAL installation." << std::endl;
+        exit(1);
+    }
+    char **papszOptions = NULL;
+    GDALDatasetH hDstDS = GDALCreate( hDriver, filename.c_str(), width, height, static_cast<int>(bands.size()), dataType, papszOptions );
+    GDALRasterBandH hBand;
+
+    for (size_t i = 0; i < bands.size(); i++){
+        hBand = GDALGetRasterBand( hDstDS, static_cast<int>(i) + 1 );
+        if (GDALRasterIO( hBand, GF_Write, 0, 0, width, height,
+                    bands[i], width, height, dataType, 0, 0 ) != CE_None){
+            std::cerr << "Cannot write TIFF to " << filename << std::endl;
+            exit(1);
+        }
+//        for (int j = 0; j < height; j++){
+//            GDALRasterIO( hBand, GF_Write, 0, j, width, 1,
+//                        bands[i][j], width, 1, dataType, 0, 0 );
+//        }
+    }
+    GDALClose( hDstDS );
+}
+
+template <typename T>
+inline T maxRange(){
+    return static_cast<T>(pow(2, sizeof(T) * 8) - 1);
+}
+
+template <typename T>
+void OdmOrthoPhoto::initBands(const cv::Mat &texture){
+    // Channels + alpha
+    for (int i = 0; i < texture.channels() + 1; i++){
+        size_t pixelCount = static_cast<size_t>(width * height);
+        T *arr = new T[pixelCount];
+        for (size_t j = 0; j < pixelCount; j++){
+            arr[j] = i == 4 ? 0 : maxRange<T>(); // Set alpha at 0
+        }
+        bands.push_back(static_cast<void *>(arr));
+    }
+}
+
 void OdmOrthoPhoto::createOrthoPhoto()
 {
     if(inputFile_.empty())
@@ -333,7 +377,7 @@ void OdmOrthoPhoto::createOrthoPhoto()
         log_ << "\tSpecified -inputGeoRefFile, but no boundary points. The georeference system will be ignored.\n";
     }
 
-    log_ << "Reading mesh file...\n";
+    log_ << "Reading mesh file... " << inputFile_ << "\n";
     // The textured mesh.
     pcl::TextureMesh mesh;
     loadObjFile(inputFile_, mesh);
@@ -375,24 +419,24 @@ void OdmOrthoPhoto::createOrthoPhoto()
     log_ << "Ortho photo area : " << xDiff*yDiff << "m2\n";
 
     // The resolution necessary to fit the area with the given resolution.
-    int rowRes = static_cast<int>(std::ceil(resolution_*yDiff));
-    int colRes = static_cast<int>(std::ceil(resolution_*xDiff));
-    log_ << "Ortho photo resolution, width x height : " << colRes << "x" << rowRes << '\n';
+    height = static_cast<int>(std::ceil(resolution_*yDiff));
+    width = static_cast<int>(std::ceil(resolution_*xDiff));
+    log_ << "Ortho photo resolution, width x height : " << width << "x" << height << '\n';
 
     // Check size of photo.
-    if(0 >= rowRes*colRes)
+    if(0 >= height*width)
     {
-        if(0 >= rowRes)
+        if(0 >= height)
         {
-            log_ << "Warning: ortho photo has zero area, height = " << rowRes << ". Forcing height = 1.\n";
-            rowRes = 1;
+            log_ << "Warning: ortho photo has zero area, height = " << height << ". Forcing height = 1.\n";
+            height = 1;
         }
-        if(0 >= colRes)
+        if(0 >= width)
         {
-            log_ << "Warning: ortho photo has zero area, width = " << colRes << ". Forcing width = 1.\n";
-            colRes = 1;
+            log_ << "Warning: ortho photo has zero area, width = " << width << ". Forcing width = 1.\n";
+            width = 1;
         }
-        log_ << "New ortho photo resolution, width x height : " << colRes << "x" << rowRes << '\n';
+        log_ << "New ortho photo resolution, width x height : " << width << "x" << height << '\n';
     }
 
     // Contains the vertices of the mesh.
@@ -493,20 +537,22 @@ void OdmOrthoPhoto::createOrthoPhoto()
         if (textureDepth == -1){
             try{
                 textureDepth = texture.depth();
-                log_ << "Texture depth is " << textureDepth << "bit\n";
+                log_ << "Texture channels: " << texture.channels() << "\n";
 
                 if (textureDepth == CV_8U){
-                    photo_ = cv::Mat::zeros(rowRes, colRes, CV_8UC4) + cv::Scalar(255, 255, 255, 0);
+                    log_ << "Texture depth: 8bit\n";
+                    initBands<uint8_t>(texture);
                 }else if (textureDepth == CV_16U){
-                    photo_ = cv::Mat::zeros(rowRes, colRes, CV_16UC4) + cv::Scalar(65535, 65535, 65535, 0);
+                    log_ << "Texture depth: 16bit\n";
+                    initBands<uint16_t>(texture);
                 }else{
                     std::cerr << "Unsupported bit depth value: " << textureDepth;
                     exit(1);
                 }
 
-                depth_ = cv::Mat::zeros(rowRes, colRes, CV_32F) - std::numeric_limits<float>::infinity();
+                depth_ = cv::Mat::zeros(height, width, CV_32F) - std::numeric_limits<float>::infinity();
             }catch(const cv::Exception &e){
-                std::cerr << "Couldn't allocate enough memory to render the orthophoto (" << colRes << "x" << rowRes << " cells = " << ((long long)colRes * (long long)rowRes * 4) << " bytes). Try to increase the --orthophoto-resolution parameter to a larger integer or add more RAM.\n";
+                std::cerr << "Couldn't allocate enough memory to render the orthophoto (" << width << "x" << height << " cells = " << ((long long)width * (long long)height * 4) << " bytes). Try to increase the --orthophoto-resolution parameter to a larger integer or add more RAM.\n";
                 exit(1);
             }
         }
@@ -531,9 +577,9 @@ void OdmOrthoPhoto::createOrthoPhoto()
 
             // ... and draw it into the ortho photo.
             if (textureDepth == CV_8U){
-                drawTexturedTriangle<unsigned char>(texture, polygon, meshCloud, uvs, faceIndex+faceOff);
+                drawTexturedTriangle<uint8_t>(texture, polygon, meshCloud, uvs, faceIndex+faceOff);
             }else if (textureDepth == CV_16U){
-                drawTexturedTriangle<unsigned short>(texture, polygon, meshCloud, uvs, faceIndex+faceOff);
+                drawTexturedTriangle<uint16_t>(texture, polygon, meshCloud, uvs, faceIndex+faceOff);
             }
         }
         faceOff += faces.size();
@@ -543,7 +589,17 @@ void OdmOrthoPhoto::createOrthoPhoto()
 
     log_ << '\n';
     log_ << "Writing ortho photo to " << outputFile_ << "\n";
-    cv::imwrite(outputFile_, photo_);
+
+    if (textureDepth == CV_8U){
+        saveTIFF(outputFile_, GDT_Byte);
+    }else if (textureDepth == CV_16U){
+        saveTIFF(outputFile_, GDT_UInt16);
+    }else{
+        std::cerr << "Unsupported bit depth value: " << textureDepth;
+        exit(1);
+    }
+
+//    cv::imwrite(outputFile_, photo_);
 
     if (!outputCornerFile_.empty())
     {
@@ -801,7 +857,7 @@ void OdmOrthoPhoto::drawTexturedTriangle(const cv::Mat &texture, const pcl::Vert
 
     // Check bounding box overlap.
     int xMin = static_cast<int>(std::min(std::min(v1x, v2x), v3x));
-    if(xMin > photo_.cols)
+    if(xMin > width)
     {
         return; // Completely outside to the right.
     }
@@ -811,7 +867,7 @@ void OdmOrthoPhoto::drawTexturedTriangle(const cv::Mat &texture, const pcl::Vert
         return; // Completely outside to the left.
     }
     int yMin = static_cast<int>(std::min(std::min(v1y, v2y), v3y));
-    if(yMin > photo_.rows)
+    if(yMin > height)
     {
         return; // Completely outside to the top.
     }
@@ -915,7 +971,7 @@ void OdmOrthoPhoto::drawTexturedTriangle(const cv::Mat &texture, const pcl::Vert
         // The first pixel row for the bottom part of the triangle.
         int rqStart = std::max(static_cast<int>(std::floor(topR+0.5f)), 0);
         // The last pixel row for the top part of the triangle.
-        int rqEnd = std::min(static_cast<int>(std::floor(midR+0.5f)), photo_.rows);
+        int rqEnd = std::min(static_cast<int>(std::floor(midR+0.5f)), height);
 
         // Traverse along row from top to middle.
         for(int rq = rqStart; rq < rqEnd; ++rq)
@@ -927,7 +983,7 @@ void OdmOrthoPhoto::drawTexturedTriangle(const cv::Mat &texture, const pcl::Vert
             // The first pixel column for the current row.
             int cqStart = std::max(static_cast<int>(std::floor(0.5f+std::min(ctm, ctb))), 0);
             // The last pixel column for the current row.
-            int cqEnd = std::min(static_cast<int>(std::floor(0.5f+std::max(ctm, ctb))), photo_.cols);
+            int cqEnd = std::min(static_cast<int>(std::floor(0.5f+std::max(ctm, ctb))), width);
 
             for(int cq = cqStart; cq < cqEnd; ++cq)
             {
@@ -973,7 +1029,7 @@ void OdmOrthoPhoto::drawTexturedTriangle(const cv::Mat &texture, const pcl::Vert
         // The first pixel row for the bottom part of the triangle.
         int rqStart = std::max(static_cast<int>(std::floor(midR+0.5f)), 0);
         // The last pixel row for the bottom part of the triangle.
-        int rqEnd = std::min(static_cast<int>(std::floor(botR+0.5f)), photo_.rows);
+        int rqEnd = std::min(static_cast<int>(std::floor(botR+0.5f)), height);
 
         // Traverse along row from middle to bottom.
         for(int rq = rqStart; rq < rqEnd; ++rq)
@@ -985,7 +1041,7 @@ void OdmOrthoPhoto::drawTexturedTriangle(const cv::Mat &texture, const pcl::Vert
             // The first pixel column for the current row.
             int cqStart = std::max(static_cast<int>(std::floor(0.5f+std::min(cmb, ctb))), 0);
             // The last pixel column for the current row.
-            int cqEnd = std::min(static_cast<int>(std::floor(0.5f+std::max(cmb, ctb))), photo_.cols);
+            int cqEnd = std::min(static_cast<int>(std::floor(0.5f+std::max(cmb, ctb))), width);
 
             for(int cq = cqStart; cq < cqEnd; ++cq)
             {
@@ -1071,10 +1127,11 @@ void OdmOrthoPhoto::renderPixel(int row, int col, float s, float t, const cv::Ma
     b += static_cast<float>(bl[0]) * dr * dt;
     b += static_cast<float>(br[0]) * dl * dt;
 
-    photo_.at<cv::Vec<T, 4> >(row,col) = cv::Vec<T, 4>(static_cast<T>(b),
-                                                       static_cast<T>(g),
-                                                       static_cast<T>(r),
-                                                       static_cast<T>(255)); // Alpha should always be in the 255 range
+    size_t idx = static_cast<size_t>(row * width + col);
+    static_cast<T *>(bands[0])[idx] = static_cast<T>(r);
+    static_cast<T *>(bands[1])[idx] = static_cast<T>(g);
+    static_cast<T *>(bands[2])[idx] = static_cast<T>(b);
+    static_cast<T *>(bands[3])[idx] = static_cast<T>(255);  // Alpha should always be in the 255 range
 }
 
 void OdmOrthoPhoto::getBarycentricCoordinates(pcl::PointXYZ v1, pcl::PointXYZ v2, pcl::PointXYZ v3, float x, float y, float &l1, float &l2, float &l3) const

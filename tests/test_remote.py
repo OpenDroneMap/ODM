@@ -35,10 +35,11 @@ class TestRemote(unittest.TestCase):
                 self.queue_num = queue_num
                 self.uuid = 'xxxxx-xxxxx-xxxxx-xxxxx-xxxx' + str(queue_num)
             
-            def info(self):
+            def info(self, with_output=None):
                 class StatusMock:
                     status = TaskStatus.RUNNING if self.running else TaskStatus.QUEUED
                     processing_time = 1
+                    output = "test output"
                 return StatusMock()
 
             def remove(self):

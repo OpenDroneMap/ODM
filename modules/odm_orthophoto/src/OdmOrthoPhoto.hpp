@@ -20,6 +20,10 @@
 // OpenCV
 #include <opencv2/core/core.hpp>
 
+// GDAL
+#include "gdal_priv.h"
+#include "cpl_conv.h" // for CPLMalloc()
+
 // Logger
 #include "Logger.hpp"
 
@@ -76,6 +80,7 @@ public:
     int run(int argc, char* argv[]);
 
 private:
+    int width, height;
 
     /*!
      * \brief parseArguments    Parses command line arguments.
@@ -123,6 +128,10 @@ private:
      * @return
      */
     Eigen::Transform<float, 3, Eigen::Affine> readTransform(std::string transformFile_) const;
+
+    template <typename T>
+    void initBands(const cv::Mat &texture);
+    void saveTIFF(const std::string &filename, GDALDataType dataType);
     
     /*!
       * \brief Renders a triangle into the ortho photo.
@@ -222,7 +231,8 @@ private:
     Eigen::Vector2f boundaryPoint3_;     /**< The third boundary point for the ortho photo, in local coordinates. */
     Eigen::Vector2f boundaryPoint4_;     /**< The fourth boundary point for the ortho photo, in local coordinates. */
 
-    cv::Mat         photo_;             /**< The ortho photo as an OpenCV matrix, CV_8UC3. */
+    std::vector<void *>    bands;
+
     cv::Mat         depth_;             /**< The depth of the ortho photo as an OpenCV matrix, CV_32F. */
 
     bool            multiMaterial_;     /**< True if the mesh has multiple materials. **/

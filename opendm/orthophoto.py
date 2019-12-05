@@ -82,11 +82,15 @@ def compute_mask_raster(input_raster, vector_mask, output_raster, blend_distance
             out_image, out_transform = mask(rast, shapes, nodata=0)
 
             if blend_distance > 0:
-                alpha_band = out_image[3]
-                dist_t = ndimage.distance_transform_edt(alpha_band)
-                dist_t[dist_t <= blend_distance] /= blend_distance
-                dist_t[dist_t > blend_distance] = 1
-                np.multiply(alpha_band, dist_t, out=alpha_band, casting="unsafe")
+                if out_image.shape[0] >= 4:
+                # rast_mask = rast.dataset_mask()
+                    rast_mask = out_image[-1]
+                    dist_t = ndimage.distance_transform_edt(rast_mask)
+                    dist_t[dist_t <= blend_distance] /= blend_distance
+                    dist_t[dist_t > blend_distance] = 1
+                    np.multiply(rast_mask, dist_t, out=rast_mask, casting="unsafe")
+                else:
+                    log.ODM_WARNING("%s does not have an alpha band, cannot blend cutline!" % input_raster)
 
             with rasterio.open(output_raster, 'w', **rast.profile) as dst:
                 dst.write(out_image)
