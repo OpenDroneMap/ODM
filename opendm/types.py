@@ -93,6 +93,54 @@ class ODM_Reconstruction(object):
         self.photos = photos
         self.georef = None
         self.gcp = None
+        self.multi_camera = self.detect_multi_camera()
+
+    def detect_multi_camera(self):
+        """
+        Looks at the reconstruction photos and determines if this
+        is a single or multi-camera setup.
+        """
+        supported_ext_re = r"\.(" + "|".join([e[1:] for e in context.supported_extensions]) + ")$"
+        
+        # Match filename_1.tif, filename_2.tif, filename_3.tif, ...
+        # 
+        multi_camera_patterns = {
+            'MicaSense RedEdge-M': r'^IMG_\d+_(?P<band>\d{1})',
+            'Parrot Sequoia': r'^IMG_\d+_\d+_\d+_(?P<band>[A-Z]{3})',
+        }
+
+        for cam, regex in multi_camera_patterns.items():
+            pattern = re.compile(regex + supported_ext_re, re.IGNORECASE)
+            mc = {}
+
+            for p in self.photos:
+                matches = re.match(pattern, p.filename)
+                if matches:
+                    band = matches.group("band")
+                    if not band in mc:
+                        mc[band] = []
+                    mc[band].append(p)
+            
+            # We support between 2 and 6 bands
+            # If we matched more or less bands, we probably just
+            # found filename patterns that do not match a multi-camera setup
+            bands_count = len(mc)
+            if bands_count >= 2 and bands_count <= 6:
+                
+                # Validate that all bands have the same number of images,
+                # otherwise this is not a multi-camera setup
+                img_per_band = len(mc[band])
+                valid = True
+                for band in mc:
+                    if len(mc[band]) != img_per_band:
+                        log.ODM_WARNING("This might be a multi-camera setup, but band \"%s\" (identified from \"%s\") has only %s images (instead of %s), perhaps images are missing or are corrupted." % (band, mc[band][0].filename, len(mc[band]), img_per_band))
+                        valid = False
+                        break
+                
+                if valid:
+                    return mc
+        
+        return None
 
     def is_georeferenced(self):
         return self.georef is not None
