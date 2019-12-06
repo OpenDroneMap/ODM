@@ -214,7 +214,7 @@ class ODMMergeStage(types.ODM_Stage):
                     )
 
                     if len(all_orthos_and_ortho_cuts) > 1:
-                        log.ODM_INFO("Found %s submodels with valid orthophotos and cutlines" % len(all_orthos_and_cutlines))
+                        log.ODM_INFO("Found %s submodels with valid orthophotos and cutlines" % len(all_orthos_and_ortho_cuts))
                         
                         # TODO: histogram matching via rasterio
                         # currently parts have different color tones
@@ -225,10 +225,10 @@ class ODMMergeStage(types.ODM_Stage):
                         orthophoto_vars = orthophoto.get_orthophoto_vars(args)
                         orthophoto.merge(all_orthos_and_ortho_cuts, tree.odm_orthophoto_tif, orthophoto_vars)
                         orthophoto.post_orthophoto_steps(args, merged_bounds_file, tree.odm_orthophoto_tif)
-                    elif len(all_orthos_and_cutlines) == 1:
+                    elif len(all_orthos_and_ortho_cuts) == 1:
                         # Simply copy
                         log.ODM_WARNING("A single orthophoto/cutline pair was found between all submodels.")
-                        shutil.copyfile(all_orthos_and_cutlines[0][0], tree.odm_orthophoto_tif)
+                        shutil.copyfile(all_orthos_and_ortho_cuts[0][0], tree.odm_orthophoto_tif)
                     else:
                         log.ODM_WARNING("No orthophoto/cutline pairs were found in any of the submodels. No orthophoto will be generated.")
                 else:
