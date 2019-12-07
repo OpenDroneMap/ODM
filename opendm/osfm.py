@@ -51,7 +51,7 @@ class OSFMContext:
             exit(1)
 
 
-    def setup(self, args, images_path, photos, gcp_path=None, append_config = [], rerun=False):
+    def setup(self, args, images_path, photos, reconstruction, append_config = [], rerun=False):
         """
         Setup a OpenSfM project
         """
@@ -91,13 +91,22 @@ class OSFMContext:
                 except Exception as e:
                     log.ODM_WARNING("Cannot set camera_models_overrides.json: %s" % str(e))
 
+            use_bow = False
+
+            matcher_neighbors = args.matcher_neighbors
+            if matcher_neighbors != 0 and reconstruction.multi_camera is not None:
+                matcher_neighbors *= len(reconstruction.multi_camera)
+                log.ODM_INFO("Increasing matcher neighbors to %s to accomodate multi-camera setup" % matcher_neighbors)
+                log.ODM_INFO("Multi-camera setup, using BOW matching")
+                use_bow = True
+
             # create config file for OpenSfM
             config = [
                 "use_exif_size: no",
                 "feature_process_size: %s" % args.resize_to,
                 "feature_min_frames: %s" % args.min_num_features,
                 "processes: %s" % args.max_concurrency,
-                "matching_gps_neighbors: %s" % args.matcher_neighbors,
+                "matching_gps_neighbors: %s" % matcher_neighbors,
                 "matching_gps_distance: %s" % args.matcher_distance,
                 "depthmap_method: %s" % args.opensfm_depthmap_method,
                 "depthmap_resolution: %s" % args.depthmap_resolution,
@@ -114,12 +123,16 @@ class OSFMContext:
 
             if not has_gps:
                 log.ODM_INFO("No GPS information, using BOW matching")
+                use_bow = True
+
+            if use_bow:
                 config.append("matcher_type: WORDS")
 
             if has_alt:
                 log.ODM_INFO("Altitude data detected, enabling it for GPS alignment")
                 config.append("use_altitude_tag: yes")
 
+            gcp_path = reconstruction.gcp.gcp_path
             if has_alt or gcp_path:
                 config.append("align_method: auto")
             else:
