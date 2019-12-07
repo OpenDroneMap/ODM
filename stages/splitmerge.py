@@ -46,7 +46,7 @@ class ODMSplitStage(types.ODM_Stage):
                     "submodel_overlap: %s" % args.split_overlap,
                 ]
 
-                octx.setup(args, tree.dataset_raw, photos, gcp_path=reconstruction.gcp.gcp_path, append_config=config, rerun=self.rerun())
+                octx.setup(args, tree.dataset_raw, photos, reconstruction=reconstruction, append_config=config, rerun=self.rerun())
                 octx.extract_metadata(self.rerun())
 
                 self.update_progress(5)

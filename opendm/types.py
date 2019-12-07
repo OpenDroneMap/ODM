@@ -3,11 +3,11 @@ import exifread
 import re
 import os
 from fractions import Fraction
-from opensfm.exif import sensor_string
 from opendm import get_image_size
 from opendm import location
 from opendm.gcp import GCPFile
 from pyproj import CRS
+import xmltodict as x2d
 
 import log
 import io
@@ -28,10 +28,11 @@ class ODM_Photo:
         # other attributes
         self.camera_make = ''
         self.camera_model = ''
-        self.make_model = ''
         self.latitude = None
         self.longitude = None
         self.altitude = None
+        self.band_name = 'RGB'
+
         # parse values from metadata
         self.parse_exif_values(path_file)
 
@@ -40,8 +41,9 @@ class ODM_Photo:
 
 
     def __str__(self):
-        return '{} | camera: {} | dimensions: {} x {} | lat: {} | lon: {} | alt: {}'.format(
-                            self.filename, self.make_model, self.width, self.height, self.latitude, self.longitude, self.altitude)
+        return '{} | camera: {} {} | dimensions: {} x {} | lat: {} | lon: {} | alt: {} | band: {}'.format(
+                            self.filename, self.camera_make, self.camera_model, self.width, self.height, 
+                            self.latitude, self.longitude, self.altitude, self.band_name)
 
     def parse_exif_values(self, _path_file):
         # Disable exifread log
@@ -66,10 +68,36 @@ class ODM_Photo:
             except IndexError as e:
                 log.ODM_WARNING("Cannot read EXIF tags for %s: %s" % (_path_file, e.message))
 
-        if self.camera_make and self.camera_model:
-            self.make_model = sensor_string(self.camera_make, self.camera_model)
+            # Extract XMP tags
+            f.seek(0)
+            xmp = self.get_xmp(f)
+
+            # Find band name (if available)
+            for tags in xmp:
+                if 'Camera:BandName' in tags:
+                    self.band_name = str(tags['Camera:BandName']).replace(" ", "")
+                    break
 
         self.width, self.height = get_image_size.get_image_size(_path_file)
+    
+    # From https://github.com/mapillary/OpenSfM/blob/master/opensfm/exif.py
+    def get_xmp(self, file):
+        img_str = str(file.read())
+        xmp_start = img_str.find('<x:xmpmeta')
+        xmp_end = img_str.find('</x:xmpmeta')
+
+        if xmp_start < xmp_end:
+            xmp_str = img_str[xmp_start:xmp_end + 12]
+            xdict = x2d.parse(xmp_str)
+            xdict = xdict.get('x:xmpmeta', {})
+            xdict = xdict.get('rdf:RDF', {})
+            xdict = xdict.get('rdf:Description', {})
+            if isinstance(xdict, list):
+                return xdict
+            else:
+                return [xdict]
+        else:
+            return []
 
     def dms_to_decimal(self, dms, sign):
         """Converts dms coords to decimal degrees"""
@@ -100,45 +128,23 @@ class ODM_Reconstruction(object):
         Looks at the reconstruction photos and determines if this
         is a single or multi-camera setup.
         """
-        supported_ext_re = r"\.(" + "|".join([e[1:] for e in context.supported_extensions]) + ")$"
-        
-        # Match filename_1.tif, filename_2.tif, filename_3.tif, ...
-        # 
-        multi_camera_patterns = {
-            'MicaSense RedEdge-M': r'^IMG_\d+_(?P<band>\d{1})',
-            'Parrot Sequoia': r'^IMG_\d+_\d+_\d+_(?P<band>[A-Z]{3})',
-        }
-
-        for cam, regex in multi_camera_patterns.items():
-            pattern = re.compile(regex + supported_ext_re, re.IGNORECASE)
-            mc = {}
-
-            for p in self.photos:
-                matches = re.match(pattern, p.filename)
-                if matches:
-                    band = matches.group("band")
-                    if not band in mc:
-                        mc[band] = []
-                    mc[band].append(p)
+        mc = {}
+        for p in self.photos:
+            if not p.band_name in mc:
+                mc[p.band_name] = []
+            mc[p.band_name].append(p)
             
-            # We support between 2 and 6 bands
-            # If we matched more or less bands, we probably just
-            # found filename patterns that do not match a multi-camera setup
-            bands_count = len(mc)
-            if bands_count >= 2 and bands_count <= 6:
-                
-                # Validate that all bands have the same number of images,
-                # otherwise this is not a multi-camera setup
-                img_per_band = len(mc[band])
-                valid = True
-                for band in mc:
-                    if len(mc[band]) != img_per_band:
-                        log.ODM_WARNING("This might be a multi-camera setup, but band \"%s\" (identified from \"%s\") has only %s images (instead of %s), perhaps images are missing or are corrupted." % (band, mc[band][0].filename, len(mc[band]), img_per_band))
-                        valid = False
-                        break
-                
-                if valid:
-                    return mc
+        bands_count = len(mc)
+        if bands_count >= 2 and bands_count <= 8:
+            # Validate that all bands have the same number of images,
+            # otherwise this is not a multi-camera setup
+            img_per_band = len(mc[p.band_name])
+            for band in mc:
+                if len(mc[band]) != img_per_band:
+                    log.ODM_ERROR("Multi-camera setup detected, but band \"%s\" (identified from \"%s\") has only %s images (instead of %s), perhaps images are missing or are corrupted. Please include all necessary files to process all bands and try again." % (band, mc[band][0].filename, len(mc[band]), img_per_band))
+                    raise RuntimeError("Invalid multi-camera images")
+            
+            return mc
         
         return None
 

@@ -314,7 +314,8 @@ void OdmOrthoPhoto::saveTIFF(const std::string &filename, GDALDataType dataType)
         exit(1);
     }
     char **papszOptions = NULL;
-    GDALDatasetH hDstDS = GDALCreate( hDriver, filename.c_str(), width, height, static_cast<int>(bands.size()), dataType, papszOptions );
+    GDALDatasetH hDstDS = GDALCreate( hDriver, filename.c_str(), width, height,
+                                      static_cast<int>(bands.size()), dataType, papszOptions );
     GDALRasterBandH hBand;
 
     for (size_t i = 0; i < bands.size(); i++){
@@ -328,10 +329,6 @@ void OdmOrthoPhoto::saveTIFF(const std::string &filename, GDALDataType dataType)
             std::cerr << "Cannot write TIFF to " << filename << std::endl;
             exit(1);
         }
-//        for (int j = 0; j < height; j++){
-//            GDALRasterIO( hBand, GF_Write, 0, j, width, 1,
-//                        bands[i][j], width, 1, dataType, 0, 0 );
-//        }
     }
     GDALClose( hDstDS );
 }
