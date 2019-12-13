@@ -57,7 +57,7 @@ class ODMOpenSfMStage(types.ODM_Stage):
             octx.touch(updated_config_flag_file)
 
         # These will be used for texturing / MVS
-        undistorted_images_path = octx.path("undistorted")
+        undistorted_images_path = octx.path("undistorted", "images")
 
         if not io.dir_exists(undistorted_images_path) or self.rerun():
             octx.run('undistort')
@@ -66,11 +66,32 @@ class ODMOpenSfMStage(types.ODM_Stage):
 
         self.update_progress(80)
 
-        if not io.file_exists(tree.opensfm_reconstruction_nvm) or self.rerun():
-            octx.run('export_visualsfm --undistorted --points')
+        if not reconstruction.multi_camera:
+            if not io.file_exists(tree.opensfm_reconstruction_nvm) or self.rerun():
+                octx.run('export_visualsfm --points')
+            else:
+                log.ODM_WARNING('Found a valid OpenSfM NVM reconstruction file in: %s' %
+                                tree.opensfm_reconstruction_nvm)
         else:
-            log.ODM_WARNING('Found a valid OpenSfM NVM reconstruction file in: %s' %
-                            tree.opensfm_reconstruction_nvm)
+            # Dump band image lists
+            log.ODM_INFO("Multiple bands found")
+            for band in reconstruction.multi_camera:
+                log.ODM_INFO("Exporting %s band" % band['name'])
+                image_list_file = octx.path("image_list_%s.txt" % band['name'].lower())
+
+                if not io.file_exists(image_list_file) or self.rerun():
+                    with open(image_list_file, "w") as f:
+                        f.write("\n".join([p.filename for p in band['photos']]))
+                        log.ODM_INFO("Wrote %s" % image_list_file)
+                else:
+                    log.ODM_WARNING("Found a valid image list in %s for %s band" % (image_list_file, band['name']))
+                
+                nvm_file = octx.path("undistorted", "reconstruction_%s.nvm" % band['name'].lower())
+                if not io.file_exists(nvm_file) or self.rerun():
+                    octx.run('export_visualsfm --points --image_list "%s"' % image_list_file)
+                    os.rename(tree.opensfm_reconstruction_nvm, nvm_file)
+                else:
+                    log.ODM_WARNING("Found a valid NVM file in %s for %s band" % (nvm_file, band['name']))
 
         self.update_progress(85)
 
