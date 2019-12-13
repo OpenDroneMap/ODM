@@ -74,7 +74,7 @@ class ODMMvsTexStage(types.ODM_Stage):
                     'toneMapping': self.params.get('tone_mapping'),
                     'nadirMode': nadir,
                     'nadirWeight': 2 ** args.texturing_nadir_weight - 1,
-                    'nvm_file': io.join_paths(tree.opensfm, "reconstruction.nvm")
+                    'nvm_file': tree.opensfm_reconstruction_nvm
                 }
 
                 mvs_tmp_dir = os.path.join(r['out_dir'], 'tmp')

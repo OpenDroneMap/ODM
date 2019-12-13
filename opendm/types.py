@@ -87,7 +87,6 @@ class ODM_Photo:
                         if cit in tags:
                             self.band_index = int(tags[cit])
         self.width, self.height = get_image_size.get_image_size(_path_file)
-        print(self)
     
     # From https://github.com/mapillary/OpenSfM/blob/master/opensfm/exif.py
     def get_xmp(self, file):
@@ -328,8 +327,8 @@ class ODM_Tree(object):
         self.opensfm_bundle_list = io.join_paths(self.opensfm, 'list_r000.out')
         self.opensfm_image_list = io.join_paths(self.opensfm, 'image_list.txt')
         self.opensfm_reconstruction = io.join_paths(self.opensfm, 'reconstruction.json')
-        self.opensfm_reconstruction_nvm = io.join_paths(self.opensfm, 'reconstruction.nvm')
-        self.opensfm_model = io.join_paths(self.opensfm, 'depthmaps/merged.ply')
+        self.opensfm_reconstruction_nvm = io.join_paths(self.opensfm, 'undistorted/reconstruction.nvm')
+        self.opensfm_model = io.join_paths(self.opensfm, 'undistorted/depthmaps/merged.ply')
         self.opensfm_transformation = io.join_paths(self.opensfm, 'geocoords_transformation.txt')
 
         # mve
@@ -354,8 +353,6 @@ class ODM_Tree(object):
         self.odm_texuring_log = 'odm_texturing_log.txt'
 
         # odm_georeferencing
-        self.odm_georeferencing_latlon = io.join_paths(
-            self.odm_georeferencing, 'latlon.txt')
         self.odm_georeferencing_coords = io.join_paths(
             self.odm_georeferencing, 'coords.txt')
         self.odm_georeferencing_gcp = gcp_file or io.find('gcp_list.txt', self.root_path)
