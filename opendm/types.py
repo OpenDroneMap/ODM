@@ -32,6 +32,7 @@ class ODM_Photo:
         self.longitude = None
         self.altitude = None
         self.band_name = 'RGB'
+        self.band_index = 0
 
         # parse values from metadata
         self.parse_exif_values(path_file)
@@ -41,9 +42,9 @@ class ODM_Photo:
 
 
     def __str__(self):
-        return '{} | camera: {} {} | dimensions: {} x {} | lat: {} | lon: {} | alt: {} | band: {}'.format(
+        return '{} | camera: {} {} | dimensions: {} x {} | lat: {} | lon: {} | alt: {} | band: {} ({})'.format(
                             self.filename, self.camera_make, self.camera_model, self.width, self.height, 
-                            self.latitude, self.longitude, self.altitude, self.band_name)
+                            self.latitude, self.longitude, self.altitude, self.band_name, self.band_index)
 
     def parse_exif_values(self, _path_file):
         # Disable exifread log
@@ -72,13 +73,21 @@ class ODM_Photo:
             f.seek(0)
             xmp = self.get_xmp(f)
 
-            # Find band name (if available)
+            # Find band name and camera index (if available)
+            camera_index_tags = [
+                    'DLS:SensorId', # Micasense
+                    '@Camera:RigCameraIndex' # Parrot Sequoia
+            ]
+
             for tags in xmp:
                 if 'Camera:BandName' in tags:
                     self.band_name = str(tags['Camera:BandName']).replace(" ", "")
-                    break
-
+                else:
+                    for cit in camera_index_tags:
+                        if cit in tags:
+                            self.band_index = int(tags[cit])
         self.width, self.height = get_image_size.get_image_size(_path_file)
+        print(self)
     
     # From https://github.com/mapillary/OpenSfM/blob/master/opensfm/exif.py
     def get_xmp(self, file):
@@ -128,24 +137,36 @@ class ODM_Reconstruction(object):
         Looks at the reconstruction photos and determines if this
         is a single or multi-camera setup.
         """
-        mc = {}
+        band_photos = {}
+        band_indexes = {}
+
         for p in self.photos:
-            if not p.band_name in mc:
-                mc[p.band_name] = []
-            mc[p.band_name].append(p)
+            if not p.band_name in band_photos:
+                band_photos[p.band_name] = []
+            if not p.band_name in band_indexes:
+                band_indexes[p.band_name] = p.band_index
+
+            band_photos[p.band_name].append(p)
             
-        bands_count = len(mc)
+        bands_count = len(band_photos)
         if bands_count >= 2 and bands_count <= 8:
             # Validate that all bands have the same number of images,
             # otherwise this is not a multi-camera setup
-            img_per_band = len(mc[p.band_name])
-            for band in mc:
-                if len(mc[band]) != img_per_band:
-                    log.ODM_ERROR("Multi-camera setup detected, but band \"%s\" (identified from \"%s\") has only %s images (instead of %s), perhaps images are missing or are corrupted. Please include all necessary files to process all bands and try again." % (band, mc[band][0].filename, len(mc[band]), img_per_band))
+            img_per_band = len(band_photos[p.band_name])
+            for band in band_photos:
+                if len(band_photos[band]) != img_per_band:
+                    log.ODM_ERROR("Multi-camera setup detected, but band \"%s\" (identified from \"%s\") has only %s images (instead of %s), perhaps images are missing or are corrupted. Please include all necessary files to process all bands and try again." % (band, band_photos[band][0].filename, len(band_photos[band]), img_per_band))
                     raise RuntimeError("Invalid multi-camera images")
             
+            mc = []
+            for band_name in band_indexes:
+                mc.append({'name': band_name, 'photos': band_photos[band_name]})
+            
+            # Sort by band index
+            mc.sort(key=lambda x: band_indexes[x['name']])
+
             return mc
-        
+
         return None
 
     def is_georeferenced(self):
@@ -187,7 +208,7 @@ class ODM_Reconstruction(object):
             log.ODM_INFO("GCP file already exist: %s" % output_gcp_file)
             self.gcp = GCPFile(output_gcp_file)
         
-        self.georef = ODM_GeoRef.FromCoordsFile(output_coords_file)
+        self.georef = ODM_GeoRef.Froband_photosoordsFile(output_coords_file)
         return self.georef
 
     def georeference_with_gps(self, images_path, output_coords_file, rerun=False):
@@ -197,7 +218,7 @@ class ODM_Reconstruction(object):
             else:
                 log.ODM_INFO("Coordinates file already exist: %s" % output_coords_file)
             
-            self.georef = ODM_GeoRef.FromCoordsFile(output_coords_file)
+            self.georef = ODM_GeoRef.Froband_photosoordsFile(output_coords_file)
         except:
             log.ODM_WARNING('Could not generate coordinates file. An orthophoto will not be generated.')
 
@@ -217,7 +238,7 @@ class ODM_GeoRef(object):
         return ODM_GeoRef(CRS.from_proj4(projstring))
 
     @staticmethod
-    def FromCoordsFile(coords_file):
+    def Froband_photosoordsFile(coords_file):
         # check for coordinate file existence
         if not io.file_exists(coords_file):
             log.ODM_WARNING('Could not find file %s' % coords_file)
