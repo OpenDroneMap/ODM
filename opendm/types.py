@@ -86,7 +86,11 @@ class ODM_Photo:
                     for cit in camera_index_tags:
                         if cit in tags:
                             self.band_index = int(tags[cit])
+        
         self.width, self.height = get_image_size.get_image_size(_path_file)
+        
+        # Sanitize band name since we use it in folder paths
+        self.band_name = re.sub('[^A-Za-z0-9]+', '', self.band_name)
     
     # From https://github.com/mapillary/OpenSfM/blob/master/opensfm/exif.py
     def get_xmp(self, file):
