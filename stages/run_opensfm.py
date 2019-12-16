@@ -66,13 +66,7 @@ class ODMOpenSfMStage(types.ODM_Stage):
 
         self.update_progress(80)
 
-        if not reconstruction.multi_camera:
-            if not io.file_exists(tree.opensfm_reconstruction_nvm) or self.rerun():
-                octx.run('export_visualsfm --points')
-            else:
-                log.ODM_WARNING('Found a valid OpenSfM NVM reconstruction file in: %s' %
-                                tree.opensfm_reconstruction_nvm)
-        else:
+        if reconstruction.multi_camera:
             # Dump band image lists
             log.ODM_INFO("Multiple bands found")
             for band in reconstruction.multi_camera:
@@ -92,6 +86,12 @@ class ODMOpenSfMStage(types.ODM_Stage):
                     os.rename(tree.opensfm_reconstruction_nvm, nvm_file)
                 else:
                     log.ODM_WARNING("Found a valid NVM file in %s for %s band" % (nvm_file, band['name']))
+
+        if not io.file_exists(tree.opensfm_reconstruction_nvm) or self.rerun():
+            octx.run('export_visualsfm --points')
+        else:
+            log.ODM_WARNING('Found a valid OpenSfM NVM reconstruction file in: %s' %
+                            tree.opensfm_reconstruction_nvm)
 
         self.update_progress(85)
 
