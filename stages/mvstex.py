@@ -15,13 +15,13 @@ class ODMMvsTexStage(types.ODM_Stage):
             runs = []
 
         def add_run(nvm_file, primary=True, band=None):
-            out_dir_suffix = ""
+            subdir = ""
             if not primary and band is not None:
-                out_dir_suffix = band
+                subdir = band
 
             if not args.skip_3dmodel and (primary or args.use_3dmesh):
                 nonloc.runs += [{
-                    'out_dir': os.path.join(tree.odm_texturing, out_dir_suffix),
+                    'out_dir': os.path.join(tree.odm_texturing, subdir),
                     'model': tree.odm_mesh,
                     'nadir': False,
                     'nvm_file': nvm_file
@@ -29,7 +29,7 @@ class ODMMvsTexStage(types.ODM_Stage):
 
             if not args.use_3dmesh:
                 nonloc.runs += [{
-                    'out_dir': os.path.join(tree.odm_25dtexturing, out_dir_suffix),
+                    'out_dir': os.path.join(tree.odm_25dtexturing, subdir),
                     'model': tree.odm_25dmesh,
                     'nadir': True,
                     'nvm_file': nvm_file
