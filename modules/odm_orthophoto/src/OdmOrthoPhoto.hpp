@@ -131,6 +131,10 @@ private:
 
     template <typename T>
     void initBands(const cv::Mat &texture);
+
+    template <typename T>
+    void initAlphaBand(const cv::Mat &texture);
+
     void saveTIFF(const std::string &filename, GDALDataType dataType);
     
     /*!
@@ -209,7 +213,7 @@ private:
 
     Logger          log_;               /**< Logging object. */
 
-    std::string     inputFile_;         /**< Path to the textured mesh as an obj-file. */
+    std::vector<std::string> inputFiles;
     std::string     inputGeoRefFile_;   /**< Path to the georeference system file. */
     std::string     inputTransformFile_;
     std::string     outputFile_;        /**< Path to the destination file. */
@@ -232,10 +236,10 @@ private:
     Eigen::Vector2f boundaryPoint4_;     /**< The fourth boundary point for the ortho photo, in local coordinates. */
 
     std::vector<void *>    bands;
+    void *alphaBand; // Keep alpha band separate
+    int currentBandIndex;
 
     cv::Mat         depth_;             /**< The depth of the ortho photo as an OpenCV matrix, CV_32F. */
-
-    bool            multiMaterial_;     /**< True if the mesh has multiple materials. **/
 
     std::vector<pcl::MTLReader> companions_; /**< Materials (used by loadOBJFile). **/
 };

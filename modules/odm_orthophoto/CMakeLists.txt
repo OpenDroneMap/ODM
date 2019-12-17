@@ -6,7 +6,7 @@ set(PCL_DIR "PCL_DIR-NOTFOUND" CACHE "PCL_DIR" "Path to the pcl installation dir
 set(OPENCV_DIR "OPENCV_DIR-NOTFOUND" CACHE "OPENCV_DIR" "Path to the OPENCV installation directory")
 
 # Add compiler options.
-add_definitions(-Wall -Wextra)
+add_definitions(-Wall -Wextra -g)
 
 # Find pcl at the location specified by PCL_DIR
 find_package(VTK 6.0 REQUIRED)
@@ -33,4 +33,7 @@ aux_source_directory("./src" SRC_LIST)
 
 # Add exectuteable
 add_executable(${PROJECT_NAME} ${SRC_LIST})
+set_target_properties(${PROJECT_NAME} PROPERTIES
+    CXX_STANDARD 11
+)
 target_link_libraries(odm_orthophoto ${PCL_COMMON_LIBRARIES} ${PCL_IO_LIBRARIES} ${PCL_SURFACE_LIBRARIES} ${OpenCV_LIBS} ${GDAL_LIBRARY})

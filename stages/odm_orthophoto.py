@@ -97,7 +97,6 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
 
                 system.run('gdal_translate -a_ullr {ulx} {uly} {lrx} {lry} '
                            '{vars} '
-                        #    '-b 1 -b 2 -b 3 -mask 4 '
                            '-a_srs \"{proj}\" '
                            '--config GDAL_CACHEMAX {max_memory}% '
                            '--config GDAL_TIFF_INTERNAL_MASK YES '
