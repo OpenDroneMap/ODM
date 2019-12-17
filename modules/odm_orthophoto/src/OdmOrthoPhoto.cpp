@@ -1,58 +1,18 @@
-// C++
 #include <math.h>
 #include <sstream>
 #include <fstream>
 #include <Eigen/StdVector>
 
-// This
 #include "OdmOrthoPhoto.hpp"
 
-std::ostream & operator<< (std::ostream &os, const WorldPoint &worldPoint)
-{
-    return os << worldPoint.eastInteger_ + worldPoint.eastFractional_ << " " << worldPoint.northInteger_ + worldPoint.northFractional_;
-}
-
-std::istream & operator>> (std::istream &is,  WorldPoint &worldPoint)
-{
-    is >> worldPoint.eastInteger_;
-    // Check if east coordinate is given as rational.
-    if('.' == is.peek())
-    {
-        is >> worldPoint.eastFractional_;
-    }
-    else
-    {
-        worldPoint.eastFractional_ = 0.0f;
-    }
-    
-    is >> worldPoint.northInteger_;
-    // Check if north coordinate is given as rational.
-    if('.' == is.peek())
-    {
-        is >> worldPoint.northFractional_;
-    }
-    else
-    {
-        worldPoint.northFractional_ = 0.0f;
-    }
-
-    return is;
-}
-
 OdmOrthoPhoto::OdmOrthoPhoto()
-    :log_(false)
-{
-    inputGeoRefFile_ = "";
-    inputTransformFile_ = "";
-    outputFile_ = "ortho.jpg";
+    :log_(false){
+    outputFile_ = "ortho.tif";
     logFile_    = "log.txt";
     outputCornerFile_ = "";
 
-    transformOverride_ = false;
-
     resolution_ = 0.0f;
 
-    boundaryDefined_ = false;
     boundaryPoint1_[0] = 0.0f; boundaryPoint1_[1] = 0.0f;
     boundaryPoint2_[0] = 0.0f; boundaryPoint2_[1] = 0.0f;
     boundaryPoint3_[0] = 0.0f; boundaryPoint3_[1] = 0.0f;
@@ -139,55 +99,6 @@ void OdmOrthoPhoto::parseArguments(int argc, char *argv[])
             ss >> resolution_;
             log_ << "Resolution count was set to: " << resolution_ << "pixels/meter\n";
         }
-        else if(argument == "-boundary")
-        {
-            if(argIndex+8 >= argc)
-            {
-                throw OdmOrthoPhotoException("Argument '" + argument + "' expects 8 more input following it, but no more inputs were provided.");
-            }
-
-            std::stringstream ss;
-            ss << argv[argIndex+1] << " " << argv[argIndex+2] << " " << argv[argIndex+3] << " " << argv[argIndex+4] << " " << argv[argIndex+5] << " " << argv[argIndex+6] << " " << argv[argIndex+7] << " " << argv[argIndex+8];
-            ss >> worldPoint1_ >> worldPoint2_ >> worldPoint3_ >> worldPoint4_;
-            boundaryDefined_ = true;
-
-            argIndex += 8;
-
-            log_ << "Boundary point 1 was set to: " << worldPoint1_ << '\n';
-            log_ << "Boundary point 2 was set to: " << worldPoint2_ << '\n';
-            log_ << "Boundary point 3 was set to: " << worldPoint3_ << '\n';
-            log_ << "Boundary point 4 was set to: " << worldPoint4_ << '\n';
-        }
-        else if(argument == "-boundaryMinMax")
-        {
-            if(argIndex+4 >= argc)
-            {
-                throw OdmOrthoPhotoException("Argument '" + argument + "' expects 4 more input following it, but no more inputs were provided.");
-            }
-
-            std::stringstream ss;
-            ss << argv[argIndex+1] << " " << argv[argIndex+2] << " " << argv[argIndex+3] << " " << argv[argIndex+4];
-            ss >> worldPoint1_ >> worldPoint3_;
-            boundaryDefined_ = true;
-
-            // Set the other world points as the other two corners.
-            worldPoint2_.eastFractional_  = worldPoint1_.eastFractional_;
-            worldPoint2_.eastInteger_     = worldPoint1_.eastInteger_;
-            worldPoint2_.northFractional_ = worldPoint3_.northFractional_;
-            worldPoint2_.northInteger_    = worldPoint3_.northInteger_;
-            
-            worldPoint4_.eastFractional_  = worldPoint3_.eastFractional_;
-            worldPoint4_.eastInteger_     = worldPoint3_.eastInteger_;
-            worldPoint4_.northFractional_ = worldPoint1_.northFractional_;
-            worldPoint4_.northInteger_    = worldPoint1_.northInteger_;
-
-            argIndex += 4;
-
-            log_ << "Boundary point 1 was set to: " << worldPoint1_ << '\n';
-            log_ << "Boundary point 2 was set to: " << worldPoint2_ << '\n';
-            log_ << "Boundary point 3 was set to: " << worldPoint3_ << '\n';
-            log_ << "Boundary point 4 was set to: " << worldPoint4_ << '\n';
-        }
         else if(argument == "-verbose")
         {
             log_.setIsPrintingInCout(true);
@@ -221,16 +132,6 @@ void OdmOrthoPhoto::parseArguments(int argc, char *argv[])
                 inputFiles.push_back(item);
             }
         }
-        else if(argument == "-inputGeoRefFile")
-        {
-            argIndex++;
-            if (argIndex >= argc)
-            {
-                throw OdmOrthoPhotoException("Argument '" + argument + "' expects 1 more input following it, but no more inputs were provided.");
-            }
-            inputGeoRefFile_ = std::string(argv[argIndex]);
-            log_ << "Reading georef from: " << inputGeoRefFile_ << "\n";
-        }
         else if(argument == "-outputFile")
         {
             argIndex++;
@@ -250,17 +151,6 @@ void OdmOrthoPhoto::parseArguments(int argc, char *argv[])
             }
             outputCornerFile_ = std::string(argv[argIndex]);
             log_ << "Writing corners to: " << outputCornerFile_ << "\n";
-        }
-        else if(argument == "-inputTransformFile")
-        {
-            argIndex++;
-            if (argIndex >= argc)
-            {
-                throw OdmOrthoPhotoException("Argument '" + argument + "' expects 1 more input following it, but no more inputs were provided.");
-            }
-            inputTransformFile_ = std::string(argv[argIndex]);
-            transformOverride_ = true;
-            log_ << "Reading transformation matrix from: " << outputCornerFile_ << "\n";
         }
         else
         {
@@ -291,9 +181,6 @@ void OdmOrthoPhoto::printHelp()
     log_ << "\"-inputFiles <path>[,<path2>,<path3>,...]\" (mandatory)\n";
     log_ << "\"Input obj files that must contain a textured mesh.\n\n";
 
-    log_ << "\"-inputGeoRefFile <path>\" (optional, if specified boundary points are assumed to be given as world coordinates. If not specified, the boundary points are assumed to be local coordinates)\n";
-    log_ << "\"Input geograpical reference system file that describes the world position of the model's origin.\n\n";
-
     log_ << "\"-outputFile <path>\" (optional, default: ortho.jpg)\n";
     log_ << "\"Target file in which the orthophoto is saved.\n\n";
 
@@ -302,12 +189,6 @@ void OdmOrthoPhoto::printHelp()
 
     log_ << "\"-resolution <pixels/m>\" (mandatory)\n";
     log_ << "\"The number of pixels used per meter.\n\n";
-
-    log_ << "\"-boundary <Point1x Point1y Point2x Point2y Point3x Point3y Point4x Point4y>\" (optional, if not specified the entire model will be rendered)\n";
-    log_ << "\"Describes the area which should be covered in the ortho photo. The area will be a bounding box containing all four points. The points should be given in the same georeference system as the model.\n\n";
-
-    log_ << "\"-boundaryMinMax <MinX MinY MaxX MaxY>\" (optional, if not specified the entire model will be rendered.)\n";
-    log_ << "\"Describes the area which should be covered in the ortho photo. The area will be a bounding box with corners at MinX, MinY and MaxX, MaxY. The points should be given in the same georeference system as the model.\n\n";
 
     log_.setIsPrintingInCout(false);
 }
@@ -357,11 +238,11 @@ inline T maxRange(){
 }
 
 template <typename T>
-void OdmOrthoPhoto::initBands(const cv::Mat &texture){
+void OdmOrthoPhoto::initBands(int count){
     size_t pixelCount = static_cast<size_t>(width * height);
 
     // Channels
-    for (int i = 0; i < texture.channels(); i++){
+    for (int i = 0; i < count; i++){
         T *arr = new T[pixelCount];
         for (size_t j = 0; j < pixelCount; j++){
             arr[j] = maxRange<T>();
@@ -371,7 +252,7 @@ void OdmOrthoPhoto::initBands(const cv::Mat &texture){
 }
 
 template <typename T>
-void OdmOrthoPhoto::initAlphaBand(const cv::Mat &texture){
+void OdmOrthoPhoto::initAlphaBand(){
      size_t pixelCount = static_cast<size_t>(width * height);
      // Alpha
      if (alphaBand == nullptr){
@@ -391,35 +272,16 @@ void OdmOrthoPhoto::createOrthoPhoto()
         throw OdmOrthoPhotoException("Failed to create ortho photo, no texture meshes given.");
     }
 
-    if(boundaryDefined_)
-    {
-        if(inputGeoRefFile_.empty())
-        {
-            // Points are assumed to be given in as local points.
-            adjustBoundsForLocal();
-        }
-        else
-        {
-            // Points are assumed to be given in as world points.
-            adjustBoundsForGeoRef();
-        }
-    }
-    else if(!inputGeoRefFile_.empty())
-    {
-        // No boundary points specified, but georeference system file was given.
-        log_ << "Warning:\n";
-        log_ << "\tSpecified -inputGeoRefFile, but no boundary points. The georeference system will be ignored.\n";
-    }
-
     int textureDepth = -1;
     float xMax, xMin, yMax, yMin;
+    bool primary = true;
 
     for (auto &inputFile : inputFiles){
         log_ << "Reading mesh file... " << inputFile << "\n";
-        // The textured mesh.
+
         pcl::TextureMesh mesh;
         loadObjFile(inputFile, mesh);
-        log_ << ".. mesh file read.\n\n";
+        log_ << "Mesh file read.\n\n";
 
         // Does the model have more than one material?
         bool multiMaterial_ = 1 < mesh.tex_materials.size();
@@ -434,11 +296,10 @@ void OdmOrthoPhoto::createOrthoPhoto()
             }
         }
 
-        if(!boundaryDefined_)
-        {
-            // Determine boundary from model.
+        // Set boundaries according to the first model
+        // subsequent models use the boundaries of the first
+        if (primary){
             adjustBoundsForEntireModel(mesh);
-            boundaryDefined_ = true;
         }
 
         // The minimum and maximum boundary values.
@@ -458,6 +319,7 @@ void OdmOrthoPhoto::createOrthoPhoto()
         // The resolution necessary to fit the area with the given resolution.
         height = static_cast<int>(std::ceil(resolution_*yDiff));
         width = static_cast<int>(std::ceil(resolution_*xDiff));
+        depth_ = cv::Mat::zeros(height, width, CV_32F) - std::numeric_limits<float>::infinity();
         log_ << "Ortho photo resolution, width x height : " << width << "x" << height << '\n';
 
         // Check size of photo.
@@ -550,7 +412,6 @@ void OdmOrthoPhoto::createOrthoPhoto()
         {
             uvs.insert(uvs.end(), mesh.tex_coordinates[t].begin(), mesh.tex_coordinates[t].end());
         }
-        //cv::namedWindow("dsfs");
 
         // The current material texture
         cv::Mat texture;
@@ -569,41 +430,24 @@ void OdmOrthoPhoto::createOrthoPhoto()
 
             // The first material determines the bit depth
             // Init ortho photo
-            if (textureDepth == -1){
-                try{
-                    textureDepth = texture.depth();
-                    log_ << "Texture channels: " << texture.channels() << "\n";
+            if (t == 0){
+                if (primary) textureDepth = texture.depth();
+                else if (textureDepth != texture.depth()) throw OdmOrthoPhotoException("Texture depth must be the same for all models");
 
-                    if (textureDepth == CV_8U){
-                        log_ << "Texture depth: 8bit\n";
-                        initBands<uint8_t>(texture);
-                        initAlphaBand<uint8_t>(texture);
-                    }else if (textureDepth == CV_16U){
-                        log_ << "Texture depth: 16bit\n";
-                        initBands<uint16_t>(texture);
-                        initAlphaBand<uint16_t>(texture);
-                    }else{
-                        std::cerr << "Unsupported bit depth value: " << textureDepth;
-                        exit(1);
-                    }
-
-                    depth_ = cv::Mat::zeros(height, width, CV_32F) - std::numeric_limits<float>::infinity();
-                }catch(const std::bad_alloc &){
-                    std::cerr << "Couldn't allocate enough memory to render the orthophoto (" << width << "x" << height << " cells = " << ((long long)width * (long long)height * 4) << " bytes). Try to increase the --orthophoto-resolution parameter to a larger integer or add more RAM.\n";
-                    exit(1);
-                }
-            }else{
-                // Quick checks
-                if (textureDepth != texture.depth()) throw OdmOrthoPhotoException("Texture depth must be the same for all models");
                 log_ << "Texture channels: " << texture.channels() << "\n";
 
                 try{
                     if (textureDepth == CV_8U){
                         log_ << "Texture depth: 8bit\n";
-                        initBands<uint8_t>(texture);
+                        initBands<uint8_t>(texture.channels());
+                        if (primary) initAlphaBand<uint8_t>();
                     }else if (textureDepth == CV_16U){
                         log_ << "Texture depth: 16bit\n";
-                        initBands<uint16_t>(texture);
+                        initBands<uint16_t>(texture.channels());
+                        if (primary) initAlphaBand<uint16_t>();
+                    }else{
+                        std::cerr << "Unsupported bit depth value: " << textureDepth;
+                        exit(1);
                     }
                 }catch(const std::bad_alloc &){
                     std::cerr << "Couldn't allocate enough memory to render the orthophoto (" << width << "x" << height << " cells = " << ((long long)width * (long long)height * 4) << " bytes). Try to increase the --orthophoto-resolution parameter to a larger integer or add more RAM.\n";
@@ -639,9 +483,10 @@ void OdmOrthoPhoto::createOrthoPhoto()
             faceOff += faces.size();
             log_ << "Material " << t << " rendered.\n";
         }
-        log_ << "...ortho photo rendered\n";
+        log_ << "... model rendered\n";
 
         currentBandIndex += texture.channels();
+        primary = false;
     }
 
     log_ << '\n';
@@ -671,73 +516,6 @@ void OdmOrthoPhoto::createOrthoPhoto()
     }
 
     log_ << "Orthophoto generation done.\n";
-}
-
-void OdmOrthoPhoto::adjustBoundsForGeoRef()
-{
-    log_ << "Adjusting bounds for world coordinates\n";
-
-    // A stream of the georef system.
-    std::ifstream geoRefStream(inputGeoRefFile_.c_str());
-
-    // The system name
-    std::string system;
-    // The east and north offsets
-    int eastOffset, northOffset;
-
-    // Parse file
-    std::getline(geoRefStream, system);
-    if(!(geoRefStream >> eastOffset))
-    {
-            throw OdmOrthoPhotoException("Could not extract geographical reference system from \n" + inputGeoRefFile_ + "\nCould not extract east offset.");
-    }
-    if(!(geoRefStream >> northOffset))
-    {
-            throw OdmOrthoPhotoException("Could not extract geographical reference system from \n" + inputGeoRefFile_ + "\nCould not extract north offset.");
-    }
-
-    log_ << "Georeference system:\n";
-    log_ << system << "\n";
-    log_ << "East offset: " << eastOffset << "\n";
-    log_ << "North offset: " << northOffset << "\n";
-
-    // Adjust boundary points.
-    boundaryPoint1_[0] = static_cast<float>(worldPoint1_.eastInteger_  - eastOffset)  + worldPoint1_.eastFractional_;
-    boundaryPoint1_[1] = static_cast<float>(worldPoint1_.northInteger_ - northOffset) + worldPoint1_.northFractional_;
-    boundaryPoint2_[0] = static_cast<float>(worldPoint2_.eastInteger_  - eastOffset)  + worldPoint2_.eastFractional_;
-    boundaryPoint2_[1] = static_cast<float>(worldPoint2_.northInteger_ - northOffset) + worldPoint2_.northFractional_;
-    boundaryPoint3_[0] = static_cast<float>(worldPoint3_.eastInteger_  - eastOffset)  + worldPoint3_.eastFractional_;
-    boundaryPoint3_[1] = static_cast<float>(worldPoint3_.northInteger_ - northOffset) + worldPoint3_.northFractional_;
-    boundaryPoint4_[0] = static_cast<float>(worldPoint4_.eastInteger_  - eastOffset)  + worldPoint4_.eastFractional_;
-    boundaryPoint4_[1] = static_cast<float>(worldPoint4_.northInteger_ - northOffset) + worldPoint4_.northFractional_;
-
-    log_ << "Local boundary points:\n";
-    log_ << "Point 1: " << boundaryPoint1_[0] << " " << boundaryPoint1_[1] << "\n";
-    log_ << "Point 2: " << boundaryPoint2_[0] << " " << boundaryPoint2_[1] << "\n";
-    log_ << "Point 3: " << boundaryPoint3_[0] << " " << boundaryPoint3_[1] << "\n";
-    log_ << "Point 4: " << boundaryPoint4_[0] << " " << boundaryPoint4_[1] << "\n";
-}
-
-void OdmOrthoPhoto::adjustBoundsForLocal()
-{
-    log_ << "Adjusting bounds for local coordinates\n";
-
-    // Set boundary points from world points.
-    boundaryPoint1_[0] = static_cast<float>(worldPoint1_.eastInteger_ )  + worldPoint1_.eastFractional_;
-    boundaryPoint1_[1] = static_cast<float>(worldPoint1_.northInteger_) + worldPoint1_.northFractional_;
-    boundaryPoint2_[0] = static_cast<float>(worldPoint2_.eastInteger_ )  + worldPoint2_.eastFractional_;
-    boundaryPoint2_[1] = static_cast<float>(worldPoint2_.northInteger_) + worldPoint2_.northFractional_;
-    boundaryPoint3_[0] = static_cast<float>(worldPoint3_.eastInteger_ )  + worldPoint3_.eastFractional_;
-    boundaryPoint3_[1] = static_cast<float>(worldPoint3_.northInteger_) + worldPoint3_.northFractional_;
-    boundaryPoint4_[0] = static_cast<float>(worldPoint4_.eastInteger_ )  + worldPoint4_.eastFractional_;
-    boundaryPoint4_[1] = static_cast<float>(worldPoint4_.northInteger_) + worldPoint4_.northFractional_;
-
-    log_ << "Local boundary points:\n";
-    log_ << "Point 1: " << boundaryPoint1_[0] << " " << boundaryPoint1_[1] << "\n";
-    log_ << "Point 2: " << boundaryPoint2_[0] << " " << boundaryPoint2_[1] << "\n";
-    log_ << "Point 3: " << boundaryPoint3_[0] << " " << boundaryPoint3_[1] << "\n";
-    log_ << "Point 4: " << boundaryPoint4_[0] << " " << boundaryPoint4_[1] << "\n";
-    log_ << "\n";
 }
 
 void OdmOrthoPhoto::adjustBoundsForEntireModel(const pcl::TextureMesh &mesh)
@@ -800,70 +578,28 @@ void OdmOrthoPhoto::adjustBoundsForEntireModel(const pcl::TextureMesh &mesh)
 
 Eigen::Transform<float, 3, Eigen::Affine> OdmOrthoPhoto::getROITransform(float xMin, float yMin) const
 {
-    //Use transformation matrix if provided:
-    if(transformOverride_){
-        return readTransform(inputTransformFile_);
-    }
-    else {
-        // The transform used to move the chosen area into the ortho photo.
-        Eigen::Transform<float, 3, Eigen::Affine> transform;
-
-        transform(0, 0) = resolution_;     // x Scaling.
-        transform(1, 0) = 0.0f;
-        transform(2, 0) = 0.0f;
-        transform(3, 0) = 0.0f;
-
-        transform(0, 1) = 0.0f;
-        transform(1, 1) = -resolution_;     // y Scaling, mirrored for easier rendering.
-        transform(2, 1) = 0.0f;
-        transform(3, 1) = 0.0f;
-
-        transform(0, 2) = 0.0f;
-        transform(1, 2) = 0.0f;
-        transform(2, 2) = 1.0f;
-        transform(3, 2) = 0.0f;
-
-        transform(0, 3) = -xMin * resolution_;    // x Translation
-        transform(1, 3) = -yMin * resolution_;    // y Translation
-        transform(2, 3) = 0.0f;
-        transform(3, 3) = 1.0f;
-
-        return transform;
-    }
-}
-
-Eigen::Transform<float, 3, Eigen::Affine> OdmOrthoPhoto::readTransform(std::string transformFile_) const
-{
+    // The transform used to move the chosen area into the ortho photo.
     Eigen::Transform<float, 3, Eigen::Affine> transform;
 
-    std::ifstream transStream(transformFile_.c_str());
-    if (!transStream.good())
-    {
-        throw OdmOrthoPhotoException("Failed opening coordinate file " + transformFile_ + " for reading. " + '\n');
-    }
+    transform(0, 0) = resolution_;     // x Scaling.
+    transform(1, 0) = 0.0f;
+    transform(2, 0) = 0.0f;
+    transform(3, 0) = 0.0f;
 
-    std::string transString;
-    {
-        std::getline(transStream, transString);
-        std::stringstream l1(transString);
-        l1 >> transform(0,0) >> transform(0,1) >> transform(0,2) >> transform(0,3);
+    transform(0, 1) = 0.0f;
+    transform(1, 1) = -resolution_;     // y Scaling, mirrored for easier rendering.
+    transform(2, 1) = 0.0f;
+    transform(3, 1) = 0.0f;
 
-        std::getline(transStream, transString);
-        std::stringstream l2(transString);
-        l2 >> transform(1,0) >> transform(1,1) >> transform(1,2) >> transform(1,3);
+    transform(0, 2) = 0.0f;
+    transform(1, 2) = 0.0f;
+    transform(2, 2) = 1.0f;
+    transform(3, 2) = 0.0f;
 
-        std::getline(transStream, transString);
-        std::stringstream l3(transString);
-        l3 >> transform(2,0) >> transform(2,1) >> transform(2,2) >> transform(2,3);
-
-        std::getline(transStream, transString);
-        std::stringstream l4(transString);
-        l4 >> transform(3,0) >> transform(3,1) >> transform(3,2) >> transform(3,3);
-    }
-
-    // Don't do any rotation/shear
-    transform(0,1) = 0.0f;
-    transform(1,0) = 0.0f;
+    transform(0, 3) = -xMin * resolution_;    // x Translation
+    transform(1, 3) = -yMin * resolution_;    // y Translation
+    transform(2, 3) = 0.0f;
+    transform(3, 3) = 1.0f;
 
     return transform;
 }
@@ -1155,14 +891,16 @@ void OdmOrthoPhoto::renderPixel(int row, int col, float s, float t, const cv::Ma
     
     // The interpolated color values.
     size_t idx = static_cast<size_t>(row * width + col);
+    T *data = reinterpret_cast<T *>(texture.data); // Faster access
+    int numChannels = texture.channels();
 
-    for (int i = 0; i < texture.channels(); i++){
+    for (int i = 0; i < numChannels; i++){
         float value = 0.0f;
 
-        T tl = texture.at<T>(top, left, i);
-        T tr = texture.at<T>(top, left+1, i);
-        T bl = texture.at<T>(top+1, left, i);
-        T br = texture.at<T>(top+1, left+1, i);
+        T tl = data[(top) * texture.cols * numChannels + (left) * numChannels + i];
+        T tr = data[(top) * texture.cols * numChannels + (left + 1) * numChannels + i];
+        T bl = data[(top + 1) * texture.cols * numChannels + (left) * numChannels + i];
+        T br = data[(top + 1) * texture.cols * numChannels + (left + 1) * numChannels + i];
 
         value += static_cast<float>(tl) * dr * db;
         value += static_cast<float>(tr) * dl * db;
