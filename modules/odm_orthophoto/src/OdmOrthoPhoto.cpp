@@ -42,7 +42,6 @@ std::istream & operator>> (std::istream &is,  WorldPoint &worldPoint)
 OdmOrthoPhoto::OdmOrthoPhoto()
     :log_(false)
 {
-    inputFile_ = "";
     inputGeoRefFile_ = "";
     inputTransformFile_ = "";
     outputFile_ = "ortho.jpg";
@@ -58,6 +57,9 @@ OdmOrthoPhoto::OdmOrthoPhoto()
     boundaryPoint2_[0] = 0.0f; boundaryPoint2_[1] = 0.0f;
     boundaryPoint3_[0] = 0.0f; boundaryPoint3_[1] = 0.0f;
     boundaryPoint4_[0] = 0.0f; boundaryPoint4_[1] = 0.0f;
+
+    alphaBand = nullptr;
+    currentBandIndex = 0;
 }
 
 OdmOrthoPhoto::~OdmOrthoPhoto()
@@ -205,15 +207,19 @@ void OdmOrthoPhoto::parseArguments(int argc, char *argv[])
             }
             log_ << "Log file path was set to: " << logFile_ << "\n";
         }
-        else if(argument == "-inputFile")
+        else if(argument == "-inputFiles")
         {
             argIndex++;
             if (argIndex >= argc)
             {
                 throw OdmOrthoPhotoException("Argument '" + argument + "' expects 1 more input following it, but no more inputs were provided.");
             }
-            inputFile_ = std::string(argv[argIndex]);
-            log_ << "Reading textured mesh from: " << inputFile_ << "\n";
+            std::string inputFilesArg = std::string(argv[argIndex]);
+            std::stringstream ss(inputFilesArg);
+            std::string item;
+            while(std::getline(ss, item, ',')){
+                inputFiles.push_back(item);
+            }
         }
         else if(argument == "-inputGeoRefFile")
         {
@@ -282,8 +288,8 @@ void OdmOrthoPhoto::printHelp()
     log_ << "Call the program with flag \"-verbose\", to print log messages in the standard output stream as well as in the log file.\n\n";
 
     log_ << "Parameters are specified as: \"-<argument name> <argument>\", (without <>), and the following parameters are configureable:\n";
-    log_ << "\"-inputFile <path>\" (mandatory)\n";
-    log_ << "\"Input obj file that must contain a textured mesh.\n\n";
+    log_ << "\"-inputFiles <path>[,<path2>,<path3>,...]\" (mandatory)\n";
+    log_ << "\"Input obj files that must contain a textured mesh.\n\n";
 
     log_ << "\"-inputGeoRefFile <path>\" (optional, if specified boundary points are assumed to be given as world coordinates. If not specified, the boundary points are assumed to be local coordinates)\n";
     log_ << "\"Input geograpical reference system file that describes the world position of the model's origin.\n\n";
@@ -315,14 +321,13 @@ void OdmOrthoPhoto::saveTIFF(const std::string &filename, GDALDataType dataType)
     }
     char **papszOptions = NULL;
     GDALDatasetH hDstDS = GDALCreate( hDriver, filename.c_str(), width, height,
-                                      static_cast<int>(bands.size()), dataType, papszOptions );
+                                      static_cast<int>(bands.size() + 1), dataType, papszOptions );
     GDALRasterBandH hBand;
 
-    for (size_t i = 0; i < bands.size(); i++){
+    // Bands
+    size_t i = 0;
+    for (; i < bands.size(); i++){
         hBand = GDALGetRasterBand( hDstDS, static_cast<int>(i) + 1 );
-
-        // Set alpha band
-        if (i == 3) GDALSetRasterColorInterpretation(hBand, GCI_AlphaBand );
 
         if (GDALRasterIO( hBand, GF_Write, 0, 0, width, height,
                     bands[i], width, height, dataType, 0, 0 ) != CE_None){
@@ -330,6 +335,19 @@ void OdmOrthoPhoto::saveTIFF(const std::string &filename, GDALDataType dataType)
             exit(1);
         }
     }
+
+    // Alpha
+    hBand = GDALGetRasterBand( hDstDS, static_cast<int>(i) + 1 );
+
+    // Set alpha band
+    GDALSetRasterColorInterpretation(hBand, GCI_AlphaBand );
+
+    if (GDALRasterIO( hBand, GF_Write, 0, 0, width, height,
+                alphaBand, width, height, dataType, 0, 0 ) != CE_None){
+        std::cerr << "Cannot write TIFF (alpha) to " << filename << std::endl;
+        exit(1);
+    }
+
     GDALClose( hDstDS );
 }
 
@@ -340,22 +358,37 @@ inline T maxRange(){
 
 template <typename T>
 void OdmOrthoPhoto::initBands(const cv::Mat &texture){
-    // Channels + alpha
-    for (int i = 0; i < texture.channels() + 1; i++){
-        size_t pixelCount = static_cast<size_t>(width * height);
+    size_t pixelCount = static_cast<size_t>(width * height);
+
+    // Channels
+    for (int i = 0; i < texture.channels(); i++){
         T *arr = new T[pixelCount];
         for (size_t j = 0; j < pixelCount; j++){
-            arr[j] = i == 4 ? 0 : maxRange<T>(); // Set alpha at 0
+            arr[j] = maxRange<T>();
         }
         bands.push_back(static_cast<void *>(arr));
     }
 }
 
+template <typename T>
+void OdmOrthoPhoto::initAlphaBand(const cv::Mat &texture){
+     size_t pixelCount = static_cast<size_t>(width * height);
+     // Alpha
+     if (alphaBand == nullptr){
+         T *arr = new T[pixelCount];
+         for (size_t j = 0; j < pixelCount; j++){
+             arr[j] = 0.0;
+         }
+         alphaBand = static_cast<void *>(arr);
+     }
+}
+
+
 void OdmOrthoPhoto::createOrthoPhoto()
 {
-    if(inputFile_.empty())
+    if(inputFiles.size() == 0)
     {
-        throw OdmOrthoPhotoException("Failed to create ortho photo, no texture mesh given.");
+        throw OdmOrthoPhotoException("Failed to create ortho photo, no texture meshes given.");
     }
 
     if(boundaryDefined_)
@@ -378,215 +411,238 @@ void OdmOrthoPhoto::createOrthoPhoto()
         log_ << "\tSpecified -inputGeoRefFile, but no boundary points. The georeference system will be ignored.\n";
     }
 
-    log_ << "Reading mesh file... " << inputFile_ << "\n";
-    // The textured mesh.
-    pcl::TextureMesh mesh;
-    loadObjFile(inputFile_, mesh);
-    log_ << ".. mesh file read.\n\n";
-
-    // Does the model have more than one material?
-    multiMaterial_ = 1 < mesh.tex_materials.size();
-
-    bool splitModel = false;
-
-    if(multiMaterial_)
-    {
-        // Need to check relationship between texture coordinates and faces.
-        if(!isModelOk(mesh))
-        {
-            splitModel = true;
-        }
-    }
-
-    if(!boundaryDefined_)
-    {
-        // Determine boundary from model.
-        adjustBoundsForEntireModel(mesh);
-    }
-
-    // The minimum and maximum boundary values.
+    int textureDepth = -1;
     float xMax, xMin, yMax, yMin;
-    xMin = std::min(std::min(boundaryPoint1_[0], boundaryPoint2_[0]), std::min(boundaryPoint3_[0], boundaryPoint4_[0]));
-    xMax = std::max(std::max(boundaryPoint1_[0], boundaryPoint2_[0]), std::max(boundaryPoint3_[0], boundaryPoint4_[0]));
-    yMin = std::min(std::min(boundaryPoint1_[1], boundaryPoint2_[1]), std::min(boundaryPoint3_[1], boundaryPoint4_[1]));
-    yMax = std::max(std::max(boundaryPoint1_[1], boundaryPoint2_[1]), std::max(boundaryPoint3_[1], boundaryPoint4_[1]));
 
-    log_ << "Ortho photo bounds x : " << xMin << " -> " << xMax << '\n';
-    log_ << "Ortho photo bounds y : " << yMin << " -> " << yMax << '\n';
+    for (auto &inputFile : inputFiles){
+        log_ << "Reading mesh file... " << inputFile << "\n";
+        // The textured mesh.
+        pcl::TextureMesh mesh;
+        loadObjFile(inputFile, mesh);
+        log_ << ".. mesh file read.\n\n";
 
-    // The size of the area.
-    float xDiff = xMax - xMin;
-    float yDiff = yMax - yMin;
-    log_ << "Ortho photo area : " << xDiff*yDiff << "m2\n";
+        // Does the model have more than one material?
+        bool multiMaterial_ = 1 < mesh.tex_materials.size();
+        bool splitModel = false;
 
-    // The resolution necessary to fit the area with the given resolution.
-    height = static_cast<int>(std::ceil(resolution_*yDiff));
-    width = static_cast<int>(std::ceil(resolution_*xDiff));
-    log_ << "Ortho photo resolution, width x height : " << width << "x" << height << '\n';
-
-    // Check size of photo.
-    if(0 >= height*width)
-    {
-        if(0 >= height)
+        if(multiMaterial_)
         {
-            log_ << "Warning: ortho photo has zero area, height = " << height << ". Forcing height = 1.\n";
-            height = 1;
-        }
-        if(0 >= width)
-        {
-            log_ << "Warning: ortho photo has zero area, width = " << width << ". Forcing width = 1.\n";
-            width = 1;
-        }
-        log_ << "New ortho photo resolution, width x height : " << width << "x" << height << '\n';
-    }
-
-    // Contains the vertices of the mesh.
-    pcl::PointCloud<pcl::PointXYZ>::Ptr meshCloud (new pcl::PointCloud<pcl::PointXYZ>);
-    pcl::fromPCLPointCloud2 (mesh.cloud, *meshCloud);
-
-    // Split model and make copies of vertices and texture coordinates for all faces
-    if (splitModel)
-    {
-        pcl::PointCloud<pcl::PointXYZ>::Ptr meshCloudSplit (new pcl::PointCloud<pcl::PointXYZ>);
-        std::vector<Eigen::Vector2f, Eigen::aligned_allocator<Eigen::Vector2f> > textureCoordinates = std::vector<Eigen::Vector2f, Eigen::aligned_allocator<Eigen::Vector2f> >(0);
-
-        size_t vertexIndexCount = 0;
-        for(size_t t = 0; t < mesh.tex_polygons.size(); ++t)
-        {
-            vertexIndexCount += 3 * mesh.tex_polygons[t].size();
-        }
-        textureCoordinates.reserve(vertexIndexCount);
-
-        for(size_t t = 0; t < mesh.tex_polygons.size(); ++t)
-        {
-
-            for(size_t faceIndex = 0; faceIndex < mesh.tex_polygons[t].size(); ++faceIndex)
+            // Need to check relationship between texture coordinates and faces.
+            if(!isModelOk(mesh))
             {
-                pcl::Vertices polygon = mesh.tex_polygons[t][faceIndex];
-
-                // The index to the vertices of the polygon.
-                size_t v1i = polygon.vertices[0];
-                size_t v2i = polygon.vertices[1];
-                size_t v3i = polygon.vertices[2];
-
-                // The polygon's points.
-                pcl::PointXYZ v1 = meshCloud->points[v1i];
-                pcl::PointXYZ v2 = meshCloud->points[v2i];
-                pcl::PointXYZ v3 = meshCloud->points[v3i];
-
-                Eigen::Vector2f vt1 = mesh.tex_coordinates[0][3*faceIndex];
-                Eigen::Vector2f vt2 = mesh.tex_coordinates[0][3*faceIndex + 1];
-                Eigen::Vector2f vt3 = mesh.tex_coordinates[0][3*faceIndex + 2];
-
-                meshCloudSplit->points.push_back(v1);
-                textureCoordinates.push_back(vt1);
-                mesh.tex_polygons[t][faceIndex].vertices[0] = vertexIndexCount;
-
-                meshCloudSplit->points.push_back(v2);
-                textureCoordinates.push_back(vt2);
-                mesh.tex_polygons[t][faceIndex].vertices[1] = vertexIndexCount;
-
-                meshCloudSplit->points.push_back(v3);
-                textureCoordinates.push_back(vt3);
-                mesh.tex_polygons[t][faceIndex].vertices[2] = vertexIndexCount;
+                splitModel = true;
             }
         }
 
-        mesh.tex_coordinates.clear();
-        mesh.tex_coordinates.push_back(textureCoordinates);
+        if(!boundaryDefined_)
+        {
+            // Determine boundary from model.
+            adjustBoundsForEntireModel(mesh);
+            boundaryDefined_ = true;
+        }
 
-        meshCloud = meshCloudSplit;
-    }
+        // The minimum and maximum boundary values.
+        xMin = std::min(std::min(boundaryPoint1_[0], boundaryPoint2_[0]), std::min(boundaryPoint3_[0], boundaryPoint4_[0]));
+        xMax = std::max(std::max(boundaryPoint1_[0], boundaryPoint2_[0]), std::max(boundaryPoint3_[0], boundaryPoint4_[0]));
+        yMin = std::min(std::min(boundaryPoint1_[1], boundaryPoint2_[1]), std::min(boundaryPoint3_[1], boundaryPoint4_[1]));
+        yMax = std::max(std::max(boundaryPoint1_[1], boundaryPoint2_[1]), std::max(boundaryPoint3_[1], boundaryPoint4_[1]));
 
-    // Creates a transformation which aligns the area for the ortho photo.
-    Eigen::Transform<float, 3, Eigen::Affine> transform = getROITransform(xMin, -yMax);
+        log_ << "Ortho photo bounds x : " << xMin << " -> " << xMax << '\n';
+        log_ << "Ortho photo bounds y : " << yMin << " -> " << yMax << '\n';
 
-    log_ << "Translating and scaling mesh...\n";
+        // The size of the area.
+        float xDiff = xMax - xMin;
+        float yDiff = yMax - yMin;
+        log_ << "Ortho photo area : " << xDiff*yDiff << "m2\n";
 
-    // Move the mesh into position.
-    pcl::transformPointCloud(*meshCloud, *meshCloud, transform);
-    log_ << ".. mesh translated and scaled.\n\n";
+        // The resolution necessary to fit the area with the given resolution.
+        height = static_cast<int>(std::ceil(resolution_*yDiff));
+        width = static_cast<int>(std::ceil(resolution_*xDiff));
+        log_ << "Ortho photo resolution, width x height : " << width << "x" << height << '\n';
 
-    // Flatten texture coordinates.
-    std::vector<Eigen::Vector2f> uvs;
-    uvs.reserve(mesh.tex_coordinates.size());
-    for(size_t t = 0; t < mesh.tex_coordinates.size(); ++t)
-    {
-        uvs.insert(uvs.end(), mesh.tex_coordinates[t].begin(), mesh.tex_coordinates[t].end());
-    }
-    //cv::namedWindow("dsfs");
+        // Check size of photo.
+        if(0 >= height*width)
+        {
+            if(0 >= height)
+            {
+                log_ << "Warning: ortho photo has zero area, height = " << height << ". Forcing height = 1.\n";
+                height = 1;
+            }
+            if(0 >= width)
+            {
+                log_ << "Warning: ortho photo has zero area, width = " << width << ". Forcing width = 1.\n";
+                width = 1;
+            }
+            log_ << "New ortho photo resolution, width x height : " << width << "x" << height << '\n';
+        }
 
-    // The current material texture
-    cv::Mat texture;
+        // Contains the vertices of the mesh.
+        pcl::PointCloud<pcl::PointXYZ>::Ptr meshCloud (new pcl::PointCloud<pcl::PointXYZ>);
+        pcl::fromPCLPointCloud2 (mesh.cloud, *meshCloud);
 
-    // Used to keep track of the global face index.
-    size_t faceOff = 0;
+        // Split model and make copies of vertices and texture coordinates for all faces
+        if (splitModel)
+        {
+            pcl::PointCloud<pcl::PointXYZ>::Ptr meshCloudSplit (new pcl::PointCloud<pcl::PointXYZ>);
+            std::vector<Eigen::Vector2f, Eigen::aligned_allocator<Eigen::Vector2f> > textureCoordinates = std::vector<Eigen::Vector2f, Eigen::aligned_allocator<Eigen::Vector2f> >(0);
 
-    log_ << "Rendering the ortho photo...\n";
+            size_t vertexIndexCount = 0;
+            for(size_t t = 0; t < mesh.tex_polygons.size(); ++t)
+            {
+                vertexIndexCount += 3 * mesh.tex_polygons[t].size();
+            }
+            textureCoordinates.reserve(vertexIndexCount);
 
-    // Iterate over each part of the mesh (one per material).
-    int textureDepth = -1;
+            for(size_t t = 0; t < mesh.tex_polygons.size(); ++t)
+            {
 
-    for(size_t t = 0; t < mesh.tex_materials.size(); ++t)
-    {
-        // The material of the current submesh.
-        pcl::TexMaterial material = mesh.tex_materials[t];
-        texture = cv::imread(material.tex_file, cv::IMREAD_COLOR | cv::IMREAD_ANYDEPTH);
+                for(size_t faceIndex = 0; faceIndex < mesh.tex_polygons[t].size(); ++faceIndex)
+                {
+                    pcl::Vertices polygon = mesh.tex_polygons[t][faceIndex];
 
-        // The first material determines the bit depth
-        // Init ortho photo
-        if (textureDepth == -1){
-            try{
-                textureDepth = texture.depth();
-                log_ << "Texture channels: " << texture.channels() << "\n";
+                    // The index to the vertices of the polygon.
+                    size_t v1i = polygon.vertices[0];
+                    size_t v2i = polygon.vertices[1];
+                    size_t v3i = polygon.vertices[2];
 
-                if (textureDepth == CV_8U){
-                    log_ << "Texture depth: 8bit\n";
-                    initBands<uint8_t>(texture);
-                }else if (textureDepth == CV_16U){
-                    log_ << "Texture depth: 16bit\n";
-                    initBands<uint16_t>(texture);
-                }else{
-                    std::cerr << "Unsupported bit depth value: " << textureDepth;
+                    // The polygon's points.
+                    pcl::PointXYZ v1 = meshCloud->points[v1i];
+                    pcl::PointXYZ v2 = meshCloud->points[v2i];
+                    pcl::PointXYZ v3 = meshCloud->points[v3i];
+
+                    Eigen::Vector2f vt1 = mesh.tex_coordinates[0][3*faceIndex];
+                    Eigen::Vector2f vt2 = mesh.tex_coordinates[0][3*faceIndex + 1];
+                    Eigen::Vector2f vt3 = mesh.tex_coordinates[0][3*faceIndex + 2];
+
+                    meshCloudSplit->points.push_back(v1);
+                    textureCoordinates.push_back(vt1);
+                    mesh.tex_polygons[t][faceIndex].vertices[0] = vertexIndexCount;
+
+                    meshCloudSplit->points.push_back(v2);
+                    textureCoordinates.push_back(vt2);
+                    mesh.tex_polygons[t][faceIndex].vertices[1] = vertexIndexCount;
+
+                    meshCloudSplit->points.push_back(v3);
+                    textureCoordinates.push_back(vt3);
+                    mesh.tex_polygons[t][faceIndex].vertices[2] = vertexIndexCount;
+                }
+            }
+
+            mesh.tex_coordinates.clear();
+            mesh.tex_coordinates.push_back(textureCoordinates);
+
+            meshCloud = meshCloudSplit;
+        }
+
+        // Creates a transformation which aligns the area for the ortho photo.
+        Eigen::Transform<float, 3, Eigen::Affine> transform = getROITransform(xMin, -yMax);
+
+        log_ << "Translating and scaling mesh...\n";
+
+        // Move the mesh into position.
+        pcl::transformPointCloud(*meshCloud, *meshCloud, transform);
+        log_ << ".. mesh translated and scaled.\n\n";
+
+        // Flatten texture coordinates.
+        std::vector<Eigen::Vector2f> uvs;
+        uvs.reserve(mesh.tex_coordinates.size());
+        for(size_t t = 0; t < mesh.tex_coordinates.size(); ++t)
+        {
+            uvs.insert(uvs.end(), mesh.tex_coordinates[t].begin(), mesh.tex_coordinates[t].end());
+        }
+        //cv::namedWindow("dsfs");
+
+        // The current material texture
+        cv::Mat texture;
+
+        // Used to keep track of the global face index.
+        size_t faceOff = 0;
+
+        log_ << "Rendering the ortho photo...\n";
+
+        // Iterate over each part of the mesh (one per material).
+        for(size_t t = 0; t < mesh.tex_materials.size(); ++t)
+        {
+            // The material of the current submesh.
+            pcl::TexMaterial material = mesh.tex_materials[t];
+            texture = cv::imread(material.tex_file, cv::IMREAD_ANYDEPTH | cv::IMREAD_UNCHANGED);
+
+            // The first material determines the bit depth
+            // Init ortho photo
+            if (textureDepth == -1){
+                try{
+                    textureDepth = texture.depth();
+                    log_ << "Texture channels: " << texture.channels() << "\n";
+
+                    if (textureDepth == CV_8U){
+                        log_ << "Texture depth: 8bit\n";
+                        initBands<uint8_t>(texture);
+                        initAlphaBand<uint8_t>(texture);
+                    }else if (textureDepth == CV_16U){
+                        log_ << "Texture depth: 16bit\n";
+                        initBands<uint16_t>(texture);
+                        initAlphaBand<uint16_t>(texture);
+                    }else{
+                        std::cerr << "Unsupported bit depth value: " << textureDepth;
+                        exit(1);
+                    }
+
+                    depth_ = cv::Mat::zeros(height, width, CV_32F) - std::numeric_limits<float>::infinity();
+                }catch(const std::bad_alloc &){
+                    std::cerr << "Couldn't allocate enough memory to render the orthophoto (" << width << "x" << height << " cells = " << ((long long)width * (long long)height * 4) << " bytes). Try to increase the --orthophoto-resolution parameter to a larger integer or add more RAM.\n";
                     exit(1);
                 }
+            }else{
+                // Quick checks
+                if (textureDepth != texture.depth()) throw OdmOrthoPhotoException("Texture depth must be the same for all models");
+                log_ << "Texture channels: " << texture.channels() << "\n";
 
-                depth_ = cv::Mat::zeros(height, width, CV_32F) - std::numeric_limits<float>::infinity();
-            }catch(const cv::Exception &e){
-                std::cerr << "Couldn't allocate enough memory to render the orthophoto (" << width << "x" << height << " cells = " << ((long long)width * (long long)height * 4) << " bytes). Try to increase the --orthophoto-resolution parameter to a larger integer or add more RAM.\n";
-                exit(1);
+                try{
+                    if (textureDepth == CV_8U){
+                        log_ << "Texture depth: 8bit\n";
+                        initBands<uint8_t>(texture);
+                    }else if (textureDepth == CV_16U){
+                        log_ << "Texture depth: 16bit\n";
+                        initBands<uint16_t>(texture);
+                    }
+                }catch(const std::bad_alloc &){
+                    std::cerr << "Couldn't allocate enough memory to render the orthophoto (" << width << "x" << height << " cells = " << ((long long)width * (long long)height * 4) << " bytes). Try to increase the --orthophoto-resolution parameter to a larger integer or add more RAM.\n";
+                    exit(1);
+                }
             }
-        }
 
-        // Check for missing files.
-        if(texture.empty())
-        {
-            log_ << "Material texture could not be read:\n";
-            log_ << material.tex_file << '\n';
-            log_ << "Could not be read as image, does the file exist?\n";
-            continue; // Skip to next material.
-        }
-
-        // The faces of the current submesh.
-        std::vector<pcl::Vertices> faces = mesh.tex_polygons[t];
-
-        // Iterate over each face...
-        for(size_t faceIndex = 0; faceIndex < faces.size(); ++faceIndex)
-        {
-            // The current polygon.
-            pcl::Vertices polygon = faces[faceIndex];
-
-            // ... and draw it into the ortho photo.
-            if (textureDepth == CV_8U){
-                drawTexturedTriangle<uint8_t>(texture, polygon, meshCloud, uvs, faceIndex+faceOff);
-            }else if (textureDepth == CV_16U){
-                drawTexturedTriangle<uint16_t>(texture, polygon, meshCloud, uvs, faceIndex+faceOff);
+            // Check for missing files.
+            if(texture.empty())
+            {
+                log_ << "Material texture could not be read:\n";
+                log_ << material.tex_file << '\n';
+                log_ << "Could not be read as image, does the file exist?\n";
+                continue; // Skip to next material.
             }
+
+            // The faces of the current submesh.
+            std::vector<pcl::Vertices> faces = mesh.tex_polygons[t];
+
+            // Iterate over each face...
+            for(size_t faceIndex = 0; faceIndex < faces.size(); ++faceIndex)
+            {
+                // The current polygon.
+                pcl::Vertices polygon = faces[faceIndex];
+
+                // ... and draw it into the ortho photo.
+                if (textureDepth == CV_8U){
+                    drawTexturedTriangle<uint8_t>(texture, polygon, meshCloud, uvs, faceIndex+faceOff);
+                }else if (textureDepth == CV_16U){
+                    drawTexturedTriangle<uint16_t>(texture, polygon, meshCloud, uvs, faceIndex+faceOff);
+                }
+            }
+            faceOff += faces.size();
+            log_ << "Material " << t << " rendered.\n";
         }
-        faceOff += faces.size();
-        log_ << "Material " << t << " rendered.\n";
+        log_ << "...ortho photo rendered\n";
+
+        currentBandIndex += texture.channels();
     }
-    log_ << "...ortho photo rendered\n";
 
     log_ << '\n';
     log_ << "Writing ortho photo to " << outputFile_ << "\n";
@@ -599,8 +655,6 @@ void OdmOrthoPhoto::createOrthoPhoto()
         std::cerr << "Unsupported bit depth value: " << textureDepth;
         exit(1);
     }
-
-//    cv::imwrite(outputFile_, photo_);
 
     if (!outputCornerFile_.empty())
     {
@@ -1082,9 +1136,6 @@ void OdmOrthoPhoto::drawTexturedTriangle(const cv::Mat &texture, const pcl::Vert
 template <typename T>
 void OdmOrthoPhoto::renderPixel(int row, int col, float s, float t, const cv::Mat &texture)
 {
-    // The colors of the texture pixels. tl : top left, tr : top right, bl : bottom left, br : bottom right.
-    cv::Vec<T,3> tl, tr, bl, br;
-    
     // The offset of the texture coordinate from its pixel positions.
     float leftF, topF;
     // The position of the top left pixel.
@@ -1102,37 +1153,29 @@ void OdmOrthoPhoto::renderPixel(int row, int col, float s, float t, const cv::Ma
     left = static_cast<int>(leftF);
     top = static_cast<int>(topF);
     
-    tl = texture.at<cv::Vec<T,3> >(top, left);
-    tr = texture.at<cv::Vec<T,3> >(top, left+1);
-    bl = texture.at<cv::Vec<T,3> >(top+1, left);
-    br = texture.at<cv::Vec<T,3> >(top+1, left+1);
-    
     // The interpolated color values.
-    float r = 0.0f, g = 0.0f, b = 0.0f;
-    
-    // Red
-    r += static_cast<float>(tl[2]) * dr * db;
-    r += static_cast<float>(tr[2]) * dl * db;
-    r += static_cast<float>(bl[2]) * dr * dt;
-    r += static_cast<float>(br[2]) * dl * dt;
-    
-    // Green
-    g += static_cast<float>(tl[1]) * dr * db;
-    g += static_cast<float>(tr[1]) * dl * db;
-    g += static_cast<float>(bl[1]) * dr * dt;
-    g += static_cast<float>(br[1]) * dl * dt;
-    
-    // Blue
-    b += static_cast<float>(tl[0]) * dr * db;
-    b += static_cast<float>(tr[0]) * dl * db;
-    b += static_cast<float>(bl[0]) * dr * dt;
-    b += static_cast<float>(br[0]) * dl * dt;
-
     size_t idx = static_cast<size_t>(row * width + col);
-    static_cast<T *>(bands[0])[idx] = static_cast<T>(r);
-    static_cast<T *>(bands[1])[idx] = static_cast<T>(g);
-    static_cast<T *>(bands[2])[idx] = static_cast<T>(b);
-    static_cast<T *>(bands[3])[idx] = static_cast<T>(255);  // Alpha should always be in the 255 range
+
+    for (int i = 0; i < texture.channels(); i++){
+        float value = 0.0f;
+
+        T tl = texture.at<T>(top, left, i);
+        T tr = texture.at<T>(top, left+1, i);
+        T bl = texture.at<T>(top+1, left, i);
+        T br = texture.at<T>(top+1, left+1, i);
+
+        value += static_cast<float>(tl) * dr * db;
+        value += static_cast<float>(tr) * dl * db;
+        value += static_cast<float>(bl) * dr * dt;
+        value += static_cast<float>(br) * dl * dt;
+
+        static_cast<T *>(bands[currentBandIndex + i])[idx] = static_cast<T>(value);
+    }
+
+    // The first model dictates the alpha band
+    if (currentBandIndex == 0){
+        static_cast<T *>(alphaBand)[idx] = static_cast<T>(255);  // Alpha should always be in the 255 range
+    }
 }
 
 void OdmOrthoPhoto::getBarycentricCoordinates(pcl::PointXYZ v1, pcl::PointXYZ v2, pcl::PointXYZ v3, float x, float y, float &l1, float &l2, float &l3) const
