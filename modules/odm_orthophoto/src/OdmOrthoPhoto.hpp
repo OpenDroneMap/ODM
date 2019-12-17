@@ -28,36 +28,6 @@
 #include "Logger.hpp"
 
 /*!
- * \brief   The WorldPoint struct encapsules world coordinates used for the ortho photo boundary.
- *          Points are separated into integers and fractional parts for high numerical stability.
- */
-struct WorldPoint
-{
-    int eastInteger_;               /**< The inger part of the east point. */
-    float eastFractional_;          /**< The farctional part of the east point. */
-    int northInteger_;              /**< The inger part of the east point. */
-    float northFractional_;         /**< The farctional part of the east point. */
-    
-    /*!
-      * \brief Overloads operator '<<' for WorldPoint.
-      *
-      * \param os The output stream in which the WorldPoint should be printed.
-      * \param worldPoint The WorldPoint should be printed.
-      * \return A reference to the given output stream.
-      */
-    friend std::ostream & operator<< (std::ostream &os, const WorldPoint &worldPoint);
-    
-    /*!
-      * \brief Overloads operator '>>' for WorldPoint.
-      *
-      * \param is The input stream from which the WorldPoint should be extracted
-      * \param worldPoint The modified WorldPoint.
-      * \return A reference to the given input stream.
-      */
-    friend std::istream & operator>> (std::istream &os, WorldPoint &worldPoint);
-};
-
-/*!
  * \brief   The OdmOrthoPhoto class is used to create an orthographic photo over a given area.
  *          The class reads an oriented textured mesh from an OBJ-file.
  *          The class uses file read from pcl.
@@ -82,34 +52,11 @@ public:
 private:
     int width, height;
 
-    /*!
-     * \brief parseArguments    Parses command line arguments.
-     *
-     * \param   argc    Application argument count.
-     * \param   argv    Argument values.
-     */
     void parseArguments(int argc, char* argv[]);
-
-    /*!
-     * \brief printHelp     Prints help, explaining usage. Can be shown by calling the program with argument: "-help".
-     */
     void printHelp();
 
-    /*!
-      * \brief Create the ortho photo using the current settings.
-      */
     void createOrthoPhoto();
-    
-    /*!
-      * \brief Adjusts the boundary points according to the given georef system.
-      */
-    void adjustBoundsForGeoRef();
-    
-    /*!
-      * \brief Adjusts the boundary points assuming the wolrd points are relative the local coordinate system.
-      */
-    void adjustBoundsForLocal();
-    
+
     /*!
       * \brief Adjusts the boundary points so that the entire model fits inside the photo.
       *
@@ -122,18 +69,11 @@ private:
       */
     Eigen::Transform<float, 3, Eigen::Affine> getROITransform(float xMin, float yMin) const;
 
-    /*!
-     * \brief Reads a transformation matrix from a file
-     * @param transformFile_
-     * @return
-     */
-    Eigen::Transform<float, 3, Eigen::Affine> readTransform(std::string transformFile_) const;
+    template <typename T>
+    void initBands(int count);
 
     template <typename T>
-    void initBands(const cv::Mat &texture);
-
-    template <typename T>
-    void initAlphaBand(const cv::Mat &texture);
+    void initAlphaBand();
 
     void saveTIFF(const std::string &filename, GDALDataType dataType);
     
@@ -214,21 +154,11 @@ private:
     Logger          log_;               /**< Logging object. */
 
     std::vector<std::string> inputFiles;
-    std::string     inputGeoRefFile_;   /**< Path to the georeference system file. */
-    std::string     inputTransformFile_;
     std::string     outputFile_;        /**< Path to the destination file. */
     std::string     outputCornerFile_;  /**< Path to the output corner file. */
     std::string     logFile_;           /**< Path to the log file. */
 
     float           resolution_;        /**< The number of pixels per meter in the ortho photo. */
-
-    bool            transformOverride_;
-    bool            boundaryDefined_;    /**< True if the user has defined a boundary. */
-
-    WorldPoint      worldPoint1_;       /**< The first boundary point for the ortho photo, in world coordinates. */
-    WorldPoint      worldPoint2_;       /**< The second boundary point for the ortho photo, in world coordinates. */
-    WorldPoint      worldPoint3_;       /**< The third boundary point for the ortho photo, in world coordinates. */
-    WorldPoint      worldPoint4_;       /**< The fourth boundary point for the ortho photo, in world coordinates. */
 
     Eigen::Vector2f boundaryPoint1_;     /**< The first boundary point for the ortho photo, in local coordinates. */
     Eigen::Vector2f boundaryPoint2_;     /**< The second boundary point for the ortho photo, in local coordinates. */
