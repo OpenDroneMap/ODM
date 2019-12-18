@@ -315,11 +315,22 @@ void OdmOrthoPhoto::createOrthoPhoto()
             }
         }
 
-        bounds = computeBoundsForModel(mesh);
-        // TODO: check these haven't changed for other models
+        Bounds b = computeBoundsForModel(mesh);
 
-        log_ << "Model bounds x : " << bounds.xMin << " -> " << bounds.xMax << '\n';
-        log_ << "Model bounds y : " << bounds.yMin << " -> " << bounds.yMax << '\n';
+        log_ << "Model bounds x : " << b.xMin << " -> " << b.xMax << '\n';
+        log_ << "Model bounds y : " << b.yMin << " -> " << b.yMax << '\n';
+
+        if (primary){
+            bounds = b;
+        }else{
+            // Quick check
+            if (b.xMin != bounds.xMin ||
+                    b.xMax != bounds.xMax ||
+                    b.yMin != bounds.yMin ||
+                    b.yMax != bounds.yMax){
+                throw OdmOrthoPhotoException("Bounds between models must all match, but they don't.");
+            }
+        }
 
         // The size of the area.
         float xDiff = bounds.xMax - bounds.xMin;
@@ -329,8 +340,6 @@ void OdmOrthoPhoto::createOrthoPhoto()
         // The resolution necessary to fit the area with the given resolution.
         height = static_cast<int>(std::ceil(resolution_*yDiff));
         width = static_cast<int>(std::ceil(resolution_*xDiff));
-
-        // TODO: check these haven't changed for other models
 
         depth_ = cv::Mat::zeros(height, width, CV_32F) - std::numeric_limits<float>::infinity();
         log_ << "Model resolution, width x height : " << width << "x" << height << '\n';
@@ -546,32 +555,12 @@ Bounds OdmOrthoPhoto::computeBoundsForModel(const pcl::TextureMesh &mesh)
     pcl::PointCloud<pcl::PointXYZ>::Ptr meshCloud (new pcl::PointCloud<pcl::PointXYZ>);
     pcl::fromPCLPointCloud2 (mesh.cloud, *meshCloud);
 
-    for(size_t t = 0; t < mesh.tex_materials.size(); ++t)
-    {
-        // The faces of the current submesh.
-        std::vector<pcl::Vertices> faces = mesh.tex_polygons[t];
-
-        // Iterate over each face...
-        for(size_t faceIndex = 0; faceIndex < faces.size(); ++faceIndex)
-        {
-            // The current polygon.
-            pcl::Vertices polygon = faces[faceIndex];
-
-            // The index to the vertices of the polygon.
-            size_t v1i = polygon.vertices[0];
-            size_t v2i = polygon.vertices[1];
-            size_t v3i = polygon.vertices[2];
-
-            // The polygon's points.
-            pcl::PointXYZ v1 = meshCloud->points[v1i];
-            pcl::PointXYZ v2 = meshCloud->points[v2i];
-            pcl::PointXYZ v3 = meshCloud->points[v3i];
-
-            r.xMin = std::min(std::min(r.xMin, v1.x), std::min(v2.x, v3.x));
-            r.xMax = std::max(std::max(r.xMax, v1.x), std::max(v2.x, v3.x));
-            r.yMin = std::min(std::min(r.yMin, v1.y), std::min(v2.y, v3.y));
-            r.yMax = std::max(std::max(r.yMax, v1.y), std::max(v2.y, v3.y));
-        }
+    for (size_t i = 0; i < meshCloud->points.size(); i++){
+        pcl::PointXYZ v = meshCloud->points[i];
+        r.xMin = std::min(r.xMin, v.x);
+        r.xMax = std::max(r.xMax, v.x);
+        r.yMin = std::min(r.yMin, v.y);
+        r.yMax = std::max(r.yMax, v.y);
     }
 
     log_ << "Boundary points:\n";
