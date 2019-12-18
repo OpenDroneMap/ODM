@@ -41,13 +41,13 @@ if __name__ == '__main__':
         os.system("rm -rf " + 
                     " ".join([
                         quote(os.path.join(args.project_path, "odm_georeferencing")),
+                        quote(os.path.join(args.project_path, "odm_georeferencing_25d")),
                         quote(os.path.join(args.project_path, "odm_meshing")),
                         quote(os.path.join(args.project_path, "odm_orthophoto")),
                         quote(os.path.join(args.project_path, "odm_texturing")),
                         quote(os.path.join(args.project_path, "opensfm")),
                         quote(os.path.join(args.project_path, "odm_filterpoints")),
-                        quote(os.path.join(args.project_path, "odm_25dmeshing")),
-                        quote(os.path.join(args.project_path, "odm_25dtexturing")),
+                        quote(os.path.join(args.project_path, "odm_texturing_25d")),
                         quote(os.path.join(args.project_path, "mve")),
                         quote(os.path.join(args.project_path, "entwine_pointcloud")),
                         quote(os.path.join(args.project_path, "submodels")),
