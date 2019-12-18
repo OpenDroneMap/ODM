@@ -27,6 +27,23 @@
 // Logger
 #include "Logger.hpp"
 
+struct Bounds{
+    float xMin;
+    float xMax;
+    float yMin;
+    float yMax;
+
+    Bounds() : xMin(0), xMax(0), yMin(0), yMax(0) {}
+    Bounds(float xMin, float xMax, float yMin, float yMax) :
+        xMin(xMin), xMax(xMax), yMin(yMin), yMax(yMax){}
+    Bounds(const Bounds &b) {
+        xMin = b.xMin;
+        xMax = b.xMax;
+        yMin = b.yMin;
+        yMax = b.yMax;
+    }
+};
+
 /*!
  * \brief   The OdmOrthoPhoto class is used to create an orthographic photo over a given area.
  *          The class reads an oriented textured mesh from an OBJ-file.
@@ -51,18 +68,17 @@ public:
 
 private:
     int width, height;
-
     void parseArguments(int argc, char* argv[]);
     void printHelp();
 
     void createOrthoPhoto();
 
     /*!
-      * \brief Adjusts the boundary points so that the entire model fits inside the photo.
+      * \brief Compute the boundary points so that the entire model fits inside the photo.
       *
       * \param mesh The model which decides the boundary.
       */
-    void adjustBoundsForEntireModel(const pcl::TextureMesh &mesh);
+    Bounds computeBoundsForModel(const pcl::TextureMesh &mesh);
     
     /*!
       * \brief Creates a transformation which aligns the area for the orthophoto.
@@ -74,6 +90,9 @@ private:
 
     template <typename T>
     void initAlphaBand();
+
+    template <typename T>
+    void finalizeAlphaBand();
 
     void saveTIFF(const std::string &filename, GDALDataType dataType);
     
@@ -141,7 +160,7 @@ private:
       * \param mesh The model.
       * \return True if model was loaded successfully.
       */
-    bool loadObjFile(std::string inputFile, pcl::TextureMesh &mesh);
+    bool loadObjFile(std::string inputFile, pcl::TextureMesh &mesh, std::vector<pcl::MTLReader> &companions);
 
     /*!
       * \brief Function is compied straight from the function in the pcl::io module.
@@ -149,7 +168,8 @@ private:
     bool readHeader (const std::string &file_name, pcl::PCLPointCloud2 &cloud,
                      Eigen::Vector4f &origin, Eigen::Quaternionf &orientation,
                      int &file_version, int &data_type, unsigned int &data_idx,
-                     const int offset);
+                     const int offset,
+                     std::vector<pcl::MTLReader> &companions);
 
     Logger          log_;               /**< Logging object. */
 
@@ -160,18 +180,11 @@ private:
 
     float           resolution_;        /**< The number of pixels per meter in the ortho photo. */
 
-    Eigen::Vector2f boundaryPoint1_;     /**< The first boundary point for the ortho photo, in local coordinates. */
-    Eigen::Vector2f boundaryPoint2_;     /**< The second boundary point for the ortho photo, in local coordinates. */
-    Eigen::Vector2f boundaryPoint3_;     /**< The third boundary point for the ortho photo, in local coordinates. */
-    Eigen::Vector2f boundaryPoint4_;     /**< The fourth boundary point for the ortho photo, in local coordinates. */
-
     std::vector<void *>    bands;
     void *alphaBand; // Keep alpha band separate
     int currentBandIndex;
 
     cv::Mat         depth_;             /**< The depth of the ortho photo as an OpenCV matrix, CV_32F. */
-
-    std::vector<pcl::MTLReader> companions_; /**< Materials (used by loadOBJFile). **/
 };
 
 /*!
