@@ -9,7 +9,7 @@ from opendm import gsd
 from opendm import orthophoto
 from opendm.concurrency import get_max_memory
 from opendm.cutline import compute_cutline
-
+from pipes import quote
 
 class ODMOrthoPhotoStage(types.ODM_Stage):
     def process(self, args, outputs):
@@ -44,19 +44,32 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                 else:
                     log.ODM_WARNING('Cannot read UTM offset from {}. An orthophoto will not be generated.'.format(odm_georeferencing_model_txt_geo_file))
 
-            if reconstruction.is_georeferenced():
-                if args.use_3dmesh:
-                    kwargs['model_geo'] = os.path.join(tree.odm_texturing, tree.odm_georeferencing_model_obj_geo)
-                else:
-                    kwargs['model_geo'] = os.path.join(tree.odm_25dtexturing, tree.odm_georeferencing_model_obj_geo)
+            models = []
+
+            if args.use_3dmesh:
+                base_dir = tree.odm_texturing
             else:
-                if args.use_3dmesh:
-                    kwargs['model_geo'] = os.path.join(tree.odm_texturing, tree.odm_textured_model_obj)
-                else:
-                    kwargs['model_geo'] = os.path.join(tree.odm_25dtexturing, tree.odm_textured_model_obj)
+                base_dir = tree.odm_25dtexturing
+                
+            if reconstruction.is_georeferenced():
+                model_file = tree.odm_georeferencing_model_obj_geo
+            else:
+                model_file = tree.odm_textured_model_obj
+
+            if reconstruction.multi_camera:
+                for band in reconstruction.multi_camera:
+                    primary = band == reconstruction.multi_camera[0]
+                    subdir = ""
+                    if not primary:
+                        subdir = band['name'].lower()
+                    models.append(os.path.join(base_dir, subdir, model_file))
+            else:
+                models.append(os.path.join(base_dir, model_file))
+
+            kwargs['models'] = ','.join(map(quote, models))
 
             # run odm_orthophoto
-            system.run('{bin}/odm_orthophoto -inputFile {model_geo} '
+            system.run('{bin}/odm_orthophoto -inputFiles {models} '
                        '-logFile {log} -outputFile {ortho} -resolution {res} {verbose} '
                        '-outputCornerFile {corners}'.format(**kwargs))
 
