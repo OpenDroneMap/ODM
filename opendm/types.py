@@ -315,7 +315,7 @@ class ODM_Tree(object):
         self.odm_texturing = io.join_paths(self.root_path, 'odm_texturing')
         self.odm_25dtexturing = io.join_paths(self.root_path, 'odm_texturing_25d')
         self.odm_georeferencing = io.join_paths(self.root_path, 'odm_georeferencing')
-        self.odm_25dgeoreferencing = io.join_paths(self.root_path, 'odm_25dgeoreferencing')
+        self.odm_25dgeoreferencing = io.join_paths(self.root_path, 'odm_georeferencing_25d')
         self.odm_filterpoints = io.join_paths(self.root_path, 'odm_filterpoints')
         self.odm_orthophoto = io.join_paths(self.root_path, 'odm_orthophoto')
 
