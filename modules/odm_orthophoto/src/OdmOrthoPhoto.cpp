@@ -449,6 +449,11 @@ void OdmOrthoPhoto::createOrthoPhoto()
             pcl::TexMaterial material = mesh.tex_materials[t];
             texture = cv::imread(material.tex_file, cv::IMREAD_ANYDEPTH | cv::IMREAD_UNCHANGED);
 
+            // BGR to RGB when necessary
+            if (texture.channels() == 3){
+                cv::cvtColor(texture, texture, cv::COLOR_BGR2RGB);
+            }
+
             // The first material determines the bit depth
             // Init ortho photo
             if (t == 0){
@@ -907,10 +912,10 @@ void OdmOrthoPhoto::renderPixel(int row, int col, float s, float t, const cv::Ma
         static_cast<T *>(bands[currentBandIndex + i])[idx] = static_cast<T>(value);
     }
 
-    // Add 1 to the alpha band if the pixel was visible for this band
-    // the final alpha band will be set to 255 if alpha == num channels
+    // Increment the alpha band if the pixel was visible for this band
+    // the final alpha band will be set to 255 if alpha == num bands
     // (all bands have information at this pixel)
-    static_cast<T *>(alphaBand)[idx] += static_cast<T>(1);
+    static_cast<T *>(alphaBand)[idx] += static_cast<T>(numChannels);
 }
 
 void OdmOrthoPhoto::getBarycentricCoordinates(pcl::PointXYZ v1, pcl::PointXYZ v2, pcl::PointXYZ v3, float x, float y, float &l1, float &l2, float &l3) const
