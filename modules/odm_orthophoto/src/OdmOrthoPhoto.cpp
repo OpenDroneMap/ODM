@@ -13,11 +13,6 @@ OdmOrthoPhoto::OdmOrthoPhoto()
 
     resolution_ = 0.0f;
 
-    boundaryPoint1_[0] = 0.0f; boundaryPoint1_[1] = 0.0f;
-    boundaryPoint2_[0] = 0.0f; boundaryPoint2_[1] = 0.0f;
-    boundaryPoint3_[0] = 0.0f; boundaryPoint3_[1] = 0.0f;
-    boundaryPoint4_[0] = 0.0f; boundaryPoint4_[1] = 0.0f;
-
     alphaBand = nullptr;
     currentBandIndex = 0;
 }
@@ -218,6 +213,15 @@ void OdmOrthoPhoto::saveTIFF(const std::string &filename, GDALDataType dataType)
     }
 
     // Alpha
+    if (dataType == GDT_UInt16){
+        finalizeAlphaBand<uint16_t>();
+    }else if (dataType == GDT_Byte){
+        finalizeAlphaBand<uint8_t>();
+    }else{
+        throw OdmOrthoPhotoException("Invalid data type");
+    }
+
+    // Alpha
     hBand = GDALGetRasterBand( hDstDS, static_cast<int>(i) + 1 );
 
     // Set alpha band
@@ -264,6 +268,20 @@ void OdmOrthoPhoto::initAlphaBand(){
      }
 }
 
+template <typename T>
+void OdmOrthoPhoto::finalizeAlphaBand(){
+     // Adjust alpha band values, only pixels that have
+     // values on all bands should be visible
+
+     size_t pixelCount = static_cast<size_t>(width * height);
+     int channels = bands.size();
+
+     T *arr = reinterpret_cast<T *>(alphaBand);
+     for (size_t j = 0; j < pixelCount; j++){
+         arr[j] = arr[j] >= channels ? 255.0 : 0.0;
+     }
+}
+
 
 void OdmOrthoPhoto::createOrthoPhoto()
 {
@@ -273,14 +291,15 @@ void OdmOrthoPhoto::createOrthoPhoto()
     }
 
     int textureDepth = -1;
-    float xMax, xMin, yMax, yMin;
     bool primary = true;
+    Bounds bounds;
 
     for (auto &inputFile : inputFiles){
         log_ << "Reading mesh file... " << inputFile << "\n";
 
+        std::vector<pcl::MTLReader> companions; /**< Materials (used by loadOBJFile). **/
         pcl::TextureMesh mesh;
-        loadObjFile(inputFile, mesh);
+        loadObjFile(inputFile, mesh, companions);
         log_ << "Mesh file read.\n\n";
 
         // Does the model have more than one material?
@@ -296,31 +315,25 @@ void OdmOrthoPhoto::createOrthoPhoto()
             }
         }
 
-        // Set boundaries according to the first model
-        // subsequent models use the boundaries of the first
-        if (primary){
-            adjustBoundsForEntireModel(mesh);
-        }
+        bounds = computeBoundsForModel(mesh);
+        // TODO: check these haven't changed for other models
 
-        // The minimum and maximum boundary values.
-        xMin = std::min(std::min(boundaryPoint1_[0], boundaryPoint2_[0]), std::min(boundaryPoint3_[0], boundaryPoint4_[0]));
-        xMax = std::max(std::max(boundaryPoint1_[0], boundaryPoint2_[0]), std::max(boundaryPoint3_[0], boundaryPoint4_[0]));
-        yMin = std::min(std::min(boundaryPoint1_[1], boundaryPoint2_[1]), std::min(boundaryPoint3_[1], boundaryPoint4_[1]));
-        yMax = std::max(std::max(boundaryPoint1_[1], boundaryPoint2_[1]), std::max(boundaryPoint3_[1], boundaryPoint4_[1]));
-
-        log_ << "Ortho photo bounds x : " << xMin << " -> " << xMax << '\n';
-        log_ << "Ortho photo bounds y : " << yMin << " -> " << yMax << '\n';
+        log_ << "Model bounds x : " << bounds.xMin << " -> " << bounds.xMax << '\n';
+        log_ << "Model bounds y : " << bounds.yMin << " -> " << bounds.yMax << '\n';
 
         // The size of the area.
-        float xDiff = xMax - xMin;
-        float yDiff = yMax - yMin;
-        log_ << "Ortho photo area : " << xDiff*yDiff << "m2\n";
+        float xDiff = bounds.xMax - bounds.xMin;
+        float yDiff = bounds.yMax - bounds.yMin;
+        log_ << "Model area : " << xDiff*yDiff << "m2\n";
 
         // The resolution necessary to fit the area with the given resolution.
         height = static_cast<int>(std::ceil(resolution_*yDiff));
         width = static_cast<int>(std::ceil(resolution_*xDiff));
+
+        // TODO: check these haven't changed for other models
+
         depth_ = cv::Mat::zeros(height, width, CV_32F) - std::numeric_limits<float>::infinity();
-        log_ << "Ortho photo resolution, width x height : " << width << "x" << height << '\n';
+        log_ << "Model resolution, width x height : " << width << "x" << height << '\n';
 
         // Check size of photo.
         if(0 >= height*width)
@@ -397,8 +410,7 @@ void OdmOrthoPhoto::createOrthoPhoto()
         }
 
         // Creates a transformation which aligns the area for the ortho photo.
-        Eigen::Transform<float, 3, Eigen::Affine> transform = getROITransform(xMin, -yMax);
-
+        Eigen::Transform<float, 3, Eigen::Affine> transform = getROITransform(bounds.xMin, -bounds.yMax);
         log_ << "Translating and scaling mesh...\n";
 
         // Move the mesh into position.
@@ -511,24 +523,24 @@ void OdmOrthoPhoto::createOrthoPhoto()
         }
         cornerStream.setf(std::ios::scientific, std::ios::floatfield);
         cornerStream.precision(17);
-        cornerStream << xMin << " " << yMin << " " << xMax << " " << yMax;
+        cornerStream << bounds.xMin << " " << bounds.yMin << " " << bounds.xMax << " " << bounds.yMax;
         cornerStream.close();
     }
 
     log_ << "Orthophoto generation done.\n";
 }
 
-void OdmOrthoPhoto::adjustBoundsForEntireModel(const pcl::TextureMesh &mesh)
+Bounds OdmOrthoPhoto::computeBoundsForModel(const pcl::TextureMesh &mesh)
 {
     log_ << "Set boundary to contain entire model.\n";
 
     // The boundary of the model.
-    float xMin, xMax, yMin, yMax;
+    Bounds r;
 
-    xMin = std::numeric_limits<float>::infinity();
-    xMax = -std::numeric_limits<float>::infinity();
-    yMin = std::numeric_limits<float>::infinity();
-    yMax = -std::numeric_limits<float>::infinity();
+    r.xMin = std::numeric_limits<float>::infinity();
+    r.xMax = -std::numeric_limits<float>::infinity();
+    r.yMin = std::numeric_limits<float>::infinity();
+    r.yMax = -std::numeric_limits<float>::infinity();
 
     // Contains the vertices of the mesh.
     pcl::PointCloud<pcl::PointXYZ>::Ptr meshCloud (new pcl::PointCloud<pcl::PointXYZ>);
@@ -555,25 +567,21 @@ void OdmOrthoPhoto::adjustBoundsForEntireModel(const pcl::TextureMesh &mesh)
             pcl::PointXYZ v2 = meshCloud->points[v2i];
             pcl::PointXYZ v3 = meshCloud->points[v3i];
 
-            xMin = std::min(std::min(xMin, v1.x), std::min(v2.x, v3.x));
-            xMax = std::max(std::max(xMax, v1.x), std::max(v2.x, v3.x));
-            yMin = std::min(std::min(yMin, v1.y), std::min(v2.y, v3.y));
-            yMax = std::max(std::max(yMax, v1.y), std::max(v2.y, v3.y));
+            r.xMin = std::min(std::min(r.xMin, v1.x), std::min(v2.x, v3.x));
+            r.xMax = std::max(std::max(r.xMax, v1.x), std::max(v2.x, v3.x));
+            r.yMin = std::min(std::min(r.yMin, v1.y), std::min(v2.y, v3.y));
+            r.yMax = std::max(std::max(r.yMax, v1.y), std::max(v2.y, v3.y));
         }
     }
 
-    // Create dummy boundary points.
-    boundaryPoint1_[0] = xMin; boundaryPoint1_[1] = yMin;
-    boundaryPoint2_[0] = xMin; boundaryPoint2_[1] = yMax;
-    boundaryPoint3_[0] = xMax; boundaryPoint3_[1] = yMax;
-    boundaryPoint4_[0] = xMax; boundaryPoint4_[1] = yMin;
-
-    log_ << "Local boundary points:\n";
-    log_ << "Point 1: " << boundaryPoint1_[0] << " " << boundaryPoint1_[1] << "\n";
-    log_ << "Point 2: " << boundaryPoint2_[0] << " " << boundaryPoint2_[1] << "\n";
-    log_ << "Point 3: " << boundaryPoint3_[0] << " " << boundaryPoint3_[1] << "\n";
-    log_ << "Point 4: " << boundaryPoint4_[0] << " " << boundaryPoint4_[1] << "\n";
+    log_ << "Boundary points:\n";
+    log_ << "Point 1: " << r.xMin << " " << r.yMin << "\n";
+    log_ << "Point 2: " << r.xMin << " " << r.yMax << "\n";
+    log_ << "Point 3: " << r.xMax << " " << r.yMax << "\n";
+    log_ << "Point 4: " << r.xMax << " " << r.yMin << "\n";
     log_ << "\n";
+
+    return r;
 }
 
 Eigen::Transform<float, 3, Eigen::Affine> OdmOrthoPhoto::getROITransform(float xMin, float yMin) const
@@ -910,10 +918,10 @@ void OdmOrthoPhoto::renderPixel(int row, int col, float s, float t, const cv::Ma
         static_cast<T *>(bands[currentBandIndex + i])[idx] = static_cast<T>(value);
     }
 
-    // The first model dictates the alpha band
-    if (currentBandIndex == 0){
-        static_cast<T *>(alphaBand)[idx] = static_cast<T>(255);  // Alpha should always be in the 255 range
-    }
+    // Add 1 to the alpha band if the pixel was visible for this band
+    // the final alpha band will be set to 255 if alpha == num channels
+    // (all bands have information at this pixel)
+    static_cast<T *>(alphaBand)[idx] += static_cast<T>(1);
 }
 
 void OdmOrthoPhoto::getBarycentricCoordinates(pcl::PointXYZ v1, pcl::PointXYZ v2, pcl::PointXYZ v3, float x, float y, float &l1, float &l2, float &l3) const
@@ -971,7 +979,7 @@ bool OdmOrthoPhoto::isModelOk(const pcl::TextureMesh &mesh)
 }
 
 
-bool OdmOrthoPhoto::loadObjFile(std::string inputFile, pcl::TextureMesh &mesh)
+bool OdmOrthoPhoto::loadObjFile(std::string inputFile, pcl::TextureMesh &mesh, std::vector<pcl::MTLReader> &companions)
 {
     int data_type;
     unsigned int data_idx;
@@ -980,7 +988,7 @@ bool OdmOrthoPhoto::loadObjFile(std::string inputFile, pcl::TextureMesh &mesh)
     Eigen::Vector4f origin;
     Eigen::Quaternionf orientation;
 
-    if (!readHeader(inputFile, mesh.cloud, origin, orientation, file_version, data_type, data_idx, offset))
+    if (!readHeader(inputFile, mesh.cloud, origin, orientation, file_version, data_type, data_idx, offset, companions))
     {
         throw OdmOrthoPhotoException("Problem reading header in modelfile!\n");
     }
@@ -1112,10 +1120,10 @@ bool OdmOrthoPhoto::loadObjFile(std::string inputFile, pcl::TextureMesh &mesh)
             {
                 mesh.tex_polygons.push_back (std::vector<pcl::Vertices> ());
                 mesh.tex_materials.push_back (pcl::TexMaterial ());
-                for (std::size_t i = 0; i < companions_.size (); ++i)
+                for (std::size_t i = 0; i < companions.size (); ++i)
                 {
-                    std::vector<pcl::TexMaterial>::const_iterator mat_it = companions_[i].getMaterial (st[1]);
-                    if (mat_it != companions_[i].materials_.end ())
+                    std::vector<pcl::TexMaterial>::const_iterator mat_it = companions[i].getMaterial (st[1]);
+                    if (mat_it != companions[i].materials_.end ())
                     {
                         mesh.tex_materials.back () = *mat_it;
                         break;
@@ -1182,7 +1190,8 @@ bool OdmOrthoPhoto::loadObjFile(std::string inputFile, pcl::TextureMesh &mesh)
 bool OdmOrthoPhoto::readHeader (const std::string &file_name, pcl::PCLPointCloud2 &cloud,
                                 Eigen::Vector4f &origin, Eigen::Quaternionf &orientation,
                                 int &file_version, int &data_type, unsigned int &data_idx,
-                                const int offset)
+                                const int offset,
+                                std::vector<pcl::MTLReader> &companions)
 {
     origin       = Eigen::Vector4f::Zero ();
     orientation  = Eigen::Quaternionf::Identity ();
@@ -1319,7 +1328,7 @@ bool OdmOrthoPhoto::readHeader (const std::string &file_name, pcl::PCLPointCloud
                 log_<<"Problem reading material file.";
             }
 
-            companions_.push_back (companion);
+            companions.push_back (companion);
         }
     }
 
