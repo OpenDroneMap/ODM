@@ -205,6 +205,19 @@ void OdmOrthoPhoto::saveTIFF(const std::string &filename, GDALDataType dataType)
     for (; i < bands.size(); i++){
         hBand = GDALGetRasterBand( hDstDS, static_cast<int>(i) + 1 );
 
+        // TODO: should we set these based on a command line parameter?
+        GDALColorInterp interp;
+        if (i == 0){
+            interp = GCI_RedBand;
+        }else if (i == 1){
+            interp = GCI_GreenBand;
+        }else if (i == 2){
+            interp = GCI_BlueBand;
+        }else{
+            interp = GCI_GrayIndex;
+        }
+        GDALSetRasterColorInterpretation(hBand, interp );
+
         if (GDALRasterIO( hBand, GF_Write, 0, 0, width, height,
                     bands[i], width, height, dataType, 0, 0 ) != CE_None){
             std::cerr << "Cannot write TIFF to " << filename << std::endl;
