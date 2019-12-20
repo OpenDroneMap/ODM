@@ -6,7 +6,7 @@ set(PCL_DIR "PCL_DIR-NOTFOUND" CACHE "PCL_DIR" "Path to the pcl installation dir
 set(OPENCV_DIR "OPENCV_DIR-NOTFOUND" CACHE "OPENCV_DIR" "Path to the OPENCV installation directory")
 
 # Add compiler options.
-add_definitions(-Wall -Wextra -g)
+add_definitions(-Wall -Wextra)
 
 # Find pcl at the location specified by PCL_DIR
 find_package(VTK 6.0 REQUIRED)
