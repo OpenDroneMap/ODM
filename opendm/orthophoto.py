@@ -83,16 +83,17 @@ def compute_mask_raster(input_raster, vector_mask, output_raster, blend_distance
 
             if blend_distance > 0:
                 if out_image.shape[0] >= 4:
-                # rast_mask = rast.dataset_mask()
-                    rast_mask = out_image[-1]
-                    dist_t = ndimage.distance_transform_edt(rast_mask)
+                    # alpha_band = rast.dataset_mask()
+                    alpha_band = out_image[-1]
+                    dist_t = ndimage.distance_transform_edt(alpha_band)
                     dist_t[dist_t <= blend_distance] /= blend_distance
                     dist_t[dist_t > blend_distance] = 1
-                    np.multiply(rast_mask, dist_t, out=rast_mask, casting="unsafe")
+                    np.multiply(alpha_band, dist_t, out=alpha_band, casting="unsafe")
                 else:
                     log.ODM_WARNING("%s does not have an alpha band, cannot blend cutline!" % input_raster)
 
             with rasterio.open(output_raster, 'w', **rast.profile) as dst:
+                dst.colorinterp = rast.colorinterp
                 dst.write(out_image)
 
             return output_raster
@@ -124,6 +125,8 @@ def merge(input_ortho_and_ortho_cuts, output_orthophoto, orthophoto_vars={}):
         res = first.res
         dtype = first.dtypes[0]
         profile = first.profile
+        num_bands = first.meta['count'] - 1 # minus alpha
+        colorinterp = first.colorinterp
 
     log.ODM_INFO("%s valid orthophoto rasters to merge" % len(inputs))
     sources = [(rasterio.open(o), rasterio.open(c)) for o,c in inputs]
@@ -167,6 +170,7 @@ def merge(input_ortho_and_ortho_cuts, output_orthophoto, orthophoto_vars={}):
 
     # create destination file
     with rasterio.open(output_orthophoto, "w", **profile) as dstrast:
+        dstrast.colorinterp = colorinterp
         for idx, dst_window in dstrast.block_windows():
             left, bottom, right, top = dstrast.window_bounds(dst_window)
 
@@ -194,12 +198,12 @@ def merge(input_ortho_and_ortho_cuts, output_orthophoto, orthophoto_vars={}):
 
                 # pixels without data yet are available to write
                 write_region = np.logical_and(
-                    (dstarr[3] == 0), (temp[3] != 0)  # 0 is nodata
+                    (dstarr[-1] == 0), (temp[-1] != 0)  # 0 is nodata
                 )
                 np.copyto(dstarr, temp, where=write_region)
 
                 # check if dest has any nodata pixels available
-                if np.count_nonzero(dstarr[3]) == blocksize:
+                if np.count_nonzero(dstarr[-1]) == blocksize:
                     break
 
             # Second pass, write cut rasters
@@ -217,9 +221,9 @@ def merge(input_ortho_and_ortho_cuts, output_orthophoto, orthophoto_vars={}):
 
                 # For each band, average alpha values between
                 # destination raster and cut raster
-                for b in range(0, 3):
-                    blended = temp[3] / 255.0 * temp[b] + (1 - temp[3] / 255.0) * dstarr[b]
-                    np.copyto(dstarr[b], blended, casting='unsafe', where=temp[3]!=0)
+                for b in range(0, num_bands):
+                    blended = temp[-1] / 255.0 * temp[b] + (1 - temp[-1] / 255.0) * dstarr[b]
+                    np.copyto(dstarr[b], blended, casting='unsafe', where=temp[-1]!=0)
 
             dstrast.write(dstarr, window=dst_window)
 
