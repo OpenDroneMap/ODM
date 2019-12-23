@@ -503,7 +503,8 @@ class ToolchainTask(Task):
                                         "odm_orthophoto/cutline.gpkg",
                                         "odm_orthophoto/odm_orthophoto_cut.tif",
                                         "odm_dem",
-                                        "odm_georeferencing"])
+                                        "odm_georeferencing",
+                                        "odm_georeferencing_25d"])
         else:
             log.ODM_INFO("Already processed toolchain for %s" % submodel_name)
             handle_result()
