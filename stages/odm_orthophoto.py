@@ -29,6 +29,7 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                 'ortho': tree.odm_orthophoto_render,
                 'corners': tree.odm_orthophoto_corners,
                 'res': 1.0 / (gsd.cap_resolution(args.orthophoto_resolution, tree.opensfm_reconstruction, ignore_gsd=args.ignore_gsd) / 100.0),
+                'bands': '',
                 'verbose': verbose
             }
 
@@ -63,6 +64,7 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                     if not primary:
                         subdir = band['name'].lower()
                     models.append(os.path.join(base_dir, subdir, model_file))
+                kwargs['bands'] = '-bands %s' % (','.join([quote(b['name'].lower()) for b in reconstruction.multi_camera]))
             else:
                 models.append(os.path.join(base_dir, model_file))
 
@@ -71,7 +73,7 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
             # run odm_orthophoto
             system.run('{bin}/odm_orthophoto -inputFiles {models} '
                        '-logFile {log} -outputFile {ortho} -resolution {res} {verbose} '
-                       '-outputCornerFile {corners}'.format(**kwargs))
+                       '-outputCornerFile {corners} {bands}'.format(**kwargs))
 
             # Create georeferenced GeoTiff
             geotiffcreated = False

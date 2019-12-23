@@ -177,10 +177,12 @@ private:
     std::string     outputFile_;        /**< Path to the destination file. */
     std::string     outputCornerFile_;  /**< Path to the output corner file. */
     std::string     logFile_;           /**< Path to the log file. */
+    std::string     bandsOrder;
 
     float           resolution_;        /**< The number of pixels per meter in the ortho photo. */
 
     std::vector<void *>    bands;
+    std::vector<GDALColorInterp> colorInterps;
     void *alphaBand; // Keep alpha band separate
     int currentBandIndex;
 

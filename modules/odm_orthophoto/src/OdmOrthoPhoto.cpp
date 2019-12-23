@@ -10,6 +10,7 @@ OdmOrthoPhoto::OdmOrthoPhoto()
     outputFile_ = "ortho.tif";
     logFile_    = "log.txt";
     outputCornerFile_ = "";
+    bandsOrder = "red,green,blue";
 
     resolution_ = 0.0f;
 
@@ -127,6 +128,15 @@ void OdmOrthoPhoto::parseArguments(int argc, char *argv[])
                 inputFiles.push_back(item);
             }
         }
+        else if(argument == "-bands")
+        {
+            argIndex++;
+            if (argIndex >= argc)
+            {
+                throw OdmOrthoPhotoException("Argument '" + argument + "' expects 1 more input following it, but no more inputs were provided.");
+            }
+            bandsOrder = std::string(argv[argIndex]);
+        }
         else if(argument == "-outputFile")
         {
             argIndex++;
@@ -154,6 +164,20 @@ void OdmOrthoPhoto::parseArguments(int argc, char *argv[])
         }
     }
     log_ << "\n";
+
+    std::stringstream ss(bandsOrder);
+    std::string item;
+    while(std::getline(ss, item, ',')){
+        if (item == "red" || item == "r"){
+            colorInterps.push_back(GCI_RedBand);
+        }else if (item == "green" || item == "g"){
+            colorInterps.push_back(GCI_GreenBand);
+        }else if (item == "blue" || item == "b"){
+            colorInterps.push_back(GCI_BlueBand);
+        }else{
+            colorInterps.push_back(GCI_GrayIndex);
+        }
+    }
 }
 
 void OdmOrthoPhoto::printHelp()
@@ -185,6 +209,9 @@ void OdmOrthoPhoto::printHelp()
     log_ << "\"-resolution <pixels/m>\" (mandatory)\n";
     log_ << "\"The number of pixels used per meter.\n\n";
 
+    log_ << "\"-bands red,green,blue,[...]\" (optional)\n";
+    log_ << "\"Naming of bands to assign color interpolation values when creating output TIFF.\n\n";
+
     log_.setIsPrintingInCout(false);
 }
 
@@ -206,15 +233,9 @@ void OdmOrthoPhoto::saveTIFF(const std::string &filename, GDALDataType dataType)
         hBand = GDALGetRasterBand( hDstDS, static_cast<int>(i) + 1 );
 
         // TODO: should we set these based on a command line parameter?
-        GDALColorInterp interp;
-        if (i == 0){
-            interp = GCI_RedBand;
-        }else if (i == 1){
-            interp = GCI_GreenBand;
-        }else if (i == 2){
-            interp = GCI_BlueBand;
-        }else{
-            interp = GCI_GrayIndex;
+        GDALColorInterp interp = GCI_GrayIndex;
+        if (i < colorInterps.size()){
+            interp = colorInterps[i];
         }
         GDALSetRasterColorInterpretation(hBand, interp );
 
