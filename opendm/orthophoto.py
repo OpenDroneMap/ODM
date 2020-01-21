@@ -62,6 +62,8 @@ def compute_mask_raster(input_raster, vector_mask, output_raster, blend_distance
         log.ODM_WARNING("Cannot mask raster, %s does not exist" % vector_mask)
         return
 
+    log.ODM_INFO("Computing mask raster: %s" % output_raster)
+
     with rasterio.open(input_raster, 'r') as rast:
         with fiona.open(vector_mask) as src:
             burn_features = src
@@ -98,6 +100,30 @@ def compute_mask_raster(input_raster, vector_mask, output_raster, blend_distance
 
             return output_raster
 
+def feather_raster(input_raster, output_raster, blend_distance=20):
+    if not os.path.exists(input_raster):
+        log.ODM_WARNING("Cannot feather raster, %s does not exist" % input_raster)
+        return
+
+    log.ODM_INFO("Computing feather raster: %s" % output_raster)
+    
+    with rasterio.open(input_raster, 'r') as rast:
+        out_image = rast.read()
+        if blend_distance > 0:
+            if out_image.shape[0] >= 4:
+                alpha_band = out_image[-1]
+                dist_t = ndimage.distance_transform_edt(alpha_band)
+                dist_t[dist_t <= blend_distance] /= blend_distance
+                dist_t[dist_t > blend_distance] = 1
+                np.multiply(alpha_band, dist_t, out=alpha_band, casting="unsafe")
+            else:
+                log.ODM_WARNING("%s does not have an alpha band, cannot blend cutline!" % input_raster)
+
+        with rasterio.open(output_raster, 'w', **rast.profile) as dst:
+            dst.colorinterp = rast.colorinterp
+            dst.write(out_image)
+
+        return output_raster
 
 def merge(input_ortho_and_ortho_cuts, output_orthophoto, orthophoto_vars={}):
     """
@@ -181,9 +207,9 @@ def merge(input_ortho_and_ortho_cuts, output_orthophoto, orthophoto_vars={}):
             dst_count = first.count
             dst_shape = (dst_count, dst_rows, dst_cols)
 
-            # First pass, write all rasters naively
             dstarr = np.zeros(dst_shape, dtype=dtype)
 
+            # First pass, write all rasters naively without blending
             for src, _ in sources:
                 src_window = tuple(zip(rowcol(
                         src.transform, left, top, op=round, precision=precision
@@ -206,7 +232,32 @@ def merge(input_ortho_and_ortho_cuts, output_orthophoto, orthophoto_vars={}):
                 if np.count_nonzero(dstarr[-1]) == blocksize:
                     break
 
-            # Second pass, write cut rasters
+            # Second pass, write all feathered rasters
+            # blending the edges
+            for src, _ in sources:
+                src_window = tuple(zip(rowcol(
+                        src.transform, left, top, op=round, precision=precision
+                    ), rowcol(
+                        src.transform, right, bottom, op=round, precision=precision
+                    )))
+
+                temp = np.zeros(dst_shape, dtype=dtype)
+                temp = src.read(
+                    out=temp, window=src_window, boundless=True, masked=False
+                )
+
+                where = temp[-1] != 0
+                for b in range(0, num_bands):
+                    blended = temp[-1] / 255.0 * temp[b] + (1 - temp[-1] / 255.0) * dstarr[b]
+                    np.copyto(dstarr[b], blended, casting='unsafe', where=where)
+                    dstarr[-1][where] = 255.0
+                
+                # check if dest has any nodata pixels available
+                if np.count_nonzero(dstarr[-1]) == blocksize:
+                    break
+
+            # Third pass, write cut rasters
+            # blending the cutlines
             for _, cut in sources:
                 src_window = tuple(zip(rowcol(
                         cut.transform, left, top, op=round, precision=precision

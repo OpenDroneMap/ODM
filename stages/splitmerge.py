@@ -209,7 +209,7 @@ class ODMMergeStage(types.ODM_Stage):
 
                 if not io.file_exists(tree.odm_orthophoto_tif) or self.rerun():
                     all_orthos_and_ortho_cuts = get_all_submodel_paths(tree.submodels_path,
-                        os.path.join("odm_orthophoto", "odm_orthophoto.tif"),
+                        os.path.join("odm_orthophoto", "odm_orthophoto_feathered.tif"),
                         os.path.join("odm_orthophoto", "odm_orthophoto_cut.tif"),
                     )
 

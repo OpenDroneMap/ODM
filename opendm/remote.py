@@ -502,6 +502,7 @@ class ToolchainTask(Task):
                                 outputs=["odm_orthophoto/odm_orthophoto.tif",
                                         "odm_orthophoto/cutline.gpkg",
                                         "odm_orthophoto/odm_orthophoto_cut.tif",
+                                        "odm_orthophoto/odm_orthophoto_feathered.tif",
                                         "odm_dem",
                                         "odm_georeferencing",
                                         "odm_georeferencing_25d"])
