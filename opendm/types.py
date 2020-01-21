@@ -211,7 +211,7 @@ class ODM_Reconstruction(object):
             log.ODM_INFO("GCP file already exist: %s" % output_gcp_file)
             self.gcp = GCPFile(output_gcp_file)
         
-        self.georef = ODM_GeoRef.Froband_photosoordsFile(output_coords_file)
+        self.georef = ODM_GeoRef.FromCoordsFile(output_coords_file)
         return self.georef
 
     def georeference_with_gps(self, images_path, output_coords_file, rerun=False):
@@ -221,7 +221,7 @@ class ODM_Reconstruction(object):
             else:
                 log.ODM_INFO("Coordinates file already exist: %s" % output_coords_file)
             
-            self.georef = ODM_GeoRef.Froband_photosoordsFile(output_coords_file)
+            self.georef = ODM_GeoRef.FromCoordsFile(output_coords_file)
         except:
             log.ODM_WARNING('Could not generate coordinates file. An orthophoto will not be generated.')
 
@@ -241,7 +241,7 @@ class ODM_GeoRef(object):
         return ODM_GeoRef(CRS.from_proj4(projstring))
 
     @staticmethod
-    def Froband_photosoordsFile(coords_file):
+    def FromCoordsFile(coords_file):
         # check for coordinate file existence
         if not io.file_exists(coords_file):
             log.ODM_WARNING('Could not find file %s' % coords_file)
