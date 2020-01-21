@@ -250,7 +250,7 @@ def merge(input_ortho_and_ortho_cuts, output_orthophoto, orthophoto_vars={}):
                 for b in range(0, num_bands):
                     blended = temp[-1] / 255.0 * temp[b] + (1 - temp[-1] / 255.0) * dstarr[b]
                     np.copyto(dstarr[b], blended, casting='unsafe', where=where)
-                    dstarr[-1][where] = 255.0
+                dstarr[-1][where] = 255.0
                 
                 # check if dest has any nodata pixels available
                 if np.count_nonzero(dstarr[-1]) == blocksize:
