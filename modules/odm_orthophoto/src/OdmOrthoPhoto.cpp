@@ -232,7 +232,6 @@ void OdmOrthoPhoto::saveTIFF(const std::string &filename, GDALDataType dataType)
     for (; i < bands.size(); i++){
         hBand = GDALGetRasterBand( hDstDS, static_cast<int>(i) + 1 );
 
-        // TODO: should we set these based on a command line parameter?
         GDALColorInterp interp = GCI_GrayIndex;
         if (i < colorInterps.size()){
             interp = colorInterps[i];
