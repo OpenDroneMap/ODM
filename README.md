@@ -241,7 +241,22 @@ For documentation, see http://docs.opendronemap.org/ and https://github.com/Open
 
 Help improve our software!
 
-Join the developer's chat at https://community.opendronemap.org/c/developers-chat/21
+For Linux users, the easiest way to modify the software is to make sure docker is installed, clone the repository and then run from a shell:
+
+```bash
+$ DATA=/path/to/datasets ./start-dev-env.sh
+```
+
+Where `/path/to/datasets` is a directory where you can place test datasets (it can also point to an empty directory if you don't have test datasets).
+
+You can now make changes to the ODM source. When you are ready to test the changes you can simply invoke:
+
+```bash
+(odmdev) [user:/code] master+* ± ./run.sh --project-path /datasets mydataset
+```
+
+If you have questions, join the developer's chat at https://community.opendronemap.org/c/developers-chat/21
 
 1. Try to keep commits clean and simple
 2. Submit a pull request with detailed changes and test results
+3. Have fun!
