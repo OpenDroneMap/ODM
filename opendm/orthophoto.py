@@ -117,7 +117,7 @@ def feather_raster(input_raster, output_raster, blend_distance=20):
                 dist_t[dist_t > blend_distance] = 1
                 np.multiply(alpha_band, dist_t, out=alpha_band, casting="unsafe")
             else:
-                log.ODM_WARNING("%s does not have an alpha band, cannot blend cutline!" % input_raster)
+                log.ODM_WARNING("%s does not have an alpha band, cannot feather raster!" % input_raster)
 
         with rasterio.open(output_raster, 'w', **rast.profile) as dst:
             dst.colorinterp = rast.colorinterp
