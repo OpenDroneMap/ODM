@@ -137,6 +137,13 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
 
                 orthophoto.post_orthophoto_steps(args, bounds_file_path, tree.odm_orthophoto_tif)
 
+                # Generate feathered orthophoto also
+                if args.orthophoto_cutline:
+                    orthophoto.feather_raster(tree.odm_orthophoto_tif, 
+                            os.path.join(tree.odm_orthophoto, "odm_orthophoto_feathered.tif"),
+                            blend_distance=20
+                        )
+
                 geotiffcreated = True
             if not geotiffcreated:
                 log.ODM_WARNING('No geo-referenced orthophoto created due '
