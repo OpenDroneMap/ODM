@@ -75,18 +75,19 @@ class ODM_Photo:
 
             # Find band name and camera index (if available)
             camera_index_tags = [
-                    'DLS:SensorId', # Micasense
-                    '@Camera:RigCameraIndex' # Parrot Sequoia
+                    'DLS:SensorId', # Micasense RedEdge
+                    '@Camera:RigCameraIndex', # Parrot Sequoia
+                    'Camera:RigCameraIndex', # MicaSense Altum
             ]
 
             for tags in xmp:
                 if 'Camera:BandName' in tags:
                     self.band_name = str(tags['Camera:BandName']).replace(" ", "")
-                else:
-                    for cit in camera_index_tags:
-                        if cit in tags:
-                            self.band_index = int(tags[cit])
-        
+                    
+                for cit in camera_index_tags:
+                    if cit in tags:
+                        self.band_index = int(tags[cit])
+
         self.width, self.height = get_image_size.get_image_size(_path_file)
         
         # Sanitize band name since we use it in folder paths
