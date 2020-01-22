@@ -464,7 +464,7 @@ def config():
                         metavar='<float>',
                         type=float,
                         default=5,
-                        help='DSM/DTM resolution in cm / pixel.'
+                        help='DSM/DTM resolution in cm / pixel. Note that this value is capped by a ground sampling distance (GSD) estimate. To remove the cap, check --ignore-gsd also.'
                              '\nDefault: %(default)s')
 
     parser.add_argument('--dem-decimation',
@@ -489,7 +489,7 @@ def config():
                         metavar='<float > 0.0>',
                         default=5,
                         type=float,
-                        help=('Orthophoto resolution in cm / pixel.\n'
+                        help=('Orthophoto resolution in cm / pixel. Note that this value is capped by a ground sampling distance (GSD) estimate. To remove the cap, check --ignore-gsd also.\n'
                               'Default: %(default)s'))
 
     parser.add_argument('--orthophoto-no-tiled',
