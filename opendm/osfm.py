@@ -117,6 +117,8 @@ class OSFMContext:
                 "undistorted_image_format: tif",
                 "bundle_outlier_filtering_type: AUTO",
                 "align_orientation_prior: vertical",
+                "triangulation_type: ROBUST",
+                "bundle_common_position_constraints: %s" % ('no' if reconstruction.multi_camera is None else 'yes'),
             ]
 
             if args.camera_lens != 'auto':
