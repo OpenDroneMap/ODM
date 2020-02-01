@@ -8,6 +8,7 @@ from opendm import location
 from opendm.gcp import GCPFile
 from pyproj import CRS
 import xmltodict as x2d
+from six import string_types
 
 import log
 import io
@@ -82,8 +83,21 @@ class ODM_Photo:
 
             for tags in xmp:
                 if 'Camera:BandName' in tags:
-                    self.band_name = str(tags['Camera:BandName']).replace(" ", "")
-                    
+                    cbt = tags['Camera:BandName']
+                    band_name = None
+
+                    if isinstance(cbt, string_types):
+                        band_name = str(tags['Camera:BandName'])
+                    elif isinstance(cbt, dict):
+                        items = cbt.get('rdf:Seq', {}).get('rdf:li', {})
+                        if items:
+                            band_name = " ".join(items)
+
+                    if band_name is not None:
+                        self.band_name = band_name.replace(" ", "")
+                    else:
+                        log.ODM_WARNING("Camera:BandName tag found in XMP, but we couldn't parse it. Multispectral bands might be improperly classified.")
+                
                 for cit in camera_index_tags:
                     if cit in tags:
                         self.band_index = int(tags[cit])
