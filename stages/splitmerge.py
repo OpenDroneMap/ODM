@@ -13,7 +13,7 @@ from opensfm.large import metadataset
 from opendm.cropper import Cropper
 from opendm.concurrency import get_max_memory
 from opendm.remote import LocalRemoteExecutor
-from opendm import entwine
+from opendm import point_cloud
 from pipes import quote
 
 class ODMSplitStage(types.ODM_Stage):
@@ -46,7 +46,7 @@ class ODMSplitStage(types.ODM_Stage):
                     "submodel_overlap: %s" % args.split_overlap,
                 ]
 
-                octx.setup(args, tree.dataset_raw, photos, gcp_path=reconstruction.gcp.gcp_path, append_config=config, rerun=self.rerun())
+                octx.setup(args, tree.dataset_raw, photos, reconstruction=reconstruction, append_config=config, rerun=self.rerun())
                 octx.extract_metadata(self.rerun())
 
                 self.update_progress(5)
@@ -175,26 +175,17 @@ class ODMMergeStage(types.ODM_Stage):
 
             # Merge point clouds
             if args.merge in ['all', 'pointcloud']:
-                if not io.dir_exists(tree.entwine_pointcloud) or self.rerun():
+                if not io.file_exists(tree.odm_georeferencing_model_laz) or self.rerun():
                     all_point_clouds = get_submodel_paths(tree.submodels_path, "odm_georeferencing", "odm_georeferenced_model.laz")
                     
                     try:
-                        entwine.build(all_point_clouds, tree.entwine_pointcloud, max_concurrency=args.max_concurrency, rerun=self.rerun())
+                        point_cloud.merge(all_point_clouds, tree.odm_georeferencing_model_laz, rerun=self.rerun())
+                        point_cloud.post_point_cloud_steps(args, tree)
                     except Exception as e:
-                        log.ODM_WARNING("Could not merge EPT point cloud: %s (skipping)" % str(e))
-                else:
-                    log.ODM_WARNING("Found merged EPT point cloud in %s" % tree.entwine_pointcloud)
-                
-                if not io.file_exists(tree.odm_georeferencing_model_laz) or self.rerun():
-                    if io.dir_exists(tree.entwine_pointcloud):
-                        try:
-                            system.run('pdal translate "ept://{}" "{}"'.format(tree.entwine_pointcloud, tree.odm_georeferencing_model_laz))
-                        except Exception as e:
-                            log.ODM_WARNING("Cannot export EPT dataset to LAZ: %s" % str(e))
-                    else:
-                        log.ODM_WARNING("No EPT point cloud found (%s), skipping LAZ conversion)" % tree.entwine_pointcloud)
+                        log.ODM_WARNING("Could not merge point cloud: %s (skipping)" % str(e))
                 else:
                     log.ODM_WARNING("Found merged point cloud in %s" % tree.odm_georeferencing_model_laz)
+                
             
             self.update_progress(25)
 
@@ -217,84 +208,27 @@ class ODMMergeStage(types.ODM_Stage):
                     system.mkdir_p(tree.odm_orthophoto)
 
                 if not io.file_exists(tree.odm_orthophoto_tif) or self.rerun():
-                    all_orthos_and_cutlines = get_all_submodel_paths(tree.submodels_path,
-                        os.path.join("odm_orthophoto", "odm_orthophoto.tif"),
-                        os.path.join("odm_orthophoto", "cutline.gpkg"),
+                    all_orthos_and_ortho_cuts = get_all_submodel_paths(tree.submodels_path,
+                        os.path.join("odm_orthophoto", "odm_orthophoto_feathered.tif"),
+                        os.path.join("odm_orthophoto", "odm_orthophoto_cut.tif"),
                     )
 
-                    if len(all_orthos_and_cutlines) > 1:
-                        log.ODM_INFO("Found %s submodels with valid orthophotos and cutlines" % len(all_orthos_and_cutlines))
+                    if len(all_orthos_and_ortho_cuts) > 1:
+                        log.ODM_INFO("Found %s submodels with valid orthophotos and cutlines" % len(all_orthos_and_ortho_cuts))
                         
                         # TODO: histogram matching via rasterio
                         # currently parts have different color tones
 
-                        merged_geotiff = os.path.join(tree.odm_orthophoto, "odm_orthophoto.merged.tif")
-
-                        kwargs = {
-                            'orthophoto_merged': merged_geotiff,
-                            'input_files': ' '.join(map(lambda i: quote(i[0]), all_orthos_and_cutlines)),
-                            'max_memory': get_max_memory(),
-                            'threads': args.max_concurrency,
-                        }
-
-                        # use bounds as cutlines (blending)
-                        if io.file_exists(merged_geotiff):
-                            os.remove(merged_geotiff)
-
-                        system.run('gdal_merge.py -o {orthophoto_merged} '
-                                #'-createonly '
-                                '-co "BIGTIFF=YES" '
-                                '-co "BLOCKXSIZE=512" '
-                                '-co "BLOCKYSIZE=512" '
-                                '--config GDAL_CACHEMAX {max_memory}% '
-                                '{input_files} '.format(**kwargs)
-                                )
-
-                        for ortho_cutline in all_orthos_and_cutlines:
-                            kwargs['input_file'], kwargs['cutline'] = ortho_cutline
-
-                            # Note: cblend has a high performance penalty
-                            system.run('gdalwarp -cutline {cutline} '
-                                    '-cblend 20 '
-                                    '-r bilinear -multi '
-                                    '-wo NUM_THREADS={threads} '
-                                    '--config GDAL_CACHEMAX {max_memory}% '
-                                    '{input_file} {orthophoto_merged}'.format(**kwargs)
-                            )
-
-                        # Apply orthophoto settings (compression, tiling, etc.)
-                        orthophoto_vars = orthophoto.get_orthophoto_vars(args)
-
                         if io.file_exists(tree.odm_orthophoto_tif):
                             os.remove(tree.odm_orthophoto_tif)
 
-                        kwargs = {
-                            'vars': ' '.join(['-co %s=%s' % (k, orthophoto_vars[k]) for k in orthophoto_vars]),
-                            'max_memory': get_max_memory(),
-                            'merged': merged_geotiff,
-                            'log': tree.odm_orthophoto_tif_log,
-                            'orthophoto': tree.odm_orthophoto_tif,
-                        }
-
-                        system.run('gdal_translate '
-                            '{vars} '
-                            '--config GDAL_CACHEMAX {max_memory}% '
-                            '{merged} {orthophoto} > {log}'.format(**kwargs))
-
-                        os.remove(merged_geotiff)
-
-                        # Crop
-                        if args.crop > 0:
-                            Cropper.crop(merged_bounds_file, tree.odm_orthophoto_tif, orthophoto_vars)
-
-                        # Overviews
-                        if args.build_overviews:
-                            orthophoto.build_overviews(tree.odm_orthophoto_tif) 
-                        
-                    elif len(all_orthos_and_cutlines) == 1:
+                        orthophoto_vars = orthophoto.get_orthophoto_vars(args)
+                        orthophoto.merge(all_orthos_and_ortho_cuts, tree.odm_orthophoto_tif, orthophoto_vars)
+                        orthophoto.post_orthophoto_steps(args, merged_bounds_file, tree.odm_orthophoto_tif)
+                    elif len(all_orthos_and_ortho_cuts) == 1:
                         # Simply copy
                         log.ODM_WARNING("A single orthophoto/cutline pair was found between all submodels.")
-                        shutil.copyfile(all_orthos_and_cutlines[0][0], tree.odm_orthophoto_tif)
+                        shutil.copyfile(all_orthos_and_ortho_cuts[0][0], tree.odm_orthophoto_tif)
                     else:
                         log.ODM_WARNING("No orthophoto/cutline pairs were found in any of the submodels. No orthophoto will be generated.")
                 else:

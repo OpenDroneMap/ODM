@@ -242,14 +242,14 @@ def config():
 
     parser.add_argument('--mesh-size',
                         metavar='<positive integer>',
-                        default=100000,
+                        default=200000,
                         type=int,
                         help=('The maximum vertex count of the output mesh. '
                               'Default: %(default)s'))
 
     parser.add_argument('--mesh-octree-depth',
                         metavar='<positive integer>',
-                        default=9,
+                        default=11,
                         type=int,
                         help=('Oct-tree depth used in the mesh reconstruction, '
                               'increase to get more vertices, recommended '
@@ -464,7 +464,7 @@ def config():
                         metavar='<float>',
                         type=float,
                         default=5,
-                        help='DSM/DTM resolution in cm / pixel.'
+                        help='DSM/DTM resolution in cm / pixel. Note that this value is capped by a ground sampling distance (GSD) estimate. To remove the cap, check --ignore-gsd also.'
                              '\nDefault: %(default)s')
 
     parser.add_argument('--dem-decimation',
@@ -489,13 +489,19 @@ def config():
                         metavar='<float > 0.0>',
                         default=5,
                         type=float,
-                        help=('Orthophoto resolution in cm / pixel.\n'
+                        help=('Orthophoto resolution in cm / pixel. Note that this value is capped by a ground sampling distance (GSD) estimate. To remove the cap, check --ignore-gsd also.\n'
                               'Default: %(default)s'))
 
     parser.add_argument('--orthophoto-no-tiled',
                         action='store_true',
                         default=False,
                         help='Set this parameter if you want a stripped geoTIFF.\n'
+                             'Default: %(default)s')
+    
+    parser.add_argument('--orthophoto-png',
+                        action='store_true',
+                        default=False,
+                        help='Set this parameter if you want to generate a PNG rendering of the orthophoto.\n'
                              'Default: %(default)s')
 
     parser.add_argument('--orthophoto-compression',

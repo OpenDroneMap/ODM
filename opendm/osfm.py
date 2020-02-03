@@ -17,7 +17,8 @@ class OSFMContext:
         self.opensfm_project_path = opensfm_project_path
     
     def run(self, command):
-        system.run('%s/bin/opensfm %s "%s"' %
+        # Use Python 2.x by default, otherwise OpenSfM uses Python 3.x
+        system.run('/usr/bin/env python2 %s/bin/opensfm %s "%s"' %
                     (context.opensfm_path, command, self.opensfm_project_path))
 
     def is_reconstruction_done(self):
@@ -41,17 +42,17 @@ class OSFMContext:
             log.ODM_WARNING('Found a valid OpenSfM reconstruction file in: %s' % reconstruction_file)
 
         # Check that a reconstruction file has been created
-        if not io.file_exists(reconstruction_file):
+        if not self.reconstructed():
             log.ODM_ERROR("The program could not process this dataset using the current settings. "
                             "Check that the images have enough overlap, "
                             "that there are enough recognizable features "
                             "and that the images are in focus. "
                             "You could also try to increase the --min-num-features parameter."
                             "The program will now exit.")
-            raise Exception("Reconstruction could not be generated")
+            exit(1)
 
 
-    def setup(self, args, images_path, photos, gcp_path=None, append_config = [], rerun=False):
+    def setup(self, args, images_path, photos, reconstruction, append_config = [], rerun=False):
         """
         Setup a OpenSfM project
         """
@@ -91,22 +92,33 @@ class OSFMContext:
                 except Exception as e:
                     log.ODM_WARNING("Cannot set camera_models_overrides.json: %s" % str(e))
 
+            use_bow = False
+
+            matcher_neighbors = args.matcher_neighbors
+            if matcher_neighbors != 0 and reconstruction.multi_camera is not None:
+                matcher_neighbors *= len(reconstruction.multi_camera)
+                log.ODM_INFO("Increasing matcher neighbors to %s to accomodate multi-camera setup" % matcher_neighbors)
+                log.ODM_INFO("Multi-camera setup, using BOW matching")
+                use_bow = True
+
             # create config file for OpenSfM
             config = [
                 "use_exif_size: no",
                 "feature_process_size: %s" % args.resize_to,
                 "feature_min_frames: %s" % args.min_num_features,
                 "processes: %s" % args.max_concurrency,
-                "matching_gps_neighbors: %s" % args.matcher_neighbors,
+                "matching_gps_neighbors: %s" % matcher_neighbors,
                 "matching_gps_distance: %s" % args.matcher_distance,
                 "depthmap_method: %s" % args.opensfm_depthmap_method,
                 "depthmap_resolution: %s" % args.depthmap_resolution,
                 "depthmap_min_patch_sd: %s" % args.opensfm_depthmap_min_patch_sd,
                 "depthmap_min_consistent_views: %s" % args.opensfm_depthmap_min_consistent_views,
                 "optimize_camera_parameters: %s" % ('no' if args.use_fixed_camera_params or args.cameras else 'yes'),
-                "undistorted_image_format: png", # mvs-texturing exhibits artifacts with JPG
+                "undistorted_image_format: tif",
                 "bundle_outlier_filtering_type: AUTO",
                 "align_orientation_prior: vertical",
+                "triangulation_type: ROBUST",
+                "bundle_common_position_constraints: %s" % ('no' if reconstruction.multi_camera is None else 'yes'),
             ]
 
             if args.camera_lens != 'auto':
@@ -114,12 +126,16 @@ class OSFMContext:
 
             if not has_gps:
                 log.ODM_INFO("No GPS information, using BOW matching")
+                use_bow = True
+
+            if use_bow:
                 config.append("matcher_type: WORDS")
 
             if has_alt:
                 log.ODM_INFO("Altitude data detected, enabling it for GPS alignment")
                 config.append("use_altitude_tag: yes")
 
+            gcp_path = reconstruction.gcp.gcp_path
             if has_alt or gcp_path:
                 config.append("align_method: auto")
             else:
@@ -151,6 +167,13 @@ class OSFMContext:
 
     def get_config_file_path(self):
         return io.join_paths(self.opensfm_project_path, 'config.yaml')
+
+    def reconstructed(self):
+        if not io.file_exists(self.path("reconstruction.json")):
+            return False
+        
+        with open(self.path("reconstruction.json"), 'r') as f:
+            return f.readline().strip() != "[]"
 
     def extract_metadata(self, rerun=False):
         metadata_dir = self.path("exif")

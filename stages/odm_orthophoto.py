@@ -8,9 +8,8 @@ from opendm import types
 from opendm import gsd
 from opendm import orthophoto
 from opendm.concurrency import get_max_memory
-from opendm.cropper import Cropper
 from opendm.cutline import compute_cutline
-
+from pipes import quote
 
 class ODMOrthoPhotoStage(types.ODM_Stage):
     def process(self, args, outputs):
@@ -21,15 +20,16 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
         # define paths and create working directories
         system.mkdir_p(tree.odm_orthophoto)
 
-        if not io.file_exists(tree.odm_orthophoto_file) or self.rerun():
+        if not io.file_exists(tree.odm_orthophoto_tif) or self.rerun():
 
             # odm_orthophoto definitions
             kwargs = {
                 'bin': context.odm_modules_path,
                 'log': tree.odm_orthophoto_log,
-                'ortho': tree.odm_orthophoto_file,
+                'ortho': tree.odm_orthophoto_render,
                 'corners': tree.odm_orthophoto_corners,
                 'res': 1.0 / (gsd.cap_resolution(args.orthophoto_resolution, tree.opensfm_reconstruction, ignore_gsd=args.ignore_gsd) / 100.0),
+                'bands': '',
                 'verbose': verbose
             }
 
@@ -45,21 +45,35 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                 else:
                     log.ODM_WARNING('Cannot read UTM offset from {}. An orthophoto will not be generated.'.format(odm_georeferencing_model_txt_geo_file))
 
-            if reconstruction.is_georeferenced():
-                if args.use_3dmesh:
-                    kwargs['model_geo'] = os.path.join(tree.odm_texturing, tree.odm_georeferencing_model_obj_geo)
-                else:
-                    kwargs['model_geo'] = os.path.join(tree.odm_25dtexturing, tree.odm_georeferencing_model_obj_geo)
+            models = []
+
+            if args.use_3dmesh:
+                base_dir = tree.odm_texturing
             else:
-                if args.use_3dmesh:
-                    kwargs['model_geo'] = os.path.join(tree.odm_texturing, tree.odm_textured_model_obj)
-                else:
-                    kwargs['model_geo'] = os.path.join(tree.odm_25dtexturing, tree.odm_textured_model_obj)
+                base_dir = tree.odm_25dtexturing
+                
+            if reconstruction.is_georeferenced():
+                model_file = tree.odm_georeferencing_model_obj_geo
+            else:
+                model_file = tree.odm_textured_model_obj
+
+            if reconstruction.multi_camera:
+                for band in reconstruction.multi_camera:
+                    primary = band == reconstruction.multi_camera[0]
+                    subdir = ""
+                    if not primary:
+                        subdir = band['name'].lower()
+                    models.append(os.path.join(base_dir, subdir, model_file))
+                kwargs['bands'] = '-bands %s' % (','.join([quote(b['name'].lower()) for b in reconstruction.multi_camera]))
+            else:
+                models.append(os.path.join(base_dir, model_file))
+
+            kwargs['models'] = ','.join(map(quote, models))
 
             # run odm_orthophoto
-            system.run('{bin}/odm_orthophoto -inputFile {model_geo} '
+            system.run('{bin}/odm_orthophoto -inputFiles {models} '
                        '-logFile {log} -outputFile {ortho} -resolution {res} {verbose} '
-                       '-outputCornerFile {corners}'.format(**kwargs))
+                       '-outputCornerFile {corners} {bands}'.format(**kwargs))
 
             # Create georeferenced GeoTiff
             geotiffcreated = False
@@ -90,8 +104,8 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                     'lry': lry,
                     'vars': ' '.join(['-co %s=%s' % (k, orthophoto_vars[k]) for k in orthophoto_vars]),
                     'proj': reconstruction.georef.proj4(),
-                    'png': tree.odm_orthophoto_file,
-                    'tiff': tree.odm_orthophoto_tif,
+                    'input': tree.odm_orthophoto_render,
+                    'output': tree.odm_orthophoto_tif,
                     'log': tree.odm_orthophoto_tif_log,
                     'max_memory': get_max_memory(),
                 }
@@ -100,25 +114,35 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                            '{vars} '
                            '-a_srs \"{proj}\" '
                            '--config GDAL_CACHEMAX {max_memory}% '
-                           '{png} {tiff} > {log}'.format(**kwargs))
+                           '--config GDAL_TIFF_INTERNAL_MASK YES '
+                           '{input} {output} > {log}'.format(**kwargs))
 
                 bounds_file_path = os.path.join(tree.odm_georeferencing, 'odm_georeferenced_model.bounds.gpkg')
                     
                 # Cutline computation, before cropping
                 # We want to use the full orthophoto, not the cropped one.
                 if args.orthophoto_cutline:
+                    cutline_file = os.path.join(tree.odm_orthophoto, "cutline.gpkg")
+
                     compute_cutline(tree.odm_orthophoto_tif, 
                                     bounds_file_path,
-                                    os.path.join(tree.odm_orthophoto, "cutline.gpkg"),
+                                    cutline_file,
                                     args.max_concurrency,
                                     tmpdir=os.path.join(tree.odm_orthophoto, "grass_cutline_tmpdir"),
                                     scale=0.25)
 
-                if args.crop > 0:
-                    Cropper.crop(bounds_file_path, tree.odm_orthophoto_tif, orthophoto_vars)
+                    orthophoto.compute_mask_raster(tree.odm_orthophoto_tif, cutline_file, 
+                                           os.path.join(tree.odm_orthophoto, "odm_orthophoto_cut.tif"),
+                                           blend_distance=20, only_max_coords_feature=True)
 
-                if args.build_overviews:
-                    orthophoto.build_overviews(tree.odm_orthophoto_tif)
+                orthophoto.post_orthophoto_steps(args, bounds_file_path, tree.odm_orthophoto_tif)
+
+                # Generate feathered orthophoto also
+                if args.orthophoto_cutline:
+                    orthophoto.feather_raster(tree.odm_orthophoto_tif, 
+                            os.path.join(tree.odm_orthophoto, "odm_orthophoto_feathered.tif"),
+                            blend_distance=20
+                        )
 
                 geotiffcreated = True
             if not geotiffcreated:
@@ -126,4 +150,4 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                                 'to missing geo-referencing or corner coordinates.')
 
         else:
-            log.ODM_WARNING('Found a valid orthophoto in: %s' % tree.odm_orthophoto_file)
+            log.ODM_WARNING('Found a valid orthophoto in: %s' % tree.odm_orthophoto_tif)
