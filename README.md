@@ -1,6 +1,6 @@
-# ODM
-
 ![](https://raw.githubusercontent.com/OpenDroneMap/OpenDroneMap/master/img/odm_image.png)
+
+For documentation, see https://docs.opendronemap.org and Quickstart below 
 
 ## What is it?
 
@@ -22,16 +22,15 @@ In a word, ODM is a toolchain for processing raw civilian UAS imagery to other u
 
 ODM now includes state-of-the-art 3D reconstruction work by Michael Waechter, Nils Moehrle, and Michael Goesele. See their publication at [http://www.gcc.tu-darmstadt.de/media/gcc/papers/Waechter-2014-LTB.pdf](http://www.gcc.tu-darmstadt.de/media/gcc/papers/Waechter-2014-LTB.pdf).
 
-For Docs, see Quickstart below and also https://docs.opendronemap.org
 
-## QUICKSTART
+## Quickstart
 
 ### Docker (All platforms)
 
 The easiest way to run ODM is through Docker. If you don't have it installed,
 see the [Docker Ubuntu installation tutorial](https://docs.docker.com/engine/installation/linux/ubuntulinux/) and follow the
 instructions through "Create a Docker group". The Docker image workflow
-has equivalent procedures for Mac OS X and Windows found at [docs.docker.com](docs.docker.com). Then run the following command which will build a pre-built image and run on images found in `$(pwd)/images` (you can change this if you need to, see the [wiki](https://github.com/OpenDroneMap/OpenDroneMap/wiki/Docker) for more detailed instructions.
+has equivalent procedures for Mac OS X and Windows found at [docs.docker.com](https://docs.docker.com). Then run the following command which will build a pre-built image and run on images found in `$(pwd)/images` (you can change this if you need to, see the [wiki](https://github.com/OpenDroneMap/OpenDroneMap/wiki/Docker) for more detailed instructions.
 
 ```
 docker run -it --rm \
@@ -43,11 +42,10 @@ docker run -it --rm \
 
 ### Native Install (Ubuntu 16.04)
 
-** Please note that we need help getting ODM updated to work for 16.10+. Look at [#659](https://github.com/OpenDroneMap/OpenDroneMap/issues/659) or drop into the [gitter](https://gitter.im/OpenDroneMap/OpenDroneMap) for more info.
+** Please note that we need help getting ODM updated to work for 16.10+. Look at [#659](https://github.com/OpenDroneMap/OpenDroneMap/issues/659).
 
 
-**[Download the latest release here](https://github.com/OpenDroneMap/OpenDroneMap/releases)**  
-Current version: 0.3.1 (this software is in beta)
+**[Download the latest release here](https://github.com/OpenDroneMap/ODM/archive/master.zip)**  
 
 1. Extract and enter the OpenDroneMap directory
 2. Run `bash configure.sh install`
@@ -147,8 +145,6 @@ When the process finishes, the results will be organized as follows:
 
 Any file ending in .obj or .ply can be opened and viewed in [MeshLab](http://meshlab.sourceforge.net/) or similar software. That includes `opensfm/depthmaps/merged.ply`, `odm_meshing/odm_mesh.ply`, `odm_texturing/odm_textured_model[_geo].obj`, or `odm_georeferencing/odm_georeferenced_model.ply`. Below is an example textured mesh:
 
-![](https://raw.githubusercontent.com/alexhagiopol/OpenDroneMap/feature-better-docker/toledo_dataset_example_mesh.jpg)
-
 You can also view the orthophoto GeoTIFF in [QGIS](http://www.qgis.org/) or other mapping software:
 
 ![](https://raw.githubusercontent.com/OpenDroneMap/OpenDroneMap/master/img/bellus_map.png)
@@ -233,28 +229,34 @@ Experimental flags need to be enabled in Docker to use the ```--squash``` flag. 
 
 After this, you must restart docker by typing ```sudo service docker restart``` into your Linux terminal.
 
-
 ## User Interface
 
 A web interface and API to OpenDroneMap is currently under active development in the [WebODM](https://github.com/OpenDroneMap/WebODM) repository.
 
-## Video Support
-
-Currently we have an experimental feature that uses ORB_SLAM to render a textured mesh from video. It is only supported on Ubuntu 14.04 on machines with X11 support. See the [wiki](https://github.com/OpenDroneMap/OpenDroneMap/wiki/Reconstruction-from-Video) for details on installation and use.
-
-## Examples
-
-Coming soon...
-
 ## Documentation:
 
-For documentation, everything is being moved to [http://docs.opendronemap.org/](http://docs.opendronemap.org/) but you can also take a look at our [wiki](https://github.com/OpenDroneMap/OpenDroneMap/wiki). Check those places first if you are having problems. There's also help at [community forum](http://community.opendronemap.org/), and if you still need help and think you've found a bug or need an enhancement, look through the issue queue or create one.
+For documentation, see http://docs.opendronemap.org/ and https://github.com/OpenDroneMap/ODM/wiki. Check those places first if you are having problems. There's also help at [community forum](https://community.opendronemap.org/), and if you still need help and think you've found a bug or need an enhancement, look through the issue queue or create one.
 
 ## Developers
 
 Help improve our software!
 
-[![Join the chat at https://gitter.im/OpenDroneMap/OpenDroneMap](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/OpenDroneMap/OpenDroneMap?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+For Linux users, the easiest way to modify the software is to make sure docker is installed, clone the repository and then run from a shell:
+
+```bash
+$ DATA=/path/to/datasets ./start-dev-env.sh
+```
+
+Where `/path/to/datasets` is a directory where you can place test datasets (it can also point to an empty directory if you don't have test datasets).
+
+You can now make changes to the ODM source. When you are ready to test the changes you can simply invoke:
+
+```bash
+(odmdev) [user:/code] master+* ± ./run.sh --project-path /datasets mydataset
+```
+
+If you have questions, join the developer's chat at https://community.opendronemap.org/c/developers-chat/21
 
 1. Try to keep commits clean and simple
 2. Submit a pull request with detailed changes and test results
+3. Have fun!

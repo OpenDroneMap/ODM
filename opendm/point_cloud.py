@@ -3,6 +3,9 @@ from opendm import system
 from opendm import log
 from opendm import context
 from opendm.system import run
+from opendm import entwine
+from opendm import io
+from pipes import quote
 
 def filter(input_point_cloud, output_point_cloud, standard_deviation=2.5, meank=16, confidence=None, sample_radius=0, verbose=False):
     """
@@ -100,6 +103,50 @@ def get_extent(input_point_cloud):
             raise Exception("Cannot compute bounds for %s (invalid keys) %s" % (input_point_cloud, str(bounds)))
             
     os.remove(json_file)
-    return bounds    
+    return bounds
+
+
+def merge(input_point_cloud_files, output_file, rerun=False):
+    num_files = len(input_point_cloud_files)
+    if num_files == 0:
+        log.ODM_WARNING("No input point cloud files to process")
+        return
+
+    if rerun and io.file_exists(output_file):
+        log.ODM_WARNING("Removing previous point cloud: %s" % output_file)
+        os.remove(output_file)
+
+    kwargs = {
+        'all_inputs': " ".join(map(quote, input_point_cloud_files)),
+        'output': output_file
+    }
+
+    system.run('lasmerge -i {all_inputs} -o "{output}"'.format(**kwargs))
    
 
+def post_point_cloud_steps(args, tree):
+    # XYZ point cloud output
+    if args.pc_csv:
+        log.ODM_INFO("Creating geo-referenced CSV file (XYZ format)")
+        
+        system.run("pdal translate -i \"{}\" "
+            "-o \"{}\" "
+            "--writers.text.format=csv "
+            "--writers.text.order=\"X,Y,Z\" "
+            "--writers.text.keep_unspecified=false ".format(
+                tree.odm_georeferencing_model_laz,
+                tree.odm_georeferencing_xyz_file))
+
+    # LAS point cloud output
+    if args.pc_las:
+        log.ODM_INFO("Creating geo-referenced LAS file")
+        
+        system.run("pdal translate -i \"{}\" "
+            "-o \"{}\" ".format(
+                tree.odm_georeferencing_model_laz,
+                tree.odm_georeferencing_model_las))
+
+    # EPT point cloud output
+    if args.pc_ept:
+        log.ODM_INFO("Creating geo-referenced Entwine Point Tile output")
+        entwine.build([tree.odm_georeferencing_model_laz], tree.entwine_pointcloud, max_concurrency=args.max_concurrency, rerun=False)

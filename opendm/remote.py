@@ -501,8 +501,11 @@ class ToolchainTask(Task):
                                                 "opensfm/exif/empty"],
                                 outputs=["odm_orthophoto/odm_orthophoto.tif",
                                         "odm_orthophoto/cutline.gpkg",
+                                        "odm_orthophoto/odm_orthophoto_cut.tif",
+                                        "odm_orthophoto/odm_orthophoto_feathered.tif",
                                         "odm_dem",
-                                        "odm_georeferencing"])
+                                        "odm_georeferencing",
+                                        "odm_georeferencing_25d"])
         else:
             log.ODM_INFO("Already processed toolchain for %s" % submodel_name)
             handle_result()

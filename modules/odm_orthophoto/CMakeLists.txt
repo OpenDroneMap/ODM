@@ -11,6 +11,8 @@ add_definitions(-Wall -Wextra)
 # Find pcl at the location specified by PCL_DIR
 find_package(VTK 6.0 REQUIRED)
 find_package(PCL 1.8 HINTS "${PCL_DIR}/share/pcl-1.8" REQUIRED)
+find_package(GDAL REQUIRED)
+include_directories(${GDAL_INCLUDE_DIR})
 
 # Find OpenCV at the default location
 find_package(OpenCV HINTS "${OPENCV_DIR}" REQUIRED)
@@ -31,4 +33,7 @@ aux_source_directory("./src" SRC_LIST)
 
 # Add exectuteable
 add_executable(${PROJECT_NAME} ${SRC_LIST})
-target_link_libraries(odm_orthophoto ${PCL_COMMON_LIBRARIES} ${PCL_IO_LIBRARIES} ${PCL_SURFACE_LIBRARIES} ${OpenCV_LIBS})
+set_target_properties(${PROJECT_NAME} PROPERTIES
+    CXX_STANDARD 11
+)
+target_link_libraries(odm_orthophoto ${PCL_COMMON_LIBRARIES} ${PCL_IO_LIBRARIES} ${PCL_SURFACE_LIBRARIES} ${OpenCV_LIBS} ${GDAL_LIBRARY})
