@@ -53,6 +53,10 @@ class ODMGeoreferencingStage(types.ODM_Stage):
         progress_per_run = 100.0 / len(nonloc.runs)
         progress = 0.0
 
+        # Clear previous run point cloud
+        if io.file_exists(tree.odm_georeferencing_model_laz) and self.rerun():
+            os.remove(tree.odm_georeferencing_model_laz)
+
         for r in nonloc.runs:
             if not io.dir_exists(r['georeferencing_dir']):
                 system.mkdir_p(r['georeferencing_dir'])

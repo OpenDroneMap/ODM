@@ -21,8 +21,8 @@ class ODMDEMStage(types.ODM_Stage):
         ignore_resolution = False
         pseudo_georeference = False
         
-        if not pc_model_found:
-            log.ODM_WARNING("Georeferenced point cloud not found, trying ungeoreferenced...")
+        if not reconstruction.is_georeferenced():
+            log.ODM_WARNING("Not georeferenced, using ungeoreferenced point cloud...")
             dem_input = tree.path("odm_filterpoints", "point_cloud.ply")
             pc_model_found = io.file_exists(dem_input)
             ignore_resolution = True
