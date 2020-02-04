@@ -190,6 +190,9 @@ class ODM_Reconstruction(object):
     def is_georeferenced(self):
         return self.georef is not None
 
+    def has_gcp(self):
+        return self.is_georeferenced() and self.gcp is not None
+
     def georeference_with_gcp(self, gcp_file, output_coords_file, output_gcp_file, rerun=False):
         if not io.file_exists(output_coords_file) or not io.file_exists(output_gcp_file) or rerun:
             gcp = GCPFile(gcp_file)

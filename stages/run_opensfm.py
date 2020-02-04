@@ -48,7 +48,7 @@ class ODMOpenSfMStage(types.ODM_Stage):
         # Make sure it's capped by the depthmap-resolution arg,
         # since the undistorted images are used for MVS
         outputs['undist_image_max_size'] = max(
-            gsd.image_max_size(photos, args.orthophoto_resolution, tree.opensfm_reconstruction, ignore_gsd=args.ignore_gsd),
+            gsd.image_max_size(photos, args.orthophoto_resolution, tree.opensfm_reconstruction, ignore_gsd=args.ignore_gsd, has_gcp=reconstruction.has_gcp()),
             args.depthmap_resolution
         )
 
