@@ -114,19 +114,17 @@ def opensfm_reconstruction_average_gsd(reconstruction_json, use_all_shots=False)
     gsds = []
     for shotImage in reconstruction['shots']:
         shot = reconstruction['shots'][shotImage]
-        if not use_all_shots and shot['gps_dop'] >= 999999:
-            continue
-
-        camera = reconstruction['cameras'][shot['camera']]
-        shot_height = shot['translation'][2]
-        focal_ratio = camera.get('focal', camera.get('focal_x'))
-        if not focal_ratio:
-            log.ODM_WARNING("Cannot parse focal values from %s. This is likely an unsupported camera model." % reconstruction_json)
-            return None
-            
-        gsds.append(calculate_gsd_from_focal_ratio(focal_ratio, 
-                                                    shot_height - ground_height, 
-                                                    camera['width']))
+        if use_all_shots or shot['gps_dop'] < 999999:
+            camera = reconstruction['cameras'][shot['camera']]
+            shot_height = shot['translation'][2]
+            focal_ratio = camera.get('focal', camera.get('focal_x'))
+            if not focal_ratio:
+                log.ODM_WARNING("Cannot parse focal values from %s. This is likely an unsupported camera model." % reconstruction_json)
+                return None
+                
+            gsds.append(calculate_gsd_from_focal_ratio(focal_ratio, 
+                                                        shot_height - ground_height, 
+                                                        camera['width']))
     
     if len(gsds) > 0:
         mean = np.mean(gsds)

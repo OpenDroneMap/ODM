@@ -23,14 +23,16 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
 
         if not io.file_exists(tree.odm_orthophoto_tif) or self.rerun():
             gsd_error_estimate = 0.1
+            ignore_resolution = False
             if not reconstruction.is_georeferenced():
                 # Match DEMs
                 gsd_error_estimate = -3
+                ignore_resolution = True
 
             resolution = 1.0 / (gsd.cap_resolution(args.orthophoto_resolution, tree.opensfm_reconstruction,
                                                     gsd_error_estimate=gsd_error_estimate, 
                                                     ignore_gsd=args.ignore_gsd,
-                                                    ignore_resolution=not reconstruction.is_georeferenced(),
+                                                    ignore_resolution=ignore_resolution,
                                                     has_gcp=reconstruction.has_gcp()) / 100.0)
 
             # odm_orthophoto definitions
@@ -162,5 +164,7 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                     pseudogeo.add_pseudo_georeferencing(tree.odm_orthophoto_render, 0.1)
                     log.ODM_INFO("Renaming %s --> %s" % (tree.odm_orthophoto_render, tree.odm_orthophoto_tif))
                     os.rename(tree.odm_orthophoto_render, tree.odm_orthophoto_tif)
+                else:
+                    log.ODM_WARNING("Could not generate an orthophoto (it did not render)")
         else:
             log.ODM_WARNING('Found a valid orthophoto in: %s' % tree.odm_orthophoto_tif)
