@@ -22,6 +22,13 @@ class ODMDEMStage(types.ODM_Stage):
         pseudo_georeference = False
         
         if not reconstruction.is_georeferenced():
+            # Special case to clear previous run point cloud 
+            # (NodeODM will generate a fake georeferenced laz during postprocessing
+            # with non-georeferenced datasets). odm_georeferencing_model_laz should
+            # not be here! Perhaps we should improve this.
+            if io.file_exists(tree.odm_georeferencing_model_laz) and self.rerun():
+                os.remove(tree.odm_georeferencing_model_laz)
+
             log.ODM_WARNING("Not georeferenced, using ungeoreferenced point cloud...")
             dem_input = tree.path("odm_filterpoints", "point_cloud.ply")
             pc_model_found = io.file_exists(dem_input)
