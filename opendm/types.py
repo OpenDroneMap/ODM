@@ -241,7 +241,7 @@ class ODM_Reconstruction(object):
             
             self.georef = ODM_GeoRef.FromCoordsFile(output_coords_file)
         except:
-            log.ODM_WARNING('Could not generate coordinates file. An orthophoto will not be generated.')
+            log.ODM_WARNING('Could not generate coordinates file. The orthophoto will not be georeferenced.')
 
         self.gcp = GCPFile(None)
         return self.georef
