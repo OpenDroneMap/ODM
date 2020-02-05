@@ -10,6 +10,7 @@ from opendm import orthophoto
 from opendm.concurrency import get_max_memory
 from opendm.cutline import compute_cutline
 from pipes import quote
+from opendm import pseudogeo
 
 class ODMOrthoPhotoStage(types.ODM_Stage):
     def process(self, args, outputs):
@@ -21,6 +22,18 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
         system.mkdir_p(tree.odm_orthophoto)
 
         if not io.file_exists(tree.odm_orthophoto_tif) or self.rerun():
+            gsd_error_estimate = 0.1
+            ignore_resolution = False
+            if not reconstruction.is_georeferenced():
+                # Match DEMs
+                gsd_error_estimate = -3
+                ignore_resolution = True
+
+            resolution = 1.0 / (gsd.cap_resolution(args.orthophoto_resolution, tree.opensfm_reconstruction,
+                                                    gsd_error_estimate=gsd_error_estimate, 
+                                                    ignore_gsd=args.ignore_gsd,
+                                                    ignore_resolution=ignore_resolution,
+                                                    has_gcp=reconstruction.has_gcp()) / 100.0)
 
             # odm_orthophoto definitions
             kwargs = {
@@ -28,7 +41,7 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                 'log': tree.odm_orthophoto_log,
                 'ortho': tree.odm_orthophoto_render,
                 'corners': tree.odm_orthophoto_corners,
-                'res': 1.0 / (gsd.cap_resolution(args.orthophoto_resolution, tree.opensfm_reconstruction, ignore_gsd=args.ignore_gsd) / 100.0),
+                'res': resolution,
                 'bands': '',
                 'verbose': verbose
             }
@@ -43,7 +56,7 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                 if io.file_exists(odm_georeferencing_model_txt_geo_file):
                     reconstruction.georef.extract_offsets(odm_georeferencing_model_txt_geo_file)
                 else:
-                    log.ODM_WARNING('Cannot read UTM offset from {}. An orthophoto will not be generated.'.format(odm_georeferencing_model_txt_geo_file))
+                    log.ODM_WARNING('Cannot read UTM offset from {}.'.format(odm_georeferencing_model_txt_geo_file))
 
             models = []
 
@@ -146,8 +159,12 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
 
                 geotiffcreated = True
             if not geotiffcreated:
-                log.ODM_WARNING('No geo-referenced orthophoto created due '
-                                'to missing geo-referencing or corner coordinates.')
-
+                if io.file_exists(tree.odm_orthophoto_render):
+                    # 0.1 is arbitrary
+                    pseudogeo.add_pseudo_georeferencing(tree.odm_orthophoto_render, 0.1)
+                    log.ODM_INFO("Renaming %s --> %s" % (tree.odm_orthophoto_render, tree.odm_orthophoto_tif))
+                    os.rename(tree.odm_orthophoto_render, tree.odm_orthophoto_tif)
+                else:
+                    log.ODM_WARNING("Could not generate an orthophoto (it did not render)")
         else:
             log.ODM_WARNING('Found a valid orthophoto in: %s' % tree.odm_orthophoto_tif)

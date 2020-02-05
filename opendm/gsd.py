@@ -21,7 +21,7 @@ def rounded_gsd(reconstruction_json, default_value=None, ndigits=0, ignore_gsd=F
         return default_value
 
 
-def image_max_size(photos, target_resolution, reconstruction_json, gsd_error_estimate = 0.5, ignore_gsd=False):
+def image_max_size(photos, target_resolution, reconstruction_json, gsd_error_estimate = 0.5, ignore_gsd=False, has_gcp=False):
     """
     :param photos images database
     :param target_resolution resolution the user wants have in cm / pixel
@@ -36,7 +36,7 @@ def image_max_size(photos, target_resolution, reconstruction_json, gsd_error_est
     if ignore_gsd:
         isf = 1.0
     else:
-        isf = image_scale_factor(target_resolution, reconstruction_json, gsd_error_estimate)
+        isf = image_scale_factor(target_resolution, reconstruction_json, gsd_error_estimate, has_gcp=has_gcp)
 
     for p in photos:
         max_width = max(p.width, max_width)
@@ -44,7 +44,7 @@ def image_max_size(photos, target_resolution, reconstruction_json, gsd_error_est
 
     return int(math.ceil(max(max_width, max_height) * isf))
 
-def image_scale_factor(target_resolution, reconstruction_json, gsd_error_estimate = 0.5):
+def image_scale_factor(target_resolution, reconstruction_json, gsd_error_estimate = 0.5, has_gcp=False):
     """
     :param target_resolution resolution the user wants have in cm / pixel
     :param reconstruction_json path to OpenSfM's reconstruction.json
@@ -52,7 +52,7 @@ def image_scale_factor(target_resolution, reconstruction_json, gsd_error_estimat
     :return A down-scale (<= 1) value to apply to images to achieve the target resolution by comparing the current GSD of the reconstruction.
         If a GSD cannot be computed, it just returns 1. Returned scale values are never higher than 1.
     """
-    gsd = opensfm_reconstruction_average_gsd(reconstruction_json)
+    gsd = opensfm_reconstruction_average_gsd(reconstruction_json, use_all_shots=has_gcp)
 
     if gsd is not None and target_resolution > 0:
         gsd = gsd * (1 + gsd_error_estimate)
@@ -61,7 +61,7 @@ def image_scale_factor(target_resolution, reconstruction_json, gsd_error_estimat
         return 1
 
 
-def cap_resolution(resolution, reconstruction_json, gsd_error_estimate = 0.1, ignore_gsd=False):
+def cap_resolution(resolution, reconstruction_json, gsd_error_estimate = 0.1, ignore_gsd=False, ignore_resolution=False, has_gcp=False):
     """
     :param resolution resolution in cm / pixel
     :param reconstruction_json path to OpenSfM's reconstruction.json
@@ -73,11 +73,11 @@ def cap_resolution(resolution, reconstruction_json, gsd_error_estimate = 0.1, ig
     if ignore_gsd:
         return resolution
 
-    gsd = opensfm_reconstruction_average_gsd(reconstruction_json)
+    gsd = opensfm_reconstruction_average_gsd(reconstruction_json, use_all_shots=has_gcp or ignore_resolution)
 
     if gsd is not None:
         gsd = gsd * (1 - gsd_error_estimate)
-        if gsd > resolution:
+        if gsd > resolution or ignore_resolution:
             log.ODM_WARNING('Maximum resolution set to GSD - {}% ({} cm / pixel, requested resolution was {} cm / pixel)'.format(gsd_error_estimate * 100, round(gsd, 2), round(resolution, 2)))
             return gsd
         else:
@@ -88,7 +88,7 @@ def cap_resolution(resolution, reconstruction_json, gsd_error_estimate = 0.1, ig
 
 
 @lru_cache(maxsize=None)
-def opensfm_reconstruction_average_gsd(reconstruction_json):
+def opensfm_reconstruction_average_gsd(reconstruction_json, use_all_shots=False):
     """
     Computes the average Ground Sampling Distance of an OpenSfM reconstruction.
     :param reconstruction_json path to OpenSfM's reconstruction.json
@@ -114,9 +114,8 @@ def opensfm_reconstruction_average_gsd(reconstruction_json):
     gsds = []
     for shotImage in reconstruction['shots']:
         shot = reconstruction['shots'][shotImage]
-        if shot['gps_dop'] < 999999:
+        if use_all_shots or shot['gps_dop'] < 999999:
             camera = reconstruction['cameras'][shot['camera']]
-
             shot_height = shot['translation'][2]
             focal_ratio = camera.get('focal', camera.get('focal_x'))
             if not focal_ratio:
