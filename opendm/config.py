@@ -249,7 +249,7 @@ def config():
 
     parser.add_argument('--mesh-octree-depth',
                         metavar='<positive integer>',
-                        default=11,
+                        default=10,
                         type=int,
                         help=('Oct-tree depth used in the mesh reconstruction, '
                               'increase to get more vertices, recommended '
