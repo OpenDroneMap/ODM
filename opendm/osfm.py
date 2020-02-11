@@ -104,6 +104,7 @@ class OSFMContext:
             # create config file for OpenSfM
             config = [
                 "use_exif_size: no",
+                "feature_type: SIFT",
                 "feature_process_size: %s" % args.resize_to,
                 "feature_min_frames: %s" % args.min_num_features,
                 "processes: %s" % args.max_concurrency,
