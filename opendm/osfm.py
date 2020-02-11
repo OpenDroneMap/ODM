@@ -93,6 +93,7 @@ class OSFMContext:
                     log.ODM_WARNING("Cannot set camera_models_overrides.json: %s" % str(e))
 
             use_bow = False
+            feature_type = "SIFT"
 
             matcher_neighbors = args.matcher_neighbors
             if matcher_neighbors != 0 and reconstruction.multi_camera is not None:
@@ -104,7 +105,6 @@ class OSFMContext:
             # create config file for OpenSfM
             config = [
                 "use_exif_size: no",
-                "feature_type: SIFT",
                 "feature_process_size: %s" % args.resize_to,
                 "feature_min_frames: %s" % args.min_num_features,
                 "processes: %s" % args.max_concurrency,
@@ -129,8 +129,17 @@ class OSFMContext:
                 log.ODM_INFO("No GPS information, using BOW matching")
                 use_bow = True
 
+            feature_type = args.feature_type.upper()
+
             if use_bow:
                 config.append("matcher_type: WORDS")
+
+                # Cannot use SIFT with BOW
+                if feature_type == "SIFT":
+                    log.ODM_WARNING("Using BOW matching, will use HAHOG feature type, not SIFT")
+                    feature_type = "HAHOG"
+            
+            config.append("feature_type: %s" % feature_type)
 
             if has_alt:
                 log.ODM_INFO("Altitude data detected, enabling it for GPS alignment")
