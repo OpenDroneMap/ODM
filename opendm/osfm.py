@@ -311,7 +311,7 @@ def get_submodel_argv(project_name = None, submodels_path = None, submodel_name 
             crop_value = float(argv[i + 1])
             if crop_value == 0:
                 crop_value = 0.015625
-            result.append(crop_value)
+            result.append(str(crop_value))
             found_args[arg] = True
             i += 2
         elif arg in read_json_always:
