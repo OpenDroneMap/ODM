@@ -127,10 +127,11 @@ class ODM_Reconstruction(object):
             with open(file, 'w') as f:
                 f.write(self.georef.proj4())
 
-    def get_photo(filename):
+    def get_photo(self, filename):
         for p in self.photos:
             if p.filename == filename:
                 return p
+    
 
 class ODM_GeoRef(object):
     @staticmethod

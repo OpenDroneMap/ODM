@@ -9,6 +9,7 @@ from opendm import gsd
 from opendm import point_cloud
 from opendm import types
 from opendm.osfm import OSFMContext
+from opendm.multispectral import dn_to_radiance
 
 class ODMOpenSfMStage(types.ODM_Stage):
     def process(self, args, outputs):
@@ -21,43 +22,50 @@ class ODMOpenSfMStage(types.ODM_Stage):
             exit(1)
 
         octx = OSFMContext(tree.opensfm)
-        octx.setup(args, tree.dataset_raw, photos, reconstruction=reconstruction, rerun=self.rerun())
-        octx.extract_metadata(self.rerun())
-        self.update_progress(20)
-        octx.feature_matching(self.rerun())
-        self.update_progress(30)
-        octx.reconstruct(self.rerun())
-        octx.extract_cameras(tree.path("cameras.json"), self.rerun())
-        self.update_progress(70)
+        # octx.setup(args, tree.dataset_raw, photos, reconstruction=reconstruction, rerun=self.rerun())
+        # octx.extract_metadata(self.rerun())
+        # self.update_progress(20)
+        # octx.feature_matching(self.rerun())
+        # self.update_progress(30)
+        # octx.reconstruct(self.rerun())
+        # octx.extract_cameras(tree.path("cameras.json"), self.rerun())
+        # self.update_progress(70)
 
-        # If we find a special flag file for split/merge we stop right here
-        if os.path.exists(octx.path("split_merge_stop_at_reconstruction.txt")):
-            log.ODM_INFO("Stopping OpenSfM early because we found: %s" % octx.path("split_merge_stop_at_reconstruction.txt"))
-            self.next_stage = None
-            return
+        # # If we find a special flag file for split/merge we stop right here
+        # if os.path.exists(octx.path("split_merge_stop_at_reconstruction.txt")):
+        #     log.ODM_INFO("Stopping OpenSfM early because we found: %s" % octx.path("split_merge_stop_at_reconstruction.txt"))
+        #     self.next_stage = None
+        #     return
 
-        if args.fast_orthophoto:
-            output_file = octx.path('reconstruction.ply')
-        elif args.use_opensfm_dense:
-            output_file = tree.opensfm_model
-        else:
-            output_file = tree.opensfm_reconstruction
+        # if args.fast_orthophoto:
+        #     output_file = octx.path('reconstruction.ply')
+        # elif args.use_opensfm_dense:
+        #     output_file = tree.opensfm_model
+        # else:
+        #     output_file = tree.opensfm_reconstruction
 
-        updated_config_flag_file = octx.path('updated_config.txt')
+        # updated_config_flag_file = octx.path('updated_config.txt')
 
-        # Make sure it's capped by the depthmap-resolution arg,
-        # since the undistorted images are used for MVS
-        outputs['undist_image_max_size'] = max(
-            gsd.image_max_size(photos, args.orthophoto_resolution, tree.opensfm_reconstruction, ignore_gsd=args.ignore_gsd, has_gcp=reconstruction.has_gcp()),
-            args.depthmap_resolution
-        )
+        # # Make sure it's capped by the depthmap-resolution arg,
+        # # since the undistorted images are used for MVS
+        # outputs['undist_image_max_size'] = max(
+        #     gsd.image_max_size(photos, args.orthophoto_resolution, tree.opensfm_reconstruction, ignore_gsd=args.ignore_gsd, has_gcp=reconstruction.has_gcp()),
+        #     args.depthmap_resolution
+        # )
 
-        if not io.file_exists(updated_config_flag_file) or self.rerun():
-            octx.update_config({'undistorted_image_max_size': outputs['undist_image_max_size']})
-            octx.touch(updated_config_flag_file)
+        # if not io.file_exists(updated_config_flag_file) or self.rerun():
+        #     octx.update_config({'undistorted_image_max_size': outputs['undist_image_max_size']})
+        #     octx.touch(updated_config_flag_file)
 
         # These will be used for texturing / MVS
-        octx.convert_and_undistort(self.rerun())
+        if args.radiometric_calibration == "none":
+            octx.convert_and_undistort(self.rerun())
+        else:
+            def radiometric_calibrate(shot_id, image):
+                photo = reconstruction.get_photo(shot_id)
+                return dn_to_radiance(photo, image)
+
+            octx.convert_and_undistort(self.rerun(), radiometric_calibrate)
 
         self.update_progress(80)
 

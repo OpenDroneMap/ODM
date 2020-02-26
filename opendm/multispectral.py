@@ -1,9 +1,10 @@
-def dn_to_radiance(photo, img):
+def dn_to_radiance(photo, image):
     """
     Convert Digital Number values to Radiance values
     :param photo ODM_Photo
-    :param img numpy array containing image data
+    :param image numpy array containing image data
     :return numpy array with radiance image values
     """
     # TODO!
-    return img
+    print("HI")
+    return image
