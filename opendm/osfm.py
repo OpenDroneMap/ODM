@@ -234,14 +234,12 @@ class OSFMContext:
         else:
             log.ODM_INFO("Already extracted cameras")
     
-    def convert_and_undistort(self, rerun=False):
+    def convert_and_undistort(self, rerun=False, imageFilter=None):
+        log.ODM_INFO("Undistorting %s ..." % self.opensfm_project_path)
         undistorted_images_path = self.path("undistorted", "images")
 
         if not io.dir_exists(undistorted_images_path) or rerun:
-            def test(image):
-                return image
-
-            cmd = undistort.Command(test)
+            cmd = undistort.Command(imageFilter)
             parser = argparse.ArgumentParser()
             cmd.add_arguments(parser)
             cmd.run(parser.parse_args([self.opensfm_project_path]))

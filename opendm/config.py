@@ -160,6 +160,17 @@ def config():
                 'set to one of: [auto, perspective, brown, fisheye, spherical]. Default: '
                 '%(default)s'))
 
+    parser.add_argument('--radiometric-calibration',
+            metavar='<string>',
+            default='none',
+            choices=['none', 'camera', 'sun', 'sunangle'],
+            help=('Set the radiometric calibration to perform on images. '
+                'When processing multispectral images you should set this value '
+                'to obtain reflectance value (otherwise orthophotos will contain Digital Number (DN) values). ' 
+                'Can be set to one of: [none, camera, sun, sunangle]. Default: '
+                '%(default)s'))
+
+
     parser.add_argument('--max-concurrency',
                         metavar='<positive integer>',
                         default=context.num_cores,
