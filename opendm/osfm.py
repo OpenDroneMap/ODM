@@ -2,7 +2,7 @@
 OpenSfM related utils
 """
 
-import os, shutil, sys, json
+import os, shutil, sys, json, argparse
 import yaml
 from opendm import io
 from opendm import log
@@ -11,6 +11,7 @@ from opendm import context
 from opendm import camera
 from opensfm.large import metadataset
 from opensfm.large import tools
+from opensfm.commands import undistort
 
 class OSFMContext:
     def __init__(self, opensfm_project_path):
@@ -232,6 +233,21 @@ class OSFMContext:
                 log.ODM_WARNING("Cannot export cameras to %s. %s." % (output, str(e)))
         else:
             log.ODM_INFO("Already extracted cameras")
+    
+    def convert_and_undistort(self, rerun=False):
+        undistorted_images_path = self.path("undistorted", "images")
+
+        if not io.dir_exists(undistorted_images_path) or rerun:
+            def test(image):
+                return image
+
+            cmd = undistort.Command(test)
+            parser = argparse.ArgumentParser()
+            cmd.add_arguments(parser)
+            cmd.run(parser.parse_args([self.opensfm_project_path]))
+        else:
+            log.ODM_WARNING("Found an undistorted directory in %s" % undistorted_images_path)
+
 
     def update_config(self, cfg_dict):
         cfg_file = self.get_config_file_path()

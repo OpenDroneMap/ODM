@@ -57,12 +57,7 @@ class ODMOpenSfMStage(types.ODM_Stage):
             octx.touch(updated_config_flag_file)
 
         # These will be used for texturing / MVS
-        undistorted_images_path = octx.path("undistorted", "images")
-
-        if not io.dir_exists(undistorted_images_path) or self.rerun():
-            octx.run('undistort')
-        else:
-            log.ODM_WARNING("Found an undistorted directory in %s" % undistorted_images_path)
+        octx.convert_and_undistort(self.rerun())
 
         self.update_progress(80)
 
