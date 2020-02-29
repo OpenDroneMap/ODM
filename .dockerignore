@@ -12,3 +12,15 @@ odm_meshing
 odm_georeferencing
 images_resize
 .git
+
+/contrib
+/docs
+/hooks
+/img
+/license
+/tests
+tests.sh
+settings.yml
+code_of_conduct.md
+configure_18_04.sh
+index.html
