@@ -163,11 +163,11 @@ def config():
     parser.add_argument('--radiometric-calibration',
             metavar='<string>',
             default='none',
-            choices=['none', 'camera', 'sun', 'sunangle'],
+            choices=['none', 'camera', 'camera+sun'],
             help=('Set the radiometric calibration to perform on images. '
                 'When processing multispectral images you should set this option '
-                'to obtain reflectance values (otherwise you will get digital number (DN) values). ' 
-                'Can be set to one of: [none, camera, sun, sunangle]. Default: '
+                'to obtain reflectance values (otherwise you will get digital number (DN) values). '
+                'Can be set to one of: [none, camera, camera+sun]. Default: '
                 '%(default)s'))
 
 

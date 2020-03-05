@@ -1,3 +1,5 @@
+from opendm import dls
+import math
 # Loosely based on https://github.com/micasense/imageprocessing/blob/master/micasense/utils.py
 
 def dn_to_radiance(photo, image):
@@ -7,7 +9,13 @@ def dn_to_radiance(photo, image):
     :param image numpy array containing image data
     :return numpy array with radiance image values
     """
-
+    # Handle thermal bands (experimental)
+    if photo.band_name == 'LWIR':
+        image -= (273.15 * 100.0) # Convert Kelvin to Celsius
+        image = image.astype(float) * 0.01
+        return image
+    
+    # All others
     a1, a2, a3 = photo.get_radiometric_calibration()
     dark_level = photo.get_dark_level()
 
@@ -56,7 +64,7 @@ def dn_to_radiance(photo, image):
         image *= a1
     
     image /= bit_depth_max
-    
+
     return image
 
 def vignette_map(photo):
@@ -87,3 +95,47 @@ def vignette_map(photo):
         return vignette, x, y
     
     return None, None, None
+
+def dn_to_reflectance(photo, image, use_sun_sensor=True):
+    radiance = dn_to_radiance(photo, image)
+    irradiance_scale = compute_irradiance_scale_factor(photo, use_sun_sensor=use_sun_sensor)
+    return radiance * irradiance_scale
+
+def compute_irradiance_scale_factor(photo, use_sun_sensor=True):
+    # Thermal?
+    if photo.band_name == "LWIR":
+        return 1.0
+
+    if photo.irradiance is not None:
+        horizontal_irradiance = photo.irradiance
+        return math.pi / horizontal_irradiance
+    
+    if use_sun_sensor:
+        # Estimate it
+        dls_orientation_vector = np.array([0,0,-1])
+        sun_vector_ned, sensor_vector_ned, sun_sensor_angle, \
+        solar_elevation, solar_azimuth = dls.compute_sun_angle([photo.latitude, photo.longitude],
+                                        (0,0,0), # TODO: add support for sun sensor pose
+                                        photo.utc_time,
+                                        dls_orientation_vector)
+
+        angular_correction = dls.fresnel(sun_sensor_angle)
+
+        # TODO: support for direct and scattered irradiance
+
+        direct_to_diffuse_ratio = 6.0 # Assumption
+        spectral_irradiance = photo.sun_sensor # TODO: support for XMP:SpectralIrradiance
+
+        percent_diffuse = 1.0 / direct_to_diffuse_ratio
+        sensor_irradiance = spectral_irradiance / angular_correction
+
+        # find direct irradiance in the plane normal to the sun
+        untilted_direct_irr = sensor_irradiance / (percent_diffuse + np.cos(sun_sensor_angle))
+        direct_irradiance = untilted_direct_irr
+        scattered_irradiance = untilted_direct_irr*percent_diffuse
+
+        # compute irradiance on the ground using the solar altitude angle
+        horizontal_irradiance = direct_irradiance * np.sin(solar_elevation) + scattered_irradiance
+        return math.pi / horizontal_irradiance
+    
+    return 1.0

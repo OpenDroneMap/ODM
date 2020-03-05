@@ -5,6 +5,8 @@ import re
 import exifread
 import numpy as np
 from six import string_types
+from datetime import datetime, timedelta
+import pytz
 
 import log
 import system
@@ -33,17 +35,22 @@ class ODM_Photo:
         self.band_name = 'RGB'
         self.band_index = 0
 
-        # Multi-spectral fields (not all cameras implement all these values)
+        # Multi-spectral fields
         self.radiometric_calibration = None
         self.black_level = None
 
-        # Capture info (most cameras implement these)
+        # Capture info
         self.exposure_time = None
         self.iso_speed = None
         self.bits_per_sample = None
         self.vignetting_center = None
         self.vignetting_polynomial = None
+        self.irradiance = None
+        self.sun_sensor = None
+        self.utc_time = None
 
+        # self.center_wavelength = None
+        # self.bandwidth = None
 
         # parse values from metadata
         self.parse_exif_values(path_file)
@@ -88,7 +95,24 @@ class ODM_Photo:
                     self.iso_speed = self.int_value(tags['EXIF ISOSpeed'])
                 if 'Image BitsPerSample' in tags:
                     self.bits_per_sample = self.int_value(tags['Image BitsPerSample'])
-                
+                if 'EXIF DateTimeOriginal' in tags:
+                    str_time = tags['EXIF DateTimeOriginal'].values.encode('utf8')
+                    utc_time = datetime.strptime(str_time, "%Y:%m:%d %H:%M:%S")
+                    subsec = 0
+                    if 'EXIF SubSecTime' in tags:
+                        subsec = self.int_value(tags['EXIF SubSecTime'])
+                    negative = 1.0
+                    if subsec < 0:
+                        negative = -1.0
+                        subsec *= -1.0
+                    subsec = float('0.{}'.format(int(subsec)))
+                    subsec *= negative
+                    ms = subsec * 1e3
+                    utc_time += timedelta(milliseconds = ms)
+                    timezone = pytz.timezone('UTC')
+                    epoch = timezone.localize(datetime.utcfromtimestamp(0))
+                    self.utc_time = (timezone.localize(utc_time) - epoch).total_seconds() * 1000.0
+
             except IndexError as e:
                 log.ODM_WARNING("Cannot read EXIF tags for %s: %s" % (_path_file, e.message))
 
@@ -119,6 +143,22 @@ class ODM_Photo:
                     'Camera:VignettingPolynomial',
                     'Sentera:VignettingPolynomial',
                 ])
+                
+                self.set_attr_from_xmp_tag('irradiance', tags, [
+                    'Camera:Irradiance'
+                ], float)
+
+                self.set_attr_from_xmp_tag('sun_sensor', tags, [
+                    'Camera:SunSensor'
+                ], float)
+
+                # self.set_attr_from_xmp_tag('center_wavelength', tags, [
+                #     'Camera:CentralWavelength'
+                # ], float)
+
+                # self.set_attr_from_xmp_tag('bandwidth', tags, [
+                #     'Camera:WavelengthFWHM'
+                # ], float)
             
             # print(self.band_name)
             # print(self.band_index)
@@ -128,18 +168,21 @@ class ODM_Photo:
             # print(self.iso_speed)
             # print(self.bits_per_sample)
             # print(self.vignetting_center)
-            # print(self.vignetting_polynomial)
+            # print(self.sun_sensor)
             # exit(1)
         self.width, self.height = get_image_size.get_image_size(_path_file)
         
         # Sanitize band name since we use it in folder paths
         self.band_name = re.sub('[^A-Za-z0-9]+', '', self.band_name)
 
-    def set_attr_from_xmp_tag(self, attr, xmp_tags, tags):
+    def set_attr_from_xmp_tag(self, attr, xmp_tags, tags, cast=None):
         v = self.get_xmp_tag(xmp_tags, tags)
         if v is not None:
-            setattr(self, attr, v)
-
+            if cast is None:
+                setattr(self, attr, v)
+            else:
+                setattr(self, attr, cast(v))
+    
     def get_xmp_tag(self, xmp_tags, tags):
         if isinstance(tags, str):
             tags = [tags]
@@ -153,6 +196,8 @@ class ODM_Photo:
                 elif isinstance(t, dict):
                     items = t.get('rdf:Seq', {}).get('rdf:li', {})
                     if items:
+                        if isinstance(items, string_types):
+                            return items
                         return " ".join(items)
                 elif isinstance(t, int) or isinstance(t, float):
                     return t

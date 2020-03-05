@@ -63,7 +63,7 @@ class ODMOpenSfMStage(types.ODM_Stage):
         else:
             def radiometric_calibrate(shot_id, image):
                 photo = reconstruction.get_photo(shot_id)
-                return dn_to_radiance(photo, image)
+                return dn_to_reflectance(photo, image, use_sun_sensor=args.radiometric_calibration=="camera+sun")
 
             octx.convert_and_undistort(self.rerun(), radiometric_calibrate)
 
