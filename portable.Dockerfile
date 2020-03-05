@@ -1,18 +1,13 @@
-FROM phusion/baseimage
+FROM phusion/baseimage as base
 
 # Env variables
 ENV DEBIAN_FRONTEND noninteractive
 
 #Install dependencies and required requisites
-RUN apt-get update -y \
-  && apt-get install -y \
-    software-properties-common \
-  && add-apt-repository -y ppa:ubuntugis/ubuntugis-unstable \
+RUN add-apt-repository -y ppa:ubuntugis/ubuntugis-unstable \
   && add-apt-repository -y ppa:george-edison55/cmake-3.x \
-  && apt-get update -y
-
-# All packages (Will install much faster)
-RUN apt-get install --no-install-recommends -y \
+  && apt-get update -y \
+  && apt-get install --no-install-recommends -y \
   build-essential \
   cmake \
   gdal-bin \
@@ -53,34 +48,23 @@ RUN apt-get install --no-install-recommends -y \
   python-pip \
   python-software-properties \
   python-wheel \
+  software-properties-common \
   swig2.0 \
   grass-core \
-  libssl-dev
-
-RUN apt-get remove libdc1394-22-dev
-RUN pip install --upgrade pip
-RUN pip install setuptools
-
+  libssl-dev \
+  && apt-get remove libdc1394-22-dev \
+  && pip install --upgrade pip \
+  && pip install setuptools
+  
 # Prepare directories
-RUN mkdir /code
 WORKDIR /code
 
-# Copy repository files
-COPY CMakeLists.txt /code/CMakeLists.txt
-COPY configure.sh /code/configure.sh
-COPY /modules/ /code/modules/
-COPY /opendm/ /code/opendm/
-COPY run.py /code/run.py
-COPY run.sh /code/run.sh
-COPY /stages/ /code/stages/
-COPY /SuperBuild/cmake/ /code/SuperBuild/cmake/
-COPY /SuperBuild/CMakeLists.txt /code/SuperBuild/CMakeLists.txt
-COPY docker.settings.yaml /code/settings.yaml
-COPY VERSION /code/VERSION
-COPY requirements.txt /code/requirements.txt
+# Copy everything
+COPY . ./
 
-RUN pip install -r requirements.txt
-RUN pip install --upgrade cryptography && python -m easy_install --upgrade pyOpenSSL
+RUN pip install -r requirements.txt \
+  && pip install --upgrade cryptography \
+  && python -m easy_install --upgrade pyOpenSSL
 
 ENV PYTHONPATH="$PYTHONPATH:/code/SuperBuild/install/lib/python2.7/dist-packages"
 ENV PYTHONPATH="$PYTHONPATH:/code/SuperBuild/src/opensfm"
@@ -106,7 +90,8 @@ RUN cd SuperBuild \
   && make -j$(nproc)
 
 # Cleanup APT
-RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* 
+RUN apt-get clean \
+  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* 
 
 # Clean Superbuild
 RUN rm -rf \
