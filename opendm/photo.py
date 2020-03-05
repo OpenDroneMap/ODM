@@ -3,6 +3,7 @@ import logging
 import re
 
 import exifread
+import numpy as np
 from six import string_types
 
 import log
@@ -76,9 +77,11 @@ class ODM_Photo:
                 if 'GPS GPSLongitude' in tags and 'GPS GPSLongitudeRef' in tags:
                     self.longitude = self.dms_to_decimal(tags['GPS GPSLongitude'], tags['GPS GPSLongitudeRef'])
                 
-                # if 'BlackLevel' in tags:
                 if 'Image Tag 0xC61A' in tags:
                     self.black_level = self.list_values(tags['Image Tag 0xC61A'])
+                elif 'BlackLevel' in tags:
+                    self.black_level = self.list_values(tags['BlackLevel'])
+                
                 if 'EXIF ExposureTime' in tags:
                     self.exposure_time = self.float_value(tags['EXIF ExposureTime'])
                 if 'EXIF ISOSpeed' in tags:
@@ -126,6 +129,7 @@ class ODM_Photo:
             # print(self.bits_per_sample)
             # print(self.vignetting_center)
             # print(self.vignetting_polynomial)
+            # exit(1)
         self.width, self.height = get_image_size.get_image_size(_path_file)
         
         # Sanitize band name since we use it in folder paths
@@ -202,3 +206,36 @@ class ODM_Photo:
     def list_values(self, tag):
         return " ".join(map(str, tag.values))
 
+    def get_radiometric_calibration(self):
+        if self.radiometric_calibration:
+            parts = self.radiometric_calibration.split(" ")
+            if len(parts) == 3:
+                return list(map(float, parts))
+
+        return [None, None, None]                
+    
+    def get_dark_level(self):
+        if self.black_level:
+            levels = np.array([float(v) for v in self.black_level.split(" ")])
+            return levels.mean()
+        return None
+
+    def get_gain(self):
+        if self.iso_speed:
+            return self.iso_speed / 100.0
+        return None
+
+    def get_vignetting_center(self):
+        if self.vignetting_center:
+            parts = self.vignetting_center.split(" ")
+            if len(parts) == 2:
+                return list(map(float, parts))
+        return [None, None]
+
+    def get_vignetting_polynomial(self):
+        if self.vignetting_polynomial:
+            parts = self.vignetting_polynomial.split(" ")
+            if len(parts) > 0:
+                return list(map(float, parts))
+        
+        return None
