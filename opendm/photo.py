@@ -36,6 +36,7 @@ class ODM_Photo:
         self.band_index = 0
 
         # Multi-spectral fields
+        self.fnumber = None
         self.radiometric_calibration = None
         self.black_level = None
 
@@ -91,8 +92,18 @@ class ODM_Photo:
                 
                 if 'EXIF ExposureTime' in tags:
                     self.exposure_time = self.float_value(tags['EXIF ExposureTime'])
+
+                if 'EXIF FNumber' in tags:
+                    self.fnumber = self.float_value(tags['EXIF FNumber'])
+                
                 if 'EXIF ISOSpeed' in tags:
                     self.iso_speed = self.int_value(tags['EXIF ISOSpeed'])
+                elif 'EXIF PhotographicSensitivity' in tags:
+                    self.iso_speed = self.int_value(tags['EXIF PhotographicSensitivity'])
+                elif 'EXIF ISOSpeedRatings' in tags:
+                    self.iso_speed = self.int_value(tags['EXIF ISOSpeedRatings'])
+                    
+
                 if 'Image BitsPerSample' in tags:
                     self.bits_per_sample = self.int_value(tags['Image BitsPerSample'])
                 if 'EXIF DateTimeOriginal' in tags:
@@ -169,7 +180,8 @@ class ODM_Photo:
             # print(self.bits_per_sample)
             # print(self.vignetting_center)
             # print(self.sun_sensor)
-            # exit(1)
+            #print(self.get_vignetting_polynomial())
+            #exit(1)
         self.width, self.height = get_image_size.get_image_size(_path_file)
         
         # Sanitize band name since we use it in folder paths
@@ -233,7 +245,10 @@ class ODM_Photo:
         )
 
     def float_values(self, tag):
-        return map(lambda v: float(v.num) / float(v.den), tag.values) 
+        if isinstance(tag.values, list):
+            return map(lambda v: float(v.num) / float(v.den), tag.values) 
+        else:
+            return [float(tag.values.num) / float(tag.values.den)]
     
     def float_value(self, tag):
         v = self.float_values(tag)
@@ -241,7 +256,10 @@ class ODM_Photo:
             return v[0]
 
     def int_values(self, tag):
-        return map(int, tag.values)
+        if isinstance(tag.values, list):
+            return map(int, tag.values)
+        else:
+            return [int(tag.values)]
 
     def int_value(self, tag):
         v = self.int_values(tag)
@@ -263,12 +281,11 @@ class ODM_Photo:
         if self.black_level:
             levels = np.array([float(v) for v in self.black_level.split(" ")])
             return levels.mean()
-        return None
 
     def get_gain(self):
+        #(gain = ISO/100)
         if self.iso_speed:
             return self.iso_speed / 100.0
-        return None
 
     def get_vignetting_center(self):
         if self.vignetting_center:
@@ -281,6 +298,18 @@ class ODM_Photo:
         if self.vignetting_polynomial:
             parts = self.vignetting_polynomial.split(" ")
             if len(parts) > 0:
-                return list(map(float, parts))
-        
-        return None
+                coeffs = list(map(float, parts))
+
+                # Different camera vendors seem to use different ordering for the coefficients
+                if self.camera_make != "Sentera":
+                    coeffs.reverse()
+                return coeffs
+
+    def get_utc_time(self):
+        if self.utc_time:
+            return datetime.utcfromtimestamp(self.utc_time / 1000)
+
+    def get_photometric_exposure(self):
+        # H ~= (exposure_time) / (f_number^2)
+        if self.fnumber is not None and self.exposure_time > 0:
+            return self.exposure_time / (self.fnumber * self.fnumber)
