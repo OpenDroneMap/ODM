@@ -65,8 +65,6 @@ def dn_to_radiance(photo, image):
         R = 1.0 / (1.0 + a2 * y / exposure_time - a3 * y)
         image *= R
 
-        cv2.imwrite("/datasets/mica/R.tif", R)
-
         print("Row gradient")
     
     # Floor any negative radiances to zero (can happend due to noise around blackLevel)
@@ -114,19 +112,28 @@ def vignette_map(photo):
 
 def dn_to_reflectance(photo, image, use_sun_sensor=True):
     radiance = dn_to_radiance(photo, image)
-    irradiance_scale = compute_irradiance_scale_factor(photo, use_sun_sensor=use_sun_sensor)
-    return radiance * irradiance_scale
 
-def compute_irradiance_scale_factor(photo, use_sun_sensor=True):
+    # TODO REMOVE
+    cv2.imwrite("/datasets/sentera-6x/radiance.tif", radiance)
+
+
+    irradiance = compute_irradiance(photo, use_sun_sensor=use_sun_sensor)
+    print(irradiance)
+    return radiance * math.pi / irradiance
+
+def compute_irradiance(photo, use_sun_sensor=True):
     # Thermal?
     if photo.band_name == "LWIR":
         return 1.0
 
-    if photo.irradiance is not None:
-        horizontal_irradiance = photo.irradiance
-        return math.pi / horizontal_irradiance
-    
-    if use_sun_sensor:
+    # Some cameras (Micasense) store the value (nice! just return)
+    hirradiance = photo.get_horizontal_irradiance()
+    if hirradiance is not None:
+        return hirradiance
+
+    # TODO: support for calibration panels
+
+    if use_sun_sensor and photo.sun_sensor:
         # Estimate it
         dls_orientation_vector = np.array([0,0,-1])
         sun_vector_ned, sensor_vector_ned, sun_sensor_angle, \
@@ -137,21 +144,25 @@ def compute_irradiance_scale_factor(photo, use_sun_sensor=True):
 
         angular_correction = dls.fresnel(sun_sensor_angle)
 
+        print("Sun sensor")
+
         # TODO: support for direct and scattered irradiance
 
         direct_to_diffuse_ratio = 6.0 # Assumption
-        spectral_irradiance = photo.sun_sensor # TODO: support for XMP:SpectralIrradiance
+        spectral_irradiance = photo.sun_sensor
 
         percent_diffuse = 1.0 / direct_to_diffuse_ratio
         sensor_irradiance = spectral_irradiance / angular_correction
 
-        # find direct irradiance in the plane normal to the sun
+        # Find direct irradiance in the plane normal to the sun
         untilted_direct_irr = sensor_irradiance / (percent_diffuse + np.cos(sun_sensor_angle))
         direct_irradiance = untilted_direct_irr
-        scattered_irradiance = untilted_direct_irr*percent_diffuse
+        scattered_irradiance = untilted_direct_irr * percent_diffuse
 
         # compute irradiance on the ground using the solar altitude angle
         horizontal_irradiance = direct_irradiance * np.sin(solar_elevation) + scattered_irradiance
-        return math.pi / horizontal_irradiance
+        return horizontal_irradiance
+    elif use_sun_sensor:
+        log.ODM_WARNING("No sun sensor values found for %s" % photo.filename)
     
     return 1.0
