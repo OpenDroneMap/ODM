@@ -46,7 +46,9 @@ class ODM_Photo:
         self.bits_per_sample = None
         self.vignetting_center = None
         self.vignetting_polynomial = None
-        self.irradiance = None
+        # self.irradiance = None
+        self.horizontal_irradiance = None
+        self.irradiance_scale_to_si = None
         self.sun_sensor = None
         self.utc_time = None
 
@@ -155,12 +157,17 @@ class ODM_Photo:
                     'Sentera:VignettingPolynomial',
                 ])
                 
-                self.set_attr_from_xmp_tag('irradiance', tags, [
-                    'Camera:Irradiance'
+                self.set_attr_from_xmp_tag('horizontal_irradiance', tags, [
+                    'Camera:HorizontalIrradiance'
+                ], float)
+
+                self.set_attr_from_xmp_tag('irradiance_scale_to_si', tags, [
+                    'Camera:IrradianceScaleToSIUnits'
                 ], float)
 
                 self.set_attr_from_xmp_tag('sun_sensor', tags, [
-                    'Camera:SunSensor'
+                    'Camera:SunSensor',
+                    'Camera:Irradiance',
                 ], float)
 
                 # self.set_attr_from_xmp_tag('center_wavelength', tags, [
@@ -181,7 +188,7 @@ class ODM_Photo:
             # print(self.vignetting_center)
             # print(self.sun_sensor)
             #print(self.get_vignetting_polynomial())
-            #exit(1)
+            # exit(1)
         self.width, self.height = get_image_size.get_image_size(_path_file)
         
         # Sanitize band name since we use it in folder paths
@@ -313,3 +320,11 @@ class ODM_Photo:
         # H ~= (exposure_time) / (f_number^2)
         if self.fnumber is not None and self.exposure_time > 0:
             return self.exposure_time / (self.fnumber * self.fnumber)
+
+    def get_horizontal_irradiance(self):
+        if self.horizontal_irradiance is not None:
+            scale = 1.0 # Assumed
+            if self.irradiance_scale_to_si is not None:
+                scale = self.irradiance_scale_to_si
+            
+            return self.horizontal_irradiance * scale
