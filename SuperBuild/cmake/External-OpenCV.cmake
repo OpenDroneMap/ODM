@@ -1,7 +1,29 @@
 set(_proj_name opencv)
 set(_SB_BINARY_DIR "${SB_BINARY_DIR}/${_proj_name}")
 
+ExternalProject_Add(opencv_contrib
+  PREFIX            ${_SB_BINARY_DIR}
+  TMP_DIR           ${_SB_BINARY_DIR}/tmp
+  STAMP_DIR         ${_SB_BINARY_DIR}/stamp
+  #--Download step--------------
+  DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
+  URL               https://github.com/pierotofy/opencv_contrib/archive/346sift.zip
+  #--Update/Patch step----------
+  UPDATE_COMMAND    ""
+  #--Configure step-------------
+  SOURCE_DIR        ${SB_SOURCE_DIR}/opencv_contrib
+  CONFIGURE_COMMAND ""
+  BUILD_IN_SOURCE 1
+  BUILD_COMMAND   ""
+  INSTALL_COMMAND ""
+  #--Output logging-------------
+  LOG_DOWNLOAD      OFF
+  LOG_CONFIGURE     OFF
+  LOG_BUILD         OFF
+)
+
 ExternalProject_Add(${_proj_name}
+  DEPENDS           opencv_contrib
   PREFIX            ${_SB_BINARY_DIR}
   TMP_DIR           ${_SB_BINARY_DIR}/tmp
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
@@ -46,6 +68,8 @@ ExternalProject_Add(${_proj_name}
     -DBUILD_opencv_java=OFF
     -DBUILD_opencv_ocl=OFF
     -DBUILD_opencv_ts=OFF
+    -DOPENCV_EXTRA_MODULES_PATH=${SB_SOURCE_DIR}/opencv_contrib/modules
+    -DBUILD_opencv_xfeatures2d=ON
     -DCMAKE_BUILD_TYPE:STRING=Release
     -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
   #--Build step-----------------
