@@ -14,7 +14,7 @@ def dn_to_radiance(photo, image):
     :return numpy array with radiance image values
     """
 
-    image = image.astype(float)
+    image = image.astype("float32")
 
     # Handle thermal bands (experimental)
     if photo.band_name == 'LWIR':
@@ -133,12 +133,12 @@ def compute_irradiance(photo, use_sun_sensor=True):
 
     # TODO: support for calibration panels
 
-    if use_sun_sensor and photo.sun_sensor:
+    if use_sun_sensor and photo.get_sun_sensor():
         # Estimate it
         dls_orientation_vector = np.array([0,0,-1])
         sun_vector_ned, sensor_vector_ned, sun_sensor_angle, \
         solar_elevation, solar_azimuth = dls.compute_sun_angle([photo.latitude, photo.longitude],
-                                        (0,0,0), # TODO: add support for sun sensor pose
+                                        photo.get_dls_pose(),
                                         photo.get_utc_time(),
                                         dls_orientation_vector)
 
@@ -148,8 +148,8 @@ def compute_irradiance(photo, use_sun_sensor=True):
 
         # TODO: support for direct and scattered irradiance
 
-        direct_to_diffuse_ratio = 6.0 # Assumption
-        spectral_irradiance = photo.sun_sensor
+        direct_to_diffuse_ratio = 6.0 # Assumption, clear skies
+        spectral_irradiance = photo.get_sun_sensor()
 
         percent_diffuse = 1.0 / direct_to_diffuse_ratio
         sensor_irradiance = spectral_irradiance / angular_correction

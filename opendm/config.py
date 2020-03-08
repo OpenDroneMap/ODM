@@ -289,8 +289,7 @@ def config():
                 default=False,
                 help='Skips dense reconstruction and 3D model generation. '
                 'It generates an orthophoto directly from the sparse reconstruction. '
-                'If you just need an orthophoto and do not need a full 3D model, turn on this option. '
-                'Experimental.')
+                'If you just need an orthophoto and do not need a full 3D model, turn on this option.')
 
     parser.add_argument('--crop',
                     metavar='<positive float>',

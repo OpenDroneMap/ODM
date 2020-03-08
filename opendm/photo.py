@@ -46,11 +46,16 @@ class ODM_Photo:
         self.bits_per_sample = None
         self.vignetting_center = None
         self.vignetting_polynomial = None
-        # self.irradiance = None
+        self.spectral_irradiance = None
         self.horizontal_irradiance = None
         self.irradiance_scale_to_si = None
-        self.sun_sensor = None
         self.utc_time = None
+
+        # DLS
+        self.sun_sensor = None
+        self.dls_yaw = None
+        self.dls_pitch = None
+        self.dls_roll = None
 
         # self.center_wavelength = None
         # self.bandwidth = None
@@ -86,7 +91,10 @@ class ODM_Photo:
                     self.latitude = self.dms_to_decimal(tags['GPS GPSLatitude'], tags['GPS GPSLatitudeRef'])
                 if 'GPS GPSLongitude' in tags and 'GPS GPSLongitudeRef' in tags:
                     self.longitude = self.dms_to_decimal(tags['GPS GPSLongitude'], tags['GPS GPSLongitudeRef'])
-                
+            except IndexError as e:
+                log.ODM_WARNING("Cannot read basic EXIF tags for %s: %s" % (_path_file, e.message))
+
+            try:
                 if 'Image Tag 0xC61A' in tags:
                     self.black_level = self.list_values(tags['Image Tag 0xC61A'])
                 elif 'BlackLevel' in tags:
@@ -125,50 +133,63 @@ class ODM_Photo:
                     timezone = pytz.timezone('UTC')
                     epoch = timezone.localize(datetime.utcfromtimestamp(0))
                     self.utc_time = (timezone.localize(utc_time) - epoch).total_seconds() * 1000.0
+            except Exception as e:
+                log.ODM_WARNING("Cannot read extended EXIF tags for %s: %s" % (_path_file, e.message))
 
-            except IndexError as e:
-                log.ODM_WARNING("Cannot read EXIF tags for %s: %s" % (_path_file, e.message))
 
             # Extract XMP tags
             f.seek(0)
             xmp = self.get_xmp(f)
 
             for tags in xmp:
-                band_name = self.get_xmp_tag(tags, 'Camera:BandName')
-                if band_name is not None:
-                    self.band_name = band_name.replace(" ", "")
+                try:
+                    band_name = self.get_xmp_tag(tags, 'Camera:BandName')
+                    if band_name is not None:
+                        self.band_name = band_name.replace(" ", "")
 
-                self.set_attr_from_xmp_tag('band_index', tags, [
-                    'DLS:SensorId', # Micasense RedEdge
-                    '@Camera:RigCameraIndex', # Parrot Sequoia, Sentera 21244-00_3.2MP-GS-0001
-                    'Camera:RigCameraIndex', # MicaSense Altum
-                ])
-                self.set_attr_from_xmp_tag('radiometric_calibration', tags, [
-                    'MicaSense:RadiometricCalibration',
-                ])
+                    self.set_attr_from_xmp_tag('band_index', tags, [
+                        'DLS:SensorId', # Micasense RedEdge
+                        '@Camera:RigCameraIndex', # Parrot Sequoia, Sentera 21244-00_3.2MP-GS-0001
+                        'Camera:RigCameraIndex', # MicaSense Altum
+                    ])
+                    self.set_attr_from_xmp_tag('radiometric_calibration', tags, [
+                        'MicaSense:RadiometricCalibration',
+                    ])
 
-                self.set_attr_from_xmp_tag('vignetting_center', tags, [
-                    'Camera:VignettingCenter',
-                    'Sentera:VignettingCenter',
-                ])
+                    self.set_attr_from_xmp_tag('vignetting_center', tags, [
+                        'Camera:VignettingCenter',
+                        'Sentera:VignettingCenter',
+                    ])
 
-                self.set_attr_from_xmp_tag('vignetting_polynomial', tags, [
-                    'Camera:VignettingPolynomial',
-                    'Sentera:VignettingPolynomial',
-                ])
-                
-                self.set_attr_from_xmp_tag('horizontal_irradiance', tags, [
-                    'Camera:HorizontalIrradiance'
-                ], float)
+                    self.set_attr_from_xmp_tag('vignetting_polynomial', tags, [
+                        'Camera:VignettingPolynomial',
+                        'Sentera:VignettingPolynomial',
+                    ])
+                    
+                    self.set_attr_from_xmp_tag('horizontal_irradiance', tags, [
+                        'Camera:HorizontalIrradiance'
+                    ], float)
 
-                self.set_attr_from_xmp_tag('irradiance_scale_to_si', tags, [
-                    'Camera:IrradianceScaleToSIUnits'
-                ], float)
+                    self.set_attr_from_xmp_tag('irradiance_scale_to_si', tags, [
+                        'Camera:IrradianceScaleToSIUnits'
+                    ], float)
 
-                self.set_attr_from_xmp_tag('sun_sensor', tags, [
-                    'Camera:SunSensor',
-                    'Camera:Irradiance',
-                ], float)
+                    self.set_attr_from_xmp_tag('sun_sensor', tags, [
+                        'Camera:SunSensor',
+                    ], float)
+
+                    self.set_attr_from_xmp_tag('spectral_irradiance', tags, [
+                        'Camera:SpectralIrradiance',
+                        'Camera:Irradiance',                    
+                    ], float)
+
+                    if 'DLS:Yaw' in tags:
+                        self.set_attr_from_xmp_tag('dls_yaw', tags, ['DLS:Yaw'], float)
+                        self.set_attr_from_xmp_tag('dls_pitch', tags, ['DLS:Pitch'], float)
+                        self.set_attr_from_xmp_tag('dls_roll', tags, ['DLS:Roll'], float)
+                except Exception as e:
+                    log.ODM_WARNING("Cannot read XMP tags for %s: %s" % (_path_file, e.message))
+
 
                 # self.set_attr_from_xmp_tag('center_wavelength', tags, [
                 #     'Camera:CentralWavelength'
@@ -187,7 +208,11 @@ class ODM_Photo:
             # print(self.bits_per_sample)
             # print(self.vignetting_center)
             # print(self.sun_sensor)
-            #print(self.get_vignetting_polynomial())
+            # print(self.get_vignetting_polynomial())
+            # print(self.dls_yaw)
+            # print(self.dls_pitch)
+            # print(self.fnumber)
+    
             # exit(1)
         self.width, self.height = get_image_size.get_image_size(_path_file)
         
@@ -328,3 +353,23 @@ class ODM_Photo:
                 scale = self.irradiance_scale_to_si
             
             return self.horizontal_irradiance * scale
+    
+    def get_sun_sensor(self):
+        if self.sun_sensor is not None:
+            # TODO: Presence of XMP:SunSensorExposureTime
+            # and XMP:SunSensorSensitivity might
+            # require additional logic. If these two tags are present, 
+            # then sun_sensor is not in physical units?
+
+            return self.sun_sensor / 65535 # uint16 normalized (TODO: is this correct? Documentation from manufacturers is missing)
+        elif self.spectral_irradiance is not None:
+            scale = 1.0 # Assumed
+            if self.irradiance_scale_to_si is not None:
+                scale = self.irradiance_scale_to_si
+            
+            return self.spectral_irradiance * scale
+
+    def get_dls_pose(self):
+        if self.dls_yaw is not None:
+            return [self.dls_yaw, self.dls_pitch, self.dls_roll]
+        return [0.0, 0.0, 0.0]
