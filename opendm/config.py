@@ -113,6 +113,14 @@ def config():
                         help=('Minimum number of features to extract per image. '
                               'More features leads to better results but slower '
                               'execution. Default: %(default)s'))
+    
+    parser.add_argument('--feature-type',
+            metavar='<string>',
+            default='sift',
+            choices=['sift', 'hahog'],
+            help=('Choose the algorithm for extracting keypoints and computing descriptors. '
+                'Can be one of: [sift, hahog]. Default: '
+                '%(default)s'))
 
     parser.add_argument('--matcher-neighbors',
                         type=int,
@@ -249,7 +257,7 @@ def config():
 
     parser.add_argument('--mesh-octree-depth',
                         metavar='<positive integer>',
-                        default=11,
+                        default=10,
                         type=int,
                         help=('Oct-tree depth used in the mesh reconstruction, '
                               'increase to get more vertices, recommended '
