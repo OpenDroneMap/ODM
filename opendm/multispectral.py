@@ -44,14 +44,9 @@ def dn_to_radiance(photo, image):
         image -= dark_level
 
     # Normalize DN to 0 - 1.0
-    bps = photo.bits_per_sample
-    if bps:
-        bit_depth_max = float(2 ** bps)
-    else:
-        # Infer from array dtype
-        info = np.iinfo(image.dtype)
-        bit_depth_max = info.max - info.min
-    image /= bit_depth_max
+    bit_depth_max = photo.get_bit_depth_max()
+    if bit_depth_max:
+        image /= bit_depth_max
 
     if V is not None:
         # vignette correction

@@ -344,8 +344,7 @@ class ODM_Photo:
             # and XMP:SunSensorSensitivity might
             # require additional logic. If these two tags are present, 
             # then sun_sensor is not in physical units?
-
-            return self.sun_sensor / 65535 # uint16 normalized (TODO: is this correct? Documentation from manufacturers is missing)
+            return self.sun_sensor / 65535.0 # normalize uint16 (is this correct?)
         elif self.spectral_irradiance is not None:
             scale = 1.0 # Assumed
             if self.irradiance_scale_to_si is not None:
@@ -357,3 +356,9 @@ class ODM_Photo:
         if self.dls_yaw is not None:
             return [self.dls_yaw, self.dls_pitch, self.dls_roll]
         return [0.0, 0.0, 0.0]
+
+    def get_bit_depth_max(self):
+        if self.bits_per_sample:
+            return float(2 ** self.bits_per_sample)
+
+        return None
