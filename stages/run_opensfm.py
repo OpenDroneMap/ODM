@@ -62,7 +62,7 @@ class ODMOpenSfMStage(types.ODM_Stage):
             octx.convert_and_undistort(self.rerun())
         else:
 
-            # TODO: does this work for multi-band RGB images?
+            # TODO: does this work for RGB images?
 
             def radiometric_calibrate(shot_id, image):
                 photo = reconstruction.get_photo(shot_id)
