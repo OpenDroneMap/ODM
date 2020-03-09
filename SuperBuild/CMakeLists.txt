@@ -129,7 +129,7 @@ endforeach()
 
 externalproject_add(mve
     GIT_REPOSITORY  https://github.com/OpenDroneMap/mve.git
-    GIT_TAG         098
+    GIT_TAG         099
     UPDATE_COMMAND  ""
     SOURCE_DIR      ${SB_SOURCE_DIR}/elibs/mve
     CONFIGURE_COMMAND ""
