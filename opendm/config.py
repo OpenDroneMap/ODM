@@ -645,5 +645,10 @@ def config():
         except exceptions.NodeConnectionError as e:
             log.ODM_ERROR("Cluster node seems to be offline: %s"  % str(e))
             sys.exit(1)
+    
+    if args.radiometric_calibration != "none" and not args.texturing_skip_global_seam_leveling:
+        log.ODM_WARNING("--radiometric-calibration is set, disabling texturing global seam leveling")
+        args.texturing_skip_global_seam_leveling = True
+
 
     return args
