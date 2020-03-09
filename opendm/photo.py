@@ -190,7 +190,6 @@ class ODM_Photo:
                 except Exception as e:
                     log.ODM_WARNING("Cannot read XMP tags for %s: %s" % (_path_file, e.message))
 
-
                 # self.set_attr_from_xmp_tag('center_wavelength', tags, [
                 #     'Camera:CentralWavelength'
                 # ], float)
@@ -199,21 +198,6 @@ class ODM_Photo:
                 #     'Camera:WavelengthFWHM'
                 # ], float)
             
-            # print(self.band_name)
-            # print(self.band_index)
-            # print(self.radiometric_calibration)
-            # print(self.black_level)
-            # print(self.exposure_time)
-            # print(self.iso_speed)
-            # print(self.bits_per_sample)
-            # print(self.vignetting_center)
-            # print(self.sun_sensor)
-            # print(self.get_vignetting_polynomial())
-            # print(self.dls_yaw)
-            # print(self.dls_pitch)
-            # print(self.fnumber)
-    
-            # exit(1)
         self.width, self.height = get_image_size.get_image_size(_path_file)
         
         # Sanitize band name since we use it in folder paths
