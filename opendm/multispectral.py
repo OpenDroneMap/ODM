@@ -3,7 +3,6 @@ import math
 import numpy as np
 from opendm import log
 
-import cv2 # TODO REMOVE
 # Loosely based on https://github.com/micasense/imageprocessing/blob/master/micasense/utils.py
 
 def dn_to_radiance(photo, image):
@@ -43,7 +42,6 @@ def dn_to_radiance(photo, image):
 
     if dark_level is not None:
         image -= dark_level
-        print("Adjusted black")
 
     # Normalize DN to 0 - 1.0
     bps = photo.bits_per_sample
@@ -58,14 +56,11 @@ def dn_to_radiance(photo, image):
     if V is not None:
         # vignette correction
         image *= V
-        print("Adjusted vignette")
 
     if exposure_time and a2 is not None and a3 is not None:
         # row gradient correction
         R = 1.0 / (1.0 + a2 * y / exposure_time - a3 * y)
         image *= R
-
-        print("Row gradient")
     
     # Floor any negative radiances to zero (can happend due to noise around blackLevel)
     if dark_level is not None:
@@ -76,7 +71,6 @@ def dn_to_radiance(photo, image):
 
     if gain is not None and exposure_time is not None:
         image /= (gain * exposure_time)
-        print("Gain adjustment")
     
     image *= a1
 
@@ -112,13 +106,7 @@ def vignette_map(photo):
 
 def dn_to_reflectance(photo, image, use_sun_sensor=True):
     radiance = dn_to_radiance(photo, image)
-
-    # TODO REMOVE
-    cv2.imwrite("/datasets/sentera-6x/radiance.tif", radiance)
-
-
     irradiance = compute_irradiance(photo, use_sun_sensor=use_sun_sensor)
-    print(irradiance)
     return radiance * math.pi / irradiance
 
 def compute_irradiance(photo, use_sun_sensor=True):
@@ -143,8 +131,6 @@ def compute_irradiance(photo, use_sun_sensor=True):
                                         dls_orientation_vector)
 
         angular_correction = dls.fresnel(sun_sensor_angle)
-
-        print("Sun sensor")
 
         # TODO: support for direct and scattered irradiance
 
