@@ -67,8 +67,8 @@ def rectify(lasFile, debug=False, reclassify_threshold=5, min_area=750, min_poin
         system.run(' '.join(cmd))
         os.remove(tempLasFile)
 
-    except:
-        raise Exception("Error rectifying ground in file %s" % lasFile)
+    except Exception as e:
+        raise Exception("Error rectifying ground in file %s: %s" % (lasFile, str(e)))
 
     log.ODM_INFO('Created %s in %s' % (os.path.relpath(lasFile), datetime.now() - start))
     return lasFile
