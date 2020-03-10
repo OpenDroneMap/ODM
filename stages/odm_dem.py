@@ -75,7 +75,7 @@ class ODMDEMStage(types.ODM_Stage):
         progress = 20
         self.update_progress(progress)
 
-        if args.rectify:
+        if args.pc_rectify:
             commands.rectify(dem_input, args.debug)
 
         # Do we need to process anything here?

@@ -595,11 +595,11 @@ def config():
                           'This flag is useful if you have high precision GPS measurements. '
                           'If there are no GCPs, this flag does nothing. Default: %(default)s'))
 
-    parser.add_argument('--rectify',
+    parser.add_argument('--pc-rectify',
                     action='store_true',
                     default=False,
-                    help=('Perform ground rectification. This means that wrongly classified ground '
-                          'points will be re-classified and gaps will be filled. '
+                    help=('Perform ground rectification on the point cloud. This means that wrongly classified ground '
+                          'points will be re-classified and gaps will be filled. Useful for generating DTMs. '
                           'Default: %(default)s'))
 
     args = parser.parse_args()
@@ -616,8 +616,8 @@ def config():
       log.ODM_INFO('Fast orthophoto is turned on, automatically setting --skip-3dmodel')
       args.skip_3dmodel = True
 
-    if args.rectify and not args.pc_classify:
-      log.ODM_INFO("Groudn rectify is turned on, automatically turning on point cloud classification")
+    if args.pc_rectify and not args.pc_classify:
+      log.ODM_INFO("Ground rectify is turned on, automatically turning on point cloud classification")
       args.pc_classify = True
 
     if args.dtm and not args.pc_classify:
