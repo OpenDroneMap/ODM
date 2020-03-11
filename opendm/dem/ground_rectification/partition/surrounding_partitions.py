@@ -60,15 +60,8 @@ class SurroundingPartitions(PartitionPlan):
         closest_y_idx = np.argmin(np.abs(y - center_y))
 
         # Calculate the direction to where the box should grow
-        x_dir = np.sign(center_x - x[closest_x_idx])
-        y_dir = np.sign(center_y - y[closest_y_idx])
-
-        # Handle corner case where center is between min and max
-        if x_min <= center_x and center_x <= x_max:
-            x_dir *= -1
-        if y_min <= center_y and center_y <= y_max:
-            y_dir *= -1
-
+        x_dir = -1 if closest_x_idx == 0 else 1
+        y_dir = -1 if closest_y_idx == 0 else 1
 
         bounding_box = BoxBounds(x[0], x[1], y[0], y[1])
         while bounding_box.area() < min_area:
