@@ -8,6 +8,7 @@ import shutil
 from opendm.system import run
 from opendm import point_cloud
 from opendm import io
+from opendm import system
 from opendm.concurrency import get_max_memory
 from scipy import ndimage
 from datetime import datetime
@@ -18,6 +19,7 @@ except:
     import queue
 import threading
 
+from .ground_rectification.rectify import run_rectification
 from . import pdal
 
 def classify(lasFile, scalar, slope, threshold, window, verbose=False):
@@ -26,7 +28,47 @@ def classify(lasFile, scalar, slope, threshold, window, verbose=False):
     try:
         pdal.run_pdaltranslate_smrf(lasFile, lasFile, scalar, slope, threshold, window, verbose)
     except:
-        raise Exception("Error creating classified file %s" % fout)
+        log.ODM_WARNING("Error creating classified file %s" % lasFile)
+
+    log.ODM_INFO('Created %s in %s' % (os.path.relpath(lasFile), datetime.now() - start))
+    return lasFile
+
+def rectify(lasFile, debug=False, reclassify_threshold=5, min_area=750, min_points=500):
+    start = datetime.now()
+
+    try:
+        # Currently, no Python 2 lib that supports reading and writing LAZ, so we will do it manually until ODM is migrated to Python 3
+        # When migration is done, we can move to pylas and avoid using PDAL for convertion
+        tempLasFile = os.path.join(os.path.dirname(lasFile), 'tmp.las')
+
+        # Convert LAZ to LAS
+        cmd = [
+            'pdal',
+            'translate',
+            '-i %s' % lasFile,
+            '-o %s' % tempLasFile
+        ]
+        system.run(' '.join(cmd))
+
+        log.ODM_INFO("Rectifying {} using with [reclassify threshold: {}, min area: {}, min points: {}]".format(lasFile, reclassify_threshold, min_area, min_points))
+        run_rectification(
+            input=tempLasFile, output=tempLasFile, debug=debug, \
+            reclassify_plan='median', reclassify_threshold=reclassify_threshold, \
+            extend_plan='surrounding', extend_grid_distance=5, \
+            min_area=min_area, min_points=min_points)
+
+        # Convert LAS to LAZ
+        cmd = [
+            'pdal',
+            'translate',
+            '-i %s' % tempLasFile,
+            '-o %s' % lasFile
+        ]
+        system.run(' '.join(cmd))
+        os.remove(tempLasFile)
+
+    except Exception as e:
+        raise Exception("Error rectifying ground in file %s: %s" % (lasFile, str(e)))
 
     log.ODM_INFO('Created %s in %s' % (os.path.relpath(lasFile), datetime.now() - start))
     return lasFile

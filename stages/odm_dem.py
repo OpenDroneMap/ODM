@@ -75,6 +75,9 @@ class ODMDEMStage(types.ODM_Stage):
         progress = 20
         self.update_progress(progress)
 
+        if args.pc_rectify:
+            commands.rectify(dem_input, args.debug)
+
         # Do we need to process anything here?
         if (args.dsm or args.dtm) and pc_model_found:
             dsm_output_filename = os.path.join(odm_dem_root, 'dsm.tif')
