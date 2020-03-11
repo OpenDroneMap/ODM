@@ -19,3 +19,5 @@ joblib==0.13.2
 Fiona==1.8.9.post2
 cryptography==2.8
 pyOpenSSL==19.1.0
+scikit-learn==0.20
+laspy==1.6.0
