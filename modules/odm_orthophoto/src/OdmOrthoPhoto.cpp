@@ -276,7 +276,7 @@ inline T maxRange(){
 
 template <typename T>
 void OdmOrthoPhoto::initBands(int count){
-    size_t pixelCount = static_cast<size_t>(width * height);
+    size_t pixelCount = static_cast<size_t>(width) * static_cast<size_t>(height);
 
     // Channels
     for (int i = 0; i < count; i++){
@@ -290,7 +290,7 @@ void OdmOrthoPhoto::initBands(int count){
 
 template <typename T>
 void OdmOrthoPhoto::initAlphaBand(){
-     size_t pixelCount = static_cast<size_t>(width * height);
+     size_t pixelCount = static_cast<size_t>(width) * static_cast<size_t>(height);
      // Alpha
      if (alphaBand == nullptr){
          T *arr = new T[pixelCount];
@@ -306,7 +306,7 @@ void OdmOrthoPhoto::finalizeAlphaBand(){
      // Adjust alpha band values, only pixels that have
      // values on all bands should be visible
 
-     size_t pixelCount = static_cast<size_t>(width * height);
+     size_t pixelCount = static_cast<size_t>(width) * static_cast<size_t>(height);
      int channels = bands.size();
 
      T *arr = reinterpret_cast<T *>(alphaBand);
@@ -925,7 +925,7 @@ void OdmOrthoPhoto::renderPixel(int row, int col, float s, float t, const cv::Ma
     top = static_cast<int>(topF);
     
     // The interpolated color values.
-    size_t idx = static_cast<size_t>(row * width + col);
+    size_t idx = static_cast<size_t>(row) * static_cast<size_t>(width) + static_cast<size_t>(col);
     T *data = reinterpret_cast<T *>(texture.data); // Faster access
     int numChannels = texture.channels();
 
