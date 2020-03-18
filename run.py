@@ -14,12 +14,16 @@ from stages.odm_app import ODMApp
 if __name__ == '__main__':
     args = config.config()
 
-    log.ODM_INFO('Initializing OpenDroneMap app - %s' % system.now())
+    log.ODM_INFO('Initializing ODM - %s' % system.now())
 
     # Print args
     args_dict = vars(args)
     log.ODM_INFO('==============')
     for k in sorted(args_dict.keys()):
+        # Skip _is_set keys
+        if k.endswith("_is_set"):
+            continue
+
         # Don't leak token
         if k == 'sm_cluster' and args_dict[k] is not None:
             log.ODM_INFO('%s: True' % k)
