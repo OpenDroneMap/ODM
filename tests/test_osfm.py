@@ -37,13 +37,6 @@ class TestOSFM(unittest.TestCase):
         self.assertEqual(get_submodel_argv(args, "/submodels", "submodel_0000")[1:], 
             ['--crop', '0.015625', '--orthophoto-cutline', '--dem-euclidean-map', '--skip-3dmodel', '--project-path', '/submodels', 'submodel_0000'])        
 
-        # Using settings.yaml with project-path
-        args = config.config(["brighton"], os.path.join(os.path.dirname(os.path.realpath(__file__)), "assets", "settings.yaml"))
-        self.assertEqual(get_submodel_argv(args)[1:], 
-            ['--orthophoto-cutline', '--dem-euclidean-map', '--skip-3dmodel'])
-        self.assertEqual(get_submodel_argv(args, "/submodels", "submodel_0000")[1:], 
-            ['--orthophoto-cutline', '--dem-euclidean-map', '--skip-3dmodel', '--project-path', '/submodels', 'submodel_0000'])
-            
         # With sm-cluster, pc-csv and others
         args = config.config(["--project-path", "/datasets", "--split", "200", "--pc-csv"])
         self.assertEqual(get_submodel_argv(args)[1:], 
