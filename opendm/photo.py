@@ -199,7 +199,7 @@ class ODM_Photo:
                 # ], float)
             
         self.width, self.height = get_image_size.get_image_size(_path_file)
-        
+
         # Sanitize band name since we use it in folder paths
         self.band_name = re.sub('[^A-Za-z0-9]+', '', self.band_name)
 
@@ -286,7 +286,7 @@ class ODM_Photo:
         return " ".join(map(str, tag.values))
 
     def get_radiometric_calibration(self):
-        if self.radiometric_calibration:
+        if isinstance(self.radiometric_calibration, str):
             parts = self.radiometric_calibration.split(" ")
             if len(parts) == 3:
                 return list(map(float, parts))

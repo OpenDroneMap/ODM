@@ -144,7 +144,7 @@ class ODMSplitStage(types.ODM_Stage):
                         log.ODM_INFO("Processing %s" % sp_octx.name()) 
                         log.ODM_INFO("========================")
 
-                        argv = get_submodel_argv(args.name, tree.submodels_path, sp_octx.name())
+                        argv = get_submodel_argv(tree.submodels_path, sp_octx.name())
 
                         # Re-run the ODM toolchain on the submodel
                         system.run(" ".join(map(quote, argv)), env_vars=os.environ.copy())

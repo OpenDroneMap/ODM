@@ -61,9 +61,6 @@ class ODMOpenSfMStage(types.ODM_Stage):
         if args.radiometric_calibration == "none":
             octx.convert_and_undistort(self.rerun())
         else:
-
-            # TODO: does this work for RGB images?
-
             def radiometric_calibrate(shot_id, image):
                 photo = reconstruction.get_photo(shot_id)
                 return multispectral.dn_to_reflectance(photo, image, use_sun_sensor=args.radiometric_calibration=="camera+sun")
