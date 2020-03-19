@@ -1,8 +1,6 @@
 import cv2
-import exifread
 import re
 import os
-from fractions import Fraction
 from opendm import get_image_size
 from opendm import location
 from opendm.gcp import GCPFile
@@ -16,131 +14,7 @@ import system
 import context
 import logging
 from opendm.progress import progressbc
-
-class ODM_Photo:
-    """   ODMPhoto - a class for ODMPhotos
-    """
-
-    def __init__(self, path_file):
-        #  general purpose
-        self.filename = io.extract_file_from_path_file(path_file)
-        self.width = None
-        self.height = None
-        # other attributes
-        self.camera_make = ''
-        self.camera_model = ''
-        self.latitude = None
-        self.longitude = None
-        self.altitude = None
-        self.band_name = 'RGB'
-        self.band_index = 0
-
-        # parse values from metadata
-        self.parse_exif_values(path_file)
-
-        # print log message
-        log.ODM_DEBUG('Loaded {}'.format(self))
-
-
-    def __str__(self):
-        return '{} | camera: {} {} | dimensions: {} x {} | lat: {} | lon: {} | alt: {} | band: {} ({})'.format(
-                            self.filename, self.camera_make, self.camera_model, self.width, self.height, 
-                            self.latitude, self.longitude, self.altitude, self.band_name, self.band_index)
-
-    def parse_exif_values(self, _path_file):
-        # Disable exifread log
-        logging.getLogger('exifread').setLevel(logging.CRITICAL)
-
-        with open(_path_file, 'rb') as f:
-            tags = exifread.process_file(f, details=False)
-
-            try:
-                if 'Image Make' in tags:
-                    self.camera_make = tags['Image Make'].values.encode('utf8')
-                if 'Image Model' in tags:
-                    self.camera_model = tags['Image Model'].values.encode('utf8')
-                if 'GPS GPSAltitude' in tags:
-                    self.altitude = self.float_values(tags['GPS GPSAltitude'])[0]
-                    if 'GPS GPSAltitudeRef' in tags and self.int_values(tags['GPS GPSAltitudeRef'])[0] > 0:
-                        self.altitude *= -1
-                if 'GPS GPSLatitude' in tags and 'GPS GPSLatitudeRef' in tags:
-                    self.latitude = self.dms_to_decimal(tags['GPS GPSLatitude'], tags['GPS GPSLatitudeRef'])
-                if 'GPS GPSLongitude' in tags and 'GPS GPSLongitudeRef' in tags:
-                    self.longitude = self.dms_to_decimal(tags['GPS GPSLongitude'], tags['GPS GPSLongitudeRef'])
-            except IndexError as e:
-                log.ODM_WARNING("Cannot read EXIF tags for %s: %s" % (_path_file, e.message))
-
-            # Extract XMP tags
-            f.seek(0)
-            xmp = self.get_xmp(f)
-
-            # Find band name and camera index (if available)
-            camera_index_tags = [
-                    'DLS:SensorId', # Micasense RedEdge
-                    '@Camera:RigCameraIndex', # Parrot Sequoia
-                    'Camera:RigCameraIndex', # MicaSense Altum
-            ]
-
-            for tags in xmp:
-                if 'Camera:BandName' in tags:
-                    cbt = tags['Camera:BandName']
-                    band_name = None
-
-                    if isinstance(cbt, string_types):
-                        band_name = str(tags['Camera:BandName'])
-                    elif isinstance(cbt, dict):
-                        items = cbt.get('rdf:Seq', {}).get('rdf:li', {})
-                        if items:
-                            band_name = " ".join(items)
-
-                    if band_name is not None:
-                        self.band_name = band_name.replace(" ", "")
-                    else:
-                        log.ODM_WARNING("Camera:BandName tag found in XMP, but we couldn't parse it. Multispectral bands might be improperly classified.")
-                
-                for cit in camera_index_tags:
-                    if cit in tags:
-                        self.band_index = int(tags[cit])
-
-        self.width, self.height = get_image_size.get_image_size(_path_file)
-        
-        # Sanitize band name since we use it in folder paths
-        self.band_name = re.sub('[^A-Za-z0-9]+', '', self.band_name)
-    
-    # From https://github.com/mapillary/OpenSfM/blob/master/opensfm/exif.py
-    def get_xmp(self, file):
-        img_str = str(file.read())
-        xmp_start = img_str.find('<x:xmpmeta')
-        xmp_end = img_str.find('</x:xmpmeta')
-
-        if xmp_start < xmp_end:
-            xmp_str = img_str[xmp_start:xmp_end + 12]
-            xdict = x2d.parse(xmp_str)
-            xdict = xdict.get('x:xmpmeta', {})
-            xdict = xdict.get('rdf:RDF', {})
-            xdict = xdict.get('rdf:Description', {})
-            if isinstance(xdict, list):
-                return xdict
-            else:
-                return [xdict]
-        else:
-            return []
-
-    def dms_to_decimal(self, dms, sign):
-        """Converts dms coords to decimal degrees"""
-        degrees, minutes, seconds = self.float_values(dms)
-
-        return (-1 if sign.values[0] in 'SWsw' else 1) * (
-            degrees +
-            minutes / 60 +
-            seconds / 3600
-        )
-
-    def float_values(self, tag):
-        return map(lambda v: float(v.num) / float(v.den), tag.values) 
-
-    def int_values(self, tag):
-        return map(int, tag.values)
+from opendm.photo import ODM_Photo
 
 
 class ODM_Reconstruction(object):
@@ -252,6 +126,12 @@ class ODM_Reconstruction(object):
         if self.is_georeferenced():
             with open(file, 'w') as f:
                 f.write(self.georef.proj4())
+
+    def get_photo(self, filename):
+        for p in self.photos:
+            if p.filename == filename:
+                return p
+    
 
 class ODM_GeoRef(object):
     @staticmethod

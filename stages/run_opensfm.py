@@ -9,6 +9,7 @@ from opendm import gsd
 from opendm import point_cloud
 from opendm import types
 from opendm.osfm import OSFMContext
+from opendm import multispectral
 
 class ODMOpenSfMStage(types.ODM_Stage):
     def process(self, args, outputs):
@@ -57,12 +58,14 @@ class ODMOpenSfMStage(types.ODM_Stage):
             octx.touch(updated_config_flag_file)
 
         # These will be used for texturing / MVS
-        undistorted_images_path = octx.path("undistorted", "images")
-
-        if not io.dir_exists(undistorted_images_path) or self.rerun():
-            octx.run('undistort')
+        if args.radiometric_calibration == "none":
+            octx.convert_and_undistort(self.rerun())
         else:
-            log.ODM_WARNING("Found an undistorted directory in %s" % undistorted_images_path)
+            def radiometric_calibrate(shot_id, image):
+                photo = reconstruction.get_photo(shot_id)
+                return multispectral.dn_to_reflectance(photo, image, use_sun_sensor=args.radiometric_calibration=="camera+sun")
+
+            octx.convert_and_undistort(self.rerun(), radiometric_calibrate)
 
         self.update_progress(80)
 

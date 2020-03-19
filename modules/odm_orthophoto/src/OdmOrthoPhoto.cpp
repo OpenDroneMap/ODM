@@ -246,7 +246,9 @@ void OdmOrthoPhoto::saveTIFF(const std::string &filename, GDALDataType dataType)
     }
 
     // Alpha
-    if (dataType == GDT_UInt16){
+    if (dataType == GDT_Float32){
+        finalizeAlphaBand<float>();
+    }else if (dataType == GDT_UInt16){
         finalizeAlphaBand<uint16_t>();
     }else if (dataType == GDT_Byte){
         finalizeAlphaBand<uint8_t>();
@@ -504,6 +506,10 @@ void OdmOrthoPhoto::createOrthoPhoto()
                         log_ << "Texture depth: 16bit\n";
                         initBands<uint16_t>(texture.channels());
                         if (primary) initAlphaBand<uint16_t>();
+                    }else if (textureDepth == CV_32F){
+                        log_ << "Texture depth: 32bit (float)\n";
+                        initBands<float>(texture.channels());
+                        if (primary) initAlphaBand<float>();
                     }else{
                         std::cerr << "Unsupported bit depth value: " << textureDepth;
                         exit(1);
@@ -537,6 +543,8 @@ void OdmOrthoPhoto::createOrthoPhoto()
                     drawTexturedTriangle<uint8_t>(texture, polygon, meshCloud, uvs, faceIndex+faceOff);
                 }else if (textureDepth == CV_16U){
                     drawTexturedTriangle<uint16_t>(texture, polygon, meshCloud, uvs, faceIndex+faceOff);
+                }else if (textureDepth == CV_32F){
+                    drawTexturedTriangle<float>(texture, polygon, meshCloud, uvs, faceIndex+faceOff);
                 }
             }
             faceOff += faces.size();
@@ -555,6 +563,8 @@ void OdmOrthoPhoto::createOrthoPhoto()
         saveTIFF(outputFile_, GDT_Byte);
     }else if (textureDepth == CV_16U){
         saveTIFF(outputFile_, GDT_UInt16);
+    }else if (textureDepth == CV_32F){
+        saveTIFF(outputFile_, GDT_Float32);
     }else{
         std::cerr << "Unsupported bit depth value: " << textureDepth;
         exit(1);
