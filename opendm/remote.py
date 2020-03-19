@@ -8,6 +8,7 @@ import zipfile
 import glob
 from opendm import log
 from opendm import system
+from opendm import config
 from pyodm import Node, exceptions
 from pyodm.utils import AtomicCounter
 from pyodm.types import TaskStatus
@@ -354,7 +355,7 @@ class Task:
 
         # Upload task
         task = self.node.create_task(images, 
-                get_submodel_args_dict(),
+                get_submodel_args_dict(config.config()),
                 progress_callback=print_progress,
                 skip_post_processing=True,
                 outputs=outputs)
@@ -470,8 +471,7 @@ class ToolchainTask(Task):
             log.ODM_INFO("=============================")
 
             submodels_path = os.path.abspath(self.path(".."))
-            project_name = os.path.basename(os.path.abspath(os.path.join(submodels_path, "..")))
-            argv = get_submodel_argv(project_name, submodels_path, submodel_name)
+            argv = get_submodel_argv(config.config(), submodels_path, submodel_name)
 
             # Re-run the ODM toolchain on the submodel
             system.run(" ".join(map(quote, argv)), env_vars=os.environ.copy())

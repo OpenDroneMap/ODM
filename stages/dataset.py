@@ -9,6 +9,7 @@ from opendm import system
 from shutil import copyfile
 from opendm import progress
 
+
 def save_images_database(photos, database_file):
     with open(database_file, 'w') as f:
         f.write(json.dumps(map(lambda p: p.__dict__, photos)))
@@ -38,7 +39,6 @@ def load_images_database(database_file):
 
 class ODMLoadDatasetStage(types.ODM_Stage):
     def process(self, args, outputs):
-        # Load tree
         tree = types.ODM_Tree(args.project_path, args.gcp)
         outputs['tree'] = tree
 

@@ -2,7 +2,7 @@
 OpenSfM related utils
 """
 
-import os, shutil, sys, json
+import os, shutil, sys, json, argparse
 import yaml
 from opendm import io
 from opendm import log
@@ -11,6 +11,7 @@ from opendm import context
 from opendm import camera
 from opensfm.large import metadataset
 from opensfm.large import tools
+from opensfm.commands import undistort
 
 class OSFMContext:
     def __init__(self, opensfm_project_path):
@@ -242,6 +243,19 @@ class OSFMContext:
                 log.ODM_WARNING("Cannot export cameras to %s. %s." % (output, str(e)))
         else:
             log.ODM_INFO("Already extracted cameras")
+    
+    def convert_and_undistort(self, rerun=False, imageFilter=None):
+        log.ODM_INFO("Undistorting %s ..." % self.opensfm_project_path)
+        undistorted_images_path = self.path("undistorted", "images")
+
+        if not io.dir_exists(undistorted_images_path) or rerun:
+            cmd = undistort.Command(imageFilter)
+            parser = argparse.ArgumentParser()
+            cmd.add_arguments(parser)
+            cmd.run(parser.parse_args([self.opensfm_project_path]))
+        else:
+            log.ODM_WARNING("Found an undistorted directory in %s" % undistorted_images_path)
+
 
     def update_config(self, cfg_dict):
         cfg_file = self.get_config_file_path()
@@ -263,9 +277,9 @@ class OSFMContext:
     def name(self):
         return os.path.basename(os.path.abspath(self.path("..")))
 
-def get_submodel_argv(project_name = None, submodels_path = None, submodel_name = None):
+def get_submodel_argv(args, submodels_path = None, submodel_name = None):
     """
-    Gets argv for a submodel starting from the argv passed to the application startup.
+    Gets argv for a submodel starting from the args passed to the application startup.
     Additionally, if project_name, submodels_path and submodel_name are passed, the function
     handles the <project name> value and --project-path detection / override.
     When all arguments are set to None, --project-path and project name are always removed.
@@ -281,82 +295,73 @@ def get_submodel_argv(project_name = None, submodels_path = None, submodel_name 
         removing --gcp (the GCP path if specified is always "gcp_list.txt")
         reading the contents of --cameras
     """
-    assure_always = ['--orthophoto-cutline', '--dem-euclidean-map', '--skip-3dmodel']
-    remove_always_2 = ['--split', '--split-overlap', '--rerun-from', '--rerun', '--gcp', '--end-with', '--sm-cluster']
-    remove_always_1 = ['--rerun-all', '--pc-csv', '--pc-las', '--pc-ept']
-    read_json_always = ['--cameras']
+    assure_always = ['orthophoto_cutline', 'dem_euclidean_map', 'skip_3dmodel']
+    remove_always = ['split', 'split_overlap', 'rerun_from', 'rerun', 'gcp', 'end_with', 'sm_cluster', 'rerun_all', 'pc_csv', 'pc_las', 'pc_ept']
+    read_json_always = ['cameras']
 
     argv = sys.argv
+    result = [argv[0]] # Startup script (/path/to/run.py)
 
-    result = [argv[0]]
-    i = 1
-    found_args = {}
+    args_dict = vars(args).copy()
+    set_keys = [k[:-len("_is_set")] for k in args_dict.keys() if k.endswith("_is_set")]
 
-    while i < len(argv):
-        arg = argv[i]
-        
-        if i == 1 and project_name and submodel_name and arg == project_name:
-            i += 1
-            continue
-        elif i == len(argv) - 1:
-            # Project name?
-            if project_name and submodel_name and arg == project_name:
-                result.append(submodel_name)
-                found_args['project_name'] = True
-                i += 1
-                continue
-        
-        if arg == '--project-path':
-            if submodels_path:
-                result.append(arg)
-                result.append(submodels_path)
-                found_args[arg] = True
-            i += 2
-        elif arg in assure_always:
-            result.append(arg)
-            found_args[arg] = True
-            i += 1
-        elif arg == '--crop':
-            result.append(arg)
-            crop_value = float(argv[i + 1])
-            if crop_value == 0:
-                crop_value = 0.015625
-            result.append(str(crop_value))
-            found_args[arg] = True
-            i += 2
-        elif arg in read_json_always:
+    # Handle project name and project path (special case)
+    if "name" in set_keys:
+        del args_dict["name"]
+        set_keys.remove("name")
+
+    if "project_path" in set_keys:
+        del args_dict["project_path"]
+        set_keys.remove("project_path")
+
+    # Remove parameters
+    set_keys = [k for k in set_keys if k not in remove_always]
+
+    # Assure parameters
+    for k in assure_always:
+        if not k in set_keys:
+            set_keys.append(k)
+            args_dict[k] = True
+    
+    # Read JSON always
+    for k in read_json_always:
+        if k in set_keys:
             try:
-                jsond = io.path_or_json_string_to_dict(argv[i + 1])
-                result.append(arg)
-                result.append(json.dumps(jsond))
-                found_args[arg] = True
+                if isinstance(args_dict[k], str):
+                    args_dict[k] = io.path_or_json_string_to_dict(args_dict[k])
+                if isinstance(args_dict[k], dict):
+                    args_dict[k] = json.dumps(args_dict[k])
             except ValueError as e:
                 log.ODM_WARNING("Cannot parse/read JSON: {}".format(str(e)))
-            finally:
-                i += 2
-        elif arg in remove_always_2:
-            i += 2
-        elif arg in remove_always_1:
-            i += 1
-        else:
-            result.append(arg)
-            i += 1
+
+    # Handle crop (cannot be zero for split/merge)
+    if "crop" in set_keys:
+        crop_value = float(args_dict["crop"])
+        if crop_value == 0:
+            crop_value = 0.015625
+        args_dict["crop"] = crop_value
+
+    # Populate result
+    for k in set_keys:
+        result.append("--%s" % k.replace("_", "-"))
+        
+        # No second value for booleans
+        if isinstance(args_dict[k], bool) and args_dict[k] == True:
+            continue
+        
+        result.append(str(args_dict[k]))
     
-    if not found_args.get('--project-path') and submodels_path:
-        result.append('--project-path')
+    if submodels_path:
+        result.append("--project-path")
         result.append(submodels_path)
-    
-    for arg in assure_always:
-        if not found_args.get(arg):
-            result.append(arg)
-    
-    if not found_args.get('project_name') and submodel_name:
+
+    if submodel_name:
         result.append(submodel_name)
 
     return result
 
-def get_submodel_args_dict():
-    submodel_argv = get_submodel_argv()
+def get_submodel_args_dict(args):
+    submodel_argv = get_submodel_argv(args)
     result = {}
 
     i = 0
