@@ -14,6 +14,8 @@ def dn_to_radiance(photo, image):
     """
 
     image = image.astype("float32")
+    if len(image.shape) != 3:
+        raise ValueError("Image should have shape length of 3 (got: %s)" % len(image.shape))
 
     # Handle thermal bands (experimental)
     if photo.band_name == 'LWIR':
@@ -50,11 +52,13 @@ def dn_to_radiance(photo, image):
 
     if V is not None:
         # vignette correction
+        V = np.repeat(V[:, :, np.newaxis], image.shape[2], axis=2)
         image *= V
 
     if exposure_time and a2 is not None and a3 is not None:
         # row gradient correction
         R = 1.0 / (1.0 + a2 * y / exposure_time - a3 * y)
+        R = np.repeat(R[:, :, np.newaxis], image.shape[2], axis=2)
         image *= R
     
     # Floor any negative radiances to zero (can happend due to noise around blackLevel)
