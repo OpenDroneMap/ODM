@@ -44,7 +44,7 @@ def generate_png(orthophoto_file):
 
 def post_orthophoto_steps(args, bounds_file_path, orthophoto_file):
     if args.crop > 0:
-        Cropper.crop(bounds_file_path, orthophoto_file, get_orthophoto_vars(args), warp_options=['-dstalpha'])
+        Cropper.crop(bounds_file_path, orthophoto_file, get_orthophoto_vars(args), keep_original=not args.optimize_disk_space, warp_options=['-dstalpha'])
 
     if args.build_overviews:
         build_overviews(orthophoto_file)

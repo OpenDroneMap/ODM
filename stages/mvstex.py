@@ -114,9 +114,27 @@ class ODMMvsTexStage(types.ODM_Stage):
                         '{nadirMode} '
                         '-n {nadirWeight}'.format(**kwargs))
                 
+                if args.optimize_disk_space:
+                    cleanup_files = [
+                        os.path.join(r['out_dir'], "odm_textured_model_data_costs.spt"),
+                        os.path.join(r['out_dir'], "odm_textured_model_labeling.vec"),
+                    ]
+                    for f in cleanup_files:
+                        if io.file_exists(f):
+                            os.remove(f)
+                
                 progress += progress_per_run
                 self.update_progress(progress)
             else:
                 log.ODM_WARNING('Found a valid ODM Texture file in: %s'
                                 % odm_textured_model_obj)
+        
+        if args.optimize_disk_space:
+            for r in nonloc.runs:
+                if io.file_exists(r['model']):
+                    os.remove(r['model'])
+            
+            undistorted_images_path = os.path.join(tree.opensfm, "undistorted", "images")
+            if io.dir_exists(undistorted_images_path):
+                shutil.rmtree(undistorted_images_path)
 

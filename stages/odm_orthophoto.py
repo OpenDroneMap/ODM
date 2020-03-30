@@ -168,3 +168,6 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                     log.ODM_WARNING("Could not generate an orthophoto (it did not render)")
         else:
             log.ODM_WARNING('Found a valid orthophoto in: %s' % tree.odm_orthophoto_tif)
+
+        if args.optimize_disk_space and io.file_exists(tree.odm_orthophoto_render):
+            os.remove(tree.odm_orthophoto_render)
