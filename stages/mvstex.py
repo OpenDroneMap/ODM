@@ -133,4 +133,8 @@ class ODMMvsTexStage(types.ODM_Stage):
             for r in nonloc.runs:
                 if io.file_exists(r['model']):
                     os.remove(r['model'])
+            
+            undistorted_images_path = os.path.join(tree.opensfm, "undistorted", "images")
+            if io.dir_exists(undistorted_images_path):
+                shutil.rmtree(undistorted_images_path)
 
