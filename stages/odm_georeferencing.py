@@ -137,6 +137,9 @@ class ODMGeoreferencingStage(types.ODM_Stage):
             else:
                 log.ODM_WARNING('Found a valid georeferenced model in: %s'
                                 % tree.odm_georeferencing_model_laz)
+
+            if args.optimize_disk_space and io.file_exists(tree.odm_georeferencing_model_laz) and io.file_exists(tree.filtered_point_cloud):
+                os.remove(tree.filtered_point_cloud)
             
             progress += progress_per_run
             self.update_progress(progress)

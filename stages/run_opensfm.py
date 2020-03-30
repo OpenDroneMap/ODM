@@ -1,5 +1,7 @@
 import sys
 import os
+import shutil
+import glob
 
 from opendm import log
 from opendm import io
@@ -30,6 +32,12 @@ class ODMOpenSfMStage(types.ODM_Stage):
         octx.reconstruct(self.rerun())
         octx.extract_cameras(tree.path("cameras.json"), self.rerun())
         self.update_progress(70)
+
+        if args.optimize_disk_space:
+            shutil.rmtree(octx.path("features"))
+            shutil.rmtree(octx.path("matches"))
+            shutil.rmtree(octx.path("exif"))
+            shutil.rmtree(octx.path("reports"))
 
         # If we find a special flag file for split/merge we stop right here
         if os.path.exists(octx.path("split_merge_stop_at_reconstruction.txt")):
@@ -118,3 +126,12 @@ class ODMOpenSfMStage(types.ODM_Stage):
             octx.run('export_geocoords --transformation --proj \'%s\'' % reconstruction.georef.proj4())
         else:
             log.ODM_WARNING("Will skip exporting %s" % tree.opensfm_transformation)
+
+        if args.optimize_disk_space:
+            os.remove(octx.path("tracks.csv"))
+            os.remove(octx.path("undistorted", "tracks.csv"))
+            os.remove(octx.path("undistorted", "reconstruction.json"))
+            if io.dir_exists(octx.path("undistorted", "depthmaps")):
+                files = glob.glob(octx.path("undistorted", "depthmaps", "*.npz"))
+                for f in files:
+                    os.remove(f)
