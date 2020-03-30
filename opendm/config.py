@@ -702,6 +702,15 @@ def config(argv=None):
                           'This flag is useful if you have high precision GPS measurements. '
                           'If there are no GCPs, this flag does nothing. Default: %(default)s'))
 
+    parser.add_argument('--optimize-disk-space',
+                action=StoreTrue,
+                nargs=0,
+                default=False,
+                help=('Delete heavy intermediate files to optimize disk space usage. This '
+                      'affects the ability to restart the pipeline from an intermediate stage, '
+                      'but allows datasets to be processed on machines that don\'t have sufficient '
+                      'disk space available. Default: %(default)s'))
+
     parser.add_argument('--pc-rectify',
                     action=StoreTrue,
                     nargs=0,

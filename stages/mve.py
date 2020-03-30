@@ -93,6 +93,9 @@ class ODMMveStage(types.ODM_Stage):
                     os.rename(mve_filtered_model, tree.mve_model)
                 else:
                     log.ODM_WARNING("Couldn't filter MVE model (%s does not exist)." % mve_filtered_model)
+        
+            if args.optimize_disk_space:
+                shutil.rmtree(tree.mve_views)
         else:
             log.ODM_WARNING('Found a valid MVE reconstruction file in: %s' %
                             tree.mve_model)
