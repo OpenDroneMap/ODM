@@ -143,7 +143,7 @@ class ODM_Photo:
 
             for tags in xmp:
                 try:
-                    band_name = self.get_xmp_tag(tags, 'Camera:BandName')
+                    band_name = self.get_xmp_tag(tags, ['Camera:BandName', '@Camera:BandName'])
                     if band_name is not None:
                         self.band_name = band_name.replace(" ", "")
 
