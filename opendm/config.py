@@ -674,6 +674,12 @@ def config(argv=None):
                         'are added to the cluster. This is done to ensure '
                         'that neighboring submodels overlap.')
 
+    parser.add_argument('--split-multitracks',
+                       action=StoreTrue,
+                       nargs=0,
+                       default=False,
+                       help='Split multi-track reconstructions.')
+
     parser.add_argument('--sm-cluster',
                         metavar='<string>',
                         action=StoreValue,
