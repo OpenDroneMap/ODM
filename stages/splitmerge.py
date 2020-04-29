@@ -133,7 +133,7 @@ class ODMSplitStage(types.ODM_Stage):
                             mkdirs(path+"/images")
 
                             #symlinks for common data
-			    images = os.listdir(octx.path("../images"))
+                            images = os.listdir(octx.path("../images"))
                             for image in images:
                                 symlink("../../../images/"+image, path+"/images/"+image)
                             symlink("../../../opensfm/exif", path+"/opensfm/exif")
