@@ -18,19 +18,6 @@ from opendm.remote import LocalRemoteExecutor
 from opendm import point_cloud
 from pipes import quote
 
-def resplit_submodel_path(i, template):
-    return os.path.join(".", template % i)
-
-def mkdirs(p):
-    try:
-        os.makedirs(p)
-    except:
-        pass
-
-def symlink(a, b):
-    os.symlink(os.path.join(".",a), b)
-
-
 
 class ODMSplitStage(types.ODM_Stage):
     def process(self, args, outputs):
@@ -126,21 +113,21 @@ class ODMSplitStage(types.ODM_Stage):
                             j = json.load(f)
                         for k in range(0, len(j)):
                             v = j[k]
-                            path = resplit_submodel_path(i, template)
-
+                            path = template % i
+                            
                             #Create the submodel path up to opensfm
-                            mkdirs(path+"/opensfm")
-                            mkdirs(path+"/images")
+                            os.makedirs(path+"/opensfm")
+                            os.makedirs(path+"/images")
 
                             #symlinks for common data
-			    images = os.listdir(octx.path("../images"))
+                            images = os.listdir(octx.path("../images"))
                             for image in images:
-                                symlink("../../../images/"+image, path+"/images/"+image)
-                            symlink("../../../opensfm/exif", path+"/opensfm/exif")
-                            symlink("../../../opensfm/features", path+"/opensfm/features")
-                            symlink("../../../opensfm/matches", path+"/opensfm/matches")
-                            symlink("../../../opensfm/reference_lla.json", path+"/opensfm/reference_lla.json")
-                            symlink("../../../opensfm/camera_models.json", path+"/opensfm/camera_models.json")
+                                os.symlink("../../../images/"+image, path+"/images/"+image)
+                            os.symlink("../../../opensfm/exif", path+"/opensfm/exif")
+                            os.symlink("../../../opensfm/features", path+"/opensfm/features")
+                            os.symlink("../../../opensfm/matches", path+"/opensfm/matches")
+                            os.symlink("../../../opensfm/reference_lla.json", path+"/opensfm/reference_lla.json")
+                            os.symlink("../../../opensfm/camera_models.json", path+"/opensfm/camera_models.json")
 
                             shutil.copy(s+"/../cameras.json", path+"/cameras.json")
 
