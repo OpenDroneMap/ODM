@@ -259,7 +259,6 @@ class ODM_Photo:
 
         if xmp_start < xmp_end:
             xmp_str = img_str[xmp_start:xmp_end + 12]
-            xmp_str = xmp_str.replace("rdf:about=''xmlns", "rdf:about='' xmlns")
             xdict = x2d.parse(xmp_str)
             xdict = xdict.get('x:xmpmeta', {})
             xdict = xdict.get('rdf:RDF', {})
