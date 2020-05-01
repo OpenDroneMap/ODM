@@ -60,6 +60,10 @@ class ODM_Photo:
         # self.center_wavelength = None
         # self.bandwidth = None
 
+        # RTK
+        self.gps_xy_stddev = None # Dilution of Precision X/Y
+        self.gps_z_stddev = None # Dilution of Precision Z
+
         # parse values from metadata
         self.parse_exif_values(path_file)
 
@@ -183,6 +187,22 @@ class ODM_Photo:
                         'Camera:Irradiance',                    
                     ], float)
 
+                    # Phantom 4 RTK
+                    if '@drone-dji:RtkStdLon' in tags:
+                        y = float(self.get_xmp_tag(tags, '@drone-dji:RtkStdLon'))
+                        x = float(self.get_xmp_tag(tags, '@drone-dji:RtkStdLat'))
+                        self.gps_xy_stddev = max(x, y)
+                    
+                        if '@drone-dji:RtkStdHgt' in tags:
+                            self.gps_z_stddev = float(self.get_xmp_tag(tags, '@drone-dji:RtkStdHgt'))
+                    else:
+                        self.set_attr_from_xmp_tag('gps_xy_stddev', tags, [
+                            '@Camera:GPSXYAccuracy'
+                        ], float)
+                        self.set_attr_from_xmp_tag('gps_z_stddev', tags, [
+                            '@Camera:GPSZAccuracy'
+                        ], float)
+
                     if 'DLS:Yaw' in tags:
                         self.set_attr_from_xmp_tag('dls_yaw', tags, ['DLS:Yaw'], float)
                         self.set_attr_from_xmp_tag('dls_pitch', tags, ['DLS:Pitch'], float)
@@ -239,6 +259,7 @@ class ODM_Photo:
 
         if xmp_start < xmp_end:
             xmp_str = img_str[xmp_start:xmp_end + 12]
+            xmp_str = xmp_str.replace("rdf:about=''xmlns", "rdf:about='' xmlns")
             xdict = x2d.parse(xmp_str)
             xdict = xdict.get('x:xmpmeta', {})
             xdict = xdict.get('rdf:RDF', {})
@@ -360,5 +381,16 @@ class ODM_Photo:
     def get_bit_depth_max(self):
         if self.bits_per_sample:
             return float(2 ** self.bits_per_sample)
+
+        return None
+
+    def get_gps_dop(self):
+        val = -9999
+        if self.gps_xy_stddev is not None:
+            val = self.gps_xy_stddev
+        if self.gps_z_stddev is not None:
+            val = max(val, self.gps_z_stddev)
+        if val > 0:
+            return val
 
         return None

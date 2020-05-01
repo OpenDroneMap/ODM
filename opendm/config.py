@@ -707,6 +707,17 @@ def config(argv=None):
                     help=('Use images\' GPS exif data for reconstruction, even if there are GCPs present.'
                           'This flag is useful if you have high precision GPS measurements. '
                           'If there are no GCPs, this flag does nothing. Default: %(default)s'))
+    
+    parser.add_argument('--gps-accuracy',
+                        type=float,
+                        action=StoreValue,
+                        metavar='<positive float>',
+                        default=15,
+                        help='Set a value in meters for the GPS Dilution of Precision (DOP) '
+                        'information for all images. If your images are tagged '
+                        'with high precision GPS information (RTK), this value will be automatically '
+                        'set accordingly. You can use this option to manually set it in case the reconstruction '
+                        'fails. Lowering this option can sometimes help control bowling-effects over large areas. Default: %(default)s')
 
     parser.add_argument('--optimize-disk-space',
                 action=StoreTrue,
