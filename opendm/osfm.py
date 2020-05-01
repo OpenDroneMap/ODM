@@ -103,6 +103,35 @@ class OSFMContext:
                 log.ODM_INFO("Multi-camera setup, using BOW matching")
                 use_bow = True
 
+            # GPSDOP override if we have GPS accuracy information (such as RTK)
+            override_gps_dop = 'gps_accuracy_is_set' in args
+            for p in photos:
+                if p.get_gps_dop() is not None:
+                    override_gps_dop = True
+                    break
+            
+            if override_gps_dop:
+                if 'gps_accuracy_is_set' in args:
+                    log.ODM_INFO("Forcing GPS DOP to %s for all images" % args.gps_accuracy)
+                else:
+                    log.ODM_INFO("Looks like we have RTK accuracy info for some photos. Good! We'll use it.")
+
+                exif_overrides = {}
+                for p in photos:
+                    dop = args.gps_accuracy if 'gps_accuracy_is_set' in args else p.get_gps_dop()
+                    if dop is not None and p.latitude is not None and p.longitude is not None:
+                        exif_overrides[p.filename] = {
+                            'gps': {
+                                'latitude': p.latitude,
+                                'longitude': p.longitude,
+                                'altitude': p.altitude if p.altitude is not None else 0,
+                                'dop': dop,
+                            }
+                        }
+
+                with open(os.path.join(self.opensfm_project_path, "exif_overrides.json"), 'w') as f:
+                    f.write(json.dumps(exif_overrides))
+
             # create config file for OpenSfM
             config = [
                 "use_exif_size: no",
