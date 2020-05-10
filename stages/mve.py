@@ -29,7 +29,13 @@ class ODMMveStage(types.ODM_Stage):
 
             # run mve makescene
             if not io.dir_exists(tree.mve_views):
-                system.run('%s "%s" "%s"' % (context.makescene_path, tree.opensfm_reconstruction_nvm, tree.mve), env_vars={'OMP_NUM_THREADS': args.max_concurrency})
+                nvm_file = tree.opensfm_reconstruction_nvm
+                if reconstruction.multi_camera:
+                    # Reconstruct only the primary band
+                    primary = reconstruction.multi_camera[0]
+                    nvm_file = os.path.join(tree.opensfm, "undistorted", "reconstruction_%s.nvm" % primary['name'].lower())
+
+                system.run('%s "%s" "%s"' % (context.makescene_path, nvm_file, tree.mve), env_vars={'OMP_NUM_THREADS': args.max_concurrency})
 
             self.update_progress(10)
 
@@ -43,54 +49,13 @@ class ODMMveStage(types.ODM_Stage):
 
             dmrecon_config = [
                 "-s%s" % mve_output_scale,
-	            "--progress=silent",
+	            "--progress=fancy",
                 "--local-neighbors=2",
                 # "--filter-width=3",
             ]
 
             # Run MVE's dmrecon
-            log.ODM_INFO('                                                                               ')
-            log.ODM_INFO('                                    ,*/**                                      ')
-            log.ODM_INFO('                                  ,*@%*/@%*                                    ')
-            log.ODM_INFO('                                ,/@%******@&*.                                 ')
-            log.ODM_INFO('                              ,*@&*********/@&*                                ')
-            log.ODM_INFO('                            ,*@&**************@&*                              ')
-            log.ODM_INFO('                          ,/@&******************@&*.                           ')
-            log.ODM_INFO('                        ,*@&*********************/@&*                          ')
-            log.ODM_INFO('                      ,*@&**************************@&*.                       ')
-            log.ODM_INFO('                    ,/@&******************************&&*,                     ')
-            log.ODM_INFO('                  ,*&&**********************************@&*.                   ')
-            log.ODM_INFO('                ,*@&**************************************@&*.                 ')
-            log.ODM_INFO('              ,*@&***************#@@@@@@@@@%****************&&*,               ')
-            log.ODM_INFO('            .*&&***************&@@@@@@@@@@@@@@****************@@*.             ')
-            log.ODM_INFO('          .*@&***************&@@@@@@@@@@@@@@@@@%****(@@%********@@*.           ')
-            log.ODM_INFO('        .*@@***************%@@@@@@@@@@@@@@@@@@@@@#****&@@@@%******&@*,         ')
-            log.ODM_INFO('      .*&@****************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@/*****@@*.       ')
-            log.ODM_INFO('    .*@@****************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@%*************@@*.     ')
-            log.ODM_INFO('  .*@@****/***********@@@@@&**(@@@@@@@@@@@@@@@@@@@@@@@#*****************%@*,   ')
-            log.ODM_INFO(' */@*******@*******#@@@@%*******/@@@@@@@@@@@@@@@@@@@@********************/@(,  ')
-            log.ODM_INFO(' ,*@(********&@@@@@@#**************/@@@@@@@#**(@@&/**********************@&*   ')
-            log.ODM_INFO('   *#@/*******************************@@@@@***&@&**********************&@*,    ')
-            log.ODM_INFO('     *#@#******************************&@@@***@#*********************&@*,      ')
-            log.ODM_INFO('       */@#*****************************@@@************************@@*.        ')
-            log.ODM_INFO('         *#@/***************************/@@/*********************%@*,          ')
-            log.ODM_INFO('           *#@#**************************#@@%******************%@*,            ')
-            log.ODM_INFO('             */@#*************************(@@@@@@@&%/********&@*.              ')
-            log.ODM_INFO('               *(@(*********************************/%@@%**%@*,                ')
-            log.ODM_INFO('                 *(@%************************************%@**                  ')
-            log.ODM_INFO('                   **@%********************************&@*,                    ')
-            log.ODM_INFO('                     *(@(****************************%@/*                      ')
-            log.ODM_INFO('                       ,(@%************************#@/*                        ')
-            log.ODM_INFO('                         ,*@%********************&@/,                          ')
-            log.ODM_INFO('                           */@#****************#@/*                            ')
-            log.ODM_INFO('                             ,/@&************#@/*                              ')
-            log.ODM_INFO('                               ,*@&********%@/,                                ')
-            log.ODM_INFO('                                 */@#****(@/*                                  ')
-            log.ODM_INFO('                                   ,/@@@@(*                                    ')
-            log.ODM_INFO('                                     .**,                                      ')
-            log.ODM_INFO('')
-            log.ODM_INFO("Running dense reconstruction. This might take a while. Please be patient, the process is not dead or hung.")
-            log.ODM_INFO("                              Process is running")
+            log.ODM_INFO("Running dense reconstruction. This might take a while.")
             
             # TODO: find out why MVE is crashing at random
             # MVE *seems* to have a race condition, triggered randomly, regardless of dataset
@@ -128,6 +93,9 @@ class ODMMveStage(types.ODM_Stage):
                     os.rename(mve_filtered_model, tree.mve_model)
                 else:
                     log.ODM_WARNING("Couldn't filter MVE model (%s does not exist)." % mve_filtered_model)
+        
+            if args.optimize_disk_space:
+                shutil.rmtree(tree.mve_views)
         else:
             log.ODM_WARNING('Found a valid MVE reconstruction file in: %s' %
                             tree.mve_model)

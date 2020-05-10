@@ -24,4 +24,4 @@ ceres-solver.tar.gz
 *.pyc
 opencv.zip
 settings.yaml
-docker.settings.yaml
+.setupdevenv

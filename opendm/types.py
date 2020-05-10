@@ -1,13 +1,12 @@
 import cv2
-import exifread
 import re
 import os
-from fractions import Fraction
-from opensfm.exif import sensor_string
 from opendm import get_image_size
 from opendm import location
 from opendm.gcp import GCPFile
 from pyproj import CRS
+import xmltodict as x2d
+from six import string_types
 
 import log
 import io
@@ -15,77 +14,7 @@ import system
 import context
 import logging
 from opendm.progress import progressbc
-
-class ODM_Photo:
-    """   ODMPhoto - a class for ODMPhotos
-    """
-
-    def __init__(self, path_file):
-        #  general purpose
-        self.filename = io.extract_file_from_path_file(path_file)
-        self.width = None
-        self.height = None
-        # other attributes
-        self.camera_make = ''
-        self.camera_model = ''
-        self.make_model = ''
-        self.latitude = None
-        self.longitude = None
-        self.altitude = None
-        # parse values from metadata
-        self.parse_exif_values(path_file)
-
-        # print log message
-        log.ODM_DEBUG('Loaded {}'.format(self))
-
-
-    def __str__(self):
-        return '{} | camera: {} | dimensions: {} x {} | lat: {} | lon: {} | alt: {}'.format(
-                            self.filename, self.make_model, self.width, self.height, self.latitude, self.longitude, self.altitude)
-
-    def parse_exif_values(self, _path_file):
-        # Disable exifread log
-        logging.getLogger('exifread').setLevel(logging.CRITICAL)
-
-        with open(_path_file, 'rb') as f:
-            tags = exifread.process_file(f, details=False)
-
-            try:
-                if 'Image Make' in tags:
-                    self.camera_make = tags['Image Make'].values.encode('utf8')
-                if 'Image Model' in tags:
-                    self.camera_model = tags['Image Model'].values.encode('utf8')
-                if 'GPS GPSAltitude' in tags:
-                    self.altitude = self.float_values(tags['GPS GPSAltitude'])[0]
-                    if 'GPS GPSAltitudeRef' in tags and self.int_values(tags['GPS GPSAltitudeRef'])[0] > 0:
-                        self.altitude *= -1
-                if 'GPS GPSLatitude' in tags and 'GPS GPSLatitudeRef' in tags:
-                    self.latitude = self.dms_to_decimal(tags['GPS GPSLatitude'], tags['GPS GPSLatitudeRef'])
-                if 'GPS GPSLongitude' in tags and 'GPS GPSLongitudeRef' in tags:
-                    self.longitude = self.dms_to_decimal(tags['GPS GPSLongitude'], tags['GPS GPSLongitudeRef'])
-            except IndexError as e:
-                log.ODM_WARNING("Cannot read EXIF tags for %s: %s" % (_path_file, e.message))
-
-        if self.camera_make and self.camera_model:
-            self.make_model = sensor_string(self.camera_make, self.camera_model)
-
-        self.width, self.height = get_image_size.get_image_size(_path_file)
-
-    def dms_to_decimal(self, dms, sign):
-        """Converts dms coords to decimal degrees"""
-        degrees, minutes, seconds = self.float_values(dms)
-
-        return (-1 if sign.values[0] in 'SWsw' else 1) * (
-            degrees +
-            minutes / 60 +
-            seconds / 3600
-        )
-
-    def float_values(self, tag):
-        return map(lambda v: float(v.num) / float(v.den), tag.values) 
-
-    def int_values(self, tag):
-        return map(int, tag.values)
+from opendm.photo import ODM_Photo
 
 
 class ODM_Reconstruction(object):
@@ -93,9 +22,50 @@ class ODM_Reconstruction(object):
         self.photos = photos
         self.georef = None
         self.gcp = None
+        self.multi_camera = self.detect_multi_camera()
+
+    def detect_multi_camera(self):
+        """
+        Looks at the reconstruction photos and determines if this
+        is a single or multi-camera setup.
+        """
+        band_photos = {}
+        band_indexes = {}
+
+        for p in self.photos:
+            if not p.band_name in band_photos:
+                band_photos[p.band_name] = []
+            if not p.band_name in band_indexes:
+                band_indexes[p.band_name] = p.band_index
+
+            band_photos[p.band_name].append(p)
+            
+        bands_count = len(band_photos)
+        if bands_count >= 2 and bands_count <= 8:
+            # Validate that all bands have the same number of images,
+            # otherwise this is not a multi-camera setup
+            img_per_band = len(band_photos[p.band_name])
+            for band in band_photos:
+                if len(band_photos[band]) != img_per_band:
+                    log.ODM_ERROR("Multi-camera setup detected, but band \"%s\" (identified from \"%s\") has only %s images (instead of %s), perhaps images are missing or are corrupted. Please include all necessary files to process all bands and try again." % (band, band_photos[band][0].filename, len(band_photos[band]), img_per_band))
+                    raise RuntimeError("Invalid multi-camera images")
+            
+            mc = []
+            for band_name in band_indexes:
+                mc.append({'name': band_name, 'photos': band_photos[band_name]})
+            
+            # Sort by band index
+            mc.sort(key=lambda x: band_indexes[x['name']])
+
+            return mc
+
+        return None
 
     def is_georeferenced(self):
         return self.georef is not None
+
+    def has_gcp(self):
+        return self.is_georeferenced() and self.gcp is not None
 
     def georeference_with_gcp(self, gcp_file, output_coords_file, output_gcp_file, rerun=False):
         if not io.file_exists(output_coords_file) or not io.file_exists(output_gcp_file) or rerun:
@@ -145,7 +115,7 @@ class ODM_Reconstruction(object):
             
             self.georef = ODM_GeoRef.FromCoordsFile(output_coords_file)
         except:
-            log.ODM_WARNING('Could not generate coordinates file. An orthophoto will not be generated.')
+            log.ODM_WARNING('Could not generate coordinates file. The orthophoto will not be georeferenced.')
 
         self.gcp = GCPFile(None)
         return self.georef
@@ -156,6 +126,12 @@ class ODM_Reconstruction(object):
         if self.is_georeferenced():
             with open(file, 'w') as f:
                 f.write(self.georef.proj4())
+
+    def get_photo(self, filename):
+        for p in self.photos:
+            if p.filename == filename:
+                return p
+    
 
 class ODM_GeoRef(object):
     @staticmethod
@@ -237,7 +213,7 @@ class ODM_Tree(object):
         self.odm_texturing = io.join_paths(self.root_path, 'odm_texturing')
         self.odm_25dtexturing = io.join_paths(self.root_path, 'odm_texturing_25d')
         self.odm_georeferencing = io.join_paths(self.root_path, 'odm_georeferencing')
-        self.odm_25dgeoreferencing = io.join_paths(self.root_path, 'odm_25dgeoreferencing')
+        self.odm_25dgeoreferencing = io.join_paths(self.root_path, 'odm_georeferencing_25d')
         self.odm_filterpoints = io.join_paths(self.root_path, 'odm_filterpoints')
         self.odm_orthophoto = io.join_paths(self.root_path, 'odm_orthophoto')
 
@@ -253,8 +229,8 @@ class ODM_Tree(object):
         self.opensfm_bundle_list = io.join_paths(self.opensfm, 'list_r000.out')
         self.opensfm_image_list = io.join_paths(self.opensfm, 'image_list.txt')
         self.opensfm_reconstruction = io.join_paths(self.opensfm, 'reconstruction.json')
-        self.opensfm_reconstruction_nvm = io.join_paths(self.opensfm, 'reconstruction.nvm')
-        self.opensfm_model = io.join_paths(self.opensfm, 'depthmaps/merged.ply')
+        self.opensfm_reconstruction_nvm = io.join_paths(self.opensfm, 'undistorted/reconstruction.nvm')
+        self.opensfm_model = io.join_paths(self.opensfm, 'undistorted/depthmaps/merged.ply')
         self.opensfm_transformation = io.join_paths(self.opensfm, 'geocoords_transformation.txt')
 
         # mve
@@ -279,8 +255,6 @@ class ODM_Tree(object):
         self.odm_texuring_log = 'odm_texturing_log.txt'
 
         # odm_georeferencing
-        self.odm_georeferencing_latlon = io.join_paths(
-            self.odm_georeferencing, 'latlon.txt')
         self.odm_georeferencing_coords = io.join_paths(
             self.odm_georeferencing, 'coords.txt')
         self.odm_georeferencing_gcp = gcp_file or io.find('gcp_list.txt', self.root_path)
@@ -304,7 +278,7 @@ class ODM_Tree(object):
             self.odm_georeferencing, 'odm_georeferencing_model_dem.tif')
 
         # odm_orthophoto
-        self.odm_orthophoto_file = io.join_paths(self.odm_orthophoto, 'odm_orthophoto.png')
+        self.odm_orthophoto_render = io.join_paths(self.odm_orthophoto, 'odm_orthophoto_render.tif')
         self.odm_orthophoto_tif = io.join_paths(self.odm_orthophoto, 'odm_orthophoto.tif')
         self.odm_orthophoto_corners = io.join_paths(self.odm_orthophoto, 'odm_orthophoto_corners.txt')
         self.odm_orthophoto_log = io.join_paths(self.odm_orthophoto, 'odm_orthophoto_log.txt')

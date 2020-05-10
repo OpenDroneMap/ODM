@@ -11,27 +11,45 @@ class ODMMvsTexStage(types.ODM_Stage):
         tree = outputs['tree']
         reconstruction = outputs['reconstruction']
 
-        # define paths and create working directories
-        system.mkdir_p(tree.odm_texturing)
-        if not args.use_3dmesh: system.mkdir_p(tree.odm_25dtexturing)
-
-        runs = [{
-            'out_dir': tree.odm_texturing,
-            'model': tree.odm_mesh,
-            'nadir': False
-        }]
-
-        if args.skip_3dmodel:
+        class nonloc:
             runs = []
 
-        if not args.use_3dmesh:
-            runs += [{
-                    'out_dir': tree.odm_25dtexturing,
-                    'model': tree.odm_25dmesh,
-                    'nadir': True
+        def add_run(nvm_file, primary=True, band=None):
+            subdir = ""
+            if not primary and band is not None:
+                subdir = band
+
+            if not args.skip_3dmodel and (primary or args.use_3dmesh):
+                nonloc.runs += [{
+                    'out_dir': os.path.join(tree.odm_texturing, subdir),
+                    'model': tree.odm_mesh,
+                    'nadir': False,
+                    'nvm_file': nvm_file
                 }]
 
-        for r in runs:
+            if not args.use_3dmesh:
+                nonloc.runs += [{
+                    'out_dir': os.path.join(tree.odm_25dtexturing, subdir),
+                    'model': tree.odm_25dmesh,
+                    'nadir': True,
+                    'nvm_file': nvm_file
+                }]
+
+        if reconstruction.multi_camera:
+            for band in reconstruction.multi_camera:
+                primary = band == reconstruction.multi_camera[0]
+                nvm_file = os.path.join(tree.opensfm, "undistorted", "reconstruction_%s.nvm" % band['name'].lower())
+                add_run(nvm_file, primary, band['name'].lower())
+        else:
+            add_run(tree.opensfm_reconstruction_nvm)
+
+        progress_per_run = 100.0 / len(nonloc.runs)
+        progress = 0.0
+
+        for r in nonloc.runs:
+            if not io.dir_exists(r['out_dir']):
+                system.mkdir_p(r['out_dir'])
+
             odm_textured_model_obj = os.path.join(r['out_dir'], tree.odm_textured_model_obj)
 
             if not io.file_exists(odm_textured_model_obj) or self.rerun():
@@ -74,7 +92,7 @@ class ODMMvsTexStage(types.ODM_Stage):
                     'toneMapping': self.params.get('tone_mapping'),
                     'nadirMode': nadir,
                     'nadirWeight': 2 ** args.texturing_nadir_weight - 1,
-                    'nvm_file': io.join_paths(tree.opensfm, "reconstruction.nvm")
+                    'nvm_file': r['nvm_file']
                 }
 
                 mvs_tmp_dir = os.path.join(r['out_dir'], 'tmp')
@@ -96,8 +114,27 @@ class ODMMvsTexStage(types.ODM_Stage):
                         '{nadirMode} '
                         '-n {nadirWeight}'.format(**kwargs))
                 
-                self.update_progress(50)
+                if args.optimize_disk_space:
+                    cleanup_files = [
+                        os.path.join(r['out_dir'], "odm_textured_model_data_costs.spt"),
+                        os.path.join(r['out_dir'], "odm_textured_model_labeling.vec"),
+                    ]
+                    for f in cleanup_files:
+                        if io.file_exists(f):
+                            os.remove(f)
+                
+                progress += progress_per_run
+                self.update_progress(progress)
             else:
                 log.ODM_WARNING('Found a valid ODM Texture file in: %s'
                                 % odm_textured_model_obj)
+        
+        if args.optimize_disk_space:
+            for r in nonloc.runs:
+                if io.file_exists(r['model']):
+                    os.remove(r['model'])
+            
+            undistorted_images_path = os.path.join(tree.opensfm, "undistorted", "images")
+            if io.dir_exists(undistorted_images_path):
+                shutil.rmtree(undistorted_images_path)
 

@@ -9,7 +9,6 @@ from opendm import system
 from opendm import context
 from opendm.cropper import Cropper
 from opendm import point_cloud
-from opendm import entwine
 
 class ODMGeoreferencingStage(types.ODM_Stage):
     def process(self, args, outputs):
@@ -20,28 +19,46 @@ class ODMGeoreferencingStage(types.ODM_Stage):
         transformPointCloud = True
         verbose = '-verbose' if self.params.get('verbose') else ''
 
-        runs = [{
-            'georeferencing_dir': tree.odm_georeferencing,
-            'texturing_dir': tree.odm_texturing,
-            'model': os.path.join(tree.odm_texturing, tree.odm_textured_model_obj)
-        }]
-
-        if args.skip_3dmodel:
+        class nonloc:
             runs = []
 
-        if not args.use_3dmesh:
+        def add_run(primary=True, band=None):
+            subdir = ""
+            if not primary and band is not None:
+                subdir = band
+
             # Make sure 2.5D mesh is georeferenced before the 3D mesh
             # Because it will be used to calculate a transform
             # for the point cloud. If we use the 3D model transform,
             # DEMs and orthophoto might not align!
-            runs.insert(0, {
-                    'georeferencing_dir': tree.odm_25dgeoreferencing,
-                    'texturing_dir': tree.odm_25dtexturing,
-                    'model': os.path.join(tree.odm_25dtexturing, tree.odm_textured_model_obj)
-                })
+            if not args.use_3dmesh:
+                nonloc.runs += [{
+                    'georeferencing_dir': os.path.join(tree.odm_25dgeoreferencing, subdir),
+                    'texturing_dir': os.path.join(tree.odm_25dtexturing, subdir),
+                }]
+            
+            if not args.skip_3dmodel and (primary or args.use_3dmesh):
+                nonloc.runs += [{
+                    'georeferencing_dir': tree.odm_georeferencing,
+                    'texturing_dir': os.path.join(tree.odm_texturing, subdir),
+                }]
+        
+        if reconstruction.multi_camera:
+            for band in reconstruction.multi_camera:
+                primary = band == reconstruction.multi_camera[0]
+                add_run(primary, band['name'].lower())
+        else:
+            add_run()
 
-        for r in runs:
+        progress_per_run = 100.0 / len(nonloc.runs)
+        progress = 0.0
+
+        for r in nonloc.runs:
+            if not io.dir_exists(r['georeferencing_dir']):
+                system.mkdir_p(r['georeferencing_dir'])
+
             odm_georeferencing_model_obj_geo = os.path.join(r['texturing_dir'], tree.odm_georeferencing_model_obj_geo)
+            odm_georeferencing_model_obj = os.path.join(r['texturing_dir'], tree.odm_textured_model_obj)
             odm_georeferencing_log = os.path.join(r['georeferencing_dir'], tree.odm_georeferencing_log)
             odm_georeferencing_transform_file = os.path.join(r['georeferencing_dir'], tree.odm_georeferencing_transform_file)
             odm_georeferencing_model_txt_geo_file = os.path.join(r['georeferencing_dir'], tree.odm_georeferencing_model_txt_geo)
@@ -56,7 +73,7 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                     'bundle': tree.opensfm_bundle,
                     'imgs': tree.dataset_raw,
                     'imgs_list': tree.opensfm_bundle_list,
-                    'model': r['model'],
+                    'model': odm_georeferencing_model_obj,
                     'log': odm_georeferencing_log,
                     'input_trans_file': tree.opensfm_transformation,
                     'transform_file': odm_georeferencing_transform_file,
@@ -97,32 +114,7 @@ class ODMGeoreferencingStage(types.ODM_Stage):
 
                 if doPointCloudGeo:
                     reconstruction.georef.extract_offsets(odm_georeferencing_model_txt_geo_file)
-
-                    # XYZ point cloud output
-                    if args.pc_csv:
-                        log.ODM_INFO("Creating geo-referenced CSV file (XYZ format)")
-                        
-                        system.run("pdal translate -i \"{}\" "
-                            "-o \"{}\" "
-                            "--writers.text.format=csv "
-                            "--writers.text.order=\"X,Y,Z\" "
-                            "--writers.text.keep_unspecified=false ".format(
-                                tree.odm_georeferencing_model_laz,
-                                tree.odm_georeferencing_xyz_file))
-                    
-                    # LAS point cloud output
-                    if args.pc_las:
-                        log.ODM_INFO("Creating geo-referenced LAS file")
-                        
-                        system.run("pdal translate -i \"{}\" "
-                            "-o \"{}\" ".format(
-                                tree.odm_georeferencing_model_laz,
-                                tree.odm_georeferencing_model_las))
-
-                    # EPT point cloud output
-                    if args.pc_ept:
-                        log.ODM_INFO("Creating geo-referenced Entwine Point Tile output")
-                        entwine.build([tree.odm_georeferencing_model_laz], tree.entwine_pointcloud, max_concurrency=args.max_concurrency, rerun=self.rerun())
+                    point_cloud.post_point_cloud_steps(args, tree)
                     
                     if args.crop > 0:
                         log.ODM_INFO("Calculating cropping area and generating bounds shapefile from point cloud")
@@ -145,3 +137,9 @@ class ODMGeoreferencingStage(types.ODM_Stage):
             else:
                 log.ODM_WARNING('Found a valid georeferenced model in: %s'
                                 % tree.odm_georeferencing_model_laz)
+
+            if args.optimize_disk_space and io.file_exists(tree.odm_georeferencing_model_laz) and io.file_exists(tree.filtered_point_cloud):
+                os.remove(tree.filtered_point_cloud)
+            
+            progress += progress_per_run
+            self.update_progress(progress)

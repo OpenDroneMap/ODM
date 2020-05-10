@@ -1,5 +1,7 @@
 import os
 import shutil
+import json
+import yaml
 from opendm import log
 from opendm.osfm import OSFMContext, get_submodel_argv, get_submodel_paths, get_all_submodel_paths
 from opendm import types
@@ -13,8 +15,9 @@ from opensfm.large import metadataset
 from opendm.cropper import Cropper
 from opendm.concurrency import get_max_memory
 from opendm.remote import LocalRemoteExecutor
-from opendm import entwine
+from opendm import point_cloud
 from pipes import quote
+
 
 class ODMSplitStage(types.ODM_Stage):
     def process(self, args, outputs):
@@ -46,7 +49,7 @@ class ODMSplitStage(types.ODM_Stage):
                     "submodel_overlap: %s" % args.split_overlap,
                 ]
 
-                octx.setup(args, tree.dataset_raw, photos, gcp_path=reconstruction.gcp.gcp_path, append_config=config, rerun=self.rerun())
+                octx.setup(args, tree.dataset_raw, photos, reconstruction=reconstruction, append_config=config, rerun=self.rerun())
                 octx.extract_metadata(self.rerun())
 
                 self.update_progress(5)
@@ -100,6 +103,71 @@ class ODMSplitStage(types.ODM_Stage):
 
                 self.update_progress(50)
 
+                resplit_done_file = octx.path('resplit_done.txt')
+                if not io.file_exists(resplit_done_file) and bool(args.split_multitracks):
+                    submodels = mds.get_submodel_paths()
+                    i = 0
+                    for s in submodels:
+                        template = octx.path("../aligned_submodels/submodel_%04d")
+                        with open(s+"/reconstruction.json", "r") as f:
+                            j = json.load(f)
+                        for k in range(0, len(j)):
+                            v = j[k]
+                            path = template % i
+                            
+                            #Create the submodel path up to opensfm
+                            os.makedirs(path+"/opensfm")
+                            os.makedirs(path+"/images")
+
+                            #symlinks for common data
+                            images = os.listdir(octx.path("../images"))
+                            for image in images:
+                                os.symlink("../../../images/"+image, path+"/images/"+image)
+                            os.symlink("../../../opensfm/exif", path+"/opensfm/exif")
+                            os.symlink("../../../opensfm/features", path+"/opensfm/features")
+                            os.symlink("../../../opensfm/matches", path+"/opensfm/matches")
+                            os.symlink("../../../opensfm/reference_lla.json", path+"/opensfm/reference_lla.json")
+                            os.symlink("../../../opensfm/camera_models.json", path+"/opensfm/camera_models.json")
+
+                            shutil.copy(s+"/../cameras.json", path+"/cameras.json")
+
+                            shutil.copy(s+"/../images.json", path+"/images.json")
+
+
+                            with open(octx.path("config.yaml")) as f:
+                                doc = yaml.safe_load(f)
+
+                            dmcv = "depthmap_min_consistent_views"
+                            if dmcv in doc:
+                                if len(v["shots"]) < doc[dmcv]:
+                                    doc[dmcv] = len(v["shots"])
+                                    print("WARNING: Reduced "+dmcv+" to accommodate short track")
+
+                            with open(path+"/opensfm/config.yaml", "w") as f:
+                                yaml.dump(doc, f)
+
+                            #We need the original tracks file for the visualsfm export, since
+                            #there may still be point matches between the tracks
+                            shutil.copy(s+"/tracks.csv", path+"/opensfm/tracks.csv")
+
+                            #Create our new reconstruction file with only the relevant track
+                            with open(path+"/opensfm/reconstruction.json", "w") as o:
+                                json.dump([v], o)
+
+                            #Create image lists
+                            with open(path+"/opensfm/image_list.txt", "w") as o:
+                                o.writelines(map(lambda x: "../images/"+x+'\n', v["shots"].keys()))
+                            with open(path+"/img_list.txt", "w") as o:
+                                o.writelines(map(lambda x: x+'\n', v["shots"].keys()))
+
+                            i+=1
+                    os.rename(octx.path("../submodels"), octx.path("../unaligned_submodels"))
+                    os.rename(octx.path("../aligned_submodels"), octx.path("../submodels"))
+                    octx.touch(resplit_done_file)
+
+                mds = metadataset.MetaDataSet(tree.opensfm)
+                submodel_paths = [os.path.abspath(p) for p in mds.get_submodel_paths()]
+
                 # Align
                 octx.align_reconstructions(self.rerun())
 
@@ -144,7 +212,7 @@ class ODMSplitStage(types.ODM_Stage):
                         log.ODM_INFO("Processing %s" % sp_octx.name()) 
                         log.ODM_INFO("========================")
 
-                        argv = get_submodel_argv(args.name, tree.submodels_path, sp_octx.name())
+                        argv = get_submodel_argv(args, tree.submodels_path, sp_octx.name())
 
                         # Re-run the ODM toolchain on the submodel
                         system.run(" ".join(map(quote, argv)), env_vars=os.environ.copy())
@@ -175,26 +243,17 @@ class ODMMergeStage(types.ODM_Stage):
 
             # Merge point clouds
             if args.merge in ['all', 'pointcloud']:
-                if not io.dir_exists(tree.entwine_pointcloud) or self.rerun():
+                if not io.file_exists(tree.odm_georeferencing_model_laz) or self.rerun():
                     all_point_clouds = get_submodel_paths(tree.submodels_path, "odm_georeferencing", "odm_georeferenced_model.laz")
                     
                     try:
-                        entwine.build(all_point_clouds, tree.entwine_pointcloud, max_concurrency=args.max_concurrency, rerun=self.rerun())
+                        point_cloud.merge(all_point_clouds, tree.odm_georeferencing_model_laz, rerun=self.rerun())
+                        point_cloud.post_point_cloud_steps(args, tree)
                     except Exception as e:
-                        log.ODM_WARNING("Could not merge EPT point cloud: %s (skipping)" % str(e))
-                else:
-                    log.ODM_WARNING("Found merged EPT point cloud in %s" % tree.entwine_pointcloud)
-                
-                if not io.file_exists(tree.odm_georeferencing_model_laz) or self.rerun():
-                    if io.dir_exists(tree.entwine_pointcloud):
-                        try:
-                            system.run('pdal translate "ept://{}" "{}"'.format(tree.entwine_pointcloud, tree.odm_georeferencing_model_laz))
-                        except Exception as e:
-                            log.ODM_WARNING("Cannot export EPT dataset to LAZ: %s" % str(e))
-                    else:
-                        log.ODM_WARNING("No EPT point cloud found (%s), skipping LAZ conversion)" % tree.entwine_pointcloud)
+                        log.ODM_WARNING("Could not merge point cloud: %s (skipping)" % str(e))
                 else:
                     log.ODM_WARNING("Found merged point cloud in %s" % tree.odm_georeferencing_model_laz)
+                
             
             self.update_progress(25)
 
@@ -217,84 +276,27 @@ class ODMMergeStage(types.ODM_Stage):
                     system.mkdir_p(tree.odm_orthophoto)
 
                 if not io.file_exists(tree.odm_orthophoto_tif) or self.rerun():
-                    all_orthos_and_cutlines = get_all_submodel_paths(tree.submodels_path,
-                        os.path.join("odm_orthophoto", "odm_orthophoto.tif"),
-                        os.path.join("odm_orthophoto", "cutline.gpkg"),
+                    all_orthos_and_ortho_cuts = get_all_submodel_paths(tree.submodels_path,
+                        os.path.join("odm_orthophoto", "odm_orthophoto_feathered.tif"),
+                        os.path.join("odm_orthophoto", "odm_orthophoto_cut.tif"),
                     )
 
-                    if len(all_orthos_and_cutlines) > 1:
-                        log.ODM_INFO("Found %s submodels with valid orthophotos and cutlines" % len(all_orthos_and_cutlines))
+                    if len(all_orthos_and_ortho_cuts) > 1:
+                        log.ODM_INFO("Found %s submodels with valid orthophotos and cutlines" % len(all_orthos_and_ortho_cuts))
                         
                         # TODO: histogram matching via rasterio
                         # currently parts have different color tones
 
-                        merged_geotiff = os.path.join(tree.odm_orthophoto, "odm_orthophoto.merged.tif")
-
-                        kwargs = {
-                            'orthophoto_merged': merged_geotiff,
-                            'input_files': ' '.join(map(lambda i: quote(i[0]), all_orthos_and_cutlines)),
-                            'max_memory': get_max_memory(),
-                            'threads': args.max_concurrency,
-                        }
-
-                        # use bounds as cutlines (blending)
-                        if io.file_exists(merged_geotiff):
-                            os.remove(merged_geotiff)
-
-                        system.run('gdal_merge.py -o {orthophoto_merged} '
-                                #'-createonly '
-                                '-co "BIGTIFF=YES" '
-                                '-co "BLOCKXSIZE=512" '
-                                '-co "BLOCKYSIZE=512" '
-                                '--config GDAL_CACHEMAX {max_memory}% '
-                                '{input_files} '.format(**kwargs)
-                                )
-
-                        for ortho_cutline in all_orthos_and_cutlines:
-                            kwargs['input_file'], kwargs['cutline'] = ortho_cutline
-
-                            # Note: cblend has a high performance penalty
-                            system.run('gdalwarp -cutline {cutline} '
-                                    '-cblend 20 '
-                                    '-r bilinear -multi '
-                                    '-wo NUM_THREADS={threads} '
-                                    '--config GDAL_CACHEMAX {max_memory}% '
-                                    '{input_file} {orthophoto_merged}'.format(**kwargs)
-                            )
-
-                        # Apply orthophoto settings (compression, tiling, etc.)
-                        orthophoto_vars = orthophoto.get_orthophoto_vars(args)
-
                         if io.file_exists(tree.odm_orthophoto_tif):
                             os.remove(tree.odm_orthophoto_tif)
 
-                        kwargs = {
-                            'vars': ' '.join(['-co %s=%s' % (k, orthophoto_vars[k]) for k in orthophoto_vars]),
-                            'max_memory': get_max_memory(),
-                            'merged': merged_geotiff,
-                            'log': tree.odm_orthophoto_tif_log,
-                            'orthophoto': tree.odm_orthophoto_tif,
-                        }
-
-                        system.run('gdal_translate '
-                            '{vars} '
-                            '--config GDAL_CACHEMAX {max_memory}% '
-                            '{merged} {orthophoto} > {log}'.format(**kwargs))
-
-                        os.remove(merged_geotiff)
-
-                        # Crop
-                        if args.crop > 0:
-                            Cropper.crop(merged_bounds_file, tree.odm_orthophoto_tif, orthophoto_vars)
-
-                        # Overviews
-                        if args.build_overviews:
-                            orthophoto.build_overviews(tree.odm_orthophoto_tif) 
-                        
-                    elif len(all_orthos_and_cutlines) == 1:
+                        orthophoto_vars = orthophoto.get_orthophoto_vars(args)
+                        orthophoto.merge(all_orthos_and_ortho_cuts, tree.odm_orthophoto_tif, orthophoto_vars)
+                        orthophoto.post_orthophoto_steps(args, merged_bounds_file, tree.odm_orthophoto_tif)
+                    elif len(all_orthos_and_ortho_cuts) == 1:
                         # Simply copy
                         log.ODM_WARNING("A single orthophoto/cutline pair was found between all submodels.")
-                        shutil.copyfile(all_orthos_and_cutlines[0][0], tree.odm_orthophoto_tif)
+                        shutil.copyfile(all_orthos_and_ortho_cuts[0][0], tree.odm_orthophoto_tif)
                     else:
                         log.ODM_WARNING("No orthophoto/cutline pairs were found in any of the submodels. No orthophoto will be generated.")
                 else:
@@ -326,7 +328,7 @@ class ODMMergeStage(types.ODM_Stage):
                     if io.file_exists(dem_file):
                         # Crop
                         if args.crop > 0:
-                            Cropper.crop(merged_bounds_file, dem_file, dem_vars)
+                            Cropper.crop(merged_bounds_file, dem_file, dem_vars, keep_original=not args.optimize_disk_space)
                         log.ODM_INFO("Created %s" % dem_file)
                     else:
                         log.ODM_WARNING("Cannot merge %s, %s was not created" % (human_name, dem_file))

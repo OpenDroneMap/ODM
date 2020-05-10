@@ -129,7 +129,7 @@ endforeach()
 
 externalproject_add(mve
     GIT_REPOSITORY  https://github.com/OpenDroneMap/mve.git
-    GIT_TAG         070
+    GIT_TAG         099
     UPDATE_COMMAND  ""
     SOURCE_DIR      ${SB_SOURCE_DIR}/elibs/mve
     CONFIGURE_COMMAND ""
@@ -167,4 +167,17 @@ externalproject_add(dem2points
     BUILD_IN_SOURCE 1
     BUILD_COMMAND     make
     INSTALL_COMMAND   ""
+)
+
+externalproject_add(lastools
+    GIT_REPOSITORY    https://github.com/LAStools/LAStools.git
+    GIT_TAG           2ef44281645999ec7217facec84a5913bbbbe165
+    SOURCE_DIR        ${SB_SOURCE_DIR}/lastools
+    CONFIGURE_COMMAND ""
+    CMAKE_COMMAND     ""
+    CMAKE_GENERATOR   ""
+    UPDATE_COMMAND    ""
+    BUILD_IN_SOURCE 1
+    BUILD_COMMAND     make -C LASlib -j$(nproc) CXXFLAGS='-std=c++11' && make -C src -j$(nproc) CXXFLAGS='-std=c++11' lasmerge
+    INSTALL_COMMAND   mv ${SB_SOURCE_DIR}/lastools/bin/lasmerge ${SB_INSTALL_DIR}/bin
 )

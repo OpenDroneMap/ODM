@@ -17,7 +17,7 @@ class Cropper:
         return os.path.join(self.storage_dir, '{}.{}'.format(self.files_prefix, suffix))
 
     @staticmethod
-    def crop(gpkg_path, geotiff_path, gdal_options, keep_original=True):
+    def crop(gpkg_path, geotiff_path, gdal_options, keep_original=True, warp_options=[]):
         if not os.path.exists(gpkg_path) or not os.path.exists(geotiff_path):
             log.ODM_WARNING("Either {} or {} does not exist, will skip cropping.".format(gpkg_path, geotiff_path))
             return geotiff_path
@@ -44,12 +44,14 @@ class Cropper:
                 'geotiffInput': original_geotiff,
                 'geotiffOutput': geotiff_path,
                 'options': ' '.join(map(lambda k: '-co {}={}'.format(k, gdal_options[k]), gdal_options)),
+                'warpOptions': ' '.join(warp_options),
                 'max_memory': get_max_memory()
             }
 
             run('gdalwarp -cutline {gpkg_path} '
                 '-crop_to_cutline '
                 '{options} '
+                '{warpOptions} '
                 '{geotiffInput} '
                 '{geotiffOutput} '
                 '--config GDAL_CACHEMAX {max_memory}%'.format(**kwargs))
