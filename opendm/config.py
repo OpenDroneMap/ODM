@@ -712,7 +712,7 @@ def config(argv=None):
                         type=float,
                         action=StoreValue,
                         metavar='<positive float>',
-                        default=15,
+                        default=5,
                         help='Set a value in meters for the GPS Dilution of Precision (DOP) '
                         'information for all images. If your images are tagged '
                         'with high precision GPS information (RTK), this value will be automatically '
