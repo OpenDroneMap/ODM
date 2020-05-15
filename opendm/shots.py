@@ -100,7 +100,7 @@ def merge_geojson_shots(geojson_shots_files, output_geojson_file):
         with open(shot_file, "r") as f:
             shots = json.loads(f.read())
 
-        if result is None:
+        if len(result) == 0:
             for feat in shots.get('features', []):
                 added_files[feat['properties']['filename']] = True
 
