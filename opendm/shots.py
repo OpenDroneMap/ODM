@@ -93,5 +93,24 @@ def get_geojson_shots_from_opensfm(reconstruction_file, geocoords_transformation
     else:
         raise RuntimeError("%s does not exist." % reconstruction_file)
 
-def merge_geojson_shots(geojson_shots_files):
-    pass
+def merge_geojson_shots(geojson_shots_files, output_geojson_file):
+    result = None
+    added_files = {}
+    for shot_file in geojson_shots_files:
+        with open(shot_file, "r") as f:
+            shots = json.loads(f.read())
+
+        if result is None:
+            for feat in shots.get('features', []):
+                added_files[feat['properties']['filename']] = True
+
+            # Use first file as base
+            result = shots
+        else:
+            # Append features if filename not already added
+            for feat in shots.get('features', []):
+                if not feat['properties']['filename'] in added_files:
+                    result['features'].append(feat)
+    
+    with open(output_geojson_file, "w") as f:
+        f.write(json.dumps(result))
