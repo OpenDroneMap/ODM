@@ -14,7 +14,7 @@ def get_origin(shot):
     """The origin of the pose in world coordinates."""
     return -get_rotation_matrix(np.array(shot['rotation'])).T.dot(np.array(shot['translation']))
 
-def extract_shots_from_opensfm(reconstruction_file, geocoords_transformation_file=None, utm_srs=None):
+def get_geojson_shots_from_opensfm(reconstruction_file, geocoords_transformation_file=None, utm_srs=None):
     """
     Extract shots from OpenSfM's reconstruction.json
     """
@@ -77,3 +77,5 @@ def extract_shots_from_opensfm(reconstruction_file, geocoords_transformation_fil
     else:
         raise RuntimeError("%s does not exist." % reconstruction_file)
 
+def merge_geojson_shots(geojson_shots_files):
+    pass

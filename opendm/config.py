@@ -11,7 +11,7 @@ import sys
 # parse arguments
 processopts = ['dataset', 'split', 'merge', 'opensfm', 'mve', 'odm_filterpoints',
                'odm_meshing', 'mvs_texturing', 'odm_georeferencing',
-               'odm_dem', 'odm_orthophoto']
+               'odm_dem', 'odm_orthophoto', 'odm_report']
 
 with open(io.join_paths(context.root_path, 'VERSION')) as version_file:
     __version__ = version_file.read().strip()
