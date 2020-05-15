@@ -21,7 +21,7 @@ class ODMReport(types.ODM_Stage):
             if reconstruction.is_georeferenced():
                 shots = get_geojson_shots_from_opensfm(tree.opensfm_reconstruction, tree.opensfm_transformation, reconstruction.get_proj_srs())    
             else:
-                # Psuedo geo
+                # Pseudo geo
                 shots = get_geojson_shots_from_opensfm(tree.opensfm_reconstruction, pseudo_geotiff=tree.odm_orthophoto_tif)
 
             if shots:
