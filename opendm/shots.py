@@ -94,7 +94,7 @@ def get_geojson_shots_from_opensfm(reconstruction_file, geocoords_transformation
         raise RuntimeError("%s does not exist." % reconstruction_file)
 
 def merge_geojson_shots(geojson_shots_files, output_geojson_file):
-    result = None
+    result = {}
     added_files = {}
     for shot_file in geojson_shots_files:
         with open(shot_file, "r") as f:
