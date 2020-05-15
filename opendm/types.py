@@ -125,7 +125,11 @@ class ODM_Reconstruction(object):
         # dataset is not georeferenced)
         if self.is_georeferenced():
             with open(file, 'w') as f:
-                f.write(self.georef.proj4())
+                f.write(self.get_proj_srs())
+
+    def get_proj_srs(self):
+        if self.is_georeferenced():
+            return self.georef.proj4()
 
     def get_photo(self, filename):
         for p in self.photos:
