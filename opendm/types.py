@@ -220,6 +220,8 @@ class ODM_Tree(object):
         self.odm_25dgeoreferencing = io.join_paths(self.root_path, 'odm_georeferencing_25d')
         self.odm_filterpoints = io.join_paths(self.root_path, 'odm_filterpoints')
         self.odm_orthophoto = io.join_paths(self.root_path, 'odm_orthophoto')
+        self.odm_report = io.join_paths(self.root_path, 'odm_report')
+        
 
         # important files paths
 
