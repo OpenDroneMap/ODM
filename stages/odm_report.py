@@ -22,12 +22,15 @@ class ODMReport(types.ODM_Stage):
                 shots = get_geojson_shots_from_opensfm(tree.opensfm_reconstruction, tree.opensfm_transformation, reconstruction.get_proj_srs())    
             else:
                 # Psuedo geo
-                shots = get_geojson_shots_from_opensfm(tree.opensfm_reconstruction)
+                shots = get_geojson_shots_from_opensfm(tree.opensfm_reconstruction, pseudo_geotiff=tree.odm_orthophoto_tif)
 
-            with open(shots_geojson, "w") as fout:
-                fout.write(json.dumps(shots))
-                
-            logger.info("Wrote %s" % shots_geojson)
+            if shots:
+                with open(shots_geojson, "w") as fout:
+                    fout.write(json.dumps(shots))
+
+                log.ODM_INFO("Wrote %s" % shots_geojson)
+            else:
+                log.ODM_WARNING("Cannot extract shots")
         else:
             log.ODM_WARNING('Found a valid shots file in: %s' %
                             tree.shots_geojson)
