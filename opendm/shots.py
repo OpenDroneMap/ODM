@@ -1,8 +1,9 @@
 import os, json
 from opendm import log
-from opendm.pseudogeo import get_pseudogeo_utm
+from opendm.pseudogeo import get_pseudogeo_utm, get_pseudogeo_scale
 from opendm.location import transformer
 from pyproj import CRS
+import gdal
 import numpy as np
 import cv2
 
@@ -14,7 +15,7 @@ def get_origin(shot):
     """The origin of the pose in world coordinates."""
     return -get_rotation_matrix(np.array(shot['rotation'])).T.dot(np.array(shot['translation']))
 
-def get_geojson_shots_from_opensfm(reconstruction_file, geocoords_transformation_file=None, utm_srs=None):
+def get_geojson_shots_from_opensfm(reconstruction_file, geocoords_transformation_file=None, utm_srs=None, pseudo_geotiff=None):
     """
     Extract shots from OpenSfM's reconstruction.json
     """
@@ -22,10 +23,25 @@ def get_geojson_shots_from_opensfm(reconstruction_file, geocoords_transformation
     # Read transform (if available)
     if geocoords_transformation_file is not None and utm_srs is not None and os.path.exists(geocoords_transformation_file):
         geocoords = np.loadtxt(geocoords_transformation_file, usecols=range(4))
-    else:
+    elif pseudo_geotiff is not None and os.path.exists(pseudo_geotiff):
         # pseudogeo transform
         utm_srs = get_pseudogeo_utm()
-        geocoords = np.identity(4)
+
+        # the pseudo-georeferencing CRS UL corner is at 0,0
+        # but our shot coordinates aren't, so we need to offset them
+        raster = gdal.Open(pseudo_geotiff)
+        ulx, xres, _, uly, _, yres  = raster.GetGeoTransform()
+        lrx = ulx + (raster.RasterXSize * xres)
+        lry = uly + (raster.RasterYSize * yres)
+
+        geocoords = np.array([[1.0 / get_pseudogeo_scale() ** 2, 0, 0, ulx + lrx / 2.0],
+                              [0, 1.0 / get_pseudogeo_scale() ** 2, 0, uly + lry / 2.0],
+                              [0, 0, 1, 0],
+                              [0, 0, 0, 1]])
+        raster = None
+    else:
+        # Can't deal with this
+        return
 
     crstrans = transformer(CRS.from_proj4(utm_srs), CRS.from_epsg("4326"))
 
@@ -47,10 +63,10 @@ def get_geojson_shots_from_opensfm(reconstruction_file, geocoords_transformation
                     continue
                 
                 cam = cameras[cam]
-                R, T = geocoords[:3, :3], geocoords[:3, 3]
+                Rs, T = geocoords[:3, :3], geocoords[:3, 3]
                 origin = get_origin(shot)
 
-                utm_coords = np.dot(R, origin) + T
+                utm_coords = np.dot(Rs, origin) + T
                 trans_coords = crstrans.TransformPoint(utm_coords[0], utm_coords[1], utm_coords[2])
 
                 feats.append({

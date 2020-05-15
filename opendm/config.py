@@ -96,7 +96,7 @@ def config(argv=None):
     parser.add_argument('--end-with', '-e',
                         metavar='<string>',
                         action=StoreValue,
-                        default='odm_orthophoto',
+                        default='odm_report',
                         choices=processopts,
                         help=('Can be one of:' + ' | '.join(processopts)))
 
