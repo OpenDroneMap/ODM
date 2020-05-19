@@ -11,6 +11,14 @@ def get_rotation_matrix(rotation):
     """Get rotation as a 3x3 matrix."""
     return cv2.Rodrigues(rotation)[0]
 
+def matrix_to_rotation(rotation_matrix):
+    R = np.array(rotation_matrix, dtype=float)
+    # if not np.isclose(np.linalg.det(R), 1):
+    #     raise ValueError("Determinant != 1")
+    # if not np.allclose(np.linalg.inv(R), R.T):
+    #     raise ValueError("Not orthogonal")
+    return cv2.Rodrigues(R)[0].ravel()
+
 def get_origin(shot):
     """The origin of the pose in world coordinates."""
     return -get_rotation_matrix(np.array(shot['rotation'])).T.dot(np.array(shot['translation']))
@@ -64,10 +72,16 @@ def get_geojson_shots_from_opensfm(reconstruction_file, geocoords_transformation
                 
                 cam = cameras[cam]
                 Rs, T = geocoords[:3, :3], geocoords[:3, 3]
+                Rs1 = np.linalg.inv(Rs)
                 origin = get_origin(shot)
 
+                # Translation
                 utm_coords = np.dot(Rs, origin) + T
                 trans_coords = crstrans.TransformPoint(utm_coords[0], utm_coords[1], utm_coords[2])
+
+                # Rotation
+                rotation_matrix = get_rotation_matrix(np.array(shot['rotation']))
+                rotation = matrix_to_rotation(np.dot(rotation_matrix, Rs1))
 
                 feats.append({
                     'type': 'Feature',
@@ -76,7 +90,8 @@ def get_geojson_shots_from_opensfm(reconstruction_file, geocoords_transformation
                         'focal': cam.get('focal', cam.get('focal_x')), # Focal ratio = focal length (mm) / max(sensor_width, sensor_height) (mm)
                         'width': cam.get('width', 0),
                         'height': cam.get('height', 0),
-                        'rotation': shot.get('rotation', [])
+                        'translation': shot['translation'],
+                        'rotation': [rotation[0], rotation[1], rotation[2]]
                     },
                     'geometry':{
                         'type': 'Point',
