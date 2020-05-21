@@ -17,6 +17,7 @@ from odm_orthophoto import ODMOrthoPhotoStage
 from odm_dem import ODMDEMStage
 from odm_filterpoints import ODMFilterPoints
 from splitmerge import ODMSplitStage, ODMMergeStage
+from odm_report import ODMReport
 
 
 class ODMApp:
@@ -57,7 +58,8 @@ class ODMApp:
         dem = ODMDEMStage('odm_dem', args, progress=90.0,
                             max_concurrency=args.max_concurrency,
                             verbose=args.verbose)
-        orthophoto = ODMOrthoPhotoStage('odm_orthophoto', args, progress=100.0)
+        orthophoto = ODMOrthoPhotoStage('odm_orthophoto', args, progress=98.0)
+        report = ODMReport('odm_report', args, progress=100.0)
 
         # Normal pipeline
         self.first_stage = dataset
@@ -77,7 +79,8 @@ class ODMApp:
             .connect(texturing) \
             .connect(georeferencing) \
             .connect(dem) \
-            .connect(orthophoto)
+            .connect(orthophoto) \
+            .connect(report)
                 
         # # SLAM pipeline
         # # TODO: this is broken and needs work

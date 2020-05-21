@@ -125,7 +125,11 @@ class ODM_Reconstruction(object):
         # dataset is not georeferenced)
         if self.is_georeferenced():
             with open(file, 'w') as f:
-                f.write(self.georef.proj4())
+                f.write(self.get_proj_srs())
+
+    def get_proj_srs(self):
+        if self.is_georeferenced():
+            return self.georef.proj4()
 
     def get_photo(self, filename):
         for p in self.photos:
@@ -216,6 +220,8 @@ class ODM_Tree(object):
         self.odm_25dgeoreferencing = io.join_paths(self.root_path, 'odm_georeferencing_25d')
         self.odm_filterpoints = io.join_paths(self.root_path, 'odm_filterpoints')
         self.odm_orthophoto = io.join_paths(self.root_path, 'odm_orthophoto')
+        self.odm_report = io.join_paths(self.root_path, 'odm_report')
+        
 
         # important files paths
 

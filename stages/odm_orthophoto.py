@@ -160,8 +160,7 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                 geotiffcreated = True
             if not geotiffcreated:
                 if io.file_exists(tree.odm_orthophoto_render):
-                    # 0.1 is arbitrary
-                    pseudogeo.add_pseudo_georeferencing(tree.odm_orthophoto_render, 0.1)
+                    pseudogeo.add_pseudo_georeferencing(tree.odm_orthophoto_render)
                     log.ODM_INFO("Renaming %s --> %s" % (tree.odm_orthophoto_render, tree.odm_orthophoto_tif))
                     os.rename(tree.odm_orthophoto_render, tree.odm_orthophoto_tif)
                 else:

@@ -126,7 +126,7 @@ class ODMOpenSfMStage(types.ODM_Stage):
             octx.run('export_geocoords --transformation --proj \'%s\'' % reconstruction.georef.proj4())
         else:
             log.ODM_WARNING("Will skip exporting %s" % tree.opensfm_transformation)
-
+        
         if args.optimize_disk_space:
             os.remove(octx.path("tracks.csv"))
             os.remove(octx.path("undistorted", "tracks.csv"))

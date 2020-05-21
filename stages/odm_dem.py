@@ -130,8 +130,7 @@ class ODMDEMStage(types.ODM_Stage):
                                             overwrite=True)
 
                     if pseudo_georeference:
-                        # 0.1 is arbitrary
-                        pseudogeo.add_pseudo_georeferencing(dem_geotiff_path, 0.1)
+                        pseudogeo.add_pseudo_georeferencing(dem_geotiff_path)
                     
                     progress += 30
                     self.update_progress(progress)

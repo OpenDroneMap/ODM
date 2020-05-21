@@ -4,7 +4,13 @@ from gdalconst import GA_Update
 from opendm import io
 from opendm import log
 
-def add_pseudo_georeferencing(geotiff, scale=1.0):
+def get_pseudogeo_utm():
+    return '+proj=utm +zone=30 +ellps=WGS84 +datum=WGS84 +units=m +no_defs'
+
+def get_pseudogeo_scale():
+    return 0.1 # Arbitrarily chosen
+
+def add_pseudo_georeferencing(geotiff):
     if not io.file_exists(geotiff):
         log.ODM_WARNING("Cannot add pseudo georeferencing, %s does not exist" % geotiff)
         return
@@ -14,9 +20,9 @@ def add_pseudo_georeferencing(geotiff, scale=1.0):
 
         dst_ds = gdal.Open(geotiff, GA_Update)
         srs = osr.SpatialReference()
-        srs.ImportFromProj4('+proj=utm +zone=30 +ellps=WGS84 +datum=WGS84 +units=m +no_defs')
+        srs.ImportFromProj4(get_pseudogeo_utm())
         dst_ds.SetProjection( srs.ExportToWkt() )
-        dst_ds.SetGeoTransform( [ 0.0, scale, 0.0, 0.0, 0.0, -scale ] )
+        dst_ds.SetGeoTransform( [ 0.0, get_pseudogeo_scale(), 0.0, 0.0, 0.0, -get_pseudogeo_scale() ] )
         dst_ds = None
 
     except Exception as e:
