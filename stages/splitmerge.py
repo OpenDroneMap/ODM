@@ -15,6 +15,7 @@ from opensfm.large import metadataset
 from opendm.cropper import Cropper
 from opendm.concurrency import get_max_memory
 from opendm.remote import LocalRemoteExecutor
+from opendm.shots import merge_geojson_shots
 from opendm import point_cloud
 from pipes import quote
 
@@ -340,6 +341,20 @@ class ODMMergeStage(types.ODM_Stage):
 
             if args.merge in ['all', 'dem'] and args.dtm:
                 merge_dems("dtm.tif", "DTM")
+
+            self.update_progress(95)
+
+            # Merge reports
+            if not io.dir_exists(tree.odm_report):
+                system.mkdir_p(tree.odm_report)
+
+            geojson_shots = tree.path(tree.odm_report, "shots.geojson")
+            if not io.file_exists(geojson_shots) or self.rerun():
+                geojson_shots_files = get_submodel_paths(tree.submodels_path, "odm_report", "shots.geojson")
+                log.ODM_INFO("Merging %s shots.geojson files" % len(geojson_shots_files))
+                merge_geojson_shots(geojson_shots_files, geojson_shots)
+            else:
+                log.ODM_WARNING("Found merged shots.geojson in %s" % tree.odm_report)
 
             # Stop the pipeline short! We're done.
             self.next_stage = None
