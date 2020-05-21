@@ -31,6 +31,7 @@ def get_geojson_shots_from_opensfm(reconstruction_file, geocoords_transformation
     # Read transform (if available)
     if geocoords_transformation_file is not None and utm_srs is not None and os.path.exists(geocoords_transformation_file):
         geocoords = np.loadtxt(geocoords_transformation_file, usecols=range(4))
+        pseudo = False
     elif pseudo_geotiff is not None and os.path.exists(pseudo_geotiff):
         # pseudogeo transform
         utm_srs = get_pseudogeo_utm()
@@ -47,6 +48,7 @@ def get_geojson_shots_from_opensfm(reconstruction_file, geocoords_transformation
                               [0, 0, 1, 0],
                               [0, 0, 0, 1]])
         raster = None
+        pseudo = True
     else:
         # Can't deal with this
         return
@@ -83,6 +85,8 @@ def get_geojson_shots_from_opensfm(reconstruction_file, geocoords_transformation
                 rotation_matrix = get_rotation_matrix(np.array(shot['rotation']))
                 rotation = matrix_to_rotation(np.dot(rotation_matrix, Rs1))
 
+                translation = origin if pseudo else utm_coords
+
                 feats.append({
                     'type': 'Feature',
                     'properties': {
@@ -90,8 +94,8 @@ def get_geojson_shots_from_opensfm(reconstruction_file, geocoords_transformation
                         'focal': cam.get('focal', cam.get('focal_x')), # Focal ratio = focal length (mm) / max(sensor_width, sensor_height) (mm)
                         'width': cam.get('width', 0),
                         'height': cam.get('height', 0),
-                        'translation': shot['translation'],
-                        'rotation': [rotation[0], rotation[1], rotation[2]]
+                        'translation': list(translation),
+                        'rotation': list(rotation)
                     },
                     'geometry':{
                         'type': 'Point',
