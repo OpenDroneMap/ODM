@@ -504,6 +504,7 @@ class ToolchainTask(Task):
                                         "odm_orthophoto/odm_orthophoto_cut.tif",
                                         "odm_orthophoto/odm_orthophoto_feathered.tif",
                                         "odm_dem",
+                                        "odm_report",
                                         "odm_georeferencing",
                                         "odm_georeferencing_25d"])
         else:
