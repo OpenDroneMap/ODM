@@ -129,6 +129,11 @@ $ DATA=/path/to/datasets ./start-dev-env.sh
 
 Where `/path/to/datasets` is a directory where you can place test datasets (it can also point to an empty directory if you don't have test datasets).
 
+Run configure to set up the required third party libraries:
+```bash
+(odmdev) [user:/code] master+* ± bash configure.sh reinstall
+```
+
 You can now make changes to the ODM source. When you are ready to test the changes you can simply invoke:
 
 ```bash
