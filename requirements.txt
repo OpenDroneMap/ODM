@@ -1,6 +1,6 @@
 PyYAML==3.13
 ExifRead==2.1.2
-cloudpickle==0.4.0
+cloudpickle==1.2.2
 pytz==2020.1
 gpxpy==1.3.5
 xmltodict==0.12.0
