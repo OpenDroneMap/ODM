@@ -15,14 +15,14 @@ If you would rather not type commands in a shell and are looking for a friendly 
 
 ## Quickstart
 
-The easiest way to run ODM is via docker. To install docker, see [docs.docker.com](https://docs.docker.com). Once you have docker installed and [working](https://docs.docker.com/get-started/#test-docker-installation), you can run ODM by placing some images (JPEGs or TIFFs) in a folder named “images” (for example `/datasets/project/images` or `C:\Users\youruser\datasets\project\images`) and simply run from a Terminal / Command Prompt:
+The easiest way to run ODM is via docker. To install docker, see [docs.docker.com](https://docs.docker.com). Once you have docker installed and [working](https://docs.docker.com/get-started/#test-docker-installation), you can run ODM by placing some images (JPEGs or TIFFs) in a folder named “images” (for example `C:\Users\youruser\datasets\project\images` or `/home/youruser/datasets/project/images`) and simply run from a Command Prompt / Terminal:
 
 ```bash
 # Windows
 docker run -ti --rm -v c:/Users/youruser/datasets:/datasets opendronemap/odm --project-path /datasets project
 
 # Mac/Linux
-docker run -ti --rm -v /datasets:/datasets opendronemap/odm --project-path /datasets project
+docker run -ti --rm -v /home/youruser/datasets:/datasets opendronemap/odm --project-path /datasets project
 ```
 
 You can pass [additional parameters](https://docs.opendronemap.org/arguments.html) by appending them to the command:
