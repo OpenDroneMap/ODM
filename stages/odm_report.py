@@ -32,5 +32,4 @@ class ODMReport(types.ODM_Stage):
             else:
                 log.ODM_WARNING("Cannot extract shots")
         else:
-            log.ODM_WARNING('Found a valid shots file in: %s' %
-                            tree.shots_geojson)
+            log.ODM_WARNING('Found a valid shots file in: %s' % shots_geojson)
