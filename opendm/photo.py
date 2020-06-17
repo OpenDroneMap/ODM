@@ -84,9 +84,17 @@ class ODM_Photo:
             tags = exifread.process_file(f, details=False)
             try:
                 if 'Image Make' in tags:
-                    self.camera_make = tags['Image Make'].values.encode('utf8')
+                    try:
+                        self.camera_make = tags['Image Make'].values.encode('utf8')
+                    except UnicodeDecodeError:
+                        log.ODM_WARNING("EXIF Image Make might be corrupted")
+                        self.camera_make = "unknown"
                 if 'Image Model' in tags:
-                    self.camera_model = tags['Image Model'].values.encode('utf8')
+                    try:
+                        self.camera_model = tags['Image Model'].values.encode('utf8')
+                    except UnicodeDecodeError:
+                        log.ODM_WARNING("EXIF Image Model might be corrupted")
+                        self.camera_model = "unknown"
                 if 'GPS GPSAltitude' in tags:
                     self.altitude = self.float_value(tags['GPS GPSAltitude'])
                     if 'GPS GPSAltitudeRef' in tags and self.int_value(tags['GPS GPSAltitudeRef']) > 0:
