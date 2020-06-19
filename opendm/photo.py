@@ -270,7 +270,7 @@ class ODM_Photo:
             xmp_str = img_str[xmp_start:xmp_end + 12]
             try:
                 xdict = x2d.parse(xmp_str)
-            except ExpatError as e:
+            except ExpatError:
                 from bs4 import BeautifulSoup
                 xmp_str = str(BeautifulSoup(xmp_str, 'xml'))
                 xdict = x2d.parse(xmp_str)
