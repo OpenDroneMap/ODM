@@ -12,7 +12,7 @@ import log
 import system
 import xmltodict as x2d
 from opendm import get_image_size
-
+from xml.parsers.expat import ExpatError
 
 class ODM_Photo:
     """   ODMPhoto - a class for ODMPhotos
@@ -205,10 +205,12 @@ class ODM_Photo:
                             self.gps_z_stddev = float(self.get_xmp_tag(tags, '@drone-dji:RtkStdHgt'))
                     else:
                         self.set_attr_from_xmp_tag('gps_xy_stddev', tags, [
-                            '@Camera:GPSXYAccuracy'
+                            '@Camera:GPSXYAccuracy',
+                            'GPSXYAccuracy'
                         ], float)
                         self.set_attr_from_xmp_tag('gps_z_stddev', tags, [
-                            '@Camera:GPSZAccuracy'
+                            '@Camera:GPSZAccuracy',
+                            'GPSZAccuracy'
                         ], float)
 
                     if 'DLS:Yaw' in tags:
@@ -227,7 +229,6 @@ class ODM_Photo:
                 # ], float)
             
         self.width, self.height = get_image_size.get_image_size(_path_file)
-
         # Sanitize band name since we use it in folder paths
         self.band_name = re.sub('[^A-Za-z0-9]+', '', self.band_name)
 
@@ -267,7 +268,13 @@ class ODM_Photo:
 
         if xmp_start < xmp_end:
             xmp_str = img_str[xmp_start:xmp_end + 12]
-            xdict = x2d.parse(xmp_str)
+            try:
+                xdict = x2d.parse(xmp_str)
+            except ExpatError:
+                from bs4 import BeautifulSoup
+                xmp_str = str(BeautifulSoup(xmp_str, 'xml'))
+                xdict = x2d.parse(xmp_str)
+                log.ODM_WARNING("%s has malformed XMP XML (but we fixed it)" % self.filename)
             xdict = xdict.get('x:xmpmeta', {})
             xdict = xdict.get('rdf:RDF', {})
             xdict = xdict.get('rdf:Description', {})
