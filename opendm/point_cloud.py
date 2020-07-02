@@ -11,8 +11,14 @@ def filter(input_point_cloud, output_point_cloud, standard_deviation=2.5, meank=
     """
     Filters a point cloud
     """
+    if not os.path.exists(input_point_cloud):
+        log.ODM_ERROR("{} does not exist. The program will now exit.".format(input_point_cloud))
+        sys.exit(1)
+
     if (standard_deviation <= 0 or meank <= 0) and sample_radius <= 0:
         log.ODM_INFO("Skipping point cloud filtering")
+        # if using the option `--pc-filter 0`, we need copy input_point_cloud
+        shutil.copy(input_point_cloud, output_point_cloud)
         return
 
     if standard_deviation > 0 and meank > 0:
@@ -23,10 +29,6 @@ def filter(input_point_cloud, output_point_cloud, standard_deviation=2.5, meank=
 
     if sample_radius > 0:
         log.ODM_INFO("Sampling points around a %sm radius" % sample_radius)
-
-    if not os.path.exists(input_point_cloud):
-        log.ODM_ERROR("{} does not exist, cannot filter point cloud. The program will now exit.".format(input_point_cloud))
-        sys.exit(1)
 
     filter_program = os.path.join(context.odm_modules_path, 'odm_filterpoints')
     if not os.path.exists(filter_program):
