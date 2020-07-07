@@ -7,7 +7,26 @@ from opendm import entwine
 from opendm import io
 from pipes import quote
 
-def filter(input_point_cloud, output_point_cloud, standard_deviation=2.5, meank=16, confidence=None, sample_radius=0, verbose=False):
+def ply_has_normals(input_ply):
+    if not os.path.exists(input_ply):
+        return False
+
+    # Read PLY header, check if point cloud has normals
+    has_normals = False
+    with open(input_ply, 'r') as f:
+        line = f.readline().strip().lower()
+        i = 0
+        while line != "end_header" and i < 100:
+            line = f.readline().strip().lower()
+            props = line.split(" ")
+            if len(props) == 3 and props[0] == "property" and props[2] in ["nx", "normalx", "normal_x"]:
+                has_normals = True
+                break
+            i += 1
+
+    return has_normals
+
+def filter(input_point_cloud, output_point_cloud, standard_deviation=2.5, meank=16, sample_radius=0, verbose=False):
     """
     Filters a point cloud
     """
@@ -21,40 +40,53 @@ def filter(input_point_cloud, output_point_cloud, standard_deviation=2.5, meank=
         shutil.copy(input_point_cloud, output_point_cloud)
         return
 
-    if standard_deviation > 0 and meank > 0:
-        log.ODM_INFO("Filtering point cloud (statistical, meanK {}, standard deviation {})".format(meank, standard_deviation))
-    
-    if confidence:
-        log.ODM_INFO("Keeping only points with > %s confidence" % confidence)
+    filters = []
 
     if sample_radius > 0:
         log.ODM_INFO("Sampling points around a %sm radius" % sample_radius)
+        filters.append('sample')
 
-    filter_program = os.path.join(context.odm_modules_path, 'odm_filterpoints')
-    if not os.path.exists(filter_program):
-        log.ODM_WARNING("{} program not found. Will skip filtering, but this installation should be fixed.")
-        shutil.copy(input_point_cloud, output_point_cloud)
-        return
+    if standard_deviation > 0 and meank > 0:
+        log.ODM_INFO("Filtering point cloud (statistical, meanK {}, standard deviation {})".format(meank, standard_deviation))
+        filters.append('outlier')
+
+    if len(filters) > 0:
+        filters.append('range')
+
+    dims = "x=float,y=float,z=float,"
+    if ply_has_normals(input_point_cloud):
+        dims += "nx=float,ny=float,nz=float,"
+    dims += "red=uchar,blue=uchar,green=uchar"
 
     filterArgs = {
-      'bin': filter_program,
       'inputFile': input_point_cloud,
       'outputFile': output_point_cloud,
-      'sd': standard_deviation,
-      'meank': meank,
-      'verbose': '-verbose' if verbose else '',
-      'confidence': '-confidence %s' % confidence if confidence else '',
-      'sample': max(0, sample_radius)
+      'stages': " ".join(filters),
+      'dims': dims
     }
 
-    system.run('{bin} -inputFile {inputFile} '
-         '-outputFile {outputFile} '
-         '-sd {sd} '
-         '-meank {meank} '
-         '-sample {sample} '
-         '{confidence} {verbose} '.format(**filterArgs))
+    cmd = ("pdal translate -i \"{inputFile}\" "
+            "-o \"{outputFile}\" "
+            "{stages} "
+            "--writers.ply.sized_types=false "
+            "--writers.ply.storage_mode='little endian' "
+            "--writers.ply.dims=\"{dims}\" "
+            "").format(**filterArgs)
 
-    # Remove input file, swap temp file
+    if 'sample' in filters:
+        cmd += "--filters.sample.radius={} ".format(sample_radius)
+    
+    if 'outlier' in filters:
+        cmd += ("--filters.outlier.method='statistical' "
+               "--filters.outlier.mean_k={} "
+               "--filters.outlier.multiplier={} ").format(meank, standard_deviation)  
+    
+    if 'range' in filters:
+        # Remove outliers
+        cmd += "--filters.range.limits='Classification![7:7]' "
+
+    system.run(cmd)
+
     if not os.path.exists(output_point_cloud):
         log.ODM_WARNING("{} not found, filtering has failed.".format(output_point_cloud))
 

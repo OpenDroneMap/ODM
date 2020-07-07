@@ -25,7 +25,6 @@ class ODMFilterPoints(types.ODM_Stage):
 
             point_cloud.filter(inputPointCloud, tree.filtered_point_cloud, 
                                 standard_deviation=args.pc_filter, 
-                                confidence=None, 
                                 sample_radius=args.pc_sample,
                                 verbose=args.verbose)
             
