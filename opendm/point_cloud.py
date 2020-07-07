@@ -1,4 +1,4 @@
-import os, sys, shutil, tempfile, json
+import os, sys, shutil, tempfile, json, math
 from opendm import system
 from opendm import log
 from opendm import context
@@ -7,26 +7,60 @@ from opendm import entwine
 from opendm import io
 from pipes import quote
 
-def ply_has_normals(input_ply):
+def ply_info(input_ply):
     if not os.path.exists(input_ply):
         return False
 
     # Read PLY header, check if point cloud has normals
     has_normals = False
+    vertex_count = 0
+
     with open(input_ply, 'r') as f:
         line = f.readline().strip().lower()
         i = 0
         while line != "end_header" and i < 100:
             line = f.readline().strip().lower()
             props = line.split(" ")
-            if len(props) == 3 and props[0] == "property" and props[2] in ["nx", "normalx", "normal_x"]:
-                has_normals = True
-                break
+            if len(props) == 3:
+                if props[0] == "property" and props[2] in ["nx", "normalx", "normal_x"]:
+                    has_normals = True
+                elif props[0] == "element" and props[1] == "vertex":
+                    vertex_count = int(props[2])
             i += 1
 
-    return has_normals
+    return {
+        'has_normals': has_normals,
+        'vertex_count': vertex_count,
+    }
 
-def filter(input_point_cloud, output_point_cloud, standard_deviation=2.5, meank=16, sample_radius=0, verbose=False):
+
+def split(input_point_cloud, outdir, filename_template, capacity, dims=None):
+    log.ODM_INFO("Splitting point cloud filtering in chunks of {} vertices".format(capacity))
+
+    if not os.path.exists(input_point_cloud):
+        log.ODM_ERROR("{} does not exist, cannot split point cloud. The program will now exit.".format(input_point_cloud))
+        sys.exit(1)
+
+    if not os.path.exists(outdir):
+        system.mkdir_p(outdir)
+
+    if len(os.listdir(outdir)) != 0:
+        log.ODM_ERROR("%s already contains some files. The program will now exit.".format(outdir))
+        sys.exit(1)
+
+    cmd = 'pdal split -i "%s" -o "%s" --capacity %s ' % (input_point_cloud, os.path.join(outdir, filename_template), capacity)
+    
+    if filename_template.endswith(".ply"):
+        cmd += ("--writers.ply.sized_types=false "
+                "--writers.ply.storage_mode='little endian' ")
+    if dims is not None:
+        cmd += '--writers.ply.dims="%s"' % dims
+    system.run(cmd)
+
+    return [os.path.join(outdir, f) for f in os.listdir(outdir)]
+
+
+def filter(input_point_cloud, output_point_cloud, standard_deviation=2.5, meank=16, sample_radius=0, verbose=False, max_concurrency=1):
     """
     Filters a point cloud
     """
@@ -47,48 +81,86 @@ def filter(input_point_cloud, output_point_cloud, standard_deviation=2.5, meank=
         filters.append('sample')
 
     if standard_deviation > 0 and meank > 0:
-        log.ODM_INFO("Filtering point cloud (statistical, meanK {}, standard deviation {})".format(meank, standard_deviation))
+        log.ODM_INFO("Filtering {} (statistical, meanK {}, standard deviation {})".format(input_point_cloud, meank, standard_deviation))
         filters.append('outlier')
 
     if len(filters) > 0:
         filters.append('range')
 
+    info = ply_info(input_point_cloud)
     dims = "x=float,y=float,z=float,"
-    if ply_has_normals(input_point_cloud):
+    if info['has_normals']:
         dims += "nx=float,ny=float,nz=float,"
     dims += "red=uchar,blue=uchar,green=uchar"
 
-    filterArgs = {
-      'inputFile': input_point_cloud,
-      'outputFile': output_point_cloud,
-      'stages': " ".join(filters),
-      'dims': dims
-    }
+    if info['vertex_count'] == 0:
+        log.ODM_ERROR("Cannot read vertex count for {}".format(input_point_cloud))
+        sys.exit(1)
 
-    cmd = ("pdal translate -i \"{inputFile}\" "
-            "-o \"{outputFile}\" "
-            "{stages} "
-            "--writers.ply.sized_types=false "
-            "--writers.ply.storage_mode='little endian' "
-            "--writers.ply.dims=\"{dims}\" "
-            "").format(**filterArgs)
+    # Do we need to split this?
+    VERTEX_THRESHOLD = 300000
+    max_concurrency = min(max_concurrency, math.ceil(info['vertex_count'] / VERTEX_THRESHOLD))
+    vertices_per_submodel = int(math.ceil(info['vertex_count'] / max(1, max_concurrency)))
+    should_split = max_concurrency > 1 and info['vertex_count'] > VERTEX_THRESHOLD
 
-    if 'sample' in filters:
-        cmd += "--filters.sample.radius={} ".format(sample_radius)
-    
-    if 'outlier' in filters:
-        cmd += ("--filters.outlier.method='statistical' "
-               "--filters.outlier.mean_k={} "
-               "--filters.outlier.multiplier={} ").format(meank, standard_deviation)  
-    
-    if 'range' in filters:
-        # Remove outliers
-        cmd += "--filters.range.limits='Classification![7:7]' "
+    if should_split:
+        partsdir = os.path.join(os.path.dirname(output_point_cloud), "parts")
+        if os.path.exists(partsdir):
+            log.ODM_WARNING("Removing existing directory %s" % partsdir)
+            shutil.rmtree(partsdir)
 
-    system.run(cmd)
+        point_cloud_submodels = split(input_point_cloud, partsdir, "part.ply", capacity=vertices_per_submodel, dims=dims)
+
+         # Filter
+        for pcs in point_cloud_submodels:
+            # Recurse
+            filter(pcs, io.related_file_path(pcs, postfix="_filtered"), 
+                        standard_deviation=standard_deviation, 
+                        meank=meank, 
+                        sample_radius=sample_radius, 
+                        verbose=verbose,
+                        max_concurrency=1)
+
+        # Merge
+        log.ODM_INFO("Merging %s point cloud chunks to %s" % (len(point_cloud_submodels), output_point_cloud))
+        filtered_pcs = [io.related_file_path(pcs, postfix="_filtered") for pcs in point_cloud_submodels]
+        merge_ply(filtered_pcs, output_point_cloud, dims)
+
+        # TODO REMOVE parts
+    else:
+        # Process point cloud (or a point cloud submodel) in a single step
+        filterArgs = {
+            'inputFile': input_point_cloud,
+            'outputFile': output_point_cloud,
+            'stages': " ".join(filters),
+            'dims': dims
+        }
+
+        cmd = ("pdal translate -i \"{inputFile}\" "
+                "-o \"{outputFile}\" "
+                "{stages} "
+                "--writers.ply.sized_types=false "
+                "--writers.ply.storage_mode='little endian' "
+                "--writers.ply.dims=\"{dims}\" "
+                "").format(**filterArgs)
+
+        if 'sample' in filters:
+            cmd += "--filters.sample.radius={} ".format(sample_radius)
+        
+        if 'outlier' in filters:
+            cmd += ("--filters.outlier.method='statistical' "
+                "--filters.outlier.mean_k={} "
+                "--filters.outlier.multiplier={} ").format(meank, standard_deviation)  
+        
+        if 'range' in filters:
+            # Remove outliers
+            cmd += "--filters.range.limits='Classification![7:7]' "
+
+        system.run(cmd)
 
     if not os.path.exists(output_point_cloud):
         log.ODM_WARNING("{} not found, filtering has failed.".format(output_point_cloud))
+
 
 def get_extent(input_point_cloud):
     fd, json_file = tempfile.mkstemp(suffix='.json')
@@ -146,7 +218,7 @@ def merge(input_point_cloud_files, output_file, rerun=False):
         log.ODM_WARNING("No input point cloud files to process")
         return
 
-    if rerun and io.file_exists(output_file):
+    if io.file_exists(output_file):
         log.ODM_WARNING("Removing previous point cloud: %s" % output_file)
         os.remove(output_file)
 
@@ -157,6 +229,23 @@ def merge(input_point_cloud_files, output_file, rerun=False):
 
     system.run('lasmerge -i {all_inputs} -o "{output}"'.format(**kwargs))
    
+
+def merge_ply(input_point_cloud_files, output_file, dims=None):
+    num_files = len(input_point_cloud_files)
+    if num_files == 0:
+        log.ODM_WARNING("No input point cloud files to process")
+        return
+
+    cmd = [
+        'pdal',
+        'merge',
+        '--writers.ply.sized_types=false',
+        '--writers.ply.storage_mode="little endian"',
+        ('--writers.ply.dims="%s"' % dims) if dims is not None else '',
+        ' '.join(map(quote, input_point_cloud_files + [output_file])),
+    ]
+
+    system.run(' '.join(cmd))
 
 def post_point_cloud_steps(args, tree):
     # XYZ point cloud output
