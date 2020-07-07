@@ -102,10 +102,8 @@ def filter(input_point_cloud, output_point_cloud, standard_deviation=2.5, meank=
         sys.exit(1)
 
     # Do we need to split this?
-    VERTEX_THRESHOLD = 300000
-    max_concurrency = min(max_concurrency, int(math.ceil(info['vertex_count'] / VERTEX_THRESHOLD)))
-    vertices_per_submodel = int(math.ceil(info['vertex_count'] / max(1, max_concurrency)))
-    should_split = max_concurrency > 1 and info['vertex_count'] > VERTEX_THRESHOLD
+    VERTEX_THRESHOLD = 400000
+    should_split = max_concurrency > 1 and info['vertex_count'] > VERTEX_THRESHOLD*2
 
     if should_split:
         partsdir = os.path.join(os.path.dirname(output_point_cloud), "parts")
@@ -113,7 +111,7 @@ def filter(input_point_cloud, output_point_cloud, standard_deviation=2.5, meank=
             log.ODM_WARNING("Removing existing directory %s" % partsdir)
             shutil.rmtree(partsdir)
 
-        point_cloud_submodels = split(input_point_cloud, partsdir, "part.ply", capacity=vertices_per_submodel, dims=dims)
+        point_cloud_submodels = split(input_point_cloud, partsdir, "part.ply", capacity=VERTEX_THRESHOLD, dims=dims)
 
         def run_filter(pcs):
             # Recurse
