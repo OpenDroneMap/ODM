@@ -8,15 +8,14 @@ ExternalProject_Add(${_proj_name}
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
-  URL               https://github.com/PDAL/PDAL/archive/1.9.1.zip
+  URL               https://github.com/PDAL/PDAL/archive/2.1.0.zip
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   #--Configure step-------------
   SOURCE_DIR        ${SB_SOURCE_DIR}/${_proj_name}
   CMAKE_ARGS
-    -BUILD_PGPOINTCLOUD_TESTS=OFF
-    -BUILD_PLUGIN_PCL=ON
-    -BUILD_PLUGIN_PGPOINTCLOUD=ON
+    -DBUILD_PGPOINTCLOUD_TESTS=OFF
+    -DBUILD_PLUGIN_PGPOINTCLOUD=OFF
     -DBUILD_PLUGIN_CPD=OFF
 	-DBUILD_PLUGIN_GREYHOUND=OFF
 	-DBUILD_PLUGIN_HEXBIN=ON
