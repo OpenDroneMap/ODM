@@ -102,7 +102,7 @@ def filter(input_point_cloud, output_point_cloud, standard_deviation=2.5, meank=
         sys.exit(1)
 
     # Do we need to split this?
-    VERTEX_THRESHOLD = 400000
+    VERTEX_THRESHOLD = 250000
     should_split = max_concurrency > 1 and info['vertex_count'] > VERTEX_THRESHOLD*2
 
     if should_split:
