@@ -80,6 +80,9 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
                 verbose=False, decimation=None, keep_unfilled_copy=False,
                 apply_smoothing=True):
     """ Create DEM from multiple radii, and optionally gapfill """
+    
+    # TODO: refactor to use concurrency.parallel_map
+    
     global error
     error = None
 
@@ -166,9 +169,7 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
         
         d = pdal.json_gdal_base(q['filename'], output_type, q['radius'], resolution, q['bounds'])
 
-        if dem_type == 'dsm':
-            d = pdal.json_add_classification_filter(d, 2, equality='max')
-        elif dem_type == 'dtm':
+        if dem_type == 'dtm':
             d = pdal.json_add_classification_filter(d, 2)
 
         if decimation is not None:
