@@ -1,23 +1,15 @@
 #!/bin/sh
 
-# Rename - remove timestamp
-for img in IMG_*.*; do
-	newname=`echo $img | sed -r "s/IMG_[0-9]+_[0-9]+_//"`
-	mv $img $newname
-done
+# Copy GPS Exif tags from IMG_*_RGB.JPG to .TIF images
 
-# Copy GPS Exif tags from *RGB.JPG to .TIF images
-for rgb in *_RGB.JPG; do
+for rgb in IMG_*_RGB.JPG; do
+	seqnum=`echo $rgb | sed -r "s/IMG_[0-9]+_[0-9]+_([0-9]+).*/\1/"`
+	echo $seqnum
+	exiv2 -PEVk --grep GPS $rgb > $rgb.tags
+
 	for band in GRE NIR RED REG; do
-		tif=`echo $rgb | sed s/_RGB.JPG/_$band.TIF/`
-		exiv2 -PEVk --grep GPS $rgb > $rgb.tags
-		exiv2 -m $rgb.tags $tif
-		rm $rgb.tags
+		exiv2 -m $rgb.tags IMG_*_$seqnum\_$band.TIF
 	done
-done
 
-# Move into subfolder per band
-for band in RGB GRE NIR RED REG; do
-	mkdir $band
-	mv *_$band.* $band/
+	rm $rgb.tags
 done
