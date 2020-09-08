@@ -8,11 +8,11 @@ from pyproj import CRS
 import xmltodict as x2d
 from six import string_types
 
-import log
-import io
-import system
-import context
-import logging
+from opendm import log
+from opendm import io
+from opendm import system
+from opendm import context
+
 from opendm.progress import progressbc
 from opendm.photo import ODM_Photo
 

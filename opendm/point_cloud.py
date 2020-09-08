@@ -10,7 +10,7 @@ from pipes import quote
 
 def ply_info(input_ply):
     if not os.path.exists(input_ply):
-        return False
+        raise IOError("%s does not exist" % input_ply)
 
     # Read PLY header, check if point cloud has normals
     has_normals = False

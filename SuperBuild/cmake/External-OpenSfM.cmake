@@ -18,7 +18,7 @@ ExternalProject_Add(${_proj_name}
     -DCERES_ROOT_DIR=${SB_INSTALL_DIR}
     -DOpenCV_DIR=${SB_INSTALL_DIR}/share/OpenCV
     -DOPENSFM_BUILD_TESTS=off
-    -DPYTHON_EXECUTABLE=/usr/bin/python
+    -DPYTHON_EXECUTABLE=/usr/bin/python3
   #--Build step-----------------
   BINARY_DIR        ${_SB_BINARY_DIR}
   #--Install step---------------

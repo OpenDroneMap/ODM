@@ -1,4 +1,10 @@
-#!/usr/bin/python
+#!/usr/bin/python3
+
+# Basic check
+import sys
+if sys.version_info.major < 3:
+    print("Ups! ODM needs to run with Python 3. It seems you launched it with Python 2. Try using: python3 run.py ... ")
+    sys.exit(1)
 
 from opendm import log
 from opendm import config

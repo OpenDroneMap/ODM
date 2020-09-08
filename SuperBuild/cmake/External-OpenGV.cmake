@@ -16,7 +16,7 @@ ExternalProject_Add(${_proj_name}
   CMAKE_ARGS
     -DBUILD_TESTS=OFF 
     -DBUILD_PYTHON=ON
-    -DPYBIND11_PYTHON_VERSION=2.7
+    -DPYBIND11_PYTHON_VERSION=3.6
     -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
   #--Build step-----------------
   BINARY_DIR        ${_SB_BINARY_DIR}

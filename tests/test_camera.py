@@ -15,7 +15,7 @@ class TestCamera(unittest.TestCase):
     def test_camera(self):
         c = camera.get_cameras_from_opensfm("tests/assets/reconstruction.json")
         self.assertEqual(len(c.keys()), 1)
-        camera_id = c.keys()[0]
+        camera_id = list(c.keys())[0]
         self.assertTrue('v2 ' not in camera_id)
 
         self.assertRaises(RuntimeError, camera.get_cameras_from_opensfm, 'tests/assets/nonexistant.json')
@@ -27,7 +27,7 @@ class TestCamera(unittest.TestCase):
 
         osfm_c = camera.get_opensfm_camera_models(c)
         self.assertEqual(len(osfm_c.keys()), 1)
-        c1 = osfm_c[osfm_c.keys()[0]]
+        c1 = osfm_c[list(osfm_c.keys())[0]]
         self.assertTrue('k1_prior' in c1)
         self.assertTrue('k2_prior' in c1)
         self.assertFalse('test' in c1)

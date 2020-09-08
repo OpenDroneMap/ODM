@@ -74,6 +74,8 @@ def proj_srs_convert(srs):
         proj4 = srs.to_proj4()
         res.ImportFromProj4(proj4)
     
+    res.SetAxisMappingStrategy(osr.OAMS_TRADITIONAL_GIS_ORDER)
+
     return res
 
 def transformer(from_srs, to_srs):

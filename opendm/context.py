@@ -12,9 +12,11 @@ superbuild_bin_path = os.path.join(superbuild_path, 'install', 'bin')
 tests_path = os.path.join(root_path, 'tests')
 tests_data_path = os.path.join(root_path, 'tests/test_data')
 
-# add opencv to python path
-pyopencv_path = os.path.join(superbuild_path, 'install/lib/python2.7/dist-packages')
-sys.path.append(pyopencv_path)
+# add opencv,opensfm to python path
+sys.path.append(os.path.join(superbuild_path, 'install/lib/python3.6/dist-packages'))
+sys.path.append(os.path.join(superbuild_path, 'install/lib/python3/dist-packages'))
+sys.path.append(os.path.join(superbuild_path, 'src/opensfm'))
+
 
 # define opensfm path
 opensfm_path = os.path.join(superbuild_path, "src/opensfm")
