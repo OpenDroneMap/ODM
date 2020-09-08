@@ -25,3 +25,4 @@ scikit-learn==0.20
 laspy==1.6.0
 beautifulsoup4==4.9.1
 lxml==4.5.1
+matplotlib==1.5.1

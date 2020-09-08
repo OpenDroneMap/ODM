@@ -15,9 +15,9 @@ class GCPFile:
     def read(self):
         if self.exists():
             with open(self.gcp_path, 'r') as f:
-                contents = f.read().decode('utf-8-sig').encode('utf-8').strip()
+                contents = f.read().strip()
     
-            lines = map(str.strip, contents.split('\n'))
+            lines = list(map(str.strip, contents.split('\n')))
             if lines:
                 self.raw_srs = lines[0] # SRS
                 self.srs = location.parse_srs_header(self.raw_srs)
@@ -104,7 +104,7 @@ class GCPFile:
         if os.path.exists(gcp_file_output):
             os.remove(gcp_file_output)
 
-        files = map(os.path.basename, glob.glob(os.path.join(images_dir, "*")))
+        files = list(map(os.path.basename, glob.glob(os.path.join(images_dir, "*"))))
 
         output = [self.raw_srs]
         files_found = 0

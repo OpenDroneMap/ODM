@@ -18,8 +18,7 @@ class OSFMContext:
         self.opensfm_project_path = opensfm_project_path
     
     def run(self, command):
-        # Use Python 2.x by default, otherwise OpenSfM uses Python 3.x
-        system.run('/usr/bin/env python2 %s/bin/opensfm %s "%s"' %
+        system.run('/usr/bin/env python3 %s/bin/opensfm %s "%s"' %
                     (context.opensfm_path, command, self.opensfm_project_path))
 
     def is_reconstruction_done(self):

@@ -8,8 +8,8 @@ from six import string_types
 from datetime import datetime, timedelta
 import pytz
 
-import log
-import system
+from opendm import log
+from opendm import system
 import xmltodict as x2d
 from opendm import get_image_size
 from xml.parsers.expat import ExpatError

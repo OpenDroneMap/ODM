@@ -60,9 +60,6 @@ class StoreValue(argparse.Action):
         setattr(namespace, self.dest, values)
         setattr(namespace, self.dest + '_is_set', True)
 
-parser = SettingsParser(description='OpenDroneMap',
-                        usage='%(prog)s [options] <project name>',
-                        yaml_file=open(context.settings_path))
 args = None
 
 def config(argv=None):
@@ -70,6 +67,10 @@ def config(argv=None):
 
     if args is not None and argv is None:
         return args
+
+    parser = SettingsParser(description='OpenDroneMap',
+                        usage='%(prog)s [options] <project name>',
+                        yaml_file=open(context.settings_path))
     
     parser.add_argument('--project-path',
                         metavar='<path>',
@@ -742,7 +743,7 @@ def config(argv=None):
     if not args.project_path:
         log.ODM_ERROR('You need to set the project path in the '
                       'settings.yaml file before you can run ODM, '
-                      'or use `--project-path <path>`. Run `python '
+                      'or use `--project-path <path>`. Run `python3 '
                       'run.py --help` for more information. ')
         sys.exit(1)
 
