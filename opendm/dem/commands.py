@@ -9,7 +9,7 @@ from opendm.system import run
 from opendm import point_cloud
 from opendm import io
 from opendm import system
-from opendm.concurrency import get_max_memory
+from opendm.concurrency import get_max_memory, parallel_map
 from scipy import ndimage
 from datetime import datetime
 from opendm import log
@@ -80,8 +80,6 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
                 verbose=False, decimation=None, keep_unfilled_copy=False,
                 apply_smoothing=True):
     """ Create DEM from multiple radii, and optionally gapfill """
-    
-    # TODO: refactor to use concurrency.parallel_map
     
     global error
     error = None
@@ -164,7 +162,7 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
     # Sort tiles by increasing radius
     tiles.sort(key=lambda t: float(t['radius']), reverse=True)
 
-    def process_one(q):
+    def process_tile(q):
         log.ODM_INFO("Generating %s (%s, radius: %s, resolution: %s)" % (q['filename'], output_type, q['radius'], resolution))
         
         d = pdal.json_gdal_base(q['filename'], output_type, q['radius'], resolution, q['bounds'])
@@ -178,63 +176,7 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
         pdal.json_add_readers(d, [input_point_cloud])
         pdal.run_pipeline(d, verbose=verbose)
 
-    def worker():
-        global error
-
-        while True:
-            (num, q) = pq.get()
-            if q is None or error is not None:
-                pq.task_done()
-                break
-
-            try:
-                process_one(q)
-            except Exception as e:
-                error = e
-            finally:
-                pq.task_done()
-
-    if max_workers > 1:
-        use_single_thread = False
-        pq = queue.PriorityQueue()
-        threads = []
-        for i in range(max_workers):
-            t = threading.Thread(target=worker)
-            t.start()
-            threads.append(t)
-
-        for t in tiles:
-            pq.put((i, t.copy()))
-
-        def stop_workers():
-            for i in range(len(threads)):
-                pq.put((-1, None))
-            for t in threads:
-                t.join()
-
-        # block until all tasks are done
-        try:
-            while pq.unfinished_tasks > 0:
-                time.sleep(0.5)
-        except KeyboardInterrupt:
-            print("CTRL+C terminating...")
-            stop_workers()
-            sys.exit(1)
-
-        stop_workers()
-
-        if error is not None:
-            # Try to reprocess using a single thread
-            # in case this was a memory error
-            log.ODM_WARNING("DEM processing failed with multiple threads, let's retry with a single thread...")
-            use_single_thread = True
-    else:
-        use_single_thread = True
-
-    if use_single_thread:
-        # Boring, single thread processing
-        for q in tiles:
-            process_one(q)
+    parallel_map(process_tile, tiles, max_workers)
 
     output_file = "%s.tif" % dem_type
     output_path = os.path.abspath(os.path.join(outdir, output_file))

@@ -148,7 +148,7 @@ def run_pipeline(json, verbose=False):
     f, jsonfile = tempfile.mkstemp(suffix='.json')
     if verbose:
         log.ODM_INFO('Pipeline file: %s' % jsonfile)
-    os.write(f, jsonlib.dumps(json))
+    os.write(f, jsonlib.dumps(json).encode('utf8'))
     os.close(f)
 
     cmd = [

@@ -53,7 +53,7 @@ def sighandler(signum, frame):
 signal.signal(signal.SIGINT, sighandler)
 signal.signal(signal.SIGTERM, sighandler)
 
-def run(cmd, env_paths=[context.superbuild_bin_path], env_vars={}):
+def run(cmd, env_paths=[context.superbuild_bin_path], env_vars={}, packages_paths=context.python_packages_paths):
     """Run a system command"""
     global running_subprocesses
 
@@ -62,6 +62,9 @@ def run(cmd, env_paths=[context.superbuild_bin_path], env_vars={}):
     env = os.environ.copy()
     if len(env_paths) > 0:
         env["PATH"] = env["PATH"] + ":" + ":".join(env_paths)
+    
+    if len(packages_paths) > 0:
+        env["PYTHONPATH"] = env.get("PYTHONPATH", "") + ":" + ":".join(packages_paths) 
     
     for k in env_vars:
         env[k] = str(env_vars[k])
