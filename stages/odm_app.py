@@ -6,19 +6,19 @@ from opendm import io
 from opendm import system
 from opendm import log
 
-from dataset import ODMLoadDatasetStage
-from run_opensfm import ODMOpenSfMStage
-from mve import ODMMveStage
-from odm_slam import ODMSlamStage
-from odm_meshing import ODMeshingStage
-from mvstex import ODMMvsTexStage
-from odm_georeferencing import ODMGeoreferencingStage
-from odm_orthophoto import ODMOrthoPhotoStage
-from odm_dem import ODMDEMStage
-from odm_filterpoints import ODMFilterPoints
-from splitmerge import ODMSplitStage, ODMMergeStage
-from odm_report import ODMReport
+from stages.dataset import ODMLoadDatasetStage
+from stages.run_opensfm import ODMOpenSfMStage
+from stages.mve import ODMMveStage
+from stages.odm_slam import ODMSlamStage
+from stages.odm_meshing import ODMeshingStage
+from stages.mvstex import ODMMvsTexStage
+from stages.odm_georeferencing import ODMGeoreferencingStage
+from stages.odm_orthophoto import ODMOrthoPhotoStage
+from stages.odm_dem import ODMDEMStage
+from stages.odm_filterpoints import ODMFilterPoints
+from stages.splitmerge import ODMSplitStage, ODMMergeStage
 
+from stages.odm_report import ODMReport
 
 class ODMApp:
     def __init__(self, args):
