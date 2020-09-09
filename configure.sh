@@ -14,7 +14,6 @@ check_version(){
     exit 1
   fi
 }
-check_version
 
 if [[ $2 =~ ^[0-9]+$ ]] ; then
     processes=$2
@@ -36,7 +35,11 @@ install() {
         echo "Installing sudo"
         apt-get update && apt-get install -y sudo
     fi
-    sudo apt-get update && sudo apt-get install software-properties-common -y  --no-install-recommends
+    sudo apt-get update && sudo apt-get install software-properties-common lsb-release tzdata -y  --no-install-recommends
+    
+    # Check version
+    check_version
+    
     sudo add-apt-repository -y ppa:ubuntugis/ubuntugis-unstable
     sudo apt-get update
     
@@ -110,6 +113,8 @@ install() {
 }
 
 uninstall() {
+    check_version
+
     echo "Removing SuperBuild and build directories"
     cd ${RUNPATH}/SuperBuild
     rm -rfv build src download install
@@ -118,6 +123,8 @@ uninstall() {
 }
 
 reinstall() {
+    check_version
+
     echo "Reinstalling ODM modules"
     uninstall
     install
