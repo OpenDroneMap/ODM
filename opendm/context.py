@@ -1,6 +1,5 @@
 import os
 import sys
-from opendm import io
 import multiprocessing
 
 # Define some needed locations
@@ -56,3 +55,8 @@ supported_extensions = {'.jpg','.jpeg','.png', '.tif', '.tiff'}
 
 # Define the number of cores
 num_cores = multiprocessing.cpu_count()
+
+
+# Print python paths if invoked as a script
+if __name__ == "__main__":
+    print("export PYTHONPATH=" + ":".join(python_packages_paths))

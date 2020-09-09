@@ -12,7 +12,8 @@ if [ "$1" = "--setup" ]; then
         
         touch .setupdevenv
         apt install -y vim
-        chown -R $3:$4 /code /var/www
+        chown -R $3:$4 /code
+        chown -R $3:$4 /var/www
     fi
 
     echo "Adding $2 to /etc/passwd"
@@ -44,7 +45,10 @@ if [ "$1" = "--setup" ]; then
     # Colors
     echo "alias ls='ls --color=auto'" >> $HOME/.bashrc
 
-    su -c bash $2 
+    # Python paths
+    echo $(python /code/opendm/context.py) >> $HOME/.bashrc
+
+    su -c bash $2
     exit 0
 fi
 
