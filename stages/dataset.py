@@ -12,7 +12,7 @@ from opendm import progress
 
 def save_images_database(photos, database_file):
     with open(database_file, 'w') as f:
-        f.write(json.dumps(map(lambda p: p.__dict__, photos)))
+        f.write(json.dumps([p.__dict__ for p in photos]))
     
     log.ODM_INFO("Wrote images database: %s" % database_file)
 
