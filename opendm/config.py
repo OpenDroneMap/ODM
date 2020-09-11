@@ -152,7 +152,7 @@ def config(argv=None):
                         action=StoreValue,
                         default='high',
                         choices=['ultra', 'high', 'medium', 'low', 'lowest'],
-                        help=('Set feature extraction quality. Higher quality computes better features, but requires more memory takes longer. '
+                        help=('Set feature extraction quality. Higher quality generates better features, but requires more memory and takes longer. '
                             'Can be one of: [ultra, high, medium, low, lowest]. Default: '
                             '%(default)s'))
 
