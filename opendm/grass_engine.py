@@ -101,11 +101,11 @@ class GrassContext:
                                 cwd=self.get_cwd(), stdout=subprocess.PIPE, stderr=writer, env=env)
             
             while p.poll() is None:
-                sys.stdout.write(reader.read())
+                sys.stdout.write(reader.read().decode('utf8'))
                 time.sleep(0.5)
             
             # Read the remaining
-            sys.stdout.write(reader.read())
+            sys.stdout.write(reader.read().decode('utf8'))
 
             out, err = p.communicate()
             out = out.decode('utf-8').strip()

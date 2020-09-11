@@ -101,7 +101,7 @@ class ODMDEMStage(types.ODM_Stage):
                             dem_input,
                             product,
                             output_type='idw' if product == 'dtm' else 'max',
-                            radiuses=map(str, radius_steps),
+                            radiuses=list(map(str, radius_steps)),
                             gapfill=args.dem_gapfill_steps > 0,
                             outdir=odm_dem_root,
                             resolution=resolution / 100.0,
