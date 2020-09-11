@@ -4,7 +4,7 @@ from opendm.dem import commands
 from opendm import system
 from opendm import log
 from opendm import context
-from scipy import signal, ndimage
+from scipy import signal
 import numpy as np
 
 def create_25dmesh(inPointCloud, outMesh, dsm_radius=0.07, dsm_resolution=0.05, depth=8, samples=1, maxVertexCount=100000, verbose=False, available_cores=None, method='gridded', smooth_dsm=True):
