@@ -157,9 +157,9 @@ class ODMSplitStage(types.ODM_Stage):
 
                             #Create image lists
                             with open(path+"/opensfm/image_list.txt", "w") as o:
-                                o.writelines(map(lambda x: "../images/"+x+'\n', v["shots"].keys()))
+                                o.writelines(list(map(lambda x: "../images/"+x+'\n', v["shots"].keys())))
                             with open(path+"/img_list.txt", "w") as o:
-                                o.writelines(map(lambda x: x+'\n', v["shots"].keys()))
+                                o.writelines(list(map(lambda x: x+'\n', v["shots"].keys())))
 
                             i+=1
                     os.rename(octx.path("../submodels"), octx.path("../unaligned_submodels"))
