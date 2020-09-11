@@ -7,7 +7,7 @@ import math
 import numpy as np
 import rasterio
 import fiona
-from scipy import ndimage
+from edt import edt
 from rasterio.transform import Affine, rowcol
 from rasterio.mask import mask
 from opendm import io
@@ -87,7 +87,7 @@ def compute_mask_raster(input_raster, vector_mask, output_raster, blend_distance
                 if out_image.shape[0] >= 4:
                     # alpha_band = rast.dataset_mask()
                     alpha_band = out_image[-1]
-                    dist_t = ndimage.distance_transform_edt(alpha_band)
+                    dist_t = edt(alpha_band, black_border=True, parallel=0)
                     dist_t[dist_t <= blend_distance] /= blend_distance
                     dist_t[dist_t > blend_distance] = 1
                     np.multiply(alpha_band, dist_t, out=alpha_band, casting="unsafe")
@@ -112,7 +112,7 @@ def feather_raster(input_raster, output_raster, blend_distance=20):
         if blend_distance > 0:
             if out_image.shape[0] >= 4:
                 alpha_band = out_image[-1]
-                dist_t = ndimage.distance_transform_edt(alpha_band)
+                dist_t = edt(alpha_band, black_border=True, parallel=0)
                 dist_t[dist_t <= blend_distance] /= blend_distance
                 dist_t[dist_t > blend_distance] = 1
                 np.multiply(alpha_band, dist_t, out=alpha_band, casting="unsafe")
