@@ -60,7 +60,7 @@ class Cropper:
                 os.remove(original_geotiff)
 
         except Exception as e:
-            log.ODM_WARNING('Something went wrong while cropping: {}'.format(e.message))
+            log.ODM_WARNING('Something went wrong while cropping: {}'.format(e))
             
             # Revert rename
             os.rename(original_geotiff, geotiff_path)
