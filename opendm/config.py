@@ -90,9 +90,9 @@ def config(argv=None):
                         action=StoreValue,
                         default=2048,
                         type=int,
-                        help='Resizes images by the largest side for feature extraction purposes only. '
+                        help='Legacy option (use --feature-quality instead). Resizes images by the largest side for feature extraction purposes only. '
                              'Set to -1 to disable. This does not affect the final orthophoto '
-                             ' resolution quality and will not resize the original images. Default:  %(default)s')
+                             'resolution quality and will not resize the original images. Default:  %(default)s')
 
     parser.add_argument('--end-with', '-e',
                         metavar='<string>',
@@ -145,6 +145,15 @@ def config(argv=None):
                         choices=['sift', 'hahog'],
                         help=('Choose the algorithm for extracting keypoints and computing descriptors. '
                             'Can be one of: [sift, hahog]. Default: '
+                            '%(default)s'))
+    
+    parser.add_argument('--feature-quality',
+                        metavar='<string>',
+                        action=StoreValue,
+                        default='high',
+                        choices=['ultra', 'high', 'medium', 'low', 'lowest'],
+                        help=('Set feature extraction quality. Higher quality computes better features, but requires more memory takes longer. '
+                            'Can be one of: [ultra, high, medium, low, lowest]. Default: '
                             '%(default)s'))
 
     parser.add_argument('--matcher-neighbors',

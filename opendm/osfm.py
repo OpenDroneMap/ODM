@@ -130,12 +130,39 @@ class OSFMContext:
 
                 with open(os.path.join(self.opensfm_project_path, "exif_overrides.json"), 'w') as f:
                     f.write(json.dumps(exif_overrides))
+            
+            # Compute feature_process_size
+            feature_process_size = 2048 # default
+            if 'resize_to_is_set' in args:
+                # Legacy
+                log.ODM_WARNING("Legacy option --resize-to (this might be removed in a future version). Use --feature-quality instead.")
+                feature_process_size = int(args.resize_to)
+            else:
+                feature_quality_scale = {
+                    'ultra': 1,
+                    'high': 0.5,
+                    'medium': 0.25,
+                    'low': 0.125,
+                    'lowest': 0.0675,
+                }
+                # Find largest photo dimension
+                max_dim = 0
+                for p in photos:
+                    if p.width is None:
+                        continue
+                    max_dim = max(max_dim, max(p.width, p.height))
+
+                if max_dim > 0:
+                    log.ODM_INFO("Maximum photo dimensions: %spx" % str(max_dim))
+                    feature_process_size = int(max_dim * feature_quality_scale[args.feature_quality])
+                else:
+                    log.ODM_WARNING("Cannot compute max image dimensions, going with defaults")
 
             # create config file for OpenSfM
             config = [
                 "use_exif_size: no",
                 "flann_algorithm: KDTREE", # more stable, faster than KMEANS
-                "feature_process_size: %s" % args.resize_to,
+                "feature_process_size: %s" % feature_process_size,
                 "feature_min_frames: %s" % args.min_num_features,
                 "processes: %s" % args.max_concurrency,
                 "matching_gps_neighbors: %s" % matcher_neighbors,
