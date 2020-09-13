@@ -145,3 +145,7 @@ If you have questions, join the developer's chat at https://community.opendronem
 1. Try to keep commits clean and simple
 2. Submit a pull request with detailed changes and test results
 3. Have fun!
+
+### Citation
+
+> *OpenDroneMap Authors* ODM - A command line toolkit to generate maps, point clouds, 3D models and DEMs from drone, balloon or kite images. **OpenDroneMap/ODM GitHub Page** 2020; [https://github.com/OpenDroneMap/ODM](https://github.com/OpenDroneMap/ODM)
