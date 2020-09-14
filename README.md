@@ -75,9 +75,9 @@ See http://docs.opendronemap.org for tutorials and more guides.
 
 We have a vibrant [community forum](https://community.opendronemap.org/). You can [search it](https://community.opendronemap.org/search?expanded=true) for issues you might be having with ODM and you can post questions there. We encourage users of ODM to partecipate in the forum and to engage with fellow drone mapping users.
 
-## Native Install (Ubuntu 16.04)
+## Native Install (Ubuntu 18.04)
 
-You can run ODM natively on Ubuntu 16.04 LTS (although we don't recommend it):  
+You can run ODM natively on Ubuntu 18.04 LTS (although we don't recommend it):  
 
 1. Download the source from [here](https://github.com/OpenDroneMap/ODM/archive/master.zip)
 2. Run `bash configure.sh install`

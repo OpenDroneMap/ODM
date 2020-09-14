@@ -103,33 +103,32 @@ class OSFMContext:
                 use_bow = True
 
             # GPSDOP override if we have GPS accuracy information (such as RTK)
-            override_gps_dop = 'gps_accuracy_is_set' in args
-            for p in photos:
-                if p.get_gps_dop() is not None:
-                    override_gps_dop = True
-                    break
+            if 'gps_accuracy_is_set' in args:
+                log.ODM_INFO("Forcing GPS DOP to %s for all images" % args.gps_accuracy)
             
-            if override_gps_dop:
+            log.ODM_INFO("Writing exif overrides")
+
+            exif_overrides = {}
+            for p in photos:
                 if 'gps_accuracy_is_set' in args:
-                    log.ODM_INFO("Forcing GPS DOP to %s for all images" % args.gps_accuracy)
+                    dop = args.gps_accuracy
+                elif p.get_gps_dop() is not None:
+                    dop = p.get_gps_dop()
                 else:
-                    log.ODM_INFO("Looks like we have RTK accuracy info for some photos. Good! We'll use it.")
+                    dop = args.gps_accuracy # default value
 
-                exif_overrides = {}
-                for p in photos:
-                    dop = args.gps_accuracy if 'gps_accuracy_is_set' in args else p.get_gps_dop()
-                    if dop is not None and p.latitude is not None and p.longitude is not None:
-                        exif_overrides[p.filename] = {
-                            'gps': {
-                                'latitude': p.latitude,
-                                'longitude': p.longitude,
-                                'altitude': p.altitude if p.altitude is not None else 0,
-                                'dop': dop,
-                            }
+                if p.latitude is not None and p.longitude is not None:
+                    exif_overrides[p.filename] = {
+                        'gps': {
+                            'latitude': p.latitude,
+                            'longitude': p.longitude,
+                            'altitude': p.altitude if p.altitude is not None else 0,
+                            'dop': dop,
                         }
+                    }
 
-                with open(os.path.join(self.opensfm_project_path, "exif_overrides.json"), 'w') as f:
-                    f.write(json.dumps(exif_overrides))
+            with open(os.path.join(self.opensfm_project_path, "exif_overrides.json"), 'w') as f:
+                f.write(json.dumps(exif_overrides))
             
             # Compute feature_process_size
             feature_process_size = 2048 # default

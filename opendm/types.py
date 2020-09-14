@@ -22,6 +22,7 @@ class ODM_Reconstruction(object):
         self.photos = photos
         self.georef = None
         self.gcp = None
+        self.geo_file = None
         self.multi_camera = self.detect_multi_camera()
 
     def detect_multi_camera(self):
@@ -200,7 +201,7 @@ class ODM_GeoRef(object):
 
 
 class ODM_Tree(object):
-    def __init__(self, root_path, gcp_file = None):
+    def __init__(self, root_path, gcp_file = None, geo_file = None):
         # root path to the project
         self.root_path = io.absolute_path_file(root_path)
         self.input_images = io.join_paths(self.root_path, 'images')
@@ -265,6 +266,8 @@ class ODM_Tree(object):
             self.odm_georeferencing, 'coords.txt')
         self.odm_georeferencing_gcp = gcp_file or io.find('gcp_list.txt', self.root_path)
         self.odm_georeferencing_gcp_utm = io.join_paths(self.odm_georeferencing, 'gcp_list_utm.txt')
+        self.odm_geo_file = geo_file or io.find('geo.txt', self.root_path)
+        
         self.odm_georeferencing_utm_log = io.join_paths(
             self.odm_georeferencing, 'odm_georeferencing_utm_log.txt')
         self.odm_georeferencing_log = 'odm_georeferencing_log.txt'

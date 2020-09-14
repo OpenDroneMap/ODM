@@ -6,6 +6,7 @@ from opendm import io
 from opendm import types
 from opendm import log
 from opendm import system
+from opendm.geo import GeoFile
 from shutil import copyfile
 from opendm import progress
 
@@ -39,7 +40,7 @@ def load_images_database(database_file):
 
 class ODMLoadDatasetStage(types.ODM_Stage):
     def process(self, args, outputs):
-        tree = types.ODM_Tree(args.project_path, args.gcp)
+        tree = types.ODM_Tree(args.project_path, args.gcp, args.geo)
         outputs['tree'] = tree
 
         if args.time and io.file_exists(tree.benchmarking):
@@ -88,6 +89,18 @@ class ODMLoadDatasetStage(types.ODM_Stage):
                     for f in path_files:
                         photos += [types.ODM_Photo(f)]
                         dataset_list.write(photos[-1].filename + '\n')
+
+                # Check if a geo file is available
+                if os.path.exists(tree.odm_geo_file):
+                    log.ODM_INFO("Found image geolocation file")
+                    gf = GeoFile(tree.odm_geo_file)
+                    updated = 0
+                    for p in photos:
+                        entry = gf.get_entry(p.filename)
+                        if entry:
+                            p.update_with_geo_entry(entry)
+                            updated += 1
+                    log.ODM_INFO("Updated %s image positions" % updated)
 
                 # Save image database for faster restart
                 save_images_database(photos, images_database_file)
