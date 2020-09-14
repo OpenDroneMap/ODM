@@ -522,11 +522,23 @@ def config(argv=None):
                         metavar='<path string>',
                         action=StoreValue,
                         default=None,
-                        help=('path to the file containing the ground control '
+                        help=('Path to the file containing the ground control '
                               'points used for georeferencing.  Default: '
                               '%(default)s. The file needs to '
-                              'be on the following line format: \neasting '
-                              'northing height pixelrow pixelcol imagename'))
+                              'use the following format: \n'
+                              'EPSG:<code> or <+proj definition>\n'
+                              'geo_x geo_y geo_z im_x im_y image_name [gcp_name] [extra1] [extra2]'))
+
+    parser.add_argument('--geo',
+                        metavar='<path string>',
+                        action=StoreValue,
+                        default=None,
+                        help=('Path to the image geolocation file containing the camera center coordinates used for georeferencing.  Default: '
+                              '%(default)s. The file needs to '
+                              'use the following format: \n'
+                              'EPSG:<code> or <+proj definition>\n'
+                              'image_name geo_x geo_y geo_z [omega (degrees)] [phi (degrees)] [kappa (degrees)] [horz (meters)] [vert accuracy (meters)]'
+                              ''))
 
     parser.add_argument('--use-exif',
                         action=StoreTrue,

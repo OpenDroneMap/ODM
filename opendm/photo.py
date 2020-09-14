@@ -75,6 +75,13 @@ class ODM_Photo:
                             self.filename, self.camera_make, self.camera_model, self.width, self.height, 
                             self.latitude, self.longitude, self.altitude, self.band_name, self.band_index)
 
+    def update_with_geo_entry(self, geo_entry):
+        self.latitude = geo_entry.y
+        self.longitude = geo_entry.x
+        self.altitude = geo_entry.z
+        self.gps_xy_stddev = geo_entry.horizontal_accuracy
+        self.gps_z_stddev = geo_entry.vertical_accuracy
+
     def parse_exif_values(self, _path_file):
         # Disable exifread log
         logging.getLogger('exifread').setLevel(logging.CRITICAL)
