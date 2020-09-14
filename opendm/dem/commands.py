@@ -236,11 +236,15 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
         run('gdalbuildvrt -resolution highest -r bilinear "%s" "%s" "%s"' % (merged_vrt_path, geotiff_small_filled_path, geotiff_tmp_path))
         run('gdal_translate '
             '-co NUM_THREADS={threads} '
+            '-co TILED=YES '
+            '-co COMPRESS=DEFLATE '
             '--config GDAL_CACHEMAX {max_memory}% '
             '{merged_vrt} {geotiff}'.format(**kwargs))
     else:
         run('gdal_translate '
                 '-co NUM_THREADS={threads} '
+                '-co TILED=YES '
+                '-co COMPRESS=DEFLATE '
                 '--config GDAL_CACHEMAX {max_memory}% '
                 '{tiles_vrt} {geotiff}'.format(**kwargs))
 

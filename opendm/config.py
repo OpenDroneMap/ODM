@@ -144,7 +144,7 @@ def config(argv=None):
                         default='sift',
                         choices=['sift', 'hahog'],
                         help=('Choose the algorithm for extracting keypoints and computing descriptors. '
-                            'Can be one of: [sift, hahog]. Default: '
+                            'Can be one of: %(choices)s. Default: '
                             '%(default)s'))
     
     parser.add_argument('--feature-quality',
@@ -153,7 +153,7 @@ def config(argv=None):
                         default='high',
                         choices=['ultra', 'high', 'medium', 'low', 'lowest'],
                         help=('Set feature extraction quality. Higher quality generates better features, but requires more memory and takes longer. '
-                            'Can be one of: [ultra, high, medium, low, lowest]. Default: '
+                            'Can be one of: %(choices)s. Default: '
                             '%(default)s'))
 
     parser.add_argument('--matcher-neighbors',
@@ -204,7 +204,7 @@ def config(argv=None):
             help=('Set a camera projection type. Manually setting a value '
                 'can help improve geometric undistortion. By default the application '
                 'tries to determine a lens type from the images metadata. Can be '
-                'set to one of: [auto, perspective, brown, fisheye, spherical]. Default: '
+                'set to one of: %(choices)s. Default: '
                 '%(default)s'))
 
     parser.add_argument('--radiometric-calibration',
@@ -217,7 +217,7 @@ def config(argv=None):
                 'to obtain reflectance values (otherwise you will get digital number values). '
                 '[camera] applies black level, vignetting, row gradient gain/exposure compensation (if appropriate EXIF tags are found). '
                 '[camera+sun] is experimental, applies all the corrections of [camera], plus compensates for spectral radiance registered via a downwelling light sensor (DLS) taking in consideration the angle of the sun. '
-                'Can be set to one of: [none, camera, camera+sun]. Default: '
+                'Can be set to one of: %(choices)s. Default: '
                 '%(default)s'))
 
     parser.add_argument('--max-concurrency',
@@ -616,9 +616,7 @@ def config(argv=None):
                         type=str,
                         choices=['JPEG', 'LZW', 'PACKBITS', 'DEFLATE', 'LZMA', 'NONE'],
                         default='DEFLATE',
-                        help='Set the compression to use. Note that this could '
-                             'break gdal_translate if you don\'t know what you '
-                             'are doing. Options: %(choices)s.\nDefault: %(default)s')
+                        help='Set the compression to use for orthophotos. Options: %(choices)s.\nDefault: %(default)s')
     
     parser.add_argument('--orthophoto-cutline',
             action=StoreTrue,
