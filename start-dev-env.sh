@@ -11,7 +11,7 @@ if [ "$1" = "--setup" ]; then
         #bash configure.sh reinstall
         
         touch .setupdevenv
-        apt install -y vim
+        apt update && apt install -y vim
         chown -R $3:$4 /code
         chown -R $3:$4 /var/www
     fi
