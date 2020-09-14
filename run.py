@@ -110,4 +110,4 @@ if __name__ == '__main__':
         log.ODM_INFO('MMMMMMMMMMMN-  smNm/  +MMm  :NNdo` .mMM` oMM+/yMM/  MMMMMMMMMMMM')
         log.ODM_INFO('MMMMMMMMMMMMNo-    `:yMMMm      `:sNMMM` sMMMMMMM+  NMMMMMMMMMMM')
         log.ODM_INFO('MMMMMMMMMMMMMMMNmmNMMMMMMMNmmmmNMMMMMMMNNMMMMMMMMMNNMMMMMMMMMMMM')
-    log.ODM_INFO('OpenDroneMap app finished - %s' % system.now())
+    log.ODM_INFO('ODM app finished - %s' % system.now())

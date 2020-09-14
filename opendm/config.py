@@ -68,7 +68,7 @@ def config(argv=None):
     if args is not None and argv is None:
         return args
 
-    parser = SettingsParser(description='OpenDroneMap',
+    parser = SettingsParser(description='ODM',
                         usage='%(prog)s [options] <project name>',
                         yaml_file=open(context.settings_path))
     
@@ -533,11 +533,13 @@ def config(argv=None):
                         metavar='<path string>',
                         action=StoreValue,
                         default=None,
-                        help=('Path to the image geolocation file containing the camera center coordinates used for georeferencing.  Default: '
+                        help=('Path to the image geolocation file containing the camera center coordinates used for georeferencing. '
+                              'Note that omega/phi/kappa are currently not supported (you can set them to 0). '
+                              'Default: '
                               '%(default)s. The file needs to '
                               'use the following format: \n'
                               'EPSG:<code> or <+proj definition>\n'
-                              'image_name geo_x geo_y geo_z [omega (degrees)] [phi (degrees)] [kappa (degrees)] [horz (meters)] [vert accuracy (meters)]'
+                              'image_name geo_x geo_y geo_z [omega (degrees)] [phi (degrees)] [kappa (degrees)] [horz accuracy (meters)] [vert accuracy (meters)]'
                               ''))
 
     parser.add_argument('--use-exif',
@@ -669,7 +671,7 @@ def config(argv=None):
 
     parser.add_argument('--version',
                         action='version',
-                        version='OpenDroneMap {0}'.format(__version__),
+                        version='ODM {0}'.format(__version__),
                         help='Displays version number and exits. ')
 
     parser.add_argument('--split',
