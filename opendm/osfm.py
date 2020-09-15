@@ -129,6 +129,18 @@ class OSFMContext:
 
             with open(os.path.join(self.opensfm_project_path, "exif_overrides.json"), 'w') as f:
                 f.write(json.dumps(exif_overrides))
+
+            # Check image masks
+            masks = []
+            for p in photos:
+                if p.mask is not None:
+                    masks.append((p.filename, os.path.join(images_path, p.mask)))
+            
+            if masks:
+                log.ODM_INFO("Found %s image masks" % len(masks))
+                with open(os.path.join(self.opensfm_project_path, "mask_list.txt"), 'w') as f:
+                    for fname, mask in masks:
+                        f.write("{} {}\n".format(fname, mask))
             
             # Compute feature_process_size
             feature_process_size = 2048 # default

@@ -49,16 +49,16 @@ class ODMLoadDatasetStage(types.ODM_Stage):
             with open(tree.benchmarking, 'a') as b:
                 b.write('ODM Benchmarking file created %s\nNumber of Cores: %s\n\n' % (system.now(), context.num_cores))
     
-        # check if the extension is supported
-        def supported_extension(file_name):
-            (pathfn, ext) = os.path.splitext(file_name)
-            return ext.lower() in context.supported_extensions
+        # check if the image filename is supported
+        def valid_image_filename(filename):
+            (pathfn, ext) = os.path.splitext(filename)
+            return ext.lower() in context.supported_extensions and pathfn[-5:] != "_mask"
 
         # Get supported images from dir
         def get_images(in_dir):
             # filter images for its extension type
             log.ODM_DEBUG(in_dir)
-            return [f for f in io.get_files_list(in_dir) if supported_extension(f)]
+            return [f for f in os.listdir(path_dir) if valid_image_filename(f)]
 
         # get images directory
         input_dir = tree.input_images
