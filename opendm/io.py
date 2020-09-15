@@ -2,17 +2,8 @@ import os
 import shutil, errno
 import json
 
-def get_files_list(path_dir):
-    return os.listdir(path_dir)
-
-
 def absolute_path_file(path_file):
     return os.path.abspath(path_file)
-
-
-def extract_file_from_path_file(path_file):
-    path, file = os.path.split(path_file)
-    return file
 
 
 def extract_path_from_file(file):

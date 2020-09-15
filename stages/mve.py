@@ -77,7 +77,8 @@ class ODMMveStage(types.ODM_Stage):
             self.update_progress(90)
 
             scene2pset_config = [
-                "-F%s" % mve_output_scale
+                "-F%s" % mve_output_scale,
+                '-mmask'
             ]
 
             # run scene2pset
