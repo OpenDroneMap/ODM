@@ -58,7 +58,7 @@ class ODMLoadDatasetStage(types.ODM_Stage):
         def get_images(in_dir):
             # filter images for its extension type
             log.ODM_DEBUG(in_dir)
-            return [f for f in os.listdir(path_dir) if valid_image_filename(f)]
+            return [f for f in os.listdir(in_dir) if valid_image_filename(f)]
 
         # get images directory
         input_dir = tree.input_images
