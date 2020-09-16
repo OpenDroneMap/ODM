@@ -111,6 +111,8 @@ install() {
         fi
     fi
 
+    set -eo pipefail
+    
     echo "Compiling SuperBuild"
     cd ${RUNPATH}/SuperBuild
     mkdir -p build && cd build
