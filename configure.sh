@@ -99,15 +99,27 @@ install() {
 
     pip install -r requirements.txt
 
+    if [ ! -z "$PORTABLE_INSTALL" ]; then
+        echo "Replacing g++ and gcc with our scripts for portability..."
+        if [ ! -e /usr/bin/gcc_real ]; then
+            sudo mv -v /usr/bin/gcc /usr/bin/gcc_real
+            sudo cp -v ./docker/gcc /usr/bin/gcc
+        fi
+        if [ ! -e /usr/bin/g++_real ]; then
+            sudo mv -v /usr/bin/g++ /usr/bin/g++_real
+            sudo cp -v ./docker/g++ /usr/bin/g++
+        fi
+    fi
+
     echo "Compiling SuperBuild"
-    # cd ${RUNPATH}/SuperBuild
-    # mkdir -p build && cd build
-    # cmake .. && make -j$processes
+    cd ${RUNPATH}/SuperBuild
+    mkdir -p build && cd build
+    cmake .. && make -j$processes
 
     echo "Compiling build"
-    # cd ${RUNPATH}
-    # mkdir -p build && cd build
-    # cmake .. && make -j$processes
+    cd ${RUNPATH}
+    mkdir -p build && cd build
+    cmake .. && make -j$processes
 	
     echo "Configuration Finished"
 }
