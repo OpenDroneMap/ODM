@@ -15,22 +15,12 @@ import xmltodict as x2d
 from opendm import get_image_size
 from xml.parsers.expat import ExpatError
 
-def find_mask(photo_path):
-    (pathfn, ext) = os.path.splitext(photo_path)
-    mask_path = "{}_mask{}".format(pathfn, ext)
-    if os.path.exists(mask_path):
-        # Spaces are not supported due to OpenSfM's mask_list.txt format reqs
-        if not " " in mask_path:
-            return os.path.basename(mask_path)
-        else:
-            log.ODM_WARNING("Image mask {} has a space. Spaces are currently not supported for image masks.".format(os.path.basename(mask_path)))
-
 class ODM_Photo:
     """ODMPhoto - a class for ODMPhotos"""
 
     def __init__(self, path_file):
         self.filename = os.path.basename(path_file)
-        self.mask = find_mask(path_file)
+        self.mask = None
         
         # Standard tags (virtually all photos have these)
         self.width = None
@@ -87,6 +77,9 @@ class ODM_Photo:
         return '{} | camera: {} {} | dimensions: {} x {} | lat: {} | lon: {} | alt: {} | band: {} ({})'.format(
                             self.filename, self.camera_make, self.camera_model, self.width, self.height, 
                             self.latitude, self.longitude, self.altitude, self.band_name, self.band_index)
+
+    def set_mask(self, mask):
+        self.mask = mask
 
     def update_with_geo_entry(self, geo_entry):
         self.latitude = geo_entry.y

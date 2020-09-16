@@ -56,18 +56,30 @@ class ODMLoadDatasetStage(types.ODM_Stage):
 
         # Get supported images from dir
         def get_images(in_dir):
-            # filter images for its extension type
             log.ODM_DEBUG(in_dir)
-            return [f for f in os.listdir(in_dir) if valid_image_filename(f)]
+            entries = os.listdir(in_dir)
+            valid, rejects = [], []
+            for f in entries:
+                if valid_image_filename(f):
+                    valid.append(f)
+                else:
+                    rejects.append(f)
+            return valid, rejects
+
+        def find_mask(photo_path, masks):
+            (pathfn, ext) = os.path.splitext(os.path.basename(photo_path))
+            k = "{}_mask".format(pathfn)
+            
+            mask = masks.get(k)
+            if mask:
+                # Spaces are not supported due to OpenSfM's mask_list.txt format reqs
+                if not " " in mask:
+                    return mask
+                else:
+                    log.ODM_WARNING("Image mask {} has a space. Spaces are currently not supported for image masks.".format(mask))
 
         # get images directory
-        input_dir = tree.input_images
         images_dir = tree.dataset_raw
-
-        if not io.dir_exists(images_dir):
-            log.ODM_INFO("Project directory %s doesn't exist. Creating it now. " % images_dir)
-            system.mkdir_p(images_dir)
-            copied = [copyfile(io.join_paths(input_dir, f), io.join_paths(images_dir, f)) for f in get_images(input_dir)]
 
         # define paths and create working directories
         system.mkdir_p(tree.odm_georeferencing)
@@ -78,16 +90,25 @@ class ODMLoadDatasetStage(types.ODM_Stage):
         # check if we rerun cell or not
         images_database_file = io.join_paths(tree.root_path, 'images.json')
         if not io.file_exists(images_database_file) or self.rerun():
-            files = get_images(images_dir)
+            files, rejects = get_images(images_dir)
             if files:
                 # create ODMPhoto list
                 path_files = [io.join_paths(images_dir, f) for f in files]
+
+                # Lookup table for masks
+                masks = {}
+                for r in rejects:
+                    (p, ext) = os.path.splitext(r)
+                    if p[-5:] == "_mask":
+                        masks[p] = r
 
                 photos = []
                 with open(tree.dataset_list, 'w') as dataset_list:
                     log.ODM_INFO("Loading %s images" % len(path_files))
                     for f in path_files:
-                        photos += [types.ODM_Photo(f)]
+                        p = types.ODM_Photo(f)
+                        p.set_mask(find_mask(f, masks))
+                        photos += [p]
                         dataset_list.write(photos[-1].filename + '\n')
 
                 # Check if a geo file is available
