@@ -99,7 +99,7 @@ class ODMLoadDatasetStage(types.ODM_Stage):
                 masks = {}
                 for r in rejects:
                     (p, ext) = os.path.splitext(r)
-                    if p[-5:] == "_mask":
+                    if p[-5:] == "_mask" and ext.lower() in context.supported_extensions:
                         masks[p] = r
 
                 photos = []
