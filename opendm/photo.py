@@ -85,6 +85,9 @@ class ODM_Photo:
         self.latitude = geo_entry.y
         self.longitude = geo_entry.x
         self.altitude = geo_entry.z
+        self.dls_yaw = geo_entry.omega
+        self.dls_pitch = geo_entry.phi
+        self.dls_roll = geo_entry.kappa
         self.gps_xy_stddev = geo_entry.horizontal_accuracy
         self.gps_z_stddev = geo_entry.vertical_accuracy
 

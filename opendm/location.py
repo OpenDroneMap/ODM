@@ -21,7 +21,7 @@ def extract_utm_coords(photos, images_path, output_coords_file):
     reference_photo = None
     for photo in photos:
         if photo.latitude is None or photo.longitude is None:
-            log.ODM_ERROR("Failed parsing GPS position for %s, skipping" % photo.filename)
+            log.ODM_WARNING("GPS position not available for %s" % photo.filename)
             continue
         
         if utm_zone is None:
