@@ -48,6 +48,9 @@ if [ "$1" = "--setup" ]; then
     # Python paths
     echo $(python /code/opendm/context.py) >> $HOME/.bashrc
 
+    # Misc aliases
+    echo "alias pdal=/code/SuperBuild/install/bin/pdal" >> $HOME/.bashrc
+
     su -c bash $2
     exit 0
 fi
