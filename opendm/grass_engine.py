@@ -95,7 +95,7 @@ class GrassContext:
         log.ODM_INFO("Executing grass script from {}: {} --tmp-location {} --exec bash script.sh".format(self.get_cwd(), self.grass_binary, self.location))
         env = os.environ.copy()
         env["GRASS_ADDON_PATH"] = env.get("GRASS_ADDON_PATH", "") + os.path.abspath(os.path.join("opendm/grass/addons"))
-        env["LC_ALL"] = locale.getdefaultlocale()[1] or "C.UTF-8"
+        env["LC_ALL"] = "C.UTF-8"
 
         filename = os.path.join(self.get_cwd(), 'output.log')
         with open(filename, 'wb') as writer, open(filename, 'rb', 1) as reader:
