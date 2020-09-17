@@ -62,15 +62,16 @@ class StoreValue(argparse.Action):
 
 args = None
 
-def config(argv=None):
+def config(argv=None, parser=None):
     global args
 
     if args is not None and argv is None:
         return args
 
-    parser = SettingsParser(description='ODM',
-                        usage='%(prog)s [options] <project name>',
-                        yaml_file=open(context.settings_path))
+    if parser is None:
+        parser = SettingsParser(description='ODM',
+                            usage='%(prog)s [options] <project name>',
+                            yaml_file=open(context.settings_path))
     
     parser.add_argument('--project-path',
                         metavar='<path>',
