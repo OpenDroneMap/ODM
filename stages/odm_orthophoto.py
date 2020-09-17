@@ -148,7 +148,7 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                                            os.path.join(tree.odm_orthophoto, "odm_orthophoto_cut.tif"),
                                            blend_distance=20, only_max_coords_feature=True)
 
-                orthophoto.post_orthophoto_steps(args, bounds_file_path, tree.odm_orthophoto_tif)
+                orthophoto.post_orthophoto_steps(args, bounds_file_path, tree.odm_orthophoto_tif, tree.orthophoto_tiles)
 
                 # Generate feathered orthophoto also
                 if args.orthophoto_cutline:

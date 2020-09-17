@@ -11,6 +11,7 @@ from edt import edt
 from rasterio.transform import Affine, rowcol
 from rasterio.mask import mask
 from opendm import io
+from opendm.tiles.tiler import generate_orthophoto_tiles
 
 def get_orthophoto_vars(args):
     return {
@@ -42,7 +43,7 @@ def generate_png(orthophoto_file):
                '--config GDAL_CACHEMAX %s%% ' % (orthophoto_file, orthophoto_png, get_max_memory()))
 
 
-def post_orthophoto_steps(args, bounds_file_path, orthophoto_file):
+def post_orthophoto_steps(args, bounds_file_path, orthophoto_file, orthophoto_tiles_dir):
     if args.crop > 0:
         Cropper.crop(bounds_file_path, orthophoto_file, get_orthophoto_vars(args), keep_original=not args.optimize_disk_space, warp_options=['-dstalpha'])
 
@@ -51,6 +52,9 @@ def post_orthophoto_steps(args, bounds_file_path, orthophoto_file):
 
     if args.orthophoto_png:
         generate_png(orthophoto_file)
+
+    if args.tiles:
+        generate_orthophoto_tiles(orthophoto_file, orthophoto_tiles_dir, args.max_concurrency)
 
 
 def compute_mask_raster(input_raster, vector_mask, output_raster, blend_distance=20, only_max_coords_feature=False):
