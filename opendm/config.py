@@ -642,6 +642,14 @@ def config(argv=None):
             'Default: '
             '%(default)s')
 
+    parser.add_argument('--tiles',
+                    action=StoreTrue,
+                    nargs=0,
+                    default=False,
+                    help='Generate static tiles for orthophotos and DEMs that are '
+                         'suitable for viewers like Leaflet or OpenLayers. '
+                         'Default: %(default)s')
+
     parser.add_argument('--build-overviews',
                         action=StoreTrue,
                         nargs=0,

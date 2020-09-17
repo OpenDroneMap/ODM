@@ -293,6 +293,9 @@ class ODM_Tree(object):
         self.odm_orthophoto_log = io.join_paths(self.odm_orthophoto, 'odm_orthophoto_log.txt')
         self.odm_orthophoto_tif_log = io.join_paths(self.odm_orthophoto, 'gdal_translate_log.txt')
 
+        # tiles
+        self.orthophoto_tiles = io.join_paths(self.root_path, "orthophoto_tiles")
+
         # Split-merge 
         self.submodels_path = io.join_paths(self.root_path, 'submodels')
 
