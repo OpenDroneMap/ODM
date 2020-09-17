@@ -6,6 +6,7 @@ import sys
 import time
 from opendm import log
 from opendm import system
+import locale
 
 from string import Template
 
@@ -94,7 +95,8 @@ class GrassContext:
         log.ODM_INFO("Executing grass script from {}: {} --tmp-location {} --exec bash script.sh".format(self.get_cwd(), self.grass_binary, self.location))
         env = os.environ.copy()
         env["GRASS_ADDON_PATH"] = env.get("GRASS_ADDON_PATH", "") + os.path.abspath(os.path.join("opendm/grass/addons"))
-        
+        env["LC_ALL"] = locale.getdefaultlocale()[1] or "C.UTF-8"
+
         filename = os.path.join(self.get_cwd(), 'output.log')
         with open(filename, 'wb') as writer, open(filename, 'rb', 1) as reader:
             p = subprocess.Popen([self.grass_binary, '--tmp-location', self.location, '--exec', 'bash', 'script.sh'],
