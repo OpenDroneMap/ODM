@@ -10,13 +10,13 @@ from pipes import quote
 
 def ply_info(input_ply):
     if not os.path.exists(input_ply):
-        return False
+        raise IOError("%s does not exist" % input_ply)
 
     # Read PLY header, check if point cloud has normals
     has_normals = False
     vertex_count = 0
 
-    with open(input_ply, 'r') as f:
+    with open(input_ply, 'r', errors='ignore') as f:
         line = f.readline().strip().lower()
         i = 0
         while line != "end_header":
@@ -251,10 +251,10 @@ def fast_merge_ply(input_point_cloud_files, output_file):
     vertex_count = sum([ply_info(pcf)['vertex_count'] for pcf in input_point_cloud_files])
     master_file = input_point_cloud_files[0]
     with open(output_file, "wb") as out:
-        with open(master_file, "r") as fhead:
+        with open(master_file, "r", errors="ignore") as fhead:
             # Copy header
             line = fhead.readline()
-            out.write(line)
+            out.write(line.encode('utf8'))
 
             i = 0
             while line.strip().lower() != "end_header":
@@ -262,9 +262,9 @@ def fast_merge_ply(input_point_cloud_files, output_file):
                 
                 # Intercept element vertex field
                 if line.lower().startswith("element vertex "):
-                    out.write("element vertex %s\n" % vertex_count)
-                else:                    
-                    out.write(line)
+                    out.write(("element vertex %s\n" % vertex_count).encode('utf8'))
+                else:
+                    out.write(line.encode('utf8'))
 
                 i += 1
                 if i > 100:
@@ -275,7 +275,7 @@ def fast_merge_ply(input_point_cloud_files, output_file):
             with open(ipc, "rb") as fin:
                 # Skip header
                 line = fin.readline()
-                while line.strip().lower() != "end_header":
+                while line.strip().lower() != b"end_header":
                     line = fin.readline()
 
                     i += 1

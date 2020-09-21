@@ -23,7 +23,7 @@ i.cutlinesmod.py --overwrite input=ortho output=cutline number_lines=${number_li
 v.select ainput=cutline binput=crop_area output=result operator=within
 
 # Export
-v.out.ogr input=result output="result.gpkg" format=GPKG
+v.out.ogr input=result output="result.gpkg" format=GPKG --overwrite
 
 # Merge all geometries, select only the largest one (remove islands)
 ogr2ogr -f GPKG -overwrite -explodecollections -dialect SQLite -sql "SELECT ST_Union(geom) FROM result ORDER BY ST_AREA(geom) DESC LIMIT 1" cutline.gpkg result.gpkg

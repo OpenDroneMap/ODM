@@ -9,7 +9,7 @@ ExternalProject_Add(${_proj_name}
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
   GIT_REPOSITORY    https://github.com/OpenDroneMap/OpenSfM/
-  GIT_TAG           100
+  GIT_TAG           200
   #--Update/Patch step----------
   UPDATE_COMMAND    git submodule update --init --recursive
   #--Configure step-------------
@@ -18,7 +18,7 @@ ExternalProject_Add(${_proj_name}
     -DCERES_ROOT_DIR=${SB_INSTALL_DIR}
     -DOpenCV_DIR=${SB_INSTALL_DIR}/share/OpenCV
     -DOPENSFM_BUILD_TESTS=off
-    -DPYTHON_EXECUTABLE=/usr/bin/python
+    -DPYTHON_EXECUTABLE=/usr/bin/python3
   #--Build step-----------------
   BINARY_DIR        ${_SB_BINARY_DIR}
   #--Install step---------------

@@ -60,7 +60,7 @@ class Cropper:
                 os.remove(original_geotiff)
 
         except Exception as e:
-            log.ODM_WARNING('Something went wrong while cropping: {}'.format(e.message))
+            log.ODM_WARNING('Something went wrong while cropping: {}'.format(e))
             
             # Revert rename
             os.rename(original_geotiff, geotiff_path)
@@ -189,8 +189,14 @@ class Cropper:
         BUFFER_SMOOTH_DISTANCE = 3
 
         if buffer_distance > 0:
-            convexhull = convexhull.Buffer(-(buffer_distance + BUFFER_SMOOTH_DISTANCE))
-            convexhull = convexhull.Buffer(BUFFER_SMOOTH_DISTANCE)
+            # For small areas, check that buffering doesn't obliterate 
+            # our hull
+            tmp = convexhull.Buffer(-(buffer_distance + BUFFER_SMOOTH_DISTANCE))
+            tmp = tmp.Buffer(BUFFER_SMOOTH_DISTANCE)
+            if tmp.Area() > 0:
+                convexhull = tmp
+            else:
+                log.ODM_WARNING("Very small crop area detected, we will not smooth it.")
 
         # Save to a new file
         bounds_geojson_path = self.path('bounds.geojson')

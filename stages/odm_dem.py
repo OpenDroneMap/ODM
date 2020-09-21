@@ -10,6 +10,7 @@ from opendm import gsd
 from opendm.dem import commands, utils
 from opendm.cropper import Cropper
 from opendm import pseudogeo
+from opendm.tiles.tiler import generate_dem_tiles
 
 class ODMDEMStage(types.ODM_Stage):
     def process(self, args, outputs):
@@ -101,7 +102,7 @@ class ODMDEMStage(types.ODM_Stage):
                             dem_input,
                             product,
                             output_type='idw' if product == 'dtm' else 'max',
-                            radiuses=map(str, radius_steps),
+                            radiuses=list(map(str, radius_steps)),
                             gapfill=args.dem_gapfill_steps > 0,
                             outdir=odm_dem_root,
                             resolution=resolution / 100.0,
@@ -128,9 +129,12 @@ class ODMDEMStage(types.ODM_Stage):
                         commands.compute_euclidean_map(unfilled_dem_path, 
                                             io.related_file_path(dem_geotiff_path, postfix=".euclideand"), 
                                             overwrite=True)
-
+                    
                     if pseudo_georeference:
                         pseudogeo.add_pseudo_georeferencing(dem_geotiff_path)
+
+                    if args.tiles:
+                        generate_dem_tiles(dem_geotiff_path, tree.path("%s_tiles" % product), args.max_concurrency)
                     
                     progress += 30
                     self.update_progress(progress)

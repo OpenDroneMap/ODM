@@ -11,8 +11,9 @@ if [ "$1" = "--setup" ]; then
         #bash configure.sh reinstall
         
         touch .setupdevenv
-        apt install -y vim
-        chown -R $3:$4 /code /var/www
+        apt update && apt install -y vim
+        chown -R $3:$4 /code
+        chown -R $3:$4 /var/www
     fi
 
     echo "Adding $2 to /etc/passwd"
@@ -44,7 +45,13 @@ if [ "$1" = "--setup" ]; then
     # Colors
     echo "alias ls='ls --color=auto'" >> $HOME/.bashrc
 
-    su -c bash $2 
+    # Python paths
+    echo $(python /code/opendm/context.py) >> $HOME/.bashrc
+
+    # Misc aliases
+    echo "alias pdal=/code/SuperBuild/install/bin/pdal" >> $HOME/.bashrc
+
+    su -c bash $2
     exit 0
 fi
 
@@ -75,6 +82,7 @@ fi
 
 export PORT="${PORT:=3000}"
 export QTC="${QTC:=NO}"
+export IMAGE="${IMAGE:=opendronemap/nodeodm}"
 
 if [ -z "$DATA" ]; then
     echo "Usage: DATA=/path/to/datasets [VARS] $0"
@@ -82,6 +90,7 @@ if [ -z "$DATA" ]; then
     echo "VARS:"
     echo "	DATA	Path to directory that contains datasets for testing. The directory will be mounted in /datasets. If you don't have any, simply set it to a folder outside the ODM repository."
     echo "	PORT	Port to expose for NodeODM (default: $PORT)"
+    echo "	IMAGE	Docker image to use (default: $IMAGE)"
     echo "	QTC	When set to YES, installs QT Creator for C++ development (default: $QTC)"
     exit 1
 fi
@@ -89,8 +98,9 @@ fi
 
 echo "Starting development environment..."
 echo "Datasets path: $DATA"
-echo "NodeODM port: $PORT"
+echo "Expose port: $PORT"
 echo "QT Creator: $QTC"
+echo "Image: $IMAGE"
 
 if [ ! -e "$HOME"/.odm-dev-home ]; then
     mkdir -p "$HOME"/.odm-dev-home
@@ -100,5 +110,5 @@ USER_ID=$(id -u)
 GROUP_ID=$(id -g)
 USER=$(id -un)
 xhost +
-docker run -ti --entrypoint bash --name odmdev -v $(pwd):/code -v "$DATA":/datasets -p $PORT:3000 --privileged -e DISPLAY -e LANG=C.UTF-8 -e LC_ALL=C.UTF-8 -v="/tmp/.X11-unix:/tmp/.X11-unix:rw" -v="$HOME/.odm-dev-home:/home/$USER" opendronemap/nodeodm -c "/code/start-dev-env.sh --setup $USER $USER_ID $GROUP_ID $QTC"
+docker run -ti --entrypoint bash --name odmdev -v $(pwd):/code -v "$DATA":/datasets -p $PORT:3000 --privileged -e DISPLAY -e LANG=C.UTF-8 -e LC_ALL=C.UTF-8 -v="/tmp/.X11-unix:/tmp/.X11-unix:rw" -v="$HOME/.odm-dev-home:/home/$USER" $IMAGE -c "/code/start-dev-env.sh --setup $USER $USER_ID $GROUP_ID $QTC"
 exit 0

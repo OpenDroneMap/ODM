@@ -6,6 +6,7 @@ import sys
 import time
 from opendm import log
 from opendm import system
+import locale
 
 from string import Template
 
@@ -94,18 +95,19 @@ class GrassContext:
         log.ODM_INFO("Executing grass script from {}: {} --tmp-location {} --exec bash script.sh".format(self.get_cwd(), self.grass_binary, self.location))
         env = os.environ.copy()
         env["GRASS_ADDON_PATH"] = env.get("GRASS_ADDON_PATH", "") + os.path.abspath(os.path.join("opendm/grass/addons"))
-        
+        env["LC_ALL"] = "C.UTF-8"
+
         filename = os.path.join(self.get_cwd(), 'output.log')
         with open(filename, 'wb') as writer, open(filename, 'rb', 1) as reader:
             p = subprocess.Popen([self.grass_binary, '--tmp-location', self.location, '--exec', 'bash', 'script.sh'],
                                 cwd=self.get_cwd(), stdout=subprocess.PIPE, stderr=writer, env=env)
             
             while p.poll() is None:
-                sys.stdout.write(reader.read())
+                sys.stdout.write(reader.read().decode('utf8'))
                 time.sleep(0.5)
             
             # Read the remaining
-            sys.stdout.write(reader.read())
+            sys.stdout.write(reader.read().decode('utf8'))
 
             out, err = p.communicate()
             out = out.decode('utf-8').strip()

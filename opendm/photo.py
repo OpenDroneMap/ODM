@@ -1,6 +1,6 @@
-import io
 import logging
 import re
+import os
 
 import exifread
 import numpy as np
@@ -8,19 +8,21 @@ from six import string_types
 from datetime import datetime, timedelta
 import pytz
 
-import log
-import system
+from opendm import io
+from opendm import log
+from opendm import system
 import xmltodict as x2d
 from opendm import get_image_size
 from xml.parsers.expat import ExpatError
 
 class ODM_Photo:
-    """   ODMPhoto - a class for ODMPhotos
-    """
+    """ODMPhoto - a class for ODMPhotos"""
 
     def __init__(self, path_file):
+        self.filename = os.path.basename(path_file)
+        self.mask = None
+        
         # Standard tags (virtually all photos have these)
-        self.filename = io.extract_file_from_path_file(path_file)
         self.width = None
         self.height = None
         self.camera_make = ''
@@ -76,6 +78,19 @@ class ODM_Photo:
                             self.filename, self.camera_make, self.camera_model, self.width, self.height, 
                             self.latitude, self.longitude, self.altitude, self.band_name, self.band_index)
 
+    def set_mask(self, mask):
+        self.mask = mask
+
+    def update_with_geo_entry(self, geo_entry):
+        self.latitude = geo_entry.y
+        self.longitude = geo_entry.x
+        self.altitude = geo_entry.z
+        self.dls_yaw = geo_entry.omega
+        self.dls_pitch = geo_entry.phi
+        self.dls_roll = geo_entry.kappa
+        self.gps_xy_stddev = geo_entry.horizontal_accuracy
+        self.gps_z_stddev = geo_entry.vertical_accuracy
+
     def parse_exif_values(self, _path_file):
         # Disable exifread log
         logging.getLogger('exifread').setLevel(logging.CRITICAL)
@@ -85,13 +100,13 @@ class ODM_Photo:
             try:
                 if 'Image Make' in tags:
                     try:
-                        self.camera_make = tags['Image Make'].values.encode('utf8')
+                        self.camera_make = tags['Image Make'].values
                     except UnicodeDecodeError:
                         log.ODM_WARNING("EXIF Image Make might be corrupted")
                         self.camera_make = "unknown"
                 if 'Image Model' in tags:
                     try:
-                        self.camera_model = tags['Image Model'].values.encode('utf8')
+                        self.camera_model = tags['Image Model'].values
                     except UnicodeDecodeError:
                         log.ODM_WARNING("EXIF Image Model might be corrupted")
                         self.camera_model = "unknown"
@@ -129,7 +144,7 @@ class ODM_Photo:
                 if 'Image BitsPerSample' in tags:
                     self.bits_per_sample = self.int_value(tags['Image BitsPerSample'])
                 if 'EXIF DateTimeOriginal' in tags:
-                    str_time = tags['EXIF DateTimeOriginal'].values.encode('utf8')
+                    str_time = tags['EXIF DateTimeOriginal'].values
                     utc_time = datetime.strptime(str_time, "%Y:%m:%d %H:%M:%S")
                     subsec = 0
                     if 'EXIF SubSecTime' in tags:
@@ -146,7 +161,7 @@ class ODM_Photo:
                     epoch = timezone.localize(datetime.utcfromtimestamp(0))
                     self.utc_time = (timezone.localize(utc_time) - epoch).total_seconds() * 1000.0
             except Exception as e:
-                log.ODM_WARNING("Cannot read extended EXIF tags for %s: %s" % (_path_file, e.message))
+                log.ODM_WARNING("Cannot read extended EXIF tags for %s: %s" % (_path_file, str(e)))
 
 
             # Extract XMP tags
@@ -262,15 +277,15 @@ class ODM_Photo:
     
     # From https://github.com/mapillary/OpenSfM/blob/master/opensfm/exif.py
     def get_xmp(self, file):
-        img_str = str(file.read())
-        xmp_start = img_str.find('<x:xmpmeta')
-        xmp_end = img_str.find('</x:xmpmeta')
+        img_bytes = file.read()
+        xmp_start = img_bytes.find(b'<x:xmpmeta')
+        xmp_end = img_bytes.find(b'</x:xmpmeta')
 
         if xmp_start < xmp_end:
-            xmp_str = img_str[xmp_start:xmp_end + 12]
+            xmp_str = img_bytes[xmp_start:xmp_end + 12].decode('utf8')
             try:
                 xdict = x2d.parse(xmp_str)
-            except ExpatError:
+            except ExpatError as e:
                 from bs4 import BeautifulSoup
                 xmp_str = str(BeautifulSoup(xmp_str, 'xml'))
                 xdict = x2d.parse(xmp_str)
@@ -297,7 +312,7 @@ class ODM_Photo:
 
     def float_values(self, tag):
         if isinstance(tag.values, list):
-            return map(lambda v: float(v.num) / float(v.den), tag.values) 
+            return [float(v.num) / float(v.den) for v in tag.values]
         else:
             return [float(tag.values.num) / float(tag.values.den)]
     
@@ -308,7 +323,7 @@ class ODM_Photo:
 
     def int_values(self, tag):
         if isinstance(tag.values, list):
-            return map(int, tag.values)
+            return [int(v) for v in tag.values]
         else:
             return [int(tag.values)]
 

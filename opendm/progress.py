@@ -32,8 +32,9 @@ class Broadcaster:
             global_progress = 100
 
         try:
-            sock.sendto("PGUP/{}/{}/{}".format(self.pid, self.project_name, float(global_progress)).encode('utf-8'), (UDP_IP, self.port))
-        except:
-            log.ODM_WARNING("Failed to broadcast progress update on UDP port %s" % str(self.port))
+            sock.sendto("PGUP/{}/{}/{}".format(self.pid, self.project_name, float(global_progress)).encode('utf8'), 
+                        (UDP_IP, self.port))
+        except Exception as e:
+            log.ODM_WARNING("Failed to broadcast progress update on UDP port %s (%s)" % (str(self.port), str(e)))
 
 progressbc = Broadcaster(PROGRESS_BROADCAST_PORT)

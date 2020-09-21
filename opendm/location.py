@@ -20,15 +20,16 @@ def extract_utm_coords(photos, images_path, output_coords_file):
     coords = []
     reference_photo = None
     for photo in photos:
-        if photo.latitude is None or photo.longitude is None or photo.altitude is None:
-            log.ODM_ERROR("Failed parsing GPS position for %s, skipping" % photo.filename)
+        if photo.latitude is None or photo.longitude is None:
+            log.ODM_WARNING("GPS position not available for %s" % photo.filename)
             continue
         
         if utm_zone is None:
             utm_zone, hemisphere = get_utm_zone_and_hemisphere_from(photo.longitude, photo.latitude)
 
         try:
-            coord = convert_to_utm(photo.longitude, photo.latitude, photo.altitude, utm_zone, hemisphere)
+            alt = photo.altitude if photo.altitude is not None else 0
+            coord = convert_to_utm(photo.longitude, photo.latitude, alt, utm_zone, hemisphere)
         except:
             raise Exception("Failed to convert GPS position to UTM for %s" % photo.filename)
         
@@ -74,6 +75,8 @@ def proj_srs_convert(srs):
         proj4 = srs.to_proj4()
         res.ImportFromProj4(proj4)
     
+    res.SetAxisMappingStrategy(osr.OAMS_TRADITIONAL_GIS_ORDER)
+
     return res
 
 def transformer(from_srs, to_srs):

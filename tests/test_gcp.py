@@ -33,8 +33,8 @@ class TestGcp(unittest.TestCase):
         copy = GCPFile(gcp.create_utm_copy("tests/assets/output/gcp_utm.txt"))
         self.assertTrue(copy.exists())
         self.assertEqual(copy.raw_srs, "WGS84 UTM 16N")
-        self.assertEqual(copy.get_entry(0).x, 609865.707705)
-        self.assertEqual(copy.get_entry(0).y, 4950688.36182)
+        self.assertEqual(copy.get_entry(0).x, 609865.7077054137)
+        self.assertEqual(copy.get_entry(0).y, 4950688.361817497)
     
     def test_utm_conversion_feet(self):
         gcp = GCPFile("tests/assets/gcp_michigan_feet_valid.txt")
@@ -43,7 +43,7 @@ class TestGcp(unittest.TestCase):
         self.assertEqual(copy.raw_srs, "WGS84 UTM 16N")
         self.assertEqual(round(copy.get_entry(0).x, 3), 609925.818)
         self.assertEqual(round(copy.get_entry(0).y, 3), 4950688.772)
-        self.assertEqual(round(copy.get_entry(0).z, 3), 171.663)
+        self.assertEqual(round(copy.get_entry(0).z, 3), 563.199)
 
     def test_filtered_copy(self):
         gcp = GCPFile('tests/assets/gcp_latlon_valid.txt')

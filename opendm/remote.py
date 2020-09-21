@@ -12,7 +12,7 @@ from opendm import config
 from pyodm import Node, exceptions
 from pyodm.utils import AtomicCounter
 from pyodm.types import TaskStatus
-from osfm import OSFMContext, get_submodel_args_dict, get_submodel_argv
+from opendm.osfm import OSFMContext, get_submodel_args_dict, get_submodel_argv
 from pipes import quote
 
 try:
@@ -474,7 +474,7 @@ class ToolchainTask(Task):
             argv = get_submodel_argv(config.config(), submodels_path, submodel_name)
 
             # Re-run the ODM toolchain on the submodel
-            system.run(" ".join(map(quote, argv)), env_vars=os.environ.copy())
+            system.run(" ".join(map(quote, map(str, argv))), env_vars=os.environ.copy())
 
             # This will only get executed if the command above succeeds
             self.touch(completed_file)

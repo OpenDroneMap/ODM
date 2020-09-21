@@ -18,8 +18,7 @@ class OSFMContext:
         self.opensfm_project_path = opensfm_project_path
     
     def run(self, command):
-        # Use Python 2.x by default, otherwise OpenSfM uses Python 3.x
-        system.run('/usr/bin/env python2 %s/bin/opensfm %s "%s"' %
+        system.run('/usr/bin/env python3 %s/bin/opensfm %s "%s"' %
                     (context.opensfm_path, command, self.opensfm_project_path))
 
     def is_reconstruction_done(self):
@@ -104,39 +103,77 @@ class OSFMContext:
                 use_bow = True
 
             # GPSDOP override if we have GPS accuracy information (such as RTK)
-            override_gps_dop = 'gps_accuracy_is_set' in args
-            for p in photos:
-                if p.get_gps_dop() is not None:
-                    override_gps_dop = True
-                    break
+            if 'gps_accuracy_is_set' in args:
+                log.ODM_INFO("Forcing GPS DOP to %s for all images" % args.gps_accuracy)
             
-            if override_gps_dop:
+            log.ODM_INFO("Writing exif overrides")
+
+            exif_overrides = {}
+            for p in photos:
                 if 'gps_accuracy_is_set' in args:
-                    log.ODM_INFO("Forcing GPS DOP to %s for all images" % args.gps_accuracy)
+                    dop = args.gps_accuracy
+                elif p.get_gps_dop() is not None:
+                    dop = p.get_gps_dop()
                 else:
-                    log.ODM_INFO("Looks like we have RTK accuracy info for some photos. Good! We'll use it.")
+                    dop = args.gps_accuracy # default value
 
-                exif_overrides = {}
-                for p in photos:
-                    dop = args.gps_accuracy if 'gps_accuracy_is_set' in args else p.get_gps_dop()
-                    if dop is not None and p.latitude is not None and p.longitude is not None:
-                        exif_overrides[p.filename] = {
-                            'gps': {
-                                'latitude': p.latitude,
-                                'longitude': p.longitude,
-                                'altitude': p.altitude if p.altitude is not None else 0,
-                                'dop': dop,
-                            }
+                if p.latitude is not None and p.longitude is not None:
+                    exif_overrides[p.filename] = {
+                        'gps': {
+                            'latitude': p.latitude,
+                            'longitude': p.longitude,
+                            'altitude': p.altitude if p.altitude is not None else 0,
+                            'dop': dop,
                         }
+                    }
 
-                with open(os.path.join(self.opensfm_project_path, "exif_overrides.json"), 'w') as f:
-                    f.write(json.dumps(exif_overrides))
+            with open(os.path.join(self.opensfm_project_path, "exif_overrides.json"), 'w') as f:
+                f.write(json.dumps(exif_overrides))
+
+            # Check image masks
+            masks = []
+            for p in photos:
+                if p.mask is not None:
+                    masks.append((p.filename, os.path.join(images_path, p.mask)))
+            
+            if masks:
+                log.ODM_INFO("Found %s image masks" % len(masks))
+                with open(os.path.join(self.opensfm_project_path, "mask_list.txt"), 'w') as f:
+                    for fname, mask in masks:
+                        f.write("{} {}\n".format(fname, mask))
+            
+            # Compute feature_process_size
+            feature_process_size = 2048 # default
+            if 'resize_to_is_set' in args:
+                # Legacy
+                log.ODM_WARNING("Legacy option --resize-to (this might be removed in a future version). Use --feature-quality instead.")
+                feature_process_size = int(args.resize_to)
+            else:
+                feature_quality_scale = {
+                    'ultra': 1,
+                    'high': 0.5,
+                    'medium': 0.25,
+                    'low': 0.125,
+                    'lowest': 0.0675,
+                }
+                # Find largest photo dimension
+                max_dim = 0
+                for p in photos:
+                    if p.width is None:
+                        continue
+                    max_dim = max(max_dim, max(p.width, p.height))
+
+                if max_dim > 0:
+                    log.ODM_INFO("Maximum photo dimensions: %spx" % str(max_dim))
+                    feature_process_size = int(max_dim * feature_quality_scale[args.feature_quality])
+                else:
+                    log.ODM_WARNING("Cannot compute max image dimensions, going with defaults")
 
             # create config file for OpenSfM
             config = [
                 "use_exif_size: no",
                 "flann_algorithm: KDTREE", # more stable, faster than KMEANS
-                "feature_process_size: %s" % args.resize_to,
+                "feature_process_size: %s" % feature_process_size,
                 "feature_min_frames: %s" % args.min_num_features,
                 "processes: %s" % args.max_concurrency,
                 "matching_gps_neighbors: %s" % matcher_neighbors,
@@ -317,7 +354,7 @@ def get_submodel_argv(args, submodels_path = None, submodel_name = None):
     :return the same as argv, but removing references to --split, 
         setting/replacing --project-path and name
         removing --rerun-from, --rerun, --rerun-all, --sm-cluster
-        removing --pc-las, --pc-csv, --pc-ept flags (processing these is wasteful)
+        removing --pc-las, --pc-csv, --pc-ept, --tiles flags (processing these is wasteful)
         adding --orthophoto-cutline
         adding --dem-euclidean-map
         adding --skip-3dmodel (split-merge does not support 3D model merging)
@@ -326,7 +363,7 @@ def get_submodel_argv(args, submodels_path = None, submodel_name = None):
         reading the contents of --cameras
     """
     assure_always = ['orthophoto_cutline', 'dem_euclidean_map', 'skip_3dmodel']
-    remove_always = ['split', 'split_overlap', 'rerun_from', 'rerun', 'gcp', 'end_with', 'sm_cluster', 'rerun_all', 'pc_csv', 'pc_las', 'pc_ept']
+    remove_always = ['split', 'split_overlap', 'rerun_from', 'rerun', 'gcp', 'end_with', 'sm_cluster', 'rerun_all', 'pc_csv', 'pc_las', 'pc_ept', 'tiles']
     read_json_always = ['cameras']
 
     argv = sys.argv

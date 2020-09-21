@@ -1,5 +1,20 @@
 #!/bin/bash
 
+check_version(){
+  UBUNTU_VERSION=$(lsb_release -r)
+  if [[ $UBUNTU_VERSION = *"18.04"* ]]; then
+    echo "Ubuntu: $UBUNTU_VERSION, good!"
+  elif [[ $UBUNTU_VERSION = *"16.04" ]]; then
+    echo "ODM 2.0 has upgraded to Ubuntu 18.04, but you're on 16.04"
+    echo "The last version of ODM that supports Ubuntu 16.04 is v1.0.2. We recommend you upgrade to Ubuntu 18.04, or better yet, use docker."
+    exit 1
+  else
+    echo "You are not on Ubuntu 18.04 (detected: $UBUNTU_VERSION)"
+    echo "It might be possible to run ODM on a newer version of Ubuntu, however, you cannot rely on this script."
+    exit 1
+  fi
+}
+
 if [[ $2 =~ ^[0-9]+$ ]] ; then
     processes=$2
 else
@@ -7,63 +22,73 @@ else
 fi
 
 install() {
+    cd /code
+    
     ## Set up library paths
-    export PYTHONPATH=$RUNPATH/SuperBuild/install/lib/python2.7/dist-packages:$RUNPATH/SuperBuild/src/opensfm:$PYTHONPATH
+    export DEBIAN_FRONTEND=noninteractive
     export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$RUNPATH/SuperBuild/install/lib
 
-    ## Before installing
+	## Before installing
     echo "Updating the system"
-    add-apt-repository -y ppa:ubuntugis/ubuntugis-unstable
-    apt-get update
-
+    if ! command -v sudo &> /dev/null
+    then
+        echo "Installing sudo"
+        apt-get update && apt-get install -y sudo
+    fi
+    sudo apt-get update && sudo apt-get install software-properties-common lsb-release tzdata -y  --no-install-recommends
+    
+    # Check version
+    check_version
+    
+    sudo add-apt-repository -y ppa:ubuntugis/ubuntugis-unstable
+    sudo apt-get update
+    
     echo "Installing Required Requisites"
-    apt-get install -y -qq build-essential \
+    sudo apt-get install -y -qq --no-install-recommends \
+                         build-essential \
                          git \
                          cmake \
-                         python-pip \
+                         python3-pip \
                          libgdal-dev \
                          gdal-bin \
                          libgeotiff-dev \
                          pkg-config \
                          libjsoncpp-dev \
-                         python-gdal \
+                         python3-gdal \
+                         python3-setuptools \
                          grass-core \
                          libssl-dev \
-                         liblas-bin \
-                         swig2.0 \
-                         python-wheel \
+                         swig3.0 \
+                         python3-wheel \
                          libboost-log-dev
+    sudo pip3 install -U pip
 
-    echo "Getting CMake 3.1 for MVS-Texturing"
-    apt-get install -y software-properties-common python-software-properties
-    add-apt-repository -y ppa:george-edison55/cmake-3.x
-    apt-get update -y
-    apt-get install -y --only-upgrade cmake
 
     echo "Installing OpenCV Dependencies"
-    apt-get install -y -qq libgtk2.0-dev \
+    sudo apt-get install -y -qq --no-install-recommends libgtk2.0-dev \
                          libavcodec-dev \
                          libavformat-dev \
                          libswscale-dev \
-                         python-dev \
+                         python3-dev \
                          libtbb2 \
                          libtbb-dev \
                          libjpeg-dev \
                          libpng-dev \
                          libtiff-dev \
-                         libjasper-dev \
                          libflann-dev \
                          libproj-dev \
                          libxext-dev \
                          liblapack-dev \
                          libeigen3-dev \
                          libvtk6-dev
-
-    echo "Removing libdc1394-22-dev due to python opencv issue"
-    apt-get remove libdc1394-22-dev
-
+						 
+	sudo add-apt-repository "deb http://security.ubuntu.com/ubuntu xenial-security main"
+    sudo apt-get update
+	sudo apt-get install -y -qq  --no-install-recommends libjasper1 \
+                         libjasper-dev
+	
     echo "Installing OpenSfM Dependencies"
-    apt-get install -y -qq libgoogle-glog-dev \
+    sudo apt-get install -y -qq  --no-install-recommends libgoogle-glog-dev \
                          libsuitesparse-dev \
                          libboost-filesystem-dev \
                          libboost-iostreams-dev \
@@ -72,12 +97,22 @@ install() {
                          libboost-date-time-dev \
                          libboost-thread-dev
 
-    pip install -r "${RUNPATH}/requirements.txt"
+    pip install -r requirements.txt
 
-    # Fix:  /usr/local/lib/python2.7/dist-packages/requests/__init__.py:83: RequestsDependencyWarning: Old version of cryptography ([1, 2, 3]) may cause slowdown.
-    pip install --upgrade cryptography
-    python -m easy_install --upgrade pyOpenSSL
+    if [ ! -z "$PORTABLE_INSTALL" ]; then
+        echo "Replacing g++ and gcc with our scripts for portability..."
+        if [ ! -e /usr/bin/gcc_real ]; then
+            sudo mv -v /usr/bin/gcc /usr/bin/gcc_real
+            sudo cp -v ./docker/gcc /usr/bin/gcc
+        fi
+        if [ ! -e /usr/bin/g++_real ]; then
+            sudo mv -v /usr/bin/g++ /usr/bin/g++_real
+            sudo cp -v ./docker/g++ /usr/bin/g++
+        fi
+    fi
 
+    set -eo pipefail
+    
     echo "Compiling SuperBuild"
     cd ${RUNPATH}/SuperBuild
     mkdir -p build && cd build
@@ -87,11 +122,13 @@ install() {
     cd ${RUNPATH}
     mkdir -p build && cd build
     cmake .. && make -j$processes
-
+	
     echo "Configuration Finished"
 }
 
 uninstall() {
+    check_version
+
     echo "Removing SuperBuild and build directories"
     cd ${RUNPATH}/SuperBuild
     rm -rfv build src download install
@@ -100,11 +137,12 @@ uninstall() {
 }
 
 reinstall() {
+    check_version
+
     echo "Reinstalling ODM modules"
     uninstall
     install
 }
-
 usage() {
     echo "Usage:"
     echo "bash configure.sh <install|update|uninstall|help> [nproc]"
@@ -120,7 +158,7 @@ usage() {
     echo "[nproc] is an optional argument that can set the number of processes for the make -j tag. By default it uses $(nproc)"
 }
 
-if [[ $1 =~ ^(install|reinstall|uninstall|usage)$ ]]; then
+if [[ $1 =~ ^(install|reinstall|uninstall)$ ]]; then
     RUNPATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
     "$1"
 else

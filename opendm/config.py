@@ -60,16 +60,18 @@ class StoreValue(argparse.Action):
         setattr(namespace, self.dest, values)
         setattr(namespace, self.dest + '_is_set', True)
 
-parser = SettingsParser(description='OpenDroneMap',
-                        usage='%(prog)s [options] <project name>',
-                        yaml_file=open(context.settings_path))
 args = None
 
-def config(argv=None):
+def config(argv=None, parser=None):
     global args
 
     if args is not None and argv is None:
         return args
+
+    if parser is None:
+        parser = SettingsParser(description='ODM',
+                            usage='%(prog)s [options] <project name>',
+                            yaml_file=open(context.settings_path))
     
     parser.add_argument('--project-path',
                         metavar='<path>',
@@ -89,9 +91,9 @@ def config(argv=None):
                         action=StoreValue,
                         default=2048,
                         type=int,
-                        help='Resizes images by the largest side for feature extraction purposes only. '
+                        help='Legacy option (use --feature-quality instead). Resizes images by the largest side for feature extraction purposes only. '
                              'Set to -1 to disable. This does not affect the final orthophoto '
-                             ' resolution quality and will not resize the original images. Default:  %(default)s')
+                             'resolution quality and will not resize the original images. Default:  %(default)s')
 
     parser.add_argument('--end-with', '-e',
                         metavar='<string>',
@@ -143,7 +145,16 @@ def config(argv=None):
                         default='sift',
                         choices=['sift', 'hahog'],
                         help=('Choose the algorithm for extracting keypoints and computing descriptors. '
-                            'Can be one of: [sift, hahog]. Default: '
+                            'Can be one of: %(choices)s. Default: '
+                            '%(default)s'))
+    
+    parser.add_argument('--feature-quality',
+                        metavar='<string>',
+                        action=StoreValue,
+                        default='high',
+                        choices=['ultra', 'high', 'medium', 'low', 'lowest'],
+                        help=('Set feature extraction quality. Higher quality generates better features, but requires more memory and takes longer. '
+                            'Can be one of: %(choices)s. Default: '
                             '%(default)s'))
 
     parser.add_argument('--matcher-neighbors',
@@ -194,7 +205,7 @@ def config(argv=None):
             help=('Set a camera projection type. Manually setting a value '
                 'can help improve geometric undistortion. By default the application '
                 'tries to determine a lens type from the images metadata. Can be '
-                'set to one of: [auto, perspective, brown, fisheye, spherical]. Default: '
+                'set to one of: %(choices)s. Default: '
                 '%(default)s'))
 
     parser.add_argument('--radiometric-calibration',
@@ -207,7 +218,7 @@ def config(argv=None):
                 'to obtain reflectance values (otherwise you will get digital number values). '
                 '[camera] applies black level, vignetting, row gradient gain/exposure compensation (if appropriate EXIF tags are found). '
                 '[camera+sun] is experimental, applies all the corrections of [camera], plus compensates for spectral radiance registered via a downwelling light sensor (DLS) taking in consideration the angle of the sun. '
-                'Can be set to one of: [none, camera, camera+sun]. Default: '
+                'Can be set to one of: %(choices)s. Default: '
                 '%(default)s'))
 
     parser.add_argument('--max-concurrency',
@@ -512,11 +523,25 @@ def config(argv=None):
                         metavar='<path string>',
                         action=StoreValue,
                         default=None,
-                        help=('path to the file containing the ground control '
+                        help=('Path to the file containing the ground control '
                               'points used for georeferencing.  Default: '
                               '%(default)s. The file needs to '
-                              'be on the following line format: \neasting '
-                              'northing height pixelrow pixelcol imagename'))
+                              'use the following format: \n'
+                              'EPSG:<code> or <+proj definition>\n'
+                              'geo_x geo_y geo_z im_x im_y image_name [gcp_name] [extra1] [extra2]'))
+
+    parser.add_argument('--geo',
+                        metavar='<path string>',
+                        action=StoreValue,
+                        default=None,
+                        help=('Path to the image geolocation file containing the camera center coordinates used for georeferencing. '
+                              'Note that omega/phi/kappa are currently not supported (you can set them to 0). '
+                              'Default: '
+                              '%(default)s. The file needs to '
+                              'use the following format: \n'
+                              'EPSG:<code> or <+proj definition>\n'
+                              'image_name geo_x geo_y geo_z [omega (degrees)] [phi (degrees)] [kappa (degrees)] [horz accuracy (meters)] [vert accuracy (meters)]'
+                              ''))
 
     parser.add_argument('--use-exif',
                         action=StoreTrue,
@@ -606,9 +631,7 @@ def config(argv=None):
                         type=str,
                         choices=['JPEG', 'LZW', 'PACKBITS', 'DEFLATE', 'LZMA', 'NONE'],
                         default='DEFLATE',
-                        help='Set the compression to use. Note that this could '
-                             'break gdal_translate if you don\'t know what you '
-                             'are doing. Options: %(choices)s.\nDefault: %(default)s')
+                        help='Set the compression to use for orthophotos. Options: %(choices)s.\nDefault: %(default)s')
     
     parser.add_argument('--orthophoto-cutline',
             action=StoreTrue,
@@ -619,6 +642,14 @@ def config(argv=None):
             'can be useful for stitching seamless mosaics with multiple overlapping orthophotos. '
             'Default: '
             '%(default)s')
+
+    parser.add_argument('--tiles',
+                    action=StoreTrue,
+                    nargs=0,
+                    default=False,
+                    help='Generate static tiles for orthophotos and DEMs that are '
+                         'suitable for viewers like Leaflet or OpenLayers. '
+                         'Default: %(default)s')
 
     parser.add_argument('--build-overviews',
                         action=StoreTrue,
@@ -649,7 +680,7 @@ def config(argv=None):
 
     parser.add_argument('--version',
                         action='version',
-                        version='OpenDroneMap {0}'.format(__version__),
+                        version='ODM {0}'.format(__version__),
                         help='Displays version number and exits. ')
 
     parser.add_argument('--split',
@@ -742,7 +773,7 @@ def config(argv=None):
     if not args.project_path:
         log.ODM_ERROR('You need to set the project path in the '
                       'settings.yaml file before you can run ODM, '
-                      'or use `--project-path <path>`. Run `python '
+                      'or use `--project-path <path>`. Run `python3 '
                       'run.py --help` for more information. ')
         sys.exit(1)
 
