@@ -127,9 +127,7 @@ def opensfm_reconstruction_average_gsd(reconstruction_json, use_all_shots=False)
                                                         camera['width']))
     
     if len(gsds) > 0:
-        mean = np.mean(gsds)
-        if mean > 0:
-            return mean
+        return abs(np.mean(gsds))
     
     return None
 
