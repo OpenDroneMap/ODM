@@ -127,7 +127,10 @@ def opensfm_reconstruction_average_gsd(reconstruction_json, use_all_shots=False)
                                                         camera['width']))
     
     if len(gsds) > 0:
-        return abs(np.mean(gsds))
+        mean = np.mean(gsds)
+        if mean < 0:
+            log.ODM_WARNING("Negative GSD estimated, this might indicate a flipped Z-axis.")
+        return abs(mean)
     
     return None
 
