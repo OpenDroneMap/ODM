@@ -119,7 +119,7 @@ class ODM_Photo:
                 if 'GPS GPSLongitude' in tags and 'GPS GPSLongitudeRef' in tags:
                     self.longitude = self.dms_to_decimal(tags['GPS GPSLongitude'], tags['GPS GPSLongitudeRef'])
             except IndexError as e:
-                log.ODM_WARNING("Cannot read basic EXIF tags for %s: %s" % (_path_file, e.message))
+                log.ODM_WARNING("Cannot read basic EXIF tags for %s: %s" % (_path_file, str(e)))
 
             try:
                 if 'Image Tag 0xC61A' in tags:
@@ -233,7 +233,7 @@ class ODM_Photo:
                         self.set_attr_from_xmp_tag('dls_pitch', tags, ['DLS:Pitch'], float)
                         self.set_attr_from_xmp_tag('dls_roll', tags, ['DLS:Roll'], float)
                 except Exception as e:
-                    log.ODM_WARNING("Cannot read XMP tags for %s: %s" % (_path_file, e.message))
+                    log.ODM_WARNING("Cannot read XMP tags for %s: %s" % (_path_file, str(e)))
 
                 # self.set_attr_from_xmp_tag('center_wavelength', tags, [
                 #     'Camera:CentralWavelength'
@@ -253,6 +253,9 @@ class ODM_Photo:
             if cast is None:
                 setattr(self, attr, v)
             else:
+                # Handle fractions
+                if (cast == float or cast == int) and "/" in v:
+                    v = self.try_parse_fraction(v)
                 setattr(self, attr, cast(v))
     
     def get_xmp_tag(self, xmp_tags, tags):
@@ -334,6 +337,16 @@ class ODM_Photo:
 
     def list_values(self, tag):
         return " ".join(map(str, tag.values))
+
+    def try_parse_fraction(self, val):
+        parts = val.split("/")
+        if len(parts) == 2:
+            try:
+                num, den = map(float, parts)
+                return num / den if den != 0 else val
+            except ValueError:
+                pass
+        return val 
 
     def get_radiometric_calibration(self):
         if isinstance(self.radiometric_calibration, str):
