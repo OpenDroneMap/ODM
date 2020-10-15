@@ -1,0 +1,37 @@
+diff --git a/io/Ilvis2MetadataReader.cpp b/io/Ilvis2MetadataReader.cpp
+index 05f9427..c65be59 100644
+--- a/io/Ilvis2MetadataReader.cpp
++++ b/io/Ilvis2MetadataReader.cpp
+@@ -33,6 +33,7 @@
+ ****************************************************************************/
+ 
+ #include <ogr_geometry.h>
++#include <cpl_conv.h>
+ 
+ #include "Ilvis2MetadataReader.hpp"
+ 
+diff --git a/pdal/Geometry.cpp b/pdal/Geometry.cpp
+index ab0d847..2d85d73 100644
+--- a/pdal/Geometry.cpp
++++ b/pdal/Geometry.cpp
+@@ -34,6 +34,8 @@
+ 
+ #include <ogr_api.h>
+ #include <ogr_geometry.h>
++#include <cpl_conv.h>
++#include <cpl_string.h>
+ 
+ #include <pdal/Geometry.hpp>
+ #include <pdal/private/gdal/GDALUtils.hpp>
+diff --git a/pdal/private/gdal/GDALUtils.cpp b/pdal/private/gdal/GDALUtils.cpp
+index 2662870..21aa559 100644
+--- a/pdal/private/gdal/GDALUtils.cpp
++++ b/pdal/private/gdal/GDALUtils.cpp
+@@ -42,6 +42,7 @@
+ #include <gdal_priv.h>
+ #include <ogr_api.h>
+ #include <ogr_geometry.h>
++#include <ogr_p.h>
+ #include <ogrsf_frmts.h>
+ 
+ #include <nlohmann/json.hpp>

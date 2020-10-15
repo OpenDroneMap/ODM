@@ -10,6 +10,7 @@ ExternalProject_Add(${_proj_name}
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
   URL               https://github.com/PDAL/PDAL/archive/2.2.0.zip
   #--Update/Patch step----------
+  PATCH_COMMAND     patch -Np1 -i "${SB_ROOT_DIR}/../patches/PDAL.diff"
   UPDATE_COMMAND    ""
   #--Configure step-------------
   SOURCE_DIR        ${SB_SOURCE_DIR}/${_proj_name}
