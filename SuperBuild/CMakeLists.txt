@@ -125,6 +125,9 @@ foreach(lib ${custom_libs})
 	SETUP_EXTERNAL_PROJECT_CUSTOM(${lib})
 endforeach()
 
+include(ProcessorCount)
+ProcessorCount(nproc)
+
 ## Add mve Build
 
 externalproject_add(mve
@@ -134,7 +137,7 @@ externalproject_add(mve
     SOURCE_DIR      ${SB_SOURCE_DIR}/elibs/mve
     CONFIGURE_COMMAND ""
     BUILD_IN_SOURCE 1
-    BUILD_COMMAND   make
+    BUILD_COMMAND   make -j${nproc}
     INSTALL_COMMAND ""
 )
 
@@ -145,7 +148,7 @@ externalproject_add(poissonrecon
     UPDATE_COMMAND    ""
     CONFIGURE_COMMAND ""
     BUILD_IN_SOURCE 1
-    BUILD_COMMAND     make poissonrecon
+    BUILD_COMMAND     make -j${nproc} poissonrecon
     INSTALL_COMMAND   ""
 )
 
@@ -155,7 +158,6 @@ externalproject_add(dem2mesh
     SOURCE_DIR        ${SB_SOURCE_DIR}/dem2mesh
     UPDATE_COMMAND    ""
     BUILD_IN_SOURCE 1
-    BUILD_COMMAND     make
     INSTALL_COMMAND   ""
 )
 
@@ -165,7 +167,6 @@ externalproject_add(dem2points
     SOURCE_DIR        ${SB_SOURCE_DIR}/dem2points
     UPDATE_COMMAND    ""
     BUILD_IN_SOURCE 1
-    BUILD_COMMAND     make
     INSTALL_COMMAND   ""
 )
 
@@ -178,6 +179,6 @@ externalproject_add(lastools
     CMAKE_GENERATOR   ""
     UPDATE_COMMAND    ""
     BUILD_IN_SOURCE 1
-    BUILD_COMMAND     make -C LASlib -j$(nproc) CXXFLAGS='-std=c++11' && make -C src -j$(nproc) CXXFLAGS='-std=c++11' lasmerge
+    BUILD_COMMAND     make -C LASlib -j${nproc} CXXFLAGS='-std=c++11' && make -C src -j${nproc} CXXFLAGS='-std=c++11' lasmerge
     INSTALL_COMMAND   mv ${SB_SOURCE_DIR}/lastools/bin/lasmerge ${SB_INSTALL_DIR}/bin
 )
