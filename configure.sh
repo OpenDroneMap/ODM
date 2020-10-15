@@ -81,11 +81,6 @@ install() {
                          liblapack-dev \
                          libeigen3-dev \
                          libvtk6-dev
-						 
-	sudo add-apt-repository "deb http://security.ubuntu.com/ubuntu xenial-security main"
-    sudo apt-get update
-	sudo apt-get install -y -qq  --no-install-recommends libjasper1 \
-                         libjasper-dev
 	
     echo "Installing OpenSfM Dependencies"
     sudo apt-get install -y -qq  --no-install-recommends libgoogle-glog-dev \
