@@ -11,14 +11,15 @@ from opendm import context
 from opendm import camera
 from opensfm.large import metadataset
 from opensfm.large import tools
-from opensfm.commands import undistort
+from opensfm.actions import undistort
+from opensfm.dataset import DataSet
 
 class OSFMContext:
     def __init__(self, opensfm_project_path):
         self.opensfm_project_path = opensfm_project_path
     
     def run(self, command):
-        system.run('/usr/bin/env python3 %s/bin/opensfm %s "%s"' %
+        system.run('%s/bin/opensfm %s "%s"' %
                     (context.opensfm_path, command, self.opensfm_project_path))
 
     def is_reconstruction_done(self):
@@ -316,10 +317,8 @@ class OSFMContext:
         undistorted_images_path = self.path("undistorted", "images")
 
         if not io.dir_exists(undistorted_images_path) or rerun:
-            cmd = undistort.Command(imageFilter)
-            parser = argparse.ArgumentParser()
-            cmd.add_arguments(parser)
-            cmd.run(parser.parse_args([self.opensfm_project_path]))
+            undistort.run_dataset(DataSet(self.opensfm_project_path), "reconstruction.json", 
+                                  0, None, "undistorted", imageFilter)
         else:
             log.ODM_WARNING("Found an undistorted directory in %s" % undistorted_images_path)
 
