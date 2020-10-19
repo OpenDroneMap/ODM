@@ -101,25 +101,16 @@ SETUP_EXTERNAL_PROJECT(Ceres ${ODM_Ceres_Version} ${ODM_BUILD_Ceres})
 SETUP_EXTERNAL_PROJECT(Hexer 1.4 ON)
 
 # ---------------------------------------------------------------------------------------------
-# Open Geometric Vision (OpenGV)
 # Open Structure from Motion (OpenSfM)
 #
 
-set(custom_libs OpenGV
-				OpenSfM
+set(custom_libs OpenSfM
 				LASzip
                 Zstd
 				PDAL
                 Entwine
 				MvsTexturing
 )
-
-# Dependencies of the SLAM module
-if(ODM_BUILD_SLAM)
-	list(APPEND custom_libs
-				Pangolin
-				ORB_SLAM2)
-endif()
 
 foreach(lib ${custom_libs})
 	SETUP_EXTERNAL_PROJECT_CUSTOM(${lib})
