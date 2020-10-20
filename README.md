@@ -7,7 +7,7 @@ An open source command line toolkit for processing aerial drone imagery. ODM tur
 * Georeferenced Orthorectified Imagery
 * Georeferenced Digital Elevation Models
 
-![images-diag](https://user-images.githubusercontent.com/1174901/96613039-7de94500-12cc-11eb-9975-ca67b188b0d3.png)
+![images-diag](https://user-images.githubusercontent.com/1174901/96644651-5b205600-12f7-11eb-827b-8f4a3a6f3b21.png)
 
 The application is available for Windows, Mac and Linux and it works from the command line, making it ideal for power users, scripts and for integration with other software.
 
