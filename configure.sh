@@ -97,7 +97,7 @@ install() {
                          libboost-date-time-dev \
                          libboost-thread-dev
 
-    pip install -r requirements.txt
+    pip install --ignore-installed -r requirements.txt
 
     if [ ! -z "$PORTABLE_INSTALL" ]; then
         echo "Replacing g++ and gcc with our scripts for portability..."
