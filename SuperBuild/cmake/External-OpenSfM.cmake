@@ -12,6 +12,7 @@ ExternalProject_Add(${_proj_name}
   GIT_TAG           200
   #--Update/Patch step----------
   UPDATE_COMMAND    git submodule update --init --recursive
+  PATCH_COMMAND     git apply ../../../patches/OpenSfM.diff
   #--Configure step-------------
   SOURCE_DIR        ${SB_SOURCE_DIR}/${_proj_name}
   CONFIGURE_COMMAND cmake <SOURCE_DIR>/${_proj_name}/src
