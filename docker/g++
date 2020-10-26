@@ -1,12 +1,12 @@
 #!/bin/bash
 
-args=""
+declare -a args
 
 for i in "$@"
 do
-    if [[ $i != -march* ]]; then
-        args="$args $i"
+    if [[ "$i" != -march* ]]; then
+        args+=("$i")
     fi
 done
 
-/usr/bin/g++_real -march=nehalem $args
+/usr/bin/g++_real -march=nehalem "${args[@]}"
