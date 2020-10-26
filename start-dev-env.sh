@@ -47,6 +47,9 @@ if [ "$1" = "--setup" ]; then
 
     # Python paths
     echo $(python /code/opendm/context.py) >> $HOME/.bashrc
+    
+    # Vim 
+    printf "syntax on\nset showmatch\nset ts=4\nset sts=4\nset sw=4\nset autoindent\nset smartindent\nset smarttab\nset expandtab" > $HOME/.vimrc
 
     # Misc aliases
     echo "alias pdal=/code/SuperBuild/install/bin/pdal" >> $HOME/.bashrc
