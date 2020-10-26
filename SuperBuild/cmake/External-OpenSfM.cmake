@@ -16,7 +16,7 @@ ExternalProject_Add(${_proj_name}
   SOURCE_DIR        ${SB_SOURCE_DIR}/${_proj_name}
   CONFIGURE_COMMAND cmake <SOURCE_DIR>/${_proj_name}/src
     -DCERES_ROOT_DIR=${SB_INSTALL_DIR}
-    -DOpenCV_DIR=${SB_INSTALL_DIR}/share/OpenCV
+    -DOpenCV_DIR=${SB_INSTALL_DIR}/lib/cmake/opencv4
     -DOPENSFM_BUILD_TESTS=off
     -DPYTHON_EXECUTABLE=/usr/bin/python3
   #--Build step-----------------
