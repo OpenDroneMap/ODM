@@ -20,7 +20,7 @@ ExternalProject_Add(${_proj_name}
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
   GIT_REPOSITORY    https://github.com/cdcseacave/openMVS
-  GIT_TAG           0af021346007f1ab15af160814977a91a8166f55
+  GIT_TAG           v1.1.1
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   #--Configure step-------------
