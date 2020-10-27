@@ -27,7 +27,9 @@ RUN rm -rf \
   /code/SuperBuild/src/opencv \
   /code/SuperBuild/src/opengv \
   /code/SuperBuild/src/pcl \
-  /code/SuperBuild/src/pdal
+  /code/SuperBuild/src/pdal \
+  /code/SuperBuild/src/openmvs \
+  /code/SuperBuild/build/openmvs
 
 # Entry point
 ENTRYPOINT ["python3", "/code/run.py"]

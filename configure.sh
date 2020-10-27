@@ -91,6 +91,9 @@ install() {
                          libboost-python-dev \
                          libboost-date-time-dev \
                          libboost-thread-dev
+    
+    echo "Installing OpenMVS Dependencies"
+    sudo apt-get install -y -qq --no-install-recommends libcgal-dev
 
     pip install --ignore-installed -r requirements.txt
 

@@ -110,6 +110,7 @@ set(custom_libs OpenSfM
 				PDAL
                 Entwine
 				MvsTexturing
+                OpenMVS
 )
 
 foreach(lib ${custom_libs})

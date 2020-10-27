@@ -12,8 +12,8 @@ def extract_path_from_file(file):
     return path
 
 
-def join_paths(path1, path2):
-    return os.path.join(path1, path2)
+def join_paths(*args):
+    return os.path.join(*args)
 
 
 def file_exists(path_file):

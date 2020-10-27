@@ -40,6 +40,9 @@ dem2points_path = os.path.join(superbuild_path, 'src', 'dem2points', 'dem2points
 # define mvstex path
 mvstex_path = os.path.join(superbuild_path, "install/bin/texrecon")
 
+# openmvs paths
+omvs_densify_path = os.path.join(superbuild_path, "install/bin/OpenMVS/DensifyPointCloud")
+
 # define txt2las path
 txt2las_path = os.path.join(superbuild_path, 'src/las-tools/bin')
 pdal_path = os.path.join(superbuild_path, 'build/pdal/bin')

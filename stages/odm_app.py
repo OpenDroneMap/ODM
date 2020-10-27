@@ -8,7 +8,7 @@ from opendm import log
 
 from stages.dataset import ODMLoadDatasetStage
 from stages.run_opensfm import ODMOpenSfMStage
-from stages.mve import ODMMveStage
+from stages.openmvs import ODMOpenMVSStage
 from stages.odm_slam import ODMSlamStage
 from stages.odm_meshing import ODMeshingStage
 from stages.mvstex import ODMMvsTexStage
@@ -34,7 +34,7 @@ class ODMApp:
         merge = ODMMergeStage('merge', args, progress=100.0)
         opensfm = ODMOpenSfMStage('opensfm', args, progress=25.0)
         slam = ODMSlamStage('slam', args)
-        mve = ODMMveStage('mve', args, progress=50.0)
+        openmvs = ODMOpenMVSStage('openmvs', args, progress=50.0)
         filterpoints = ODMFilterPoints('odm_filterpoints', args, progress=52.0)
         meshing = ODMeshingStage('odm_meshing', args, progress=60.0,
                                     max_vertex=args.mesh_size,
@@ -71,8 +71,8 @@ class ODMApp:
         if args.use_opensfm_dense or args.fast_orthophoto:
             opensfm.connect(filterpoints)
         else:
-            opensfm.connect(mve) \
-                    .connect(filterpoints)
+            opensfm.connect(openmvs) \
+                   .connect(filterpoints)
         
         filterpoints \
             .connect(meshing) \
@@ -82,14 +82,5 @@ class ODMApp:
             .connect(orthophoto) \
             .connect(report)
                 
-        # # SLAM pipeline
-        # # TODO: this is broken and needs work
-        # log.ODM_WARNING("SLAM module is currently broken. We could use some help fixing this. If you know Python, get in touch at https://community.opendronemap.org.")
-        # self.first_stage = slam
-
-        # slam.connect(mve) \
-        #     .connect(meshing) \
-        #     .connect(texturing)
-
     def execute(self):
         self.first_stage.run()

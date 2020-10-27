@@ -214,6 +214,7 @@ class ODM_Tree(object):
         self.dataset_raw = io.join_paths(self.root_path, 'images')
         self.opensfm = io.join_paths(self.root_path, 'opensfm')
         self.mve = io.join_paths(self.root_path, 'mve')
+        self.openmvs = io.join_paths(self.opensfm, 'undistorted', 'openmvs')
         self.odm_meshing = io.join_paths(self.root_path, 'odm_meshing')
         self.odm_texturing = io.join_paths(self.root_path, 'odm_texturing')
         self.odm_25dtexturing = io.join_paths(self.root_path, 'odm_texturing_25d')
@@ -243,6 +244,9 @@ class ODM_Tree(object):
         # mve
         self.mve_model = io.join_paths(self.mve, 'mve_dense_point_cloud.ply')
         self.mve_views = io.join_paths(self.mve, 'views')
+
+        # OpenMVS
+        self.openmvs_model = io.join_paths(self.openmvs, 'scene_dense.ply')
 
         # filter points
         self.filtered_point_cloud = io.join_paths(self.odm_filterpoints, "point_cloud.ply")
