@@ -32,7 +32,7 @@ if __name__ == '__main__':
 
         # Don't leak token
         if k == 'sm_cluster' and args_dict[k] is not None:
-            log.ODM_INFO('%s: True' % k
+            log.ODM_INFO('%s: True' % k)
         else:
             log.ODM_INFO('%s: %s' % (k, args_dict[k]))
     log.ODM_INFO('==============')
