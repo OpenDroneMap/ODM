@@ -88,12 +88,12 @@ class ODMLoadDatasetStage(types.ODM_Stage):
         log.ODM_INFO('Loading dataset from: %s' % images_dir)
 
         # check if we rerun cell or not
-        images_database_file = io.join_paths(tree.root_path, 'images.json')
+        images_database_file = os.path.join(tree.root_path, 'images.json')
         if not io.file_exists(images_database_file) or self.rerun():
             files, rejects = get_images(images_dir)
             if files:
                 # create ODMPhoto list
-                path_files = [io.join_paths(images_dir, f) for f in files]
+                path_files = [os.path.join(images_dir, f) for f in files]
 
                 # Lookup table for masks
                 masks = {}
@@ -163,5 +163,5 @@ class ODMLoadDatasetStage(types.ODM_Stage):
                                                  tree.odm_georeferencing_coords, 
                                                  rerun=self.rerun())
 
-        reconstruction.save_proj_srs(io.join_paths(tree.odm_georeferencing, tree.odm_georeferencing_proj))
+        reconstruction.save_proj_srs(os.path.join(tree.odm_georeferencing, tree.odm_georeferencing_proj))
         outputs['reconstruction'] = reconstruction

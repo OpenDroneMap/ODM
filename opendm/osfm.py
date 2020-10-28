@@ -63,7 +63,7 @@ class OSFMContext:
         if not io.dir_exists(self.opensfm_project_path):
             system.mkdir_p(self.opensfm_project_path)
 
-        list_path = io.join_paths(self.opensfm_project_path, 'image_list.txt')
+        list_path = os.path.join(self.opensfm_project_path, 'image_list.txt')
         if not io.file_exists(list_path) or rerun:
             
             # create file list
@@ -75,7 +75,7 @@ class OSFMContext:
                         has_alt = False
                     if photo.latitude is not None and photo.longitude is not None:
                         has_gps = True
-                    fout.write('%s\n' % io.join_paths(images_path, photo.filename))
+                    fout.write('%s\n' % os.path.join(images_path, photo.filename))
             
             # check for image_groups.txt (split-merge)
             image_groups_file = os.path.join(args.project_path, "image_groups.txt")
@@ -245,7 +245,7 @@ class OSFMContext:
             log.ODM_WARNING("%s already exists, not rerunning OpenSfM setup" % list_path)
 
     def get_config_file_path(self):
-        return io.join_paths(self.opensfm_project_path, 'config.yaml')
+        return os.path.join(self.opensfm_project_path, 'config.yaml')
 
     def reconstructed(self):
         if not io.file_exists(self.path("reconstruction.json")):

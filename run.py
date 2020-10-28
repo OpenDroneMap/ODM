@@ -40,7 +40,7 @@ if __name__ == '__main__':
     progressbc.set_project_name(args.name)
 
     # Add project dir if doesn't exist
-    args.project_path = io.join_paths(args.project_path, args.name)
+    args.project_path = os.path.join(args.project_path, args.name)
     if not io.dir_exists(args.project_path):
         log.ODM_WARNING('Directory %s does not exist. Creating it now.' % args.name)
         system.mkdir_p(os.path.abspath(args.project_path))
