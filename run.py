@@ -32,7 +32,7 @@ if __name__ == '__main__':
 
         # Don't leak token
         if k == 'sm_cluster' and args_dict[k] is not None:
-            log.ODM_INFO('%s: True' % k)
+            log.ODM_INFO('%s: True' % k
         else:
             log.ODM_INFO('%s: %s' % (k, args_dict[k]))
     log.ODM_INFO('==============')
@@ -40,7 +40,7 @@ if __name__ == '__main__':
     progressbc.set_project_name(args.name)
 
     # Add project dir if doesn't exist
-    args.project_path = io.join_paths(args.project_path, args.name)
+    args.project_path = os.path.join(args.project_path, args.name)
     if not io.dir_exists(args.project_path):
         log.ODM_WARNING('Directory %s does not exist. Creating it now.' % args.name)
         system.mkdir_p(os.path.abspath(args.project_path))
