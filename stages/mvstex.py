@@ -80,7 +80,7 @@ class ODMMvsTexStage(types.ODM_Stage):
                 # mvstex definitions
                 kwargs = {
                     'bin': context.mvstex_path,
-                    'out_dir': io.join_paths(r['out_dir'], "odm_textured_model"),
+                    'out_dir': os.path.join(r['out_dir'], "odm_textured_model"),
                     'model': r['model'],
                     'dataTerm': self.params.get('data_term'),
                     'outlierRemovalType': self.params.get('outlier_rem_type'),

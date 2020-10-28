@@ -204,57 +204,57 @@ class ODM_Tree(object):
     def __init__(self, root_path, gcp_file = None, geo_file = None):
         # root path to the project
         self.root_path = io.absolute_path_file(root_path)
-        self.input_images = io.join_paths(self.root_path, 'images')
+        self.input_images = os.path.join(self.root_path, 'images')
 
         # modules paths
 
         # here are defined where all modules should be located in
         # order to keep track all files al directories during the
         # whole reconstruction process.
-        self.dataset_raw = io.join_paths(self.root_path, 'images')
-        self.opensfm = io.join_paths(self.root_path, 'opensfm')
-        self.mve = io.join_paths(self.root_path, 'mve')
-        self.odm_meshing = io.join_paths(self.root_path, 'odm_meshing')
-        self.odm_texturing = io.join_paths(self.root_path, 'odm_texturing')
-        self.odm_25dtexturing = io.join_paths(self.root_path, 'odm_texturing_25d')
-        self.odm_georeferencing = io.join_paths(self.root_path, 'odm_georeferencing')
-        self.odm_25dgeoreferencing = io.join_paths(self.root_path, 'odm_georeferencing_25d')
-        self.odm_filterpoints = io.join_paths(self.root_path, 'odm_filterpoints')
-        self.odm_orthophoto = io.join_paths(self.root_path, 'odm_orthophoto')
-        self.odm_report = io.join_paths(self.root_path, 'odm_report')
+        self.dataset_raw = os.path.join(self.root_path, 'images')
+        self.opensfm = os.path.join(self.root_path, 'opensfm')
+        self.mve = os.path.join(self.root_path, 'mve')
+        self.odm_meshing = os.path.join(self.root_path, 'odm_meshing')
+        self.odm_texturing = os.path.join(self.root_path, 'odm_texturing')
+        self.odm_25dtexturing = os.path.join(self.root_path, 'odm_texturing_25d')
+        self.odm_georeferencing = os.path.join(self.root_path, 'odm_georeferencing')
+        self.odm_25dgeoreferencing = os.path.join(self.root_path, 'odm_georeferencing_25d')
+        self.odm_filterpoints = os.path.join(self.root_path, 'odm_filterpoints')
+        self.odm_orthophoto = os.path.join(self.root_path, 'odm_orthophoto')
+        self.odm_report = os.path.join(self.root_path, 'odm_report')
         
 
         # important files paths
 
         # benchmarking
-        self.benchmarking = io.join_paths(self.root_path, 'benchmark.txt')
-        self.dataset_list = io.join_paths(self.root_path, 'img_list.txt')
+        self.benchmarking = os.path.join(self.root_path, 'benchmark.txt')
+        self.dataset_list = os.path.join(self.root_path, 'img_list.txt')
 
         # opensfm
-        self.opensfm_tracks = io.join_paths(self.opensfm, 'tracks.csv')
-        self.opensfm_bundle = io.join_paths(self.opensfm, 'bundle_r000.out')
-        self.opensfm_bundle_list = io.join_paths(self.opensfm, 'list_r000.out')
-        self.opensfm_image_list = io.join_paths(self.opensfm, 'image_list.txt')
-        self.opensfm_reconstruction = io.join_paths(self.opensfm, 'reconstruction.json')
-        self.opensfm_reconstruction_nvm = io.join_paths(self.opensfm, 'undistorted/reconstruction.nvm')
-        self.opensfm_model = io.join_paths(self.opensfm, 'undistorted/depthmaps/merged.ply')
-        self.opensfm_transformation = io.join_paths(self.opensfm, 'geocoords_transformation.txt')
+        self.opensfm_tracks = os.path.join(self.opensfm, 'tracks.csv')
+        self.opensfm_bundle = os.path.join(self.opensfm, 'bundle_r000.out')
+        self.opensfm_bundle_list = os.path.join(self.opensfm, 'list_r000.out')
+        self.opensfm_image_list = os.path.join(self.opensfm, 'image_list.txt')
+        self.opensfm_reconstruction = os.path.join(self.opensfm, 'reconstruction.json')
+        self.opensfm_reconstruction_nvm = os.path.join(self.opensfm, 'undistorted/reconstruction.nvm')
+        self.opensfm_model = os.path.join(self.opensfm, 'undistorted/depthmaps/merged.ply')
+        self.opensfm_transformation = os.path.join(self.opensfm, 'geocoords_transformation.txt')
 
         # mve
-        self.mve_model = io.join_paths(self.mve, 'mve_dense_point_cloud.ply')
-        self.mve_views = io.join_paths(self.mve, 'views')
+        self.mve_model = os.path.join(self.mve, 'mve_dense_point_cloud.ply')
+        self.mve_views = os.path.join(self.mve, 'views')
 
         # filter points
-        self.filtered_point_cloud = io.join_paths(self.odm_filterpoints, "point_cloud.ply")
+        self.filtered_point_cloud = os.path.join(self.odm_filterpoints, "point_cloud.ply")
 
         # odm_meshing
-        self.odm_mesh = io.join_paths(self.odm_meshing, 'odm_mesh.ply')
-        self.odm_meshing_log = io.join_paths(self.odm_meshing, 'odm_meshing_log.txt')
-        self.odm_25dmesh = io.join_paths(self.odm_meshing, 'odm_25dmesh.ply')
-        self.odm_25dmeshing_log = io.join_paths(self.odm_meshing, 'odm_25dmeshing_log.txt')
+        self.odm_mesh = os.path.join(self.odm_meshing, 'odm_mesh.ply')
+        self.odm_meshing_log = os.path.join(self.odm_meshing, 'odm_meshing_log.txt')
+        self.odm_25dmesh = os.path.join(self.odm_meshing, 'odm_25dmesh.ply')
+        self.odm_25dmeshing_log = os.path.join(self.odm_meshing, 'odm_25dmeshing_log.txt')
 
         # texturing
-        self.odm_texturing_undistorted_image_path = io.join_paths(
+        self.odm_texturing_undistorted_image_path = os.path.join(
             self.odm_texturing, 'undistorted')
         self.odm_textured_model_obj = 'odm_textured_model.obj'
         self.odm_textured_model_mtl = 'odm_textured_model.mtl'
@@ -262,42 +262,42 @@ class ODM_Tree(object):
         self.odm_texuring_log = 'odm_texturing_log.txt'
 
         # odm_georeferencing
-        self.odm_georeferencing_coords = io.join_paths(
+        self.odm_georeferencing_coords = os.path.join(
             self.odm_georeferencing, 'coords.txt')
         self.odm_georeferencing_gcp = gcp_file or io.find('gcp_list.txt', self.root_path)
-        self.odm_georeferencing_gcp_utm = io.join_paths(self.odm_georeferencing, 'gcp_list_utm.txt')
+        self.odm_georeferencing_gcp_utm = os.path.join(self.odm_georeferencing, 'gcp_list_utm.txt')
         self.odm_geo_file = geo_file or io.find('geo.txt', self.root_path)
         
-        self.odm_georeferencing_utm_log = io.join_paths(
+        self.odm_georeferencing_utm_log = os.path.join(
             self.odm_georeferencing, 'odm_georeferencing_utm_log.txt')
         self.odm_georeferencing_log = 'odm_georeferencing_log.txt'
         self.odm_georeferencing_transform_file = 'odm_georeferencing_transform.txt'
         self.odm_georeferencing_proj = 'proj.txt'
         self.odm_georeferencing_model_txt_geo = 'odm_georeferencing_model_geo.txt'
         self.odm_georeferencing_model_obj_geo = 'odm_textured_model_geo.obj'
-        self.odm_georeferencing_xyz_file = io.join_paths(
+        self.odm_georeferencing_xyz_file = os.path.join(
             self.odm_georeferencing, 'odm_georeferenced_model.csv')
-        self.odm_georeferencing_las_json = io.join_paths(
+        self.odm_georeferencing_las_json = os.path.join(
             self.odm_georeferencing, 'las.json')
-        self.odm_georeferencing_model_laz = io.join_paths(
+        self.odm_georeferencing_model_laz = os.path.join(
             self.odm_georeferencing, 'odm_georeferenced_model.laz')
-        self.odm_georeferencing_model_las = io.join_paths(
+        self.odm_georeferencing_model_las = os.path.join(
             self.odm_georeferencing, 'odm_georeferenced_model.las')
-        self.odm_georeferencing_dem = io.join_paths(
+        self.odm_georeferencing_dem = os.path.join(
             self.odm_georeferencing, 'odm_georeferencing_model_dem.tif')
 
         # odm_orthophoto
-        self.odm_orthophoto_render = io.join_paths(self.odm_orthophoto, 'odm_orthophoto_render.tif')
-        self.odm_orthophoto_tif = io.join_paths(self.odm_orthophoto, 'odm_orthophoto.tif')
-        self.odm_orthophoto_corners = io.join_paths(self.odm_orthophoto, 'odm_orthophoto_corners.txt')
-        self.odm_orthophoto_log = io.join_paths(self.odm_orthophoto, 'odm_orthophoto_log.txt')
-        self.odm_orthophoto_tif_log = io.join_paths(self.odm_orthophoto, 'gdal_translate_log.txt')
+        self.odm_orthophoto_render = os.path.join(self.odm_orthophoto, 'odm_orthophoto_render.tif')
+        self.odm_orthophoto_tif = os.path.join(self.odm_orthophoto, 'odm_orthophoto.tif')
+        self.odm_orthophoto_corners = os.path.join(self.odm_orthophoto, 'odm_orthophoto_corners.txt')
+        self.odm_orthophoto_log = os.path.join(self.odm_orthophoto, 'odm_orthophoto_log.txt')
+        self.odm_orthophoto_tif_log = os.path.join(self.odm_orthophoto, 'gdal_translate_log.txt')
 
         # tiles
-        self.orthophoto_tiles = io.join_paths(self.root_path, "orthophoto_tiles")
+        self.orthophoto_tiles = os.path.join(self.root_path, "orthophoto_tiles")
 
         # Split-merge 
-        self.submodels_path = io.join_paths(self.root_path, 'submodels')
+        self.submodels_path = os.path.join(self.root_path, 'submodels')
 
         # Tiles
         self.entwine_pointcloud = self.path("entwine_pointcloud")
