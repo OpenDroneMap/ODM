@@ -213,7 +213,6 @@ class ODM_Tree(object):
         # whole reconstruction process.
         self.dataset_raw = io.join_paths(self.root_path, 'images')
         self.opensfm = io.join_paths(self.root_path, 'opensfm')
-        self.mve = io.join_paths(self.root_path, 'mve')
         self.openmvs = io.join_paths(self.opensfm, 'undistorted', 'openmvs')
         self.odm_meshing = io.join_paths(self.root_path, 'odm_meshing')
         self.odm_texturing = io.join_paths(self.root_path, 'odm_texturing')
@@ -240,10 +239,6 @@ class ODM_Tree(object):
         self.opensfm_reconstruction_nvm = io.join_paths(self.opensfm, 'undistorted/reconstruction.nvm')
         self.opensfm_model = io.join_paths(self.opensfm, 'undistorted/depthmaps/merged.ply')
         self.opensfm_transformation = io.join_paths(self.opensfm, 'geocoords_transformation.txt')
-
-        # mve
-        self.mve_model = io.join_paths(self.mve, 'mve_dense_point_cloud.ply')
-        self.mve_views = io.join_paths(self.mve, 'views')
 
         # OpenMVS
         self.openmvs_model = io.join_paths(self.openmvs, 'scene_dense.ply')

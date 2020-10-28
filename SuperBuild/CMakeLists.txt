@@ -120,19 +120,6 @@ endforeach()
 include(ProcessorCount)
 ProcessorCount(nproc)
 
-## Add mve Build
-
-externalproject_add(mve
-    GIT_REPOSITORY  https://github.com/OpenDroneMap/mve.git
-    GIT_TAG         210
-    UPDATE_COMMAND  ""
-    SOURCE_DIR      ${SB_SOURCE_DIR}/elibs/mve
-    CONFIGURE_COMMAND ""
-    BUILD_IN_SOURCE 1
-    BUILD_COMMAND   make -j${nproc}
-    INSTALL_COMMAND ""
-)
-
 externalproject_add(poissonrecon
     GIT_REPOSITORY    https://github.com/mkazhdan/PoissonRecon.git
     GIT_TAG           ce5005ae3094d902d551a65a8b3131e06f45e7cf
