@@ -31,7 +31,7 @@ jobs:
           --volume "$GITHUB_WORKSPACE":"$GITHUB_WORKSPACE" \
           --workdir "$GITHUB_WORKSPACE" \
           --platform "${{ matrix.architecture }}" \
-          diddledan/snapcraft:core18
+          diddledan/snapcraft:core18 snapcraft --enable-experimental-package-repositories
         
         SNAPFILE="$(find "$GITHUB_WORKSPACE" -maxdepth 1 -type f -name "*.snap" | head -n1)"
         sudo chown "$(id -u)":"$(id -g)" "$SNAPFILE"
