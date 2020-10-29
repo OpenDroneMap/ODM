@@ -1,3 +1,5 @@
+on:
+  workflow_dispatch:
 name: 'Snapcraft Build'
 description: 'Build a Snapcraft project'
 author: 'James Henstridge'
