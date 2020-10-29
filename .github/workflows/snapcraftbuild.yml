@@ -8,40 +8,18 @@ on:
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        architecture:
-        - linux/amd64
-        - linux/386
     steps:
     - name: Checkout
       uses: actions/checkout@v2
     - name: Build
       id: build
-      run: |
-        echo '{"experimental": true}' | sudo tee /etc/docker/daemon.json > /dev/null
-        sudo systemctl restart docker
-        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-
-        ######### Change snap name to temporary test name
-        sed -i 's/^name:.*/name: opendronemap-core18-test/' snap/snapcraft.yaml
-        #########
-
-        docker run --rm --tty --privileged \
-          --volume "$GITHUB_WORKSPACE":"$GITHUB_WORKSPACE" \
-          --workdir "$GITHUB_WORKSPACE" \
-          --platform "${{ matrix.architecture }}" \
-          diddledan/snapcraft:core18 snapcraft --enable-experimental-package-repositories
-        
-        SNAPFILE="$(find "$GITHUB_WORKSPACE" -maxdepth 1 -type f -name "*.snap" | head -n1)"
-        sudo chown "$(id -u)":"$(id -g)" "$SNAPFILE"
-        echo ::set-output name=snap::"$SNAPFILE"
+      uses: snapcore/action-build@v1
     - name: Review
       uses: diddlesnaps/snapcraft-review-tools-action@v1
       with:
         snap: ${{ steps.build.outputs.snap }}
         isClassic: 'false'
-    - name: Publish to Edge
+    - name: Publish playtest to Edge
       uses: snapcore/action-publish@v1
       with:
         store_login: ${{ secrets.STORE_LOGIN }}
