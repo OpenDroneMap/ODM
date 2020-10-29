@@ -1,11 +1,40 @@
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - uses: snapcore/action-build@v1
-      id: snapcraft
-    - uses: actions/upload-artifact@v2
-      with:
-        name: snap
-        path: ${{ steps.snapcraft.outputs.snap }}
+name: 'Snapcraft Build'
+description: 'Build a Snapcraft project'
+author: 'James Henstridge'
+branding:
+  icon: 'package'
+  color: 'orange'
+inputs:
+  path:
+    description: 'The location of the Snapcraft project.  Defaults to the base of the repository'
+    default: '.'
+  build-info:
+    description: >
+      Whether to include build information in the resulting snap.
+      This will add snap/manifest.yaml and snap/snapcraft.yaml files
+      to the snap.  The Snap Store can use this information to detect
+      snaps with security vulnerabilities introduced through
+      stage-packages.
+      Proprietary applications may want to disable this due to
+      the information leakage.
+    default: 'true'
+  snapcraft-channel:
+    description: >
+      The Snapcraft channel to use
+      By default, the action will use the stable version of Snapcraft
+      to build the project.  This parameter can be used to instead
+      select a different channel such as beta, candidate, or edge.
+    default: 'stable'
+  snapcraft-args:
+    description: >
+      Additional arguments to pass to Snapcraft
+      Some experimental Snapcraft features are disabled by default and
+      must be turned on via a `--enable-experimental-*` command line
+      argument.  This parameter can be used to turn on such features.
+    default: ''
+outputs:
+  snap:
+    description: 'The file name of the resulting snap.'
+runs:
+  using: 'node12'
+  main: 'dist/index.js'
