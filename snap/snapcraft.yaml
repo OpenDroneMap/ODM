@@ -1,4 +1,4 @@
-name: opendronemap-core18-test
+name: opendronemap
 adopt-info: odm
 grade: devel
 confinement: strict
