@@ -72,6 +72,9 @@ class ODM_Reconstruction(object):
         if not io.file_exists(output_coords_file) or not io.file_exists(output_gcp_file) or rerun:
             gcp = GCPFile(gcp_file)
             if gcp.exists():
+                if gcp.entries_count() == 0:
+                    raise RuntimeError("This GCP file does not have any entries. Are the entries entered in the proper format?")
+                
                 # Create coords file, we'll be using this later
                 # during georeferencing
                 with open(output_coords_file, 'w') as f:
