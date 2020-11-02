@@ -30,7 +30,117 @@ package-repositories:
     ppa: ubuntugis/ubuntugis-unstable
 
 parts:
+  prereqs:
+    source: .
+    plugin: nil
+    override-pull: exit 0
+    build-packages:
+      - build-essential
+      - cmake
+      - gdal-bin
+      - git
+      - grass-core
+      - libboost-log-dev
+      - libgdal-dev
+      - libgeotiff-dev
+      - libjsoncpp-dev
+      - libssl-dev
+      - libusb-dev
+      - ninja-build
+      - pkg-config
+      - python3-dev
+      - python3-gdal
+      - python3-pip
+      - python3-setuptools
+      - python3-wheel
+      - rsync
+      - swig3.0
+    stage-packages:
+      - gdal-bin
+      - grass-core
+      - libboost-log1.65.1
+      - libgdal26
+      - libgeotiff5
+      - libjsoncpp1
+      - libspqr2
+      - libssl1.1
+      - libusb-0.1-4
+      - procps
+      - python3-gdal
+      - python3-setuptools
+    stage:
+      # remove deb-based numpy because it conflicts with our pip-installed version
+      - -usr/lib/python3/dist-packages/numpy
+
+  opencv:
+    source: .
+    plugin: nil
+    override-pull: exit 0
+    build-packages:
+      - libavcodec-dev
+      - libavformat-dev
+      - libeigen3-dev
+      - libflann-dev
+      - libgtk2.0-dev
+      - libjpeg-dev
+      - liblapack-dev
+      - libpng-dev
+      - libproj-dev
+      - libswscale-dev
+      - libtbb-dev
+      - libtiff-dev
+      - libvtk6-dev
+      - libxext-dev
+    stage-packages:
+      - libavcodec57
+      - libavformat57
+      - libflann1.9
+      - libgtk2.0-0
+      - libjpeg-turbo8
+      - liblapack3
+      - libpng16-16
+      - libproj19
+      - libswscale4
+      - libtbb2
+      - libtiff5
+      - libvtk6.3
+      - libxext6
+
+  opensfm:
+    source: .
+    plugin: nil
+    override-pull: exit 0
+    build-packages:
+      - libboost-date-time-dev
+      - libboost-filesystem-dev
+      - libboost-iostreams-dev
+      - libboost-python-dev
+      - libboost-regex-dev
+      - libboost-thread-dev
+      - libgoogle-glog-dev
+      - libsuitesparse-dev
+    stage-packages:
+      - libamd2
+      - libboost-date-time1.65.1
+      - libboost-filesystem1.65.1
+      - libboost-iostreams1.65.1
+      - libboost-python1.65.1
+      - libboost-regex1.65.1
+      - libboost-system1.65.1
+      - libboost-thread1.65.1
+      - libcamd2
+      - libccolamd2
+      - libcholmod3
+      - libcolamd2
+      - libcxsparse3
+      - libgoogle-glog0v5
+      - libsuitesparseconfig5
+
   odm:
+    after:
+      - prereqs
+      - opencv
+      - opensfm
     source: .
     plugin: nil # We will script everything ourselves
     build-environment:
@@ -62,20 +172,7 @@ parts:
         $SNAPCRAFT_PART_BUILD/ $SNAPCRAFT_PART_INSTALL/odm/
       chmod -R u=rwX,go=rX $PYTHONUSERBASE/lib/python*
     stage:
-      # include the libraries and execuables from debian packages
-      - bin
-      - lib
-      - share
-      - usr/bin
-      - usr/lib
-      - usr/share
-
-      # remove deb-based numpy because it conflicts with our pip-installed version
-      - -usr/lib/python3/dist-packages/numpy
-
-      # include the odm directory ...
-      - odm
-      # ... but strip the temporary build files and sources
+      # strip the temporary build files and sources
       - -odm/SuperBuild/build/opencv
       - -odm/SuperBuild/download
       - -odm/SuperBuild/src/ceres
@@ -99,144 +196,6 @@ parts:
       - -**/*.o
     build-snaps:
       - cmake
-    build-packages:
-      - build-essential
-      - gdal-bin
-      - git
-      - grass-core
-      - libboost-log-dev
-      - libgdal-dev
-      - libgeotiff-dev
-      - libjsoncpp-dev
-      - libssl-dev
-      - libusb-dev
-      - ninja-build
-      - python3-gdal
-      - python3-pip
-      - python3-setuptools
-      - python3-wheel
-      - rsync
-      - swig3.0
-      # OpenCV
-      - libavcodec-dev
-      - libavformat-dev
-      - libeigen3-dev
-      - libflann-dev
-      - libgtk2.0-dev
-      - libjpeg-dev
-      - liblapack-dev
-      - libpng-dev
-      - libproj-dev
-      - libswscale-dev
-      - libtbb-dev
-      - libtbb2
-      - libtiff-dev
-      - libvtk6-dev
-      - libxext-dev
-      - python3-dev
-      # OpenSfM
-      - libboost-date-time-dev
-      - libboost-filesystem-dev
-      - libboost-iostreams-dev
-      - libboost-python-dev
-      - libboost-regex-dev
-      - libboost-thread-dev
-      - libgoogle-glog-dev
-      - libsuitesparse-dev
-    stage-packages:
-      - gdal-bin
-      - grass-core
-      - libaec0
-      - libamd2
-      - libasn1-8-heimdal
-      - libavcodec57
-      - libavformat57
-      - libboost-filesystem1.65.1
-      - libboost-iostreams1.65.1
-      - libboost-system1.65.1
-      - libboost-thread1.65.1
-      - libcamd2
-      - libccolamd2
-      - libcfitsio5
-      - libcharls1
-      - libcholmod3
-      - libcolamd2
-      - libcurl3-gnutls
-      - libcxsparse3
-      - libdap25
-      - libdapclient6v5
-      - libepsilon1
-      - libflann1.9
-      - libfontconfig1
-      - libfreetype6
-      - libfreexl1
-      - libfyba0
-      - libgdal26
-      - libgeos-3.8.0
-      - libgeos-c1v5
-      - libgeotiff5
-      - libgflags2.2
-      - libgif7
-      - libgomp1
-      - libgoogle-glog0v5
-      - libgssapi3-heimdal
-      - libhcrypto4-heimdal
-      - libhdf4-0-alt
-      - libhdf5-100
-      - libheimbase1-heimdal
-      - libheimntlm0-heimdal
-      - libhwloc5
-      - libhx509-5-heimdal
-      - libicu60
-      - libjbig0
-      - libjpeg-turbo8
-      - libjsoncpp1
-      - libkmlbase1
-      - libkmldom1
-      - libkmlengine1
-      - libkrb5-26-heimdal
-      - liblcms2-2
-      - libldap-2.4-2
-      - libltdl7
-      - libmetis5
-      - libminizip1
-      - libmysqlclient20
-      - libnetcdf-c++4
-      - libnetcdf13
-      - libnghttp2-14
-      - libnspr4
-      - libnss3
-      - libnuma1
-      - libodbc1
-      - libogdi4.1
-      - libopenjp2-7
-      - libopenmpi2
-      - libpng16-16
-      - libpoppler73
-      - libpq5
-      - libproj19
-      - libpsl5
-      - libqhull7
-      - libroken18-heimdal
-      - librtmp1
-      - libsasl2-2
-      - libspatialite7
-      - libspqr2
-      - libsuitesparseconfig5
-      - libsz2
-      - libtbb2
-      - libtiff5
-      - libunwind8
-      - liburiparser1
-      - libvtk6.3
-      - libwebp6
-      - libwind0-heimdal
-      - libxerces-c3.2
-      - libxml2
-      - odbcinst1debian2
-      - procps
-      - python3-gdal
-      - python3-setuptools
 
   snap-specifics:
     source: snap/local
