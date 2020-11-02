@@ -115,7 +115,7 @@ parts:
       - libboost-program-options-dev
     stage-packages:
       - libboost-program-options1.65.1
-      - libCGAL
+      - libcgal-dev
 
   opensfm:
     source: .
