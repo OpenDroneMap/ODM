@@ -1,0 +1,29 @@
+name: Build and Release Snap
+
+on:
+  push:
+    branches:
+    - master
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Build
+      id: build
+      uses: snapcore/action-build@v1
+      with:
+        snapcraft-args: --enable-experimental-package-repositories
+    - name: Review
+      uses: diddlesnaps/snapcraft-review-tools-action@v1
+      with:
+        snap: ${{ steps.build.outputs.snap }}
+        isClassic: 'false'
+    - name: Publish playtest to Edge
+      uses: snapcore/action-publish@v1
+      with:
+        store_login: ${{ secrets.STORE_LOGIN }}
+        snap: ${{ steps.build.outputs.snap }}
+        release: edge
