@@ -26,7 +26,6 @@ ExternalProject_Add(${_proj_name}
   #--Configure step-------------
   SOURCE_DIR        ${SB_SOURCE_DIR}/${_proj_name}
   CMAKE_ARGS
-    -DCERES_ROOT_DIR=${SB_INSTALL_DIR}
     -DOpenCV_DIR=${SB_INSTALL_DIR}/lib/cmake/opencv4
     -DVCG_ROOT=${SB_SOURCE_DIR}/vcg
     -DCMAKE_BUILD_TYPE=Release

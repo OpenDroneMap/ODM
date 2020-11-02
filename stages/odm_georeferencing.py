@@ -131,9 +131,13 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                         if not args.fast_orthophoto:
                             decimation_step *= int(len(reconstruction.photos) / 1000) + 1
 
-                        cropper.create_bounds_gpkg(tree.odm_georeferencing_model_laz, args.crop, 
-                                                    decimation_step=decimation_step)
-
+                        try:
+                            cropper.create_bounds_gpkg(tree.odm_georeferencing_model_laz, args.crop, 
+                                                        decimation_step=decimation_step)
+                        except:
+                            log.ODM_WARNING("Cannot calculate crop bounds! We will skip cropping")
+                            args.crop = 0
+                            
                     # Do not execute a second time, since
                     # We might be doing georeferencing for
                     # multiple models (3D, 2.5D, ...)

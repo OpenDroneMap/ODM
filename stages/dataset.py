@@ -141,7 +141,7 @@ class ODMLoadDatasetStage(types.ODM_Stage):
                 has_mask = True
                 break
 
-        if has_mask and not args.use_opensfm_dense:
+        if has_mask and not args.use_opensfm_dense and not args.fast_orthophoto:
             log.ODM_WARNING("Image masks found, will use OpenSfM for dense reconstruction")
             args.use_opensfm_dense = True
             
