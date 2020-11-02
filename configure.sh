@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Ensure the DEBIAN_FRONTEND environment variable is set for apt-get calls
+APT_GET="env DEBIAN_FRONTEND=noninteractive $(command -v apt-get)"
+
 check_version(){
   UBUNTU_VERSION=$(lsb_release -r)
   if [[ $UBUNTU_VERSION = *"18.04"* ]]; then
@@ -21,79 +24,88 @@ else
     processes=$(nproc)
 fi
 
+ensure_prereqs() {
+    export DEBIAN_FRONTEND=noninteractive
+
+    if ! command -v sudo &> /dev/null; then
+        echo "Installing sudo"
+        $APT_GET update
+        $APT_GET install -y -qq --no-install-recommends sudo
+    else
+        sudo $APT_GET update
+    fi
+
+    if ! command -v lsb_release &> /dev/null; then
+        echo "Installing lsb_release"
+        sudo $APT_GET install -y -qq --no-install-recommends lsb-release
+    fi
+
+    if ! command -v pkg-config &> /dev/null; then
+        echo "Installing pkg-config"
+        sudo $APT_GET install -y -qq --no-install-recommends pkg-config
+    fi
+
+    echo "Installing tzdata"
+    sudo $APT_GET install -y -qq tzdata
+
+    echo "Enabling PPA for Ubuntu GIS"
+    sudo $APT_GET install -y -qq --no-install-recommends software-properties-common
+    sudo add-apt-repository -y ppa:ubuntugis/ubuntugis-unstable
+    sudo $APT_GET update
+
+    echo "Installing Python PIP"
+    sudo $APT_GET install -y -qq --no-install-recommends \
+        python3-pip \
+        python3-setuptools
+    sudo pip3 install -U pip
+    sudo pip3 install -U shyaml
+}
+
+# Save all dependencies in snapcraft.yaml to maintain a single source of truth.
+# Maintaining multiple lists will otherwise be painful.
+installdepsfromsnapcraft() {
+    section="$2"
+    case "$1" in
+        build) key=build-packages; ;;
+        runtime) key=stage-packages; ;;
+        *) key=build-packages; ;; # shouldn't be needed, but it's here just in case
+    esac
+
+    cat snap/snapcraft.yaml | \
+        shyaml get-values-0 parts.$section.$key | \
+        xargs -0 sudo $APT_GET install -y -qq --no-install-recommends
+}
+
+installruntimedepsonly() {
+    echo "Installing runtime dependencies"
+    ensure_prereqs
+    check_version
+
+    echo "Installing Required Requisites"
+    installdepsfromsnapcraft runtime prereqs
+    echo "Installing OpenCV Dependencies"
+    installdepsfromsnapcraft runtime opencv
+    echo "Installing OpenSfM Dependencies"
+    installdepsfromsnapcraft runtime opensfm
+}
+    
 install() {
     cd /code
     
     ## Set up library paths
-    export DEBIAN_FRONTEND=noninteractive
     export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$RUNPATH/SuperBuild/install/lib
 
 	## Before installing
     echo "Updating the system"
-    if ! command -v sudo &> /dev/null
-    then
-        echo "Installing sudo"
-        apt-get update && apt-get install -y sudo
-    fi
-    sudo apt-get update && sudo apt-get install software-properties-common lsb-release tzdata -y  --no-install-recommends
-    
-    # Check version
+    ensure_prereqs
     check_version
     
-    sudo add-apt-repository -y ppa:ubuntugis/ubuntugis-unstable
-    sudo apt-get update
-    
     echo "Installing Required Requisites"
-    sudo apt-get install -y -qq --no-install-recommends \
-                         build-essential \
-                         git \
-                         cmake \
-                         python3-pip \
-                         libgdal-dev \
-                         gdal-bin \
-                         libgeotiff-dev \
-                         pkg-config \
-                         libjsoncpp-dev \
-                         python3-gdal \
-                         python3-setuptools \
-                         grass-core \
-                         libssl-dev \
-                         swig3.0 \
-                         python3-wheel \
-                         libboost-log-dev
-    sudo pip3 install -U pip
-
-
+    installdepsfromsnapcraft build prereqs
     echo "Installing OpenCV Dependencies"
-    sudo apt-get install -y -qq --no-install-recommends libgtk2.0-dev \
-                         libavcodec-dev \
-                         libavformat-dev \
-                         libswscale-dev \
-                         python3-dev \
-                         libtbb2 \
-                         libtbb-dev \
-                         libjpeg-dev \
-                         libpng-dev \
-                         libtiff-dev \
-                         libflann-dev \
-                         libproj-dev \
-                         libxext-dev \
-                         liblapack-dev \
-                         libeigen3-dev \
-                         libvtk6-dev
-	
+    installdepsfromsnapcraft build opencv
     echo "Installing OpenSfM Dependencies"
-    sudo apt-get install -y -qq  --no-install-recommends libgoogle-glog-dev \
-                         libsuitesparse-dev \
-                         libboost-filesystem-dev \
-                         libboost-iostreams-dev \
-                         libboost-regex-dev \
-                         libboost-python-dev \
-                         libboost-date-time-dev \
-                         libboost-thread-dev
-    
-    echo "Installing OpenMVS Dependencies"
-    sudo apt-get install -y -qq --no-install-recommends libcgal-dev
+    installdepsfromsnapcraft build opensfm
 
     pip install --ignore-installed -r requirements.txt
 
@@ -147,6 +159,8 @@ usage() {
     echo "Subcommands:"
     echo "  install"
     echo "    Installs all dependencies and modules for running OpenDroneMap"
+    echo "  installruntimedepsonly"
+    echo "    Installs *only* the runtime libraries (used by docker builds). To build from source, use the 'install' command."
     echo "  reinstall"
     echo "    Removes SuperBuild and build modules, then re-installs them. Note this does not update OpenDroneMap to the latest version. "
     echo "  uninstall"
@@ -156,7 +170,7 @@ usage() {
     echo "[nproc] is an optional argument that can set the number of processes for the make -j tag. By default it uses $(nproc)"
 }
 
-if [[ $1 =~ ^(install|reinstall|uninstall)$ ]]; then
+if [[ $1 =~ ^(install|installruntimedepsonly|reinstall|uninstall)$ ]]; then
     RUNPATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
     "$1"
 else

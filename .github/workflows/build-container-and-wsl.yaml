@@ -1,0 +1,70 @@
+name: Build and Release Container and WSL Image
+
+on:
+  push:
+    tags:
+    - v*
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+    - name: Login to DockerHub
+      uses: docker/login-action@v1 
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+    # Use the repository information of the checked-out code to format docker tags
+    - name: Docker meta
+        id: docker_meta
+        uses: crazy-max/ghaction-docker-meta@v1
+        with:
+          images: opendronemap/odm
+          tag_match: \d{1,3}.\d{1,3}.\d{1,3} # matches v1.2.3
+    - name: Build and push Docker image
+      id: docker_build
+      uses: docker/build-push-action@v2
+      with:
+        file: ./portable.Dockerfile
+        platforms: linux/amd64,linux/386
+        push: true
+        load: true # Copy to the host's docker daemon so we can use it for WSL export
+        tags: ${{ steps.docker_meta.outputs.tags }}
+    - name: Export WSL image
+      id: wsl_export
+      run: |
+        docker export $(docker create opendronemap/odm) --output odm-wsl-rootfs-amd64.tar.gz
+        gzip odm-wsl-rootfs-amd64.tar.gz
+        echo ::set-output name=amd64-rootfs::"odm-wsl-rootfs-amd64.tar.gz"
+    # Convert tag into a GitHub Release
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        draft: false
+        prerelease: false
+    # Upload the WSL image to the new Release
+    - name: Upload amd64 Release Asset
+      id: upload-amd64-wsl-rootfs
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+        asset_path: ./${{ steps.wsl_export.outputs.amd64-rootfs }}
+        asset_name: ${{ steps.wsl_export.outputs.amd64-rootfs }}
+        asset_content_type: application/gzip
+    - name: Docker image digest and WSL rootfs download URL
+      run: |
+        echo "Docker image digest: ${{ steps.docker_build.outputs.digest }}"
+        echo "WSL AMD64 rootfs URL: ${{ steps.upload-amd64-wsl-rootfs.browser_download_url }}"
