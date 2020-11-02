@@ -43,7 +43,6 @@ parts:
       - libboost-log-dev
       - libgdal-dev
       - libgeotiff-dev
-      - libcgal-dev
       - libjsoncpp-dev
       - libssl-dev
       - libusb-dev
@@ -106,6 +105,14 @@ parts:
       - libtiff5
       - libvtk6.3
       - libxext6
+  
+  openmvs:
+    source: .
+    plugin: nil
+    override-pull: exit 0
+    build-packages:
+      - libcgal-dev
+      - libboost-program-options-dev
 
   opensfm:
     source: .
@@ -142,6 +149,7 @@ parts:
       - prereqs
       - opencv
       - opensfm
+      - openmvs
     source: .
     plugin: nil # We will script everything ourselves
     build-environment:
@@ -184,7 +192,7 @@ parts:
       - -odm/SuperBuild/src/laszip
       - -odm/SuperBuild/src/mvstexturing
       - -odm/SuperBuild/src/opencv
-      - -odm/SuperBuild/src/opengv
+      - -odm/SuperBuild/src/openmvs
       - -odm/SuperBuild/src/pcl
       - -odm/SuperBuild/src/pdal
       - -odm/SuperBuild/src/zstd

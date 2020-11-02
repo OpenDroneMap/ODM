@@ -87,6 +87,9 @@ installruntimedepsonly() {
     installdepsfromsnapcraft runtime opencv
     echo "Installing OpenSfM Dependencies"
     installdepsfromsnapcraft runtime opensfm
+    echo "Installing OpenMVS Dependencies"
+    installdepsfromsnapcraft runtime openmvs
+    
 }
     
 install() {
@@ -106,6 +109,9 @@ install() {
     installdepsfromsnapcraft build opencv
     echo "Installing OpenSfM Dependencies"
     installdepsfromsnapcraft build opensfm
+    echo "Installing OpenMVS Dependencies"
+    installdepsfromsnapcraft build openmvs
+    
 
     pip install --ignore-installed -r requirements.txt
 
