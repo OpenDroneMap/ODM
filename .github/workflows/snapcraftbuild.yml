@@ -30,7 +30,7 @@ jobs:
         snap: ${{ steps.build.outputs.snap }}
         isClassic: 'false'
     - name: Publish unstable builds to Edge
-      if: ${{ github.ref }} == "refs/heads/master"
+      if: github.ref == "refs/heads/master"
       uses: snapcore/action-publish@v1
       with:
         store_login: ${{ secrets.STORE_LOGIN }}
@@ -38,7 +38,7 @@ jobs:
         release: edge
     - name: Publish tagged prerelease builds to Beta
       # These are identified by having a hyphen in the tag name, e.g.: v1.0.0-beta1
-      if: ${{ startsWith("refs/tags/v", github.ref) }} && ${{ contains("-", github.ref) }}
+      if: startsWith("refs/tags/v", github.ref) && contains("-", github.ref)
       uses: snapcore/action-publish@v1
       with:
         store_login: ${{ secrets.STORE_LOGIN }}
@@ -46,7 +46,7 @@ jobs:
         release: beta
     - name: Publish tagged stable or release-candidate builds to Candidate
       # These are identified by NOT having a hyphen in the tag name, OR having "-RC" or "-rc" in the tag name.
-      if: ${{ startsWith("refs/tags/v", github.ref) }} && ( ( ! ${{ contains("-", github.ref) }} ) || ${{ contains("-RC", github.ref) }} || ${{ contains("-rc", github.ref) }} )
+      if: startsWith("refs/tags/v", github.ref) && ( ( ! contains("-", github.ref) ) || contains("-RC", github.ref) || contains("-rc", github.ref) )
       uses: snapcore/action-publish@v1
       with:
         store_login: ${{ secrets.STORE_LOGIN }}
