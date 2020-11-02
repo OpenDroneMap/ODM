@@ -1,0 +1,43 @@
+name: Build PRs
+
+on:
+  pull-request:
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+    - name: Build
+      uses: docker/build-push-action@v2
+      with:
+        file: ./portable.Dockerfile
+        platforms: linux/amd64,linux/386
+        push: false
+  
+  snapcraft:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        architecture:
+        - i386
+        - amd64
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Build
+      id: build
+      uses: diddlesnaps/snapcraft-multiarch-action@v1
+      with:
+        snapcraft-args: --enable-experimental-package-repositories
+        architecture: ${{ matrix.architecture }}
+    - name: Review
+      uses: diddlesnaps/snapcraft-review-tools-action@v1
+      with:
+        snap: ${{ steps.build.outputs.snap }}
+        isClassic: 'false'
