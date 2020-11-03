@@ -47,6 +47,7 @@ ExternalProject_Add(${_proj_name}
     -DBUILD_opencv_ocl=OFF
     -DBUILD_opencv_ts=OFF
     -DBUILD_opencv_xfeatures2d=ON
+    -DOPENCV_ALLOCATOR_STATS_COUNTER_TYPE=int64_t
     -DCMAKE_BUILD_TYPE:STRING=Release
     -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
   #--Build step-----------------

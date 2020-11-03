@@ -47,9 +47,14 @@ if [ "$1" = "--setup" ]; then
 
     # Python paths
     echo $(python /code/opendm/context.py) >> $HOME/.bashrc
+    
+    # Vim 
+    printf "syntax on\nset showmatch\nset ts=4\nset sts=4\nset sw=4\nset autoindent\nset smartindent\nset smarttab\nset expandtab" > $HOME/.vimrc
 
     # Misc aliases
     echo "alias pdal=/code/SuperBuild/install/bin/pdal" >> $HOME/.bashrc
+    echo "alias opensfm=/code/SuperBuild/src/opensfm/bin/opensfm" >> $HOME/.bashrc
+    
 
     su -c bash $2
     exit 0
@@ -109,6 +114,6 @@ fi
 USER_ID=$(id -u)
 GROUP_ID=$(id -g)
 USER=$(id -un)
-xhost +
+xhost + || true
 docker run -ti --entrypoint bash --name odmdev -v $(pwd):/code -v "$DATA":/datasets -p $PORT:3000 --privileged -e DISPLAY -e LANG=C.UTF-8 -e LC_ALL=C.UTF-8 -v="/tmp/.X11-unix:/tmp/.X11-unix:rw" -v="$HOME/.odm-dev-home:/home/$USER" $IMAGE -c "/code/start-dev-env.sh --setup $USER $USER_ID $GROUP_ID $QTC"
 exit 0

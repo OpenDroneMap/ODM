@@ -72,6 +72,9 @@ class ODM_Reconstruction(object):
         if not io.file_exists(output_coords_file) or not io.file_exists(output_gcp_file) or rerun:
             gcp = GCPFile(gcp_file)
             if gcp.exists():
+                if gcp.entries_count() == 0:
+                    raise RuntimeError("This GCP file does not have any entries. Are the entries entered in the proper format?")
+
                 # Create coords file, we'll be using this later
                 # during georeferencing
                 with open(output_coords_file, 'w') as f:
@@ -213,7 +216,7 @@ class ODM_Tree(object):
         # whole reconstruction process.
         self.dataset_raw = os.path.join(self.root_path, 'images')
         self.opensfm = os.path.join(self.root_path, 'opensfm')
-        self.mve = os.path.join(self.root_path, 'mve')
+        self.openmvs = os.path.join(self.opensfm, 'undistorted', 'openmvs')
         self.odm_meshing = os.path.join(self.root_path, 'odm_meshing')
         self.odm_texturing = os.path.join(self.root_path, 'odm_texturing')
         self.odm_25dtexturing = os.path.join(self.root_path, 'odm_texturing_25d')
@@ -240,9 +243,8 @@ class ODM_Tree(object):
         self.opensfm_model = os.path.join(self.opensfm, 'undistorted/depthmaps/merged.ply')
         self.opensfm_transformation = os.path.join(self.opensfm, 'geocoords_transformation.txt')
 
-        # mve
-        self.mve_model = os.path.join(self.mve, 'mve_dense_point_cloud.ply')
-        self.mve_views = os.path.join(self.mve, 'views')
+        # OpenMVS
+        self.openmvs_model = os.path.join(self.openmvs, 'scene_dense_dense_filtered.ply')
 
         # filter points
         self.filtered_point_cloud = os.path.join(self.odm_filterpoints, "point_cloud.ply")

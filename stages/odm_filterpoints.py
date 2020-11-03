@@ -21,7 +21,7 @@ class ODMFilterPoints(types.ODM_Stage):
             elif args.use_opensfm_dense:
                 inputPointCloud = tree.opensfm_model
             else:
-                inputPointCloud = tree.mve_model
+                inputPointCloud = tree.openmvs_model
 
             point_cloud.filter(inputPointCloud, tree.filtered_point_cloud, 
                                 standard_deviation=args.pc_filter, 

@@ -101,25 +101,17 @@ SETUP_EXTERNAL_PROJECT(Ceres ${ODM_Ceres_Version} ${ODM_BUILD_Ceres})
 SETUP_EXTERNAL_PROJECT(Hexer 1.4 ON)
 
 # ---------------------------------------------------------------------------------------------
-# Open Geometric Vision (OpenGV)
 # Open Structure from Motion (OpenSfM)
 #
 
-set(custom_libs OpenGV
-				OpenSfM
+set(custom_libs OpenSfM
 				LASzip
                 Zstd
 				PDAL
                 Entwine
 				MvsTexturing
+                OpenMVS
 )
-
-# Dependencies of the SLAM module
-if(ODM_BUILD_SLAM)
-	list(APPEND custom_libs
-				Pangolin
-				ORB_SLAM2)
-endif()
 
 foreach(lib ${custom_libs})
 	SETUP_EXTERNAL_PROJECT_CUSTOM(${lib})
@@ -127,19 +119,6 @@ endforeach()
 
 include(ProcessorCount)
 ProcessorCount(nproc)
-
-## Add mve Build
-
-externalproject_add(mve
-    GIT_REPOSITORY  https://github.com/OpenDroneMap/mve.git
-    GIT_TAG         200
-    UPDATE_COMMAND  ""
-    SOURCE_DIR      ${SB_SOURCE_DIR}/elibs/mve
-    CONFIGURE_COMMAND ""
-    BUILD_IN_SOURCE 1
-    BUILD_COMMAND   make -j${nproc}
-    INSTALL_COMMAND ""
-)
 
 externalproject_add(poissonrecon
     GIT_REPOSITORY    https://github.com/mkazhdan/PoissonRecon.git

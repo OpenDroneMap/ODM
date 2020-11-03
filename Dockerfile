@@ -24,7 +24,10 @@ RUN rm -rf \
   /code/SuperBuild/src/opencv \
   /code/SuperBuild/src/opengv \
   /code/SuperBuild/src/pcl \
-  /code/SuperBuild/src/pdal
+  /code/SuperBuild/src/pdal \
+  /code/SuperBuild/src/openmvs \
+  /code/SuperBuild/build/openmvs \
+  /code/SuperBuild/src/vcg
 
 # find in /code and delete...
 RUN find /code \

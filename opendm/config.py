@@ -9,7 +9,7 @@ import os
 import sys
 
 # parse arguments
-processopts = ['dataset', 'split', 'merge', 'opensfm', 'mve', 'odm_filterpoints',
+processopts = ['dataset', 'split', 'merge', 'opensfm', 'openmvs', 'odm_filterpoints',
                'odm_meshing', 'mvs_texturing', 'odm_georeferencing',
                'odm_dem', 'odm_orthophoto', 'odm_report']
 
@@ -274,16 +274,6 @@ def config(argv=None, parser=None):
                         default=False,
                         help='Run local bundle adjustment for every image added to the reconstruction and a global '
                              'adjustment every 100 images. Speeds up reconstruction for very large datasets.')
-
-    parser.add_argument('--mve-confidence',
-                        metavar='<float: 0 <= x <= 1>',
-                        action=StoreValue,
-                        type=float,
-                        default=0.60,
-                        help=('Discard points that have less than a certain confidence threshold. '
-                              'This only affects dense reconstructions performed with MVE. '
-                              'Higher values discard more points. '
-                              'Default: %(default)s'))
 
     parser.add_argument('--use-3dmesh',
                     action=StoreTrue,
@@ -743,7 +733,7 @@ def config(argv=None, parser=None):
                         type=float,
                         action=StoreValue,
                         metavar='<positive float>',
-                        default=15,
+                        default=10,
                         help='Set a value in meters for the GPS Dilution of Precision (DOP) '
                         'information for all images. If your images are tagged '
                         'with high precision GPS information (RTK), this value will be automatically '
