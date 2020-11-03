@@ -46,9 +46,9 @@ class ODMOpenMVSStage(types.ODM_Stage):
                 resolution_level = math.floor(math.log(outputs['undist_image_max_size'] / float(args.depthmap_resolution)) / math.log(2))
 
             config = [
-                " --resolution-level %s" % resolution_level,
-	            "--min-resolution %s" % args.depthmap_resolution,
-                "--max-resolution %s" % outputs['undist_image_max_size'],
+                " --resolution-level %s" % int(resolution_level),
+	            "--min-resolution %s" % int(args.depthmap_resolution),
+                "--max-resolution %s" % int(outputs['undist_image_max_size']),
                 "--max-threads %s" % args.max_concurrency,
                 '-w "%s"' % depthmaps_dir, 
                 "-v 0",
