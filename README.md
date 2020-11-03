@@ -1,5 +1,4 @@
 ![ODM Logo](https://user-images.githubusercontent.com/1951843/79699889-438ce580-8260-11ea-9c79-8667834aeab2.png)
-![Build and Release Snap](https://github.com/opendronemap/ODM/workflows/Build%20and%20Release%20Snap/badge.svg)
 
 An open source command line toolkit for processing aerial drone imagery. ODM turns simple 2D images into:
 
