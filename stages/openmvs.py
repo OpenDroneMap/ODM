@@ -60,12 +60,30 @@ class ODMOpenMVSStage(types.ODM_Stage):
                                        os.path.join(tree.openmvs, 'scene.mvs'),
                                       ' '.join(config)))
 
-            self.update_progress(90)
+            self.update_progress(85)
+
+            # Filter points
+            scene_dense = os.path.join(tree.openmvs, 'scene_dense.mvs')
+            if os.path.exists(scene_dense):
+                config = [
+                    "--filter-point-cloud -1",
+                    '-i "%s"' % scene_dense,
+                    "-v 0"
+                ]
+                system.run('%s %s' % (context.omvs_densify_path, ' '.join(config)))
+            else:
+                log.ODM_WARNING("Cannot find scene_dense.mvs, dense reconstruction probably failed. Exiting...")
+                exit(1)
+
+            self.update_progress(95)
 
             if args.optimize_disk_space:
-                dense_scene = os.path.join(tree.openmvs, 'scene_dense.mvs')
-                if os.path.exists(dense_scene):
-                    os.remove(dense_scene)
+                files = [scene_dense,
+                         os.path.join(tree.openmvs, 'scene_dense.ply'),
+                         os.path.join(tree.openmvs, 'scene_dense_dense_filtered.mvs')]
+                for f in files:
+                    if os.path.exists(f):
+                        os.remove(f)
                 shutil.rmtree(depthmaps_dir)
         else:
             log.ODM_WARNING('Found a valid OpenMVS reconstruction file in: %s' %

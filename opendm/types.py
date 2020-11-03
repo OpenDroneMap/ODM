@@ -74,7 +74,7 @@ class ODM_Reconstruction(object):
             if gcp.exists():
                 if gcp.entries_count() == 0:
                     raise RuntimeError("This GCP file does not have any entries. Are the entries entered in the proper format?")
-                
+
                 # Create coords file, we'll be using this later
                 # during georeferencing
                 with open(output_coords_file, 'w') as f:
@@ -244,7 +244,7 @@ class ODM_Tree(object):
         self.opensfm_transformation = os.path.join(self.opensfm, 'geocoords_transformation.txt')
 
         # OpenMVS
-        self.openmvs_model = os.path.join(self.openmvs, 'scene_dense.ply')
+        self.openmvs_model = os.path.join(self.openmvs, 'scene_dense_dense_filtered.ply')
 
         # filter points
         self.filtered_point_cloud = os.path.join(self.odm_filterpoints, "point_cloud.ply")
