@@ -1,8 +1,8 @@
-FROM ubuntu:18.04 AS builder
+FROM ubuntu:20.04 AS builder
 
 # Env variables
 ENV DEBIAN_FRONTEND=noninteractive \
-    PYTHONPATH="$PYTHONPATH:/code/SuperBuild/install/lib/python3.6/dist-packages:/code/SuperBuild/src/opensfm" \
+    PYTHONPATH="$PYTHONPATH:/code/SuperBuild/install/lib/python3.8/dist-packages:/code/SuperBuild/src/opensfm" \
     LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/code/SuperBuild/install/lib"
 
 # Prepare directories
@@ -19,6 +19,11 @@ RUN rm -rf \
   /code/SuperBuild/build/opencv \
   /code/SuperBuild/download \
   /code/SuperBuild/src/ceres \
+  /code/SuperBuild/src/entwine \
+  /code/SuperBuild/src/gflags \
+  /code/SuperBuild/src/hexer \
+  /code/SuperBuild/src/lastools \
+  /code/SuperBuild/src/laszip \
   /code/SuperBuild/src/mvstexturing \
   /code/SuperBuild/src/opencv \
   /code/SuperBuild/src/opengv \
@@ -26,7 +31,8 @@ RUN rm -rf \
   /code/SuperBuild/src/pdal \
   /code/SuperBuild/src/openmvs \
   /code/SuperBuild/build/openmvs \
-  /code/SuperBuild/src/vcg
+  /code/SuperBuild/src/vcg \
+  /code/SuperBuild/src/zstd
 
 # find in /code and delete...
 RUN find /code \
@@ -39,11 +45,11 @@ RUN find /code \
 
 ### Use a second image for the final asset to reduce the number and
 # size of the layers.
-FROM ubuntu:18.04
+FROM ubuntu:20.04
 
 # Env variables
 ENV DEBIAN_FRONTEND=noninteractive \
-    PYTHONPATH="$PYTHONPATH:/code/SuperBuild/install/lib/python3.6/dist-packages:/code/SuperBuild/src/opensfm" \
+    PYTHONPATH="$PYTHONPATH:/code/SuperBuild/install/lib/python3.8/dist-packages:/code/SuperBuild/src/opensfm" \
     LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/code/SuperBuild/install/lib"
 
 WORKDIR /code
