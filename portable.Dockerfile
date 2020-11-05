@@ -2,8 +2,7 @@ FROM ubuntu:18.04 AS builder
 
 # Env variables
 ENV DEBIAN_FRONTEND=noninteractive \
-    PYTHONPATH="$PYTHONPATH:/code/SuperBuild/install/lib/python3.6/dist-packages" \
-    PYTHONPATH="$PYTHONPATH:/code/SuperBuild/src/opensfm" \
+    PYTHONPATH="$PYTHONPATH:/code/SuperBuild/install/lib/python3.6/dist-packages:/code/SuperBuild/src/opensfm" \
     LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/code/SuperBuild/install/lib"
 
 # Prepare directories
@@ -44,8 +43,7 @@ FROM ubuntu:18.04
 
 # Env variables
 ENV DEBIAN_FRONTEND=noninteractive \
-    PYTHONPATH="$PYTHONPATH:/code/SuperBuild/install/lib/python3.6/dist-packages" \
-    PYTHONPATH="$PYTHONPATH:/code/SuperBuild/src/opensfm" \
+    PYTHONPATH="$PYTHONPATH:/code/SuperBuild/install/lib/python3.6/dist-packages:/code/SuperBuild/src/opensfm" \
     LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/code/SuperBuild/install/lib"
 
 WORKDIR /code
