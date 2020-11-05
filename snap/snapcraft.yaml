@@ -45,7 +45,7 @@ parts:
       - libgeotiff-dev
       - libjsoncpp-dev
       - libssl-dev
-      - libusb-dev
+      - libusb-1.0-0-dev
       - ninja-build
       - pkg-config
       - python3-dev
@@ -64,7 +64,7 @@ parts:
       - libjsoncpp1
       - libspqr2
       - libssl1.1
-      - libusb-0.1-4
+      - libusb-1.0-0
       - procps
       - python3-gdal
       - python3-setuptools
