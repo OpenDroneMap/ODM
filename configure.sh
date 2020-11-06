@@ -5,17 +5,23 @@ APT_GET="env DEBIAN_FRONTEND=noninteractive $(command -v apt-get)"
 
 check_version(){
   UBUNTU_VERSION=$(lsb_release -r)
-  if [[ $UBUNTU_VERSION = *"18.04"* ]]; then
-    echo "Ubuntu: $UBUNTU_VERSION, good!"
-  elif [[ $UBUNTU_VERSION = *"16.04" ]]; then
-    echo "ODM 2.0 has upgraded to Ubuntu 18.04, but you're on 16.04"
-    echo "The last version of ODM that supports Ubuntu 16.04 is v1.0.2. We recommend you upgrade to Ubuntu 18.04, or better yet, use docker."
-    exit 1
-  else
-    echo "You are not on Ubuntu 18.04 (detected: $UBUNTU_VERSION)"
-    echo "It might be possible to run ODM on a newer version of Ubuntu, however, you cannot rely on this script."
-    exit 1
-  fi
+  case "$UBUNTU_VERSION" in
+    *"20.04"*)
+      echo "Ubuntu: $UBUNTU_VERSION, good!"
+      ;;
+    *"18.04"*|*"16.04"*)
+      echo "ODM 2.1 has upgraded to Ubuntu 20.04, but you're on $UBUNTU_VERSION"
+      echo "* The last version of ODM that supports Ubuntu 16.04 is v1.0.2."
+      echo "* The last version of ODM that supports Ubuntu 18.04 is v2.0.0."
+      echo "We recommend you upgrade to Ubuntu 18.04, or better yet, use docker."
+      exit 1
+      ;;
+    *)
+      echo "You are not on Ubuntu 20.04 (detected: $UBUNTU_VERSION)"
+      echo "It might be possible to run ODM on a newer version of Ubuntu, however, you cannot rely on this script."
+      exit 1
+      ;;
+  esac
 }
 
 if [[ $2 =~ ^[0-9]+$ ]] ; then
