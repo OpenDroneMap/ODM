@@ -75,6 +75,30 @@ See http://docs.opendronemap.org for tutorials and more guides.
 
 We have a vibrant [community forum](https://community.opendronemap.org/). You can [search it](https://community.opendronemap.org/search?expanded=true) for issues you might be having with ODM and you can post questions there. We encourage users of ODM to partecipate in the forum and to engage with fellow drone mapping users.
 
+## Snap Package
+
+ODM is now available as a Snap Package from the Snap Store. To install you may use the Snap Store (available itself as a Snap Package) or the command line:
+
+```bash
+sudo snap install opendronemap
+```
+
+To run, you will need a terminal window into which you can type:
+
+```bash
+opendronemap
+
+# or
+
+snap run opendronemap
+
+# or
+
+/snap/bin/opendronemap
+```
+
+Snap packages will be kept up-to-date automatically, so you don't need to update ODM manually.
+
 ## Native Install (Ubuntu 18.04)
 
 You can run ODM natively on Ubuntu 18.04 LTS (although we don't recommend it):  
