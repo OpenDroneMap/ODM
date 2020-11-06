@@ -77,7 +77,7 @@ We have a vibrant [community forum](https://community.opendronemap.org/). You ca
 
 ## WSL or WSL2 Install
 
-Note: This requires that you have installed WSL already by following the instructions on Microsoft's Website.
+Note: This requires that you have installed WSL already by following [the instructions on Microsoft's Website](https://docs.microsoft.com/en-us/windows/wsl/install-win10).
 
 You can run ODM via WSL or WSL2 by downloading the `rootfs.tar.gz` file from [the releases page on GitHub](https://github.com/OpenDroneMap/ODM/releases). Once you have the file saved to your `Downloads` folder in Windows, open a PowerShell or CMD window by right-clicking the Flag Menu (bottom left by default) and selecting "Windows PowerShell", or alternatively by using the [Windows Terminal from the Windows Store](https://www.microsoft.com/store/productId/9N0DX20HK701).
 
