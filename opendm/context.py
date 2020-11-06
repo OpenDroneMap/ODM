@@ -13,7 +13,7 @@ tests_data_path = os.path.join(root_path, 'tests/test_data')
 
 # add opencv,opensfm to python path
 python_packages_paths = [os.path.join(superbuild_path, p) for p in [
-    'install/lib/python3.6/dist-packages',
+    'install/lib/python3.8/dist-packages',
     'install/lib/python3/dist-packages',
     'src/opensfm'
 ]]
