@@ -108,6 +108,7 @@ parts:
       - libtbb2
       - libtiff5
       - libvtk6.3
+      - libwebpdemux2
       - libxext6
   
   openmvs:
