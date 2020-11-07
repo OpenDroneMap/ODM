@@ -1,11 +1,11 @@
 name: Build and Release Container and WSL Image
 
 on:
-  workflow_dispatch:
   push:
     tags:
     - v*
-
+  workflow_dispatch:
+  
 jobs:
   build:
     runs-on: ubuntu-latest
