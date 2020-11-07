@@ -234,7 +234,7 @@ apps:
   opendronemap:
     command: odm/run.sh
     command-chain:
-      - bin/snapcraft-preload # Fixes multiprocessing python module
+      - usr/local/bin/snapcraft-preload # Fixes multiprocessing python module
     plugs:
       - home
       - network
