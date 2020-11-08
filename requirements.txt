@@ -19,7 +19,7 @@ Pysolar==0.6
 psutil==5.6.3
 joblib==0.17.0
 Fiona==1.8.9.post2
-cryptography==2.8
+cryptography==3.2
 pyOpenSSL==19.1.0
 scikit-learn==0.23.2
 laspy==1.6.0
