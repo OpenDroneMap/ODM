@@ -8,7 +8,7 @@ if [ "$1" = "--setup" ]; then
 
     if [ ! -f .setupdevenv ]; then
         echo "Recompiling environment... this might take a while."
-        #bash configure.sh reinstall
+        bash configure.sh reinstall
         
         touch .setupdevenv
         apt update && apt install -y vim
