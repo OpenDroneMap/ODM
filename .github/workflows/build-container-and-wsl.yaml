@@ -1,6 +1,7 @@
 name: Build and Release Container and WSL Image
 
 on:
+  workflow_dispatch:
   push:
     tags:
     - v*
@@ -68,5 +69,3 @@ jobs:
       run: |
         echo "Docker image digest: ${{ steps.docker_build.outputs.digest }}"
         echo "WSL AMD64 rootfs URL: ${{ steps.upload-amd64-wsl-rootfs.browser_download_url }}"
-        
-    workflow_dispatch:
