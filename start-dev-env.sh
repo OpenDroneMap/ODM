@@ -8,7 +8,7 @@ if [ "$1" = "--setup" ]; then
 
     if [ ! -f .setupdevenv ]; then
         echo "Recompiling environment... this might take a while."
-        #bash configure.sh reinstall
+        bash configure.sh reinstall
         
         touch .setupdevenv
         apt update && apt install -y vim
@@ -20,7 +20,8 @@ if [ "$1" = "--setup" ]; then
     echo "$2:x:$3:$4::/home/$2:/bin/bash" >> /etc/passwd
     echo "Adding $2 to /etc/group"
     echo "$2:x:$4:" >> /etc/group
-
+    echo "Adding $2 to /etc/shadow"
+    echo "$2:x:14871::::::" >> /etc/shadow
     echo "echo '' && echo '' && echo '' && echo '###################################' && echo 'ODM Dev Environment Ready. Hack on!' && echo '###################################' && echo '' && cd /code" > $HOME/.bashrc
 
     # Install qt creator
@@ -46,7 +47,7 @@ if [ "$1" = "--setup" ]; then
     echo "alias ls='ls --color=auto'" >> $HOME/.bashrc
 
     # Python paths
-    echo $(python /code/opendm/context.py) >> $HOME/.bashrc
+    echo $(python3 /code/opendm/context.py) >> $HOME/.bashrc
     
     # Vim 
     printf "syntax on\nset showmatch\nset ts=4\nset sts=4\nset sw=4\nset autoindent\nset smartindent\nset smarttab\nset expandtab" > $HOME/.vimrc

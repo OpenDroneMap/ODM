@@ -159,5 +159,5 @@ externalproject_add(lastools
     UPDATE_COMMAND    ""
     BUILD_IN_SOURCE 1
     BUILD_COMMAND     make -C LASlib -j${nproc} CXXFLAGS='-std=c++11' && make -C src -j${nproc} CXXFLAGS='-std=c++11' lasmerge
-    INSTALL_COMMAND   mv ${SB_SOURCE_DIR}/lastools/bin/lasmerge ${SB_INSTALL_DIR}/bin
+    INSTALL_COMMAND   install -m755 -D -t ${SB_INSTALL_DIR}/bin ${SB_SOURCE_DIR}/lastools/bin/lasmerge
 )
