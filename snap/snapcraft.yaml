@@ -108,6 +108,7 @@ parts:
       - libtbb2
       - libtiff5
       - libvtk6.3
+      - libwebpdemux2
       - libxext6
   
   openmvs:
@@ -234,7 +235,7 @@ apps:
   opendronemap:
     command: odm/run.sh
     command-chain:
-      - bin/snapcraft-preload # Fixes multiprocessing python module
+      - usr/local/bin/snapcraft-preload # Fixes multiprocessing python module
     plugs:
       - home
       - network
