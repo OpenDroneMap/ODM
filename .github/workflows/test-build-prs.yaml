@@ -17,7 +17,7 @@ jobs:
       uses: docker/build-push-action@v2
       with:
         file: ./portable.Dockerfile
-        platforms: linux/amd64,linux/386
+        platforms: linux/amd64
         push: false
   
   snapcraft:
