@@ -1,6 +1,7 @@
 import cv2
 import re
 import os
+import warnings
 from opendm import get_image_size
 from opendm import location
 from opendm.gcp import GCPFile
@@ -16,6 +17,8 @@ from opendm import context
 from opendm.progress import progressbc
 from opendm.photo import ODM_Photo
 
+# Ignore warnings about proj information being lost
+warnings.filterwarnings("ignore")
 
 class ODM_Reconstruction(object):
     def __init__(self, photos):
