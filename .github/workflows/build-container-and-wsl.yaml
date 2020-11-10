@@ -2,6 +2,8 @@ name: Build and Release Container and WSL Image
 
 on:
   push:
+    branches:
+    - master
     tags:
     - v*
 
@@ -26,7 +28,8 @@ jobs:
       uses: crazy-max/ghaction-docker-meta@v1
       with:
         images: opendronemap/odm
-        tag_match: \d{1,3}.\d{1,3}.\d{1,3} # matches v1.2.3
+        tag-edge: true
+        tag-match-latest: \d{1,3}\.\d{1,3}\.\d\{1,3} # matches v1.2.3
     - name: Build and push Docker image
       id: docker_build
       uses: docker/build-push-action@v2
@@ -42,8 +45,9 @@ jobs:
         docker export $(docker create opendronemap/odm) --output odm-wsl-rootfs-amd64.tar.gz
         gzip odm-wsl-rootfs-amd64.tar.gz
         echo ::set-output name=amd64-rootfs::"odm-wsl-rootfs-amd64.tar.gz"
-    # Convert tag into a GitHub Release
+    # Convert tag into a GitHub Release if we're building a tag
     - name: Create Release
+      if: github.event_name == 'tag'
       id: create_release
       uses: actions/create-release@v1
       env:
@@ -53,8 +57,9 @@ jobs:
         release_name: Release ${{ github.ref }}
         draft: false
         prerelease: false
-    # Upload the WSL image to the new Release
+    # Upload the WSL image to the new Release if we're building a tag
     - name: Upload amd64 Release Asset
+      if: github.event_name == 'tag'
       id: upload-amd64-wsl-rootfs
       uses: actions/upload-release-asset@v1
       env:
@@ -64,7 +69,14 @@ jobs:
         asset_path: ./${{ steps.wsl_export.outputs.amd64-rootfs }}
         asset_name: ${{ steps.wsl_export.outputs.amd64-rootfs }}
         asset_content_type: application/gzip
+    # Always archive the WSL rootfs
+    - name: Upload amd64 Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: wsl-rootfs
+        path: ${{ steps.wsl_export.outputs.amd64-rootfs }}
     - name: Docker image digest and WSL rootfs download URL
       run: |
         echo "Docker image digest: ${{ steps.docker_build.outputs.digest }}"
         echo "WSL AMD64 rootfs URL: ${{ steps.upload-amd64-wsl-rootfs.browser_download_url }}"
+
