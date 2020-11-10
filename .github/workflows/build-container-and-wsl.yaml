@@ -34,11 +34,11 @@ jobs:
         file: ./portable.Dockerfile
         platforms: linux/amd64
         push: true
-        load: true # Copy to the host's docker daemon so we can use it for WSL export
         tags: ${{ steps.docker_meta.outputs.tags }}
     - name: Export WSL image
       id: wsl_export
       run: |
+        docker pull opendronemap/odm
         docker export $(docker create opendronemap/odm) --output odm-wsl-rootfs-amd64.tar.gz
         gzip odm-wsl-rootfs-amd64.tar.gz
         echo ::set-output name=amd64-rootfs::"odm-wsl-rootfs-amd64.tar.gz"
