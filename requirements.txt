@@ -1,4 +1,4 @@
-PyYAML==3.13
+PyYAML==5.1
 ExifRead==2.3.0
 cloudpickle==1.2.2
 pytz==2020.1
