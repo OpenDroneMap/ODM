@@ -6,6 +6,7 @@ from opendm import system
 from opendm import context
 from opendm import point_cloud
 from opendm import types
+from opendm.utils import get_depthmap_resolution
 from opendm.osfm import OSFMContext
 
 class ODMOpenMVSStage(types.ODM_Stage):
@@ -39,15 +40,17 @@ class ODMOpenMVSStage(types.ODM_Stage):
             depthmaps_dir = os.path.join(tree.openmvs, "depthmaps")
             if not io.dir_exists(depthmaps_dir):
                 os.mkdir(depthmaps_dir)
+            
+            depthmap_resolution = get_depthmap_resolution(args, photos)
 
-            if outputs["undist_image_max_size"] <= args.depthmap_resolution:
+            if outputs["undist_image_max_size"] <= depthmap_resolution:
                 resolution_level = 0
             else:
-                resolution_level = math.floor(math.log(outputs['undist_image_max_size'] / float(args.depthmap_resolution)) / math.log(2))
+                resolution_level = math.floor(math.log(outputs['undist_image_max_size'] / float(depthmap_resolution)) / math.log(2))
 
             config = [
                 " --resolution-level %s" % int(resolution_level),
-	            "--min-resolution %s" % int(args.depthmap_resolution),
+	            "--min-resolution %s" % depthmap_resolution,
                 "--max-resolution %s" % int(outputs['undist_image_max_size']),
                 "--max-threads %s" % args.max_concurrency,
                 '-w "%s"' % depthmaps_dir, 

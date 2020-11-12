@@ -15,6 +15,15 @@ import xmltodict as x2d
 from opendm import get_image_size
 from xml.parsers.expat import ExpatError
 
+def find_largest_photo_dim(photos):
+    max_dim = 0
+    for p in photos:
+        if p.width is None:
+            continue
+        max_dim = max(max_dim, max(p.width, p.height))
+        
+    return max_dim
+
 class ODM_Photo:
     """ODMPhoto - a class for ODMPhotos"""
 

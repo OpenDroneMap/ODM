@@ -235,7 +235,7 @@ def config(argv=None, parser=None):
                         action=StoreValue,
                         type=float,
                         default=640,
-                        help=('Controls the density of the point cloud by setting the resolution of the depthmap images. Higher values take longer to compute '
+                        help=('Legacy option (use --pc-quality instead). Controls the density of the point cloud by setting the resolution of the depthmap images. Higher values take longer to compute '
                               'but produce denser point clouds. '
                               'Default: %(default)s'))
 
@@ -357,6 +357,15 @@ def config(argv=None, parser=None):
                           'Use 0 to disable cropping. '
                           'Default: %(default)s'))
 
+    parser.add_argument('--pc-quality',
+                    metavar='<string>',
+                    action=StoreValue,
+                    default='medium',
+                    choices=['ultra', 'high', 'medium', 'low'],
+                    help=('Set point cloud quality. Higher quality generates better, denser point clouds, but requires more memory and takes longer. Each step up in quality increases processing time roughly by a factor of 4x.'
+                        'Can be one of: %(choices)s. Default: '
+                        '%(default)s'))
+
     parser.add_argument('--pc-classify',
             action=StoreTrue,
             nargs=0,
@@ -444,17 +453,6 @@ def config(argv=None, parser=None):
                         default='gmi',
                         choices=['gmi', 'area'],
                         help=('Data term: [area, gmi]. Default: '
-                              '%(default)s'))
-
-    parser.add_argument('--texturing-nadir-weight',
-                        metavar='<integer: 0 <= x <= 32>',
-                        action=StoreValue,
-                        default=16,
-                        type=int,
-                        help=('Affects orthophotos only. '
-                              'Higher values result in sharper corners, but can affect color distribution and blurriness. '
-                              'Use lower values for planar areas and higher values for urban areas. '
-                              'The default value works well for most scenarios. Default: '
                               '%(default)s'))
 
     parser.add_argument('--texturing-outlier-removal-type',
