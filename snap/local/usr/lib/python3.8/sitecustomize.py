@@ -15,7 +15,7 @@ else:
 
 for d in site_directories:
     if d:
-        site_dir = os.path.join(d, "lib/python3.6/site-packages")
+        site_dir = os.path.join(d, "lib/python3.8/site-packages")
         site.addsitedir(site_dir)
 
 if snap_dir:
