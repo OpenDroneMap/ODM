@@ -33,7 +33,6 @@ parts:
   prereqs:
     source: .
     plugin: nil
-    override-pull: exit 0
     build-packages:
       - build-essential
       - cmake
@@ -67,7 +66,11 @@ parts:
       - libssl1.1
       - libusb-1.0-0
       - procps
+      - python3
+      - python3-distutils
       - python3-gdal
+      - python3-pkg-resources # required base package for core20
+      - python3-requests # required base package for core20
       - python3-setuptools
     stage:
       # remove deb-based numpy because it conflicts with our pip-installed version
@@ -76,7 +79,6 @@ parts:
   opencv:
     source: .
     plugin: nil
-    override-pull: exit 0
     build-packages:
       - libavcodec-dev
       - libavformat-dev
@@ -114,7 +116,6 @@ parts:
   openmvs:
     source: .
     plugin: nil
-    override-pull: exit 0
     build-packages:
       - libcgal-dev
       - libboost-program-options-dev
@@ -124,7 +125,6 @@ parts:
   opensfm:
     source: .
     plugin: nil
-    override-pull: exit 0
     build-packages:
       - libboost-date-time-dev
       - libboost-filesystem-dev
@@ -226,6 +226,8 @@ parts:
   snapcraft-preload:
     source: https://github.com/sergiusens/snapcraft-preload.git
     plugin: cmake
+    cmake-parameters:
+      - -DCMAKE_INSTALL_PREFIX=/
     build-packages:
       - on amd64:
         - gcc-multilib
@@ -235,7 +237,10 @@ apps:
   opendronemap:
     command: odm/run.sh
     command-chain:
-      - usr/local/bin/snapcraft-preload # Fixes multiprocessing python module
+      - bin/snapcraft-preload # Fixes multiprocessing python module
+    environment:
+      # Ensure libraries are found
+      LD_LIBRARY_PATH: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/blas:$SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/lapack:$LD_LIBRARY_PATH
     plugs:
       - home
       - network
