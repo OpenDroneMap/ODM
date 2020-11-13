@@ -13,7 +13,6 @@ jobs:
     strategy:
       matrix:
         architecture:
-        - i386
         - amd64
     steps:
     - name: Checkout
