@@ -91,7 +91,6 @@ class ODMMvsTexStage(types.ODM_Stage):
                     'keepUnseenFaces': keepUnseenFaces,
                     'toneMapping': self.params.get('tone_mapping'),
                     'nadirMode': nadir,
-                    'nadirWeight': 2 ** args.texturing_nadir_weight - 1,
                     'nvm_file': r['nvm_file']
                 }
 
@@ -111,8 +110,7 @@ class ODMMvsTexStage(types.ODM_Stage):
                         '{skipLocalSeamLeveling} '
                         '{skipHoleFilling} '
                         '{keepUnseenFaces} '
-                        '{nadirMode} '
-                        '-n {nadirWeight}'.format(**kwargs))
+                        '{nadirMode}'.format(**kwargs))
                 
                 if args.optimize_disk_space:
                     cleanup_files = [

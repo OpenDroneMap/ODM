@@ -10,6 +10,7 @@ from opendm import context
 from opendm import gsd
 from opendm import point_cloud
 from opendm import types
+from opendm.utils import get_depthmap_resolution
 from opendm.osfm import OSFMContext
 from opendm import multispectral
 
@@ -60,7 +61,7 @@ class ODMOpenSfMStage(types.ODM_Stage):
         # since the undistorted images are used for MVS
         outputs['undist_image_max_size'] = max(
             gsd.image_max_size(photos, args.orthophoto_resolution, tree.opensfm_reconstruction, ignore_gsd=args.ignore_gsd, has_gcp=reconstruction.has_gcp()),
-            args.depthmap_resolution
+            get_depthmap_resolution(args, photos)
         )
 
         if not io.file_exists(updated_config_flag_file) or self.rerun():

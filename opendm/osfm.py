@@ -9,6 +9,8 @@ from opendm import log
 from opendm import system
 from opendm import context
 from opendm import camera
+from opendm.utils import get_depthmap_resolution
+from opendm.photo import find_largest_photo_dim
 from opensfm.large import metadataset
 from opensfm.large import tools
 from opensfm.actions import undistort
@@ -145,6 +147,7 @@ class OSFMContext:
             
             # Compute feature_process_size
             feature_process_size = 2048 # default
+
             if 'resize_to_is_set' in args:
                 # Legacy
                 log.ODM_WARNING("Legacy option --resize-to (this might be removed in a future version). Use --feature-quality instead.")
@@ -157,18 +160,16 @@ class OSFMContext:
                     'low': 0.125,
                     'lowest': 0.0675,
                 }
-                # Find largest photo dimension
-                max_dim = 0
-                for p in photos:
-                    if p.width is None:
-                        continue
-                    max_dim = max(max_dim, max(p.width, p.height))
+
+                max_dim = find_largest_photo_dim(photos)
 
                 if max_dim > 0:
                     log.ODM_INFO("Maximum photo dimensions: %spx" % str(max_dim))
                     feature_process_size = int(max_dim * feature_quality_scale[args.feature_quality])
                 else:
                     log.ODM_WARNING("Cannot compute max image dimensions, going with defaults")
+
+            depthmap_resolution = get_depthmap_resolution(args, photos)
 
             # create config file for OpenSfM
             config = [
@@ -180,7 +181,7 @@ class OSFMContext:
                 "matching_gps_neighbors: %s" % matcher_neighbors,
                 "matching_gps_distance: %s" % args.matcher_distance,
                 "depthmap_method: %s" % args.opensfm_depthmap_method,
-                "depthmap_resolution: %s" % args.depthmap_resolution,
+                "depthmap_resolution: %s" % depthmap_resolution,
                 "depthmap_min_patch_sd: %s" % args.opensfm_depthmap_min_patch_sd,
                 "depthmap_min_consistent_views: %s" % args.opensfm_depthmap_min_consistent_views,
                 "optimize_camera_parameters: %s" % ('no' if args.use_fixed_camera_params or args.cameras else 'yes'),
