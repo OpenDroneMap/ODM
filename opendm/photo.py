@@ -315,18 +315,19 @@ class ODM_Photo:
     def dms_to_decimal(self, dms, sign):
         """Converts dms coords to decimal degrees"""
         degrees, minutes, seconds = self.float_values(dms)
-
-        return (-1 if sign.values[0] in 'SWsw' else 1) * (
-            degrees +
-            minutes / 60 +
-            seconds / 3600
-        )
+        
+        if degrees is not None and minutes is not None and seconds is not None:
+            return (-1 if sign.values[0] in 'SWsw' else 1) * (
+                degrees +
+                minutes / 60 +
+                seconds / 3600
+            )
 
     def float_values(self, tag):
         if isinstance(tag.values, list):
-            return [float(v.num) / float(v.den) for v in tag.values]
+            return [float(v.num) / float(v.den) if v.den != 0 else None for v in tag.values]
         else:
-            return [float(tag.values.num) / float(tag.values.den)]
+            return [float(tag.values.num) / float(tag.values.den) if tag.values.den != 0 else None]
     
     def float_value(self, tag):
         v = self.float_values(tag)
