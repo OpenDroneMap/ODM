@@ -1,7 +1,6 @@
 name: Build and Release Container and WSL Image
 
 on:
-  #workflow_dispatch:
   push:
     branches:
     - master
@@ -41,7 +40,7 @@ jobs:
         tags: ${{ steps.docker_meta.outputs.tags }}
     - name: Export WSL image
       id: wsl_export
-       run: |
+       run:|
         docker pull opendronemap/odm
         docker export $(docker create opendronemap/odm) --output odm-wsl-rootfs-amd64.tar.gz
         gzip odm-wsl-rootfs-amd64.tar.gz
