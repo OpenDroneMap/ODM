@@ -83,14 +83,14 @@ class ODMOpenMVSStage(types.ODM_Stage):
             if args.optimize_disk_space:
                 files = [scene_dense,
                          os.path.join(tree.openmvs, 'scene_dense.ply'),
-                         os.path.join(tree.openmvs, 'scene_dense_dense_filtered.mvs')]
+                         os.path.join(tree.openmvs, 'scene_dense_dense_filtered.mvs'),
+                         octx.path("undistorted", "tracks.csv"),
+                         octx.path("undistorted", "reconstruction.json")
+                        ]
                 for f in files:
                     if os.path.exists(f):
                         os.remove(f)
                 shutil.rmtree(depthmaps_dir)
-
-                os.remove(octx.path("undistorted", "tracks.csv"))
-                os.remove(octx.path("undistorted", "reconstruction.json"))
         else:
             log.ODM_WARNING('Found a valid OpenMVS reconstruction file in: %s' %
                             tree.openmvs_model)
