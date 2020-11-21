@@ -88,6 +88,9 @@ class ODMOpenMVSStage(types.ODM_Stage):
                     if os.path.exists(f):
                         os.remove(f)
                 shutil.rmtree(depthmaps_dir)
+
+                os.remove(octx.path("undistorted", "tracks.csv"))
+                os.remove(octx.path("undistorted", "reconstruction.json"))
         else:
             log.ODM_WARNING('Found a valid OpenMVS reconstruction file in: %s' %
                             tree.openmvs_model)
