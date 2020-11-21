@@ -132,9 +132,16 @@ class ODMOpenSfMStage(types.ODM_Stage):
         
         if args.optimize_disk_space:
             os.remove(octx.path("tracks.csv"))
-            os.remove(octx.path("undistorted", "tracks.csv"))
-            os.remove(octx.path("undistorted", "reconstruction.json"))
             if io.dir_exists(octx.path("undistorted", "depthmaps")):
                 files = glob.glob(octx.path("undistorted", "depthmaps", "*.npz"))
                 for f in files:
                     os.remove(f)
+
+            # Keep these if using OpenMVS
+            if args.fast_orthophoto or args.use_opensfm_dense:
+                files = [octx.path("undistorted", "tracks.csv"),
+                         octx.path("undistorted", "reconstruction.json")
+                        ]
+                for f in files:
+                    if os.path.exists(f):
+                        os.remove(f)

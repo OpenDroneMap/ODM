@@ -83,7 +83,10 @@ class ODMOpenMVSStage(types.ODM_Stage):
             if args.optimize_disk_space:
                 files = [scene_dense,
                          os.path.join(tree.openmvs, 'scene_dense.ply'),
-                         os.path.join(tree.openmvs, 'scene_dense_dense_filtered.mvs')]
+                         os.path.join(tree.openmvs, 'scene_dense_dense_filtered.mvs'),
+                         octx.path("undistorted", "tracks.csv"),
+                         octx.path("undistorted", "reconstruction.json")
+                        ]
                 for f in files:
                     if os.path.exists(f):
                         os.remove(f)
