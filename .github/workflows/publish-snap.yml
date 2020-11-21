@@ -1,4 +1,4 @@
-name: Build and Release Snap
+name: Publish Snap
 
 on:
   push:
