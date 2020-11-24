@@ -10,7 +10,9 @@ def get_depthmap_resolution(args, photos):
         max_dim = find_largest_photo_dim(photos)
 
         pc_quality_scale = {
-            'ultra': 0.5,
+            'ultra': 1.00,
+            'super': 0.75,
+            'hyper': 0.50,
             'high': 0.25,
             'medium': 0.125,
             'low': 0.0675
