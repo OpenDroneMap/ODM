@@ -214,12 +214,14 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
         # so we need to convert to GeoTIFF first.
         run('gdal_translate '
                 '-co NUM_THREADS={threads} '
+                '-co BIGTIFF=IF_SAFER '
                 '--config GDAL_CACHEMAX {max_memory}% '
                 '{tiles_vrt} {geotiff_tmp}'.format(**kwargs))
 
         # Scale to 10% size
         run('gdal_translate '
             '-co NUM_THREADS={threads} '
+            '-co BIGTIFF=IF_SAFER '
             '--config GDAL_CACHEMAX {max_memory}% '
             '-outsize 10% 0 '
             '{geotiff_tmp} {geotiff_small}'.format(**kwargs))
@@ -227,6 +229,7 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
         # Fill scaled
         run('gdal_fillnodata.py '
             '-co NUM_THREADS={threads} '
+            '-co BIGTIFF=IF_SAFER '
             '--config GDAL_CACHEMAX {max_memory}% '
             '-b 1 '
             '-of GTiff '
@@ -237,6 +240,7 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
         run('gdal_translate '
             '-co NUM_THREADS={threads} '
             '-co TILED=YES '
+            '-co BIGTIFF=IF_SAFER '
             '-co COMPRESS=DEFLATE '
             '--config GDAL_CACHEMAX {max_memory}% '
             '{merged_vrt} {geotiff}'.format(**kwargs))
@@ -244,6 +248,7 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
         run('gdal_translate '
                 '-co NUM_THREADS={threads} '
                 '-co TILED=YES '
+                '-co BIGTIFF=IF_SAFER '
                 '-co COMPRESS=DEFLATE '
                 '--config GDAL_CACHEMAX {max_memory}% '
                 '{tiles_vrt} {geotiff}'.format(**kwargs))
