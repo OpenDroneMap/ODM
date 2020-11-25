@@ -154,12 +154,11 @@ class OSFMContext:
                 feature_process_size = int(args.resize_to)
             else:
                 feature_quality_scale = {
-                    'ultra': 1.00,
-                    'super': 0.75,
-                    'hyper': 0.50,
-                    'high': 0.25,
-                    'medium': 0.125,
-                    'low': 0.0675,
+                    'double': 2.00,
+                    'original': 1.00,
+                    'half': 0.50,
+                    'quarter': 0.25,
+                    'eighth': 0.125,
                 }
 
                 max_dim = find_largest_photo_dim(photos)
