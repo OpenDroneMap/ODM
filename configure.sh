@@ -13,7 +13,7 @@ check_version(){
       echo "ODM 2.1 has upgraded to Ubuntu 20.04, but you're on $UBUNTU_VERSION"
       echo "* The last version of ODM that supports Ubuntu 16.04 is v1.0.2."
       echo "* The last version of ODM that supports Ubuntu 18.04 is v2.0.0."
-      echo "We recommend you upgrade to Ubuntu 18.04, or better yet, use docker."
+      echo "We recommend you to upgrade, or better yet, use docker."
       exit 1
       ;;
     *)
