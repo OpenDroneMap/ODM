@@ -11,7 +11,7 @@ if [ "$1" = "--setup" ]; then
         bash configure.sh reinstall
         
         touch .setupdevenv
-        apt update && apt install -y vim
+        apt update && apt install -y vim git
         chown -R $3:$4 /code
         chown -R $3:$4 /var/www
     fi
@@ -22,6 +22,7 @@ if [ "$1" = "--setup" ]; then
     echo "$2:x:$4:" >> /etc/group
     echo "Adding $2 to /etc/shadow"
     echo "$2:x:14871::::::" >> /etc/shadow
+    echo "$2   ALL=(ALL)   NOPASSWD:ALL" >> /etc/sudoers
     echo "echo '' && echo '' && echo '' && echo '###################################' && echo 'ODM Dev Environment Ready. Hack on!' && echo '###################################' && echo '' && cd /code" > $HOME/.bashrc
 
     # Install qt creator
