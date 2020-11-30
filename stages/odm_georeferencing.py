@@ -122,15 +122,14 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                         
                         if args.fast_orthophoto:
                             decimation_step = 10
-                        elif args.use_opensfm_dense:
-                            decimation_step = 40
                         else:
-                            decimation_step = 90
+                            decimation_step = 40
                         
                         # More aggressive decimation for large datasets
                         if not args.fast_orthophoto:
                             decimation_step *= int(len(reconstruction.photos) / 1000) + 1
-
+                            decimation_step = min(decimation_step, 95)
+                            
                         try:
                             cropper.create_bounds_gpkg(tree.odm_georeferencing_model_laz, args.crop, 
                                                         decimation_step=decimation_step)
