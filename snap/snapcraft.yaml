@@ -196,7 +196,7 @@ parts:
       - -odm/SuperBuild/build/openmvs
       - -odm/SuperBuild/download
       - -odm/SuperBuild/src/ceres
-      - -odm/SuperBuild/src/entwine
+      - -odm/SuperBuild/src/untwine
       - -odm/SuperBuild/src/gflags
       - -odm/SuperBuild/src/hexer
       - -odm/SuperBuild/src/lastools
