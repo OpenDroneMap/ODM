@@ -56,7 +56,7 @@ class OSFMContext:
             exit(1)
 
 
-    def setup(self, args, images_path, photos, reconstruction, append_config = [], rerun=False):
+    def setup(self, args, images_path, reconstruction, append_config = [], rerun=False):
         """
         Setup a OpenSfM project
         """
@@ -68,12 +68,12 @@ class OSFMContext:
 
         list_path = os.path.join(self.opensfm_project_path, 'image_list.txt')
         if not io.file_exists(list_path) or rerun:
-            
+
             if reconstruction.multi_camera:
                 photos = get_photos_by_band(reconstruction.multi_camera, args.primary_band)
                 if len(photos) < 1:
                     raise Exception("Not enough images in selected band %s" % args.primary_band.lower())
-                logger.ODM_INFO("Reconstruction will use %s images from %s band" % (len(photos), args.primary_band.lower()))
+                log.ODM_INFO("Reconstruction will use %s images from %s band" % (len(photos), args.primary_band.lower()))
             else:
                 photos = reconstruction.photos
 
@@ -105,7 +105,7 @@ class OSFMContext:
                 except Exception as e:
                     log.ODM_WARNING("Cannot set camera_models_overrides.json: %s" % str(e))
 
-            use_bow = args.feature_matcher == "bow"
+            use_bow = args.matcher_type == "bow"
             feature_type = "SIFT"
 
             # GPSDOP override if we have GPS accuracy information (such as RTK)
@@ -181,7 +181,7 @@ class OSFMContext:
                 "feature_process_size: %s" % feature_process_size,
                 "feature_min_frames: %s" % args.min_num_features,
                 "processes: %s" % args.max_concurrency,
-                "matching_gps_neighbors: %s" % matcher_neighbors,
+                "matching_gps_neighbors: %s" % args.matcher_neighbors,
                 "matching_gps_distance: %s" % args.matcher_distance,
                 "depthmap_method: %s" % args.opensfm_depthmap_method,
                 "depthmap_resolution: %s" % depthmap_resolution,

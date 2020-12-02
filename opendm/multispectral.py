@@ -1,7 +1,10 @@
-from opendm import dls
 import math
+import re
+import cv2
+from opendm import dls
 import numpy as np
 from opendm import log
+from opensfm.io import imread
 
 # Loosely based on https://github.com/micasense/imageprocessing/blob/master/micasense/utils.py
 
@@ -152,17 +155,174 @@ def compute_irradiance(photo, use_sun_sensor=True):
     
     return 1.0
 
-def get_photos_by_band(multi_camera, band_name):
+def get_photos_by_band(multi_camera, user_band_name):
+    band_name = get_primary_band_name(multi_camera, user_band_name)
+
+    for band in multi_camera:
+        if band['name'] == band_name:
+            return band['photos']
+
+
+def get_primary_band_name(multi_camera, user_band_name):
     if len(multi_camera) < 1:
         raise Exception("Invalid multi_camera list")
     
     # multi_camera is already sorted by band_index
-    if band_name == "auto":
-        return multi_camera[0]['photos']
+    if user_band_name == "auto":
+        return multi_camera[0]['name']
 
     for band in multi_camera:
-        if band['name'].lower() == band_name.lower():
-            return band['photos']
+        if band['name'].lower() == user_band_name.lower():
+            return band['name']
+    
+    band_name_fallback = multi_camera[0]['name']
 
-    logger.ODM_WARNING("Cannot find band name \"%s\", will use \"auto\" instead" % band_name)
-    return multi_camera[0]['photos']
+    log.ODM_WARNING("Cannot find band name \"%s\", will use \"%s\" instead" % (user_band_name, band_name_fallback))
+    return band_name_fallback
+
+
+def compute_primary_band_map(multi_camera, primary_band):
+    """
+    Computes a map of { photo filename --> associated primary band photo }
+    by looking at capture time or filenames as a fallback
+    """
+    band_name = get_primary_band_name(multi_camera, primary_band)
+    primary_band_photos = None
+    for band in multi_camera:
+        if band['name'] == band_name:
+            primary_band_photos = band['photos']
+            break
+    
+    # Try using capture time as the grouping factor
+    try:
+        capture_time_map = {}
+        result = {}
+
+        for p in primary_band_photos:
+            t = p.get_utc_time()
+            if t is None:
+                raise Exception("Cannot use capture time (no information in %s)" % p.filename)
+            
+            # Should be unique across primary band
+            if capture_time_map.get(t) is not None:
+                raise Exception("Unreliable capture time detected (duplicate)")
+
+            capture_time_map[t] = p
+        
+        for band in multi_camera:
+            photos = band['photos']
+
+            for p in photos:
+                t = p.get_utc_time()
+                if t is None:
+                    raise Exception("Cannot use capture time (no information in %s)" % p.filename)
+                
+                # Should match the primary band
+                if capture_time_map.get(t) is None:
+                    raise Exception("Unreliable capture time detected (no primary band match)")
+
+                result[p.filename] = capture_time_map[t]
+
+        return result
+    except Exception as e:
+        # Fallback on filename conventions
+        log.ODM_WARNING("%s, will use filenames instead" % str(e))
+
+        filename_map = {}
+        result = {}
+        file_regex = re.compile(r"^(.+)[-_]\w+(\.[A-Za-z]{3,4})$")
+
+        for p in primary_band_photos:
+            filename_without_band = re.sub(file_regex, "\\1\\2", p.filename)
+
+            # Quick check
+            if filename_without_band == p.filename:
+                raise Exception("Cannot match bands by filename on %s, make sure to name your files [filename]_band[.ext] uniformly." % p.filename)
+
+            filename_map[filename_without_band] = p
+
+        for band in multi_camera:
+            photos = band['photos']
+
+            for p in photos:
+                filename_without_band = re.sub(file_regex, "\\1\\2", p.filename)
+
+                # Quick check
+                if filename_without_band == p.filename:
+                    raise Exception("Cannot match bands by filename on %s, make sure to name your files [filename]_band[.ext] uniformly." % p.filename)
+
+                result[p.filename] = filename_map[filename_without_band]
+        
+        return result
+
+def compute_aligned_image(image, align_image_filename, feature_retention=0.15):
+    if len(image.shape) != 3:
+        raise ValueError("Image should have shape length of 3 (got: %s)" % len(image.shape))
+
+    # Convert images to grayscale if needed
+    if image.shape[2] == 3:
+        image_gray = to_8bit(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY))
+    else:
+        image_gray = to_8bit(image[:,:,0])
+
+    align_image = imread(align_image_filename, unchanged=True, anydepth=True)
+    if align_image.shape[2] == 3:
+        align_image_gray = to_8bit(cv2.cvtColor(align_image, cv2.COLOR_BGR2GRAY))
+    else:
+        align_image_gray = to_8bit(align_image[:,:,0])
+    
+    # Detect SIFT features and compute descriptors.
+    detector = cv2.SIFT_create(edgeThreshold=10, contrastThreshold=0.1)
+    kp_image, desc_image = detector.detectAndCompute(image_gray, None)
+    kp_align_image, desc_align_image = detector.detectAndCompute(align_image_gray, None)
+
+    # Match
+    bf = cv2.BFMatcher(cv2.NORM_L1,crossCheck=True)
+    matches = bf.match(desc_image, desc_align_image)
+
+    # Sort by score
+    matches.sort(key=lambda x: x.distance, reverse=False)
+
+    # Remove bad matches
+    num_good_matches = int(len(matches) * feature_retention)
+    matches = matches[:num_good_matches]
+
+    # Debug
+    # imMatches = cv2.drawMatches(im1, kp_image, im2, kp_align_image, matches, None)
+    # cv2.imwrite("matches.jpg", imMatches)
+
+    # Extract location of good matches
+    points_image = np.zeros((len(matches), 2), dtype=np.float32)
+    points_align_image = np.zeros((len(matches), 2), dtype=np.float32)
+
+    for i, match in enumerate(matches):
+        points_image[i, :] = kp_image[match.queryIdx].pt
+        points_align_image[i, :] = kp_align_image[match.trainIdx].pt
+
+    # Find homography
+    h, _ = cv2.findHomography(points_image, points_align_image, cv2.RANSAC)
+
+    # Use homography
+    height, width = align_image_gray.shape
+    aligned_image = cv2.warpPerspective(image, h, (width, height))
+
+    return aligned_image
+
+def to_8bit(image):
+    if image.dtype == np.uint8:
+        return image
+
+    # Convert to 8bit
+    try:
+        data_range = np.iinfo(image.dtype)
+        value_range = float(data_range.max) - float(data_range.min)
+    except ValueError:
+        # For floats use the actual range of the image values
+        value_range = float(image.max()) - float(image.min())
+    
+    image = image.astype(np.float32)
+    image *= 255.0 / value_range
+    np.around(image, out=image)
+    image = image.astype(np.uint8)
+
+    return image

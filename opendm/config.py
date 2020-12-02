@@ -157,7 +157,7 @@ def config(argv=None, parser=None):
                             'Can be one of: %(choices)s. Default: '
                             '%(default)s'))
     
-    parser.add_argument('--feature-matcher',
+    parser.add_argument('--matcher-type',
                         metavar='<string>',
                         action=StoreValue,
                         default='flann',
