@@ -151,3 +151,18 @@ def compute_irradiance(photo, use_sun_sensor=True):
         log.ODM_WARNING("No sun sensor values found for %s" % photo.filename)
     
     return 1.0
+
+def get_photos_by_band(multi_camera, band_name):
+    if len(multi_camera) < 1:
+        raise Exception("Invalid multi_camera list")
+    
+    # multi_camera is already sorted by band_index
+    if band_name == "auto":
+        return multi_camera[0]['photos']
+
+    for band in multi_camera:
+        if band['name'].lower() == band_name.lower():
+            return band['photos']
+
+    logger.ODM_WARNING("Cannot find band name \"%s\", will use \"auto\" instead" % band_name)
+    return multi_camera[0]['photos']

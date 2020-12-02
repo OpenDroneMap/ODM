@@ -25,7 +25,7 @@ class ODMOpenSfMStage(types.ODM_Stage):
             exit(1)
 
         octx = OSFMContext(tree.opensfm)
-        octx.setup(args, tree.dataset_raw, photos, reconstruction=reconstruction, rerun=self.rerun())
+        octx.setup(args, tree.dataset_raw, reconstruction=reconstruction, rerun=self.rerun())
         octx.extract_metadata(self.rerun())
         self.update_progress(20)
         octx.feature_matching(self.rerun())
@@ -48,13 +48,6 @@ class ODMOpenSfMStage(types.ODM_Stage):
             self.next_stage = None
             return
 
-        if args.fast_orthophoto:
-            output_file = octx.path('reconstruction.ply')
-        elif args.use_opensfm_dense:
-            output_file = tree.opensfm_model
-        else:
-            output_file = tree.opensfm_reconstruction
-
         updated_config_flag_file = octx.path('updated_config.txt')
 
         # Make sure it's capped by the depthmap-resolution arg,
@@ -68,15 +61,29 @@ class ODMOpenSfMStage(types.ODM_Stage):
             octx.update_config({'undistorted_image_max_size': outputs['undist_image_max_size']})
             octx.touch(updated_config_flag_file)
 
-        # These will be used for texturing / MVS
-        if args.radiometric_calibration == "none":
-            octx.convert_and_undistort(self.rerun())
-        else:
-            def radiometric_calibrate(shot_id, image):
-                photo = reconstruction.get_photo(shot_id)
-                return multispectral.dn_to_reflectance(photo, image, use_sun_sensor=args.radiometric_calibration=="camera+sun")
+        # Undistorted images will be used for texturing / MVS
+        undistort_pipeline = []
 
-            octx.convert_and_undistort(self.rerun(), radiometric_calibrate)
+        def undistort_callback(shot_id, image):
+            for func in undistort_pipeline:
+                image = func(shot_id, image)
+            return image
+
+        def radiometric_calibrate(shot_id, image):
+            photo = reconstruction.get_photo(shot_id)
+            return multispectral.dn_to_reflectance(photo, image, use_sun_sensor=args.radiometric_calibration=="camera+sun")
+
+        def align_to_primary_band(shot_id, image):
+            # TODO
+            return image
+
+        if args.radiometric_calibration != "none"
+            undistort_pipeline.append(radiometric_calibrate)
+        
+        if reconstruction.multi_camera:
+            undistort_pipeline.append(align_to_primary_band)
+
+        octx.convert_and_undistort(self.rerun(), undistort_callback)
 
         self.update_progress(80)
 
@@ -94,6 +101,7 @@ class ODMOpenSfMStage(types.ODM_Stage):
                 else:
                     log.ODM_WARNING("Found a valid image list in %s for %s band" % (image_list_file, band['name']))
                 
+                # TODO!! CHANGE
                 nvm_file = octx.path("undistorted", "reconstruction_%s.nvm" % band['name'].lower())
                 if not io.file_exists(nvm_file) or self.rerun():
                     octx.run('export_visualsfm --points --image_list "%s"' % image_list_file)
@@ -112,12 +120,16 @@ class ODMOpenSfMStage(types.ODM_Stage):
         # Skip dense reconstruction if necessary and export
         # sparse reconstruction instead
         if args.fast_orthophoto:
+            output_file = octx.path('reconstruction.ply')
+
             if not io.file_exists(output_file) or self.rerun():
                 octx.run('export_ply --no-cameras')
             else:
                 log.ODM_WARNING("Found a valid PLY reconstruction in %s" % output_file)
 
         elif args.use_opensfm_dense:
+            output_file = tree.opensfm_model
+
             if not io.file_exists(output_file) or self.rerun():
                 octx.run('compute_depthmaps')
             else:

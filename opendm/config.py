@@ -156,6 +156,15 @@ def config(argv=None, parser=None):
                         help=('Set feature extraction quality. Higher quality generates better features, but requires more memory and takes longer. '
                             'Can be one of: %(choices)s. Default: '
                             '%(default)s'))
+    
+    parser.add_argument('--feature-matcher',
+                        metavar='<string>',
+                        action=StoreValue,
+                        default='flann',
+                        choices=['flann', 'bow'],
+                        help=('Set feature matcher algorithm. FLANN is more robust, but slower. BOW is much faster, but can miss some valid matches. '
+                            'Can be one of: %(choices)s. Default: '
+                            '%(default)s'))
 
     parser.add_argument('--matcher-neighbors',
                         metavar='<integer>',
@@ -754,6 +763,15 @@ def config(argv=None, parser=None):
                     help=('Perform ground rectification on the point cloud. This means that wrongly classified ground '
                           'points will be re-classified and gaps will be filled. Useful for generating DTMs. '
                           'Default: %(default)s'))
+
+    parser.add_argument('--primary-band',
+                        metavar='<string>',
+                        action=StoreValue,
+                        default="auto",
+                        type=str,
+                        help=('When processing multispectral datasets, you can specify the name of the primary band that will be used for reconstruction. '
+                              'It\'s recommended to choose a band which has sharp details and is in focus. ' 
+                              'Default: %(default)s'))
 
     args = parser.parse_args(argv)
 

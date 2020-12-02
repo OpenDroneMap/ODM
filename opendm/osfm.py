@@ -15,6 +15,7 @@ from opensfm.large import metadataset
 from opensfm.large import tools
 from opensfm.actions import undistort
 from opensfm.dataset import DataSet
+from opendm.multispectral import get_photos_by_band
 
 class OSFMContext:
     def __init__(self, opensfm_project_path):
@@ -68,6 +69,14 @@ class OSFMContext:
         list_path = os.path.join(self.opensfm_project_path, 'image_list.txt')
         if not io.file_exists(list_path) or rerun:
             
+            if reconstruction.multi_camera:
+                photos = get_photos_by_band(reconstruction.multi_camera, args.primary_band)
+                if len(photos) < 1:
+                    raise Exception("Not enough images in selected band %s" % args.primary_band.lower())
+                logger.ODM_INFO("Reconstruction will use %s images from %s band" % (len(photos), args.primary_band.lower()))
+            else:
+                photos = reconstruction.photos
+
             # create file list
             has_alt = True
             has_gps = False
@@ -77,6 +86,7 @@ class OSFMContext:
                         has_alt = False
                     if photo.latitude is not None and photo.longitude is not None:
                         has_gps = True
+
                     fout.write('%s\n' % os.path.join(images_path, photo.filename))
             
             # check for image_groups.txt (split-merge)
@@ -95,15 +105,8 @@ class OSFMContext:
                 except Exception as e:
                     log.ODM_WARNING("Cannot set camera_models_overrides.json: %s" % str(e))
 
-            use_bow = False
+            use_bow = args.feature_matcher == "bow"
             feature_type = "SIFT"
-
-            matcher_neighbors = args.matcher_neighbors
-            if matcher_neighbors != 0 and reconstruction.multi_camera is not None:
-                matcher_neighbors *= len(reconstruction.multi_camera)
-                log.ODM_INFO("Increasing matcher neighbors to %s to accomodate multi-camera setup" % matcher_neighbors)
-                log.ODM_INFO("Multi-camera setup, using BOW matching")
-                use_bow = True
 
             # GPSDOP override if we have GPS accuracy information (such as RTK)
             if 'gps_accuracy_is_set' in args:
@@ -188,8 +191,7 @@ class OSFMContext:
                 "undistorted_image_format: tif",
                 "bundle_outlier_filtering_type: AUTO",
                 "align_orientation_prior: vertical",
-                "triangulation_type: ROBUST",
-                "bundle_common_position_constraints: %s" % ('no' if reconstruction.multi_camera is None else 'yes'),
+                "triangulation_type: ROBUST"
             ]
 
             if args.camera_lens != 'auto':
