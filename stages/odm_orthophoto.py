@@ -11,6 +11,7 @@ from opendm.concurrency import get_max_memory
 from opendm.cutline import compute_cutline
 from pipes import quote
 from opendm import pseudogeo
+from opendm.multispectral import get_primary_band_name
 
 class ODMOrthoPhotoStage(types.ODM_Stage):
     def process(self, args, outputs):
@@ -72,7 +73,7 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
 
             if reconstruction.multi_camera:
                 for band in reconstruction.multi_camera:
-                    primary = band == reconstruction.multi_camera[0]
+                    primary = band['name'] == get_primary_band_name(reconstruction.multi_camera, args.primary_band)
                     subdir = ""
                     if not primary:
                         subdir = band['name'].lower()

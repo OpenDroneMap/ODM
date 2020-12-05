@@ -157,15 +157,6 @@ def config(argv=None, parser=None):
                             'Can be one of: %(choices)s. Default: '
                             '%(default)s'))
     
-    parser.add_argument('--matcher-type',
-                        metavar='<string>',
-                        action=StoreValue,
-                        default='flann',
-                        choices=['flann', 'bow'],
-                        help=('Set feature matcher algorithm. FLANN is more robust, but slower. BOW is much faster, but can miss some valid matches. '
-                            'Can be one of: %(choices)s. Default: '
-                            '%(default)s'))
-
     parser.add_argument('--matcher-neighbors',
                         metavar='<integer>',
                         action=StoreValue,

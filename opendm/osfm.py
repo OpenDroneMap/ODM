@@ -105,7 +105,7 @@ class OSFMContext:
                 except Exception as e:
                     log.ODM_WARNING("Cannot set camera_models_overrides.json: %s" % str(e))
 
-            use_bow = args.matcher_type == "bow"
+            use_bow = bool(reconstruction.multi_camera)
             feature_type = "SIFT"
 
             # GPSDOP override if we have GPS accuracy information (such as RTK)
@@ -315,15 +315,66 @@ class OSFMContext:
         else:
             log.ODM_INFO("Already extracted cameras")
     
-    def convert_and_undistort(self, rerun=False, imageFilter=None):
+    def convert_and_undistort(self, rerun=False, imageFilter=None, image_list=None):
         log.ODM_INFO("Undistorting %s ..." % self.opensfm_project_path)
         undistorted_images_path = self.path("undistorted", "images")
 
         if not io.dir_exists(undistorted_images_path) or rerun:
-            undistort.run_dataset(DataSet(self.opensfm_project_path), "reconstruction.json", 
+            ds = DataSet(self.opensfm_project_path)
+
+            if image_list is not None:
+                ds._set_image_list(image_list)
+
+            undistort.run_dataset(ds, "reconstruction.json", 
                                   0, None, "undistorted", imageFilter)
         else:
             log.ODM_WARNING("Found an undistorted directory in %s" % undistorted_images_path)
+
+    def add_shots_to_reconstruction(self, p2s):
+        recon_file = self.path("reconstruction.json")
+        recon_backup_file = self.path("reconstruction.backup.json")
+        # tracks_file = self.path("tracks.csv")
+        # tracks_backup_file = self.path("tracks.backup.csv")
+        # image_list_file = self.path("image_list.txt")
+        # image_list_backup_file = self.path("image_list.backup.txt")
+
+        log.ODM_INFO("Adding shots to reconstruction")
+        if os.path.exists(recon_backup_file):
+            os.remove(recon_backup_file)
+        # if os.path.exists(tracks_backup_file):
+        #     os.remove(tracks_backup_file)
+        # if os.path.exists(image_list_backup_file):
+        #     os.remove(image_list_backup_file)
+        
+        log.ODM_INFO("Backing up reconstruction, tracks, image list")
+        shutil.copyfile(recon_file, recon_backup_file)
+
+        # shutil.copyfile(tracks_file, tracks_backup_file)
+        # shutil.copyfile(image_list_file, image_list_backup_file)
+        
+        with open(recon_file) as f:
+            reconstruction = json.loads(f.read())
+
+        # Augment reconstruction.json
+        for recon in reconstruction:
+            shots = recon['shots']
+            sids = list(shots)
+            
+            for shot_id in sids:
+                secondary_photos = p2s.get(shot_id)
+                if secondary_photos is None:
+                    log.ODM_WARNING("Cannot find secondary photos for %s" % shot_id)
+                    continue
+
+                for p in secondary_photos:
+                    shots[p.filename] = shots[shot_id]
+
+        with open(recon_file, 'w') as f:
+            f.write(json.dumps(reconstruction))
+
+        return True #(recon_file, recon_backup_file)
+                # (tracks_file, tracks_backup_file),
+                # (image_list_file, image_list_backup_file)]
 
 
     def update_config(self, cfg_dict):

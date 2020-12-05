@@ -5,6 +5,7 @@ from opendm import io
 from opendm import system
 from opendm import context
 from opendm import types
+from opendm.multispectral import get_primary_band_name
 
 class ODMMvsTexStage(types.ODM_Stage):
     def process(self, args, outputs):
@@ -36,8 +37,9 @@ class ODMMvsTexStage(types.ODM_Stage):
                 }]
 
         if reconstruction.multi_camera:
+
             for band in reconstruction.multi_camera:
-                primary = band == reconstruction.multi_camera[0]
+                primary = band['name'] == get_primary_band_name(reconstruction.multi_camera, args.primary_band)
                 nvm_file = os.path.join(tree.opensfm, "undistorted", "reconstruction_%s.nvm" % band['name'].lower())
                 add_run(nvm_file, primary, band['name'].lower())
         else:

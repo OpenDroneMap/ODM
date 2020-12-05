@@ -63,7 +63,8 @@ class ODMOpenSfMStage(types.ODM_Stage):
 
         # Undistorted images will be used for texturing / MVS
 
-        primary_band_map = None
+        alignment_info = None
+        primary_band_name = None
         undistort_pipeline = []
 
         def undistort_callback(shot_id, image):
@@ -77,38 +78,52 @@ class ODMOpenSfMStage(types.ODM_Stage):
 
 
         def align_to_primary_band(shot_id, image):
-            primary_band_photo = primary_band_map.get(shot_id)
+            photo = reconstruction.get_photo(shot_id)
 
-            try:
-                if primary_band_photo is None:
-                    raise Exception("Cannot find primary band file for %s" % shot_id)
-                
-                if primary_band_photo.filename == shot_id:
-                    # This is a photo from the primary band, skip
-                    return image
-                
-                align_image_filename = os.path.join(tree.dataset_raw, primary_band_map[shot_id].filename)
-                image = multispectral.compute_aligned_image(image, align_image_filename)
-            except Exception as e:
-                log.ODM_WARNING("Cannot align %s: %s. Output quality might be affected." % (shot_id, str(e)))
-            
-            return image
+            # No need to align primary
+            if photo.band_name == primary_band_name:
+                return image
+
+            ainfo = alignment_info.get(photo.band_name)
+            if ainfo is not None:
+                return multispectral.align_image(image, ainfo['warp_matrix'], ainfo['dimension'])
+            else:
+                log.ODM_WARNING("Cannot align %s, no alignment matrix could be computed. Band alignment quality might be affected." % (shot_id))
+                return image
+
 
         if args.radiometric_calibration != "none":
             undistort_pipeline.append(radiometric_calibrate)
         
-        if reconstruction.multi_camera:
-            primary_band_map = multispectral.compute_primary_band_map(reconstruction.multi_camera, args.primary_band)
-            
-            # TODO:
-            # if (not flag_file exists or rerun)
-            # Change reconstruction.json and tracks.csv by adding copies of the primary
-            # band camera to the reconstruction
+        image_list_override = None
 
+        if reconstruction.multi_camera:
             
+            # Undistort only secondary bands
+            image_list_override = [os.path.join(tree.dataset_raw, p.filename) for p in photos] # if p.band_name.lower() != primary_band_name.lower()
+
+            # We backup the original reconstruction.json, tracks.csv
+            # then we augment them by duplicating the primary band
+            # camera shots with each band, so that exports, undistortion,
+            # etc. include all bands
+            # We finally restore the original files later
+
+            added_shots_file = octx.path('added_shots_done.txt')
+
+            if not io.file_exists(added_shots_file) or self.rerun():
+                primary_band_name = multispectral.get_primary_band_name(reconstruction.multi_camera, args.primary_band)
+                s2p, p2s = multispectral.compute_band_maps(reconstruction.multi_camera, primary_band_name)
+                alignment_info = multispectral.compute_alignment_matrices(reconstruction.multi_camera, primary_band_name, tree.dataset_raw, s2p, p2s)
+                octx.add_shots_to_reconstruction(p2s)
+
+                # TODO: what happens to reconstruction.backup.json
+                # if the process fails here?
+
+                octx.touch(added_shots_file)
+
             undistort_pipeline.append(align_to_primary_band)
 
-        octx.convert_and_undistort(self.rerun(), undistort_callback)
+        octx.convert_and_undistort(self.rerun(), undistort_callback, image_list_override)
 
         self.update_progress(80)
 
@@ -126,15 +141,23 @@ class ODMOpenSfMStage(types.ODM_Stage):
                 else:
                     log.ODM_WARNING("Found a valid image list in %s for %s band" % (image_list_file, band['name']))
                 
-                # TODO!! CHANGE
-                print("TODO!")
-                exit(1)
                 nvm_file = octx.path("undistorted", "reconstruction_%s.nvm" % band['name'].lower())
                 if not io.file_exists(nvm_file) or self.rerun():
                     octx.run('export_visualsfm --points --image_list "%s"' % image_list_file)
                     os.rename(tree.opensfm_reconstruction_nvm, nvm_file)
                 else:
                     log.ODM_WARNING("Found a valid NVM file in %s for %s band" % (nvm_file, band['name']))
+
+            recon_file = octx.path("reconstruction.json")
+            recon_backup_file = octx.path("reconstruction.backup.json")
+
+            if os.path.exists(recon_backup_file):
+                # This time export the actual reconstruction.json
+                # (containing only the primary band)
+                if os.path.exists(recon_backup_file):
+                    os.remove(recon_file)
+                os.rename(recon_backup_file, recon_file)
+                octx.convert_and_undistort(self.rerun(), undistort_callback)
 
         if not io.file_exists(tree.opensfm_reconstruction_nvm) or self.rerun():
             octx.run('export_visualsfm --points')

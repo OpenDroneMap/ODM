@@ -9,6 +9,7 @@ from opendm import system
 from opendm import context
 from opendm.cropper import Cropper
 from opendm import point_cloud
+from opendm.multispectral import get_primary_band_name
 
 class ODMGeoreferencingStage(types.ODM_Stage):
     def process(self, args, outputs):
@@ -45,7 +46,7 @@ class ODMGeoreferencingStage(types.ODM_Stage):
         
         if reconstruction.multi_camera:
             for band in reconstruction.multi_camera:
-                primary = band == reconstruction.multi_camera[0]
+                primary = band['name'] == get_primary_band_name(reconstruction.multi_camera, args.primary_band)
                 add_run(primary, band['name'].lower())
         else:
             add_run()
