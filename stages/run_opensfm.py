@@ -91,7 +91,6 @@ class ODMOpenSfMStage(types.ODM_Stage):
                 log.ODM_WARNING("Cannot align %s, no alignment matrix could be computed. Band alignment quality might be affected." % (shot_id))
                 return image
 
-
         if args.radiometric_calibration != "none":
             undistort_pipeline.append(radiometric_calibrate)
         
@@ -109,16 +108,16 @@ class ODMOpenSfMStage(types.ODM_Stage):
             # We finally restore the original files later
 
             added_shots_file = octx.path('added_shots_done.txt')
-
+            
             if not io.file_exists(added_shots_file) or self.rerun():
                 primary_band_name = multispectral.get_primary_band_name(reconstruction.multi_camera, args.primary_band)
                 s2p, p2s = multispectral.compute_band_maps(reconstruction.multi_camera, primary_band_name)
-                alignment_info = multispectral.compute_alignment_matrices(reconstruction.multi_camera, primary_band_name, tree.dataset_raw, s2p, p2s)
+                alignment_info = multispectral.compute_alignment_matrices(reconstruction.multi_camera, primary_band_name, tree.dataset_raw, s2p, p2s, max_concurrency=args.max_concurrency)
+
+                log.ODM_INFO("Adding shots to reconstruction")
+                
+                octx.backup_reconstruction()
                 octx.add_shots_to_reconstruction(p2s)
-
-                # TODO: what happens to reconstruction.backup.json
-                # if the process fails here?
-
                 octx.touch(added_shots_file)
 
             undistort_pipeline.append(align_to_primary_band)
@@ -148,16 +147,8 @@ class ODMOpenSfMStage(types.ODM_Stage):
                 else:
                     log.ODM_WARNING("Found a valid NVM file in %s for %s band" % (nvm_file, band['name']))
 
-            recon_file = octx.path("reconstruction.json")
-            recon_backup_file = octx.path("reconstruction.backup.json")
-
-            if os.path.exists(recon_backup_file):
-                # This time export the actual reconstruction.json
-                # (containing only the primary band)
-                if os.path.exists(recon_backup_file):
-                    os.remove(recon_file)
-                os.rename(recon_backup_file, recon_file)
-                octx.convert_and_undistort(self.rerun(), undistort_callback)
+            octx.restore_reconstruction_backup()
+            octx.convert_and_undistort(self.rerun(), undistort_callback, runId='primary')
 
         if not io.file_exists(tree.opensfm_reconstruction_nvm) or self.rerun():
             octx.run('export_visualsfm --points')
@@ -194,6 +185,9 @@ class ODMOpenSfMStage(types.ODM_Stage):
         
         if args.optimize_disk_space:
             os.remove(octx.path("tracks.csv"))
+            if io.file_exists(octx.recon_backup_file()):
+                os.remove(octx.recon_backup_file())
+
             if io.dir_exists(octx.path("undistorted", "depthmaps")):
                 files = glob.glob(octx.path("undistorted", "depthmaps", "*.npz"))
                 for f in files:

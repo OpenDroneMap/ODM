@@ -5,6 +5,7 @@ import os
 from opendm import dls
 import numpy as np
 from opendm import log
+from opendm.concurrency import parallel_map
 from opensfm.io import imread
 
 from skimage import exposure
@@ -270,7 +271,7 @@ def compute_band_maps(multi_camera, primary_band):
 
         return s2p, p2s
 
-def compute_alignment_matrices(multi_camera, primary_band_name, images_path, s2p, p2s, max_samples=9999):
+def compute_alignment_matrices(multi_camera, primary_band_name, images_path, s2p, p2s, max_concurrency=1, max_samples=30):
     log.ODM_INFO("Computing band alignment")
 
     alignment_info = {}
@@ -280,93 +281,129 @@ def compute_alignment_matrices(multi_camera, primary_band_name, images_path, s2p
         if band['name'] != primary_band_name:
             matrices = []
 
-            # if band['name'] != "NIR":
-            #     continue # TODO REMOVE
+            def parallel_compute_homography(p):
+                try:
+                    if len(matrices) >= max_samples:
+                        log.ODM_INFO("Got enough samples for %s (%s)" % (band['name'], max_samples))
+                        return
 
-            # Find good matrix candidates for alignment
-            for p in band['photos']:
-                primary_band_photo = s2p.get(p.filename)
-                if primary_band_photo is None:
-                    log.ODM_WARNING("Cannot find primary band photo for %s" % p.filename)
-                    continue
+                    # Find good matrix candidates for alignment
                 
-                warp_matrix, score, dimension = compute_homography(os.path.join(images_path, p.filename),
-                                                            os.path.join(images_path, primary_band_photo.filename))
+                    primary_band_photo = s2p.get(p['filename'])
+                    if primary_band_photo is None:
+                        log.ODM_WARNING("Cannot find primary band photo for %s" % p['filename'])
+                        return
 
-                if warp_matrix is not None:
-                    log.ODM_INFO("%s --> %s good match (score: %s)" % (p.filename, primary_band_photo.filename, score))
-                    matrices.append({
-                        'warp_matrix': warp_matrix,
-                        'score': score,
-                        'dimension': dimension
-                    })
-                else:
-                    log.ODM_INFO("%s --> %s cannot be matched" % (p.filename, primary_band_photo.filename))
+                    warp_matrix, dimension, algo = compute_homography(os.path.join(images_path, p['filename']),
+                                                                os.path.join(images_path, primary_band_photo.filename))
                     
-                if len(matrices) >= max_samples:
-                    log.ODM_INFO("Got enough samples for %s (%s)" % (band['name'], max_samples))
-                    break
+                    if warp_matrix is not None:
+                        log.ODM_INFO("%s --> %s good match" % (p['filename'], primary_band_photo.filename))
+
+                        matrices.append({
+                            'warp_matrix': warp_matrix,
+                            'eigvals': np.linalg.eigvals(warp_matrix),
+                            'dimension': dimension,
+                            'algo': algo
+                        })
+                    else:
+                        log.ODM_INFO("%s --> %s cannot be matched" % (p['filename'], primary_band_photo.filename))
+                except Exception as e:
+                    log.ODM_WARNING("Failed to compute homography for %s: %s" % (p['filename'], str(e)))
+
+            parallel_map(parallel_compute_homography, [{'filename': p.filename} for p in band['photos']], max_concurrency, single_thread_fallback=False)
+
+            # Choose winning algorithm (doesn't seem to yield improvements)
+            # feat_count = 0
+            # ecc_count = 0
+            # for m in matrices:
+            #     if m['algo'] == 'feat':
+            #         feat_count += 1
+            #     if m['algo'] == 'ecc':
+            #         ecc_count += 1
+
+            # algo = 'feat' if feat_count >= ecc_count else 'ecc'
+
+            # log.ODM_INFO("Feat: %s | ECC: %s | Winner: %s" % (feat_count, ecc_count, algo))
+            # matrices = [m for m in matrices if m['algo'] == algo]
+
+            # Find the matrix that has the most common eigvals
+            # among all matrices. That should be the "best" alignment.
+            for m1 in matrices:
+                acc = np.array([0.0,0.0,0.0])
+                e = m1['eigvals']
+
+                for m2 in matrices:
+                    acc += abs(e - m2['eigvals'])
+
+                m1['score'] = acc.sum()
             
             # Sort
             matrices.sort(key=lambda x: x['score'], reverse=False)
             
             if len(matrices) > 0:
                 alignment_info[band['name']] = matrices[0]
-                print(matrices[0])
+                log.ODM_INFO("%s band will be aligned using warp matrix %s (score: %s)" % (band['name'], matrices[0]['warp_matrix'], matrices[0]['score']))
             else:
                 log.ODM_WARNING("Cannot find alignment matrix for band %s, The band will likely be misaligned!" % band['name'])
 
     return alignment_info
 
 def compute_homography(image_filename, align_image_filename):
-    # try:
-    # Convert images to grayscale if needed
-    image = imread(image_filename, unchanged=True, anydepth=True)
-    if image.shape[2] == 3:
-        image_gray = to_8bit(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY))
-    else:
-        image_gray = to_8bit(image[:,:,0])
+    try:
+        # Convert images to grayscale if needed
+        image = imread(image_filename, unchanged=True, anydepth=True)
+        if image.shape[2] == 3:
+            image_gray = to_8bit(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY))
+        else:
+            image_gray = to_8bit(image[:,:,0])
 
-    align_image = imread(align_image_filename, unchanged=True, anydepth=True)
-    if align_image.shape[2] == 3:
-        align_image_gray = to_8bit(cv2.cvtColor(align_image, cv2.COLOR_BGR2GRAY))
-    else:
-        align_image_gray = to_8bit(align_image[:,:,0])
+        align_image = imread(align_image_filename, unchanged=True, anydepth=True)
+        if align_image.shape[2] == 3:
+            align_image_gray = to_8bit(cv2.cvtColor(align_image, cv2.COLOR_BGR2GRAY))
+        else:
+            align_image_gray = to_8bit(align_image[:,:,0])
 
-    def compute_using(algorithm):
-        h = algorithm(image_gray, align_image_gray)
-        if h is None:
-            return None, None, (None, None)
+        def compute_using(algorithm):
+            h = algorithm(image_gray, align_image_gray)
+            if h is None:
+                return None, (None, None)
 
-        det = np.linalg.det(h)
+            det = np.linalg.det(h)
+            
+            # Check #1 homography's determinant will not be close to zero
+            if abs(det) < 0.25:
+                return None, (None, None)
+
+            # Check #2 the ratio of the first-to-last singular value is sane (not too high)
+            svd = np.linalg.svd(h, compute_uv=False)
+            if svd[-1] == 0:
+                return None, (None, None)
+            
+            ratio = svd[0] / svd[-1]
+            if ratio > 100000:
+                return None, (None, None)
+
+            return h, (align_image_gray.shape[1], align_image_gray.shape[0])
         
-        # Check #1 homography's determinant will not be close to zero
-        if abs(det) < 0.25:
-            return None, None, (None, None)
+        algo = 'feat'
+        result = compute_using(find_features_homography)
 
-        # Check #2 the ratio of the first-to-last singular value is sane (not too high)
-        svd = np.linalg.svd(h, compute_uv=False)
-        if svd[-1] == 0:
-            return None, None, (None, None)
+        if result[0] is None:
+            algo = 'ecc'
+            log.ODM_INFO("Can't use features matching, will use ECC (this might take a bit)")
+            result = compute_using(find_ecc_homography)
+            if result[0] is None:
+                algo = None
         
-        ratio = svd[0] / svd[-1]
-        if ratio > 100000:
-            return None, None, (None, None)
+        warp_matrix, dimension = result
+        return warp_matrix, dimension, algo
 
-        return h, compute_alignment_score(h, image_gray, align_image_gray), (align_image_gray.shape[1], align_image_gray.shape[0])
-    
-    result = compute_using(find_features_homography)
-    if result[0] is None:
-        log.ODM_INFO("Can't use features matching, will use ECC")
-        result = compute_using(find_ecc_homography)
-    
-    return result
+    except Exception as e:
+        log.ODM_WARNING("Compute homography: %s" % str(e))
+        return None, None, (None, None)
 
-    # except Exception as e:
-    #     log.ODM_WARNING("Compute homography: %s" % str(e))
-    #     return None, None, (None, None)
-
-def find_ecc_homography(image_gray, align_image_gray, number_of_iterations=5000, termination_eps=1e-8):
+def find_ecc_homography(image_gray, align_image_gray, number_of_iterations=2500, termination_eps=1e-9):
     image_gray = to_8bit(gradient(gaussian(image_gray)))
     align_image_gray = to_8bit(gradient(gaussian(align_image_gray)))
 
@@ -377,10 +414,7 @@ def find_ecc_homography(image_gray, align_image_gray, number_of_iterations=5000,
     criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT,
      number_of_iterations, termination_eps)
 
-    try:
-      (cc, warp_matrix) = cv2.findTransformECC (image_gray,align_image_gray,warp_matrix, cv2.MOTION_HOMOGRAPHY, criteria, inputMask=None, gaussFiltSize=1)
-    except:
-      (cc, warp_matrix) = cv2.findTransformECC (image_gray,align_image_gray,warp_matrix, cv2.MOTION_HOMOGRAPHY, criteria)
+    _, warp_matrix = cv2.findTransformECC (image_gray,align_image_gray,warp_matrix, cv2.MOTION_HOMOGRAPHY, criteria, inputMask=None, gaussFiltSize=9)
 
     return warp_matrix
     
@@ -417,37 +451,6 @@ def find_features_homography(image_gray, align_image_gray, feature_retention=0.2
     # Find homography
     h, _ = cv2.findHomography(points_image, points_align_image, cv2.RANSAC)
     return h
-
-def compute_alignment_score(warp_matrix, image_gray, align_image_gray, apply_gradient=True):
-    projected = align_image(image_gray, warp_matrix, (align_image_gray.shape[1], align_image_gray.shape[0]))
-    borders = projected==0
-    
-    if apply_gradient:
-        image_gray = to_8bit(gradient(gaussian(image_gray)))
-        align_image_gray = to_8bit(gradient(gaussian(align_image_gray)))
-    
-    # cv2.imwrite("/datasets/micasense/opensfm/undistorted/align_image_gray.jpg", align_image_gray)
-    # cv2.imwrite("/datasets/micasense/opensfm/undistorted/projected.jpg", projected)
-    
-    # Threshold
-    align_image_gray[align_image_gray > 128] = 255
-    projected[projected > 128] = 255
-    align_image_gray[align_image_gray <= 128] = 0
-    projected[projected <= 128] = 0
-
-    # Mark borders
-    align_image_gray[borders] = 0
-    projected[borders] = 255
-    
-
-    # cv2.imwrite("/datasets/micasense/opensfm/undistorted/threshold_align_image_gray.jpg", align_image_gray)
-    # cv2.imwrite("/datasets/micasense/opensfm/undistorted/threshold_projected.jpg", projected)
-    
-    # cv2.imwrite("/datasets/micasense/opensfm/undistorted/delta.jpg", projected - align_image_gray)
-
-    # Compute delta --> the more the images overlap perfectly, the lower the score
-    return (projected - align_image_gray).sum()
-
 
 def gradient(im, ksize=5):
     im = local_normalize(im)
