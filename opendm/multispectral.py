@@ -316,7 +316,7 @@ def compute_alignment_matrices(multi_camera, primary_band_name, images_path, s2p
             else:
                 log.ODM_WARNING("Cannot find alignment matrix for band %s, The band will likely be misaligned!" % band['name'])
 
-    return alignment_info, p2s
+    return alignment_info
 
 def compute_homography(image_filename, align_image_filename):
     # try:
