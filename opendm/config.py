@@ -464,13 +464,6 @@ def config(argv=None, parser=None):
                               '[none, gauss_damping, gauss_clamping]. Default: '
                               '%(default)s'))
 
-    parser.add_argument('--texturing-skip-visibility-test',
-                        action=StoreTrue,
-                        nargs=0,
-                        default=False,
-                        help=('Skip geometric visibility test. Default: '
-                              ' %(default)s'))
-
     parser.add_argument('--texturing-skip-global-seam-leveling',
                         action=StoreTrue,
                         nargs=0,
@@ -483,20 +476,6 @@ def config(argv=None, parser=None):
                         nargs=0,
                         default=False,
                         help='Skip local seam blending. Default:  %(default)s')
-
-    parser.add_argument('--texturing-skip-hole-filling',
-                        action=StoreTrue,
-                        nargs=0,
-                        default=False,
-                        help=('Skip filling of holes in the mesh. Default: '
-                              ' %(default)s'))
-
-    parser.add_argument('--texturing-keep-unseen-faces',
-                        action=StoreTrue,
-                        nargs=0,
-                        default=False,
-                        help=('Keep faces in the mesh that are not seen in any camera. '
-                              'Default:  %(default)s'))
 
     parser.add_argument('--texturing-tone-mapping',
                         metavar='<string>',

@@ -59,23 +59,14 @@ class ODMMvsTexStage(types.ODM_Stage):
                               % odm_textured_model_obj)
 
                 # Format arguments to fit Mvs-Texturing app
-                skipGeometricVisibilityTest = ""
                 skipGlobalSeamLeveling = ""
                 skipLocalSeamLeveling = ""
-                skipHoleFilling = ""
-                keepUnseenFaces = ""
                 nadir = ""
 
-                if (self.params.get('skip_vis_test')):
-                    skipGeometricVisibilityTest = "--skip_geometric_visibility_test"
                 if (self.params.get('skip_glob_seam_leveling')):
                     skipGlobalSeamLeveling = "--skip_global_seam_leveling"
                 if (self.params.get('skip_loc_seam_leveling')):
                     skipLocalSeamLeveling = "--skip_local_seam_leveling"
-                if (self.params.get('skip_hole_fill')):
-                    skipHoleFilling = "--skip_hole_filling"
-                if (self.params.get('keep_unseen_faces')):
-                    keepUnseenFaces = "--keep_unseen_faces"
                 if (r['nadir']):
                     nadir = '--nadir_mode'
 
@@ -86,11 +77,8 @@ class ODMMvsTexStage(types.ODM_Stage):
                     'model': r['model'],
                     'dataTerm': self.params.get('data_term'),
                     'outlierRemovalType': self.params.get('outlier_rem_type'),
-                    'skipGeometricVisibilityTest': skipGeometricVisibilityTest,
                     'skipGlobalSeamLeveling': skipGlobalSeamLeveling,
                     'skipLocalSeamLeveling': skipLocalSeamLeveling,
-                    'skipHoleFilling': skipHoleFilling,
-                    'keepUnseenFaces': keepUnseenFaces,
                     'toneMapping': self.params.get('tone_mapping'),
                     'nadirMode': nadir,
                     'nvm_file': r['nvm_file']
@@ -107,21 +95,10 @@ class ODMMvsTexStage(types.ODM_Stage):
                 system.run('{bin} {nvm_file} {model} {out_dir} '
                         '-d {dataTerm} -o {outlierRemovalType} '
                         '-t {toneMapping} '
-                        '{skipGeometricVisibilityTest} '
+                        '--no_intermediate_results '
                         '{skipGlobalSeamLeveling} '
                         '{skipLocalSeamLeveling} '
-                        '{skipHoleFilling} '
-                        '{keepUnseenFaces} '
                         '{nadirMode}'.format(**kwargs))
-                
-                if args.optimize_disk_space:
-                    cleanup_files = [
-                        os.path.join(r['out_dir'], "odm_textured_model_data_costs.spt"),
-                        os.path.join(r['out_dir'], "odm_textured_model_labeling.vec"),
-                    ]
-                    for f in cleanup_files:
-                        if io.file_exists(f):
-                            os.remove(f)
                 
                 progress += progress_per_run
                 self.update_progress(progress)
