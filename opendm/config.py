@@ -157,6 +157,15 @@ def config(argv=None, parser=None):
                             'Can be one of: %(choices)s. Default: '
                             '%(default)s'))
     
+    parser.add_argument('--matcher-type',
+                        metavar='<string>',
+                        action=StoreValue,
+                        default='flann',
+                        choices=['flann', 'bow'],
+                        help=('Matcher algorithm, Fast Library for Approximate Nearest Neighbors or Bag of Words. FLANN is slower, but more stable. BOW is faster, but can sometimes miss valid matches. '
+                            'Can be one of: %(choices)s. Default: '
+                            '%(default)s'))
+
     parser.add_argument('--matcher-neighbors',
                         metavar='<integer>',
                         action=StoreValue,
