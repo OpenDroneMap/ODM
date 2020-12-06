@@ -105,7 +105,7 @@ class OSFMContext:
                 except Exception as e:
                     log.ODM_WARNING("Cannot set camera_models_overrides.json: %s" % str(e))
 
-            use_bow = bool(reconstruction.multi_camera)
+            use_bow = False
             feature_type = "SIFT"
 
             # GPSDOP override if we have GPS accuracy information (such as RTK)
