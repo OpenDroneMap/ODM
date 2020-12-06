@@ -284,7 +284,7 @@ def compute_alignment_matrices(multi_camera, primary_band_name, images_path, s2p
             def parallel_compute_homography(p):
                 try:
                     if len(matrices) >= max_samples:
-                        log.ODM_INFO("Got enough samples for %s (%s)" % (band['name'], max_samples))
+                        # log.ODM_INFO("Got enough samples for %s (%s)" % (band['name'], max_samples))
                         return
 
                     # Find good matrix candidates for alignment
