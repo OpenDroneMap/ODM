@@ -13,6 +13,7 @@ from opendm import types
 from opendm.utils import get_depthmap_resolution
 from opendm.osfm import OSFMContext
 from opendm import multispectral
+from opendm import nvm
 
 class ODMOpenSfMStage(types.ODM_Stage):
     def process(self, args, outputs):
@@ -127,27 +128,10 @@ class ODMOpenSfMStage(types.ODM_Stage):
         self.update_progress(80)
 
         if reconstruction.multi_camera:
-            # Dump band image lists
-            log.ODM_INFO("Multiple bands found")
-            for band in reconstruction.multi_camera:
-                log.ODM_INFO("Exporting %s band" % band['name'])
-                image_list_file = octx.path("image_list_%s.txt" % band['name'].lower())
-
-                if not io.file_exists(image_list_file) or self.rerun():
-                    with open(image_list_file, "w") as f:
-                        f.write("\n".join([p.filename for p in band['photos']]))
-                        log.ODM_INFO("Wrote %s" % image_list_file)
-                else:
-                    log.ODM_WARNING("Found a valid image list in %s for %s band" % (image_list_file, band['name']))
-                
-                nvm_file = octx.path("undistorted", "reconstruction_%s.nvm" % band['name'].lower())
-                if not io.file_exists(nvm_file) or self.rerun():
-                    octx.run('export_visualsfm --points --image_list "%s"' % image_list_file)
-                    os.rename(tree.opensfm_reconstruction_nvm, nvm_file)
-                else:
-                    log.ODM_WARNING("Found a valid NVM file in %s for %s band" % (nvm_file, band['name']))
-
             octx.restore_reconstruction_backup()
+
+            # Undistort primary band and write undistorted 
+            # reconstruction.json, tracks.csv
             octx.convert_and_undistort(self.rerun(), undistort_callback, runId='primary')
 
         if not io.file_exists(tree.opensfm_reconstruction_nvm) or self.rerun():
@@ -155,6 +139,29 @@ class ODMOpenSfMStage(types.ODM_Stage):
         else:
             log.ODM_WARNING('Found a valid OpenSfM NVM reconstruction file in: %s' %
                             tree.opensfm_reconstruction_nvm)
+        
+        if reconstruction.multi_camera:
+            log.ODM_INFO("Multiple bands found")
+
+            # Write NVM files for the various bands
+            for band in reconstruction.multi_camera:
+                nvm_file = octx.path("undistorted", "reconstruction_%s.nvm" % band['name'].lower())
+
+                img_map = {}
+                for fname in p2s:
+                    
+                    # Primary band maps to itself
+                    if band['name'] == primary_band_name:
+                        img_map[fname + '.tif'] = fname + '.tif'
+                    else:
+                        band_filename = next((p.filename for p in p2s[fname] if p.band_name == band['name']), None)
+
+                        if band_filename is not None:
+                            img_map[fname + '.tif'] = band_filename + '.tif'
+                        else:
+                            log.ODM_WARNING("Cannot find %s band equivalent for %s" % (band, fname))
+
+                nvm.replace_nvm_images(tree.opensfm_reconstruction_nvm, img_map, nvm_file)
 
         self.update_progress(85)
 

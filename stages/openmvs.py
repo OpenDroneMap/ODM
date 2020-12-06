@@ -29,12 +29,6 @@ class ODMOpenMVSStage(types.ODM_Stage):
             # export reconstruction from opensfm
             octx = OSFMContext(tree.opensfm)
             cmd = 'export_openmvs'
-            if reconstruction.multi_camera:
-                # Export only the primary band
-                primary_band = get_primary_band_name(reconstruction.multi_camera, args.primary_band)
-
-                image_list = os.path.join(tree.opensfm, "image_list_%s.txt" % primary_band.lower())
-                cmd += ' --image_list "%s"' % image_list
             octx.run(cmd)
             
             self.update_progress(10)

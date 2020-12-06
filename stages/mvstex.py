@@ -25,7 +25,8 @@ class ODMMvsTexStage(types.ODM_Stage):
                     'out_dir': os.path.join(tree.odm_texturing, subdir),
                     'model': tree.odm_mesh,
                     'nadir': False,
-                    'nvm_file': nvm_file
+                    'nvm_file': nvm_file,
+                    'labeling_file': os.path.join(tree.odm_texturing, "odm_textured_model_labeling.vec") if subdir else None
                 }]
 
             if not args.use_3dmesh:
@@ -33,7 +34,8 @@ class ODMMvsTexStage(types.ODM_Stage):
                     'out_dir': os.path.join(tree.odm_25dtexturing, subdir),
                     'model': tree.odm_25dmesh,
                     'nadir': True,
-                    'nvm_file': nvm_file
+                    'nvm_file': nvm_file,
+                    'labeling_file': os.path.join(tree.odm_25dtexturing, "odm_textured_model_labeling.vec") if subdir else None
                 }]
 
         if reconstruction.multi_camera:
@@ -81,7 +83,9 @@ class ODMMvsTexStage(types.ODM_Stage):
                     'skipLocalSeamLeveling': skipLocalSeamLeveling,
                     'toneMapping': self.params.get('tone_mapping'),
                     'nadirMode': nadir,
-                    'nvm_file': r['nvm_file']
+                    'nvm_file': r['nvm_file'],
+                    'intermediate': '--no_intermediate_results' if (r['labeling_file'] or not reconstruction.multi_camera) else '',
+                    'labelingFile': '-L "%s"' % r['labeling_file'] if r['labeling_file'] else ''
                 }
 
                 mvs_tmp_dir = os.path.join(r['out_dir'], 'tmp')
@@ -95,10 +99,11 @@ class ODMMvsTexStage(types.ODM_Stage):
                 system.run('{bin} {nvm_file} {model} {out_dir} '
                         '-d {dataTerm} -o {outlierRemovalType} '
                         '-t {toneMapping} '
-                        '--no_intermediate_results '
+                        '{intermediate} '
                         '{skipGlobalSeamLeveling} '
                         '{skipLocalSeamLeveling} '
-                        '{nadirMode}'.format(**kwargs))
+                        '{nadirMode} '
+                        '{labelingFile} '.format(**kwargs))
                 
                 progress += progress_per_run
                 self.update_progress(progress)
