@@ -24,7 +24,7 @@ def get_max_memory_mb(minimum = 100, use_at_most = 0.5):
     """
     return max(minimum, (virtual_memory().available / 1024 / 1024) * use_at_most)
 
-def parallel_map(func, items, max_workers=1):
+def parallel_map(func, items, max_workers=1, single_thread_fallback=True):
     """
     Our own implementation for parallel processing
     which handles gracefully CTRL+C and reverts to 
@@ -85,7 +85,7 @@ def parallel_map(func, items, max_workers=1):
 
         stop_workers()
 
-        if error is not None:
+        if error is not None and single_thread_fallback:
             # Try to reprocess using a single thread
             # in case this was a memory error
             log.ODM_WARNING("Failed to run process in parallel, retrying with a single thread...")

@@ -6,10 +6,8 @@ cryptography==3.2.1
 edt==2.0.2
 ExifRead==2.3.2
 Fiona==1.8.17
-gpxpy==1.4.2
 joblib==0.17.0
 laspy==1.7.0
-loky==2.9.0
 lxml==4.6.1
 matplotlib==3.3.3
 networkx==2.5
@@ -25,6 +23,7 @@ PyYAML==5.1
 rasterio==1.1.8
 repoze.lru==0.7
 scikit-learn==0.23.2
+scikit-image==0.17.2
 scipy==1.5.4
 xmltodict==0.12.0
 

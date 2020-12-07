@@ -1,4 +1,4 @@
-set(_proj_name entwine)
+set(_proj_name untwine)
 set(_SB_BINARY_DIR "${SB_BINARY_DIR}/${_proj_name}")
 
 ExternalProject_Add(${_proj_name}
@@ -8,16 +8,14 @@ ExternalProject_Add(${_proj_name}
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
-  GIT_REPOSITORY    https://github.com/connormanning/entwine/
-  GIT_TAG           2.1.0
+  GIT_REPOSITORY    https://github.com/pierotofy/untwine/
+  GIT_TAG           insttgt
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   #--Configure step-------------
   SOURCE_DIR        ${SB_SOURCE_DIR}/${_proj_name}
   CMAKE_ARGS
-    -DCMAKE_CXX_FLAGS=-isystem\ ${SB_SOURCE_DIR}/pdal
-    -DADDITIONAL_LINK_DIRECTORIES_PATHS=${SB_INSTALL_DIR}/lib
-    -DWITH_TESTS=OFF
+    -DPDAL_DIR=${SB_INSTALL_DIR}/lib/cmake/PDAL
 	-DCMAKE_BUILD_TYPE=Release
     -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
   #--Build step-----------------

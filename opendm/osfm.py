@@ -15,6 +15,7 @@ from opensfm.large import metadataset
 from opensfm.large import tools
 from opensfm.actions import undistort
 from opensfm.dataset import DataSet
+from opendm.multispectral import get_photos_by_band
 
 class OSFMContext:
     def __init__(self, opensfm_project_path):
@@ -55,7 +56,7 @@ class OSFMContext:
             exit(1)
 
 
-    def setup(self, args, images_path, photos, reconstruction, append_config = [], rerun=False):
+    def setup(self, args, images_path, reconstruction, append_config = [], rerun=False):
         """
         Setup a OpenSfM project
         """
@@ -67,7 +68,15 @@ class OSFMContext:
 
         list_path = os.path.join(self.opensfm_project_path, 'image_list.txt')
         if not io.file_exists(list_path) or rerun:
-            
+
+            if reconstruction.multi_camera:
+                photos = get_photos_by_band(reconstruction.multi_camera, args.primary_band)
+                if len(photos) < 1:
+                    raise Exception("Not enough images in selected band %s" % args.primary_band.lower())
+                log.ODM_INFO("Reconstruction will use %s images from %s band" % (len(photos), args.primary_band.lower()))
+            else:
+                photos = reconstruction.photos
+
             # create file list
             has_alt = True
             has_gps = False
@@ -77,6 +86,7 @@ class OSFMContext:
                         has_alt = False
                     if photo.latitude is not None and photo.longitude is not None:
                         has_gps = True
+
                     fout.write('%s\n' % os.path.join(images_path, photo.filename))
             
             # check for image_groups.txt (split-merge)
@@ -95,15 +105,8 @@ class OSFMContext:
                 except Exception as e:
                     log.ODM_WARNING("Cannot set camera_models_overrides.json: %s" % str(e))
 
-            use_bow = False
+            use_bow = args.matcher_type == "bow"
             feature_type = "SIFT"
-
-            matcher_neighbors = args.matcher_neighbors
-            if matcher_neighbors != 0 and reconstruction.multi_camera is not None:
-                matcher_neighbors *= len(reconstruction.multi_camera)
-                log.ODM_INFO("Increasing matcher neighbors to %s to accomodate multi-camera setup" % matcher_neighbors)
-                log.ODM_INFO("Multi-camera setup, using BOW matching")
-                use_bow = True
 
             # GPSDOP override if we have GPS accuracy information (such as RTK)
             if 'gps_accuracy_is_set' in args:
@@ -178,7 +181,7 @@ class OSFMContext:
                 "feature_process_size: %s" % feature_process_size,
                 "feature_min_frames: %s" % args.min_num_features,
                 "processes: %s" % args.max_concurrency,
-                "matching_gps_neighbors: %s" % matcher_neighbors,
+                "matching_gps_neighbors: %s" % args.matcher_neighbors,
                 "matching_gps_distance: %s" % args.matcher_distance,
                 "depthmap_method: %s" % args.opensfm_depthmap_method,
                 "depthmap_resolution: %s" % depthmap_resolution,
@@ -188,8 +191,7 @@ class OSFMContext:
                 "undistorted_image_format: tif",
                 "bundle_outlier_filtering_type: AUTO",
                 "align_orientation_prior: vertical",
-                "triangulation_type: ROBUST",
-                "bundle_common_position_constraints: %s" % ('no' if reconstruction.multi_camera is None else 'yes'),
+                "triangulation_type: ROBUST"
             ]
 
             if args.camera_lens != 'auto':
@@ -313,15 +315,65 @@ class OSFMContext:
         else:
             log.ODM_INFO("Already extracted cameras")
     
-    def convert_and_undistort(self, rerun=False, imageFilter=None):
+    def convert_and_undistort(self, rerun=False, imageFilter=None, image_list=None, runId="nominal"):
         log.ODM_INFO("Undistorting %s ..." % self.opensfm_project_path)
-        undistorted_images_path = self.path("undistorted", "images")
+        done_flag_file = self.path("undistorted", "%s_done.txt" % runId)
 
-        if not io.dir_exists(undistorted_images_path) or rerun:
-            undistort.run_dataset(DataSet(self.opensfm_project_path), "reconstruction.json", 
+        if not io.file_exists(done_flag_file) or rerun:
+            ds = DataSet(self.opensfm_project_path)
+
+            if image_list is not None:
+                ds._set_image_list(image_list)
+
+            undistort.run_dataset(ds, "reconstruction.json", 
                                   0, None, "undistorted", imageFilter)
+            
+            self.touch(done_flag_file)
         else:
-            log.ODM_WARNING("Found an undistorted directory in %s" % undistorted_images_path)
+            log.ODM_WARNING("Already undistorted (%s)" % runId)
+
+    def restore_reconstruction_backup(self):
+        if os.path.exists(self.recon_backup_file()):
+            # This time export the actual reconstruction.json
+            # (containing only the primary band)
+            if os.path.exists(self.recon_file()):
+                os.remove(self.recon_file())
+            os.rename(self.recon_backup_file(), self.recon_file())
+            log.ODM_INFO("Restored reconstruction.json")
+
+    def backup_reconstruction(self):
+        if os.path.exists(self.recon_backup_file()):
+            os.remove(self.recon_backup_file())
+            
+        log.ODM_INFO("Backing up reconstruction")
+        shutil.copyfile(self.recon_file(), self.recon_backup_file())
+
+    def recon_backup_file(self):
+        return self.path("reconstruction.backup.json")
+    
+    def recon_file(self):
+        return self.path("reconstruction.json")
+
+    def add_shots_to_reconstruction(self, p2s):
+        with open(self.recon_file()) as f:
+            reconstruction = json.loads(f.read())
+
+        # Augment reconstruction.json
+        for recon in reconstruction:
+            shots = recon['shots']
+            sids = list(shots)
+            
+            for shot_id in sids:
+                secondary_photos = p2s.get(shot_id)
+                if secondary_photos is None:
+                    log.ODM_WARNING("Cannot find secondary photos for %s" % shot_id)
+                    continue
+
+                for p in secondary_photos:
+                    shots[p.filename] = shots[shot_id]
+
+        with open(self.recon_file(), 'w') as f:
+            f.write(json.dumps(reconstruction))
 
 
     def update_config(self, cfg_dict):

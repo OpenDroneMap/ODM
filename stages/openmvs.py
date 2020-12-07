@@ -8,6 +8,7 @@ from opendm import point_cloud
 from opendm import types
 from opendm.utils import get_depthmap_resolution
 from opendm.osfm import OSFMContext
+from opendm.multispectral import get_primary_band_name
 
 class ODMOpenMVSStage(types.ODM_Stage):
     def process(self, args, outputs):
@@ -28,11 +29,6 @@ class ODMOpenMVSStage(types.ODM_Stage):
             # export reconstruction from opensfm
             octx = OSFMContext(tree.opensfm)
             cmd = 'export_openmvs'
-            if reconstruction.multi_camera:
-                # Export only the primary band
-                primary = reconstruction.multi_camera[0]
-                image_list = os.path.join(tree.opensfm, "image_list_%s.txt" % primary['name'].lower())
-                cmd += ' --image_list "%s"' % image_list
             octx.run(cmd)
             
             self.update_progress(10)

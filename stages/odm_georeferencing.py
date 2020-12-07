@@ -9,6 +9,7 @@ from opendm import system
 from opendm import context
 from opendm.cropper import Cropper
 from opendm import point_cloud
+from opendm.multispectral import get_primary_band_name
 
 class ODMGeoreferencingStage(types.ODM_Stage):
     def process(self, args, outputs):
@@ -45,7 +46,7 @@ class ODMGeoreferencingStage(types.ODM_Stage):
         
         if reconstruction.multi_camera:
             for band in reconstruction.multi_camera:
-                primary = band == reconstruction.multi_camera[0]
+                primary = band['name'] == get_primary_band_name(reconstruction.multi_camera, args.primary_band)
                 add_run(primary, band['name'].lower())
         else:
             add_run()
@@ -122,15 +123,14 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                         
                         if args.fast_orthophoto:
                             decimation_step = 10
-                        elif args.use_opensfm_dense:
-                            decimation_step = 40
                         else:
-                            decimation_step = 90
+                            decimation_step = 40
                         
                         # More aggressive decimation for large datasets
                         if not args.fast_orthophoto:
                             decimation_step *= int(len(reconstruction.photos) / 1000) + 1
-
+                            decimation_step = min(decimation_step, 95)
+                            
                         try:
                             cropper.create_bounds_gpkg(tree.odm_georeferencing_model_laz, args.crop, 
                                                         decimation_step=decimation_step)

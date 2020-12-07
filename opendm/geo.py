@@ -50,7 +50,7 @@ class GeoFile:
                                                         horizontal_accuracy, vertical_accuracy, 
                                                         extras)
                     else:
-                        logger.warning("Malformed geo line: %s" % line)
+                        log.ODM_WARNING("Malformed geo line: %s" % line)
     
     def get_entry(self, filename):
         return self.entries.get(filename)

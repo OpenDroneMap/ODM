@@ -1,7 +1,16 @@
-from opendm import dls
 import math
+import re
+import cv2
+import os
+from opendm import dls
 import numpy as np
 from opendm import log
+from opendm.concurrency import parallel_map
+from opensfm.io import imread
+
+from skimage import exposure
+from skimage.morphology import disk
+from skimage.filters import rank, gaussian
 
 # Loosely based on https://github.com/micasense/imageprocessing/blob/master/micasense/utils.py
 
@@ -151,3 +160,341 @@ def compute_irradiance(photo, use_sun_sensor=True):
         log.ODM_WARNING("No sun sensor values found for %s" % photo.filename)
     
     return 1.0
+
+def get_photos_by_band(multi_camera, user_band_name):
+    band_name = get_primary_band_name(multi_camera, user_band_name)
+
+    for band in multi_camera:
+        if band['name'] == band_name:
+            return band['photos']
+
+
+def get_primary_band_name(multi_camera, user_band_name):
+    if len(multi_camera) < 1:
+        raise Exception("Invalid multi_camera list")
+    
+    # multi_camera is already sorted by band_index
+    if user_band_name == "auto":
+        return multi_camera[0]['name']
+
+    for band in multi_camera:
+        if band['name'].lower() == user_band_name.lower():
+            return band['name']
+    
+    band_name_fallback = multi_camera[0]['name']
+
+    log.ODM_WARNING("Cannot find band name \"%s\", will use \"%s\" instead" % (user_band_name, band_name_fallback))
+    return band_name_fallback
+
+
+def compute_band_maps(multi_camera, primary_band):
+    """
+    Computes maps of: 
+     - { photo filename --> associated primary band photo } (s2p)
+     - { primary band filename --> list of associated secondary band photos } (p2s)
+    by looking at capture time or filenames as a fallback
+    """
+    band_name = get_primary_band_name(multi_camera, primary_band)
+    primary_band_photos = None
+    for band in multi_camera:
+        if band['name'] == band_name:
+            primary_band_photos = band['photos']
+            break
+    
+    # Try using capture time as the grouping factor
+    try:
+        capture_time_map = {}
+        s2p = {}
+        p2s = {}
+
+        for p in primary_band_photos:
+            t = p.get_utc_time()
+            if t is None:
+                raise Exception("Cannot use capture time (no information in %s)" % p.filename)
+            
+            # Should be unique across primary band
+            if capture_time_map.get(t) is not None:
+                raise Exception("Unreliable capture time detected (duplicate)")
+
+            capture_time_map[t] = p
+        
+        for band in multi_camera:
+            photos = band['photos']
+
+            for p in photos:
+                t = p.get_utc_time()
+                if t is None:
+                    raise Exception("Cannot use capture time (no information in %s)" % p.filename)
+                
+                # Should match the primary band
+                if capture_time_map.get(t) is None:
+                    raise Exception("Unreliable capture time detected (no primary band match)")
+
+                s2p[p.filename] = capture_time_map[t]
+
+                if band['name'] != band_name:
+                    p2s.setdefault(capture_time_map[t].filename, []).append(p)
+
+        return s2p, p2s
+    except Exception as e:
+        # Fallback on filename conventions
+        log.ODM_WARNING("%s, will use filenames instead" % str(e))
+
+        filename_map = {}
+        s2p = {}
+        p2s = {}
+        file_regex = re.compile(r"^(.+)[-_]\w+(\.[A-Za-z]{3,4})$")
+
+        for p in primary_band_photos:
+            filename_without_band = re.sub(file_regex, "\\1\\2", p.filename)
+
+            # Quick check
+            if filename_without_band == p.filename:
+                raise Exception("Cannot match bands by filename on %s, make sure to name your files [filename]_band[.ext] uniformly." % p.filename)
+
+            filename_map[filename_without_band] = p
+
+        for band in multi_camera:
+            photos = band['photos']
+
+            for p in photos:
+                filename_without_band = re.sub(file_regex, "\\1\\2", p.filename)
+
+                # Quick check
+                if filename_without_band == p.filename:
+                    raise Exception("Cannot match bands by filename on %s, make sure to name your files [filename]_band[.ext] uniformly." % p.filename)
+
+                s2p[p.filename] = filename_map[filename_without_band]
+
+                if band['name'] != band_name:
+                    p2s.setdefault(filename_map[filename_without_band].filename, []).append(p)
+
+        return s2p, p2s
+
+def compute_alignment_matrices(multi_camera, primary_band_name, images_path, s2p, p2s, max_concurrency=1, max_samples=30):
+    log.ODM_INFO("Computing band alignment")
+
+    alignment_info = {}
+
+    # For each secondary band
+    for band in multi_camera:
+        if band['name'] != primary_band_name:
+            matrices = []
+
+            def parallel_compute_homography(p):
+                try:
+                    if len(matrices) >= max_samples:
+                        # log.ODM_INFO("Got enough samples for %s (%s)" % (band['name'], max_samples))
+                        return
+
+                    # Find good matrix candidates for alignment
+                
+                    primary_band_photo = s2p.get(p['filename'])
+                    if primary_band_photo is None:
+                        log.ODM_WARNING("Cannot find primary band photo for %s" % p['filename'])
+                        return
+
+                    warp_matrix, dimension, algo = compute_homography(os.path.join(images_path, p['filename']),
+                                                                os.path.join(images_path, primary_band_photo.filename))
+                    
+                    if warp_matrix is not None:
+                        log.ODM_INFO("%s --> %s good match" % (p['filename'], primary_band_photo.filename))
+
+                        matrices.append({
+                            'warp_matrix': warp_matrix,
+                            'eigvals': np.linalg.eigvals(warp_matrix),
+                            'dimension': dimension,
+                            'algo': algo
+                        })
+                    else:
+                        log.ODM_INFO("%s --> %s cannot be matched" % (p['filename'], primary_band_photo.filename))
+                except Exception as e:
+                    log.ODM_WARNING("Failed to compute homography for %s: %s" % (p['filename'], str(e)))
+
+            parallel_map(parallel_compute_homography, [{'filename': p.filename} for p in band['photos']], max_concurrency, single_thread_fallback=False)
+
+            # Choose winning algorithm (doesn't seem to yield improvements)
+            # feat_count = 0
+            # ecc_count = 0
+            # for m in matrices:
+            #     if m['algo'] == 'feat':
+            #         feat_count += 1
+            #     if m['algo'] == 'ecc':
+            #         ecc_count += 1
+
+            # algo = 'feat' if feat_count >= ecc_count else 'ecc'
+
+            # log.ODM_INFO("Feat: %s | ECC: %s | Winner: %s" % (feat_count, ecc_count, algo))
+            # matrices = [m for m in matrices if m['algo'] == algo]
+
+            # Find the matrix that has the most common eigvals
+            # among all matrices. That should be the "best" alignment.
+            for m1 in matrices:
+                acc = np.array([0.0,0.0,0.0])
+                e = m1['eigvals']
+
+                for m2 in matrices:
+                    acc += abs(e - m2['eigvals'])
+
+                m1['score'] = acc.sum()
+            
+            # Sort
+            matrices.sort(key=lambda x: x['score'], reverse=False)
+            
+            if len(matrices) > 0:
+                alignment_info[band['name']] = matrices[0]
+                log.ODM_INFO("%s band will be aligned using warp matrix %s (score: %s)" % (band['name'], matrices[0]['warp_matrix'], matrices[0]['score']))
+            else:
+                log.ODM_WARNING("Cannot find alignment matrix for band %s, The band will likely be misaligned!" % band['name'])
+
+    return alignment_info
+
+def compute_homography(image_filename, align_image_filename):
+    try:
+        # Convert images to grayscale if needed
+        image = imread(image_filename, unchanged=True, anydepth=True)
+        if image.shape[2] == 3:
+            image_gray = to_8bit(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY))
+        else:
+            image_gray = to_8bit(image[:,:,0])
+
+        align_image = imread(align_image_filename, unchanged=True, anydepth=True)
+        if align_image.shape[2] == 3:
+            align_image_gray = to_8bit(cv2.cvtColor(align_image, cv2.COLOR_BGR2GRAY))
+        else:
+            align_image_gray = to_8bit(align_image[:,:,0])
+
+        def compute_using(algorithm):
+            h = algorithm(image_gray, align_image_gray)
+            if h is None:
+                return None, (None, None)
+
+            det = np.linalg.det(h)
+            
+            # Check #1 homography's determinant will not be close to zero
+            if abs(det) < 0.25:
+                return None, (None, None)
+
+            # Check #2 the ratio of the first-to-last singular value is sane (not too high)
+            svd = np.linalg.svd(h, compute_uv=False)
+            if svd[-1] == 0:
+                return None, (None, None)
+            
+            ratio = svd[0] / svd[-1]
+            if ratio > 100000:
+                return None, (None, None)
+
+            return h, (align_image_gray.shape[1], align_image_gray.shape[0])
+        
+        algo = 'feat'
+        result = compute_using(find_features_homography)
+
+        if result[0] is None:
+            algo = 'ecc'
+            log.ODM_INFO("Can't use features matching, will use ECC (this might take a bit)")
+            result = compute_using(find_ecc_homography)
+            if result[0] is None:
+                algo = None
+        
+        warp_matrix, dimension = result
+        return warp_matrix, dimension, algo
+
+    except Exception as e:
+        log.ODM_WARNING("Compute homography: %s" % str(e))
+        return None, None, (None, None)
+
+def find_ecc_homography(image_gray, align_image_gray, number_of_iterations=2500, termination_eps=1e-9):
+    image_gray = to_8bit(gradient(gaussian(image_gray)))
+    align_image_gray = to_8bit(gradient(gaussian(align_image_gray)))
+
+    # Define the motion model
+    warp_matrix = np.eye(3, 3, dtype=np.float32)
+
+    # Define termination criteria
+    criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT,
+     number_of_iterations, termination_eps)
+
+    _, warp_matrix = cv2.findTransformECC (image_gray,align_image_gray,warp_matrix, cv2.MOTION_HOMOGRAPHY, criteria, inputMask=None, gaussFiltSize=9)
+
+    return warp_matrix
+    
+
+def find_features_homography(image_gray, align_image_gray, feature_retention=0.25):
+    # Detect SIFT features and compute descriptors.
+    detector = cv2.SIFT_create(edgeThreshold=10, contrastThreshold=0.1)
+    kp_image, desc_image = detector.detectAndCompute(image_gray, None)
+    kp_align_image, desc_align_image = detector.detectAndCompute(align_image_gray, None)
+
+    # Match
+    bf = cv2.BFMatcher(cv2.NORM_L1,crossCheck=True)
+    matches = bf.match(desc_image, desc_align_image)
+
+    # Sort by score
+    matches.sort(key=lambda x: x.distance, reverse=False)
+
+    # Remove bad matches
+    num_good_matches = int(len(matches) * feature_retention)
+    matches = matches[:num_good_matches]
+
+    # Debug
+    # imMatches = cv2.drawMatches(im1, kp_image, im2, kp_align_image, matches, None)
+    # cv2.imwrite("matches.jpg", imMatches)
+
+    # Extract location of good matches
+    points_image = np.zeros((len(matches), 2), dtype=np.float32)
+    points_align_image = np.zeros((len(matches), 2), dtype=np.float32)
+
+    for i, match in enumerate(matches):
+        points_image[i, :] = kp_image[match.queryIdx].pt
+        points_align_image[i, :] = kp_align_image[match.trainIdx].pt
+
+    # Find homography
+    h, _ = cv2.findHomography(points_image, points_align_image, cv2.RANSAC)
+    return h
+
+def gradient(im, ksize=5):
+    im = local_normalize(im)
+    grad_x = cv2.Sobel(im,cv2.CV_32F,1,0,ksize=ksize)
+    grad_y = cv2.Sobel(im,cv2.CV_32F,0,1,ksize=ksize)
+    grad = cv2.addWeighted(np.absolute(grad_x), 0.5, np.absolute(grad_y), 0.5, 0)
+    return grad
+
+def local_normalize(im):
+    width, _ = im.shape
+    disksize = int(width/5)
+    if disksize % 2 == 0:
+        disksize = disksize + 1
+    selem = disk(disksize)
+    im = rank.equalize(im, selem=selem)
+    return im
+
+
+def align_image(image, warp_matrix, dimension):
+    if warp_matrix.shape == (3, 3):
+        return cv2.warpPerspective(image, warp_matrix, dimension)
+    else:
+        return cv2.warpAffine(image, warp_matrix, dimension)
+
+
+def to_8bit(image):
+    if image.dtype == np.uint8:
+        return image
+
+    # Convert to 8bit
+    try:
+        data_range = np.iinfo(image.dtype)
+        value_range = float(data_range.max) - float(data_range.min)
+    except ValueError:
+        # For floats use the actual range of the image values
+        value_range = float(image.max()) - float(image.min())
+    
+    image = image.astype(np.float32)
+    image *= 255.0 / value_range
+    np.around(image, out=image)
+    image[image > 255] = 255
+    image[image < 0] = 0
+    image = image.astype(np.uint8)
+
+    return image
+
+
