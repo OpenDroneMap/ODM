@@ -8,16 +8,18 @@ def get_depthmap_resolution(args, photos):
         return int(args.depthmap_resolution)
     else:
         max_dim = find_largest_photo_dim(photos)
+        min_dim = 320 # Never go lower than this
 
         pc_quality_scale = {
-            'ultra': 0.5,
-            'high': 0.25,
-            'medium': 0.125,
-            'low': 0.0675
+            'ultra': 1,
+            'high': 0.5,
+            'medium': 0.25,
+            'low': 0.125,
+            'lowest': 0.0675
         }
 
         if max_dim > 0:
-            return int(max_dim * pc_quality_scale[args.pc_quality])
+            return max(min_dim, int(max_dim * pc_quality_scale[args.pc_quality]))
         else:
             log.ODM_WARNING("Cannot compute max image dimensions, going with default depthmap_resolution of 640")
             return 640 # Sensible default
