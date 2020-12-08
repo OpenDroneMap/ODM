@@ -147,22 +147,31 @@ class ODMOpenSfMStage(types.ODM_Stage):
             for band in reconstruction.multi_camera:
                 nvm_file = octx.path("undistorted", "reconstruction_%s.nvm" % band['name'].lower())
 
-                img_map = {}
-                for fname in p2s:
+                if not io.file_exists(nvm_file) or self.rerun():
+                    img_map = {}
+
+                    if primary_band_name is None:
+                        primary_band_name = multispectral.get_primary_band_name(reconstruction.multi_camera, args.primary_band)
+                    if p2s is None:
+                        s2p, p2s = multispectral.compute_band_maps(reconstruction.multi_camera, primary_band_name)
                     
-                    # Primary band maps to itself
-                    if band['name'] == primary_band_name:
-                        img_map[fname + '.tif'] = fname + '.tif'
-                    else:
-                        band_filename = next((p.filename for p in p2s[fname] if p.band_name == band['name']), None)
-
-                        if band_filename is not None:
-                            img_map[fname + '.tif'] = band_filename + '.tif'
+                    for fname in p2s:
+                        
+                        # Primary band maps to itself
+                        if band['name'] == primary_band_name:
+                            img_map[fname + '.tif'] = fname + '.tif'
                         else:
-                            log.ODM_WARNING("Cannot find %s band equivalent for %s" % (band, fname))
+                            band_filename = next((p.filename for p in p2s[fname] if p.band_name == band['name']), None)
 
-                nvm.replace_nvm_images(tree.opensfm_reconstruction_nvm, img_map, nvm_file)
+                            if band_filename is not None:
+                                img_map[fname + '.tif'] = band_filename + '.tif'
+                            else:
+                                log.ODM_WARNING("Cannot find %s band equivalent for %s" % (band, fname))
 
+                    nvm.replace_nvm_images(tree.opensfm_reconstruction_nvm, img_map, nvm_file)
+                else:
+                    log.ODM_WARNING("Found existing NVM file %s" % nvm_file)
+                    
         self.update_progress(85)
 
         # Skip dense reconstruction if necessary and export
