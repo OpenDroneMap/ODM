@@ -20,6 +20,7 @@ RUN rm -rf \
   /code/SuperBuild/download \
   /code/SuperBuild/src/ceres \
   /code/SuperBuild/src/untwine \
+  /code/SuperBuild/src/entwine \
   /code/SuperBuild/src/gflags \
   /code/SuperBuild/src/hexer \
   /code/SuperBuild/src/lastools \
