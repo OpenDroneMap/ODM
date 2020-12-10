@@ -109,6 +109,7 @@ set(custom_libs OpenSfM
                 Zstd
 				PDAL
                 Untwine
+                Entwine
 				MvsTexturing
                 OpenMVS
 )
