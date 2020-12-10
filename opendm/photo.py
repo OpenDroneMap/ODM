@@ -5,7 +5,7 @@ import os
 import exifread
 import numpy as np
 from six import string_types
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import pytz
 
 from opendm import io
@@ -396,7 +396,7 @@ class ODM_Photo:
 
     def get_utc_time(self):
         if self.utc_time:
-            return datetime.utcfromtimestamp(self.utc_time / 1000)
+            return datetime.fromtimestamp(self.utc_time / 1000, timezone.utc)
 
     def get_photometric_exposure(self):
         # H ~= (exposure_time) / (f_number^2)
