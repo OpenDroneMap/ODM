@@ -6,21 +6,6 @@ from opendm import log
 from opendm import system
 from opendm import concurrency
 
-import os
-import shutil
-from pipes import quote
-from opendm import io
-from opendm import log
-from opendm import system
-from opendm import concurrency
-
-import os
-import shutil
-from pipes import quote
-from opendm import io
-from opendm import log
-from opendm import system
-from opendm import concurrency
 
 def build(input_point_cloud_files, output_path, max_concurrency=8, rerun=False):
     num_files = len(input_point_cloud_files)
