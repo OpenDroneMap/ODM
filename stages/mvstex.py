@@ -25,6 +25,7 @@ class ODMMvsTexStage(types.ODM_Stage):
                     'out_dir': os.path.join(tree.odm_texturing, subdir),
                     'model': tree.odm_mesh,
                     'nadir': False,
+                    'primary': primary,
                     'nvm_file': nvm_file,
                     'labeling_file': os.path.join(tree.odm_texturing, "odm_textured_model_labeling.vec") if subdir else None
                 }]
@@ -34,6 +35,7 @@ class ODMMvsTexStage(types.ODM_Stage):
                     'out_dir': os.path.join(tree.odm_25dtexturing, subdir),
                     'model': tree.odm_25dmesh,
                     'nadir': True,
+                    'primary': primary,
                     'nvm_file': nvm_file,
                     'labeling_file': os.path.join(tree.odm_25dtexturing, "odm_textured_model_labeling.vec") if subdir else None
                 }]
@@ -44,9 +46,12 @@ class ODMMvsTexStage(types.ODM_Stage):
                 primary = band['name'] == get_primary_band_name(reconstruction.multi_camera, args.primary_band)
                 nvm_file = os.path.join(tree.opensfm, "undistorted", "reconstruction_%s.nvm" % band['name'].lower())
                 add_run(nvm_file, primary, band['name'].lower())
+            
+            # Sort to make sure primary band is processed first
+            nonloc.runs.sort(key=lambda r: r['primary'], reverse=True)
         else:
             add_run(tree.opensfm_reconstruction_nvm)
-
+        
         progress_per_run = 100.0 / len(nonloc.runs)
         progress = 0.0
 
