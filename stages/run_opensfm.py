@@ -81,6 +81,10 @@ class ODMOpenSfMStage(types.ODM_Stage):
         def align_to_primary_band(shot_id, image):
             photo = reconstruction.get_photo(shot_id)
 
+            # No need to align if requested by user
+            if args.skip_band_alignment:
+                return image
+
             # No need to align primary
             if photo.band_name == primary_band_name:
                 return image
@@ -109,11 +113,16 @@ class ODMOpenSfMStage(types.ODM_Stage):
             # We finally restore the original files later
 
             added_shots_file = octx.path('added_shots_done.txt')
-            
+
             if not io.file_exists(added_shots_file) or self.rerun():
                 primary_band_name = multispectral.get_primary_band_name(reconstruction.multi_camera, args.primary_band)
                 s2p, p2s = multispectral.compute_band_maps(reconstruction.multi_camera, primary_band_name)
-                alignment_info = multispectral.compute_alignment_matrices(reconstruction.multi_camera, primary_band_name, tree.dataset_raw, s2p, p2s, max_concurrency=args.max_concurrency)
+                
+                if not args.skip_band_alignment:
+                    alignment_info = multispectral.compute_alignment_matrices(reconstruction.multi_camera, primary_band_name, tree.dataset_raw, s2p, p2s, max_concurrency=args.max_concurrency)
+                else:
+                    log.ODM_WARNING("Skipping band alignment")
+                    alignment_info = {}
 
                 log.ODM_INFO("Adding shots to reconstruction")
                 
