@@ -756,8 +756,8 @@ def config(argv=None, parser=None):
                     action=StoreTrue,
                     nargs=0,
                     default=False,
-                    help=('When processing multispectral datasets, ODM will automatically align images for each band. '
-                          'If your images have been postprocessed and are already aligned, you should use this option, which will skip the alignment computations. '
+                    help=('When processing multispectral datasets, ODM will automatically align the images for each band. '
+                          'If the images have been postprocessed and are already aligned, use this option. '
                           'Default: %(default)s'))
 
     args = parser.parse_args(argv)

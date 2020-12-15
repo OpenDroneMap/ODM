@@ -408,7 +408,7 @@ def compute_homography(image_filename, align_image_filename):
         log.ODM_WARNING("Compute homography: %s" % str(e))
         return None, None, (None, None)
 
-def find_ecc_homography(image_gray, align_image_gray, number_of_iterations=1000, termination_eps=1e-7, start_eps=1e-4):
+def find_ecc_homography(image_gray, align_image_gray, number_of_iterations=1000, termination_eps=1e-8, start_eps=1e-4):
     pyramid_levels = 0
     h,w = image_gray.shape
     min_dim = min(h, w)
@@ -486,7 +486,7 @@ def find_features_homography(image_gray, align_image_gray, feature_retention=0.2
     except Exception as e:
         log.ODM_INFO("Cannot match features")
         return None
-        
+
     # Sort by score
     matches.sort(key=lambda x: x.distance, reverse=False)
 
