@@ -752,6 +752,14 @@ def config(argv=None, parser=None):
                               'It\'s recommended to choose a band which has sharp details and is in focus. ' 
                               'Default: %(default)s'))
 
+    parser.add_argument('--skip-band-alignment',
+                    action=StoreTrue,
+                    nargs=0,
+                    default=False,
+                    help=('When processing multispectral datasets, ODM will automatically align the images for each band. '
+                          'If the images have been postprocessed and are already aligned, use this option. '
+                          'Default: %(default)s'))
+
     args = parser.parse_args(argv)
 
     # check that the project path setting has been set properly

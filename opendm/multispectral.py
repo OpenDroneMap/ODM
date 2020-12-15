@@ -365,7 +365,12 @@ def compute_homography(image_filename, align_image_filename):
             align_image_gray = to_8bit(align_image[:,:,0])
 
         def compute_using(algorithm):
-            h = algorithm(image_gray, align_image_gray)
+            try:
+                h = algorithm(image_gray, align_image_gray)
+            except Exception as e:
+                log.ODM_WARNING("Cannot compute homography: %s" % str(e))
+                return None, (None, None)
+
             if h is None:
                 return None, (None, None)
 
@@ -403,21 +408,70 @@ def compute_homography(image_filename, align_image_filename):
         log.ODM_WARNING("Compute homography: %s" % str(e))
         return None, None, (None, None)
 
-def find_ecc_homography(image_gray, align_image_gray, number_of_iterations=2500, termination_eps=1e-9):
-    image_gray = to_8bit(gradient(gaussian(image_gray)))
-    align_image_gray = to_8bit(gradient(gaussian(align_image_gray)))
+def find_ecc_homography(image_gray, align_image_gray, number_of_iterations=1000, termination_eps=1e-8, start_eps=1e-4):
+    pyramid_levels = 0
+    h,w = image_gray.shape
+    min_dim = min(h, w)
+
+    while min_dim > 300:
+        min_dim /= 2.0
+        pyramid_levels += 1
+    
+    log.ODM_INFO("Pyramid levels: %s" % pyramid_levels)
+    
+    # Quick check on size
+    if align_image_gray.shape[0] < image_gray.shape[0]:
+        align_image_gray = to_8bit(align_image_gray)
+        image_gray = to_8bit(image_gray)
+
+        cv2.resize(align_image_gray, None, 
+                        fx=image_gray.shape[0]/align_image_gray.shape[0], 
+                        fy=image_gray.shape[0]/align_image_gray.shape[0],
+                        interpolation=cv2.INTER_AREA)
+
+    # Build pyramids
+    image_gray_pyr = [image_gray]
+    align_image_pyr = [align_image_gray]
+
+    for level in range(pyramid_levels):
+        image_gray_pyr[0] = to_8bit(image_gray_pyr[0], force_normalize=True)
+        image_gray_pyr.insert(0, cv2.resize(image_gray_pyr[0], None, fx=1/2, fy=1/2,
+                                interpolation=cv2.INTER_AREA))
+        align_image_pyr[0] = to_8bit(align_image_pyr[0], force_normalize=True)
+        align_image_pyr.insert(0, cv2.resize(align_image_pyr[0], None, fx=1/2, fy=1/2,
+                                interpolation=cv2.INTER_AREA))
 
     # Define the motion model
     warp_matrix = np.eye(3, 3, dtype=np.float32)
 
-    # Define termination criteria
-    criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT,
-     number_of_iterations, termination_eps)
+    for level in range(pyramid_levels+1):
+        ig = gradient(gaussian(image_gray_pyr[level]))
+        aig = gradient(gaussian(align_image_pyr[level]))
 
-    _, warp_matrix = cv2.findTransformECC (image_gray,align_image_gray,warp_matrix, cv2.MOTION_HOMOGRAPHY, criteria, inputMask=None, gaussFiltSize=9)
+        if level == pyramid_levels and pyramid_levels == 0:
+            eps = termination_eps
+        else:
+            eps = start_eps - ((start_eps - termination_eps) / (pyramid_levels)) * level
+    
+        # Define termination criteria
+        criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT,
+                number_of_iterations, eps)
+
+        try:
+            log.ODM_INFO("Computing ECC pyramid level %s" % level)
+            _, warp_matrix = cv2.findTransformECC(ig, aig, warp_matrix, cv2.MOTION_HOMOGRAPHY, criteria, inputMask=None, gaussFiltSize=9)
+        except Exception as e:
+            if level != pyramid_levels:
+                log.ODM_INFO("Could not compute ECC warp_matrix at pyramid level %s, resetting matrix" % level)
+                warp_matrix = np.eye(3, 3, dtype=np.float32)
+            else:
+                raise e
+
+        if level != pyramid_levels: 
+            warp_matrix = warp_matrix * np.array([[1,1,2],[1,1,2],[0.5,0.5,1]], dtype=np.float32)
 
     return warp_matrix
-    
+
 
 def find_features_homography(image_gray, align_image_gray, feature_retention=0.25):
     # Detect SIFT features and compute descriptors.
@@ -427,7 +481,11 @@ def find_features_homography(image_gray, align_image_gray, feature_retention=0.2
 
     # Match
     bf = cv2.BFMatcher(cv2.NORM_L1,crossCheck=True)
-    matches = bf.match(desc_image, desc_align_image)
+    try:
+        matches = bf.match(desc_image, desc_align_image)
+    except Exception as e:
+        log.ODM_INFO("Cannot match features")
+        return None
 
     # Sort by score
     matches.sort(key=lambda x: x.distance, reverse=False)
@@ -435,6 +493,10 @@ def find_features_homography(image_gray, align_image_gray, feature_retention=0.2
     # Remove bad matches
     num_good_matches = int(len(matches) * feature_retention)
     matches = matches[:num_good_matches]
+
+    if len(matches) < 4:
+        log.ODM_INFO("Insufficient features: %s" % len(matches))
+        return None
 
     # Debug
     # imMatches = cv2.drawMatches(im1, kp_image, im2, kp_align_image, matches, None)
@@ -476,8 +538,8 @@ def align_image(image, warp_matrix, dimension):
         return cv2.warpAffine(image, warp_matrix, dimension)
 
 
-def to_8bit(image):
-    if image.dtype == np.uint8:
+def to_8bit(image, force_normalize=False):
+    if not force_normalize and image.dtype == np.uint8:
         return image
 
     # Convert to 8bit
