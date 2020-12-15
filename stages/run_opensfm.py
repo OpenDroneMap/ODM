@@ -123,7 +123,7 @@ class ODMOpenSfMStage(types.ODM_Stage):
                 else:
                     log.ODM_WARNING("Skipping band alignment")
                     alignment_info = {}
-
+                    
                 log.ODM_INFO("Adding shots to reconstruction")
                 
                 octx.backup_reconstruction()
