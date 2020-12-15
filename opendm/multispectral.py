@@ -365,7 +365,12 @@ def compute_homography(image_filename, align_image_filename):
             align_image_gray = to_8bit(align_image[:,:,0])
 
         def compute_using(algorithm):
-            h = algorithm(image_gray, align_image_gray)
+            try:
+                h = algorithm(image_gray, align_image_gray)
+            except Exception as e:
+                log.ODM_WARNING("Cannot compute homography: %s" % str(e))
+                return None, (None, None)
+
             if h is None:
                 return None, (None, None)
 
@@ -417,7 +422,7 @@ def find_ecc_homography(image_gray, align_image_gray, number_of_iterations=2500,
     _, warp_matrix = cv2.findTransformECC (image_gray,align_image_gray,warp_matrix, cv2.MOTION_HOMOGRAPHY, criteria, inputMask=None, gaussFiltSize=9)
 
     return warp_matrix
-    
+
 
 def find_features_homography(image_gray, align_image_gray, feature_retention=0.25):
     # Detect SIFT features and compute descriptors.
@@ -435,6 +440,10 @@ def find_features_homography(image_gray, align_image_gray, feature_retention=0.2
     # Remove bad matches
     num_good_matches = int(len(matches) * feature_retention)
     matches = matches[:num_good_matches]
+
+    if len(matches) < 4:
+        log.ODM_INFO("Insufficient features: %s" % len(matches))
+        return None
 
     # Debug
     # imMatches = cv2.drawMatches(im1, kp_image, im2, kp_align_image, matches, None)
