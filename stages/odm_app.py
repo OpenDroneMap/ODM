@@ -39,8 +39,8 @@ class ODMApp:
         meshing = ODMeshingStage('odm_meshing', args, progress=60.0,
                                     max_vertex=args.mesh_size,
                                     oct_tree=args.mesh_octree_depth,
-                                    samples=args.mesh_samples,
-                                    point_weight=args.mesh_point_weight,
+                                    samples=1.0,
+                                    point_weight=4.0,
                                     max_concurrency=args.max_concurrency,
                                     verbose=args.verbose)
         texturing = ODMMvsTexStage('mvs_texturing', args, progress=70.0,
