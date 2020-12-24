@@ -1,6 +1,6 @@
-import osr
-import gdal
-from gdalconst import GA_Update
+from osgeo import osr
+from osgeo import gdal
+from osgeo.gdalconst import GA_Update
 from opendm import io
 from opendm import log
 
