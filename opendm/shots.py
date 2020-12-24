@@ -3,7 +3,7 @@ from opendm import log
 from opendm.pseudogeo import get_pseudogeo_utm, get_pseudogeo_scale
 from opendm.location import transformer
 from pyproj import CRS
-import gdal
+from osgeo import gdal
 import numpy as np
 import cv2
 
