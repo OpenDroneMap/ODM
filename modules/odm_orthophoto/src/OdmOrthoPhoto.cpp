@@ -500,14 +500,14 @@ void OdmOrthoPhoto::createOrthoPhoto()
                             // 16U to 8U
                             texture.convertTo(texture, CV_8U, 255.0f / 65535.0f);
                         }else{
-                            throw OdmOrthoPhotoException("Unknown conversion known from CV_8U");
+                            throw OdmOrthoPhotoException("Unknown conversion from CV_8U");
                         }
                     }else if (textureDepth == CV_16U){
                         if (texture.depth() == CV_8U){
                             // 8U to 16U
                             texture.convertTo(texture, CV_16U, 65535.0f / 255.0f);
                         }else{
-                            throw OdmOrthoPhotoException("Unknown conversion known from CV_16U");
+                            throw OdmOrthoPhotoException("Unknown conversion from CV_16U");
                         }
                     }else{
                          throw OdmOrthoPhotoException("Texture depth is not the same for all models and could not be converted");
