@@ -493,7 +493,26 @@ void OdmOrthoPhoto::createOrthoPhoto()
             // Init ortho photo
             if (t == 0){
                 if (primary) textureDepth = texture.depth();
-                else if (textureDepth != texture.depth()) throw OdmOrthoPhotoException("Texture depth must be the same for all models");
+                else if (textureDepth != texture.depth()){
+                    // Try to convert
+                    if (textureDepth == CV_8U){
+                        if (texture.depth() == CV_16U){
+                            // 16U to 8U
+                            texture.convertTo(texture, CV_8U, 255.0f / 65535.0f);
+                        }else{
+                            throw OdmOrthoPhotoException("Unknown conversion known from CV_8U");
+                        }
+                    }else if (textureDepth == CV_16U){
+                        if (texture.depth() == CV_8U){
+                            // 8U to 16U
+                            texture.convertTo(texture, CV_16U, 65535.0f / 255.0f);
+                        }else{
+                            throw OdmOrthoPhotoException("Unknown conversion known from CV_16U");
+                        }
+                    }else{
+                         throw OdmOrthoPhotoException("Texture depth is not the same for all models and could not be converted");
+                    }
+                }
 
                 log_ << "Texture channels: " << texture.channels() << "\n";
 
