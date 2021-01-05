@@ -40,7 +40,7 @@ class ODM_Reconstruction(object):
             if not p.band_name in band_photos:
                 band_photos[p.band_name] = []
             if not p.band_name in band_indexes:
-                band_indexes[p.band_name] = p.band_index
+                band_indexes[p.band_name] = str(p.band_index)
 
             band_photos[p.band_name].append(p)
             
