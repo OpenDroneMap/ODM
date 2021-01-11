@@ -26,4 +26,4 @@ scikit-learn==0.23.2
 scikit-image==0.17.2
 scipy==1.5.4
 xmltodict==0.12.0
-
+fpdf2==2.2.0rc2

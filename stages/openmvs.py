@@ -41,7 +41,7 @@ class ODMOpenMVSStage(types.ODM_Stage):
             if outputs["undist_image_max_size"] <= depthmap_resolution:
                 resolution_level = 0
             else:
-                resolution_level = math.floor(math.log(outputs['undist_image_max_size'] / float(depthmap_resolution)) / math.log(2))
+                resolution_level = int(round(math.log(outputs['undist_image_max_size'] / float(depthmap_resolution)) / math.log(2)))
 
             config = [
                 " --resolution-level %s" % int(resolution_level),
