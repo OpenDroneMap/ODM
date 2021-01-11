@@ -208,6 +208,9 @@ class ODMOpenSfMStage(types.ODM_Stage):
         else:
             log.ODM_WARNING("Will skip exporting %s" % tree.opensfm_transformation)
         
+        self.update_progress(95)
+        octx.export_stats(self.rerun())
+
         if args.optimize_disk_space:
             os.remove(octx.path("tracks.csv"))
             if io.file_exists(octx.recon_backup_file()):

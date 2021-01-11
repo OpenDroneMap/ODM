@@ -15,7 +15,9 @@ from opensfm.large import metadataset
 from opensfm.large import tools
 from opensfm.actions import undistort
 from opensfm.dataset import DataSet
+from opensfm import report
 from opendm.multispectral import get_photos_by_band
+
 
 class OSFMContext:
     def __init__(self, opensfm_project_path):
@@ -392,6 +394,31 @@ class OSFMContext:
                 log.ODM_WARNING("Cannot update configuration file %s: %s" % (cfg_file, str(e)))
         else:
             log.ODM_WARNING("Tried to update configuration, but %s does not exist." % cfg_file)
+
+    def export_stats(self, rerun=False):
+        log.ODM_INFO("Export reconstruction stats")
+        stats_path = self.path("stats", "stats.json")
+        if not os.path.exists(stats_path) or rerun:
+            self.run("compute_statistics")
+        else:
+            log.ODM_WARNING("Found existing reconstruction stats %s" % stats_path)
+
+    def export_report(self, report_path, odm_stats, rerun=False):
+        log.ODM_INFO("Exporting report to %s" % report_path)
+
+        osfm_report_path = self.path("stats", "report.pdf")
+        if not os.path.exists(report_path) or rerun:
+            data = DataSet(self.opensfm_project_path)
+            pdf_report = report.Report(data, odm_stats)
+            pdf_report.generate_report()
+            pdf_report.save_report("report.pdf")
+            
+            if os.path.exists(osfm_report_path):
+                shutil.move(osfm_report_path, report_path)
+            else:
+                log.ODM_WARNING("Report could not be generated")
+        else:
+            log.ODM_WARNING("Report %s already exported" % report_path)
 
     def name(self):
         return os.path.basename(os.path.abspath(self.path("..")))

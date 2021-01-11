@@ -167,6 +167,9 @@ def filter(input_point_cloud, output_point_cloud, standard_deviation=2.5, meank=
         log.ODM_WARNING("{} not found, filtering has failed.".format(output_point_cloud))
 
 
+def export_summary_json(pointcloud_path, summary_file_path):
+    system.run('pdal info --summary "{0}" > "{1}"'.format(pointcloud_path, summary_file_path))
+
 def get_extent(input_point_cloud):
     fd, json_file = tempfile.mkstemp(suffix='.json')
     os.close(fd)
