@@ -48,6 +48,7 @@ class ODMOpenMVSStage(types.ODM_Stage):
 	            "--min-resolution %s" % depthmap_resolution,
                 "--max-resolution %s" % int(outputs['undist_image_max_size']),
                 "--max-threads %s" % args.max_concurrency,
+                "--number-views-fuse 2",
                 '-w "%s"' % depthmaps_dir, 
                 "-v 0",
             ]
