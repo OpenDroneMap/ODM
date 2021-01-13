@@ -189,7 +189,7 @@ class ODMOpenSfMStage(types.ODM_Stage):
             output_file = octx.path('reconstruction.ply')
 
             if not io.file_exists(output_file) or self.rerun():
-                octx.run('export_ply --no-cameras')
+                octx.run('export_ply --no-cameras --point-num-views')
             else:
                 log.ODM_WARNING("Found a valid PLY reconstruction in %s" % output_file)
 

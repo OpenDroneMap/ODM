@@ -1422,7 +1422,7 @@ void Georef::transformPointCloud(const char *inputFile, const Eigen::Transform<S
     try{
         log_ << "Transforming point cloud...\n";
 
-        // PDAL pipeline: ply reader --> matrix transform --> las writer.
+        // PDAL pipeline: ply reader --> ferry --> matrix transform --> las writer.
 
         pdal::Options inPlyOpts;
         inPlyOpts.add("filename", inputFile);
@@ -1431,8 +1431,16 @@ void Georef::transformPointCloud(const char *inputFile, const Eigen::Transform<S
         pdal::PlyReader plyReader;
         plyReader.setOptions(inPlyOpts);
 
+        // Copy views to UserData dimension ("views" is not a standard LAS field)
+        pdal::Options ferryOpts;
+        ferryOpts.add("dimensions", "views => UserData");
+        pdal::FerryFilter ferry;
+        ferry.setOptions(ferryOpts);
+        ferry.setInput(plyReader);
+
+
         pdal::MatrixTransformFilter<Scalar> transformFilter(transform);
-        transformFilter.setInput(plyReader);
+        transformFilter.setInput(ferry);
 
         pdal::Options outLasOpts;
         outLasOpts.add("filename", outputFile);

@@ -21,6 +21,9 @@
 // PDAL matrix transform filter
 #include "MatrixTransformFilter.hpp"
 
+// PDAL Ferry filter
+#include <pdal/filters/FerryFilter.hpp>
+
 /*!
  * \brief   The GeorefSystem struct is used to store information about a georeference system.
  */
