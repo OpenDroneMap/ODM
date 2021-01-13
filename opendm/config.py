@@ -236,35 +236,6 @@ def config(argv=None, parser=None):
                               'but produce denser point clouds. '
                               'Default: %(default)s'))
 
-    parser.add_argument('--opensfm-depthmap-min-consistent-views',
-                      metavar='<integer: 2 <= x <= 9>',
-                      action=StoreValue,
-                      type=int,
-                      default=3,
-                      help=('Minimum number of views that should reconstruct a point for it to be valid. Use lower values '
-                            'if your images have less overlap. Lower values result in denser point clouds '
-                            'but with more noise. '
-                            'Default: %(default)s'))
-
-    parser.add_argument('--opensfm-depthmap-method',
-                      metavar='<string>',
-                      action=StoreValue,
-                      default='PATCH_MATCH',
-                      choices=['PATCH_MATCH', 'BRUTE_FORCE', 'PATCH_MATCH_SAMPLE'],
-                      help=('Raw depthmap computation algorithm. '
-                            'PATCH_MATCH and PATCH_MATCH_SAMPLE are faster, but might miss some valid points. '
-                            'BRUTE_FORCE takes longer but produces denser reconstructions. '
-                            'Default: %(default)s'))
-
-    parser.add_argument('--opensfm-depthmap-min-patch-sd',
-                      metavar='<positive float>',
-                      action=StoreValue,
-                      type=float,
-                      default=1,
-                      help=('When using PATCH_MATCH or PATCH_MATCH_SAMPLE, controls the standard deviation threshold to include patches. '
-                            'Patches with lower standard deviation are ignored. '
-                            'Default: %(default)s'))
-
     parser.add_argument('--use-hybrid-bundle-adjustment',
                         action=StoreTrue,
                         nargs=0,
@@ -283,12 +254,6 @@ def config(argv=None, parser=None):
                     nargs=0,
                     default=False,
                     help='Skip generation of a full 3D model. This can save time if you only need 2D results such as orthophotos and DEMs. Default: %(default)s')
-
-    parser.add_argument('--use-opensfm-dense',
-                        action=StoreTrue,
-                        nargs=0,
-                        default=False,
-                        help='Use OpenSfM to compute the dense point cloud instead of OpenMVS. Default: %(default)s')
 
     parser.add_argument('--ignore-gsd',
                         action=StoreTrue,

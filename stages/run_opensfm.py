@@ -193,14 +193,6 @@ class ODMOpenSfMStage(types.ODM_Stage):
             else:
                 log.ODM_WARNING("Found a valid PLY reconstruction in %s" % output_file)
 
-        elif args.use_opensfm_dense:
-            output_file = tree.opensfm_model
-
-            if not io.file_exists(output_file) or self.rerun():
-                octx.run('compute_depthmaps')
-            else:
-                log.ODM_WARNING("Found a valid dense reconstruction in %s" % output_file)
-
         self.update_progress(90)
 
         if reconstruction.is_georeferenced() and (not io.file_exists(tree.opensfm_transformation) or self.rerun()):
@@ -222,7 +214,7 @@ class ODMOpenSfMStage(types.ODM_Stage):
                     os.remove(f)
 
             # Keep these if using OpenMVS
-            if args.fast_orthophoto or args.use_opensfm_dense:
+            if args.fast_orthophoto:
                 files = [octx.path("undistorted", "tracks.csv"),
                          octx.path("undistorted", "reconstruction.json")
                         ]

@@ -135,22 +135,6 @@ class ODMLoadDatasetStage(types.ODM_Stage):
 
         log.ODM_INFO('Found %s usable images' % len(photos))
 
-        # TODO: add support for masks in OpenMVS
-        has_mask = False
-        for p in photos:
-            if p.mask is not None:
-                has_mask = True
-                break
-
-        if has_mask and not args.use_opensfm_dense and not args.fast_orthophoto:
-            log.ODM_WARNING("Image masks found, will use OpenSfM for dense reconstruction")
-            args.use_opensfm_dense = True
-            
-            # Remove OpenMVS from pipeline. Yep.
-            opensfm_stage = self.next_stage.next_stage.next_stage
-            opensfm_stage.next_stage = opensfm_stage.next_stage.next_stage
-            opensfm_stage.next_stage.prev_stage = opensfm_stage
-
         # Create reconstruction object
         reconstruction = types.ODM_Reconstruction(photos)
         

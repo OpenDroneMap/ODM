@@ -55,6 +55,8 @@ class ODMOpenMVSStage(types.ODM_Stage):
 
             log.ODM_INFO("Running dense reconstruction. This might take a while.")
             
+            # TODO: add support for image masks
+            
             system.run('%s "%s" %s' % (context.omvs_densify_path, 
                                        os.path.join(tree.openmvs, 'scene.mvs'),
                                       ' '.join(config)))
