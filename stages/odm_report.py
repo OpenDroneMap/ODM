@@ -160,20 +160,31 @@ class ODMReport(types.ODM_Stage):
                 if os.path.isfile(tree.odm_orthophoto_tif):
                     osfm_ortho = os.path.join(osfm_stats_dir, "ortho.png")
                     system.run("gdal_translate -outsize {} 0 -of png \"{}\" \"{}\" --config GDAL_CACHEMAX {}%".format(image_target_size, tree.odm_orthophoto_tif, osfm_ortho, get_max_memory()))
+                
+                dems = []
+                if args.dsm:
+                    dems.append("dsm")
+                if args.dtm:
+                    dems.append("dtm")
 
-                dsm_file = tree.path("odm_dem", "dsm.tif")
-                if os.path.isfile(dsm_file):
-                    log.ODM_INFO("Computing raster stats for %s" % dsm_file)
-                    dsm_stats = get_raster_stats(dsm_file)
-                    if len(dsm_stats) > 0:
-                        odm_stats['dsm_statistics'] = dsm_stats[0]
+                for dem in dems:
+                    dem_file = tree.path("odm_dem", "%s.tif" % dem)
+                    if os.path.isfile(dem_file):
+                        # Resize first (faster)
+                        resized_dem_file = io.related_file_path(dem_file, postfix=".preview")
+                        system.run("gdal_translate -outsize {} 0 \"{}\" \"{}\" --config GDAL_CACHEMAX {}%".format(image_target_size, dem_file, resized_dem_file, get_max_memory()))
 
-                    osfm_dsm = os.path.join(osfm_stats_dir, "dsm.png")
-                    colored_dem, hillshade_dem, colored_hillshade_dem = generate_colored_hillshade(dsm_file)
-                    system.run("gdal_translate -outsize {} 0 -of png \"{}\" \"{}\" --config GDAL_CACHEMAX {}%".format(image_target_size, colored_hillshade_dem, osfm_dsm, get_max_memory()))
-                    for f in [colored_dem, hillshade_dem, colored_hillshade_dem]:
-                        if os.path.isfile(f):
-                            os.remove(f)
+                        log.ODM_INFO("Computing raster stats for %s" % resized_dem_file)
+                        dem_stats = get_raster_stats(resized_dem_file)
+                        if len(dem_stats) > 0:
+                            odm_stats[dem + '_statistics'] = dem_stats[0]
+
+                        osfm_dem = os.path.join(osfm_stats_dir, "%s.png" % dem)
+                        colored_dem, hillshade_dem, colored_hillshade_dem = generate_colored_hillshade(resized_dem_file)
+                        system.run("gdal_translate -outsize {} 0 -of png \"{}\" \"{}\" --config GDAL_CACHEMAX {}%".format(image_target_size, colored_hillshade_dem, osfm_dem, get_max_memory()))
+                        for f in [resized_dem_file, colored_dem, hillshade_dem, colored_hillshade_dem]:
+                            if os.path.isfile(f):
+                                os.remove(f)
             else:
                 log.ODM_WARNING("Cannot generate overlap diagram, cannot compute point cloud bounds")
         else:
