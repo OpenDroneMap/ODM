@@ -11,18 +11,21 @@ from opendm.shots import get_geojson_shots_from_opensfm
 from opendm.osfm import OSFMContext
 from opendm import gsd
 from opendm.point_cloud import export_summary_json
-
+from opendm.cropper import Cropper
+from opendm.orthophoto import get_orthophoto_vars, get_max_memory
+from opendm.tiles.tiler import generate_colored_hillshade
+from opendm.utils import get_raster_stats
 
 def hms(seconds):
     h = seconds // 3600
     m = seconds % 3600 // 60
     s = seconds % 3600 % 60
     if h > 0:
-        return '{}h:{}m:{}s'.format(h, m, s)
+        return '{}h:{}m:{}s'.format(h, m, round(s, 0))
     elif m > 0:
-        return '{}m:{}s'.format(m, s)
+        return '{}m:{}s'.format(m, round(s, 0))
     else:
-        return '{}s'.format(s)
+        return '{}s'.format(round(s, 0))
 
 
 def generate_point_cloud_stats(input_point_cloud, pc_summary_file):
@@ -96,9 +99,10 @@ class ODMReport(types.ODM_Stage):
                 odm_stats['point_cloud_statistics']['dense'] = not args.fast_orthophoto
 
                 # Add runtime stats
+                total_time = (system.now_raw() - outputs['start_time']).total_seconds()
                 odm_stats['odm_processing_statistics'] = {
-                    'total_time': (system.now_raw() - outputs['start_time']).total_seconds(),
-                    'total_time_human': hms(121),
+                    'total_time': total_time,
+                    'total_time_human': hms(total_time),
                     'average_gsd': gsd.opensfm_reconstruction_average_gsd(octx.recon_file(), use_all_shots=reconstruction.has_gcp()),
                 }
 
@@ -115,7 +119,7 @@ class ODMReport(types.ODM_Stage):
         if odm_stats.get('point_cloud_statistics') and point_cloud_file and views_dimension:
             bounds = odm_stats['point_cloud_statistics'].get('summary', {}).get('bounds')
             if bounds:
-                diagram_target_size = 1600 # pixels
+                image_target_size = 1400 # pixels
                 osfm_stats_dir = os.path.join(tree.opensfm, "stats")
                 diagram_tiff = os.path.join(osfm_stats_dir, "overlap.tif")
                 diagram_png = os.path.join(osfm_stats_dir, "overlap.png")
@@ -123,7 +127,7 @@ class ODMReport(types.ODM_Stage):
                 width = bounds.get('maxx') - bounds.get('minx')
                 height = bounds.get('maxy') - bounds.get('miny')
                 max_dim = max(width, height)
-                resolution = float(max_dim) / float(diagram_target_size)
+                resolution = float(max_dim) / float(image_target_size)
                 radius = resolution * math.sqrt(2)
 
                 # Larger radius for sparse point cloud diagram
@@ -141,10 +145,35 @@ class ODMReport(types.ODM_Stage):
                                                                     resolution, views_dimension, radius))
                 report_assets = os.path.abspath(os.path.join(os.path.dirname(__file__), "../opendm/report"))
                 overlap_color_map = os.path.join(report_assets, "overlap_color_map.txt")
+
+                bounds_file_path = os.path.join(tree.odm_georeferencing, 'odm_georeferenced_model.bounds.gpkg')
+                if args.crop > 0 and os.path.isfile(bounds_file_path):
+                    Cropper.crop(bounds_file_path, diagram_tiff, get_orthophoto_vars(args), keep_original=False)
+
                 system.run("gdaldem color-relief \"{}\" \"{}\" \"{}\" -of PNG -alpha".format(diagram_tiff, overlap_color_map, diagram_png))
 
-                # Copy legend
-                shutil.copy(os.path.join(report_assets, "overlap_diagram_legend.png"), os.path.join(osfm_stats_dir, "overlap_diagram_legend.png"))
+                # Copy assets
+                for asset in ["overlap_diagram_legend.png", "dsm_gradient.png"]:
+                    shutil.copy(os.path.join(report_assets, asset), os.path.join(osfm_stats_dir, asset))
+
+                # Generate previews of ortho/dsm
+                if os.path.isfile(tree.odm_orthophoto_tif):
+                    osfm_ortho = os.path.join(osfm_stats_dir, "ortho.png")
+                    system.run("gdal_translate -outsize {} 0 -of png \"{}\" \"{}\" --config GDAL_CACHEMAX {}%".format(image_target_size, tree.odm_orthophoto_tif, osfm_ortho, get_max_memory()))
+
+                dsm_file = tree.path("odm_dem", "dsm.tif")
+                if os.path.isfile(dsm_file):
+                    log.ODM_INFO("Computing raster stats for %s" % dsm_file)
+                    dsm_stats = get_raster_stats(dsm_file)
+                    if len(dsm_stats) > 0:
+                        odm_stats['dsm_statistics'] = dsm_stats[0]
+
+                    osfm_dsm = os.path.join(osfm_stats_dir, "dsm.png")
+                    colored_dem, hillshade_dem, colored_hillshade_dem = generate_colored_hillshade(dsm_file)
+                    system.run("gdal_translate -outsize {} 0 -of png \"{}\" \"{}\" --config GDAL_CACHEMAX {}%".format(image_target_size, colored_hillshade_dem, osfm_dsm, get_max_memory()))
+                    for f in [colored_dem, hillshade_dem, colored_hillshade_dem]:
+                        if os.path.isfile(f):
+                            os.remove(f)
             else:
                 log.ODM_WARNING("Cannot generate overlap diagram, cannot compute point cloud bounds")
         else:
