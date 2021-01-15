@@ -64,6 +64,11 @@ class ODMReport(types.ODM_Stage):
         else:
             log.ODM_WARNING('Found a valid shots file in: %s' % shots_geojson)
         
+        if args.skip_report:
+            # Stop right here
+            log.ODM_WARNING("Skipping report generation as requested")
+            return
+
         # Augment OpenSfM stats file with our own stats
         odm_stats_json = os.path.join(tree.odm_report, "stats.json")
         octx = OSFMContext(tree.opensfm)

@@ -437,7 +437,7 @@ def get_submodel_argv(args, submodels_path = None, submodel_name = None):
         removing --gcp (the GCP path if specified is always "gcp_list.txt")
         reading the contents of --cameras
     """
-    assure_always = ['orthophoto_cutline', 'dem_euclidean_map', 'skip_3dmodel']
+    assure_always = ['orthophoto_cutline', 'dem_euclidean_map', 'skip_3dmodel', 'skip_report']
     remove_always = ['split', 'split_overlap', 'rerun_from', 'rerun', 'gcp', 'end_with', 'sm_cluster', 'rerun_all', 'pc_csv', 'pc_las', 'pc_ept', 'tiles']
     read_json_always = ['cameras']
 
