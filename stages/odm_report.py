@@ -12,7 +12,7 @@ from opendm.osfm import OSFMContext
 from opendm import gsd
 from opendm.point_cloud import export_info_json
 from opendm.cropper import Cropper
-from opendm.orthophoto import get_orthophoto_vars, get_max_memory
+from opendm.orthophoto import get_orthophoto_vars, get_max_memory, generate_png
 from opendm.tiles.tiler import generate_colored_hillshade
 from opendm.utils import get_raster_stats
 
@@ -164,7 +164,7 @@ class ODMReport(types.ODM_Stage):
                 # Generate previews of ortho/dsm
                 if os.path.isfile(tree.odm_orthophoto_tif):
                     osfm_ortho = os.path.join(osfm_stats_dir, "ortho.png")
-                    system.run("gdal_translate -outsize {} 0 -of png \"{}\" \"{}\" --config GDAL_CACHEMAX {}%".format(image_target_size, tree.odm_orthophoto_tif, osfm_ortho, get_max_memory()))
+                    generate_png(tree.odm_orthophoto_tif, osfm_ortho, image_target_size)
                 
                 dems = []
                 if args.dsm:

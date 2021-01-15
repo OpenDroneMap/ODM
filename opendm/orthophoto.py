@@ -12,6 +12,8 @@ from rasterio.transform import Affine, rowcol
 from rasterio.mask import mask
 from opendm import io
 from opendm.tiles.tiler import generate_orthophoto_tiles
+from osgeo import gdal
+
 
 def get_orthophoto_vars(args):
     return {
@@ -34,13 +36,23 @@ def build_overviews(orthophoto_file):
                 '--config COMPRESS_OVERVIEW JPEG '
                 '{orthophoto} 2 4 8 16'.format(**kwargs))
 
-def generate_png(orthophoto_file):
-    log.ODM_INFO("Generating PNG")
-    base, ext = os.path.splitext(orthophoto_file)
-    orthophoto_png = base + '.png'
+def generate_png(orthophoto_file, output_file=None, outsize=None):
+    if output_file is None:
+        base, ext = os.path.splitext(orthophoto_file)
+        output_file = base + '.png'
+    
+    # See if we need to select top three bands
+    bandparam = ""
+    gtif = gdal.Open(orthophoto_file)
+    if gtif.RasterCount > 4:
+        bandparam = "-b 1 -b 2 -b 3 -a_nodata 0"
 
-    system.run('gdal_translate -of png "%s" "%s" '
-               '--config GDAL_CACHEMAX %s%% ' % (orthophoto_file, orthophoto_png, get_max_memory()))
+    osparam = ""
+    if outsize is not None:
+        osparam = "-outsize %s 0" % outsize
+
+    system.run('gdal_translate -of png "%s" "%s" %s %s '
+               '--config GDAL_CACHEMAX %s%% ' % (orthophoto_file, output_file, osparam, bandparam, get_max_memory()))
 
 
 def post_orthophoto_steps(args, bounds_file_path, orthophoto_file, orthophoto_tiles_dir):
