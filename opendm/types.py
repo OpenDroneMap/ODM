@@ -243,7 +243,6 @@ class ODM_Tree(object):
         self.opensfm_image_list = os.path.join(self.opensfm, 'image_list.txt')
         self.opensfm_reconstruction = os.path.join(self.opensfm, 'reconstruction.json')
         self.opensfm_reconstruction_nvm = os.path.join(self.opensfm, 'undistorted/reconstruction.nvm')
-        self.opensfm_model = os.path.join(self.opensfm, 'undistorted/depthmaps/merged.ply')
         self.opensfm_transformation = os.path.join(self.opensfm, 'geocoords_transformation.txt')
 
         # OpenMVS

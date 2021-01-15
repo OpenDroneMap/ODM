@@ -35,18 +35,20 @@ class ODMOpenSfMStage(types.ODM_Stage):
         octx.extract_cameras(tree.path("cameras.json"), self.rerun())
         self.update_progress(70)
 
-        if args.optimize_disk_space:
-            for folder in ["features", "matches", "exif", "reports"]:
-                folder_path = octx.path(folder)
-                if os.path.islink(folder_path):
-                    os.unlink(folder_path)
-                else:
-                    shutil.rmtree(folder_path)
+        def cleanup_disk_space():
+            if args.optimize_disk_space:
+                for folder in ["features", "matches", "exif", "reports"]:
+                    folder_path = octx.path(folder)
+                    if os.path.islink(folder_path):
+                        os.unlink(folder_path)
+                    else:
+                        shutil.rmtree(folder_path)
 
         # If we find a special flag file for split/merge we stop right here
         if os.path.exists(octx.path("split_merge_stop_at_reconstruction.txt")):
             log.ODM_INFO("Stopping OpenSfM early because we found: %s" % octx.path("split_merge_stop_at_reconstruction.txt"))
             self.next_stage = None
+            cleanup_disk_space()
             return
 
         updated_config_flag_file = octx.path('updated_config.txt')
@@ -189,17 +191,9 @@ class ODMOpenSfMStage(types.ODM_Stage):
             output_file = octx.path('reconstruction.ply')
 
             if not io.file_exists(output_file) or self.rerun():
-                octx.run('export_ply --no-cameras')
+                octx.run('export_ply --no-cameras --point-num-views')
             else:
                 log.ODM_WARNING("Found a valid PLY reconstruction in %s" % output_file)
-
-        elif args.use_opensfm_dense:
-            output_file = tree.opensfm_model
-
-            if not io.file_exists(output_file) or self.rerun():
-                octx.run('compute_depthmaps')
-            else:
-                log.ODM_WARNING("Found a valid dense reconstruction in %s" % output_file)
 
         self.update_progress(90)
 
@@ -208,6 +202,13 @@ class ODMOpenSfMStage(types.ODM_Stage):
         else:
             log.ODM_WARNING("Will skip exporting %s" % tree.opensfm_transformation)
         
+        self.update_progress(95)
+
+        if not args.skip_report:
+            octx.export_stats(self.rerun())
+
+        cleanup_disk_space()
+
         if args.optimize_disk_space:
             os.remove(octx.path("tracks.csv"))
             if io.file_exists(octx.recon_backup_file()):
@@ -219,7 +220,7 @@ class ODMOpenSfMStage(types.ODM_Stage):
                     os.remove(f)
 
             # Keep these if using OpenMVS
-            if args.fast_orthophoto or args.use_opensfm_dense:
+            if args.fast_orthophoto:
                 files = [octx.path("undistorted", "tracks.csv"),
                          octx.path("undistorted", "reconstruction.json")
                         ]

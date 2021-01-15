@@ -1,6 +1,7 @@
 from opendm import context
 from opendm.system import run
 from opendm import log
+from opendm.point_cloud import export_summary_json
 from osgeo import ogr
 import json, os
 from opendm.concurrency import get_max_memory
@@ -236,7 +237,7 @@ class Cropper:
         bounds_geojson_path = self.create_bounds_geojson(pointcloud_path, buffer_distance, decimation_step)
 
         summary_file_path = os.path.join(self.storage_dir, '{}.summary.json'.format(self.files_prefix))
-        run('pdal info --summary {0} > {1}'.format(pointcloud_path, summary_file_path))
+        export_summary_json(pointcloud_path, summary_file_path)
         
         pc_proj4 = None
         with open(summary_file_path, 'r') as f:

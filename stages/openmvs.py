@@ -41,18 +41,21 @@ class ODMOpenMVSStage(types.ODM_Stage):
             if outputs["undist_image_max_size"] <= depthmap_resolution:
                 resolution_level = 0
             else:
-                resolution_level = math.floor(math.log(outputs['undist_image_max_size'] / float(depthmap_resolution)) / math.log(2))
+                resolution_level = int(round(math.log(outputs['undist_image_max_size'] / float(depthmap_resolution)) / math.log(2)))
 
             config = [
                 " --resolution-level %s" % int(resolution_level),
 	            "--min-resolution %s" % depthmap_resolution,
                 "--max-resolution %s" % int(outputs['undist_image_max_size']),
                 "--max-threads %s" % args.max_concurrency,
+                "--number-views-fuse 3",
                 '-w "%s"' % depthmaps_dir, 
                 "-v 0",
             ]
 
             log.ODM_INFO("Running dense reconstruction. This might take a while.")
+            
+            # TODO: add support for image masks
             
             system.run('%s "%s" %s' % (context.omvs_densify_path, 
                                        os.path.join(tree.openmvs, 'scene.mvs'),

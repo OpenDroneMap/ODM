@@ -15,7 +15,9 @@ from opensfm.large import metadataset
 from opensfm.large import tools
 from opensfm.actions import undistort
 from opensfm.dataset import DataSet
+from opensfm import report
 from opendm.multispectral import get_photos_by_band
+
 
 class OSFMContext:
     def __init__(self, opensfm_project_path):
@@ -183,10 +185,6 @@ class OSFMContext:
                 "processes: %s" % args.max_concurrency,
                 "matching_gps_neighbors: %s" % args.matcher_neighbors,
                 "matching_gps_distance: %s" % args.matcher_distance,
-                "depthmap_method: %s" % args.opensfm_depthmap_method,
-                "depthmap_resolution: %s" % depthmap_resolution,
-                "depthmap_min_patch_sd: %s" % args.opensfm_depthmap_min_patch_sd,
-                "depthmap_min_consistent_views: %s" % args.opensfm_depthmap_min_consistent_views,
                 "optimize_camera_parameters: %s" % ('no' if args.use_fixed_camera_params or args.cameras else 'yes'),
                 "undistorted_image_format: tif",
                 "bundle_outlier_filtering_type: AUTO",
@@ -393,6 +391,31 @@ class OSFMContext:
         else:
             log.ODM_WARNING("Tried to update configuration, but %s does not exist." % cfg_file)
 
+    def export_stats(self, rerun=False):
+        log.ODM_INFO("Export reconstruction stats")
+        stats_path = self.path("stats", "stats.json")
+        if not os.path.exists(stats_path) or rerun:
+            self.run("compute_statistics")
+        else:
+            log.ODM_WARNING("Found existing reconstruction stats %s" % stats_path)
+
+    def export_report(self, report_path, odm_stats, rerun=False):
+        log.ODM_INFO("Exporting report to %s" % report_path)
+
+        osfm_report_path = self.path("stats", "report.pdf")
+        if not os.path.exists(report_path) or rerun:
+            data = DataSet(self.opensfm_project_path)
+            pdf_report = report.Report(data, odm_stats)
+            pdf_report.generate_report()
+            pdf_report.save_report("report.pdf")
+            
+            if os.path.exists(osfm_report_path):
+                shutil.move(osfm_report_path, report_path)
+            else:
+                log.ODM_WARNING("Report could not be generated")
+        else:
+            log.ODM_WARNING("Report %s already exported" % report_path)
+
     def name(self):
         return os.path.basename(os.path.abspath(self.path("..")))
 
@@ -414,7 +437,7 @@ def get_submodel_argv(args, submodels_path = None, submodel_name = None):
         removing --gcp (the GCP path if specified is always "gcp_list.txt")
         reading the contents of --cameras
     """
-    assure_always = ['orthophoto_cutline', 'dem_euclidean_map', 'skip_3dmodel']
+    assure_always = ['orthophoto_cutline', 'dem_euclidean_map', 'skip_3dmodel', 'skip_report']
     remove_always = ['split', 'split_overlap', 'rerun_from', 'rerun', 'gcp', 'end_with', 'sm_cluster', 'rerun_all', 'pc_csv', 'pc_las', 'pc_ept', 'tiles']
     read_json_always = ['cameras']
 

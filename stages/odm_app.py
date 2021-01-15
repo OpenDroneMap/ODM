@@ -65,7 +65,7 @@ class ODMApp:
                 .connect(merge) \
                 .connect(opensfm)
 
-        if args.use_opensfm_dense or args.fast_orthophoto:
+        if args.fast_orthophoto:
             opensfm.connect(filterpoints)
         else:
             opensfm.connect(openmvs) \

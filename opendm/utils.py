@@ -1,5 +1,6 @@
 from opendm import log
 from opendm.photo import find_largest_photo_dim
+from osgeo import gdal
 
 def get_depthmap_resolution(args, photos):
     if 'depthmap_resolution_is_set' in args:
@@ -23,3 +24,19 @@ def get_depthmap_resolution(args, photos):
         else:
             log.ODM_WARNING("Cannot compute max image dimensions, going with default depthmap_resolution of 640")
             return 640 # Sensible default
+
+def get_raster_stats(geotiff):
+    stats = []
+    gtif = gdal.Open(geotiff)
+    for b in range(gtif.RasterCount):
+        srcband = gtif.GetRasterBand(b + 1)
+        s = srcband.GetStatistics(True, True)
+
+        stats.append({
+            'min': s[0],
+            'max': s[1],
+            'mean': s[2],
+            'stddev': s[3]
+        })
+            
+    return stats

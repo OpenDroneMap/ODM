@@ -18,8 +18,6 @@ class ODMFilterPoints(types.ODM_Stage):
         if not io.file_exists(tree.filtered_point_cloud) or self.rerun():
             if args.fast_orthophoto:
                 inputPointCloud = os.path.join(tree.opensfm, 'reconstruction.ply')
-            elif args.use_opensfm_dense:
-                inputPointCloud = tree.opensfm_model
             else:
                 inputPointCloud = tree.openmvs_model
 
