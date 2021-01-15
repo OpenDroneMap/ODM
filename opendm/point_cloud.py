@@ -172,6 +172,9 @@ def filter(input_point_cloud, output_point_cloud, standard_deviation=2.5, meank=
     if not os.path.exists(output_point_cloud):
         log.ODM_WARNING("{} not found, filtering has failed.".format(output_point_cloud))
 
+def export_info_json(pointcloud_path, info_file_path):
+    system.run('pdal info --dimensions "X,Y,Z" "{0}" > "{1}"'.format(pointcloud_path, info_file_path))
+
 
 def export_summary_json(pointcloud_path, summary_file_path):
     system.run('pdal info --summary "{0}" > "{1}"'.format(pointcloud_path, summary_file_path))
