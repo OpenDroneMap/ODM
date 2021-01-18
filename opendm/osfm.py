@@ -395,7 +395,7 @@ class OSFMContext:
         log.ODM_INFO("Export reconstruction stats")
         stats_path = self.path("stats", "stats.json")
         if not os.path.exists(stats_path) or rerun:
-            self.run("compute_statistics")
+            self.run("compute_statistics --diagram_max_points 100000")
         else:
             log.ODM_WARNING("Found existing reconstruction stats %s" % stats_path)
 
