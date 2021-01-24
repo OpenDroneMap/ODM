@@ -15,32 +15,7 @@ COPY . ./
 RUN PORTABLE_INSTALL=YES bash configure.sh install
 
 # Clean Superbuild
-RUN rm -rf \
-  /code/SuperBuild/build/opencv \
-  /code/SuperBuild/download \
-  /code/SuperBuild/src/ceres \
-  /code/SuperBuild/src/untwine \
-  /code/SuperBuild/src/entwine \  
-  /code/SuperBuild/src/gflags \
-  /code/SuperBuild/src/hexer \
-  /code/SuperBuild/src/lastools \
-  /code/SuperBuild/src/laszip \
-  /code/SuperBuild/src/mvstexturing \
-  /code/SuperBuild/src/opencv \
-  /code/SuperBuild/src/opengv \
-  /code/SuperBuild/src/pcl \
-  /code/SuperBuild/src/pdal \
-  /code/SuperBuild/src/openmvs \
-  /code/SuperBuild/build/openmvs \
-  /code/SuperBuild/src/vcg \
-  /code/SuperBuild/src/zstd
-
-# find in /code and delete...
-RUN find /code \
-# ...*static* libraries...
-  -type f -name "*.a" -delete \
-# ...and intermediate object files
-  -or -type f -name "*.o" -delete
+RUN bash configure.sh clean
 
 ### END Builder
 
