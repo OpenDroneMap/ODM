@@ -127,7 +127,7 @@ class ODM_Photo:
                     self.latitude = self.dms_to_decimal(tags['GPS GPSLatitude'], tags['GPS GPSLatitudeRef'])
                 if 'GPS GPSLongitude' in tags and 'GPS GPSLongitudeRef' in tags:
                     self.longitude = self.dms_to_decimal(tags['GPS GPSLongitude'], tags['GPS GPSLongitudeRef'])
-            except IndexError as e:
+            except (IndexError, ValueError) as e:
                 log.ODM_WARNING("Cannot read basic EXIF tags for %s: %s" % (_path_file, str(e)))
 
             try:
