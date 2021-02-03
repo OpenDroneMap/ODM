@@ -189,7 +189,8 @@ class OSFMContext:
                 "undistorted_image_format: tif",
                 "bundle_outlier_filtering_type: AUTO",
                 "align_orientation_prior: vertical",
-                "triangulation_type: ROBUST"
+                "triangulation_type: ROBUST",
+                "retriangulation_ratio: 2",
             ]
 
             if args.camera_lens != 'auto':
