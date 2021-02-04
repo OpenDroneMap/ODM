@@ -12,11 +12,11 @@ def get_depthmap_resolution(args, photos):
         min_dim = 320 # Never go lower than this
 
         pc_quality_scale = {
-            'ultra': 1,
-            'high': 0.5,
-            'medium': 0.25,
-            'low': 0.125,
-            'lowest': 0.0675
+            'ultra': 0.5,
+            'high': 0.25,
+            'medium': 0.125,
+            'low': 0.0675,
+            'lowest': 0.03375
         }
 
         if max_dim > 0:
