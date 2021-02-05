@@ -608,6 +608,14 @@ def config(argv=None, parser=None):
                         'are added to the cluster. This is done to ensure '
                         'that neighboring submodels overlap. Default: %(default)s')
 
+    parser.add_argument('--split-image-groups',
+                        metavar='<path string>',
+                        action=StoreValue,
+                        default=None,
+                        help=('Path to the image groups file that controls how images should be split into groups. '
+                              'The file needs to use the following format: \n'
+                              'image_name group_name\n'
+                              'Default: %(default)s'))
     # parser.add_argument('--split-multitracks',
     #                    action=StoreTrue,
     #                    nargs=0,

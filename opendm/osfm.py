@@ -93,9 +93,13 @@ class OSFMContext:
             
             # check for image_groups.txt (split-merge)
             image_groups_file = os.path.join(args.project_path, "image_groups.txt")
+            if 'split_image_groups_is_set' in args:
+                image_groups_file = os.path.abspath(args.split_image_groups)
+
             if io.file_exists(image_groups_file):
-                log.ODM_INFO("Copied image_groups.txt to OpenSfM directory")
-                io.copy(image_groups_file, os.path.join(self.opensfm_project_path, "image_groups.txt"))
+                dst_groups_file = os.path.join(self.opensfm_project_path, "image_groups.txt")
+                io.copy(image_groups_file, dst_groups_file)
+                log.ODM_INFO("Copied %s to %s" % (image_groups_file, dst_groups_file))
         
             # check for cameras
             if args.cameras:
