@@ -17,7 +17,7 @@ from opensfm.actions import undistort
 from opensfm.dataset import DataSet
 from opensfm import report
 from opendm.multispectral import get_photos_by_band
-
+from opendm.gpu import has_gpus
 
 class OSFMContext:
     def __init__(self, opensfm_project_path):
@@ -213,6 +213,14 @@ class OSFMContext:
                 if feature_type == "SIFT":
                     log.ODM_WARNING("Using BOW matching, will use HAHOG feature type, not SIFT")
                     feature_type = "HAHOG"
+            
+            # GPU acceleration?
+            if has_gpus() and feature_type == "SIFT":
+                log.ODM_INFO("Using GPU for extracting SIFT features")
+                feature_type = "SIFT_GPU"
+
+            # TODO: REMOVE
+            config.append("matcher_type: SIFT_GPU")
             
             config.append("feature_type: %s" % feature_type)
 
