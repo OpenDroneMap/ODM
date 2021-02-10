@@ -192,7 +192,7 @@ def compute_band_maps(multi_camera, primary_band):
     Computes maps of: 
      - { photo filename --> associated primary band photo } (s2p)
      - { primary band filename --> list of associated secondary band photos } (p2s)
-    by looking at capture time or filenames as a fallback
+    by looking at capture UUID, capture time or filenames as a fallback
     """
     band_name = get_primary_band_name(multi_camera, primary_band)
     primary_band_photos = None
@@ -203,37 +203,37 @@ def compute_band_maps(multi_camera, primary_band):
     
     # Try using capture time as the grouping factor
     try:
-        capture_time_map = {}
+        unique_id_map = {}
         s2p = {}
         p2s = {}
 
         for p in primary_band_photos:
-            t = p.get_utc_time()
-            if t is None:
+            uuid = p.get_capture_id()
+            if uuid is None:
                 raise Exception("Cannot use capture time (no information in %s)" % p.filename)
             
             # Should be unique across primary band
-            if capture_time_map.get(t) is not None:
-                raise Exception("Unreliable capture time detected (duplicate)")
+            if unique_id_map.get(uuid) is not None:
+                raise Exception("Unreliable UUID/capture time detected (duplicate)")
 
-            capture_time_map[t] = p
+            unique_id_map[uuid] = p
         
         for band in multi_camera:
             photos = band['photos']
 
             for p in photos:
-                t = p.get_utc_time()
-                if t is None:
-                    raise Exception("Cannot use capture time (no information in %s)" % p.filename)
+                uuid = p.get_capture_id()
+                if uuid is None:
+                    raise Exception("Cannot use UUID/capture time (no information in %s)" % p.filename)
                 
                 # Should match the primary band
-                if capture_time_map.get(t) is None:
-                    raise Exception("Unreliable capture time detected (no primary band match)")
+                if unique_id_map.get(uuid) is None:
+                    raise Exception("Unreliable UUID/capture time detected (no primary band match)")
 
-                s2p[p.filename] = capture_time_map[t]
+                s2p[p.filename] = unique_id_map[uuid]
 
                 if band['name'] != band_name:
-                    p2s.setdefault(capture_time_map[t].filename, []).append(p)
+                    p2s.setdefault(unique_id_map[uuid].filename, []).append(p)
 
         return s2p, p2s
     except Exception as e:

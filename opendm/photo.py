@@ -45,6 +45,7 @@ class ODM_Photo:
         # Multi-band fields
         self.band_name = 'RGB'
         self.band_index = 0
+        self.capture_uuid = None # DJI only
 
         # Multi-spectral fields
         self.fnumber = None
@@ -216,8 +217,12 @@ class ODM_Photo:
 
                     self.set_attr_from_xmp_tag('spectral_irradiance', tags, [
                         'Camera:SpectralIrradiance',
-                        'Camera:Irradiance',                    
+                        'Camera:Irradiance',
                     ], float)
+
+                    self.set_attr_from_xmp_tag('capture_uuid', tags, [
+                        '@drone-dji:CaptureUUID'
+                    ])
 
                     # Phantom 4 RTK
                     if '@drone-dji:RtkStdLon' in tags:
@@ -251,7 +256,7 @@ class ODM_Photo:
                 # self.set_attr_from_xmp_tag('bandwidth', tags, [
                 #     'Camera:WavelengthFWHM'
                 # ], float)
-            
+
         self.width, self.height = get_image_size.get_image_size(_path_file)
         # Sanitize band name since we use it in folder paths
         self.band_name = re.sub('[^A-Za-z0-9]+', '', self.band_name)
@@ -435,6 +440,13 @@ class ODM_Photo:
             return float(2 ** self.bits_per_sample)
 
         return None
+
+    def get_capture_id(self):
+        # Use capture UUID first, capture time as fallback
+        if self.capture_uuid is not None:
+            return self.capture_uuid
+
+        return self.get_utc_time()
 
     def get_gps_dop(self):
         val = -9999
