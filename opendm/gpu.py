@@ -1,4 +1,3 @@
-import os, subprocess
 from opendm import log
 from repoze.lru import lru_cache
 
@@ -8,8 +7,9 @@ def has_gpus():
 
     try:
         platforms = pyopencl.get_platforms()
-        print(platforms)
-        exit(1)
+        for p in platforms:
+            log.ODM_INFO("Found GPU device: %s" % p.name)
+
+        return len(platforms) > 0
     except Exception as e:
-        print(e)
         return False
