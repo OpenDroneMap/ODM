@@ -27,7 +27,7 @@ class ODMMvsTexStage(types.ODM_Stage):
                     'nadir': False,
                     'primary': primary,
                     'nvm_file': nvm_file,
-                    'labeling_file': os.path.join(tree.odm_texturing, "odm_textured_model_labeling.vec") if subdir else None
+                    'labeling_file': os.path.join(tree.odm_texturing, "odm_textured_model_geo_labeling.vec") if subdir else None
                 }]
 
             if not args.use_3dmesh:
@@ -37,7 +37,7 @@ class ODMMvsTexStage(types.ODM_Stage):
                     'nadir': True,
                     'primary': primary,
                     'nvm_file': nvm_file,
-                    'labeling_file': os.path.join(tree.odm_25dtexturing, "odm_textured_model_labeling.vec") if subdir else None
+                    'labeling_file': os.path.join(tree.odm_25dtexturing, "odm_textured_model_geo_labeling.vec") if subdir else None
                 }]
 
         if reconstruction.multi_camera:
@@ -80,7 +80,7 @@ class ODMMvsTexStage(types.ODM_Stage):
                 # mvstex definitions
                 kwargs = {
                     'bin': context.mvstex_path,
-                    'out_dir': os.path.join(r['out_dir'], "odm_textured_model"),
+                    'out_dir': os.path.join(r['out_dir'], "odm_textured_model_geo"),
                     'model': r['model'],
                     'dataTerm': self.params.get('data_term'),
                     'outlierRemovalType': self.params.get('outlier_rem_type'),

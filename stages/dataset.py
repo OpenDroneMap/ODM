@@ -84,7 +84,6 @@ class ODMLoadDatasetStage(types.ODM_Stage):
 
         # define paths and create working directories
         system.mkdir_p(tree.odm_georeferencing)
-        if not args.use_3dmesh: system.mkdir_p(tree.odm_25dgeoreferencing)
 
         log.ODM_INFO('Loading dataset from: %s' % images_dir)
 

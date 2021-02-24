@@ -16,29 +16,27 @@ class ODMGeoreferencingStage(types.ODM_Stage):
         tree = outputs['tree']
         reconstruction = outputs['reconstruction']
 
-        if io.file_exists(tree.odm_georeferencing_model_laz) or self.rerun():
-            kwargs = {
-                    'inputFile': tree.filtered_point_cloud,
-                    'outputFile': tree.odm_georeferencing_model_laz,
-            }
-            cmd = ('pdal translate -i "{inputFile}" '
-                    '-o \"{outputFile}\" '
-                    'ferry '
-                    '--filters.ferry.dimensions="views => UserData" '
-                    '--writers.las.compression="lazip" '.format(**kwargs))
+        if not io.file_exists(tree.odm_georeferencing_model_laz) or self.rerun():
+            cmd = ('pdal translate -i "%s" -o \"%s\"' % (tree.filtered_point_cloud, tree.odm_georeferencing_model_laz))
+            stages = ["ferry"]
+            params = [
+                '--filters.ferry.dimensions="views => UserData"',
+                '--writers.las.compression="lazip"',
+            ]
 
             if reconstruction.is_georeferenced():
                 log.ODM_INFO("Georeferencing point cloud")
-                kwargs = {
-                    'offset_x': reconstruction.georef.utm_east_offset,
-                    'offset_y': reconstruction.georef.utm_north_offset,
-                    'srs': reconstruction.georef.proj4()
-                }
 
-                system.run(cmd + '--writers.las.offset_x={offset_x} '
-                    '--writers.las.offset_y={offset_y} '
-                    '--writers.las.offset_z=0 '
-                    '--writers.las.a_srs="{srs}" '.format(**kwargs))
+                stages.append("transformation")
+                params += [
+                    '--filters.transformation.matrix="1 0 0 %s 0 1 0 %s 0 0 1 0 0 0 0 1"' % reconstruction.georef.utm_offset(),
+                    '--writers.las.offset_x=%s' % reconstruction.georef.utm_east_offset,
+                    '--writers.las.offset_y=%s' % reconstruction.georef.utm_north_offset,
+                    '--writers.las.offset_z=0',
+                    '--writers.las.a_srs="%s"' % reconstruction.georef.proj4()
+                ]
+                
+                system.run(cmd + ' ' + ' '.join(stages) + ' ' + ' '.join(params))
 
                 self.update_progress(50)
 
@@ -64,7 +62,7 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                         args.crop = 0
             else:
                 log.ODM_INFO("Converting point cloud (non-georeferenced)")
-                system.run(cmd)
+                system.run(cmd + ' ' + ' '.join(stages) + ' ' + ' '.join(params))
         
             point_cloud.post_point_cloud_steps(args, tree)
         else:

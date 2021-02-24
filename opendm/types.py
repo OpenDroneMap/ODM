@@ -220,7 +220,6 @@ class ODM_Tree(object):
         self.odm_texturing = os.path.join(self.root_path, 'odm_texturing')
         self.odm_25dtexturing = os.path.join(self.root_path, 'odm_texturing_25d')
         self.odm_georeferencing = os.path.join(self.root_path, 'odm_georeferencing')
-        self.odm_25dgeoreferencing = os.path.join(self.root_path, 'odm_georeferencing_25d')
         self.odm_filterpoints = os.path.join(self.root_path, 'odm_filterpoints')
         self.odm_orthophoto = os.path.join(self.root_path, 'odm_orthophoto')
         self.odm_report = os.path.join(self.root_path, 'odm_report')
@@ -260,7 +259,8 @@ class ODM_Tree(object):
         self.odm_geo_file = geo_file or io.find('geo.txt', self.root_path)
         
         self.odm_georeferencing_proj = 'proj.txt'
-        self.odm_georeferencing_model_txt_geo = 'odm_georeferencing_model_geo.txt'
+        self.odm_georeferencing_model_txt_geo = os.path.join(
+            self.odm_georeferencing, 'odm_georeferencing_model_geo.txt')
         self.odm_georeferencing_xyz_file = os.path.join(
             self.odm_georeferencing, 'odm_georeferenced_model.csv')
         self.odm_georeferencing_model_laz = os.path.join(

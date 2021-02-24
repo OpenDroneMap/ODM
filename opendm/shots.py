@@ -81,11 +81,12 @@ def get_geojson_shots_from_opensfm(reconstruction_file, utm_offset=None, pseudo_
                     else:
                         # Rotation is already in the proper CRS
                         rotation = shot['rotation']
+                        translation = shot['translation']
 
                         # Just add UTM offset
-                        translation = [shot['translation'][0] + utm_offset[0],
-                                       shot['translation'][1] + utm_offset[1],
-                                       shot['translation'][2]]
+                        trans_coords = [translation[0] + utm_offset[0],
+                                       translation[1] + utm_offset[1],
+                                       translation[2]]
 
                     feats.append({
                         'type': 'Feature',
