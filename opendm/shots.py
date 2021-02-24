@@ -23,7 +23,7 @@ def get_origin(shot):
     """The origin of the pose in world coordinates."""
     return -get_rotation_matrix(np.array(shot['rotation'])).T.dot(np.array(shot['translation']))
 
-def get_geojson_shots_from_opensfm(reconstruction_file, utm_offset=None, pseudo_geotiff=None):
+def get_geojson_shots_from_opensfm(reconstruction_file, utm_srs=None, utm_offset=None, pseudo_geotiff=None):
     """
     Extract shots from OpenSfM's reconstruction.json
     """
@@ -47,6 +47,7 @@ def get_geojson_shots_from_opensfm(reconstruction_file, utm_offset=None, pseudo_
         raster = None
         pseudo = True
 
+    crstrans = transformer(CRS.from_proj4(utm_srs), CRS.from_epsg("4326"))
 
     if os.path.exists(reconstruction_file):
         with open(reconstruction_file, 'r') as fin:
@@ -77,16 +78,18 @@ def get_geojson_shots_from_opensfm(reconstruction_file, utm_offset=None, pseudo_
                         rotation_matrix = get_rotation_matrix(np.array(shot['rotation']))
                         rotation = matrix_to_rotation(np.dot(rotation_matrix, Rs1))
 
-                        translation = origin if pseudo else utm_coords
+                        translation = origin
                     else:
-                        # Rotation is already in the proper CRS
                         rotation = shot['rotation']
-                        translation = shot['translation']
 
                         # Just add UTM offset
-                        trans_coords = [translation[0] + utm_offset[0],
-                                       translation[1] + utm_offset[1],
-                                       translation[2]]
+                        origin = get_origin(shot)
+
+                        utm_coords = [origin[0] + utm_offset[0],
+                                       origin[1] + utm_offset[1],
+                                       origin[2]]
+                        translation = utm_coords
+                        trans_coords = crstrans.TransformPoint(utm_coords[0], utm_coords[1], utm_coords[2])
 
                     feats.append({
                         'type': 'Feature',
