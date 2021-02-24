@@ -49,7 +49,7 @@ class ODMReport(types.ODM_Stage):
         if not io.file_exists(shots_geojson) or self.rerun():
             # Extract geographical camera shots
             if reconstruction.is_georeferenced():
-                shots = get_geojson_shots_from_opensfm(tree.opensfm_reconstruction, tree.opensfm_transformation, reconstruction.get_proj_srs())    
+                shots = get_geojson_shots_from_opensfm(tree.opensfm_reconstruction, utm_offset=reconstruction.georef.utm_offset())    
             else:
                 # Pseudo geo
                 shots = get_geojson_shots_from_opensfm(tree.opensfm_reconstruction, pseudo_geotiff=tree.odm_orthophoto_tif)

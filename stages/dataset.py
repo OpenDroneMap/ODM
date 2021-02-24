@@ -142,11 +142,13 @@ class ODMLoadDatasetStage(types.ODM_Stage):
             reconstruction.georeference_with_gcp(tree.odm_georeferencing_gcp,
                                                  tree.odm_georeferencing_coords,
                                                  tree.odm_georeferencing_gcp_utm,
+                                                 tree.odm_georeferencing_model_txt_geo,
                                                  rerun=self.rerun())
         else:
             reconstruction.georeference_with_gps(tree.dataset_raw, 
                                                  tree.odm_georeferencing_coords, 
+                                                 tree.odm_georeferencing_model_txt_geo,
                                                  rerun=self.rerun())
-
+        
         reconstruction.save_proj_srs(os.path.join(tree.odm_georeferencing, tree.odm_georeferencing_proj))
         outputs['reconstruction'] = reconstruction

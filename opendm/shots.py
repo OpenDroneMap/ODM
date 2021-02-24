@@ -23,16 +23,13 @@ def get_origin(shot):
     """The origin of the pose in world coordinates."""
     return -get_rotation_matrix(np.array(shot['rotation'])).T.dot(np.array(shot['translation']))
 
-def get_geojson_shots_from_opensfm(reconstruction_file, geocoords_transformation_file=None, utm_srs=None, pseudo_geotiff=None):
+def get_geojson_shots_from_opensfm(reconstruction_file, utm_offset=None, pseudo_geotiff=None):
     """
     Extract shots from OpenSfM's reconstruction.json
     """
+    pseudoGeocoords = None
 
-    # Read transform (if available)
-    if geocoords_transformation_file is not None and utm_srs is not None and os.path.exists(geocoords_transformation_file):
-        geocoords = np.loadtxt(geocoords_transformation_file, usecols=range(4))
-        pseudo = False
-    elif pseudo_geotiff is not None and os.path.exists(pseudo_geotiff):
+    if pseudo_geotiff is not None and os.path.exists(pseudo_geotiff):
         # pseudogeo transform
         utm_srs = get_pseudogeo_utm()
 
@@ -43,17 +40,13 @@ def get_geojson_shots_from_opensfm(reconstruction_file, geocoords_transformation
         lrx = ulx + (raster.RasterXSize * xres)
         lry = uly + (raster.RasterYSize * yres)
 
-        geocoords = np.array([[1.0 / get_pseudogeo_scale() ** 2, 0, 0, ulx + lrx / 2.0],
+        pseudoGeocoords = np.array([[1.0 / get_pseudogeo_scale() ** 2, 0, 0, ulx + lrx / 2.0],
                               [0, 1.0 / get_pseudogeo_scale() ** 2, 0, uly + lry / 2.0],
                               [0, 0, 1, 0],
                               [0, 0, 0, 1]])
         raster = None
         pseudo = True
-    else:
-        # Can't deal with this
-        return
 
-    crstrans = transformer(CRS.from_proj4(utm_srs), CRS.from_epsg("4326"))
 
     if os.path.exists(reconstruction_file):
         with open(reconstruction_file, 'r') as fin:
@@ -71,19 +64,28 @@ def get_geojson_shots_from_opensfm(reconstruction_file, geocoords_transformation
                         continue
 
                     cam = cameras[cam]
-                    Rs, T = geocoords[:3, :3], geocoords[:3, 3]
-                    Rs1 = np.linalg.inv(Rs)
-                    origin = get_origin(shot)
+                    if pseudoGeocoords:
+                        Rs, T = pseudoGeocoords[:3, :3], pseudoGeocoords[:3, 3]
+                        Rs1 = np.linalg.inv(Rs)
+                        origin = get_origin(shot)
 
-                    # Translation
-                    utm_coords = np.dot(Rs, origin) + T
-                    trans_coords = crstrans.TransformPoint(utm_coords[0], utm_coords[1], utm_coords[2])
+                        # Translation
+                        utm_coords = np.dot(Rs, origin) + T
+                        trans_coords = crstrans.TransformPoint(utm_coords[0], utm_coords[1], utm_coords[2])
 
-                    # Rotation
-                    rotation_matrix = get_rotation_matrix(np.array(shot['rotation']))
-                    rotation = matrix_to_rotation(np.dot(rotation_matrix, Rs1))
+                        # Rotation
+                        rotation_matrix = get_rotation_matrix(np.array(shot['rotation']))
+                        rotation = matrix_to_rotation(np.dot(rotation_matrix, Rs1))
 
-                    translation = origin if pseudo else utm_coords
+                        translation = origin if pseudo else utm_coords
+                    else:
+                        # Rotation is already in the proper CRS
+                        rotation = shot['rotation']
+
+                        # Just add UTM offset
+                        translation = [shot['translation'][0] + utm_offset[0],
+                                       shot['translation'][1] + utm_offset[1],
+                                       shot['translation'][2]]
 
                     feats.append({
                         'type': 'Feature',

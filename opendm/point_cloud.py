@@ -320,7 +320,7 @@ def merge_ply(input_point_cloud_files, output_file, dims=None):
 def post_point_cloud_steps(args, tree):
     # XYZ point cloud output
     if args.pc_csv:
-        log.ODM_INFO("Creating geo-referenced CSV file (XYZ format)")
+        log.ODM_INFO("Creating CSV file (XYZ format)")
         
         system.run("pdal translate -i \"{}\" "
             "-o \"{}\" "
@@ -332,7 +332,7 @@ def post_point_cloud_steps(args, tree):
 
     # LAS point cloud output
     if args.pc_las:
-        log.ODM_INFO("Creating geo-referenced LAS file")
+        log.ODM_INFO("Creating LAS file")
         
         system.run("pdal translate -i \"{}\" "
             "-o \"{}\" ".format(
@@ -341,5 +341,5 @@ def post_point_cloud_steps(args, tree):
 
     # EPT point cloud output
     if args.pc_ept:
-        log.ODM_INFO("Creating geo-referenced Entwine Point Tile output")
+        log.ODM_INFO("Creating Entwine Point Tile output")
         entwine.build([tree.odm_georeferencing_model_laz], tree.entwine_pointcloud, max_concurrency=args.max_concurrency, rerun=False)
