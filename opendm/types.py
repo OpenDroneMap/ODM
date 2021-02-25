@@ -97,8 +97,8 @@ class ODM_Reconstruction(object):
                 self.gcp = utm_gcp
 
                 # Compute RTC offsets from GCP points
-                x_pos = [p.x for p in self.utm_gcp.iter_entries()]
-                y_pos = [p.y for p in self.utm_gcp.iter_entries()]
+                x_pos = [p.x for p in utm_gcp.iter_entries()]
+                y_pos = [p.y for p in utm_gcp.iter_entries()]
                 x_off, y_off = int(np.round(np.mean(x_pos))), int(np.round(np.mean(y_pos)))
 
                 # Create coords file, we'll be using this later
