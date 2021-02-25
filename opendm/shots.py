@@ -27,7 +27,7 @@ def get_geojson_shots_from_opensfm(reconstruction_file, utm_srs=None, utm_offset
     """
     Extract shots from OpenSfM's reconstruction.json
     """
-    pseudoGeocoords = None
+    pseudo_geocoords = None
 
     if pseudo_geotiff is not None and os.path.exists(pseudo_geotiff):
         # pseudogeo transform
@@ -40,7 +40,7 @@ def get_geojson_shots_from_opensfm(reconstruction_file, utm_srs=None, utm_offset
         lrx = ulx + (raster.RasterXSize * xres)
         lry = uly + (raster.RasterYSize * yres)
 
-        pseudoGeocoords = np.array([[1.0 / get_pseudogeo_scale() ** 2, 0, 0, ulx + lrx / 2.0],
+        pseudo_geocoords = np.array([[1.0 / get_pseudogeo_scale() ** 2, 0, 0, ulx + lrx / 2.0],
                               [0, 1.0 / get_pseudogeo_scale() ** 2, 0, uly + lry / 2.0],
                               [0, 0, 1, 0],
                               [0, 0, 0, 1]])
@@ -65,8 +65,8 @@ def get_geojson_shots_from_opensfm(reconstruction_file, utm_srs=None, utm_offset
                         continue
 
                     cam = cameras[cam]
-                    if pseudoGeocoords:
-                        Rs, T = pseudoGeocoords[:3, :3], pseudoGeocoords[:3, 3]
+                    if pseudo_geocoords is not None:
+                        Rs, T = pseudo_geocoords[:3, :3], pseudo_geocoords[:3, 3]
                         Rs1 = np.linalg.inv(Rs)
                         origin = get_origin(shot)
 
