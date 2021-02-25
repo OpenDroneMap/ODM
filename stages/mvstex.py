@@ -110,6 +110,15 @@ class ODMMvsTexStage(types.ODM_Stage):
                         '{nadirMode} '
                         '{labelingFile} '.format(**kwargs))
                 
+                # Backward compatibility: copy odm_textured_model_geo.mtl to odm_textured_model.mtl
+                # for certain older WebODM clients which expect a odm_textured_model.mtl
+                # to be present for visualization
+                # We should remove this at some point in the future
+                geo_mtl = os.path.join(r['out_dir'], 'odm_textured_model_geo.mtl')
+                if io.file_exists(geo_mtl):
+                    nongeo_mtl = os.path.join(r['out_dir'], 'odm_textured_model.mtl')
+                    shutil.copy(geo_mtl, nongeo_mtl)
+                
                 progress += progress_per_run
                 self.update_progress(progress)
             else:
