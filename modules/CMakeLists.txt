@@ -4,10 +4,5 @@ if (NOT CMAKE_BUILD_TYPE)
 endif()
 
 # Add ODM sub-modules
-add_subdirectory(odm_georef)
 add_subdirectory(odm_orthophoto)
 add_subdirectory(odm_cleanmesh)
-
-if (ODM_BUILD_SLAM)
-  add_subdirectory(odm_slam)
-endif ()

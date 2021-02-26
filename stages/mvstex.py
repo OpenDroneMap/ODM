@@ -27,7 +27,7 @@ class ODMMvsTexStage(types.ODM_Stage):
                     'nadir': False,
                     'primary': primary,
                     'nvm_file': nvm_file,
-                    'labeling_file': os.path.join(tree.odm_texturing, "odm_textured_model_labeling.vec") if subdir else None
+                    'labeling_file': os.path.join(tree.odm_texturing, "odm_textured_model_geo_labeling.vec") if subdir else None
                 }]
 
             if not args.use_3dmesh:
@@ -37,7 +37,7 @@ class ODMMvsTexStage(types.ODM_Stage):
                     'nadir': True,
                     'primary': primary,
                     'nvm_file': nvm_file,
-                    'labeling_file': os.path.join(tree.odm_25dtexturing, "odm_textured_model_labeling.vec") if subdir else None
+                    'labeling_file': os.path.join(tree.odm_25dtexturing, "odm_textured_model_geo_labeling.vec") if subdir else None
                 }]
 
         if reconstruction.multi_camera:
@@ -80,7 +80,7 @@ class ODMMvsTexStage(types.ODM_Stage):
                 # mvstex definitions
                 kwargs = {
                     'bin': context.mvstex_path,
-                    'out_dir': os.path.join(r['out_dir'], "odm_textured_model"),
+                    'out_dir': os.path.join(r['out_dir'], "odm_textured_model_geo"),
                     'model': r['model'],
                     'dataTerm': self.params.get('data_term'),
                     'outlierRemovalType': self.params.get('outlier_rem_type'),
@@ -109,6 +109,15 @@ class ODMMvsTexStage(types.ODM_Stage):
                         '{skipLocalSeamLeveling} '
                         '{nadirMode} '
                         '{labelingFile} '.format(**kwargs))
+                
+                # Backward compatibility: copy odm_textured_model_geo.mtl to odm_textured_model.mtl
+                # for certain older WebODM clients which expect a odm_textured_model.mtl
+                # to be present for visualization
+                # We should remove this at some point in the future
+                geo_mtl = os.path.join(r['out_dir'], 'odm_textured_model_geo.mtl')
+                if io.file_exists(geo_mtl):
+                    nongeo_mtl = os.path.join(r['out_dir'], 'odm_textured_model.mtl')
+                    shutil.copy(geo_mtl, nongeo_mtl)
                 
                 progress += progress_per_run
                 self.update_progress(progress)
