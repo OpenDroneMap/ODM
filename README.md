@@ -218,7 +218,7 @@ If you have questions, join the developer's chat at https://community.opendronem
 
 ### Credits
 
-ODM makes use of [several libraries]((https://github.com/OpenDroneMap/ODM/blob/master/snap/snapcraft.yaml#L36) and other awesome open source projects to perform its tasks. Among them we'd like to highlight:
+ODM makes use of [several libraries](https://github.com/OpenDroneMap/ODM/blob/master/snap/snapcraft.yaml#L36) and other awesome open source projects to perform its tasks. Among them we'd like to highlight:
 
  - [OpenSfM](https://github.com/mapillary/OpenSfM)
  - [OpenMVS](https://github.com/cdcseacave/openMVS/)
