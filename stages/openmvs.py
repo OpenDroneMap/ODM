@@ -24,17 +24,26 @@ class ODMOpenMVSStage(types.ODM_Stage):
 
         # check if reconstruction was done before
         if not io.file_exists(tree.openmvs_model) or self.rerun():
-            if io.dir_exists(tree.openmvs):
-                shutil.rmtree(tree.openmvs)
+            if self.rerun() and io.file_exists(tree.openmvs_model):
+                os.remove(tree.openmvs_model)
+
+            openmvs_scene_file = os.path.join(tree.openmvs, 'scene.mvs')
 
             # export reconstruction from opensfm
-            octx = OSFMContext(tree.opensfm)
-            cmd = 'export_openmvs'
-            octx.run(cmd)
+            if not io.file_exists(openmvs_scene_file) or self.rerun():
+                octx = OSFMContext(tree.opensfm)
+                cmd = 'export_openmvs'
+                octx.run(cmd)
+            else:
+                log.ODM_WARNING("Found existing %s" % openmvs_scene_file)
             
             self.update_progress(10)
 
             depthmaps_dir = os.path.join(tree.openmvs, "depthmaps")
+
+            if io.dir_exists(depthmaps_dir) and self.rerun():
+                shutil.rmtree(depthmaps_dir)
+
             if not io.dir_exists(depthmaps_dir):
                 os.mkdir(depthmaps_dir)
             
@@ -58,10 +67,22 @@ class ODMOpenMVSStage(types.ODM_Stage):
                 "--fusion-mode 1"
             ]
             system.run('%s "%s" %s' % (context.omvs_densify_path, 
-                                       os.path.join(tree.openmvs, 'scene.mvs'),
+                                       openmvs_scene_file,
                                       ' '.join(config)))
 
             self.update_progress(85)
+
+            if self.rerun():
+                scene_files = glob.glob(os.path.join(tree.openmvs, "scene_[0-9][0-9][0-9][0-9].mvs"))
+                check_files = []
+                for sf in scene_files:
+                    p, _ = os.path.splitext(sf)
+                    scene_ply = p + "_dense_dense_filtered.ply"
+                    scene_dense_mvs = p + "_dense.mvs"
+                    check_files += [sf, scene_ply, scene_dense_mvs]
+                for f in check_files:
+                    if os.path.exists(f):
+                        os.remove(f)
 
             log.ODM_INFO("Computing sub-scenes")
             config = [
@@ -71,7 +92,7 @@ class ODMOpenMVSStage(types.ODM_Stage):
                 "-v 0",
             ]
             system.run('%s "%s" %s' % (context.omvs_densify_path, 
-                                       os.path.join(tree.openmvs, 'scene.mvs'),
+                                       openmvs_scene_file,
                                       ' '.join(config)))
             
             scene_files = glob.glob(os.path.join(tree.openmvs, "scene_[0-9][0-9][0-9][0-9].mvs"))
@@ -88,7 +109,7 @@ class ODMOpenMVSStage(types.ODM_Stage):
             scene_ply_files = []
 
             for sf in scene_files:
-                p, ext = os.path.splitext(sf)
+                p, _ = os.path.splitext(sf)
                 scene_ply = p + "_dense_dense_filtered.ply"
                 scene_dense_mvs = p + "_dense.mvs"
 
