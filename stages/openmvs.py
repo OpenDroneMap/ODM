@@ -24,8 +24,9 @@ class ODMOpenMVSStage(types.ODM_Stage):
 
         # check if reconstruction was done before
         if not io.file_exists(tree.openmvs_model) or self.rerun():
-            if io.dir_exists(tree.openmvs):
-                shutil.rmtree(tree.openmvs)
+            if self.rerun():
+                if io.dir_exists(tree.openmvs):
+                    shutil.rmtree(tree.openmvs)
 
             # export reconstruction from opensfm
             openmvs_scene_file = os.path.join(tree.openmvs, "scene.mvs")
@@ -78,7 +79,7 @@ class ODMOpenMVSStage(types.ODM_Stage):
 
             log.ODM_INFO("Computing sub-scenes")
             config = [
-                "--sub-scene-area 10000",
+                "--sub-scene-area 660000",
                 "--max-threads %s" % args.max_concurrency,
                 '-w "%s"' % depthmaps_dir, 
                 "-v 0",
