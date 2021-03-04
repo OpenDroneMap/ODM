@@ -353,7 +353,7 @@ def config(argv=None, parser=None):
                         metavar='<positive float>',
                         action=StoreValue,
                         type=float,
-                        default=0.01,
+                        default=0,
                         help='Filters the point cloud by keeping only a single point around a radius N (in meters). This can be useful to limit the output resolution of the point cloud and remove duplicate points. Set to 0 to disable sampling. '
                              'Default: %(default)s')
 
