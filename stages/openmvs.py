@@ -24,12 +24,11 @@ class ODMOpenMVSStage(types.ODM_Stage):
 
         # check if reconstruction was done before
         if not io.file_exists(tree.openmvs_model) or self.rerun():
-            if self.rerun() and io.file_exists(tree.openmvs_model):
-                os.remove(tree.openmvs_model)
-
-            openmvs_scene_file = os.path.join(tree.openmvs, 'scene.mvs')
+            if io.dir_exists(tree.openmvs):
+                shutil.rmtree(tree.openmvs)
 
             # export reconstruction from opensfm
+            openmvs_scene_file = os.path.join(tree.openmvs, "scene.mvs")
             if not io.file_exists(openmvs_scene_file) or self.rerun():
                 octx = OSFMContext(tree.opensfm)
                 cmd = 'export_openmvs'
@@ -56,6 +55,11 @@ class ODMOpenMVSStage(types.ODM_Stage):
             log.ODM_INFO("Running dense reconstruction. This might take a while.")
             
             log.ODM_INFO("Estimating depthmaps")
+
+            densify_ini_file = os.path.join(tree.openmvs, 'config.ini')
+            with open(densify_ini_file, 'w+') as f:
+                f.write("Optimize = 0\n") # Disable depth-maps re-filtering
+            
             config = [
                 " --resolution-level %s" % int(resolution_level),
 	            "--min-resolution %s" % depthmap_resolution,
@@ -71,18 +75,6 @@ class ODMOpenMVSStage(types.ODM_Stage):
                                       ' '.join(config)))
 
             self.update_progress(85)
-
-            if self.rerun():
-                scene_files = glob.glob(os.path.join(tree.openmvs, "scene_[0-9][0-9][0-9][0-9].mvs"))
-                check_files = []
-                for sf in scene_files:
-                    p, _ = os.path.splitext(sf)
-                    scene_ply = p + "_dense_dense_filtered.ply"
-                    scene_dense_mvs = p + "_dense.mvs"
-                    check_files += [sf, scene_ply, scene_dense_mvs]
-                for f in check_files:
-                    if os.path.exists(f):
-                        os.remove(f)
 
             log.ODM_INFO("Computing sub-scenes")
             config = [
@@ -101,9 +93,6 @@ class ODMOpenMVSStage(types.ODM_Stage):
                 exit(1)
 
             log.ODM_INFO("Fusing depthmaps for %s scenes" % len(scene_files))
-            densify_ini_file = os.path.join(tree.openmvs, 'Densify.ini')
-            with open(densify_ini_file, 'w+') as f:
-                f.write("Optimize = 0\n") # Disable depth-maps re-filtering
             
             files_to_remove = []
             scene_ply_files = []
@@ -119,6 +108,9 @@ class ODMOpenMVSStage(types.ODM_Stage):
                 if not io.file_exists(scene_ply) or self.rerun():
                     # Fuse
                     config = [
+                        '--resolution-level %s' % int(resolution_level),
+                        '--min-resolution %s' % depthmap_resolution,
+                        '--max-resolution %s' % int(outputs['undist_image_max_size']),
                         '--dense-config-file "%s"' % densify_ini_file,
                         '--number-views-fuse 2',
                         '--max-threads %s' % args.max_concurrency,
