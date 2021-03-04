@@ -78,7 +78,7 @@ class ODMOpenMVSStage(types.ODM_Stage):
 
             log.ODM_INFO("Computing sub-scenes")
             config = [
-                "--sub-scene-area 660000", # TODO: param tweak?
+                "--sub-scene-area 10000",
                 "--max-threads %s" % args.max_concurrency,
                 '-w "%s"' % depthmaps_dir, 
                 "-v 0",
