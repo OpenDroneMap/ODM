@@ -216,6 +216,20 @@ If you have questions, join the developer's chat at https://community.opendronem
 2. Submit a pull request with detailed changes and test results
 3. Have fun!
 
+### Credits
+
+ODM makes use of [several libraries](https://github.com/OpenDroneMap/ODM/blob/master/snap/snapcraft.yaml#L36) and other awesome open source projects to perform its tasks. Among them we'd like to highlight:
+
+ - [OpenSfM](https://github.com/mapillary/OpenSfM)
+ - [OpenMVS](https://github.com/cdcseacave/openMVS/)
+ - [PDAL](https://github.com/PDAL/PDAL)
+ - [Entwine](https://entwine.io/)
+ - [MVS Texturing](https://github.com/nmoehrle/mvs-texturing)
+ - [GRASS GIS](https://grass.osgeo.org/)
+ - [GDAL](https://gdal.org/)
+ - [PoissonRecon](https://github.com/mkazhdan/PoissonRecon)
+
+
 ### Citation
 
 > *OpenDroneMap Authors* ODM - A command line toolkit to generate maps, point clouds, 3D models and DEMs from drone, balloon or kite images. **OpenDroneMap/ODM GitHub Page** 2020; [https://github.com/OpenDroneMap/ODM](https://github.com/OpenDroneMap/ODM)
