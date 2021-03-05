@@ -51,6 +51,32 @@ class ODMOpenSfMStage(types.ODM_Stage):
             cleanup_disk_space()
             return
 
+        # Stats are computed in the local CRS (before geoprojection)
+        if not args.skip_report:
+
+            # TODO: this will fail to compute proper statistics if
+            # the pipeline is run with --skip-report and is subsequently
+            # rerun without --skip-report a --rerun-* parameter (due to the reconstruction.json file)
+            # being replaced below. It's an isolated use case.
+
+            octx.export_stats(self.rerun())
+        
+        self.update_progress(75)
+
+        # We now switch to a geographic CRS
+        geocoords_flag_file = octx.path("exported_geocoords.txt")
+
+        if reconstruction.is_georeferenced() and (not io.file_exists(geocoords_flag_file) or self.rerun()):
+            octx.run('export_geocoords --reconstruction --proj \'%s\' --offset-x %s --offset-y %s' % 
+                (reconstruction.georef.proj4(), reconstruction.georef.utm_east_offset, reconstruction.georef.utm_north_offset))
+            # Destructive
+            shutil.move(tree.opensfm_geocoords_reconstruction, tree.opensfm_reconstruction)
+            octx.touch(geocoords_flag_file)
+        else:
+            log.ODM_WARNING("Will skip exporting %s" % tree.opensfm_geocoords_reconstruction)
+        
+        self.update_progress(80)
+
         updated_config_flag_file = octx.path('updated_config.txt')
 
         # Make sure it's capped by the depthmap-resolution arg,
@@ -136,7 +162,7 @@ class ODMOpenSfMStage(types.ODM_Stage):
 
         octx.convert_and_undistort(self.rerun(), undistort_callback, image_list_override)
 
-        self.update_progress(80)
+        self.update_progress(95)
 
         if reconstruction.multi_camera:
             octx.restore_reconstruction_backup()
@@ -183,8 +209,6 @@ class ODMOpenSfMStage(types.ODM_Stage):
                 else:
                     log.ODM_WARNING("Found existing NVM file %s" % nvm_file)
                     
-        self.update_progress(85)
-
         # Skip dense reconstruction if necessary and export
         # sparse reconstruction instead
         if args.fast_orthophoto:
@@ -194,18 +218,6 @@ class ODMOpenSfMStage(types.ODM_Stage):
                 octx.run('export_ply --no-cameras --point-num-views')
             else:
                 log.ODM_WARNING("Found a valid PLY reconstruction in %s" % output_file)
-
-        self.update_progress(90)
-
-        if reconstruction.is_georeferenced() and (not io.file_exists(tree.opensfm_transformation) or self.rerun()):
-            octx.run('export_geocoords --transformation --proj \'%s\'' % reconstruction.georef.proj4())
-        else:
-            log.ODM_WARNING("Will skip exporting %s" % tree.opensfm_transformation)
-        
-        self.update_progress(95)
-
-        if not args.skip_report:
-            octx.export_stats(self.rerun())
 
         cleanup_disk_space()
 

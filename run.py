@@ -51,7 +51,6 @@ if __name__ == '__main__':
         os.system("rm -rf " + 
                     " ".join([
                         quote(os.path.join(args.project_path, "odm_georeferencing")),
-                        quote(os.path.join(args.project_path, "odm_georeferencing_25d")),
                         quote(os.path.join(args.project_path, "odm_meshing")),
                         quote(os.path.join(args.project_path, "odm_orthophoto")),
                         quote(os.path.join(args.project_path, "odm_dem")),

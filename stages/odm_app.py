@@ -9,7 +9,6 @@ from opendm import log
 from stages.dataset import ODMLoadDatasetStage
 from stages.run_opensfm import ODMOpenSfMStage
 from stages.openmvs import ODMOpenMVSStage
-from stages.odm_slam import ODMSlamStage
 from stages.odm_meshing import ODMeshingStage
 from stages.mvstex import ODMMvsTexStage
 from stages.odm_georeferencing import ODMGeoreferencingStage
@@ -33,7 +32,6 @@ class ODMApp:
         split = ODMSplitStage('split', args, progress=75.0)
         merge = ODMMergeStage('merge', args, progress=100.0)
         opensfm = ODMOpenSfMStage('opensfm', args, progress=25.0)
-        slam = ODMSlamStage('slam', args)
         openmvs = ODMOpenMVSStage('openmvs', args, progress=50.0)
         filterpoints = ODMFilterPoints('odm_filterpoints', args, progress=52.0)
         meshing = ODMeshingStage('odm_meshing', args, progress=60.0,
