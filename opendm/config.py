@@ -357,6 +357,13 @@ def config(argv=None, parser=None):
                         help='Filters the point cloud by keeping only a single point around a radius N (in meters). This can be useful to limit the output resolution of the point cloud and remove duplicate points. Set to 0 to disable sampling. '
                              'Default: %(default)s')
 
+    parser.add_argument('--pc-tile',
+                        action=StoreTrue,
+                        nargs=0,
+                        default=False,
+                        help='Reduce the memory usage needed for depthmap fusion by splitting large scenes into tiles. Turn this on if your machine doesn\'t have much RAM and/or you\'ve set --pc-quality to high or ultra. Experimental. '
+                             'Default: %(default)s')
+
     parser.add_argument('--smrf-scalar',
                         metavar='<positive float>',
                         action=StoreValue,

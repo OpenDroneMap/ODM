@@ -68,78 +68,99 @@ class ODMOpenMVSStage(types.ODM_Stage):
                 "--max-threads %s" % args.max_concurrency,
                 "--number-views-fuse 2",
                 '-w "%s"' % depthmaps_dir, 
-                "-v 0",
-                "--fusion-mode 1"
+                "-v 0"
             ]
+
+            if args.pc_tile:
+                config.append("--fusion-mode 1")
+
             system.run('%s "%s" %s' % (context.omvs_densify_path, 
                                        openmvs_scene_file,
                                       ' '.join(config)))
 
             self.update_progress(85)
-
-            log.ODM_INFO("Computing sub-scenes")
-            config = [
-                "--sub-scene-area 660000",
-                "--max-threads %s" % args.max_concurrency,
-                '-w "%s"' % depthmaps_dir, 
-                "-v 0",
-            ]
-            system.run('%s "%s" %s' % (context.omvs_densify_path, 
-                                       openmvs_scene_file,
-                                      ' '.join(config)))
-            
-            scene_files = glob.glob(os.path.join(tree.openmvs, "scene_[0-9][0-9][0-9][0-9].mvs"))
-            if len(scene_files) == 0:
-                log.ODM_ERROR("No OpenMVS scenes found. This could be a bug, or the reconstruction could not be processed.")
-                exit(1)
-
-            log.ODM_INFO("Fusing depthmaps for %s scenes" % len(scene_files))
-            
             files_to_remove = []
-            scene_ply_files = []
 
-            for sf in scene_files:
-                p, _ = os.path.splitext(sf)
-                scene_ply = p + "_dense_dense_filtered.ply"
-                scene_dense_mvs = p + "_dense.mvs"
+            if args.pc_tile:
+                log.ODM_INFO("Computing sub-scenes")
+                config = [
+                    "--sub-scene-area 660000",
+                    "--max-threads %s" % args.max_concurrency,
+                    '-w "%s"' % depthmaps_dir, 
+                    "-v 0",
+                ]
+                system.run('%s "%s" %s' % (context.omvs_densify_path, 
+                                        openmvs_scene_file,
+                                        ' '.join(config)))
+                
+                scene_files = glob.glob(os.path.join(tree.openmvs, "scene_[0-9][0-9][0-9][0-9].mvs"))
+                if len(scene_files) == 0:
+                    log.ODM_ERROR("No OpenMVS scenes found. This could be a bug, or the reconstruction could not be processed.")
+                    exit(1)
 
-                files_to_remove += [scene_ply, sf, scene_dense_mvs]
-                scene_ply_files.append(scene_ply)
+                log.ODM_INFO("Fusing depthmaps for %s scenes" % len(scene_files))
+                
+                scene_ply_files = []
 
-                if not io.file_exists(scene_ply) or self.rerun():
-                    # Fuse
-                    config = [
-                        '--resolution-level %s' % int(resolution_level),
-                        '--min-resolution %s' % depthmap_resolution,
-                        '--max-resolution %s' % int(outputs['undist_image_max_size']),
-                        '--dense-config-file "%s"' % densify_ini_file,
-                        '--number-views-fuse 2',
-                        '--max-threads %s' % args.max_concurrency,
-                        '-w "%s"' % depthmaps_dir,
-                        '-v 0',
-                    ]
-                    system.run('%s "%s" %s' % (context.omvs_densify_path, sf, ' '.join(config)))
+                for sf in scene_files:
+                    p, _ = os.path.splitext(sf)
+                    scene_ply = p + "_dense_dense_filtered.ply"
+                    scene_dense_mvs = p + "_dense.mvs"
 
-                    # Filter
-                    system.run('%s "%s" --filter-point-cloud -1 -v 0' % (context.omvs_densify_path, scene_dense_mvs))
+                    files_to_remove += [scene_ply, sf, scene_dense_mvs]
+                    scene_ply_files.append(scene_ply)
 
-                    if not io.file_exists(scene_ply):
-                        scene_ply_files.pop()
-                        log.ODM_WARNING("Could not compute PLY for subscene %s" % sf)
-                else:
-                    log.ODM_WARNING("Found existing dense scene file %s" % scene_ply)
+                    if not io.file_exists(scene_ply) or self.rerun():
+                        # Fuse
+                        config = [
+                            '--resolution-level %s' % int(resolution_level),
+                            '--min-resolution %s' % depthmap_resolution,
+                            '--max-resolution %s' % int(outputs['undist_image_max_size']),
+                            '--dense-config-file "%s"' % densify_ini_file,
+                            '--number-views-fuse 2',
+                            '--max-threads %s' % args.max_concurrency,
+                            '-w "%s"' % depthmaps_dir,
+                            '-v 0',
+                        ]
 
-            # Merge
-            log.ODM_INFO("Merging %s scene files" % len(scene_ply_files))
-            if len(scene_ply_files) == 0:
-                log.ODM_ERROR("Could not compute dense point cloud (no PLY files available).")
-            if len(scene_ply_files) == 1:
-                # Simply rename
-                os.rename(scene_ply_files[0], tree.openmvs_model)
-                log.ODM_INFO("%s --> %s"% (scene_ply_files[0], tree.openmvs_model))
-            else:
+                        try:
+                            system.run('%s "%s" %s' % (context.omvs_densify_path, sf, ' '.join(config)))
+
+                            # Filter
+                            system.run('%s "%s" --filter-point-cloud -1 -v 0' % (context.omvs_densify_path, scene_dense_mvs))
+                        except:
+                            log.ODM_WARNING("Sub-scene %s could not be reconstructed, skipping..." % sf)
+
+                        if not io.file_exists(scene_ply):
+                            scene_ply_files.pop()
+                            log.ODM_WARNING("Could not compute PLY for subscene %s" % sf)
+                    else:
+                        log.ODM_WARNING("Found existing dense scene file %s" % scene_ply)
+
                 # Merge
-                fast_merge_ply(scene_ply_files, tree.openmvs_model)
+                log.ODM_INFO("Merging %s scene files" % len(scene_ply_files))
+                if len(scene_ply_files) == 0:
+                    log.ODM_ERROR("Could not compute dense point cloud (no PLY files available).")
+                if len(scene_ply_files) == 1:
+                    # Simply rename
+                    os.rename(scene_ply_files[0], tree.openmvs_model)
+                    log.ODM_INFO("%s --> %s"% (scene_ply_files[0], tree.openmvs_model))
+                else:
+                    # Merge
+                    fast_merge_ply(scene_ply_files, tree.openmvs_model)
+            else:
+                # Filter all at once
+                scene_dense = os.path.join(tree.openmvs, 'scene_dense.mvs')
+                if os.path.exists(scene_dense):
+                    config = [
+                        "--filter-point-cloud -1",
+                        '-i "%s"' % scene_dense,
+                        "-v 0"
+                    ]
+                    system.run('%s %s' % (context.omvs_densify_path, ' '.join(config)))
+                else:
+                    log.ODM_WARNING("Cannot find scene_dense.mvs, dense reconstruction probably failed. Exiting...")
+                    exit(1)
 
             # TODO: add support for image masks
 
