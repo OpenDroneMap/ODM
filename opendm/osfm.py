@@ -217,10 +217,8 @@ class OSFMContext:
             # GPU acceleration?
             if has_gpus() and feature_type == "SIFT":
                 log.ODM_INFO("Using GPU for extracting SIFT features")
+                log.ODM_INFO("--min-num-features will be ignored")
                 feature_type = "SIFT_GPU"
-
-            # TODO: REMOVE
-            config.append("matcher_type: SIFT_GPU")
             
             config.append("feature_type: %s" % feature_type)
 

@@ -120,6 +120,9 @@ install() {
     
 
     pip install --ignore-installed -r requirements.txt
+    if [ ! -z "$GPU_INSTALL" ]; then
+        pip install --ignore-installed -r requirements.gpu.txt
+    fi
 
     if [ ! -z "$PORTABLE_INSTALL" ]; then
         echo "Replacing g++ and gcc with our scripts for portability..."

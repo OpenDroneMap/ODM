@@ -3,7 +3,11 @@ from repoze.lru import lru_cache
 
 @lru_cache(maxsize=None)
 def has_gpus():
-    import pyopencl
+    try:
+        import pyopencl
+    except:
+        log.ODM_INFO("PyOpenCL is missing (not a GPU build)")
+        return False
 
     try:
         platforms = pyopencl.get_platforms()

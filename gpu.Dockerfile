@@ -12,7 +12,7 @@ WORKDIR /code
 COPY . ./
 
 # Run the build
-RUN bash configure.sh install
+RUN PORTABLE_INSTALL=YES GPU_INSTALL=YES bash configure.sh install
 
 # Clean Superbuild
 RUN bash configure.sh clean
