@@ -80,6 +80,7 @@ class ODMOpenMVSStage(types.ODM_Stage):
 
             self.update_progress(85)
             files_to_remove = []
+            scene_dense = os.path.join(tree.openmvs, 'scene_dense.mvs')
 
             if args.pc_tile:
                 log.ODM_INFO("Computing sub-scenes")
@@ -150,7 +151,6 @@ class ODMOpenMVSStage(types.ODM_Stage):
                     fast_merge_ply(scene_ply_files, tree.openmvs_model)
             else:
                 # Filter all at once
-                scene_dense = os.path.join(tree.openmvs, 'scene_dense.mvs')
                 if os.path.exists(scene_dense):
                     config = [
                         "--filter-point-cloud -1",
