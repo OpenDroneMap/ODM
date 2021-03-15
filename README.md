@@ -101,13 +101,13 @@ Snap packages will be kept up-to-date automatically, so you don't need to update
 
 ## GPU Acceleration
 
-ODM has support for doing SIFT feature extraction on a GPU, which is about 2x faster CPU on a consumer laptop. To use this feature, you need to use the `opendronemap/odm:gpu` docker image instead of `opendronemap/odm` and you need to pass the `--gpus all` flag to docker:
+ODM has support for doing SIFT feature extraction on a GPU, which is about 2x faster than the CPU on a typical consumer laptop. To use this feature, you need to use the `opendronemap/odm:gpu` docker image instead of `opendronemap/odm` and you need to pass the `--gpus all` flag:
 
 ```
 docker run -ti --rm -v c:/Users/youruser/datasets:/datasets --gpus all opendronemap/odm:gpu --project-path /datasets project
 ```
 
-When you run ODM, if the GPU is recognized, in the first few lines of the output log you should notice:
+When you run ODM, if the GPU is recognized, in the first few lines of output you should see:
 
 ```
 [INFO]    Writing exif overrides
@@ -116,7 +116,7 @@ When you run ODM, if the GPU is recognized, in the first few lines of the output
 [INFO]    Using GPU for extracting SIFT features
 ```
 
-The implementation is OpenCL-based, so the acceleration should work with most graphics card (not just NVIDIA).
+The SIFT GPU implementation is OpenCL-based, so should work with most graphics card (not just NVIDIA).
 
 If you have an NVIDIA card, you can test that docker is recognizing the GPU by running:
 
