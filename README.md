@@ -99,6 +99,46 @@ snap run opendronemap
 
 Snap packages will be kept up-to-date automatically, so you don't need to update ODM manually.
 
+## GPU Acceleration
+
+ODM has support for doing SIFT feature extraction on a GPU, which is about 2x faster CPU on a consumer laptop. To use this feature, you need to use the `opendronemap/odm:gpu` docker image instead of `opendronemap/odm` and you need to pass the `--gpus all` flag to docker:
+
+```
+docker run -ti --rm -v c:/Users/youruser/datasets:/datasets --gpus all opendronemap/odm:gpu --project-path /datasets project
+```
+
+When you run ODM, if the GPU is recognized, in the first few lines of the output log you should notice:
+
+```
+[INFO]    Writing exif overrides
+[INFO]    Maximum photo dimensions: 4000px
+[INFO]    Found GPU device: Intel(R) OpenCL HD Graphics
+[INFO]    Using GPU for extracting SIFT features
+```
+
+The implementation is OpenCL-based, so the acceleration should work with most graphics card (not just NVIDIA).
+
+If you have an NVIDIA card, you can test that docker is recognizing the GPU by running:
+
+```
+docker run --rm --gpus all nvidia/cuda:10.0-base nvidia-smi
+```
+
+If you see an output that looks like this:
+
+```
+Fri Jul 24 18:51:55 2020       
++-----------------------------------------------------------------------------+
+| NVIDIA-SMI 440.82       Driver Version: 440.82       CUDA Version: 10.2     |
+|-------------------------------+----------------------+----------------------+
+| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
+```
+
+You're in good shape!
+
+See https://github.com/NVIDIA/nvidia-docker and https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker for information on docker/NVIDIA setup.
+
 ## WSL or WSL2 Install
 
 Note: This requires that you have installed WSL already by following [the instructions on Microsoft's Website](https://docs.microsoft.com/en-us/windows/wsl/install-win10).
