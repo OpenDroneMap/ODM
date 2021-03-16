@@ -43,21 +43,30 @@ with rasterio.open(dem_path) as dem_raster:
 
             r = shot.pose.get_rotation_matrix()
             Xs, Ys, Zs = shot.pose.get_origin()
-            cam_w = shot.camera.width
-            cam_h = shot.camera.height
-            img_w, img_h, num_bands = shot_image.shape
-            f = shot.camera.focal
 
+            A = np.array([[0, 1, 0], [1, 0, 0], [0, 0, 1]])
+            # A = np.array([[0, 0, 1], [0, 1, 0], [-1, 0, 0]])
+            r = (np.linalg.inv(r).dot(A)).dot(r)
+            
+            # roll = [[1, 0, 0], [0, -1, 0], [0, 0, -1]]
+            # pitch = [[-1, 0, 0], [0, 1, 0], [0, 0, -1]]
+            # yaw = [[-1, 0, 0], [0, -1, 0], [0, 0, 1]]
+            
+            # print(r)
+            # r = r.dot(pitch).dot(yaw)
+            # print(r)
+
+            img_h, img_w, num_bands = shot_image.shape
+            print("Image dimensions: %sx%s pixels" % (img_w, img_h))
+            f = shot.camera.focal# * max(img_h, img_w)
 
             def process_pixels(step):
                 imgout = np.full((num_bands, w, h), np.nan, dtype=shot_image.dtype)
                 for i in range(w):
                     if i % max_workers == step:
                         for j in range(h):
-                            # i, j = (168, 442) # TODO REMOVE
-
                             # World coordinates
-                            Xa, Ya = dem_raster.xy(i, j)
+                            Xa, Ya = dem_raster.xy(j, i)
                             Za = dem[j][i]
 
                             # Colinearity function http://web.pdx.edu/~jduh/courses/geog493f14/Week03.pdf
@@ -65,14 +74,23 @@ with rasterio.open(dem_path) as dem_raster:
                             dy = (Ya - Ys)
                             dz = (Za - Zs)
 
+                            # ? 
                             den = r[0][2] * dx + r[1][2] * dy + r[2][2] * dz
-                            x = 0.5 + (-f * (r[0][0] * dx + r[1][0] * dy + r[2][0] * dz) / den)
-                            y = 0.5 + (-f * (r[0][1] * dx + r[1][1] * dy + r[2][1] * dz) / den)
+                            x = (f * (r[0][0] * dx + r[1][0] * dy + r[2][0] * dz) / den)
+                            y = (f * (r[0][1] * dx + r[1][1] * dy + r[2][1] * dz) / den)
 
-                            # TEST
+                            # den = r[2][0] * dx + r[2][1] * dy + r[2][2] * dz
+                            # x = (img_w - 1) / 2.0 + (-f * (r[0][0] * dx + r[0][1] * dy + r[0][2] * dz) / den)
+                            # y = (img_h - 1) / 2.0 + (-f * (r[1][0] * dx + r[1][1] * dy + r[1][2] * dz) / den)
                             if x >= 0 and y >= 0 and x <= 1.0 and y <= 1.0:
-                                for b in range(3):
+                                for b in range(num_bands):
                                     imgout[b][i][j] = 255
+
+                            # if x >= 0 and y >= 0 and x <= img_w and y <= img_h:
+                                # xi = min(round(x), img_w - 1)
+                                # yi = min(round(y), img_h - 1)
+                                # for b in range(num_bands):
+                                    # imgout[b][i][j] = shot_image[yi][xi][b]
                 return imgout
 
             with multiprocessing.Pool(max_workers) as p:
@@ -98,3 +116,15 @@ with rasterio.open(dem_path) as dem_raster:
             with rasterio.open("/datasets/brighton2/odm_meshing/tmp/out.tif", 'w', **profile) as wout:
                 for b in range(num_bands):
                     wout.write(imgout[b], b + 1)
+
+            # # TODO REMOVE
+            profile = {
+                'driver': 'GTiff',
+                'width': w,
+                'height': h,
+                'count': 1,
+                'dtype': dem.dtype.name,
+                'nodata': None
+            }
+            with rasterio.open("/datasets/brighton2/odm_meshing/tmp/dsm_out.tif", 'w', **profile) as wout:
+                wout.write(dem, 1)
