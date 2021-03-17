@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# Author: Piero Toffanin
+# License: AGPLv3
+
 import os
 import sys
 sys.path.insert(0, os.path.join("..", "..", os.path.dirname(__file__)))
@@ -12,12 +15,13 @@ import multiprocessing
 
 dataset_path = "/datasets/brighton2"
 dem_path = "/datasets/brighton2/odm_meshing/tmp/mesh_dsm.tif"
-interpolation = 'bilinear'
+interpolation = 'linear' # 'bilinear'
+with_alpha = True
 
 target_images = [] # all
-target_images.append("DJI_0028.JPG")
+target_images.append("DJI_0030.JPG")
 
-def bilinear_interpolate(im, x, y, b):
+def bilinear_interpolate(im, x, y):
     x = np.asarray(x)
     y = np.asarray(y)
 
@@ -31,10 +35,10 @@ def bilinear_interpolate(im, x, y, b):
     y0 = np.clip(y0, 0, im.shape[0]-1)
     y1 = np.clip(y1, 0, im.shape[0]-1)
 
-    Ia = im[ y0, x0, b ]
-    Ib = im[ y1, x0, b ]
-    Ic = im[ y0, x1, b ]
-    Id = im[ y1, x1, b ]
+    Ia = im[ y0, x0 ]
+    Ib = im[ y1, x0 ]
+    Ic = im[ y0, x1 ]
+    Id = im[ y1, x1 ]
 
     wa = (x1-x) * (y1-y)
     wb = (x1-x) * (y-y0)
@@ -72,25 +76,17 @@ with rasterio.open(dem_path) as dem_raster:
 
             print("Camera pose: (%f, %f, %f)" % (Xs, Ys, Zs))
 
-            # A = np.array([[0, 1, 0], [1, 0, 0], [0, 0, 1]])
-            # A = np.array([[0, 0, 1], [0, 1, 0], [-1, 0, 0]])
-            # r = (np.linalg.inv(r).dot(A)).dot(r)
-            # r = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-            
-            # roll = [[1, 0, 0], [0, -1, 0], [0, 0, -1]]
-            # pitch = [[-1, 0, 0], [0, 1, 0], [0, 0, -1]]
-            # yaw = [[-1, 0, 0], [0, -1, 0], [0, 0, 1]]
-            
-            # print(r)
-            # r = r.dot(pitch).dot(yaw)
-            # print(r)
-
             img_h, img_w, num_bands = shot_image.shape
             print("Image dimensions: %sx%s pixels" % (img_w, img_h))
             f = shot.camera.focal * max(img_h, img_w)
 
             def process_pixels(step):
-                imgout = np.full((num_bands, h, w), np.nan, dtype=shot_image.dtype)
+                imgout = np.full((num_bands, h, w), np.nan)
+                minx = w
+                miny = h
+                maxx = 0
+                maxy = 0
+
                 for j in range(h):
                     if j % max_workers == step:
                         for i in range(w):
@@ -103,61 +99,87 @@ with rasterio.open(dem_path) as dem_raster:
                             dy = (Ya - Ys)
                             dz = (Za - Zs)
 
-                            # if abs(dx) < 3.0 and abs(dy) < 3.0:
-                            #     imgout[0][j][i] = 255
-                            #     imgout[1][j][i] = 0
-                            #     imgout[2][j][i] = 0
-                            # else:
-                            #     for b in range(num_bands):
-                            #         imgout[b][j][i] = 255
-
                             den = r[0][2] * dx + r[1][2] * dy + r[2][2] * dz
                             x = (img_w - 1) / 2.0 - (f * (r[0][0] * dx + r[1][0] * dy + r[2][0] * dz) / den)
                             y = (img_h - 1) / 2.0 - (f * (r[0][1] * dx + r[1][1] * dy + r[2][1] * dz) / den)
 
                             if x >= 0 and y >= 0 and x <= img_w - 1 and y <= img_h - 1:
-                                for b in range(num_bands):
-                                    if interpolation == 'bilinear':
-                                        xi = img_w - 1 - x
-                                        yi = img_h - 1 - y
-                                        imgout[b][j][i] = bilinear_interpolate(shot_image, xi, yi, b)
-                                    else:
-                                        xi = img_w - 1 - int(round(x))
-                                        yi = img_h - 1 - int(round(y))
-                                        imgout[b][j][i] = shot_image[yi][xi][b]
+                                
+                                # for b in range(num_bands):
+                                if interpolation == 'bilinear':
+                                    xi = img_w - 1 - x
+                                    yi = img_h - 1 - y
+                                    values = bilinear_interpolate(shot_image, xi, yi)
+                                else:
+                                    # Linear
+                                    xi = img_w - 1 - int(round(x))
+                                    yi = img_h - 1 - int(round(y))
+                                    values = shot_image[yi][xi]
+
+                                # We don't consider all zero values (pure black)
+                                # to be valid sample values. This will sometimes miss
+                                # valid sample values.
+
+                                if not np.all(values == 0):
+                                    minx = min(minx, i)
+                                    miny = min(miny, j)
+                                    maxx = max(maxx, i)
+                                    maxy = max(maxy, j)
+
+                                    for b in range(num_bands):
+                                        imgout[b][j][i] = values[b]
+
                                 # for b in range(num_bands):
                                 #     imgout[b][j][i] = 255
-                return imgout
+                return (imgout, (minx, miny, maxx, maxy))
 
             with multiprocessing.Pool(max_workers) as p:
                 results = p.map(process_pixels, range(max_workers))
 
-            # Merge
-            imgout = results[0]
+            # Merge image
+            imgout, _ = results[0]
             for j in range(h):
+                resimg, _ = results[j % max_workers]
                 for b in range(num_bands):
-                    imgout[b][j] = results[j % max_workers][b][j]
+                    imgout[b][j] = resimg[b][j]
+                
+            # Merge bounds
+            minx = w
+            miny = h
+            maxx = 0
+            maxy = 0
 
-            profile = {
-                'driver': 'GTiff',
-                'width': imgout.shape[2],
-                'height': imgout.shape[1],
-                'count': num_bands,
-                'dtype': imgout.dtype.name,
-                'nodata': None
-            }
-            with rasterio.open("/datasets/brighton2/odm_meshing/tmp/out.tif", 'w', **profile) as wout:
-                for b in range(num_bands):
-                    wout.write(imgout[b], b + 1)
+            for _, bounds in results:
+                minx = min(bounds[0], minx)
+                miny = min(bounds[1], miny)
+                maxx = max(bounds[2], maxx)
+                maxy = max(bounds[3], maxy)
 
-            # # TODO REMOVE
-            # profile = {
-            #     'driver': 'GTiff',
-            #     'width': w,
-            #     'height': h,
-            #     'count': 1,
-            #     'dtype': dem.dtype.name,
-            #     'nodata': None
-            # }
-            # with rasterio.open("/datasets/brighton2/odm_meshing/tmp/dsm_out.tif", 'w', **profile) as wout:
-            #     wout.write(dem, 1)
+            print("Output bounds: (%s, %s), (%s, %s) pixels" % (minx, miny, maxx, maxy))
+            if minx <= maxx and miny <= maxy:
+                imgout = imgout[:,miny:maxy,minx:maxx]
+
+                if with_alpha:
+                    alpha = np.zeros((imgout.shape[1], imgout.shape[2]), dtype=np.uint8)
+
+                    # Set all not-NaN indices to 255
+                    alpha[~np.isnan(imgout[0])] = 255
+
+                # Cast
+                imgout = imgout.astype(shot_image.dtype)
+
+                profile = {
+                    'driver': 'GTiff',
+                    'width': imgout.shape[2],
+                    'height': imgout.shape[1],
+                    'count': num_bands + 1 if with_alpha else num_bands,
+                    'dtype': imgout.dtype.name,
+                    'nodata': None
+                }
+                with rasterio.open("/datasets/brighton2/odm_meshing/tmp/out.tif", 'w', **profile) as wout:
+                    for b in range(num_bands):
+                        wout.write(imgout[b], b + 1)
+                    if with_alpha:
+                        wout.write(alpha, num_bands + 1)
+            else:
+                print("Cannot orthorectify image (is the image inside the DSM bounds?)")
