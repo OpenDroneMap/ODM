@@ -8,21 +8,70 @@ sys.path.insert(0, os.path.join("..", "..", os.path.dirname(__file__)))
 
 import rasterio
 import numpy as np
-from opensfm import dataset
 import multiprocessing
+import argparse
+from opensfm import dataset
 
-# TODO: command argument parser
+default_dem_path = "odm_dem/dsm.tif"
+default_outdir = "orthorectified"
+default_image_list = "img_list.txt"
 
-dataset_path = "/datasets/brighton2"
-dem_path = "/datasets/brighton2/odm_meshing/tmp/mesh_dsm.tif"
-interpolation = 'linear' # 'bilinear'
-with_alpha = True
-cwd_path = os.path.join(dataset_path, "orthorectified")
+parser = argparse.ArgumentParser(description='Orthorectification Tool')
+parser.add_argument('dataset',
+                type=str,
+                help='Path to ODM dataset')
+parser.add_argument('--dem',
+                type=str,
+                default=default_dem_path,
+                help='Absolute path to DEM to use to orthorectify images. Default: %(default)s')
+parser.add_argument('--no-alpha',
+                    type=bool,
+                    help="Don't output an alpha channel")
+parser.add_argument('--interpolation',
+                    type=str,
+                    choices=('nearest', 'bilinear'),
+                    default='bilinear',
+                    help="Type of interpolation to use to sample pixel values. Can be one of: %(choice)s. Default: %(default)s")
+parser.add_argument('--outdir',
+                    type=str,
+                    default=default_outdir,
+                    help="Output directory where to store results. Default: %(default)s")
+parser.add_argument('--image-list',
+                    type=str,
+                    default=default_image_list,
+                    help="Path to file that contains the list of image filenames to orthorectify. By default all images in a dataset are processed. Default: %(default)s")
+parser.add_argument('--images',
+                    type=str,
+                    default="",
+                    help="Comma-separeted list of filenames to rectify. Use as an alternative to --image-list. Default: %(default)s")
+
+args = parser.parse_args()
+
+dataset_path = args.dataset
+dem_path = os.path.join(dataset_path, default_dem_path) if args.dem == default_dem_path else args.dem
+interpolation = args.interpolation
+with_alpha = not args.no_alpha
+image_list = os.path.join(dataset_path, default_image_list) if args.image_list == default_image_list else args.image_list
+
+cwd_path = os.path.join(dataset_path, default_outdir) if args.outdir == default_outdir else args.outdir
+
 if not os.path.exists(cwd_path):
     os.makedirs(cwd_path)
 
 target_images = [] # all
-#target_images.append("DJI_0029.JPG")
+
+if args.images:
+    target_images = list(map(str.strip, args.images.split(",")))
+    print("Processing %s images" % len(target_images))
+elif args.image_list:
+    with open(image_list) as f:
+        target_images = list(filter(lambda filename: filename != '', map(str.strip, f.read().split("\n"))))
+    print("Processing %s images" % len(target_images))
+
+if not os.path.exists(dem_path):
+    print("Whoops! %s does not exist. Provide a path to a valid DEM" % dem_path)
+    exit(1)
+
 
 def bilinear_interpolate(im, x, y):
     x = np.asarray(x)
@@ -50,13 +99,13 @@ def bilinear_interpolate(im, x, y):
 
     return wa*Ia + wb*Ib + wc*Ic + wd*Id
 
-# Read DSM
-print("Reading DSM: %s" % dem_path)
+# Read DEM
+print("Reading DEM: %s" % dem_path)
 with rasterio.open(dem_path) as dem_raster:
     dem = dem_raster.read()[0]
     h, w = dem.shape
 
-    print("DSM dimensions: %sx%s pixels" % (w, h))
+    print("DEM dimensions: %sx%s pixels" % (w, h))
    
     # Read reconstruction
     udata = dataset.UndistortedDataSet(dataset.DataSet(os.path.join(dataset_path, "opensfm")))
@@ -197,4 +246,4 @@ with rasterio.open(dem_path) as dem_raster:
 
                 print("Wrote %s" % outfile)
             else:
-                print("Cannot orthorectify image (is the image inside the DSM bounds?)")
+                print("Cannot orthorectify image (is the image inside the DEM bounds?)")
