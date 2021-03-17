@@ -1,6 +1,10 @@
 # Orthorectification Tool
 
+![image](https://user-images.githubusercontent.com/1951843/111536715-fc91c380-8740-11eb-844c-5b7960186391.png)
+
 This tool is capable of orthorectifing individual images (or all images) from an ODM reconstruction. It does not account for visibility occlusion, so you will get artifacts near buildings (help us improve this?).
+
+![image](https://user-images.githubusercontent.com/1951843/111529183-3ad6b500-8738-11eb-9960-b1aa676f863b.png)
 
 ## Usage
 
