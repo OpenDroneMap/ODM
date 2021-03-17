@@ -14,7 +14,7 @@ dataset_path = "/datasets/brighton2"
 dem_path = "/datasets/brighton2/odm_meshing/tmp/mesh_dsm.tif"
 
 target_images = [] # all
-target_images.append("DJI_0018.JPG")
+target_images.append("DJI_0028.JPG")
 
 
 # Read DSM
@@ -41,12 +41,15 @@ with rasterio.open(dem_path) as dem_raster:
             print("Processing %s..." % shot.id)
             shot_image = udata.load_undistorted_image(shot.id)
 
-            r = shot.pose.get_rotation_matrix()
+            r = shot.pose.get_rotation_matrix().T
             Xs, Ys, Zs = shot.pose.get_origin()
 
-            A = np.array([[0, 1, 0], [1, 0, 0], [0, 0, 1]])
+            print("Camera pose: (%f, %f, %f)" % (Xs, Ys, Zs))
+
+            # A = np.array([[0, 1, 0], [1, 0, 0], [0, 0, 1]])
             # A = np.array([[0, 0, 1], [0, 1, 0], [-1, 0, 0]])
-            r = (np.linalg.inv(r).dot(A)).dot(r)
+            # r = (np.linalg.inv(r).dot(A)).dot(r)
+            # r = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
             
             # roll = [[1, 0, 0], [0, -1, 0], [0, 0, -1]]
             # pitch = [[-1, 0, 0], [0, 1, 0], [0, 0, -1]]
@@ -58,13 +61,13 @@ with rasterio.open(dem_path) as dem_raster:
 
             img_h, img_w, num_bands = shot_image.shape
             print("Image dimensions: %sx%s pixels" % (img_w, img_h))
-            f = shot.camera.focal# * max(img_h, img_w)
+            f = shot.camera.focal * max(img_h, img_w)
 
             def process_pixels(step):
-                imgout = np.full((num_bands, w, h), np.nan, dtype=shot_image.dtype)
-                for i in range(w):
-                    if i % max_workers == step:
-                        for j in range(h):
+                imgout = np.full((num_bands, h, w), np.nan, dtype=shot_image.dtype)
+                for j in range(h):
+                    if j % max_workers == step:
+                        for i in range(w):
                             # World coordinates
                             Xa, Ya = dem_raster.xy(j, i)
                             Za = dem[j][i]
@@ -74,23 +77,25 @@ with rasterio.open(dem_path) as dem_raster:
                             dy = (Ya - Ys)
                             dz = (Za - Zs)
 
-                            # ? 
+                            # if abs(dx) < 3.0 and abs(dy) < 3.0:
+                            #     imgout[0][j][i] = 255
+                            #     imgout[1][j][i] = 0
+                            #     imgout[2][j][i] = 0
+                            # else:
+                            #     for b in range(num_bands):
+                            #         imgout[b][j][i] = 255
+
                             den = r[0][2] * dx + r[1][2] * dy + r[2][2] * dz
-                            x = (f * (r[0][0] * dx + r[1][0] * dy + r[2][0] * dz) / den)
-                            y = (f * (r[0][1] * dx + r[1][1] * dy + r[2][1] * dz) / den)
+                            x = (img_w - 1) / 2.0 - (f * (r[0][0] * dx + r[1][0] * dy + r[2][0] * dz) / den)
+                            y = (img_h - 1) / 2.0 - (f * (r[0][1] * dx + r[1][1] * dy + r[2][1] * dz) / den)
 
-                            # den = r[2][0] * dx + r[2][1] * dy + r[2][2] * dz
-                            # x = (img_w - 1) / 2.0 + (-f * (r[0][0] * dx + r[0][1] * dy + r[0][2] * dz) / den)
-                            # y = (img_h - 1) / 2.0 + (-f * (r[1][0] * dx + r[1][1] * dy + r[1][2] * dz) / den)
-                            if x >= 0 and y >= 0 and x <= 1.0 and y <= 1.0:
+                            if x >= 0 and y >= 0 and x <= img_w - 1 and y <= img_h - 1:
+                                xi = img_w - 1 - int(x)
+                                yi = img_h - 1 - int(y)
                                 for b in range(num_bands):
-                                    imgout[b][i][j] = 255
-
-                            # if x >= 0 and y >= 0 and x <= img_w and y <= img_h:
-                                # xi = min(round(x), img_w - 1)
-                                # yi = min(round(y), img_h - 1)
+                                    imgout[b][j][i] = shot_image[yi][xi][b]
                                 # for b in range(num_bands):
-                                    # imgout[b][i][j] = shot_image[yi][xi][b]
+                                #     imgout[b][j][i] = 255
                 return imgout
 
             with multiprocessing.Pool(max_workers) as p:
@@ -98,17 +103,14 @@ with rasterio.open(dem_path) as dem_raster:
 
             # Merge
             imgout = results[0]
-            for i in range(w):
+            for j in range(h):
                 for b in range(num_bands):
-                    imgout[b][i] = results[i % max_workers][b][i]
-
-            print(w)
-            print(h)
+                    imgout[b][j] = results[j % max_workers][b][j]
 
             profile = {
                 'driver': 'GTiff',
-                'width': imgout.shape[1],
-                'height': imgout.shape[2],
+                'width': imgout.shape[2],
+                'height': imgout.shape[1],
                 'count': num_bands,
                 'dtype': imgout.dtype.name,
                 'nodata': None
@@ -118,13 +120,13 @@ with rasterio.open(dem_path) as dem_raster:
                     wout.write(imgout[b], b + 1)
 
             # # TODO REMOVE
-            profile = {
-                'driver': 'GTiff',
-                'width': w,
-                'height': h,
-                'count': 1,
-                'dtype': dem.dtype.name,
-                'nodata': None
-            }
-            with rasterio.open("/datasets/brighton2/odm_meshing/tmp/dsm_out.tif", 'w', **profile) as wout:
-                wout.write(dem, 1)
+            # profile = {
+            #     'driver': 'GTiff',
+            #     'width': w,
+            #     'height': h,
+            #     'count': 1,
+            #     'dtype': dem.dtype.name,
+            #     'nodata': None
+            # }
+            # with rasterio.open("/datasets/brighton2/odm_meshing/tmp/dsm_out.tif", 'w', **profile) as wout:
+            #     wout.write(dem, 1)
