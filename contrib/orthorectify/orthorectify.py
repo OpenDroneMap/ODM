@@ -31,7 +31,7 @@ parser.add_argument('--interpolation',
                     type=str,
                     choices=('nearest', 'bilinear'),
                     default='bilinear',
-                    help="Type of interpolation to use to sample pixel values. Can be one of: %(choice)s. Default: %(default)s")
+                    help="Type of interpolation to use to sample pixel values.Default: %(default)s")
 parser.add_argument('--outdir',
                     type=str,
                     default=default_outdir,
@@ -43,7 +43,7 @@ parser.add_argument('--image-list',
 parser.add_argument('--images',
                     type=str,
                     default="",
-                    help="Comma-separeted list of filenames to rectify. Use as an alternative to --image-list. Default: %(default)s")
+                    help="Comma-separeted list of filenames to rectify. Use as an alternative to --image-list. Default: process all images.")
 
 args = parser.parse_args()
 
@@ -105,6 +105,27 @@ with rasterio.open(dem_path) as dem_raster:
     dem = dem_raster.read()[0]
     h, w = dem.shape
 
+    crs = dem_raster.profile.get('crs')
+    dem_offset_x, dem_offset_y = (0, 0)
+
+    if crs:
+        print("DEM has a CRS: %s" % str(crs))
+
+        # Read coords.txt
+        coords_file = os.path.join(dataset_path, "odm_georeferencing", "coords.txt")
+        if not os.path.exists(coords_file):
+            print("Whoops! Cannot find %s (we need that!)" % coords_file)
+            exit(1)
+        
+        with open(coords_file) as f:
+            line = f.readline() # discard
+
+            # second line is a northing/easting offset
+            line = f.readline().rstrip()
+            dem_offset_x, dem_offset_y = map(float, line.split(" "))
+        
+        print("DEM offset: (%s, %s)" % (dem_offset_x, dem_offset_y))
+
     print("DEM dimensions: %sx%s pixels" % (w, h))
    
     # Read reconstruction
@@ -131,6 +152,7 @@ with rasterio.open(dem_path) as dem_raster:
             img_h, img_w, num_bands = shot_image.shape
             print("Image dimensions: %sx%s pixels" % (img_w, img_h))
             f = shot.camera.focal * max(img_h, img_w)
+            has_nodata = dem_raster.profile.get('nodata') is not None
 
             def process_pixels(step):
                 imgout = np.full((num_bands, h, w), np.nan)
@@ -146,6 +168,14 @@ with rasterio.open(dem_path) as dem_raster:
                             Xa, Ya = dem_raster.xy(j, i)
                             Za = dem[j][i]
 
+                            # Skip nodata
+                            if has_nodata and Za == dem_raster.nodata:
+                                continue
+
+                            # Remove offset (our cameras don't have the geographic offset)
+                            Xa -= dem_offset_x
+                            Ya -= dem_offset_y
+
                             # Colinearity function http://web.pdx.edu/~jduh/courses/geog493f14/Week03.pdf
                             dx = (Xa - Xs)
                             dy = (Ya - Ys)
@@ -157,13 +187,12 @@ with rasterio.open(dem_path) as dem_raster:
 
                             if x >= 0 and y >= 0 and x <= img_w - 1 and y <= img_h - 1:
                                 
-                                # for b in range(num_bands):
                                 if interpolation == 'bilinear':
                                     xi = img_w - 1 - x
                                     yi = img_h - 1 - y
                                     values = bilinear_interpolate(shot_image, xi, yi)
                                 else:
-                                    # Linear
+                                    # nearest
                                     xi = img_w - 1 - int(round(x))
                                     yi = img_h - 1 - int(round(y))
                                     values = shot_image[yi][xi]
@@ -231,7 +260,8 @@ with rasterio.open(dem_path) as dem_raster:
                     'dtype': imgout.dtype.name,
                     'transform': rasterio.transform.Affine(dem_transform[0], dem_transform[1], offset_x, 
                                                            dem_transform[3], dem_transform[4], offset_y),
-                    'nodata': None
+                    'nodata': None,
+                    'crs': crs
                 }
 
                 outfile = os.path.join(cwd_path, shot.id)
