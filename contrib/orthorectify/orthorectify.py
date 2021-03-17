@@ -17,9 +17,12 @@ dataset_path = "/datasets/brighton2"
 dem_path = "/datasets/brighton2/odm_meshing/tmp/mesh_dsm.tif"
 interpolation = 'linear' # 'bilinear'
 with_alpha = True
+cwd_path = os.path.join(dataset_path, "orthorectified")
+if not os.path.exists(cwd_path):
+    os.makedirs(cwd_path)
 
 target_images = [] # all
-target_images.append("DJI_0030.JPG")
+#target_images.append("DJI_0029.JPG")
 
 def bilinear_interpolate(im, x, y):
     x = np.asarray(x)
@@ -168,18 +171,30 @@ with rasterio.open(dem_path) as dem_raster:
                 # Cast
                 imgout = imgout.astype(shot_image.dtype)
 
+                dem_transform = dem_raster.profile['transform']
+                offset_x, offset_y = dem_raster.xy(miny, minx, offset='ul')
+                 
                 profile = {
                     'driver': 'GTiff',
                     'width': imgout.shape[2],
                     'height': imgout.shape[1],
                     'count': num_bands + 1 if with_alpha else num_bands,
                     'dtype': imgout.dtype.name,
+                    'transform': rasterio.transform.Affine(dem_transform[0], dem_transform[1], offset_x, 
+                                                           dem_transform[3], dem_transform[4], offset_y),
                     'nodata': None
                 }
-                with rasterio.open("/datasets/brighton2/odm_meshing/tmp/out.tif", 'w', **profile) as wout:
+
+                outfile = os.path.join(cwd_path, shot.id)
+                if not outfile.endswith(".tif"):
+                    outfile = outfile + ".tif"
+
+                with rasterio.open(outfile, 'w', **profile) as wout:
                     for b in range(num_bands):
                         wout.write(imgout[b], b + 1)
                     if with_alpha:
                         wout.write(alpha, num_bands + 1)
+
+                print("Wrote %s" % outfile)
             else:
                 print("Cannot orthorectify image (is the image inside the DSM bounds?)")
