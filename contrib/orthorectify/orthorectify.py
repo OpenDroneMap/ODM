@@ -17,7 +17,7 @@ interpolation = 'bilinear'
 target_images = [] # all
 target_images.append("DJI_0028.JPG")
 
-def bilinear_interpolate(im, x, y):
+def bilinear_interpolate(im, x, y, b):
     x = np.asarray(x)
     y = np.asarray(y)
 
@@ -25,17 +25,16 @@ def bilinear_interpolate(im, x, y):
     x1 = x0 + 1
     y0 = np.floor(y).astype(int)
     y1 = y0 + 1
-    print(im.shape)
-    exit(1)
+
     x0 = np.clip(x0, 0, im.shape[1]-1)
     x1 = np.clip(x1, 0, im.shape[1]-1)
     y0 = np.clip(y0, 0, im.shape[0]-1)
     y1 = np.clip(y1, 0, im.shape[0]-1)
 
-    Ia = im[ y0, x0 ]
-    Ib = im[ y1, x0 ]
-    Ic = im[ y0, x1 ]
-    Id = im[ y1, x1 ]
+    Ia = im[ y0, x0, b ]
+    Ib = im[ y1, x0, b ]
+    Ic = im[ y0, x1, b ]
+    Id = im[ y1, x1, b ]
 
     wa = (x1-x) * (y1-y)
     wb = (x1-x) * (y-y0)
@@ -117,12 +116,14 @@ with rasterio.open(dem_path) as dem_raster:
                             y = (img_h - 1) / 2.0 - (f * (r[0][1] * dx + r[1][1] * dy + r[2][1] * dz) / den)
 
                             if x >= 0 and y >= 0 and x <= img_w - 1 and y <= img_h - 1:
-                                xi = img_w - 1 - int(round(x))
-                                yi = img_h - 1 - int(round(y))
                                 for b in range(num_bands):
                                     if interpolation == 'bilinear':
-                                        imgout[b][j][i] = bilinear_interpolate(shot_image, yi, xi, b)
+                                        xi = img_w - 1 - x
+                                        yi = img_h - 1 - y
+                                        imgout[b][j][i] = bilinear_interpolate(shot_image, xi, yi, b)
                                     else:
+                                        xi = img_w - 1 - int(round(x))
+                                        yi = img_h - 1 - int(round(y))
                                         imgout[b][j][i] = shot_image[yi][xi][b]
                                 # for b in range(num_bands):
                                 #     imgout[b][j][i] = 255
