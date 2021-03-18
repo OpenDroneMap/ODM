@@ -144,7 +144,7 @@ with rasterio.open(dem_path) as dem_raster:
             print("Processing %s..." % shot.id)
             shot_image = udata.load_undistorted_image(shot.id)
 
-            r = shot.pose.get_rotation_matrix().T
+            r = shot.pose.get_rotation_matrix()
             Xs, Ys, Zs = shot.pose.get_origin()
 
             print("Camera pose: (%f, %f, %f)" % (Xs, Ys, Zs))
@@ -181,9 +181,9 @@ with rasterio.open(dem_path) as dem_raster:
                             dy = (Ya - Ys)
                             dz = (Za - Zs)
 
-                            den = r[0][2] * dx + r[1][2] * dy + r[2][2] * dz
-                            x = (img_w - 1) / 2.0 - (f * (r[0][0] * dx + r[1][0] * dy + r[2][0] * dz) / den)
-                            y = (img_h - 1) / 2.0 - (f * (r[0][1] * dx + r[1][1] * dy + r[2][1] * dz) / den)
+                            den = r[2][0] * dx + r[2][1] * dy + r[2][2] * dz
+                            x = (img_w - 1) / 2.0 - (f * (r[0][0] * dx + r[0][1] * dy + r[0][2] * dz) / den)
+                            y = (img_h - 1) / 2.0 - (f * (r[1][0] * dx + r[1][1] * dy + r[1][2] * dz) / den)
 
                             if x >= 0 and y >= 0 and x <= img_w - 1 and y <= img_h - 1:
                                 
