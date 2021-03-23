@@ -13,7 +13,9 @@ from opendm import types
 from opendm.utils import get_depthmap_resolution
 from opendm.osfm import OSFMContext
 from opendm import multispectral
+from opendm import thermal
 from opendm import nvm
+from opendm.photo import find_largest_photo
 
 class ODMOpenSfMStage(types.ODM_Stage):
     def process(self, args, outputs):
@@ -26,6 +28,8 @@ class ODMOpenSfMStage(types.ODM_Stage):
             exit(1)
 
         octx = OSFMContext(tree.opensfm)
+        # TODO REMOVE
+        # octx.setup(args, tree.dataset_raw, reconstruction=reconstruction, rerun=False)
         octx.setup(args, tree.dataset_raw, reconstruction=reconstruction, rerun=self.rerun())
         octx.extract_metadata(self.rerun())
         self.update_progress(20)
@@ -94,6 +98,7 @@ class ODMOpenSfMStage(types.ODM_Stage):
 
         alignment_info = None
         primary_band_name = None
+        largest_photo = None
         undistort_pipeline = []
 
         def undistort_callback(shot_id, image):
@@ -101,9 +106,19 @@ class ODMOpenSfMStage(types.ODM_Stage):
                 image = func(shot_id, image)
             return image
 
+        def resize_thermal_images(shot_id, image):
+            photo = reconstruction.get_photo(shot_id)
+            if photo.is_thermal():
+                return thermal.resize_to_match(image, largest_photo)
+            else:
+                return image
+
         def radiometric_calibrate(shot_id, image):
             photo = reconstruction.get_photo(shot_id)
-            return multispectral.dn_to_reflectance(photo, image, use_sun_sensor=args.radiometric_calibration=="camera+sun")
+            if photo.is_thermal():
+                return thermal.dn_to_temperature(photo, image)
+            else:
+                return multispectral.dn_to_reflectance(photo, image, use_sun_sensor=args.radiometric_calibration=="camera+sun")
 
 
         def align_to_primary_band(shot_id, image):
@@ -123,6 +138,10 @@ class ODMOpenSfMStage(types.ODM_Stage):
             else:
                 log.ODM_WARNING("Cannot align %s, no alignment matrix could be computed. Band alignment quality might be affected." % (shot_id))
                 return image
+
+        if reconstruction.multi_camera:
+            largest_photo = find_largest_photo(photos)
+            undistort_pipeline.append(resize_thermal_images)
 
         if args.radiometric_calibration != "none":
             undistort_pipeline.append(radiometric_calibrate)
