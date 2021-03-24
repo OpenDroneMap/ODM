@@ -27,8 +27,6 @@ def dn_to_temperature(photo, image):
     """
 
     image = image.astype("float32")
-    if len(image.shape) != 3:
-        raise ValueError("Image should have shape length of 3 (got: %s)" % len(image.shape))
 
     # Handle thermal bands
     if photo.is_thermal():

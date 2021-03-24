@@ -346,7 +346,7 @@ def compute_homography(image_filename, align_image_filename):
 
         max_dim = max(image_gray.shape)
         if max_dim <= 320:
-            log.ODM_WARNING("Small image for band alignment (%sx%s), this might be tough to compute." % (w, h))
+            log.ODM_WARNING("Small image for band alignment (%sx%s), this might be tough to compute." % (image_gray.shape[1], image_gray.shape[0]))
 
         align_image = imread(align_image_filename, unchanged=True, anydepth=True)
         if align_image.shape[2] == 3:
