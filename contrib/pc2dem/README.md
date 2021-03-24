@@ -1,6 +1,6 @@
 # Point Cloud To DEM
 
-Convert point clouds (LAS, LAZ, PLY, and any other format compatible with [PDAL](https://pdal.io/stages/readers.html) to GeoTIFF elevation models.
+Convert point clouds (LAS, LAZ, PLY, and any other format compatible with [PDAL](https://pdal.io/stages/readers.html)) to GeoTIFF elevation models.
 
 ![image](https://user-images.githubusercontent.com/1951843/112354653-492a5100-8ca3-11eb-9f21-4dda4cae976f.png)
 
