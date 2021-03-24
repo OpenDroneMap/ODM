@@ -183,6 +183,7 @@ private:
 
     std::vector<void *>    bands;
     std::vector<GDALColorInterp> colorInterps;
+    std::vector<std::string> bandDescriptions;
     void *alphaBand; // Keep alpha band separate
     int currentBandIndex;
 

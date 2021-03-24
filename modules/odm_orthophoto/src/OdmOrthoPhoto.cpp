@@ -2,6 +2,9 @@
 #include <sstream>
 #include <fstream>
 #include <Eigen/StdVector>
+#include <algorithm>
+#include <cctype>
+#include <string>
 
 #include "OdmOrthoPhoto.hpp"
 
@@ -168,15 +171,20 @@ void OdmOrthoPhoto::parseArguments(int argc, char *argv[])
     std::stringstream ss(bandsOrder);
     std::string item;
     while(std::getline(ss, item, ',')){
-        if (item == "red" || item == "r"){
+        std::string itemL = item;
+        // To lower case
+        std::transform(itemL.begin(), itemL.end(), itemL.begin(), [](unsigned char c){ return std::tolower(c); });
+
+        if (itemL == "red" || itemL == "r"){
             colorInterps.push_back(GCI_RedBand);
-        }else if (item == "green" || item == "g"){
+        }else if (itemL == "green" || itemL == "g"){
             colorInterps.push_back(GCI_GreenBand);
-        }else if (item == "blue" || item == "b"){
+        }else if (itemL == "blue" || itemL == "b"){
             colorInterps.push_back(GCI_BlueBand);
         }else{
             colorInterps.push_back(GCI_GrayIndex);
         }
+        bandDescriptions.push_back(item);
     }
 }
 
@@ -237,6 +245,10 @@ void OdmOrthoPhoto::saveTIFF(const std::string &filename, GDALDataType dataType)
             interp = colorInterps[i];
         }
         GDALSetRasterColorInterpretation(hBand, interp );
+
+        if (i < bandDescriptions.size()){
+            GDALSetDescription(hBand, bandDescriptions[i].c_str());
+        }
 
         if (GDALRasterIO( hBand, GF_Write, 0, 0, width, height,
                     bands[i], width, height, dataType, 0, 0 ) != CE_None){

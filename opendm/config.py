@@ -211,9 +211,9 @@ def config(argv=None, parser=None):
             default='none',
             choices=['none', 'camera', 'camera+sun'],
             help=('Set the radiometric calibration to perform on images. '
-                'When processing multispectral images you should set this option '
-                'to obtain reflectance values (otherwise you will get digital number values). '
-                '[camera] applies black level, vignetting, row gradient gain/exposure compensation (if appropriate EXIF tags are found). '
+                'When processing multispectral and thermal images you should set this option '
+                'to obtain reflectance/temperature values (otherwise you will get digital number values). '
+                '[camera] applies black level, vignetting, row gradient gain/exposure compensation (if appropriate EXIF tags are found) and computes absolute temperature values. '
                 '[camera+sun] is experimental, applies all the corrections of [camera], plus compensates for spectral radiance registered via a downwelling light sensor (DLS) taking in consideration the angle of the sun. '
                 'Can be one of: %(choices)s. Default: '
                 '%(default)s'))

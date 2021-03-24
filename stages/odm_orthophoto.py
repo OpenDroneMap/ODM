@@ -63,7 +63,7 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                     if not primary:
                         subdir = band['name'].lower()
                     models.append(os.path.join(base_dir, subdir, model_file))
-                kwargs['bands'] = '-bands %s' % (','.join([quote(b['name'].lower()) for b in reconstruction.multi_camera]))
+                kwargs['bands'] = '-bands %s' % (','.join([quote(b['name']) for b in reconstruction.multi_camera]))
             else:
                 models.append(os.path.join(base_dir, model_file))
 

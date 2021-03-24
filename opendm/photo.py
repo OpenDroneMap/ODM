@@ -15,6 +15,18 @@ import xmltodict as x2d
 from opendm import get_image_size
 from xml.parsers.expat import ExpatError
 
+def find_largest_photo(photos):
+    max_photo = None
+    for p in photos:
+        if p.width is None:
+            continue
+        if max_photo is None:
+            max_photo = p
+        else:
+            if max_photo.width * max_photo.height < p.width * p.height:
+                max_photo = p
+    return p
+
 def find_largest_photo_dim(photos):
     max_dim = 0
     for p in photos:
@@ -458,3 +470,6 @@ class ODM_Photo:
             return val
 
         return None
+
+    def is_thermal(self):
+        return self.band_name.upper() in ["LWIR"] # TODO: more?

@@ -118,8 +118,8 @@ def dn_to_reflectance(photo, image, use_sun_sensor=True):
     return radiance * math.pi / irradiance
 
 def compute_irradiance(photo, use_sun_sensor=True):
-    # Thermal?
-    if photo.band_name == "LWIR":
+    # Thermal (this should never happen, but just in case..)
+    if photo.is_thermal():
         return 1.0
 
     # Some cameras (Micasense) store the value (nice! just return)
@@ -313,20 +313,6 @@ def compute_alignment_matrices(multi_camera, primary_band_name, images_path, s2p
 
             parallel_map(parallel_compute_homography, [{'filename': p.filename} for p in band['photos']], max_concurrency, single_thread_fallback=False)
 
-            # Choose winning algorithm (doesn't seem to yield improvements)
-            # feat_count = 0
-            # ecc_count = 0
-            # for m in matrices:
-            #     if m['algo'] == 'feat':
-            #         feat_count += 1
-            #     if m['algo'] == 'ecc':
-            #         ecc_count += 1
-
-            # algo = 'feat' if feat_count >= ecc_count else 'ecc'
-
-            # log.ODM_INFO("Feat: %s | ECC: %s | Winner: %s" % (feat_count, ecc_count, algo))
-            # matrices = [m for m in matrices if m['algo'] == algo]
-
             # Find the matrix that has the most common eigvals
             # among all matrices. That should be the "best" alignment.
             for m1 in matrices:
@@ -345,7 +331,7 @@ def compute_alignment_matrices(multi_camera, primary_band_name, images_path, s2p
                 alignment_info[band['name']] = matrices[0]
                 log.ODM_INFO("%s band will be aligned using warp matrix %s (score: %s)" % (band['name'], matrices[0]['warp_matrix'], matrices[0]['score']))
             else:
-                log.ODM_WARNING("Cannot find alignment matrix for band %s, The band will likely be misaligned!" % band['name'])
+                log.ODM_WARNING("Cannot find alignment matrix for band %s, The band might end up misaligned!" % band['name'])
 
     return alignment_info
 
@@ -357,6 +343,10 @@ def compute_homography(image_filename, align_image_filename):
             image_gray = to_8bit(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY))
         else:
             image_gray = to_8bit(image[:,:,0])
+
+        max_dim = max(image_gray.shape)
+        if max_dim <= 320:
+            log.ODM_WARNING("Small image for band alignment (%sx%s), this might be tough to compute." % (image_gray.shape[1], image_gray.shape[0]))
 
         align_image = imread(align_image_filename, unchanged=True, anydepth=True)
         if align_image.shape[2] == 3:
@@ -420,13 +410,12 @@ def find_ecc_homography(image_gray, align_image_gray, number_of_iterations=1000,
     log.ODM_INFO("Pyramid levels: %s" % pyramid_levels)
     
     # Quick check on size
-    if align_image_gray.shape[0] < image_gray.shape[0]:
+    if align_image_gray.shape[0] != image_gray.shape[0]:
         align_image_gray = to_8bit(align_image_gray)
         image_gray = to_8bit(image_gray)
-
-        cv2.resize(align_image_gray, None, 
-                        fx=image_gray.shape[0]/align_image_gray.shape[0], 
-                        fy=image_gray.shape[0]/align_image_gray.shape[0],
+        image_gray = cv2.resize(image_gray, None, 
+                        fx=align_image_gray.shape[1]/image_gray.shape[1], 
+                        fy=align_image_gray.shape[0]/image_gray.shape[0],
                         interpolation=cv2.INTER_AREA)
 
     # Build pyramids
@@ -545,12 +534,15 @@ def to_8bit(image, force_normalize=False):
     # Convert to 8bit
     try:
         data_range = np.iinfo(image.dtype)
+        min_value = 0
         value_range = float(data_range.max) - float(data_range.min)
     except ValueError:
         # For floats use the actual range of the image values
-        value_range = float(image.max()) - float(image.min())
-    
+        min_value = float(image.min())
+        value_range = float(image.max()) - min_value
+
     image = image.astype(np.float32)
+    image -= min_value
     image *= 255.0 / value_range
     np.around(image, out=image)
     image[image > 255] = 255
