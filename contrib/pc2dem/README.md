@@ -1,10 +1,10 @@
 # Point Cloud To DEM
 
-Convert point clouds (LAS, LAZ, PLY, and any other format compatible with [PDAL](https://pdal.io/stages/readers.html) to GeoTIFF elevation models using ODM's open source algorithms.
+Convert point clouds (LAS, LAZ, PLY, and any other format compatible with [PDAL](https://pdal.io/stages/readers.html) to GeoTIFF elevation models.
 
 ![image](https://user-images.githubusercontent.com/1951843/112354653-492a5100-8ca3-11eb-9f21-4dda4cae976f.png)
 
-This tool includes method to perform efficient and scalable gapfill interpolation and is the same method used by ODM's processing pipeline. It is offered here as a standalone module for processing individual point clouds.
+This tool includes methods to perform efficient and scalable gapfill interpolation and is the same method used by ODM's processing pipeline. It is offered here as a standalone module for processing individual point clouds.
 
 ## Usage
 
