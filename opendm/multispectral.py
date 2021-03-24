@@ -534,12 +534,15 @@ def to_8bit(image, force_normalize=False):
     # Convert to 8bit
     try:
         data_range = np.iinfo(image.dtype)
+        min_value = 0
         value_range = float(data_range.max) - float(data_range.min)
     except ValueError:
         # For floats use the actual range of the image values
-        value_range = float(image.max()) - float(image.min())
-    
+        min_value = float(image.min())
+        value_range = float(image.max()) - min_value
+
     image = image.astype(np.float32)
+    image -= min_value
     image *= 255.0 / value_range
     np.around(image, out=image)
     image[image > 255] = 255
