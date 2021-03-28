@@ -422,6 +422,13 @@ def config(argv=None, parser=None):
                         default=False,
                         help='Skip the blending of colors near seams. Default: %(default)s')
 
+    parser.add_argument('--texturing-keep-unseen-faces',
+                        action=StoreTrue,
+                        nargs=0,
+                        default=False,
+                        help=('Keep faces in the mesh that are not seen in any camera. '
+                              'Default:  %(default)s'))
+
     parser.add_argument('--texturing-tone-mapping',
                         metavar='<string>',
                         action=StoreValue,

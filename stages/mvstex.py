@@ -68,12 +68,15 @@ class ODMMvsTexStage(types.ODM_Stage):
                 # Format arguments to fit Mvs-Texturing app
                 skipGlobalSeamLeveling = ""
                 skipLocalSeamLeveling = ""
+                keepUnseenFaces = ""
                 nadir = ""
 
                 if (self.params.get('skip_glob_seam_leveling')):
                     skipGlobalSeamLeveling = "--skip_global_seam_leveling"
                 if (self.params.get('skip_loc_seam_leveling')):
                     skipLocalSeamLeveling = "--skip_local_seam_leveling"
+                if (self.params.get('keep_unseen_faces')):
+                    keepUnseenFaces = "--keep_unseen_faces"
                 if (r['nadir']):
                     nadir = '--nadir_mode'
 
@@ -86,6 +89,7 @@ class ODMMvsTexStage(types.ODM_Stage):
                     'outlierRemovalType': self.params.get('outlier_rem_type'),
                     'skipGlobalSeamLeveling': skipGlobalSeamLeveling,
                     'skipLocalSeamLeveling': skipLocalSeamLeveling,
+                    'keepUnseenFaces': keepUnseenFaces,
                     'toneMapping': self.params.get('tone_mapping'),
                     'nadirMode': nadir,
                     'nvm_file': r['nvm_file'],
@@ -107,6 +111,7 @@ class ODMMvsTexStage(types.ODM_Stage):
                         '{intermediate} '
                         '{skipGlobalSeamLeveling} '
                         '{skipLocalSeamLeveling} '
+                        '{keepUnseenFaces} '
                         '{nadirMode} '
                         '{labelingFile} '.format(**kwargs))
                 

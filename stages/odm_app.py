@@ -46,6 +46,7 @@ class ODMApp:
                                     outlier_rem_type=args.texturing_outlier_removal_type,
                                     skip_glob_seam_leveling=args.texturing_skip_global_seam_leveling,
                                     skip_loc_seam_leveling=args.texturing_skip_local_seam_leveling,
+                                    keep_unseen_faces=args.texturing_keep_unseen_faces,
                                     tone_mapping=args.texturing_tone_mapping)
         georeferencing = ODMGeoreferencingStage('odm_georeferencing', args, progress=80.0,
                                                     gcp_file=args.gcp,
