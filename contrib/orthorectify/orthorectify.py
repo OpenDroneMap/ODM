@@ -242,8 +242,8 @@ with rasterio.open(dem_path) as dem_raster:
                 return (imgout, (minx, miny, maxx, maxy))
 
             # Compute bounding box of image coverage
-            # assuming a flat plane at Z = plane_z
-            # (Otherwise we have to scan the entire DSM)
+            # assuming a flat plane at Z = min Z
+            # (Otherwise we have to scan the entire DEM)
             # The Xa,Ya equations are just derived from the colinearity equations
             # solving for Xa and Ya instead of x,y
             def dem_coordinates(cpx, cpy):
@@ -283,10 +283,10 @@ with rasterio.open(dem_path) as dem_raster:
             # Merge image
             imgout, _ = results[0]
             for j in range(dem_bbox_miny, dem_bbox_maxy + 1):
-                i_j = j - dem_bbox_miny
+                im_j = j - dem_bbox_miny
                 resimg, _ = results[j % max_workers]
                 for b in range(num_bands):
-                    imgout[b][i_j] = resimg[b][i_j]
+                    imgout[b][im_j] = resimg[b][im_j]
                 
             # Merge bounds
             minx = dem_bbox_w
