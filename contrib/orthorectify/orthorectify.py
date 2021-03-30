@@ -8,8 +8,10 @@ sys.path.insert(0, os.path.join("..", "..", os.path.dirname(__file__)))
 
 import rasterio
 import numpy as np
+import numpy.ma as ma
 import multiprocessing
 import argparse
+import functools
 from opensfm import dataset
 
 default_dem_path = "odm_dem/dsm.tif"
@@ -103,6 +105,14 @@ def bilinear_interpolate(im, x, y):
 print("Reading DEM: %s" % dem_path)
 with rasterio.open(dem_path) as dem_raster:
     dem = dem_raster.read()[0]
+    dem_has_nodata = dem_raster.profile.get('nodata') is not None
+
+    if dem_has_nodata:
+        dem_min_value = ma.array(dem, mask=dem==dem_raster.nodata).min()
+    else:
+        dem_min_value = dem.min()
+    
+    print("DEM Minimum: %s" % dem_min_value)
     h, w = dem.shape
 
     crs = dem_raster.profile.get('crs')
@@ -146,6 +156,15 @@ with rasterio.open(dem_path) as dem_raster:
 
             r = shot.pose.get_rotation_matrix()
             Xs, Ys, Zs = shot.pose.get_origin()
+            a1 = r[0][0]
+            b1 = r[0][1]
+            c1 = r[0][2]
+            a2 = r[1][0]
+            b2 = r[1][1]
+            c2 = r[1][2]
+            a3 = r[2][0]
+            b3 = r[2][1]
+            c3 = r[2][2]
 
             print("Camera pose: (%f, %f, %f)" % (Xs, Ys, Zs))
 
@@ -155,15 +174,19 @@ with rasterio.open(dem_path) as dem_raster:
             has_nodata = dem_raster.profile.get('nodata') is not None
 
             def process_pixels(step):
-                imgout = np.full((num_bands, h, w), np.nan)
-                minx = w
-                miny = h
+                imgout = np.full((num_bands, dem_bbox_h, dem_bbox_w), np.nan)
+                minx = dem_bbox_w
+                miny = dem_bbox_h
                 maxx = 0
                 maxy = 0
 
-                for j in range(h):
+                for j in range(dem_bbox_miny, dem_bbox_maxy + 1):
                     if j % max_workers == step:
-                        for i in range(w):
+                        im_j = j - dem_bbox_miny
+
+                        for i in range(dem_bbox_minx, dem_bbox_maxx + 1):
+                            im_i = i - dem_bbox_minx
+
                             # World coordinates
                             Xa, Ya = dem_raster.xy(j, i)
                             Za = dem[j][i]
@@ -181,9 +204,9 @@ with rasterio.open(dem_path) as dem_raster:
                             dy = (Ya - Ys)
                             dz = (Za - Zs)
 
-                            den = r[2][0] * dx + r[2][1] * dy + r[2][2] * dz
-                            x = (img_w - 1) / 2.0 - (f * (r[0][0] * dx + r[0][1] * dy + r[0][2] * dz) / den)
-                            y = (img_h - 1) / 2.0 - (f * (r[1][0] * dx + r[1][1] * dy + r[1][2] * dz) / den)
+                            den = a3 * dx + b3 * dy + c3 * dz
+                            x = (img_w - 1) / 2.0 - (f * (a1 * dx + b1 * dy + c1 * dz) / den)
+                            y = (img_h - 1) / 2.0 - (f * (a2 * dx + b2 * dy + c2 * dz) / den)
 
                             if x >= 0 and y >= 0 and x <= img_w - 1 and y <= img_h - 1:
                                 
@@ -202,31 +225,72 @@ with rasterio.open(dem_path) as dem_raster:
                                 # valid sample values.
 
                                 if not np.all(values == 0):
-                                    minx = min(minx, i)
-                                    miny = min(miny, j)
-                                    maxx = max(maxx, i)
-                                    maxy = max(maxy, j)
+                                    minx = min(minx, im_i)
+                                    miny = min(miny, im_j)
+                                    maxx = max(maxx, im_i)
+                                    maxy = max(maxy, im_j)
 
                                     for b in range(num_bands):
-                                        imgout[b][j][i] = values[b]
+                                        imgout[b][im_j][im_i] = values[b]
 
                                 # for b in range(num_bands):
-                                #     imgout[b][j][i] = 255
+                                #     minx = min(minx, im_i)
+                                #     miny = min(miny, im_j)
+                                #     maxx = max(maxx, im_i)
+                                #     maxy = max(maxy, im_j)
+                                #     imgout[b][im_j][im_i] = 255
                 return (imgout, (minx, miny, maxx, maxy))
+
+            # Compute bounding box of image coverage
+            # assuming a flat plane at Z = plane_z
+            # (Otherwise we have to scan the entire DSM)
+            # The Xa,Ya equations are just derived from the colinearity equations
+            # solving for Xa and Ya instead of x,y
+            def dem_coordinates(cpx, cpy):
+                """
+                :param cpx principal point X (image coordinates)
+                :param cpy principal point Y (image coordinates)
+                """
+                Za = dem_min_value
+                m = (a3*b1*cpy - a1*b3*cpy - (a3*b2 - a2*b3)*cpx - (a2*b1 - a1*b2)*f)
+                Xa = dem_offset_x + (m*Xs + (b3*c1*cpy - b1*c3*cpy - (b3*c2 - b2*c3)*cpx - (b2*c1 - b1*c2)*f)*Za - (b3*c1*cpy - b1*c3*cpy - (b3*c2 - b2*c3)*cpx - (b2*c1 - b1*c2)*f)*Zs)/m
+                Ya = dem_offset_y + (m*Ys - (a3*c1*cpy - a1*c3*cpy - (a3*c2 - a2*c3)*cpx - (a2*c1 - a1*c2)*f)*Za + (a3*c1*cpy - a1*c3*cpy - (a3*c2 - a2*c3)*cpx - (a2*c1 - a1*c2)*f)*Zs)/m
+
+                y, x = dem_raster.index(Xa, Ya)
+                return (x, y)
+
+            dem_ul = dem_coordinates(-(img_w - 1) / 2.0, -(img_h - 1) / 2.0)
+            dem_ur = dem_coordinates((img_w - 1) / 2.0, -(img_h - 1) / 2.0)
+            dem_lr = dem_coordinates((img_w - 1) / 2.0, (img_h - 1) / 2.0)
+            dem_ll = dem_coordinates(-(img_w - 1) / 2.0, (img_h - 1) / 2.0)
+            dem_bbox = [dem_ul, dem_ur, dem_lr, dem_ll]
+            dem_bbox_x = np.array(list(map(lambda xy: xy[0], dem_bbox)))
+            dem_bbox_y = np.array(list(map(lambda xy: xy[1], dem_bbox)))
+
+            dem_bbox_minx = min(w - 1, max(0, dem_bbox_x.min()))
+            dem_bbox_miny = min(h - 1, max(0, dem_bbox_y.min()))
+            dem_bbox_maxx = min(w - 1, max(0, dem_bbox_x.max()))
+            dem_bbox_maxy = min(h - 1, max(0, dem_bbox_y.max()))
+            
+            dem_bbox_w = 1 + dem_bbox_maxx - dem_bbox_minx
+            dem_bbox_h = 1 + dem_bbox_maxy - dem_bbox_miny
+
+            print("Iterating over DEM box: [(%s, %s), (%s, %s)] (%sx%s pixels)" % (dem_bbox_minx, dem_bbox_miny, dem_bbox_maxx, dem_bbox_maxy, dem_bbox_w, dem_bbox_h))
 
             with multiprocessing.Pool(max_workers) as p:
                 results = p.map(process_pixels, range(max_workers))
 
             # Merge image
             imgout, _ = results[0]
-            for j in range(h):
+            for j in range(dem_bbox_miny, dem_bbox_maxy + 1):
+                i_j = j - dem_bbox_miny
                 resimg, _ = results[j % max_workers]
                 for b in range(num_bands):
-                    imgout[b][j] = resimg[b][j]
+                    imgout[b][i_j] = resimg[b][i_j]
                 
             # Merge bounds
-            minx = w
-            miny = h
+            minx = dem_bbox_w
+            miny = dem_bbox_h
             maxx = 0
             maxy = 0
 
@@ -250,7 +314,7 @@ with rasterio.open(dem_path) as dem_raster:
                 imgout = imgout.astype(shot_image.dtype)
 
                 dem_transform = dem_raster.profile['transform']
-                offset_x, offset_y = dem_raster.xy(miny, minx, offset='ul')
+                offset_x, offset_y = dem_raster.xy(dem_bbox_miny + miny, dem_bbox_minx + minx, offset='ul')
                  
                 profile = {
                     'driver': 'GTiff',
