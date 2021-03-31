@@ -46,6 +46,10 @@ parser.add_argument('--images',
                     type=str,
                     default="",
                     help="Comma-separeted list of filenames to rectify. Use as an alternative to --image-list. Default: process all images.")
+parser.add_argument('--threads',
+                    type=int,
+                    default=multiprocessing.cpu_count(),
+                    help="Number of CPU processes to use. Default: %(default)s")
 
 args = parser.parse_args()
 
@@ -144,7 +148,7 @@ with rasterio.open(dem_path) as dem_raster:
     if len(reconstructions) == 0:
         raise Exception("No reconstructions available")
 
-    max_workers = multiprocessing.cpu_count()
+    max_workers = args.threads
     print("Using %s threads" % max_workers)
 
     reconstruction = reconstructions[0]
@@ -277,8 +281,13 @@ with rasterio.open(dem_path) as dem_raster:
 
             print("Iterating over DEM box: [(%s, %s), (%s, %s)] (%sx%s pixels)" % (dem_bbox_minx, dem_bbox_miny, dem_bbox_maxx, dem_bbox_maxy, dem_bbox_w, dem_bbox_h))
 
-            with multiprocessing.Pool(max_workers) as p:
-                results = list(filter(lambda r: r[1][0] <= r[1][2] and r[1][1] <= r[1][3], p.map(process_pixels, range(max_workers))))
+            if max_workers > 1:
+                with multiprocessing.Pool(max_workers) as p:
+                    results = p.map(process_pixels, range(max_workers))
+            else:
+                results = [process_pixels(0)]
+
+            results = list(filter(lambda r: r[1][0] <= r[1][2] and r[1][1] <= r[1][3], results))
 
             # Merge image
             imgout, _ = results[0]
