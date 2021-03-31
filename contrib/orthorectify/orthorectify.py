@@ -278,7 +278,7 @@ with rasterio.open(dem_path) as dem_raster:
             print("Iterating over DEM box: [(%s, %s), (%s, %s)] (%sx%s pixels)" % (dem_bbox_minx, dem_bbox_miny, dem_bbox_maxx, dem_bbox_maxy, dem_bbox_w, dem_bbox_h))
 
             with multiprocessing.Pool(max_workers) as p:
-                results = p.map(process_pixels, range(max_workers))
+                results = list(filter(lambda r: r[1][0] <= r[1][2] and r[1][1] <= r[1][3], p.map(process_pixels, range(max_workers))))
 
             # Merge image
             imgout, _ = results[0]
