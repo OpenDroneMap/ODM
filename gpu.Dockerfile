@@ -1,4 +1,4 @@
-FROM ubuntu:20.04 AS builder
+FROM nvidia/cuda:11.2.0-runtime-ubuntu20.04 AS builder
 
 # Env variables
 ENV DEBIAN_FRONTEND=noninteractive \
@@ -12,7 +12,7 @@ WORKDIR /code
 COPY . ./
 
 # Run the build
-RUN PORTABLE_INSTALL=YES bash configure.sh install
+RUN PORTABLE_INSTALL=YES GPU_INSTALL=YES bash configure.sh install
 
 # Clean Superbuild
 RUN bash configure.sh clean
@@ -21,7 +21,7 @@ RUN bash configure.sh clean
 
 ### Use a second image for the final asset to reduce the number and
 # size of the layers.
-FROM ubuntu:20.04
+FROM nvidia/cuda:11.2.0-runtime-ubuntu20.04
 
 # Env variables
 ENV DEBIAN_FRONTEND=noninteractive \
@@ -36,11 +36,14 @@ COPY --from=builder /code /code
 # Copy the Python libraries installed via pip from the builder
 COPY --from=builder /usr/local /usr/local
 
+# Install OpenCL Drivers
+RUN apt update && apt install -y nvidia-opencl-icd-340 intel-opencl-icd
+
 # Install shared libraries that we depend on via APT, but *not*
 # the -dev packages to save space!
 RUN bash configure.sh installruntimedepsonly \
   && apt-get clean \
-  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* 
 
 # Entry point
 ENTRYPOINT ["python3", "/code/run.py"]

@@ -14,6 +14,7 @@ def ply_info(input_ply):
 
     # Read PLY header, check if point cloud has normals
     has_normals = False
+    has_views = False
     vertex_count = 0
 
     with open(input_ply, 'r', errors='ignore') as f:
@@ -25,6 +26,8 @@ def ply_info(input_ply):
             if len(props) == 3:
                 if props[0] == "property" and props[2] in ["nx", "normalx", "normal_x"]:
                     has_normals = True
+                if props[0] == "property" and props[2] in ["views"]:
+                    has_views = True
                 elif props[0] == "element" and props[1] == "vertex":
                     vertex_count = int(props[2])
             i += 1
@@ -35,6 +38,7 @@ def ply_info(input_ply):
     return {
         'has_normals': has_normals,
         'vertex_count': vertex_count,
+        'has_views': has_views
     }
 
 
@@ -96,6 +100,8 @@ def filter(input_point_cloud, output_point_cloud, standard_deviation=2.5, meank=
     if info['has_normals']:
         dims += "nx=float,ny=float,nz=float,"
     dims += "red=uchar,blue=uchar,green=uchar"
+    if info['has_views']:
+        dims += ",views=uchar"
 
     if info['vertex_count'] == 0:
         log.ODM_ERROR("Cannot read vertex count for {}".format(input_point_cloud))
@@ -166,6 +172,12 @@ def filter(input_point_cloud, output_point_cloud, standard_deviation=2.5, meank=
     if not os.path.exists(output_point_cloud):
         log.ODM_WARNING("{} not found, filtering has failed.".format(output_point_cloud))
 
+def export_info_json(pointcloud_path, info_file_path):
+    system.run('pdal info --dimensions "X,Y,Z" "{0}" > "{1}"'.format(pointcloud_path, info_file_path))
+
+
+def export_summary_json(pointcloud_path, summary_file_path):
+    system.run('pdal info --summary "{0}" > "{1}"'.format(pointcloud_path, summary_file_path))
 
 def get_extent(input_point_cloud):
     fd, json_file = tempfile.mkstemp(suffix='.json')
@@ -308,7 +320,7 @@ def merge_ply(input_point_cloud_files, output_file, dims=None):
 def post_point_cloud_steps(args, tree):
     # XYZ point cloud output
     if args.pc_csv:
-        log.ODM_INFO("Creating geo-referenced CSV file (XYZ format)")
+        log.ODM_INFO("Creating CSV file (XYZ format)")
         
         system.run("pdal translate -i \"{}\" "
             "-o \"{}\" "
@@ -320,7 +332,7 @@ def post_point_cloud_steps(args, tree):
 
     # LAS point cloud output
     if args.pc_las:
-        log.ODM_INFO("Creating geo-referenced LAS file")
+        log.ODM_INFO("Creating LAS file")
         
         system.run("pdal translate -i \"{}\" "
             "-o \"{}\" ".format(
@@ -329,5 +341,5 @@ def post_point_cloud_steps(args, tree):
 
     # EPT point cloud output
     if args.pc_ept:
-        log.ODM_INFO("Creating geo-referenced Entwine Point Tile output")
+        log.ODM_INFO("Creating Entwine Point Tile output")
         entwine.build([tree.odm_georeferencing_model_laz], tree.entwine_pointcloud, max_concurrency=args.max_concurrency, rerun=False)

@@ -13,6 +13,9 @@ from opendm import types
 from opendm.utils import get_depthmap_resolution
 from opendm.osfm import OSFMContext
 from opendm import multispectral
+from opendm import thermal
+from opendm import nvm
+from opendm.photo import find_largest_photo
 
 class ODMOpenSfMStage(types.ODM_Stage):
     def process(self, args, outputs):
@@ -25,7 +28,9 @@ class ODMOpenSfMStage(types.ODM_Stage):
             exit(1)
 
         octx = OSFMContext(tree.opensfm)
-        octx.setup(args, tree.dataset_raw, photos, reconstruction=reconstruction, rerun=self.rerun())
+        # TODO REMOVE
+        # octx.setup(args, tree.dataset_raw, reconstruction=reconstruction, rerun=False)
+        octx.setup(args, tree.dataset_raw, reconstruction=reconstruction, rerun=self.rerun())
         octx.extract_metadata(self.rerun())
         self.update_progress(20)
         octx.feature_matching(self.rerun())
@@ -34,26 +39,48 @@ class ODMOpenSfMStage(types.ODM_Stage):
         octx.extract_cameras(tree.path("cameras.json"), self.rerun())
         self.update_progress(70)
 
-        if args.optimize_disk_space:
-            for folder in ["features", "matches", "exif", "reports"]:
-                folder_path = octx.path(folder)
-                if os.path.islink(folder_path):
-                    os.unlink(folder_path)
-                else:
-                    shutil.rmtree(folder_path)
+        def cleanup_disk_space():
+            if args.optimize_disk_space:
+                for folder in ["features", "matches", "exif", "reports"]:
+                    folder_path = octx.path(folder)
+                    if os.path.exists(folder_path):
+                        if os.path.islink(folder_path):
+                            os.unlink(folder_path)
+                        else:
+                            shutil.rmtree(folder_path)
 
         # If we find a special flag file for split/merge we stop right here
         if os.path.exists(octx.path("split_merge_stop_at_reconstruction.txt")):
             log.ODM_INFO("Stopping OpenSfM early because we found: %s" % octx.path("split_merge_stop_at_reconstruction.txt"))
             self.next_stage = None
+            cleanup_disk_space()
             return
 
-        if args.fast_orthophoto:
-            output_file = octx.path('reconstruction.ply')
-        elif args.use_opensfm_dense:
-            output_file = tree.opensfm_model
+        # Stats are computed in the local CRS (before geoprojection)
+        if not args.skip_report:
+
+            # TODO: this will fail to compute proper statistics if
+            # the pipeline is run with --skip-report and is subsequently
+            # rerun without --skip-report a --rerun-* parameter (due to the reconstruction.json file)
+            # being replaced below. It's an isolated use case.
+
+            octx.export_stats(self.rerun())
+        
+        self.update_progress(75)
+
+        # We now switch to a geographic CRS
+        geocoords_flag_file = octx.path("exported_geocoords.txt")
+
+        if reconstruction.is_georeferenced() and (not io.file_exists(geocoords_flag_file) or self.rerun()):
+            octx.run('export_geocoords --reconstruction --proj \'%s\' --offset-x %s --offset-y %s' % 
+                (reconstruction.georef.proj4(), reconstruction.georef.utm_east_offset, reconstruction.georef.utm_north_offset))
+            # Destructive
+            shutil.move(tree.opensfm_geocoords_reconstruction, tree.opensfm_reconstruction)
+            octx.touch(geocoords_flag_file)
         else:
-            output_file = tree.opensfm_reconstruction
+            log.ODM_WARNING("Will skip exporting %s" % tree.opensfm_geocoords_reconstruction)
+        
+        self.update_progress(80)
 
         updated_config_flag_file = octx.path('updated_config.txt')
 
@@ -68,77 +95,164 @@ class ODMOpenSfMStage(types.ODM_Stage):
             octx.update_config({'undistorted_image_max_size': outputs['undist_image_max_size']})
             octx.touch(updated_config_flag_file)
 
-        # These will be used for texturing / MVS
-        if args.radiometric_calibration == "none":
-            octx.convert_and_undistort(self.rerun())
-        else:
-            def radiometric_calibrate(shot_id, image):
-                photo = reconstruction.get_photo(shot_id)
+        # Undistorted images will be used for texturing / MVS
+
+        alignment_info = None
+        primary_band_name = None
+        largest_photo = None
+        undistort_pipeline = []
+
+        def undistort_callback(shot_id, image):
+            for func in undistort_pipeline:
+                image = func(shot_id, image)
+            return image
+
+        def resize_thermal_images(shot_id, image):
+            photo = reconstruction.get_photo(shot_id)
+            if photo.is_thermal():
+                return thermal.resize_to_match(image, largest_photo)
+            else:
+                return image
+
+        def radiometric_calibrate(shot_id, image):
+            photo = reconstruction.get_photo(shot_id)
+            if photo.is_thermal():
+                return thermal.dn_to_temperature(photo, image)
+            else:
                 return multispectral.dn_to_reflectance(photo, image, use_sun_sensor=args.radiometric_calibration=="camera+sun")
 
-            octx.convert_and_undistort(self.rerun(), radiometric_calibrate)
 
-        self.update_progress(80)
+        def align_to_primary_band(shot_id, image):
+            photo = reconstruction.get_photo(shot_id)
+
+            # No need to align if requested by user
+            if args.skip_band_alignment:
+                return image
+
+            # No need to align primary
+            if photo.band_name == primary_band_name:
+                return image
+
+            ainfo = alignment_info.get(photo.band_name)
+            if ainfo is not None:
+                return multispectral.align_image(image, ainfo['warp_matrix'], ainfo['dimension'])
+            else:
+                log.ODM_WARNING("Cannot align %s, no alignment matrix could be computed. Band alignment quality might be affected." % (shot_id))
+                return image
 
         if reconstruction.multi_camera:
-            # Dump band image lists
-            log.ODM_INFO("Multiple bands found")
-            for band in reconstruction.multi_camera:
-                log.ODM_INFO("Exporting %s band" % band['name'])
-                image_list_file = octx.path("image_list_%s.txt" % band['name'].lower())
+            largest_photo = find_largest_photo(photos)
+            undistort_pipeline.append(resize_thermal_images)
 
-                if not io.file_exists(image_list_file) or self.rerun():
-                    with open(image_list_file, "w") as f:
-                        f.write("\n".join([p.filename for p in band['photos']]))
-                        log.ODM_INFO("Wrote %s" % image_list_file)
-                else:
-                    log.ODM_WARNING("Found a valid image list in %s for %s band" % (image_list_file, band['name']))
+        if args.radiometric_calibration != "none":
+            undistort_pipeline.append(radiometric_calibrate)
+        
+        image_list_override = None
+
+        if reconstruction.multi_camera:
+            
+            # Undistort only secondary bands
+            image_list_override = [os.path.join(tree.dataset_raw, p.filename) for p in photos] # if p.band_name.lower() != primary_band_name.lower()
+
+            # We backup the original reconstruction.json, tracks.csv
+            # then we augment them by duplicating the primary band
+            # camera shots with each band, so that exports, undistortion,
+            # etc. include all bands
+            # We finally restore the original files later
+
+            added_shots_file = octx.path('added_shots_done.txt')
+
+            if not io.file_exists(added_shots_file) or self.rerun():
+                primary_band_name = multispectral.get_primary_band_name(reconstruction.multi_camera, args.primary_band)
+                s2p, p2s = multispectral.compute_band_maps(reconstruction.multi_camera, primary_band_name)
                 
-                nvm_file = octx.path("undistorted", "reconstruction_%s.nvm" % band['name'].lower())
-                if not io.file_exists(nvm_file) or self.rerun():
-                    octx.run('export_visualsfm --points --image_list "%s"' % image_list_file)
-                    os.rename(tree.opensfm_reconstruction_nvm, nvm_file)
+                if not args.skip_band_alignment:
+                    alignment_info = multispectral.compute_alignment_matrices(reconstruction.multi_camera, primary_band_name, tree.dataset_raw, s2p, p2s, max_concurrency=args.max_concurrency)
                 else:
-                    log.ODM_WARNING("Found a valid NVM file in %s for %s band" % (nvm_file, band['name']))
+                    log.ODM_WARNING("Skipping band alignment")
+                    alignment_info = {}
+                    
+                log.ODM_INFO("Adding shots to reconstruction")
+                
+                octx.backup_reconstruction()
+                octx.add_shots_to_reconstruction(p2s)
+                octx.touch(added_shots_file)
+
+            undistort_pipeline.append(align_to_primary_band)
+
+        octx.convert_and_undistort(self.rerun(), undistort_callback, image_list_override)
+
+        self.update_progress(95)
+
+        if reconstruction.multi_camera:
+            octx.restore_reconstruction_backup()
+
+            # Undistort primary band and write undistorted 
+            # reconstruction.json, tracks.csv
+            octx.convert_and_undistort(self.rerun(), undistort_callback, runId='primary')
 
         if not io.file_exists(tree.opensfm_reconstruction_nvm) or self.rerun():
             octx.run('export_visualsfm --points')
         else:
             log.ODM_WARNING('Found a valid OpenSfM NVM reconstruction file in: %s' %
                             tree.opensfm_reconstruction_nvm)
+        
+        if reconstruction.multi_camera:
+            log.ODM_INFO("Multiple bands found")
 
-        self.update_progress(85)
+            # Write NVM files for the various bands
+            for band in reconstruction.multi_camera:
+                nvm_file = octx.path("undistorted", "reconstruction_%s.nvm" % band['name'].lower())
 
+                if not io.file_exists(nvm_file) or self.rerun():
+                    img_map = {}
+
+                    if primary_band_name is None:
+                        primary_band_name = multispectral.get_primary_band_name(reconstruction.multi_camera, args.primary_band)
+                    if p2s is None:
+                        s2p, p2s = multispectral.compute_band_maps(reconstruction.multi_camera, primary_band_name)
+                    
+                    for fname in p2s:
+                        
+                        # Primary band maps to itself
+                        if band['name'] == primary_band_name:
+                            img_map[fname + '.tif'] = fname + '.tif'
+                        else:
+                            band_filename = next((p.filename for p in p2s[fname] if p.band_name == band['name']), None)
+
+                            if band_filename is not None:
+                                img_map[fname + '.tif'] = band_filename + '.tif'
+                            else:
+                                log.ODM_WARNING("Cannot find %s band equivalent for %s" % (band, fname))
+
+                    nvm.replace_nvm_images(tree.opensfm_reconstruction_nvm, img_map, nvm_file)
+                else:
+                    log.ODM_WARNING("Found existing NVM file %s" % nvm_file)
+                    
         # Skip dense reconstruction if necessary and export
         # sparse reconstruction instead
         if args.fast_orthophoto:
+            output_file = octx.path('reconstruction.ply')
+
             if not io.file_exists(output_file) or self.rerun():
-                octx.run('export_ply --no-cameras')
+                octx.run('export_ply --no-cameras --point-num-views')
             else:
                 log.ODM_WARNING("Found a valid PLY reconstruction in %s" % output_file)
 
-        elif args.use_opensfm_dense:
-            if not io.file_exists(output_file) or self.rerun():
-                octx.run('compute_depthmaps')
-            else:
-                log.ODM_WARNING("Found a valid dense reconstruction in %s" % output_file)
+        cleanup_disk_space()
 
-        self.update_progress(90)
-
-        if reconstruction.is_georeferenced() and (not io.file_exists(tree.opensfm_transformation) or self.rerun()):
-            octx.run('export_geocoords --transformation --proj \'%s\'' % reconstruction.georef.proj4())
-        else:
-            log.ODM_WARNING("Will skip exporting %s" % tree.opensfm_transformation)
-        
         if args.optimize_disk_space:
             os.remove(octx.path("tracks.csv"))
+            if io.file_exists(octx.recon_backup_file()):
+                os.remove(octx.recon_backup_file())
+
             if io.dir_exists(octx.path("undistorted", "depthmaps")):
                 files = glob.glob(octx.path("undistorted", "depthmaps", "*.npz"))
                 for f in files:
                     os.remove(f)
 
             # Keep these if using OpenMVS
-            if args.fast_orthophoto or args.use_opensfm_dense:
+            if args.fast_orthophoto:
                 files = [octx.path("undistorted", "tracks.csv"),
                          octx.path("undistorted", "reconstruction.json")
                         ]

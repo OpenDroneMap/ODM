@@ -5,7 +5,7 @@ import os
 import exifread
 import numpy as np
 from six import string_types
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import pytz
 
 from opendm import io
@@ -14,6 +14,18 @@ from opendm import system
 import xmltodict as x2d
 from opendm import get_image_size
 from xml.parsers.expat import ExpatError
+
+def find_largest_photo(photos):
+    max_photo = None
+    for p in photos:
+        if p.width is None:
+            continue
+        if max_photo is None:
+            max_photo = p
+        else:
+            if max_photo.width * max_photo.height < p.width * p.height:
+                max_photo = p
+    return p
 
 def find_largest_photo_dim(photos):
     max_dim = 0
@@ -45,6 +57,7 @@ class ODM_Photo:
         # Multi-band fields
         self.band_name = 'RGB'
         self.band_index = 0
+        self.capture_uuid = None # DJI only
 
         # Multi-spectral fields
         self.fnumber = None
@@ -127,7 +140,7 @@ class ODM_Photo:
                     self.latitude = self.dms_to_decimal(tags['GPS GPSLatitude'], tags['GPS GPSLatitudeRef'])
                 if 'GPS GPSLongitude' in tags and 'GPS GPSLongitudeRef' in tags:
                     self.longitude = self.dms_to_decimal(tags['GPS GPSLongitude'], tags['GPS GPSLongitudeRef'])
-            except IndexError as e:
+            except (IndexError, ValueError) as e:
                 log.ODM_WARNING("Cannot read basic EXIF tags for %s: %s" % (_path_file, str(e)))
 
             try:
@@ -216,8 +229,12 @@ class ODM_Photo:
 
                     self.set_attr_from_xmp_tag('spectral_irradiance', tags, [
                         'Camera:SpectralIrradiance',
-                        'Camera:Irradiance',                    
+                        'Camera:Irradiance',
                     ], float)
+
+                    self.set_attr_from_xmp_tag('capture_uuid', tags, [
+                        '@drone-dji:CaptureUUID'
+                    ])
 
                     # Phantom 4 RTK
                     if '@drone-dji:RtkStdLon' in tags:
@@ -251,7 +268,7 @@ class ODM_Photo:
                 # self.set_attr_from_xmp_tag('bandwidth', tags, [
                 #     'Camera:WavelengthFWHM'
                 # ], float)
-            
+
         self.width, self.height = get_image_size.get_image_size(_path_file)
         # Sanitize band name since we use it in folder paths
         self.band_name = re.sub('[^A-Za-z0-9]+', '', self.band_name)
@@ -396,7 +413,7 @@ class ODM_Photo:
 
     def get_utc_time(self):
         if self.utc_time:
-            return datetime.utcfromtimestamp(self.utc_time / 1000)
+            return datetime.fromtimestamp(self.utc_time / 1000, timezone.utc)
 
     def get_photometric_exposure(self):
         # H ~= (exposure_time) / (f_number^2)
@@ -436,6 +453,13 @@ class ODM_Photo:
 
         return None
 
+    def get_capture_id(self):
+        # Use capture UUID first, capture time as fallback
+        if self.capture_uuid is not None:
+            return self.capture_uuid
+
+        return self.get_utc_time()
+
     def get_gps_dop(self):
         val = -9999
         if self.gps_xy_stddev is not None:
@@ -446,3 +470,6 @@ class ODM_Photo:
             return val
 
         return None
+
+    def is_thermal(self):
+        return self.band_name.upper() in ["LWIR"] # TODO: more?

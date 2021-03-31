@@ -50,7 +50,7 @@ class ODMSplitStage(types.ODM_Stage):
                     "submodel_overlap: %s" % args.split_overlap,
                 ]
 
-                octx.setup(args, tree.dataset_raw, photos, reconstruction=reconstruction, append_config=config, rerun=self.rerun())
+                octx.setup(args, tree.dataset_raw, reconstruction=reconstruction, append_config=config, rerun=self.rerun())
                 octx.extract_metadata(self.rerun())
 
                 self.update_progress(5)
@@ -104,67 +104,70 @@ class ODMSplitStage(types.ODM_Stage):
 
                 self.update_progress(50)
 
-                resplit_done_file = octx.path('resplit_done.txt')
-                if not io.file_exists(resplit_done_file) and bool(args.split_multitracks):
-                    submodels = mds.get_submodel_paths()
-                    i = 0
-                    for s in submodels:
-                        template = octx.path("../aligned_submodels/submodel_%04d")
-                        with open(s+"/reconstruction.json", "r") as f:
-                            j = json.load(f)
-                        for k in range(0, len(j)):
-                            v = j[k]
-                            path = template % i
+                # TODO: this is currently not working and needs a champion to fix it
+                # https://community.opendronemap.org/t/filenotfound-error-cameras-json/6047/2
+
+                # resplit_done_file = octx.path('resplit_done.txt')
+                # if not io.file_exists(resplit_done_file) and bool(args.split_multitracks):
+                #     submodels = mds.get_submodel_paths()
+                #     i = 0
+                #     for s in submodels:
+                #         template = octx.path("../aligned_submodels/submodel_%04d")
+                #         with open(s+"/reconstruction.json", "r") as f:
+                #             j = json.load(f)
+                #         for k in range(0, len(j)):
+                #             v = j[k]
+                #             path = template % i
                             
-                            #Create the submodel path up to opensfm
-                            os.makedirs(path+"/opensfm")
-                            os.makedirs(path+"/images")
+                #             #Create the submodel path up to opensfm
+                #             os.makedirs(path+"/opensfm")
+                #             os.makedirs(path+"/images")
 
-                            #symlinks for common data
-                            images = os.listdir(octx.path("../images"))
-                            for image in images:
-                                os.symlink("../../../images/"+image, path+"/images/"+image)
-                            os.symlink("../../../opensfm/exif", path+"/opensfm/exif")
-                            os.symlink("../../../opensfm/features", path+"/opensfm/features")
-                            os.symlink("../../../opensfm/matches", path+"/opensfm/matches")
-                            os.symlink("../../../opensfm/reference_lla.json", path+"/opensfm/reference_lla.json")
-                            os.symlink("../../../opensfm/camera_models.json", path+"/opensfm/camera_models.json")
+                #             #symlinks for common data
+                #             images = os.listdir(octx.path("../images"))
+                #             for image in images:
+                #                 os.symlink("../../../images/"+image, path+"/images/"+image)
+                #             os.symlink("../../../opensfm/exif", path+"/opensfm/exif")
+                #             os.symlink("../../../opensfm/features", path+"/opensfm/features")
+                #             os.symlink("../../../opensfm/matches", path+"/opensfm/matches")
+                #             os.symlink("../../../opensfm/reference_lla.json", path+"/opensfm/reference_lla.json")
+                #             os.symlink("../../../opensfm/camera_models.json", path+"/opensfm/camera_models.json")
 
-                            shutil.copy(s+"/../cameras.json", path+"/cameras.json")
+                #             shutil.copy(s+"/../cameras.json", path+"/cameras.json")
 
-                            shutil.copy(s+"/../images.json", path+"/images.json")
+                #             shutil.copy(s+"/../images.json", path+"/images.json")
 
 
-                            with open(octx.path("config.yaml")) as f:
-                                doc = yaml.safe_load(f)
+                #             with open(octx.path("config.yaml")) as f:
+                #                 doc = yaml.safe_load(f)
 
-                            dmcv = "depthmap_min_consistent_views"
-                            if dmcv in doc:
-                                if len(v["shots"]) < doc[dmcv]:
-                                    doc[dmcv] = len(v["shots"])
-                                    print("WARNING: Reduced "+dmcv+" to accommodate short track")
+                #             dmcv = "depthmap_min_consistent_views"
+                #             if dmcv in doc:
+                #                 if len(v["shots"]) < doc[dmcv]:
+                #                     doc[dmcv] = len(v["shots"])
+                #                     print("WARNING: Reduced "+dmcv+" to accommodate short track")
 
-                            with open(path+"/opensfm/config.yaml", "w") as f:
-                                yaml.dump(doc, f)
+                #             with open(path+"/opensfm/config.yaml", "w") as f:
+                #                 yaml.dump(doc, f)
 
-                            #We need the original tracks file for the visualsfm export, since
-                            #there may still be point matches between the tracks
-                            shutil.copy(s+"/tracks.csv", path+"/opensfm/tracks.csv")
+                #             #We need the original tracks file for the visualsfm export, since
+                #             #there may still be point matches between the tracks
+                #             shutil.copy(s+"/tracks.csv", path+"/opensfm/tracks.csv")
 
-                            #Create our new reconstruction file with only the relevant track
-                            with open(path+"/opensfm/reconstruction.json", "w") as o:
-                                json.dump([v], o)
+                #             #Create our new reconstruction file with only the relevant track
+                #             with open(path+"/opensfm/reconstruction.json", "w") as o:
+                #                 json.dump([v], o)
 
-                            #Create image lists
-                            with open(path+"/opensfm/image_list.txt", "w") as o:
-                                o.writelines(list(map(lambda x: "../images/"+x+'\n', v["shots"].keys())))
-                            with open(path+"/img_list.txt", "w") as o:
-                                o.writelines(list(map(lambda x: x+'\n', v["shots"].keys())))
+                #             #Create image lists
+                #             with open(path+"/opensfm/image_list.txt", "w") as o:
+                #                 o.writelines(list(map(lambda x: "../images/"+x+'\n', v["shots"].keys())))
+                #             with open(path+"/img_list.txt", "w") as o:
+                #                 o.writelines(list(map(lambda x: x+'\n', v["shots"].keys())))
 
-                            i+=1
-                    os.rename(octx.path("../submodels"), octx.path("../unaligned_submodels"))
-                    os.rename(octx.path("../aligned_submodels"), octx.path("../submodels"))
-                    octx.touch(resplit_done_file)
+                #             i+=1
+                #     os.rename(octx.path("../submodels"), octx.path("../unaligned_submodels"))
+                #     os.rename(octx.path("../aligned_submodels"), octx.path("../submodels"))
+                #     octx.touch(resplit_done_file)
 
                 mds = metadataset.MetaDataSet(tree.opensfm)
                 submodel_paths = [os.path.abspath(p) for p in mds.get_submodel_paths()]

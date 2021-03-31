@@ -13,7 +13,7 @@ check_version(){
       echo "ODM 2.1 has upgraded to Ubuntu 20.04, but you're on $UBUNTU_VERSION"
       echo "* The last version of ODM that supports Ubuntu 16.04 is v1.0.2."
       echo "* The last version of ODM that supports Ubuntu 18.04 is v2.0.0."
-      echo "We recommend you upgrade to Ubuntu 18.04, or better yet, use docker."
+      echo "We recommend you to upgrade, or better yet, use docker."
       exit 1
       ;;
     *)
@@ -120,6 +120,9 @@ install() {
     
 
     pip install --ignore-installed -r requirements.txt
+    if [ ! -z "$GPU_INSTALL" ]; then
+        pip install --ignore-installed -r requirements.gpu.txt
+    fi
 
     if [ ! -z "$PORTABLE_INSTALL" ]; then
         echo "Replacing g++ and gcc with our scripts for portability..."
@@ -165,6 +168,32 @@ reinstall() {
     uninstall
     install
 }
+
+clean() {
+    rm -rf \
+        ${RUNPATH}/SuperBuild/build/opencv \
+        ${RUNPATH}/SuperBuild/download \
+        ${RUNPATH}/SuperBuild/src/ceres \
+        ${RUNPATH}/SuperBuild/src/untwine \
+        ${RUNPATH}/SuperBuild/src/entwine \
+        ${RUNPATH}/SuperBuild/src/gflags \
+        ${RUNPATH}/SuperBuild/src/hexer \
+        ${RUNPATH}/SuperBuild/src/lastools \
+        ${RUNPATH}/SuperBuild/src/laszip \
+        ${RUNPATH}/SuperBuild/src/mvstexturing \
+        ${RUNPATH}/SuperBuild/src/opencv \
+        ${RUNPATH}/SuperBuild/src/opengv \
+        ${RUNPATH}/SuperBuild/src/pcl \
+        ${RUNPATH}/SuperBuild/src/pdal \
+        ${RUNPATH}/SuperBuild/src/openmvs \
+        ${RUNPATH}/SuperBuild/build/openmvs \
+        ${RUNPATH}/SuperBuild/src/vcg \
+        ${RUNPATH}/SuperBuild/src/zstd
+
+    # find in /code and delete static libraries and intermediate object files
+    find ${RUNPATH} -type f -name "*.a" -delete -or -type f -name "*.o" -delete
+}
+
 usage() {
     echo "Usage:"
     echo "bash configure.sh <install|update|uninstall|help> [nproc]"
@@ -177,12 +206,14 @@ usage() {
     echo "    Removes SuperBuild and build modules, then re-installs them. Note this does not update OpenDroneMap to the latest version. "
     echo "  uninstall"
     echo "    Removes SuperBuild and build modules. Does not uninstall dependencies"
+    echo "  clean"
+    echo "    Cleans the SuperBuild directory by removing temporary files. "
     echo "  help"
     echo "    Displays this message"
     echo "[nproc] is an optional argument that can set the number of processes for the make -j tag. By default it uses $(nproc)"
 }
 
-if [[ $1 =~ ^(install|installruntimedepsonly|reinstall|uninstall)$ ]]; then
+if [[ $1 =~ ^(install|installruntimedepsonly|reinstall|uninstall|clean)$ ]]; then
     RUNPATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
     "$1"
 else

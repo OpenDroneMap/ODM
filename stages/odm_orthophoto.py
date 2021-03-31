@@ -11,6 +11,7 @@ from opendm.concurrency import get_max_memory
 from opendm.cutline import compute_cutline
 from pipes import quote
 from opendm import pseudogeo
+from opendm.multispectral import get_primary_band_name
 
 class ODMOrthoPhotoStage(types.ODM_Stage):
     def process(self, args, outputs):
@@ -46,18 +47,6 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                 'verbose': verbose
             }
 
-            # Check if the georef object is initialized
-            # (during a --rerun this might not be)
-            # TODO: this should be moved to a more central location?
-            if reconstruction.is_georeferenced() and not reconstruction.georef.valid_utm_offsets():
-                georeferencing_dir = tree.odm_georeferencing if args.use_3dmesh and not args.skip_3dmodel else tree.odm_25dgeoreferencing
-                odm_georeferencing_model_txt_geo_file = os.path.join(georeferencing_dir, tree.odm_georeferencing_model_txt_geo)
-
-                if io.file_exists(odm_georeferencing_model_txt_geo_file):
-                    reconstruction.georef.extract_offsets(odm_georeferencing_model_txt_geo_file)
-                else:
-                    log.ODM_WARNING('Cannot read UTM offset from {}.'.format(odm_georeferencing_model_txt_geo_file))
-
             models = []
 
             if args.use_3dmesh:
@@ -65,19 +54,16 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
             else:
                 base_dir = tree.odm_25dtexturing
                 
-            if reconstruction.is_georeferenced():
-                model_file = tree.odm_georeferencing_model_obj_geo
-            else:
-                model_file = tree.odm_textured_model_obj
+            model_file = tree.odm_textured_model_obj
 
             if reconstruction.multi_camera:
                 for band in reconstruction.multi_camera:
-                    primary = band == reconstruction.multi_camera[0]
+                    primary = band['name'] == get_primary_band_name(reconstruction.multi_camera, args.primary_band)
                     subdir = ""
                     if not primary:
                         subdir = band['name'].lower()
                     models.append(os.path.join(base_dir, subdir, model_file))
-                kwargs['bands'] = '-bands %s' % (','.join([quote(b['name'].lower()) for b in reconstruction.multi_camera]))
+                kwargs['bands'] = '-bands %s' % (','.join([quote(b['name']) for b in reconstruction.multi_camera]))
             else:
                 models.append(os.path.join(base_dir, model_file))
 
@@ -91,7 +77,7 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
             # Create georeferenced GeoTiff
             geotiffcreated = False
 
-            if reconstruction.is_georeferenced() and reconstruction.georef.valid_utm_offsets():
+            if reconstruction.is_georeferenced():
                 ulx = uly = lrx = lry = 0.0
                 with open(tree.odm_orthophoto_corners) as f:
                     for lineNumber, line in enumerate(f):
