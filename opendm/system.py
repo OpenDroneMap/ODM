@@ -10,6 +10,10 @@ import signal
 from opendm import context
 from opendm import log
 
+class SubprocessException(Exception):
+    def __init__(self, msg, errorCode):
+        super().__init__(msg)
+        self.errorCode = errorCode
 
 def get_ccd_widths():
     """Return the CCD Width of the camera listed in the JSON defs file."""
@@ -58,7 +62,6 @@ def run(cmd, env_paths=[context.superbuild_bin_path], env_vars={}, packages_path
     global running_subprocesses
 
     log.ODM_INFO('running %s' % cmd)
-
     env = os.environ.copy()
     if len(env_paths) > 0:
         env["PATH"] = env["PATH"] + ":" + ":".join(env_paths)
@@ -74,9 +77,9 @@ def run(cmd, env_paths=[context.superbuild_bin_path], env_vars={}, packages_path
     retcode = p.wait()
     running_subprocesses.remove(p)
     if retcode < 0:
-        raise Exception("Child was terminated by signal {}".format(-retcode))
+        raise SubprocessException("Child was terminated by signal {}".format(-retcode), -retcode)
     elif retcode > 0:
-        raise Exception("Child returned {}".format(retcode))
+        raise SubprocessException("Child returned {}".format(retcode), retcode)
 
 
 def now():
