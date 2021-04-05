@@ -65,10 +65,10 @@ if __name__ == '__main__':
                     ]))
 
     app = ODMApp(args)
-    app.execute()
+    retcode = app.execute()
     
     # Do not show ASCII art for local submodels runs
-    if not "submodels/submodel_" in args.project_path:
+    if retcode == 0 and not "submodels/submodel_" in args.project_path:
         log.ODM_INFO('MMMMMMMMMMMNNNMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMNNNMMMMMMMMMMM')
         log.ODM_INFO('MMMMMMdo:..---../sNMMMMMMMMMMMMMMMMMMMMMMMMMMNs/..---..:odMMMMMM')
         log.ODM_INFO('MMMMy-.odNMMMMMNy/`/mMMMMMMMMMMMMMMMMMMMMMMm/`/hNMMMMMNdo.-yMMMM')
@@ -110,4 +110,6 @@ if __name__ == '__main__':
         log.ODM_INFO('MMMMMMMMMMMN-  smNm/  +MMm  :NNdo` .mMM` oMM+/yMM/  MMMMMMMMMMMM')
         log.ODM_INFO('MMMMMMMMMMMMNo-    `:yMMMm      `:sNMMM` sMMMMMMM+  NMMMMMMMMMMM')
         log.ODM_INFO('MMMMMMMMMMMMMMMNmmNMMMMMMMNmmmmNMMMMMMMNNMMMMMMMMMNNMMMMMMMMMMMM')
-    log.ODM_INFO('ODM app finished - %s' % system.now())
+        log.ODM_INFO('ODM app finished - %s' % system.now())
+    else:
+        exit(retcode)
