@@ -101,9 +101,9 @@ class ODMApp:
                 log.ODM_ERROR("Oh no! It looks like your CPU is not supported (is it fairly old?). You can still use ODM, but you will need to build your own docker image. See https://github.com/OpenDroneMap/ODM#build-from-source")
             elif code == 3:
                 log.ODM_ERROR("ODM can't find a program that is required for processing to run! Did you do a custom build of ODM? (cool!) Make sure that all programs required by ODM are in the right place and are built correctly.")
-            elif:
+            else:
                 log.ODM_ERROR("The program exited with a strange error code. Please report it at https://community.opendronemap.org")
-                
+
             # TODO: more?
 
             return code
