@@ -342,7 +342,15 @@ class ODM_Photo:
 
     def float_values(self, tag):
         if isinstance(tag.values, list):
-            return [float(v.num) / float(v.den) if v.den != 0 else None for v in tag.values]
+            result = []
+            for v in tag.values:
+                if isinstance(v, int):
+                    result.append(float(v))
+                elif v.den != 0:
+                    result.append(float(v.num) / float(v.den))
+                else:
+                    result.append(None)
+            return result
         else:
             return [float(tag.values.num) / float(tag.values.den) if tag.values.den != 0 else None]
     
