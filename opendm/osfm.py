@@ -299,7 +299,7 @@ class OSFMContext:
             reconstruction_shots = tools.load_reconstruction_shots(meta_data)
             transformations = tools.align_reconstructions(reconstruction_shots,
                                             tools.partial_reconstruction_name,
-                                            True)
+                                            False)
             tools.apply_transformations(transformations)
 
             self.touch(alignment_file)
