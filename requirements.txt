@@ -13,13 +13,8 @@ matplotlib==3.3.3
 networkx==2.5
 numpy==1.19.4
 Pillow==8.0.1
-<<<<<<< HEAD
 vmem==1.0.0
-pyodm==1.5.4
-=======
-psutil==5.7.3
 pyodm==1.5.5
->>>>>>> 1b0f17042e5b0ccf4026f950939e5a2c0b29642a
 pyOpenSSL==19.1.0
 pyproj==3.0.0.post1
 Pysolar==0.9
