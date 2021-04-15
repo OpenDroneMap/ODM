@@ -65,7 +65,7 @@ def generate_kmz(orthophoto_file, output_file=None, outsize=None):
     if gtif.RasterCount > 4:
         bandparam = "-b 1 -b 2 -b 3 -a_nodata 0"
 
-    system.run('gdal_translate -of KMLSUPEROVERLAY -co FORMAT=JPEG "%s" "%s" %s %s '
+    system.run('gdal_translate -of KMLSUPEROVERLAY -co FORMAT=JPEG "%s" "%s" %s '
                '--config GDAL_CACHEMAX %s%% ' % (orthophoto_file, output_file, bandparam, get_max_memory()))    
     
 def post_orthophoto_steps(args, bounds_file_path, orthophoto_file, orthophoto_tiles_dir):
