@@ -64,6 +64,9 @@ def post_orthophoto_steps(args, bounds_file_path, orthophoto_file, orthophoto_ti
 
     if args.orthophoto_png:
         generate_png(orthophoto_file)
+        
+    if args.orthophoto_kmz:
+        generate_kmz(orthophoto_file)
 
     if args.tiles:
         generate_orthophoto_tiles(orthophoto_file, orthophoto_tiles_dir, args.max_concurrency)
