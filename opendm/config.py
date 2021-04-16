@@ -636,6 +636,12 @@ def config(argv=None, parser=None):
     #                    default=False,
     #                    help='Split multi-track reconstructions.')
 
+    parser.add_argument('--sm-noalign',
+                    action=StoreTrue,
+                    nargs=0,
+                    default=False,
+                    help='Skip alignment of submodels in splitmerge. Useful if GPS is good enough on very large datasets. Default: %(default)s')
+
     parser.add_argument('--sm-cluster',
                         metavar='<string>',
                         action=StoreValue,
