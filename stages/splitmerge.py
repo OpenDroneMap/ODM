@@ -207,8 +207,6 @@ class ODMSplitStage(types.ODM_Stage):
                         shutil.move(aligned_recon, main_recon)
                         log.ODM_INFO("%s is now %s" % (aligned_recon, main_recon))
 
-
-
                     octx.align_reconstructions(self.rerun())
 
                     self.update_progress(55)
