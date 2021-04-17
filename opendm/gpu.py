@@ -11,7 +11,7 @@ def has_gpus():
     try:
         import pyopencl
     except:
-        log.ODM_INFO("NOt using the GPU")
+        log.ODM_INFO("Not using the GPU")
         return False
 
     try:
