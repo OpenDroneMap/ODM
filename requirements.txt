@@ -4,7 +4,8 @@ beautifulsoup4==4.9.3
 cloudpickle==1.6.0
 edt==2.0.2
 ExifRead==2.3.2
-Fiona==1.8.17
+Fiona==1.8.17 ; sys_platform == 'linux' or sys_platform == 'darwin'
+https://download.lfd.uci.edu/pythonlibs/w4tscw6k/Fiona-1.8.19-cp38-cp38-win_amd64.whl ; sys_platform == 'win32'
 joblib==0.17.0
 laspy==1.7.0
 lxml==4.6.1
@@ -18,7 +19,9 @@ pyproj==3.0.0.post1
 Pysolar==0.9
 pytz==2020.4
 PyYAML==5.1
-rasterio==1.1.8
+rasterio==1.1.8 ; sys_platform == 'linux' or sys_platform == 'darwin'
+https://download.lfd.uci.edu/pythonlibs/w4tscw6k/rasterio-1.2.3-cp38-cp38-win_amd64.whl ; sys_platform == 'win32'
+https://download.lfd.uci.edu/pythonlibs/w4tscw6k/GDAL-3.2.2-cp38-cp38-win_amd64.whl ; sys_platform == 'win32'
 repoze.lru==0.7
 scikit-learn==0.23.2
 scikit-image==0.17.2

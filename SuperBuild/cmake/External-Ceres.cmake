@@ -18,7 +18,9 @@ ExternalProject_Add(${_proj_name}
     -DCMAKE_CXX_FLAGS=-fPIC
     -DBUILD_EXAMPLES=OFF
     -DBUILD_TESTING=OFF
+    -DMINIGLOG=ON
     -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
+    ${WIN32_CMAKE_ARGS}
   #--Build step-----------------
   BINARY_DIR        ${_SB_BINARY_DIR}
   #--Install step---------------

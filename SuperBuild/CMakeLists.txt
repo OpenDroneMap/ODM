@@ -7,6 +7,13 @@ if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release")
 endif()
 
+if (WIN32)
+  if (NOT DEFINED CMAKE_TOOLCHAIN_FILE)
+    message(FATAL_ERROR "CMAKE_TOOLCHAIN_FILE not set. You need to set it to the path of vcpkg.cmake")
+  endif()
+  set(WIN32_CMAKE_ARGS "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}")
+endif()
+
 # Setup SuperBuild root location
 set(SB_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -35,6 +42,7 @@ message(STATUS "SuperBuild files will be downloaded to: ${SB_DOWNLOAD_DIR}")
 set(SB_SOURCE_DIR "${SB_ROOT_DIR}/src"
     CACHE PATH "Location where source tar-balls are (will be).")
 mark_as_advanced(SB_SOURCE_DIR)
+set(SB_BUILD_DIR "${SB_ROOT_DIR}/build")
 
 message(STATUS "SuperBuild source files will be extracted to: ${SB_SOURCE_DIR}")
 

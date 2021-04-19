@@ -134,7 +134,6 @@ parts:
       - libboost-serialization-dev
       - libboost-system-dev
       - libboost-thread-dev
-      - libgoogle-glog-dev
       - libsuitesparse-dev
     stage-packages:
       - libamd2
@@ -151,7 +150,6 @@ parts:
       - libcholmod3
       - libcolamd2
       - libcxsparse3
-      - libgoogle-glog0v5
       - libsuitesparseconfig5
 
   odm:
