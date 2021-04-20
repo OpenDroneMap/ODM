@@ -28,8 +28,6 @@ class ODMOpenSfMStage(types.ODM_Stage):
             exit(1)
 
         octx = OSFMContext(tree.opensfm)
-        # TODO REMOVE
-        # octx.setup(args, tree.dataset_raw, reconstruction=reconstruction, rerun=False)
         octx.setup(args, tree.dataset_raw, reconstruction=reconstruction, rerun=self.rerun())
         octx.extract_metadata(self.rerun())
         self.update_progress(20)
