@@ -1,3 +1,8 @@
-eigen3:windows-x64
-suitesparse:windows-x64
-lapack:windows-x64
+eigen3
+suitesparse
+lapack
+tbb
+zlib
+libpng
+libjpeg-turbo
+tiff

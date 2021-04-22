@@ -5,12 +5,9 @@ ProcessorCount(nproc)
 
 if(WIN32)
   set(OpenCV_DIR "${SB_INSTALL_DIR}/x64/vc16/lib")
-  set(Python_PATH "${SB_INSTALL_DIR}/../../venv/Scripts/python")
-  set(WIN32_CMAKE_EXTRA_ARGS -DCMAKE_CXX_FLAGS="-DM_PI=3.14159265358979323846")
   set(BUILD_CMD cmake --build "${SB_BUILD_DIR}/opensfm" --config "${CMAKE_BUILD_TYPE}")
 else()
   set(OpenCV_DIR "${SB_INSTALL_DIR}/lib/cmake/opencv4")
-  set(Python_PATH "/usr/bin/python3")
   set(BUILD_CMD make "-j${nproc}")
 endif()
 
@@ -32,9 +29,8 @@ ExternalProject_Add(${_proj_name}
     -DOpenCV_DIR=${OpenCV_DIR}
     -DADDITIONAL_INCLUDE_DIRS=${SB_INSTALL_DIR}/include
     -DOPENSFM_BUILD_TESTS=off
-    -DPYTHON_EXECUTABLE=${Python_PATH}
+    -DPYTHON_EXECUTABLE=${PYTHON_EXE_PATH}
     ${WIN32_CMAKE_ARGS}
-    ${WIN32_CMAKE_EXTRA_ARGS}
   BUILD_COMMAND ${BUILD_CMD}
   #--Build step-----------------
   BINARY_DIR        ${_SB_BINARY_DIR}

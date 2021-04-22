@@ -7,24 +7,25 @@ if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release")
 endif()
 
+# Setup SuperBuild root location
+set(SB_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+
 if (WIN32)
   if (NOT DEFINED CMAKE_TOOLCHAIN_FILE)
     message(FATAL_ERROR "CMAKE_TOOLCHAIN_FILE not set. You need to set it to the path of vcpkg.cmake")
   endif()
   set(WIN32_CMAKE_ARGS "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}")
+  set(PYTHON_HOME "${SB_ROOT_DIR}/../venv")
+  set(PYTHON_EXE_PATH "${PYTHON_HOME}/Scripts/python")
+else()
+  set(PYTHON_EXE_PATH "/usr/bin/python3")
 endif()
-
-# Setup SuperBuild root location
-set(SB_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 # Path to additional CMake modules
 set(CMAKE_MODULE_PATH ${SB_ROOT_DIR}/cmake)
 
 include(ExternalProject)
 include(ExternalProject-Setup)
-
-option(ODM_BUILD_SLAM "Build SLAM module" OFF)
-
 
 ################################
 # Setup SuperBuild directories #
@@ -120,6 +121,16 @@ set(custom_libs OpenSfM
                 Entwine
 				MvsTexturing
                 OpenMVS
+)
+
+externalproject_add(mve
+    GIT_REPOSITORY  https://github.com/OpenDroneMap/mve.git
+    GIT_TAG         250
+    UPDATE_COMMAND  ""
+    SOURCE_DIR      ${SB_SOURCE_DIR}/mve
+    CMAKE_ARGS      ${WIN32_CMAKE_ARGS}
+    BUILD_IN_SOURCE 1
+    INSTALL_COMMAND ""
 )
 
 foreach(lib ${custom_libs})
