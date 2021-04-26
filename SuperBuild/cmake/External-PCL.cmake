@@ -28,6 +28,7 @@ ExternalProject_Add(${_proj_name}
     -DBUILD_tools=OFF
     -DBUILD_tracking=OFF
     -DBUILD_visualization=OFF
+    -DWITH_OPENGL=OFF
     -DWITH_VTK=OFF
     -DWITH_QT=OFF
     -DBUILD_OPENNI=OFF

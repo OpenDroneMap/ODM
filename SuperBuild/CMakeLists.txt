@@ -106,12 +106,11 @@ SETUP_EXTERNAL_PROJECT(Hexer 1.4 ON)
 
 set(custom_libs OpenSfM
 				LASzip
-                Zstd
 				PDAL
-                Untwine
-                Entwine
+				Untwine
+				Entwine
 				MvsTexturing
-                OpenMVS
+				OpenMVS
 )
 
 foreach(lib ${custom_libs})
