@@ -6,3 +6,12 @@ zlib
 libpng
 libjpeg-turbo
 tiff
+flann
+boost-filesystem
+boost-date-time
+boost-iostreams
+boost-foreach
+boost-signals2
+boost-interprocess
+boost-graph
+boost-asio

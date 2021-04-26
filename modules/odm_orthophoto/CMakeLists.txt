@@ -9,7 +9,6 @@ set(OPENCV_DIR "OPENCV_DIR-NOTFOUND" CACHE "OPENCV_DIR" "Path to the OPENCV inst
 add_definitions(-Wall -Wextra)
 
 # Find pcl at the location specified by PCL_DIR
-find_package(VTK 6.0 REQUIRED)
 find_package(PCL 1.8 HINTS "${PCL_DIR}/share/pcl-1.8" REQUIRED)
 find_package(GDAL REQUIRED)
 include_directories(${GDAL_INCLUDE_DIR})
