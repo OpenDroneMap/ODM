@@ -117,17 +117,18 @@ def dem_to_mesh_gridded(inGeotiff, outMesh, maxVertexCount, verbose=False, maxCo
     # Cleanup and reduce vertex count if necessary 
     # (as dem2mesh cannot guarantee that we'll have the target vertex count)
     cleanupArgs = {
-        'bin': context.odm_modules_path,
+        'reconstructmesh': context.omvs_reconstructmesh_path,
         'outfile': outMesh,
         'infile': outMeshDirty,
-        'max_vertex': maxVertexCount,
+        'max_faces': maxVertexCount * 2,
         'verbose': '-verbose' if verbose else ''
     }
 
-    system.run('{bin}/odm_cleanmesh -inputFile {infile} '
-         '-outputFile {outfile} '
-         '-removeIslands '
-         '-decimateMesh {max_vertex} {verbose} '.format(**cleanupArgs))
+    system.run('{reconstructmesh} --mesh-file "{infile}" '
+         '-o "{outfile}" '
+         '--remove-spikes 0 --remove-spurious 0 --smooth 0 '
+         '--target-face-num {max_faces} '
+         '{verbose} '.format(**cleanupArgs))
 
     # Delete intermediate results
     os.remove(outMeshDirty)
@@ -170,17 +171,18 @@ def screened_poisson_reconstruction(inPointCloud, outMesh, depth = 8, samples = 
 
     # Cleanup and reduce vertex count if necessary
     cleanupArgs = {
-        'bin': context.odm_modules_path,
+        'reconstructmesh': context.omvs_reconstructmesh_path,
         'outfile': outMesh,
         'infile': outMeshDirty,
-        'max_vertex': maxVertexCount,
+        'max_faces': maxVertexCount * 2,
         'verbose': '-verbose' if verbose else ''
     }
 
-    system.run('{bin}/odm_cleanmesh -inputFile {infile} '
-         '-outputFile {outfile} '
-         '-removeIslands '
-         '-decimateMesh {max_vertex} {verbose} '.format(**cleanupArgs))
+    system.run('{reconstructmesh} --mesh-file "{infile}" '
+         '-o "{outfile}" '
+         '--remove-spikes 0 --remove-spurious 0 --smooth 0 '
+         '--target-face-num {max_faces} '
+         '{verbose} '.format(**cleanupArgs))
 
     # Delete intermediate results
     os.remove(outMeshDirty)

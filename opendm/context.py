@@ -36,6 +36,7 @@ mvstex_path = os.path.join(superbuild_path, "install/bin/texrecon")
 
 # openmvs paths
 omvs_densify_path = os.path.join(superbuild_path, "install/bin/OpenMVS/DensifyPointCloud")
+omvs_reconstructmesh_path = os.path.join(superbuild_path, "install/bin/OpenMVS/ReconstructMesh")
 
 # define txt2las path
 txt2las_path = os.path.join(superbuild_path, 'src/las-tools/bin')
