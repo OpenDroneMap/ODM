@@ -190,7 +190,7 @@ def merge_point_clouds(input_files, output_file, verbose=False):
     cmd = [
         'pdal',
         'merge',
-        'writers.las.minor_version=4',
+        'writers.las.minor_version="4"',
         ' '.join(map(quote, input_files + [output_file])),
     ]
 
