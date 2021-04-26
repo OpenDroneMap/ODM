@@ -18,7 +18,8 @@ ExternalProject_Add(${_proj_name}
     -DCMAKE_CXX_FLAGS=-isystem\ ${SB_SOURCE_DIR}/pdal
     -DADDITIONAL_LINK_DIRECTORIES_PATHS=${SB_INSTALL_DIR}/lib
     -DWITH_TESTS=OFF
-	-DCMAKE_BUILD_TYPE=Release
+    -DWITH_ZSTD=OFF
+    -DCMAKE_BUILD_TYPE=Release
     -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
   #--Build step-----------------
   BINARY_DIR        ${_SB_BINARY_DIR}
