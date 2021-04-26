@@ -244,7 +244,7 @@ def merge(input_point_cloud_files, output_file, rerun=False):
         'output': output_file
     }
 
-    system.run('lasmerge -i {all_inputs} -o "{output}"'.format(**kwargs))
+    system.run('lasmerge -i {all_inputs} -o "{output}" -set_version 1.4'.format(**kwargs))
    
 
 def fast_merge_ply(input_point_cloud_files, output_file):
