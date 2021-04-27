@@ -27,7 +27,7 @@ orb_slam2_path = os.path.join(superbuild_path, "src/orb_slam2")
 
 poisson_recon_path = os.path.join(superbuild_path, 'src', 'PoissonRecon', 'Bin', 'Linux', 'PoissonRecon')
 dem2mesh_path = os.path.join(superbuild_bin_path, 'dem2mesh')
-dem2points_path = os.path.join(superbuild_path, 'dem2points')
+dem2points_path = os.path.join(superbuild_bin_path, 'dem2points')
 
 # define mvstex path
 mvstex_path = os.path.join(superbuild_bin_path, "texrecon")
