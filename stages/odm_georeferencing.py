@@ -64,7 +64,7 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                 log.ODM_INFO("Converting point cloud (non-georeferenced)")
                 system.run(cmd + ' ' + ' '.join(stages) + ' ' + ' '.join(params))
         
-            point_cloud.post_point_cloud_steps(args, tree)
+            point_cloud.post_point_cloud_steps(args, tree, self.rerun())
         else:
             log.ODM_WARNING('Found a valid georeferenced model in: %s'
                             % tree.odm_georeferencing_model_laz)
