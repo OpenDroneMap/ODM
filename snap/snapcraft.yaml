@@ -213,7 +213,8 @@ parts:
       - -odm/SuperBuild/src/pcl
       - -odm/SuperBuild/src/pdal
       - -odm/SuperBuild/src/vcg
-      - -odm/SuperBuild/src/zstd
+      - -odm/SuperBuild/src/dem2mesh
+      - -odm/SuperBuild/src/dem2points
     prime:
       # remove any static-libraries
       - -**/*.a
