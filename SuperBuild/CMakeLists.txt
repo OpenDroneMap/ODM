@@ -17,6 +17,13 @@ if (WIN32)
   set(WIN32_CMAKE_ARGS "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}")
   set(PYTHON_HOME "${SB_ROOT_DIR}/../venv")
   set(PYTHON_EXE_PATH "${PYTHON_HOME}/Scripts/python")
+
+  # Use the GDAL version that comes with pip
+  set(GDAL_ROOT "${PYTHON_HOME}/Lib/site-packages/osgeo")
+  set(GDAL_LIBRARY "${GDAL_ROOT}/lib/gdal_i.lib")
+  set(GDAL_INCLUDE_DIR "${GDAL_ROOT}/include/gdal")
+
+  set(WIN32_GDAL_ARGS -DGDAL_FOUND=TRUE -DGDAL_LIBRARY=${GDAL_LIBRARY} -DGDAL_INCLUDE_DIR=${GDAL_INCLUDE_DIR})
 else()
   set(PYTHON_EXE_PATH "/usr/bin/python3")
 endif()
@@ -140,6 +147,11 @@ endforeach()
 include(ProcessorCount)
 ProcessorCount(nproc)
 
+if (WIN32)
+    set (POISSON_BUILD_CMD ${CMAKE_MAKE_PROGRAM} ${SB_SOURCE_DIR}/PoissonRecon/PoissonRecon.vcxproj /p:configuration=${CMAKE_BUILD_TYPE} /p:PlatformToolset=${CMAKE_VS_PLATFORM_TOOLSET} /p:WindowsTargetPlatformVersion=${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION})
+else()
+    set (POISSON_BUILD_CMD  make -j${nproc} poissonrecon)
+endif()
 externalproject_add(poissonrecon
     GIT_REPOSITORY    https://github.com/mkazhdan/PoissonRecon.git
     GIT_TAG           ce5005ae3094d902d551a65a8b3131e06f45e7cf
@@ -147,7 +159,7 @@ externalproject_add(poissonrecon
     UPDATE_COMMAND    ""
     CONFIGURE_COMMAND ""
     BUILD_IN_SOURCE 1
-    BUILD_COMMAND     make -j${nproc} poissonrecon
+    BUILD_COMMAND    ${POISSON_BUILD_CMD}
     INSTALL_COMMAND   ""
 )
 
@@ -155,6 +167,7 @@ externalproject_add(dem2mesh
     GIT_REPOSITORY    https://github.com/OpenDroneMap/dem2mesh.git
     GIT_TAG           master
     SOURCE_DIR        ${SB_SOURCE_DIR}/dem2mesh
+    CMAKE_ARGS        ${WIN32_GDAL_ARGS}
     UPDATE_COMMAND    ""
     BUILD_IN_SOURCE 1
     INSTALL_COMMAND   ""
