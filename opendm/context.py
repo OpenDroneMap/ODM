@@ -8,8 +8,6 @@ root_path, _ = os.path.split(current_path)
 
 superbuild_path = os.path.join(root_path, 'SuperBuild')
 superbuild_bin_path = os.path.join(superbuild_path, 'install', 'bin')
-tests_path = os.path.join(root_path, 'tests')
-tests_data_path = os.path.join(root_path, 'tests/test_data')
 
 # add opencv,opensfm to python path
 python_packages_paths = [os.path.join(superbuild_path, p) for p in [
@@ -24,18 +22,16 @@ for p in python_packages_paths:
 # define opensfm path
 opensfm_path = os.path.join(superbuild_path, "src/opensfm")
 
-# define orb_slam2 path
-orb_slam2_path = os.path.join(superbuild_path, "src/orb_slam2")
-
-poisson_recon_path = os.path.join(superbuild_path, 'src', 'PoissonRecon', 'Bin', 'Linux', 'PoissonRecon')
-dem2mesh_path = os.path.join(superbuild_path, 'src', 'dem2mesh', 'dem2mesh')
-dem2points_path = os.path.join(superbuild_path, 'src', 'dem2points', 'dem2points')
+poisson_recon_path = os.path.join(superbuild_bin_path, 'PoissonRecon')
+dem2mesh_path = os.path.join(superbuild_bin_path, 'dem2mesh')
+dem2points_path = os.path.join(superbuild_path, 'dem2points')
 
 # define mvstex path
-mvstex_path = os.path.join(superbuild_path, "install/bin/texrecon")
+mvstex_path = os.path.join(superbuild_bin_path, "texrecon")
 
 # openmvs paths
-omvs_densify_path = os.path.join(superbuild_path, "install/bin/OpenMVS/DensifyPointCloud")
+omvs_densify_path = os.path.join(superbuild_bin_path, "OpenMVS", "DensifyPointCloud")
+omvs_reconstructmesh_path = os.path.join(superbuild_bin_path, "OpenMVS", "ReconstructMesh")
 
 # define txt2las path
 txt2las_path = os.path.join(superbuild_path, 'src/las-tools/bin')

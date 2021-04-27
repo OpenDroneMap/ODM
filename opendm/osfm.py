@@ -157,7 +157,7 @@ class OSFMContext:
             # Compute feature_process_size
             feature_process_size = 2048 # default
 
-            if 'resize_to_is_set' in args:
+            if ('resize_to_is_set' in args) and args.resize_to > 0:
                 # Legacy
                 log.ODM_WARNING("Legacy option --resize-to (this might be removed in a future version). Use --feature-quality instead.")
                 feature_process_size = int(args.resize_to)
@@ -175,6 +175,7 @@ class OSFMContext:
                 if max_dim > 0:
                     log.ODM_INFO("Maximum photo dimensions: %spx" % str(max_dim))
                     feature_process_size = int(max_dim * feature_quality_scale[args.feature_quality])
+                    log.ODM_INFO("Photo dimensions for feature extraction: %ipx" % feature_process_size)
                 else:
                     log.ODM_WARNING("Cannot compute max image dimensions, going with defaults")
 

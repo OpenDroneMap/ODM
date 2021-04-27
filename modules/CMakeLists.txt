@@ -5,4 +5,3 @@ endif()
 
 # Add ODM sub-modules
 add_subdirectory(odm_orthophoto)
-add_subdirectory(odm_cleanmesh)

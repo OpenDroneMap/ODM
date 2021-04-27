@@ -542,6 +542,14 @@ def config(argv=None, parser=None):
                         default=False,
                         help='Set this parameter if you want to generate a PNG rendering of the orthophoto. '
                              'Default: %(default)s')
+    
+    parser.add_argument('--orthophoto-kmz',
+                        action=StoreTrue,
+                        nargs=0,
+                        default=False,
+                        help='Set this parameter if you want to generate a Google Earth (KMZ) rendering of the orthophoto. '
+                             'Default: %(default)s')    
+    
 
     parser.add_argument('--orthophoto-compression',
                         metavar='<string>',

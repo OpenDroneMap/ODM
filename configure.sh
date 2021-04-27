@@ -174,6 +174,7 @@ clean() {
         ${RUNPATH}/SuperBuild/build/opencv \
         ${RUNPATH}/SuperBuild/download \
         ${RUNPATH}/SuperBuild/src/ceres \
+        ${RUNPATH}/SuperBuild/src/PoissonRecon \
         ${RUNPATH}/SuperBuild/src/untwine \
         ${RUNPATH}/SuperBuild/src/entwine \
         ${RUNPATH}/SuperBuild/src/gflags \
@@ -185,10 +186,13 @@ clean() {
         ${RUNPATH}/SuperBuild/src/opengv \
         ${RUNPATH}/SuperBuild/src/pcl \
         ${RUNPATH}/SuperBuild/src/pdal \
+        ${RUNPATH}/SuperBuild/src/dem2mesh \
+        ${RUNPATH}/SuperBuild/build/dem2mesh \
+        ${RUNPATH}/SuperBuild/src/dem2points \
+        ${RUNPATH}/SuperBuild/build/dem2points \
         ${RUNPATH}/SuperBuild/src/openmvs \
         ${RUNPATH}/SuperBuild/build/openmvs \
-        ${RUNPATH}/SuperBuild/src/vcg \
-        ${RUNPATH}/SuperBuild/src/zstd
+        ${RUNPATH}/SuperBuild/src/vcg
 
     # find in /code and delete static libraries and intermediate object files
     find ${RUNPATH} -type f -name "*.a" -delete -or -type f -name "*.o" -delete

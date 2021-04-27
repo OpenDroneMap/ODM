@@ -23,6 +23,13 @@ if (WIN32)
   set(GDAL_LIBRARY "${GDAL_ROOT}/lib/gdal_i.lib")
   set(GDAL_INCLUDE_DIR "${GDAL_ROOT}/include/gdal")
 
+  # Also download missing headers :/
+  if (NOT EXISTS "${GDAL_INCLUDE_DIR}/ogrsf_frmts.h")
+    file(DOWNLOAD "https://raw.githubusercontent.com/OSGeo/gdal/release/3.2/gdal/ogr/ogrsf_frmts/ogrsf_frmts.h" "${GDAL_INCLUDE_DIR}/ogrsf_frmts.h")
+  endif()
+
+  # TODO: copy gdal302.dll to superbuild/install/bin
+
   set(WIN32_GDAL_ARGS -DGDAL_FOUND=TRUE -DGDAL_LIBRARY=${GDAL_LIBRARY} -DGDAL_INCLUDE_DIR=${GDAL_INCLUDE_DIR})
 else()
   set(PYTHON_EXE_PATH "/usr/bin/python3")
@@ -122,12 +129,11 @@ SETUP_EXTERNAL_PROJECT(Hexer 1.4 ON)
 
 set(custom_libs OpenSfM
 				LASzip
-                Zstd
 				PDAL
-                Untwine
-                Entwine
+				Untwine
+				Entwine
 				MvsTexturing
-                OpenMVS
+				OpenMVS
 )
 
 externalproject_add(mve
@@ -149,25 +155,30 @@ ProcessorCount(nproc)
 
 if (WIN32)
     set (POISSON_BUILD_CMD ${CMAKE_MAKE_PROGRAM} ${SB_SOURCE_DIR}/PoissonRecon/PoissonRecon.vcxproj /p:configuration=${CMAKE_BUILD_TYPE} /p:PlatformToolset=${CMAKE_VS_PLATFORM_TOOLSET} /p:WindowsTargetPlatformVersion=${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION})
+    set (POISSON_BIN_PATH "Win32/${CMAKE_BUILD_TYPE}/PoissonRecon.exe")
 else()
     set (POISSON_BUILD_CMD  make -j${nproc} poissonrecon)
+    set (POISSON_BIN_PATH "Linux/PoissonRecon")
 endif()
 externalproject_add(poissonrecon
     GIT_REPOSITORY    https://github.com/mkazhdan/PoissonRecon.git
     GIT_TAG           ce5005ae3094d902d551a65a8b3131e06f45e7cf
+    PREFIX            ${SB_BINARY_DIR}/PoissonRecon
     SOURCE_DIR        ${SB_SOURCE_DIR}/PoissonRecon
     UPDATE_COMMAND    ""
     CONFIGURE_COMMAND ""
     BUILD_IN_SOURCE 1
     BUILD_COMMAND    ${POISSON_BUILD_CMD}
-    INSTALL_COMMAND   ""
+    INSTALL_COMMAND  ${CMAKE_COMMAND} -E copy ${SB_SOURCE_DIR}/PoissonRecon/Bin/${POISSON_BIN_PATH} ${SB_INSTALL_DIR}/bin
 )
 
 externalproject_add(dem2mesh
     GIT_REPOSITORY    https://github.com/OpenDroneMap/dem2mesh.git
     GIT_TAG           master
+    PREFIX            ${SB_BINARY_DIR}/dem2mesh
     SOURCE_DIR        ${SB_SOURCE_DIR}/dem2mesh
-    CMAKE_ARGS        ${WIN32_GDAL_ARGS}
+    CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
+                      ${WIN32_GDAL_ARGS}
     UPDATE_COMMAND    ""
     BUILD_IN_SOURCE 1
     INSTALL_COMMAND   ""
@@ -176,10 +187,10 @@ externalproject_add(dem2mesh
 externalproject_add(dem2points
     GIT_REPOSITORY    https://github.com/OpenDroneMap/dem2points.git
     GIT_TAG           master
+    PREFIX            ${SB_BINARY_DIR}/dem2points
     SOURCE_DIR        ${SB_SOURCE_DIR}/dem2points
-    UPDATE_COMMAND    ""
-    BUILD_IN_SOURCE 1
-    INSTALL_COMMAND   ""
+    CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
+                      ${WIN32_GDAL_ARGS}
 )
 
 externalproject_add(lastools
