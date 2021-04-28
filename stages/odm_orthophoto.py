@@ -38,7 +38,7 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
 
             # odm_orthophoto definitions
             kwargs = {
-                'bin': context.odm_modules_path,
+                'odm_ortho_bin': context.odm_orthophoto_path,
                 'log': tree.odm_orthophoto_log,
                 'ortho': tree.odm_orthophoto_render,
                 'corners': tree.odm_orthophoto_corners,
@@ -70,7 +70,7 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
             kwargs['models'] = ','.join(map(quote, models))
 
             # run odm_orthophoto
-            system.run('{bin}/odm_orthophoto -inputFiles {models} '
+            system.run('{odm_ortho_bin} -inputFiles {models} '
                        '-logFile {log} -outputFile {ortho} -resolution {res} {verbose} '
                        '-outputCornerFile {corners} {bands}'.format(**kwargs))
 

@@ -143,11 +143,6 @@ install() {
     mkdir -p build && cd build
     cmake .. && make -j$processes
 
-    echo "Compiling build"
-    cd ${RUNPATH}
-    mkdir -p build && cd build
-    cmake .. && make -j$processes
-	
     echo "Configuration Finished"
 }
 
@@ -171,28 +166,9 @@ reinstall() {
 
 clean() {
     rm -rf \
-        ${RUNPATH}/SuperBuild/build/opencv \
+        ${RUNPATH}/SuperBuild/build \
         ${RUNPATH}/SuperBuild/download \
-        ${RUNPATH}/SuperBuild/src/ceres \
-        ${RUNPATH}/SuperBuild/src/PoissonRecon \
-        ${RUNPATH}/SuperBuild/src/untwine \
-        ${RUNPATH}/SuperBuild/src/entwine \
-        ${RUNPATH}/SuperBuild/src/gflags \
-        ${RUNPATH}/SuperBuild/src/hexer \
-        ${RUNPATH}/SuperBuild/src/lastools \
-        ${RUNPATH}/SuperBuild/src/laszip \
-        ${RUNPATH}/SuperBuild/src/mvstexturing \
-        ${RUNPATH}/SuperBuild/src/opencv \
-        ${RUNPATH}/SuperBuild/src/opengv \
-        ${RUNPATH}/SuperBuild/src/pcl \
-        ${RUNPATH}/SuperBuild/src/pdal \
-        ${RUNPATH}/SuperBuild/src/dem2mesh \
-        ${RUNPATH}/SuperBuild/build/dem2mesh \
-        ${RUNPATH}/SuperBuild/src/dem2points \
-        ${RUNPATH}/SuperBuild/build/dem2points \
-        ${RUNPATH}/SuperBuild/src/openmvs \
-        ${RUNPATH}/SuperBuild/build/openmvs \
-        ${RUNPATH}/SuperBuild/src/vcg
+        ${RUNPATH}/SuperBuild/src
 
     # find in /code and delete static libraries and intermediate object files
     find ${RUNPATH} -type f -name "*.a" -delete -or -type f -name "*.o" -delete

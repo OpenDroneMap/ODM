@@ -5,7 +5,7 @@ ProcessorCount(nproc)
 
 if(WIN32)
   set(OpenCV_DIR "${SB_INSTALL_DIR}/x64/vc16/lib")
-  set(BUILD_CMD cmake --build "${SB_BUILD_DIR}/opensfm" --config "${CMAKE_BUILD_TYPE}")
+  set(BUILD_CMD ${CMAKE_COMMAND} --build "${SB_BUILD_DIR}/opensfm" --config "${CMAKE_BUILD_TYPE}")
 else()
   set(OpenCV_DIR "${SB_INSTALL_DIR}/lib/cmake/opencv4")
   set(BUILD_CMD make "-j${nproc}")
@@ -19,11 +19,11 @@ ExternalProject_Add(${_proj_name}
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
   GIT_REPOSITORY    https://github.com/OpenDroneMap/OpenSfM/
-  GIT_TAG           2410
+  GIT_TAG           250
   #--Update/Patch step----------
   UPDATE_COMMAND    git submodule update --init --recursive
   #--Configure step-------------
-  SOURCE_DIR        ${SB_SOURCE_DIR}/${_proj_name}
+  SOURCE_DIR        ${SB_INSTALL_DIR}/bin/${_proj_name}
   CONFIGURE_COMMAND cmake <SOURCE_DIR>/${_proj_name}/src
     -DCERES_ROOT_DIR=${SB_INSTALL_DIR}
     -DOpenCV_DIR=${OpenCV_DIR}
