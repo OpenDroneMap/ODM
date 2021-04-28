@@ -93,7 +93,6 @@ parts:
       - libswscale-dev
       - libtbb-dev
       - libtiff-dev
-      - libvtk6-dev
       - libxext-dev
       - proj-bin
     stage-packages:
@@ -109,7 +108,6 @@ parts:
       - libswscale5
       - libtbb2
       - libtiff5
-      - libvtk6.3
       - libwebpdemux2
       - libxext6
   
@@ -215,7 +213,8 @@ parts:
       - -odm/SuperBuild/src/pcl
       - -odm/SuperBuild/src/pdal
       - -odm/SuperBuild/src/vcg
-      - -odm/SuperBuild/src/zstd
+      - -odm/SuperBuild/src/dem2mesh
+      - -odm/SuperBuild/src/dem2points
     prime:
       # remove any static-libraries
       - -**/*.a

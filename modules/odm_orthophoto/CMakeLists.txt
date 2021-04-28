@@ -9,9 +9,12 @@ set(OPENCV_DIR "OPENCV_DIR-NOTFOUND" CACHE "OPENCV_DIR" "Path to the OPENCV inst
 add_definitions(-Wall -Wextra)
 
 # Find pcl at the location specified by PCL_DIR
-find_package(VTK 6.0 REQUIRED)
 find_package(PCL 1.8 HINTS "${PCL_DIR}/share/pcl-1.8" REQUIRED)
 find_package(GDAL REQUIRED)
+
+# PCL should already link to Boost, but for some reason it doesn't...
+find_package(Boost COMPONENTS filesystem REQUIRED)
+
 include_directories(${GDAL_INCLUDE_DIR})
 
 # Find OpenCV at the default location
@@ -36,4 +39,4 @@ add_executable(${PROJECT_NAME} ${SRC_LIST})
 set_target_properties(${PROJECT_NAME} PROPERTIES
     CXX_STANDARD 11
 )
-target_link_libraries(odm_orthophoto ${PCL_COMMON_LIBRARIES} ${PCL_IO_LIBRARIES} ${PCL_SURFACE_LIBRARIES} ${OpenCV_LIBS} ${GDAL_LIBRARY})
+target_link_libraries(odm_orthophoto ${PCL_COMMON_LIBRARIES} ${PCL_IO_LIBRARIES} ${PCL_SURFACE_LIBRARIES} ${OpenCV_LIBS} ${GDAL_LIBRARY} ${Boost_FILESYSTEM_LIBRARY})

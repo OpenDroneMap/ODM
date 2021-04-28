@@ -252,7 +252,7 @@ class ODMMergeStage(types.ODM_Stage):
                     
                     try:
                         point_cloud.merge(all_point_clouds, tree.odm_georeferencing_model_laz, rerun=self.rerun())
-                        point_cloud.post_point_cloud_steps(args, tree)
+                        point_cloud.post_point_cloud_steps(args, tree, self.rerun())
                     except Exception as e:
                         log.ODM_WARNING("Could not merge point cloud: %s (skipping)" % str(e))
                 else:

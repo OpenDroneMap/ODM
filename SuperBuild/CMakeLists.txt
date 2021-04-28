@@ -106,12 +106,11 @@ SETUP_EXTERNAL_PROJECT(Hexer 1.4 ON)
 
 set(custom_libs OpenSfM
 				LASzip
-                Zstd
 				PDAL
-                Untwine
-                Entwine
+				Untwine
+				Entwine
 				MvsTexturing
-                OpenMVS
+				OpenMVS
 )
 
 foreach(lib ${custom_libs})
@@ -135,19 +134,17 @@ externalproject_add(poissonrecon
 externalproject_add(dem2mesh
     GIT_REPOSITORY    https://github.com/OpenDroneMap/dem2mesh.git
     GIT_TAG           master
+    PREFIX            ${SB_BINARY_DIR}/dem2mesh
     SOURCE_DIR        ${SB_SOURCE_DIR}/dem2mesh
-    UPDATE_COMMAND    ""
-    BUILD_IN_SOURCE 1
-    INSTALL_COMMAND   ""
+    CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
 )
 
 externalproject_add(dem2points
     GIT_REPOSITORY    https://github.com/OpenDroneMap/dem2points.git
     GIT_TAG           master
+    PREFIX            ${SB_BINARY_DIR}/dem2points
     SOURCE_DIR        ${SB_SOURCE_DIR}/dem2points
-    UPDATE_COMMAND    ""
-    BUILD_IN_SOURCE 1
-    INSTALL_COMMAND   ""
+    CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
 )
 
 externalproject_add(lastools
