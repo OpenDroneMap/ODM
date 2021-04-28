@@ -317,29 +317,35 @@ def merge_ply(input_point_cloud_files, output_file, dims=None):
 
     system.run(' '.join(cmd))
 
-def post_point_cloud_steps(args, tree):
+def post_point_cloud_steps(args, tree, rerun=False):
     # XYZ point cloud output
     if args.pc_csv:
         log.ODM_INFO("Creating CSV file (XYZ format)")
         
-        system.run("pdal translate -i \"{}\" "
-            "-o \"{}\" "
-            "--writers.text.format=csv "
-            "--writers.text.order=\"X,Y,Z\" "
-            "--writers.text.keep_unspecified=false ".format(
-                tree.odm_georeferencing_model_laz,
-                tree.odm_georeferencing_xyz_file))
+        if not io.file_exists(tree.odm_georeferencing_xyz_file) or rerun:
+            system.run("pdal translate -i \"{}\" "
+                "-o \"{}\" "
+                "--writers.text.format=csv "
+                "--writers.text.order=\"X,Y,Z\" "
+                "--writers.text.keep_unspecified=false ".format(
+                    tree.odm_georeferencing_model_laz,
+                    tree.odm_georeferencing_xyz_file))
+        else:
+            log.ODM_WARNING("Found existing CSV file %s" % tree.odm_georeferencing_xyz_file)
 
     # LAS point cloud output
     if args.pc_las:
         log.ODM_INFO("Creating LAS file")
         
-        system.run("pdal translate -i \"{}\" "
-            "-o \"{}\" ".format(
-                tree.odm_georeferencing_model_laz,
-                tree.odm_georeferencing_model_las))
+        if not io.file_exists(tree.odm_georeferencing_model_las) or rerun:
+            system.run("pdal translate -i \"{}\" "
+                "-o \"{}\" ".format(
+                    tree.odm_georeferencing_model_laz,
+                    tree.odm_georeferencing_model_las))
+        else:
+            log.ODM_WARNING("Found existing LAS file %s" % tree.odm_georeferencing_xyz_file)
 
     # EPT point cloud output
     if args.pc_ept:
         log.ODM_INFO("Creating Entwine Point Tile output")
-        entwine.build([tree.odm_georeferencing_model_laz], tree.entwine_pointcloud, max_concurrency=args.max_concurrency, rerun=False)
+        entwine.build([tree.odm_georeferencing_model_laz], tree.entwine_pointcloud, max_concurrency=args.max_concurrency, rerun=rerun)
