@@ -147,6 +147,14 @@ externalproject_add(dem2points
     CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
 )
 
+externalproject_add(odm_orthophoto
+    GIT_REPOSITORY    https://github.com/OpenDroneMap/odm_orthophoto.git
+    GIT_TAG           main
+    PREFIX            ${SB_BINARY_DIR}/odm_orthophoto
+    SOURCE_DIR        ${SB_SOURCE_DIR}/odm_orthophoto
+    CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
+)
+
 externalproject_add(lastools
     GIT_REPOSITORY    https://github.com/LAStools/LAStools.git
     GIT_TAG           2ef44281645999ec7217facec84a5913bbbbe165

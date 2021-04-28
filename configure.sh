@@ -143,11 +143,6 @@ install() {
     mkdir -p build && cd build
     cmake .. && make -j$processes
 
-    echo "Compiling build"
-    cd ${RUNPATH}
-    mkdir -p build && cd build
-    cmake .. && make -j$processes
-	
     echo "Configuration Finished"
 }
 
@@ -191,6 +186,8 @@ clean() {
         ${RUNPATH}/SuperBuild/build/dem2points \
         ${RUNPATH}/SuperBuild/src/openmvs \
         ${RUNPATH}/SuperBuild/build/openmvs \
+        ${RUNPATH}/SuperBuild/src/odm_orthophoto \
+        ${RUNPATH}/SuperBuild/build/odm_orthophoto \
         ${RUNPATH}/SuperBuild/src/vcg
 
     # find in /code and delete static libraries and intermediate object files
