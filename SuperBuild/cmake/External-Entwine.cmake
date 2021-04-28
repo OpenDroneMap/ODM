@@ -1,6 +1,10 @@
 set(_proj_name entwine)
 set(_SB_BINARY_DIR "${SB_BINARY_DIR}/${_proj_name}")
 
+if (NOT WIN32)
+  set(EXTRA_CMAKE_ARGS -DCMAKE_CXX_FLAGS=-isystem\ ${SB_SOURCE_DIR}/pdal)
+endif()
+
 ExternalProject_Add(${_proj_name}
   DEPENDS           pdal
   PREFIX            ${_SB_BINARY_DIR}
@@ -15,7 +19,7 @@ ExternalProject_Add(${_proj_name}
   #--Configure step-------------
   SOURCE_DIR        ${SB_SOURCE_DIR}/${_proj_name}
   CMAKE_ARGS
-    -DCMAKE_CXX_FLAGS=-isystem\ ${SB_SOURCE_DIR}/pdal
+    ${EXTRA_CMAKE_ARGS}
     -DADDITIONAL_LINK_DIRECTORIES_PATHS=${SB_INSTALL_DIR}/lib
     -DWITH_TESTS=OFF
     -DWITH_ZSTD=OFF

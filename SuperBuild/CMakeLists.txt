@@ -10,37 +10,6 @@ endif()
 # Setup SuperBuild root location
 set(SB_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
-if (WIN32)
-  if (NOT DEFINED CMAKE_TOOLCHAIN_FILE)
-    message(FATAL_ERROR "CMAKE_TOOLCHAIN_FILE not set. You need to set it to the path of vcpkg.cmake")
-  endif()
-  set(WIN32_CMAKE_ARGS "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}")
-  set(PYTHON_HOME "${SB_ROOT_DIR}/../venv")
-  set(PYTHON_EXE_PATH "${PYTHON_HOME}/Scripts/python")
-
-  # Use the GDAL version that comes with pip
-  set(GDAL_ROOT "${PYTHON_HOME}/Lib/site-packages/osgeo")
-  set(GDAL_LIBRARY "${GDAL_ROOT}/lib/gdal_i.lib")
-  set(GDAL_INCLUDE_DIR "${GDAL_ROOT}/include/gdal")
-
-  # Also download missing headers :/
-  if (NOT EXISTS "${GDAL_INCLUDE_DIR}/ogrsf_frmts.h")
-    file(DOWNLOAD "https://raw.githubusercontent.com/OSGeo/gdal/release/3.2/gdal/ogr/ogrsf_frmts/ogrsf_frmts.h" "${GDAL_INCLUDE_DIR}/ogrsf_frmts.h")
-  endif()
-
-  # TODO: copy gdal302.dll to superbuild/install/bin
-
-  set(WIN32_GDAL_ARGS -DGDAL_FOUND=TRUE -DGDAL_LIBRARY=${GDAL_LIBRARY} -DGDAL_INCLUDE_DIR=${GDAL_INCLUDE_DIR})
-else()
-  set(PYTHON_EXE_PATH "/usr/bin/python3")
-endif()
-
-# Path to additional CMake modules
-set(CMAKE_MODULE_PATH ${SB_ROOT_DIR}/cmake)
-
-include(ExternalProject)
-include(ExternalProject-Setup)
-
 ################################
 # Setup SuperBuild directories #
 ################################
@@ -77,6 +46,40 @@ mark_as_advanced(SB_BINARY_DIR)
 
 message(STATUS "SuperBuild binary files will be located to: ${SB_BINARY_DIR}")
 
+if (WIN32)
+  if (NOT DEFINED CMAKE_TOOLCHAIN_FILE)
+    message(FATAL_ERROR "CMAKE_TOOLCHAIN_FILE not set. You need to set it to the path of vcpkg.cmake")
+  endif()
+  get_filename_component(CMAKE_TOOLCHAIN_DIR ${CMAKE_TOOLCHAIN_FILE} DIRECTORY)
+  set(VCPKG_ROOT "${CMAKE_TOOLCHAIN_DIR}/../../")
+  set(WIN32_CMAKE_ARGS "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}")
+  set(PYTHON_HOME "${SB_ROOT_DIR}/../venv")
+  set(PYTHON_EXE_PATH "${PYTHON_HOME}/Scripts/python")
+
+  # Use the GDAL version that comes with pip
+  set(GDAL_ROOT "${PYTHON_HOME}/Lib/site-packages/osgeo")
+  set(GDAL_LIBRARY "${GDAL_ROOT}/lib/gdal_i.lib")
+  set(GDAL_INCLUDE_DIR "${GDAL_ROOT}/include/gdal")
+
+  # Also download missing headers :/
+  if (NOT EXISTS "${GDAL_INCLUDE_DIR}/ogrsf_frmts.h")
+    file(DOWNLOAD "https://raw.githubusercontent.com/OSGeo/gdal/release/3.2/gdal/ogr/ogrsf_frmts/ogrsf_frmts.h" "${GDAL_INCLUDE_DIR}/ogrsf_frmts.h")
+  endif()
+
+  # Copy VCPKG DLLs
+  file(GLOB COPY_DLLS "${VCPKG_ROOT}/installed/x64-windows/bin/*.dll")
+  file(COPY ${COPY_DLLS} DESTINATION "${SB_INSTALL_DIR}/bin")
+
+  set(WIN32_GDAL_ARGS -DGDAL_FOUND=TRUE -DGDAL_LIBRARY=${GDAL_LIBRARY} -DGDAL_INCLUDE_DIR=${GDAL_INCLUDE_DIR})
+else()
+  set(PYTHON_EXE_PATH "/usr/bin/python3")
+endif()
+
+# Path to additional CMake modules
+set(CMAKE_MODULE_PATH ${SB_ROOT_DIR}/cmake)
+
+include(ExternalProject)
+include(ExternalProject-Setup)
 
 #########################################
 # Download and install third party libs #
@@ -131,10 +134,14 @@ set(custom_libs OpenSfM
 				LASzip
 				PDAL
 				Untwine
-				Entwine
 				MvsTexturing
 				OpenMVS
 )
+
+# Build entwine only on Linux
+if (NOT WIN32)
+    set(custom_libs ${custom_libs} Entwine)
+endif()
 
 externalproject_add(mve
     GIT_REPOSITORY  https://github.com/OpenDroneMap/mve.git
@@ -194,14 +201,9 @@ externalproject_add(dem2points
 )
 
 externalproject_add(lastools
-    GIT_REPOSITORY    https://github.com/LAStools/LAStools.git
-    GIT_TAG           2ef44281645999ec7217facec84a5913bbbbe165
+    GIT_REPOSITORY    https://github.com/OpenDroneMap/LAStools.git
+    GIT_TAG           250
+    PREFIX            ${SB_BINARY_DIR}/lastools
     SOURCE_DIR        ${SB_SOURCE_DIR}/lastools
-    CONFIGURE_COMMAND ""
-    CMAKE_COMMAND     ""
-    CMAKE_GENERATOR   ""
-    UPDATE_COMMAND    ""
-    BUILD_IN_SOURCE 1
-    BUILD_COMMAND     make -C LASlib -j${nproc} CXXFLAGS='-std=c++11' && make -C src -j${nproc} CXXFLAGS='-std=c++11' lasmerge
-    INSTALL_COMMAND   install -m755 -D -t ${SB_INSTALL_DIR}/bin ${SB_SOURCE_DIR}/lastools/bin/lasmerge
+    CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
 )
