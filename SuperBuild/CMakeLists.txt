@@ -66,7 +66,7 @@ if (WIN32)
     file(DOWNLOAD "https://raw.githubusercontent.com/OSGeo/gdal/release/3.2/gdal/ogr/ogrsf_frmts/ogrsf_frmts.h" "${GDAL_INCLUDE_DIR}/ogrsf_frmts.h")
   endif()
 
-  # Copy VCPKG DLLs
+  message("Copying VCPKG DLLs...")
   file(GLOB COPY_DLLS "${VCPKG_ROOT}/installed/x64-windows/bin/*.dll")
   file(COPY ${COPY_DLLS} DESTINATION "${SB_INSTALL_DIR}/bin")
 

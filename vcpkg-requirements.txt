@@ -15,4 +15,8 @@ boost-signals2
 boost-interprocess
 boost-graph
 boost-asio
+boost-program-options
 libgeotiff
+cgal
+
+yasm-tool:x86-windows

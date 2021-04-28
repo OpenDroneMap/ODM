@@ -30,6 +30,7 @@ ExternalProject_Add(${_proj_name}
     -DVCG_ROOT=${SB_SOURCE_DIR}/vcg
     -DCMAKE_BUILD_TYPE=Release
     -DCMAKE_INSTALL_PREFIX=${SB_INSTALL_DIR}
+    ${WIN32_CMAKE_ARGS}
   #--Build step-----------------
   BINARY_DIR        ${_SB_BINARY_DIR}
   #--Install step---------------
