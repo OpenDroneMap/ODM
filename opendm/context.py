@@ -13,14 +13,14 @@ superbuild_bin_path = os.path.join(superbuild_path, 'install', 'bin')
 python_packages_paths = [os.path.join(superbuild_path, p) for p in [
     'install/lib/python3.8/dist-packages',
     'install/lib/python3/dist-packages',
-    'src/opensfm'
+    'install/bin/opensfm'
 ]]
 for p in python_packages_paths:
     sys.path.append(p)
 
 
 # define opensfm path
-opensfm_path = os.path.join(superbuild_path, "src/opensfm")
+opensfm_path = os.path.join(superbuild_bin_path, "opensfm")
 
 poisson_recon_path = os.path.join(superbuild_bin_path, 'PoissonRecon')
 dem2mesh_path = os.path.join(superbuild_bin_path, 'dem2mesh')

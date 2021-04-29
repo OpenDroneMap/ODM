@@ -24,7 +24,7 @@ ExternalProject_Add(${_proj_name}
   UPDATE_COMMAND    git submodule update --init --recursive
   #--Configure step-------------
   SOURCE_DIR        ${SB_INSTALL_DIR}/bin/${_proj_name}
-  CONFIGURE_COMMAND cmake <SOURCE_DIR>/${_proj_name}/src
+  CONFIGURE_COMMAND ${CMAKE_COMMAND} <SOURCE_DIR>/${_proj_name}/src
     -DCERES_ROOT_DIR=${SB_INSTALL_DIR}
     -DOpenCV_DIR=${OpenCV_DIR}
     -DADDITIONAL_INCLUDE_DIRS=${SB_INSTALL_DIR}/include
