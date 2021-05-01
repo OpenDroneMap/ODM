@@ -44,6 +44,7 @@ pdal_path = os.path.join(superbuild_path, 'build/pdal/bin')
 odm_modules_path = os.path.join(root_path, "build/bin")
 odm_modules_src_path = os.path.join(root_path, "modules")
 
+odm_orthophoto_path = os.path.join(superbuild_bin_path, "odm_orthophoto")
 settings_path = os.path.join(root_path, 'settings.yaml')
 
 # Define supported image extensions

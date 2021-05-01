@@ -184,20 +184,14 @@ parts:
       cmake -G Ninja ..
       cmake --build .  --parallel 1
 
-      # Build the main ODM project
-      cd $SNAPCRAFT_PART_BUILD
-      mkdir -p build
-      cd build
-      cmake -G Ninja ..
-      cmake --build . --parallel $SNAPCRAFT_PARALLEL_BUILD_COUNT
-
       rsync -av --exclude .git \
         $SNAPCRAFT_PART_BUILD/ $SNAPCRAFT_PART_INSTALL/odm/
       chmod -R u=rwX,go=rX $PYTHONUSERBASE/lib/python*
     stage:
       # strip the temporary build files and sources
       - -odm/SuperBuild/build/opencv
-      - -odm/SuperBuild/build/openmvs
+      - -odm/SuperBuild/build/openmvs 
+      - -odm/SuperBuild/build/odm_orthophoto
       - -odm/SuperBuild/download
       - -odm/SuperBuild/src/ceres
       - -odm/SuperBuild/src/untwine
@@ -215,6 +209,7 @@ parts:
       - -odm/SuperBuild/src/vcg
       - -odm/SuperBuild/src/dem2mesh
       - -odm/SuperBuild/src/dem2points
+      - -odm/SuperBuild/src/odm_orthophoto
     prime:
       # remove any static-libraries
       - -**/*.a

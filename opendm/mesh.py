@@ -124,7 +124,7 @@ def dem_to_mesh_gridded(inGeotiff, outMesh, maxVertexCount, verbose=False, maxCo
         'verbose': '-verbose' if verbose else ''
     }
 
-    system.run('{reconstructmesh} --mesh-file "{infile}" '
+    system.run('{reconstructmesh} -i "{infile}" '
          '-o "{outfile}" '
          '--remove-spikes 0 --remove-spurious 0 --smooth 0 '
          '--target-face-num {max_faces} '
@@ -178,7 +178,7 @@ def screened_poisson_reconstruction(inPointCloud, outMesh, depth = 8, samples = 
         'verbose': '-verbose' if verbose else ''
     }
 
-    system.run('{reconstructmesh} --mesh-file "{infile}" '
+    system.run('{reconstructmesh} -i "{infile}" '
          '-o "{outfile}" '
          '--remove-spikes 0 --remove-spurious 0 --smooth 0 '
          '--target-face-num {max_faces} '
