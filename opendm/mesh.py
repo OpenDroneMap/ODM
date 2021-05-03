@@ -120,15 +120,13 @@ def dem_to_mesh_gridded(inGeotiff, outMesh, maxVertexCount, verbose=False, maxCo
         'reconstructmesh': context.omvs_reconstructmesh_path,
         'outfile': outMesh,
         'infile': outMeshDirty,
-        'max_faces': maxVertexCount * 2,
-        'verbose': '-verbose' if verbose else ''
+        'max_faces': maxVertexCount * 2
     }
 
     system.run('{reconstructmesh} -i "{infile}" '
          '-o "{outfile}" '
          '--remove-spikes 0 --remove-spurious 0 --smooth 0 '
-         '--target-face-num {max_faces} '
-         '{verbose} '.format(**cleanupArgs))
+         '--target-face-num {max_faces} '.format(**cleanupArgs))
 
     # Delete intermediate results
     os.remove(outMeshDirty)
@@ -174,15 +172,13 @@ def screened_poisson_reconstruction(inPointCloud, outMesh, depth = 8, samples = 
         'reconstructmesh': context.omvs_reconstructmesh_path,
         'outfile': outMesh,
         'infile': outMeshDirty,
-        'max_faces': maxVertexCount * 2,
-        'verbose': '-verbose' if verbose else ''
+        'max_faces': maxVertexCount * 2
     }
 
     system.run('{reconstructmesh} -i "{infile}" '
          '-o "{outfile}" '
          '--remove-spikes 0 --remove-spurious 0 --smooth 0 '
-         '--target-face-num {max_faces} '
-         '{verbose} '.format(**cleanupArgs))
+         '--target-face-num {max_faces} '.format(**cleanupArgs))
 
     # Delete intermediate results
     os.remove(outMeshDirty)
