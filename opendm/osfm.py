@@ -349,7 +349,7 @@ class OSFMContext:
             # (containing only the primary band)
             if os.path.exists(self.recon_file()):
                 os.remove(self.recon_file())
-            os.rename(self.recon_backup_file(), self.recon_file())
+            os.replace(self.recon_backup_file(), self.recon_file())
             log.ODM_INFO("Restored reconstruction.json")
 
     def backup_reconstruction(self):

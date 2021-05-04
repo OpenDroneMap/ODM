@@ -6,7 +6,7 @@ from opendm.system import run
 from opendm import entwine
 from opendm import io
 from opendm.concurrency import parallel_map
-from pipes import quote
+from opendm.utils import double_quote
 
 def ply_info(input_ply):
     if not os.path.exists(input_ply):
@@ -240,7 +240,7 @@ def merge(input_point_cloud_files, output_file, rerun=False):
         os.remove(output_file)
 
     kwargs = {
-        'all_inputs': " ".join(map(quote, input_point_cloud_files)),
+        'all_inputs': " ".join(map(double_quote, input_point_cloud_files)),
         'output': output_file
     }
 
@@ -312,7 +312,7 @@ def merge_ply(input_point_cloud_files, output_file, dims=None):
         '--writers.ply.sized_types=false',
         '--writers.ply.storage_mode="little endian"',
         ('--writers.ply.dims="%s"' % dims) if dims is not None else '',
-        ' '.join(map(quote, input_point_cloud_files + [output_file])),
+        ' '.join(map(double_quote, input_point_cloud_files + [output_file])),
     ]
 
     system.run(' '.join(cmd))

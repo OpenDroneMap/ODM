@@ -258,13 +258,13 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
         median_smoothing(geotiff_path, output_path)
         os.remove(geotiff_path)
     else:
-        os.rename(geotiff_path, output_path)
+        os.replace(geotiff_path, output_path)
 
     if os.path.exists(geotiff_tmp_path):
         if not keep_unfilled_copy: 
             os.remove(geotiff_tmp_path)
         else:
-            os.rename(geotiff_tmp_path, io.related_file_path(output_path, postfix=".unfilled"))
+            os.replace(geotiff_tmp_path, io.related_file_path(output_path, postfix=".unfilled"))
     
     for cleanup_file in [tiles_vrt_path, merged_vrt_path, geotiff_small_path, geotiff_small_filled_path]:
         if os.path.exists(cleanup_file): os.remove(cleanup_file)

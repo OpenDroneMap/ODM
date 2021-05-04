@@ -144,7 +144,7 @@ class ODMOpenMVSStage(types.ODM_Stage):
                     log.ODM_ERROR("Could not compute dense point cloud (no PLY files available).")
                 if len(scene_ply_files) == 1:
                     # Simply rename
-                    os.rename(scene_ply_files[0], tree.openmvs_model)
+                    os.replace(scene_ply_files[0], tree.openmvs_model)
                     log.ODM_INFO("%s --> %s"% (scene_ply_files[0], tree.openmvs_model))
                 else:
                     # Merge

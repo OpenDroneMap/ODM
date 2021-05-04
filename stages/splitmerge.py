@@ -17,7 +17,7 @@ from opendm.concurrency import get_max_memory
 from opendm.remote import LocalRemoteExecutor
 from opendm.shots import merge_geojson_shots
 from opendm import point_cloud
-from pipes import quote
+from opendm.utils import double_quote
 from opendm.tiles.tiler import generate_dem_tiles
 
 class ODMSplitStage(types.ODM_Stage):
@@ -219,7 +219,7 @@ class ODMSplitStage(types.ODM_Stage):
                         argv = get_submodel_argv(args, tree.submodels_path, sp_octx.name())
 
                         # Re-run the ODM toolchain on the submodel
-                        system.run(" ".join(map(quote, map(str, argv))), env_vars=os.environ.copy())
+                        system.run(" ".join(map(double_quote, map(str, argv))), env_vars=os.environ.copy())
                 else:
                     lre.set_projects([os.path.abspath(os.path.join(p, "..")) for p in submodel_paths])
                     lre.run_toolchain()
