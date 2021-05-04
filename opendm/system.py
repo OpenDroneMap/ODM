@@ -72,7 +72,7 @@ def run(cmd, env_paths=[context.superbuild_bin_path], env_vars={}, packages_path
     for k in env_vars:
         env[k] = str(env_vars[k])
 
-    p = subprocess.Popen(cmd, shell=True, env=env, preexec_fn=os.setsid)
+    p = subprocess.Popen(cmd, shell=True, env=env, start_new_session=True)
     running_subprocesses.append(p)
     retcode = p.wait()
     running_subprocesses.remove(p)

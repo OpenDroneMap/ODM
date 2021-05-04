@@ -12,6 +12,7 @@ from opendm import system
 from opendm.concurrency import get_max_memory, parallel_map
 from scipy import ndimage
 from datetime import datetime
+from osgeo.utils.gdal_fillnodata import main as gdal_fillnodata
 from opendm import log
 try:
     import Queue as queue
@@ -227,14 +228,14 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
             '{geotiff_tmp} {geotiff_small}'.format(**kwargs))
 
         # Fill scaled
-        run('gdal_fillnodata.py '
-            '-co NUM_THREADS={threads} '
-            '-co BIGTIFF=IF_SAFER '
-            '--config GDAL_CACHEMAX {max_memory}% '
-            '-b 1 '
-            '-of GTiff '
-            '{geotiff_small} {geotiff_small_filled}'.format(**kwargs))
-
+        gdal_fillnodata(['.', 
+                        '-co', 'NUM_THREADS=%s' % kwargs['threads'], 
+                        '-co', 'BIGTIFF=IF_SAFER',
+                        '--config', 'GDAL_CACHE_MAX', str(kwargs['max_memory']) + '%',
+                        '-b', '1',
+                        '-of', 'GTiff',
+                        kwargs['geotiff_small'], kwargs['geotiff_small_filled']])
+        
         # Merge filled scaled DEM with unfilled DEM using bilinear interpolation
         run('gdalbuildvrt -resolution highest -r bilinear "%s" "%s" "%s"' % (merged_vrt_path, geotiff_small_filled_path, geotiff_tmp_path))
         run('gdal_translate '

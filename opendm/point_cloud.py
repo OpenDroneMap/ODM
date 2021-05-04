@@ -60,7 +60,7 @@ def split(input_point_cloud, outdir, filename_template, capacity, dims=None):
     
     if filename_template.endswith(".ply"):
         cmd += ("--writers.ply.sized_types=false "
-                "--writers.ply.storage_mode='little endian' ")
+                "--writers.ply.storage_mode=\"little endian\" ")
     if dims is not None:
         cmd += '--writers.ply.dims="%s"' % dims
     system.run(cmd)
@@ -151,7 +151,7 @@ def filter(input_point_cloud, output_point_cloud, standard_deviation=2.5, meank=
                 "-o \"{outputFile}\" "
                 "{stages} "
                 "--writers.ply.sized_types=false "
-                "--writers.ply.storage_mode='little endian' "
+                "--writers.ply.storage_mode=\"little endian\" "
                 "--writers.ply.dims=\"{dims}\" "
                 "").format(**filterArgs)
 
@@ -159,13 +159,13 @@ def filter(input_point_cloud, output_point_cloud, standard_deviation=2.5, meank=
             cmd += "--filters.sample.radius={} ".format(sample_radius)
         
         if 'outlier' in filters:
-            cmd += ("--filters.outlier.method='statistical' "
+            cmd += ("--filters.outlier.method=\"statistical\" "
                 "--filters.outlier.mean_k={} "
                 "--filters.outlier.multiplier={} ").format(meank, standard_deviation)  
         
         if 'range' in filters:
             # Remove outliers
-            cmd += "--filters.range.limits='Classification![7:7]' "
+            cmd += "--filters.range.limits=\"Classification![7:7]\" "
 
         system.run(cmd)
 

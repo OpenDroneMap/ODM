@@ -31,6 +31,7 @@
 # Library functions for creating DEMs from Lidar data
 
 import os
+import sys
 import json as jsonlib
 import tempfile
 from opendm import system
@@ -156,7 +157,7 @@ def run_pipeline(json, verbose=False):
         'pipeline',
         '-i %s' % jsonfile
     ]
-    if verbose:
+    if verbose or sys.platform == 'win32':
         system.run(' '.join(cmd))
     else:
         system.run(' '.join(cmd) + ' > /dev/null 2>&1')

@@ -186,9 +186,6 @@ externalproject_add(dem2mesh
     SOURCE_DIR        ${SB_SOURCE_DIR}/dem2mesh
     CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
                       ${WIN32_GDAL_ARGS}
-    UPDATE_COMMAND    ""
-    BUILD_IN_SOURCE 1
-    INSTALL_COMMAND   ""
 )
 
 externalproject_add(dem2points

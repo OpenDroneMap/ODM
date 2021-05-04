@@ -24,8 +24,9 @@ class OSFMContext:
         self.opensfm_project_path = opensfm_project_path
     
     def run(self, command):
-        system.run('%s/bin/opensfm %s "%s"' %
-                    (context.opensfm_path, command, self.opensfm_project_path))
+        osfm_bin = os.path.join(context.opensfm_path, 'bin', 'opensfm')
+        system.run('%s %s "%s"' %
+                    (osfm_bin, command, self.opensfm_project_path))
 
     def is_reconstruction_done(self):
         tracks_file = os.path.join(self.opensfm_project_path, 'tracks.csv')
