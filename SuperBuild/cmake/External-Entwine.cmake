@@ -8,8 +8,8 @@ ExternalProject_Add(${_proj_name}
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
-  GIT_REPOSITORY    https://github.com/connormanning/entwine/
-  GIT_TAG           2.1.0
+  GIT_REPOSITORY    https://github.com/OpenDroneMap/entwine/
+  GIT_TAG           2411
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   #--Configure step-------------
@@ -18,7 +18,8 @@ ExternalProject_Add(${_proj_name}
     -DCMAKE_CXX_FLAGS=-isystem\ ${SB_SOURCE_DIR}/pdal
     -DADDITIONAL_LINK_DIRECTORIES_PATHS=${SB_INSTALL_DIR}/lib
     -DWITH_TESTS=OFF
-	-DCMAKE_BUILD_TYPE=Release
+    -DWITH_ZSTD=OFF
+    -DCMAKE_BUILD_TYPE=Release
     -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
   #--Build step-----------------
   BINARY_DIR        ${_SB_BINARY_DIR}

@@ -11,7 +11,6 @@ def has_gpus():
     try:
         import pyopencl
     except:
-        log.ODM_INFO("PyOpenCL is missing (not a GPU build)")
         return False
 
     try:

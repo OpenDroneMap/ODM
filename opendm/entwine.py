@@ -47,18 +47,10 @@ def build_entwine(input_point_cloud_files, tmpdir, output_path, max_concurrency=
         'outputdir': output_path
     }
 
-    # Run scan to compute dataset bounds
-    system.run('entwine scan --threads {threads} --tmp "{tmpdir}" {all_inputs} -o "{outputdir}"'.format(**kwargs))
-    scan_json = os.path.join(output_path, "scan.json")
-
-    if os.path.exists(scan_json):
-        kwargs['input'] = scan_json
-        for _ in range(len(input_point_cloud_files)):
-            # One at a time
-            system.run('entwine build --threads {threads} --tmp "{tmpdir}" -i "{input}" -o "{outputdir}" --run 1'.format(**kwargs))
-    else:
-        log.ODM_WARNING("%s does not exist, no point cloud will be built." % scan_json)
-        
+    # for _ in range(len(input_point_cloud_files)):
+    #     # One at a time
+    #     system.run('entwine build --threads {threads} --tmp "{tmpdir}" -i "{input}" -o "{outputdir}"'.format(**kwargs))
+    system.run('entwine build --threads {threads} --tmp "{tmpdir}" {all_inputs} -o "{outputdir}"'.format(**kwargs))
 
 def build_untwine(input_point_cloud_files, tmpdir, output_path, max_concurrency=8, rerun=False):
     kwargs = {

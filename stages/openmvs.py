@@ -17,6 +17,7 @@ class ODMOpenMVSStage(types.ODM_Stage):
         tree = outputs['tree']
         reconstruction = outputs['reconstruction']
         photos = reconstruction.photos
+        octx = OSFMContext(tree.opensfm)
 
         if not photos:
             log.ODM_ERROR('Not enough photos in photos array to start OpenMVS')
@@ -31,7 +32,6 @@ class ODMOpenMVSStage(types.ODM_Stage):
             # export reconstruction from opensfm
             openmvs_scene_file = os.path.join(tree.openmvs, "scene.mvs")
             if not io.file_exists(openmvs_scene_file) or self.rerun():
-                octx = OSFMContext(tree.opensfm)
                 cmd = 'export_openmvs'
                 octx.run(cmd)
             else:
