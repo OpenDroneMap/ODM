@@ -40,7 +40,7 @@ def compute_cutline(orthophoto_file, crop_area_file, destination, max_concurrenc
         if scale < 1:
             log.ODM_INFO("Scaling orthophoto to %s%% to compute cutline" % (scale * 100))
 
-            scaled_orthophoto = os.path.join(tmpdir, os.path.basename(io.related_file_path(orthophoto_file, postfix=".scaled")))
+            scaled_orthophoto = io.related_file_path(orthophoto_file, postfix=".scaled")
             # Scale orthophoto before computing cutline
             system.run("gdal_translate -outsize {}% 0 "
                 "-co NUM_THREADS={} "
@@ -161,7 +161,7 @@ def compute_cutline(orthophoto_file, crop_area_file, destination, max_concurrenc
         # Remove previous
         if os.path.exists(destination):
             os.remove(destination)
-
+        
         with fiona.open(destination, 'w', **meta) as sink:
             sink.write({
                 'geometry': mapping(largest_cutline),
@@ -169,5 +169,9 @@ def compute_cutline(orthophoto_file, crop_area_file, destination, max_concurrenc
             })
         f.close()
         log.ODM_INFO("Wrote %s" % destination)
+
+        # Cleanup
+        if scaled_orthophoto is not None and os.path.exists(scaled_orthophoto):
+            os.remove(scaled_orthophoto)
     else:
         log.ODM_WARNING("We've been asked to compute cutline, but either %s or %s is missing. Skipping..." % (orthophoto_file, crop_area_file))
