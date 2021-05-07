@@ -1,6 +1,7 @@
 import os
 import shutil
 import rasterio
+import fiona
 import numpy as np
 import math
 from opendm import log
@@ -12,6 +13,8 @@ from opendm import system
 from skimage.feature import canny
 from skimage.draw import line
 from skimage.graph import route_through_array
+from shapely.geometry import LineString, mapping, shape
+from shapely.ops import polygonize, unary_union
 
 def write_raster(data, file):
     profile = {
@@ -31,8 +34,7 @@ def write_raster(data, file):
 def compute_cutline(orthophoto_file, crop_area_file, destination, max_concurrency=1, tmpdir=None, scale=1):
     if io.file_exists(orthophoto_file) and io.file_exists(crop_area_file):
         log.ODM_INFO("Computing cutline")
-        # if tmpdir and not io.dir_exists(tmpdir):
-        #     system.mkdir_p(tmpdir)
+
         scale = max(0.0001, min(1, scale))
         scaled_orthophoto = None
         if scale < 1:
@@ -54,111 +56,118 @@ def compute_cutline(orthophoto_file, crop_area_file, destination, max_concurrenc
             orthophoto_file = scaled_orthophoto
         
         # open raster
-        with rasterio.open(orthophoto_file) as f:
-            rast = f.read()
-            _, height, width = rast.shape
-            number_lines = int(max(8, math.ceil(min(width, height) / 256.0)))
-            print("num lines: %s" % number_lines)
-            line_hor_offset = int(width / number_lines)
-            line_ver_offset = int(height / number_lines)
+        f =  rasterio.open(orthophoto_file)
+        rast = f.read(1) # First band only
+        height, width = rast.shape
+        number_lines = int(max(8, math.ceil(min(width, height) / 256.0)))
+        line_hor_offset = int(width / number_lines)
+        line_ver_offset = int(height / number_lines)
 
-            if line_hor_offset <= 2 or line_ver_offset <= 2:
-                log.ODM_WARNING("Cannot compute cutline, orthophoto is too small (%sx%spx)" % (width, height))
-                return
+        if line_hor_offset <= 2 or line_ver_offset <= 2:
+            log.ODM_WARNING("Cannot compute cutline, orthophoto is too small (%sx%spx)" % (width, height))
+            return
 
-            # Compute canny edges on first band
-            edges = canny(rast[0])
+        crop_f = fiona.open(crop_area_file, 'r')
+        if len(crop_f) == 0:
+            log.ODM_WARNING("Crop area is empty, cannot compute cutline")
+            return
+        crop_poly = shape(crop_f[1]['geometry'])
+        crop_f.close()
 
+        linestrings = []
+
+        # Compute canny edges on first band
+        edges = canny(rast)
+
+        def compute_linestrings(direction):
+            log.ODM_INFO("Computing %s cutlines" % direction)
             # Initialize cost map
             cost_map = np.full((height, width), 1, dtype=np.float32)
 
             # Write edges to cost map
             cost_map[edges==True] = 0 # Low cost
 
-            # Write vertical "barrier, floor is lava" costs
-            vertical_lines = [((i, 0), (i, height - 1)) for i in range(line_hor_offset, width - line_hor_offset, line_hor_offset)]
-            vertical_points = []
-            pad_x = int(line_hor_offset / 2.0)
-
-            for i in range(0, len(vertical_lines)):
-                a,b = vertical_lines[i]
-                vertical_points.append(((a[0] - pad_x , a[1]), (b[0] - pad_x, b[1])))
-            a,b = vertical_lines[-1]
-            vertical_points.append(((a[0] + pad_x , a[1]), (b[0] + pad_x, b[1])))
+            # Write "barrier, floor is lava" costs
+            if direction == 'vertical':
+                lines = [((i, 0), (i, height - 1)) for i in range(line_hor_offset, width - line_hor_offset, line_hor_offset)]
+                points = []
+                pad_x = int(line_hor_offset / 2.0)
+                for i in range(0, len(lines)):
+                    a,b = lines[i]
+                    points.append(((a[0] - pad_x , a[1]), (b[0] - pad_x, b[1])))
+                a,b = lines[-1]
+                points.append(((a[0] + pad_x , a[1]), (b[0] + pad_x, b[1])))
+            else:
+                lines = [((0, j), (width - 1, j)) for j in range(line_ver_offset, height - line_ver_offset, line_ver_offset)]
+                points = []
+                pad_y = int(line_ver_offset / 2.0)
+                for i in range(0, len(lines)):
+                    a,b = lines[i]
+                    points.append(((a[0] , a[1] - pad_y), (b[0], b[1] - pad_y)))
+                a,b = lines[-1]
+                points.append(((a[0] , a[1] + pad_y), (b[0], b[1] + pad_y)))
                     
-            for a, b in vertical_lines:
+            for a, b in lines:
                 rr,cc = line(*a, *b)
                 cost_map[cc, rr] = 9999 # Lava
             
             # Calculate route
-            for a, b in vertical_points:
+            for a, b in points:
                 line_coords, cost = route_through_array(cost_map, (a[1], a[0]), (b[1], b[0]), fully_connected=True, geometric=True)
 
-                print(a, b)
-                print("Cost: %s" % cost)
-                for p in line_coords:
-                    cost_map[p[0], p[1]] = 5000
+                # Convert to geographic
+                geo_line_coords = [f.xy(*c) for c in line_coords]
 
-            write_raster(cost_map, '/datasets/brighton2/cc_cost_map.tif')
-            
+                # Simplify
+                ls = LineString(geo_line_coords)
+                linestrings.append(ls.simplify(0.05, preserve_topology=False))
+                
+        compute_linestrings('vertical')
+        compute_linestrings('horizontal')
+
+                    
+        # Generate polygons and keep only those inside the crop area
+        log.ODM_INFO("Generating polygons... this could take a bit.")
+        polygons = []
+        for p in polygonize(unary_union(linestrings)):
+            if crop_poly.contains(p):
+                polygons.append(p)
+
+        # This should never happen
+        if len(polygons) == 0:
+            log.ODM_WARNING("No polygons, cannot compute cutline")
+            return
+        
+        log.ODM_INFO("Merging polygons")
+        cutline_polygons = unary_union(polygons)
+        largest_cutline = cutline_polygons[0]
+        max_area = largest_cutline.area
+        for p in cutline_polygons:
+            if p.area > max_area:
+                max_area = p.area
+                largest_cutline = p
+        
+        log.ODM_INFO("Largest cutline found: %s m^2" % max_area)
+
+        meta = {
+            'crs': {'init': str(f.crs).lower() },
+            'driver': 'GPKG',
+            'schema': {
+                'properties': {},
+                'geometry': 'Polygon'
+            }
+        }
+
+        # Remove previous
+        if os.path.exists(destination):
+            os.remove(destination)
+
+        with fiona.open(destination, 'w', **meta) as sink:
+            sink.write({
+                'geometry': mapping(largest_cutline),
+                'properties': {}
+            })
+        f.close()
+        log.ODM_INFO("Wrote %s" % destination)
     else:
         log.ODM_WARNING("We've been asked to compute cutline, but either %s or %s is missing. Skipping..." % (orthophoto_file, crop_area_file))
-# def compute_cutline(orthophoto_file, crop_area_file, destination, max_concurrency=1, tmpdir=None, scale=1):
-#     if io.file_exists(orthophoto_file) and io.file_exists(crop_area_file):
-#         from opendm.grass_engine import grass
-#         log.ODM_INFO("Computing cutline")
-
-#         if tmpdir and not io.dir_exists(tmpdir):
-#             system.mkdir_p(tmpdir)
-
-#         scale = max(0.0001, min(1, scale))
-#         scaled_orthophoto = None
-
-#         if scale < 1:
-#             log.ODM_INFO("Scaling orthophoto to %s%% to compute cutline" % (scale * 100))
-
-#             scaled_orthophoto = os.path.join(tmpdir, os.path.basename(io.related_file_path(orthophoto_file, postfix=".scaled")))
-#             # Scale orthophoto before computing cutline
-#             system.run("gdal_translate -outsize {}% 0 "
-#                 "-co NUM_THREADS={} "
-#                 "--config GDAL_CACHEMAX {}% "
-#                 "{} {}".format(
-#                 scale * 100,
-#                 max_concurrency,
-#                 concurrency.get_max_memory(),
-#                 orthophoto_file,
-#                 scaled_orthophoto
-#             ))
-#             orthophoto_file = scaled_orthophoto
-
-#         try:
-#             ortho_width,ortho_height = get_image_size.get_image_size(orthophoto_file, fallback_on_error=False)
-#             log.ODM_INFO("Orthophoto dimensions are %sx%s" % (ortho_width, ortho_height))
-#             number_lines = int(max(8, math.ceil(min(ortho_width, ortho_height) / 256.0)))
-#         except:
-#             log.ODM_INFO("Cannot compute orthophoto dimensions, setting arbitrary number of lines.")
-#             number_lines = 32
-        
-#         log.ODM_INFO("Number of lines: %s" % number_lines)
-
-#         gctx = grass.create_context({'auto_cleanup' : False, 'tmpdir': tmpdir})
-#         gctx.add_param('orthophoto_file', orthophoto_file)
-#         gctx.add_param('crop_area_file', crop_area_file)
-#         gctx.add_param('number_lines', number_lines)
-#         gctx.add_param('max_concurrency', max_concurrency)
-#         gctx.add_param('memory', int(concurrency.get_max_memory_mb(300)))
-#         gctx.set_location(orthophoto_file)
-
-#         cutline_file = gctx.execute(os.path.join("opendm", "grass", "compute_cutline.grass"))
-#         if cutline_file != 'error':
-#             if io.file_exists(cutline_file):
-#                 shutil.move(cutline_file, destination)
-#                 log.ODM_INFO("Generated cutline file: %s --> %s" % (cutline_file, destination))
-#                 gctx.cleanup()
-#                 return destination
-#             else:
-#                 log.ODM_WARNING("Unexpected script result: %s. No cutline file has been generated." % cutline_file)
-#         else:
-#             log.ODM_WARNING("Could not generate orthophoto cutline. An error occured when running GRASS. No orthophoto will be generated.")
-#     else:
-#         log.ODM_WARNING("We've been asked to compute cutline, but either %s or %s is missing. Skipping..." % (orthophoto_file, crop_area_file))
