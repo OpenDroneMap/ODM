@@ -31,7 +31,7 @@ def write_raster(data, file):
     with rasterio.open(file, 'w', **profile) as wout:
         wout.write(data, 1)
 
-def compute_cutline(orthophoto_file, crop_area_file, destination, max_concurrency=1, tmpdir=None, scale=1):
+def compute_cutline(orthophoto_file, crop_area_file, destination, max_concurrency=1, scale=1):
     if io.file_exists(orthophoto_file) and io.file_exists(crop_area_file):
         log.ODM_INFO("Computing cutline")
 

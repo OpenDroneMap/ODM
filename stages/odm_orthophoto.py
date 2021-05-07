@@ -127,7 +127,6 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                                     bounds_file_path,
                                     cutline_file,
                                     args.max_concurrency,
-                                    tmpdir=os.path.join(tree.odm_orthophoto, "grass_cutline_tmpdir"),
                                     scale=0.25)
 
                     orthophoto.compute_mask_raster(tree.odm_orthophoto_tif, cutline_file, 
