@@ -1,7 +1,7 @@
 import os
 import sys
 import shutil
-from pipes import quote
+from opendm.utils import double_quote
 from opendm import io
 from opendm import log
 from opendm import system
@@ -48,7 +48,7 @@ def build_entwine(input_point_cloud_files, tmpdir, output_path, max_concurrency=
     kwargs = {
         'threads': max_concurrency,
         'tmpdir': tmpdir,
-        'all_inputs': "-i " + " ".join(map(quote, input_point_cloud_files)),
+        'all_inputs': "-i " + " ".join(map(double_quote, input_point_cloud_files)),
         'outputdir': output_path
     }
 
@@ -61,7 +61,7 @@ def build_untwine(input_point_cloud_files, tmpdir, output_path, max_concurrency=
     kwargs = {
         # 'threads': max_concurrency,
         'tmpdir': tmpdir,
-        'files': "--files " + " ".join(map(quote, input_point_cloud_files)),
+        'files': "--files " + " ".join(map(double_quote, input_point_cloud_files)),
         'outputdir': output_path
     }
 
