@@ -4,6 +4,7 @@ import rasterio
 import fiona
 import numpy as np
 import math
+import sys
 from opendm import log
 from opendm import io
 from opendm import concurrency 
@@ -13,8 +14,14 @@ from opendm import system
 from skimage.feature import canny
 from skimage.draw import line
 from skimage.graph import route_through_array
+import shapely
 from shapely.geometry import LineString, mapping, shape
 from shapely.ops import polygonize, unary_union
+
+if sys.platform == 'win32':
+    # Temporary fix for: ValueError: GEOSGeom_createLinearRing_r returned a NULL pointer  
+    # https://github.com/Toblerity/Shapely/issues/1005
+    shapely.speedups.disable()
 
 def write_raster(data, file):
     profile = {
@@ -71,6 +78,7 @@ def compute_cutline(orthophoto_file, crop_area_file, destination, max_concurrenc
         if len(crop_f) == 0:
             log.ODM_WARNING("Crop area is empty, cannot compute cutline")
             return
+
         crop_poly = shape(crop_f[1]['geometry'])
         crop_f.close()
 

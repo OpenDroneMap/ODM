@@ -43,9 +43,9 @@ class ODMSplitStage(types.ODM_Stage):
 
                 log.ODM_INFO("Large dataset detected (%s photos) and split set at %s. Preparing split merge." % (len(photos), args.split))
                 config = [
-                    "submodels_relpath: ../submodels/opensfm",
-                    "submodel_relpath_template: ../submodels/submodel_%04d/opensfm",
-                    "submodel_images_relpath_template: ../submodels/submodel_%04d/images",
+                    "submodels_relpath: " + os.path.join("..", "submodels", "opensfm"),
+                    "submodel_relpath_template: " + os.path.join("..", "submodels", "submodel_%04d", "opensfm"),
+                    "submodel_images_relpath_template: " + os.path.join("..", "submodels", "submodel_%04d", "images"),
                     "submodel_size: %s" % args.split,
                     "submodel_overlap: %s" % args.split_overlap,
                 ]

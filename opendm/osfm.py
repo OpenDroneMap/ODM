@@ -455,7 +455,16 @@ def get_submodel_argv(args, submodels_path = None, submodel_name = None):
     read_json_always = ['cameras']
 
     argv = sys.argv
-    result = [argv[0]] # Startup script (/path/to/run.py)
+
+    # Startup script (/path/to/run.py)
+    startup_script = argv[0]
+
+    # On Windows, make sure we always invoke the "run.bat" file
+    if sys.platform == 'win32':
+        startup_script_dir = os.path.dirname(startup_script)
+        startup_script = os.path.join(startup_script_dir, "run")
+
+    result = [startup_script] 
 
     args_dict = vars(args).copy()
     set_keys = [k[:-len("_is_set")] for k in args_dict.keys() if k.endswith("_is_set")]
