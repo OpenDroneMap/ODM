@@ -39,7 +39,6 @@ parts:
       - gdal-bin
       - gfortran # to build scipy
       - git
-      - grass-core
       - libboost-log-dev
       - libgdal-dev
       - libgeotiff-dev
@@ -57,7 +56,6 @@ parts:
       - swig3.0
     stage-packages:
       - gdal-bin
-      - grass-core
       - libboost-log1.71.0
       - libgdal26
       - libgeotiff5
