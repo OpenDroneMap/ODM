@@ -3,6 +3,6 @@
 setlocal
 call win32env.bat
 
-start "ODM Console" cmd "/k venv\Scripts\activate"
+start "ODM Console" cmd
 
 endlocal
