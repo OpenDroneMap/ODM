@@ -17,13 +17,6 @@ with open(os.path.join(context.root_path, 'VERSION')) as version_file:
     __version__ = version_file.read().strip()
 
 
-def alphanumeric_string(string):
-    import re
-    if re.match('^[a-zA-Z0-9_-]+$', string) is None:
-        msg = '{0} is not a valid name. Must use alphanumeric characters.'.format(string)
-        raise argparse.ArgumentTypeError(msg)
-    return string
-
 def path_or_json_string(string):
     try:
         return io.path_or_json_string_to_dict(string)
@@ -68,9 +61,14 @@ def config(argv=None, parser=None):
     if args is not None and argv is None:
         return args
 
+    if sys.platform == 'win32':
+        usage_bin = 'run'
+    else:
+        usage_bin = 'run.sh'
+
     if parser is None:
-        parser = SettingsParser(description='ODM',
-                            usage='%(prog)s [options] <project name>',
+        parser = SettingsParser(description='ODM is a command line toolkit to generate maps, point clouds, 3D models and DEMs from drone, balloon or kite images.',
+                            usage='%s [options] <dataset name>' % usage_bin,
                             yaml_file=open(context.settings_path))
     
     parser.add_argument('--project-path',
@@ -78,9 +76,9 @@ def config(argv=None, parser=None):
                         action=StoreValue,
                         help='Path to the project folder. Your project folder should contain subfolders for each dataset. Each dataset should have an "images" folder.')
     parser.add_argument('name',
-                        metavar='<project name>',
+                        metavar='<dataset name>',
                         action=StoreValue,
-                        type=alphanumeric_string,
+                        type=str,
                         default='code',
                         nargs='?',
                         help='Name of dataset (i.e subfolder name within project folder). Default: %(default)s')

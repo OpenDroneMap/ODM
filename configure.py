@@ -128,6 +128,9 @@ def clean():
     safe_remove(os.path.join("SuperBuild", "src"))
     safe_remove(os.path.join("SuperBuild", "install"))
 
+def dist():
+    # D:\Program Files (x86)\Inno Setup 6
+    run("compil32 /cc \"innosetup.iss\")
 
 if args.action == 'build':
     build()
