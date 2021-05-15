@@ -11,12 +11,22 @@ if defined _OLD_CODEPAGE (
 set ODMBASE=%~dp0
 set GDALBASE=%ODMBASE%venv\Lib\site-packages\osgeo
 set OSFMBASE=%ODMBASE%SuperBuild\install\bin\opensfm\bin
+set SBBIN=%ODMBASE%SuperBuild\install\bin
 
-set PATH=%GDALBASE%;%ODMBASE%SuperBuild\install\bin;%OSFMBASE%
+set PATH=%GDALBASE%;%SBBIN%;%OSFMBASE%
 set PROJ_LIB=%GDALBASE%\data\proj
 
 set VIRTUAL_ENV=%ODMBASE%venv
 set PYTHONPATH=%VIRTUAL_ENV%
+set PYENVCFG=%VIRTUAL_ENV%\pyvenv.cfg
+
+rem Hot-patching pyvenv.cfg
+echo home = %ODMBASE%\python38> %PYENVCFG%
+echo include-system-site-packages = false>> %PYENVCFG%
+
+rem Hot-patching cv2 extension configs
+echo BINARIES_PATHS = [r"%SBBIN%"] + BINARIES_PATHS> venv\Lib\site-packages\cv2\config.py
+echo PYTHON_EXTENSIONS_PATHS = [r'%VIRTUAL_ENV%\lib\site-packages\cv2\python-3.8'] + PYTHON_EXTENSIONS_PATHS> venv\Lib\site-packages\cv2\config-3.8.py
 
 if not defined PROMPT set PROMPT=$P$G
 
@@ -32,7 +42,7 @@ set PYTHONHOME=
 if defined _OLD_VIRTUAL_PATH set PATH=%_OLD_VIRTUAL_PATH%
 if not defined _OLD_VIRTUAL_PATH set _OLD_VIRTUAL_PATH=%PATH%
 
-set PATH=%VIRTUAL_ENV%\Scripts;%VIRTUAL_ENV%\..;%PATH%
+set PATH=%VIRTUAL_ENV%\Scripts;%PATH%
 
 :END
 if defined _OLD_CODEPAGE (

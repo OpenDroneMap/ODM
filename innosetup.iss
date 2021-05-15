@@ -43,7 +43,7 @@ Source: "licenses\*"; DestDir: "{app}\licenses"; Flags: ignoreversion recursesub
 Source: "opendm\*"; DestDir: "{app}\opendm"; Excludes: "__pycache__"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "stages\*"; DestDir: "{app}\stages"; Excludes: "__pycache__"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "SuperBuild\install\bin\*"; DestDir: "{app}\SuperBuild\install\bin"; Excludes: "__pycache__"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "venv\*"; DestDir: "{app}\venv"; Excludes: "__pycache__"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "venv\*"; DestDir: "{app}\venv"; Excludes: "__pycache__,pyvenv.cfg"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "python38\*"; DestDir: "{app}\python38"; Excludes: "__pycache__"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "console.bat"; DestDir: "{app}"; Flags: ignoreversion
 Source: "VERSION"; DestDir: "{app}"; Flags: ignoreversion
@@ -53,6 +53,7 @@ Source: "run.py"; DestDir: "{app}"; Flags: ignoreversion
 Source: "settings.yaml"; DestDir: "{app}"; Flags: ignoreversion
 Source: "win32env.bat"; DestDir: "{app}"; Flags: ignoreversion
 Source: "winrun.bat"; DestDir: "{app}"; Flags: ignoreversion
+Source: "SuperBuild\download\vc_redist.x64.exe"; DestDir: {tmp}; Flags: dontcopy
 
 [Icons]
 Name: {group}\ODM Console; Filename: "{app}\console.bat"; WorkingDir: "{app}"
@@ -62,4 +63,28 @@ Name: "{userdesktop}\ODM Console"; Filename: "{app}\console.bat"; WorkingDir: "{
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Run]
-Filename: {app}\console; Description: {cm:LaunchProgram,ODM Console}; Flags: nowait postinstall skipifsilent
+Filename: "{tmp}\vc_redist.x64.exe"; StatusMsg: "Installing Visual C++ Redistributable Packages for Visual Studio 2019"; Parameters: "/quiet"; Check: VC2019RedistNeedsInstall ; Flags: waituntilterminated
+Filename: "{app}\console.bat"; Description: {cm:LaunchProgram,ODM Console}; Flags: nowait postinstall skipifsilent
+
+[Code]
+function VC2019RedistNeedsInstall: Boolean;
+var 
+  Version: String;
+begin
+  if RegQueryStringValue(HKEY_LOCAL_MACHINE,
+       'SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64', 'Version', Version) then
+  begin
+    // Is the installed version at least 14.14 ? 
+    Log('VC Redist Version check : found ' + Version);
+    Result := (CompareStr(Version, 'v14.14.26429.03')<0);
+  end
+  else 
+  begin
+    // Not even an old version installed
+    Result := True;
+  end;
+  if (Result) then
+  begin
+    ExtractTemporaryFile('vc_redist.x64.exe');
+  end;
+end;

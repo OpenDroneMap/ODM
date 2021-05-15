@@ -129,33 +129,42 @@ def clean():
     safe_remove(os.path.join("SuperBuild", "install"))
 
 def dist():
+    # Download VC++ runtime
+    vcredist_path = os.path.join("SuperBuild", "download", "vc_redist.x64.exe")
+    if not os.path.isfile(vcredist_path):
+        vcredist_url = "https://aka.ms/vs/16/release/vc_redist.x64.exe"
+        print("Downloading %s" % vcredist_url)
+        with urllib.request.urlopen(vcredist_url) as response, open(vcredist_path, 'wb') as out_file:
+            shutil.copyfileobj(response, out_file)
+
     # Download portable python
-    is not os.path.isdir("python38"):
+    if not os.path.isdir("python38"):
+        pythonzip_path = os.path.join("SuperBuild", "download", "python38.zip")
         python_url = "https://github.com/OpenDroneMap/windows-deps/releases/download/2.5.0/python-3.8.1-embed-amd64-less-pth.zip"
-        if not os.path.exists("python38.zip"):
+        if not os.path.exists(pythonzip_path):
             print("Downloading %s" % python_url)
-            with urllib.request.urlopen(python_url) as response, open( "python38.zip", 'wb') as out_file:
+            with urllib.request.urlopen(python_url) as response, open( pythonzip_path, 'wb') as out_file:
                 shutil.copyfileobj(response, out_file)
         
         os.mkdir("python38")
 
-        print("Extracting python38.zip --> python38/")
-        with zipfile.ZipFile("python38.zip") as z:
+        print("Extracting --> python38/")
+        with zipfile.ZipFile(pythonzip_path) as z:
             z.extractall("python38")
-
 
     # Download innosetup
     if not os.path.isdir("innosetup"):
+        innosetupzip_path = os.path.join("SuperBuild", "download", "innosetup.zip")
         innosetup_url = "https://github.com/OpenDroneMap/windows-deps/releases/download/2.5.0/innosetup-portable-win32-6.0.5-3.zip"
-        if not os.path.exists("innosetup.zip"):
+        if not os.path.exists(innosetupzip_path):
             print("Downloading %s" % innosetup_url)
-            with urllib.request.urlopen(innosetup_url) as response, open( "innosetup.zip", 'wb') as out_file:
+            with urllib.request.urlopen(innosetup_url) as response, open(innosetupzip_path, 'wb') as out_file:
                 shutil.copyfileobj(response, out_file)
 
         os.mkdir("innosetup")
 
-        print("Extracting innosetup.zip --> innosetup/")
-        with zipfile.ZipFile("innosetup.zip") as z:
+        print("Extracting --> innosetup/")
+        with zipfile.ZipFile(innosetupzip_path) as z:
             z.extractall("innosetup")
     
     # Run
