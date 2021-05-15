@@ -129,13 +129,31 @@ def clean():
     safe_remove(os.path.join("SuperBuild", "install"))
 
 def dist():
-    # D:\Program Files (x86)\Inno Setup 6
-    run("compil32 /cc \"innosetup.iss\")
+    # Download innosetup
+    if not os.path.isdir("innosetup"):
+        innosetup_url = "https://github.com/OpenDroneMap/windows-deps/releases/download/2.5.0/innosetup-portable-win32-6.0.5-3.zip"
+        if not os.path.exists("innosetup.zip"):
+            print("Downloading %s" % innosetup_url)
+            with urllib.request.urlopen(innosetup_url) as response, open( "innosetup.zip", 'wb') as out_file:
+                shutil.copyfileobj(response, out_file)
+
+        os.mkdir("innosetup")
+
+        print("Extracting innosetup.zip --> innosetup/")
+        with zipfile.ZipFile("innosetup.zip") as z:
+            z.extractall("innosetup")
+    
+    # Run
+    run("innosetup\\compil32 /cc \"innosetup.iss\"")
+
+    print("Done! Setup created in dist/")
 
 if args.action == 'build':
     build()
 elif args.action == 'vcpkg_export':
     vcpkg_export()
+elif args.action == 'dist':
+    dist()
 elif args.action == 'clean':
     clean()
 else:

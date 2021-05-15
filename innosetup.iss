@@ -9,21 +9,18 @@
 #define MyAppPublisher "OpenDroneMap"
 #define MyAppURL "https://opendronemap.org"
 
-#define InnoRoot "D:\webodm-lightning"
-
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
 ; Do not use the same AppId value in installers for other applications.
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
-AppId={{E75D901B-A57E-4FDC-9F2E-36B0CF8DE895}
+AppId={{443998BA-9F8F-4A69-9A96-0D8FBC8C6393}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
-;AppVerName={#MyAppName} {#MyAppVersion}
 AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
-DefaultDirName={autopf}\WebODM Lightning
+DefaultDirName=C:\ODM
 DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
 LicenseFile=LICENSE
@@ -41,12 +38,19 @@ UsePreviousAppDir=no
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Files]
-Source: "contrib"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "licenses"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "opendm"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "stages"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "stages"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "venv"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "contrib\*"; DestDir: "{app}\contrib"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "licenses\*"; DestDir: "{app}\licenses"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "opendm\*"; DestDir: "{app}\opendm"; Excludes: "__pycache__"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "stages\*"; DestDir: "{app}\stages"; Excludes: "__pycache__"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "SuperBuild\install\bin\*"; DestDir: "{app}\SuperBuild\install\bin"; Excludes: "__pycache__"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "venv\*"; DestDir: "{app}\venv"; Excludes: "__pycache__"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "console.bat"; DestDir: "{app}"; Flags: ignoreversion
+Source: "VERSION"; DestDir: "{app}"; Flags: ignoreversion
+Source: "LICENSE"; DestDir: "{app}"; Flags: ignoreversion
+Source: "run.bat"; DestDir: "{app}"; Flags: ignoreversion
+Source: "run.py"; DestDir: "{app}"; Flags: ignoreversion
+Source: "settings.yaml"; DestDir: "{app}"; Flags: ignoreversion
+Source: "win32env.bat"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: {group}\ODM Console; Filename: "{app}\console.bat"; WorkingDir: "{app}"
