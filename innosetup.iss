@@ -52,6 +52,7 @@ Source: "run.bat"; DestDir: "{app}"; Flags: ignoreversion
 Source: "run.py"; DestDir: "{app}"; Flags: ignoreversion
 Source: "settings.yaml"; DestDir: "{app}"; Flags: ignoreversion
 Source: "win32env.bat"; DestDir: "{app}"; Flags: ignoreversion
+Source: "winrun.bat"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: {group}\ODM Console; Filename: "{app}\console.bat"; WorkingDir: "{app}"
