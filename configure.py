@@ -129,6 +129,21 @@ def clean():
     safe_remove(os.path.join("SuperBuild", "install"))
 
 def dist():
+    # Download portable python
+    is not os.path.isdir("python38"):
+        python_url = "https://github.com/OpenDroneMap/windows-deps/releases/download/2.5.0/python-3.8.1-embed-amd64-less-pth.zip"
+        if not os.path.exists("python38.zip"):
+            print("Downloading %s" % python_url)
+            with urllib.request.urlopen(python_url) as response, open( "python38.zip", 'wb') as out_file:
+                shutil.copyfileobj(response, out_file)
+        
+        os.mkdir("python38")
+
+        print("Extracting python38.zip --> python38/")
+        with zipfile.ZipFile("python38.zip") as z:
+            z.extractall("python38")
+
+
     # Download innosetup
     if not os.path.isdir("innosetup"):
         innosetup_url = "https://github.com/OpenDroneMap/windows-deps/releases/download/2.5.0/innosetup-portable-win32-6.0.5-3.zip"

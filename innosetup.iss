@@ -44,6 +44,7 @@ Source: "opendm\*"; DestDir: "{app}\opendm"; Excludes: "__pycache__"; Flags: ign
 Source: "stages\*"; DestDir: "{app}\stages"; Excludes: "__pycache__"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "SuperBuild\install\bin\*"; DestDir: "{app}\SuperBuild\install\bin"; Excludes: "__pycache__"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "venv\*"; DestDir: "{app}\venv"; Excludes: "__pycache__"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "python38\*"; DestDir: "{app}\python38"; Excludes: "__pycache__"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "console.bat"; DestDir: "{app}"; Flags: ignoreversion
 Source: "VERSION"; DestDir: "{app}"; Flags: ignoreversion
 Source: "LICENSE"; DestDir: "{app}"; Flags: ignoreversion
