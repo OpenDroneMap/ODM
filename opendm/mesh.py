@@ -64,8 +64,8 @@ def dem_to_points(inGeotiff, outPointCloud, verbose=False):
         'verbose': '-verbose' if verbose else ''
     }
 
-    system.run('{bin} -inputFile {infile} '
-         '-outputFile {outfile} '
+    system.run('"{bin}" -inputFile "{infile}" '
+         '-outputFile "{outfile}" '
          '-skirtHeightThreshold 1.5 '
          '-skirtIncrements 0.2 '
          '-skirtHeightCap 100 '
@@ -99,8 +99,8 @@ def dem_to_mesh_gridded(inGeotiff, outMesh, maxVertexCount, verbose=False, maxCo
                 'maxConcurrency': maxConcurrency,
                 'verbose': '-verbose' if verbose else ''
             }
-            system.run('{bin} -inputFile {infile} '
-                '-outputFile {outfile} '
+            system.run('"{bin}" -inputFile "{infile}" '
+                '-outputFile "{outfile}" '
                 '-maxTileLength 2000 '
                 '-maxVertexCount {maxVertexCount} '
                 '-maxConcurrency {maxConcurrency} '
@@ -123,7 +123,7 @@ def dem_to_mesh_gridded(inGeotiff, outMesh, maxVertexCount, verbose=False, maxCo
         'max_faces': maxVertexCount * 2
     }
 
-    system.run('{reconstructmesh} -i "{infile}" '
+    system.run('"{reconstructmesh}" -i "{infile}" '
          '-o "{outfile}" '
          '--remove-spikes 0 --remove-spurious 0 --smooth 0 '
          '--target-face-num {max_faces} '.format(**cleanupArgs))
@@ -158,8 +158,8 @@ def screened_poisson_reconstruction(inPointCloud, outMesh, depth = 8, samples = 
     }
 
     # Run PoissonRecon
-    system.run('{bin} --in {infile} '
-             '--out {outfile} '
+    system.run('"{bin}" --in "{infile}" '
+             '--out "{outfile}" '
              '--depth {depth} '
              '--pointWeight {pointWeight} '
              '--samplesPerNode {samples} '
@@ -171,11 +171,11 @@ def screened_poisson_reconstruction(inPointCloud, outMesh, depth = 8, samples = 
     cleanupArgs = {
         'reconstructmesh': context.omvs_reconstructmesh_path,
         'outfile': outMesh,
-        'infile': outMeshDirty,
+        'infile':outMeshDirty,
         'max_faces': maxVertexCount * 2
     }
 
-    system.run('{reconstructmesh} -i "{infile}" '
+    system.run('"{reconstructmesh}" -i "{infile}" '
          '-o "{outfile}" '
          '--remove-spikes 0 --remove-spurious 0 --smooth 0 '
          '--target-face-num {max_faces} '.format(**cleanupArgs))

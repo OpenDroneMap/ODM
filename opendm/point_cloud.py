@@ -189,14 +189,14 @@ def get_extent(input_point_cloud):
     # We know PLY files do not have --summary support
     if input_point_cloud.lower().endswith(".ply"):
         fallback = True
-        run('pdal info {0} > {1}'.format(input_point_cloud, json_file))
+        run('pdal info "{0}" > "{1}"'.format(input_point_cloud, json_file))
 
     try:
         if not fallback:
-            run('pdal info --summary {0} > {1}'.format(input_point_cloud, json_file))
+            run('pdal info --summary "{0}" > "{1}"'.format(input_point_cloud, json_file))
     except:
         fallback = True
-        run('pdal info {0} > {1}'.format(input_point_cloud, json_file))
+        run('pdal info "{0}" > "{1}"'.format(input_point_cloud, json_file))
 
     bounds = {}
     with open(json_file, 'r') as f:

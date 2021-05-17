@@ -52,7 +52,7 @@ def compute_cutline(orthophoto_file, crop_area_file, destination, max_concurrenc
             system.run("gdal_translate -outsize {}% 0 "
                 "-co NUM_THREADS={} "
                 "--config GDAL_CACHEMAX {}% "
-                "{} {}".format(
+                '"{}" "{}"'.format(
                 scale * 100,
                 max_concurrency,
                 concurrency.get_max_memory(),
