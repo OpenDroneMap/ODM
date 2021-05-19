@@ -47,7 +47,10 @@ def exit_gracefully():
 
     for sp in running_subprocesses:
         log.ODM_WARNING("Sending TERM signal to PID %s..." % sp.pid)
-        os.killpg(os.getpgid(sp.pid), signal.SIGTERM)
+        if sys.platform == 'win32':
+            os.kill(sp.pid, signal.CTRL_C_EVENT)
+        else:
+            os.killpg(os.getpgid(sp.pid), signal.SIGTERM)
     
     os._exit(1)
 
