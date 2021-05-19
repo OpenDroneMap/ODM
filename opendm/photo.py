@@ -425,7 +425,7 @@ class ODM_Photo:
 
     def get_photometric_exposure(self):
         # H ~= (exposure_time) / (f_number^2)
-        if self.fnumber is not None and self.exposure_time > 0:
+        if self.fnumber is not None and self.exposure_time is not None and self.exposure_time > 0 and self.fnumber > 0:
             return self.exposure_time / (self.fnumber * self.fnumber)
 
     def get_horizontal_irradiance(self):
