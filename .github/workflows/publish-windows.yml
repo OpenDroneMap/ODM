@@ -22,29 +22,23 @@ jobs:
       uses: ilammy/msvc-dev-cmd@v1
       with:
         arch: x64
-        toolset: "14.27.29110"
     - name: Extract code signing cert
       id: code_sign
       uses: timheuer/base64-to-file@v1
       with:
         fileName: 'comodo.pfx'
         encodedString: ${{ secrets.CODE_SIGNING_CERT }}
-    - name: Setup code signing
-      env: 
-        CODE_SIGN_CERT_PATH: ${{ steps.code_sign.outputs.filePath }}
-      run: |
-        New-Item -Path "HKCU:\SOFTWARE\Jordan Russell\Inno Setup" -Name SignTools -Force
-        Set-ItemProperty -Path "HKCU:\SOFTWARE\Jordan Russell1\Inno Setup\SignTools" -Name SignTool0 -Value ("signtool=\""" + (Get-Command signtool).Source + """ sign /f \""$env.CODE_SIGN_CERT_PATH\"" /t http://timestamp.sectigo.com " + '$f')
-    - name: Install and create venv
+    - name: Install venv
       run: |
         python -m pip install virtualenv
-        python -m virtualenv venv 
     - name: Build sources
       run: |
         python configure.py build
     - name: Create setup
+      env: 
+        CODE_SIGN_CERT_PATH: ${{ steps.code_sign.outputs.filePath }}
       run: |
-        python configure.py dist
+        python configure.py dist --signtool-path $((Get-Command signtool).Source) --code-sign-cert-path $env:CODE_SIGN_CERT_PATH
     - name: Upload Setup File
       uses: actions/upload-artifact@v2
       with:

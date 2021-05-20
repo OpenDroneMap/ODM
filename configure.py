@@ -29,6 +29,17 @@ parser.add_argument('--vcpkg-archive-url',
                     default='https://github.com/OpenDroneMap/windows-deps/releases/download/2.5.0/vcpkg-export-250.zip',
                     required=False,
                     help='Path to VCPKG export archive')
+parser.add_argument('--code-sign-cert-path',
+                    type=str,
+                    default='',
+                    required=False,
+                    help='Path to pfx code signing certificate')
+parser.add_argument('--signtool-path',
+                    type=str,
+                    default='',
+                    required=False,
+                    help='Path to signtool.exe')
+
 args = parser.parse_args()
 
 def run(cmd, cwd=os.getcwd()):
@@ -48,7 +59,7 @@ def rmtree(top):
             os.remove(filename)
         for name in dirs:
             os.rmdir(os.path.join(root, name))
-    os.rmdir(top)      
+    os.rmdir(top)
 
 def vcpkg_requirements():
     with open("vcpkg-requirements.txt") as f:
@@ -129,13 +140,21 @@ def clean():
     safe_remove(os.path.join("SuperBuild", "install"))
 
 def dist():
+    if not os.path.exists("SuperBuild\\download"):
+        print("You need to run configure.py build before you can run dist")
+        exit(1)
+
     # Download VC++ runtime
-    vcredist_path = os.path.join("SuperBuild", "download", "vc_redist.x64.exe")
+    vcredist_path = os.path.join("SuperBuild", "download", "vc_redist.x64.zip")
     if not os.path.isfile(vcredist_path):
-        vcredist_url = "https://aka.ms/vs/16/release/vc_redist.x64.exe"
+        vcredist_url = "https://github.com/OpenDroneMap/windows-deps/releases/download/2.5.0/VC_redist.x64.zip"
         print("Downloading %s" % vcredist_url)
         with urllib.request.urlopen(vcredist_url) as response, open(vcredist_path, 'wb') as out_file:
             shutil.copyfileobj(response, out_file)
+
+        print("Extracting --> vc_redist.x64.exe")
+        with zipfile.ZipFile(vcredist_path) as z:
+            z.extractall(os.path.join("SuperBuild", "download"))
 
     # Download portable python
     if not os.path.isdir("python38"):
@@ -166,9 +185,12 @@ def dist():
         print("Extracting --> innosetup/")
         with zipfile.ZipFile(innosetupzip_path) as z:
             z.extractall("innosetup")
-    
+
     # Run
-    run("innosetup\\compil32 /cc \"innosetup.iss\"")
+    cs_flags = ""
+    if args.code_sign_cert_path and args.signtool_path:
+        cs_flags = '"/Ssigntool=%s sign /f %s /t http://timestamp.sectigo.com $f"' % (args.signtool_path, args.code_sign_cert_path)
+    run("innosetup\\iscc /Qp " + cs_flags  + " \"innosetup.iss\"")
 
     print("Done! Setup created in dist/")
 

@@ -162,14 +162,14 @@ ProcessorCount(nproc)
 
 if (WIN32)
     set (POISSON_BUILD_CMD ${CMAKE_MAKE_PROGRAM} ${SB_SOURCE_DIR}/PoissonRecon/PoissonRecon.vcxproj /p:configuration=${CMAKE_BUILD_TYPE} /p:PlatformToolset=${CMAKE_VS_PLATFORM_TOOLSET} /p:WindowsTargetPlatformVersion=${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION})
-    set (POISSON_BIN_PATH "Win32/${CMAKE_BUILD_TYPE}/PoissonRecon.exe")
+    set (POISSON_BIN_PATH "x64/${CMAKE_BUILD_TYPE}/PoissonRecon.exe")
 else()
     set (POISSON_BUILD_CMD  make -j${nproc} poissonrecon)
     set (POISSON_BIN_PATH "Linux/PoissonRecon")
 endif()
 externalproject_add(poissonrecon
-    GIT_REPOSITORY    https://github.com/mkazhdan/PoissonRecon.git
-    GIT_TAG           ce5005ae3094d902d551a65a8b3131e06f45e7cf
+    GIT_REPOSITORY    https://github.com/OpenDroneMap/PoissonRecon.git
+    GIT_TAG           250
     PREFIX            ${SB_BINARY_DIR}/PoissonRecon
     SOURCE_DIR        ${SB_SOURCE_DIR}/PoissonRecon
     UPDATE_COMMAND    ""
