@@ -3,7 +3,7 @@ name: Publish Windows Setup
 on:
   push:
     branches:
-    - win32a
+    - master
     tags:
     - v*
 
