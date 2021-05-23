@@ -31,7 +31,7 @@ def classify(lasFile, scalar, slope, threshold, window, verbose=False):
     except:
         log.ODM_WARNING("Error creating classified file %s" % lasFile)
 
-    log.ODM_INFO('Created %s in %s' % (os.path.relpath(lasFile), datetime.now() - start))
+    log.ODM_INFO('Created %s in %s' % (lasFile, datetime.now() - start))
     return lasFile
 
 def rectify(lasFile, debug=False, reclassify_threshold=5, min_area=750, min_points=500):
@@ -71,7 +71,7 @@ def rectify(lasFile, debug=False, reclassify_threshold=5, min_area=750, min_poin
     except Exception as e:
         raise Exception("Error rectifying ground in file %s: %s" % (lasFile, str(e)))
 
-    log.ODM_INFO('Created %s in %s' % (os.path.relpath(lasFile), datetime.now() - start))
+    log.ODM_INFO('Created %s in %s' % (lasFile, datetime.now() - start))
     return lasFile
 
 error = None
@@ -332,6 +332,6 @@ def median_smoothing(geotiff_path, output_path, smoothing_iterations=1):
         with rasterio.open(output_path, 'w', **img.profile) as imgout:
             imgout.write(arr, 1)
     
-    log.ODM_INFO('Completed smoothing to create %s in %s' % (os.path.relpath(output_path), datetime.now() - start))
+    log.ODM_INFO('Completed smoothing to create %s in %s' % (output_path, datetime.now() - start))
 
     return output_path
