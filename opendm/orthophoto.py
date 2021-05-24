@@ -31,7 +31,7 @@ def build_overviews(orthophoto_file):
     kwargs = {'orthophoto': orthophoto_file}
     
     # Run gdaladdo
-    system.run('gdaladdo -ro -r average '
+    system.run('gdaladdo -r average '
                 '--config BIGTIFF_OVERVIEW IF_SAFER '
                 '--config COMPRESS_OVERVIEW JPEG '
                 '{orthophoto} 2 4 8 16'.format(**kwargs))
