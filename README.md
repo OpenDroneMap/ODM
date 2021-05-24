@@ -77,7 +77,7 @@ We have a vibrant [community forum](https://community.opendronemap.org/). You ca
 
 ## Windows Setup
 
-ODM can be installed natively on Windows. Just download the latest setup from [this page](https://github.com/OpenDroneMap/ODM/releases). The setup will install a ODM Console. After opening the ODM Console you can process a dataset by typing:
+ODM can be installed natively on Windows. Just download the latest setup from the [releases](https://github.com/OpenDroneMap/ODM/releases) page. After opening the ODM Console you can process datasets by typing:
 
 ```bash
 run C:\Users\youruser\datasets\project  [--additional --parameters --here]
