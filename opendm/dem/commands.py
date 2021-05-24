@@ -12,6 +12,7 @@ from opendm import system
 from opendm.concurrency import get_max_memory, parallel_map
 from scipy import ndimage
 from datetime import datetime
+from osgeo.utils.gdal_fillnodata import main as gdal_fillnodata
 from opendm import log
 try:
     import Queue as queue
@@ -30,7 +31,7 @@ def classify(lasFile, scalar, slope, threshold, window, verbose=False):
     except:
         log.ODM_WARNING("Error creating classified file %s" % lasFile)
 
-    log.ODM_INFO('Created %s in %s' % (os.path.relpath(lasFile), datetime.now() - start))
+    log.ODM_INFO('Created %s in %s' % (lasFile, datetime.now() - start))
     return lasFile
 
 def rectify(lasFile, debug=False, reclassify_threshold=5, min_area=750, min_points=500):
@@ -70,7 +71,7 @@ def rectify(lasFile, debug=False, reclassify_threshold=5, min_area=750, min_poin
     except Exception as e:
         raise Exception("Error rectifying ground in file %s: %s" % (lasFile, str(e)))
 
-    log.ODM_INFO('Created %s in %s' % (os.path.relpath(lasFile), datetime.now() - start))
+    log.ODM_INFO('Created %s in %s' % (lasFile, datetime.now() - start))
     return lasFile
 
 error = None
@@ -216,7 +217,7 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
                 '-co NUM_THREADS={threads} '
                 '-co BIGTIFF=IF_SAFER '
                 '--config GDAL_CACHEMAX {max_memory}% '
-                '{tiles_vrt} {geotiff_tmp}'.format(**kwargs))
+                '"{tiles_vrt}" "{geotiff_tmp}"'.format(**kwargs))
 
         # Scale to 10% size
         run('gdal_translate '
@@ -224,17 +225,17 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
             '-co BIGTIFF=IF_SAFER '
             '--config GDAL_CACHEMAX {max_memory}% '
             '-outsize 10% 0 '
-            '{geotiff_tmp} {geotiff_small}'.format(**kwargs))
+            '"{geotiff_tmp}" "{geotiff_small}"'.format(**kwargs))
 
         # Fill scaled
-        run('gdal_fillnodata.py '
-            '-co NUM_THREADS={threads} '
-            '-co BIGTIFF=IF_SAFER '
-            '--config GDAL_CACHEMAX {max_memory}% '
-            '-b 1 '
-            '-of GTiff '
-            '{geotiff_small} {geotiff_small_filled}'.format(**kwargs))
-
+        gdal_fillnodata(['.', 
+                        '-co', 'NUM_THREADS=%s' % kwargs['threads'], 
+                        '-co', 'BIGTIFF=IF_SAFER',
+                        '--config', 'GDAL_CACHE_MAX', str(kwargs['max_memory']) + '%',
+                        '-b', '1',
+                        '-of', 'GTiff',
+                        kwargs['geotiff_small'], kwargs['geotiff_small_filled']])
+        
         # Merge filled scaled DEM with unfilled DEM using bilinear interpolation
         run('gdalbuildvrt -resolution highest -r bilinear "%s" "%s" "%s"' % (merged_vrt_path, geotiff_small_filled_path, geotiff_tmp_path))
         run('gdal_translate '
@@ -243,7 +244,7 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
             '-co BIGTIFF=IF_SAFER '
             '-co COMPRESS=DEFLATE '
             '--config GDAL_CACHEMAX {max_memory}% '
-            '{merged_vrt} {geotiff}'.format(**kwargs))
+            '"{merged_vrt}" "{geotiff}"'.format(**kwargs))
     else:
         run('gdal_translate '
                 '-co NUM_THREADS={threads} '
@@ -251,19 +252,19 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
                 '-co BIGTIFF=IF_SAFER '
                 '-co COMPRESS=DEFLATE '
                 '--config GDAL_CACHEMAX {max_memory}% '
-                '{tiles_vrt} {geotiff}'.format(**kwargs))
+                '"{tiles_vrt}" "{geotiff}"'.format(**kwargs))
 
     if apply_smoothing:
         median_smoothing(geotiff_path, output_path)
         os.remove(geotiff_path)
     else:
-        os.rename(geotiff_path, output_path)
+        os.replace(geotiff_path, output_path)
 
     if os.path.exists(geotiff_tmp_path):
         if not keep_unfilled_copy: 
             os.remove(geotiff_tmp_path)
         else:
-            os.rename(geotiff_tmp_path, io.related_file_path(output_path, postfix=".unfilled"))
+            os.replace(geotiff_tmp_path, io.related_file_path(output_path, postfix=".unfilled"))
     
     for cleanup_file in [tiles_vrt_path, merged_vrt_path, geotiff_small_path, geotiff_small_filled_path]:
         if os.path.exists(cleanup_file): os.remove(cleanup_file)
@@ -331,6 +332,6 @@ def median_smoothing(geotiff_path, output_path, smoothing_iterations=1):
         with rasterio.open(output_path, 'w', **img.profile) as imgout:
             imgout.write(arr, 1)
     
-    log.ODM_INFO('Completed smoothing to create %s in %s' % (os.path.relpath(output_path), datetime.now() - start))
+    log.ODM_INFO('Completed smoothing to create %s in %s' % (output_path, datetime.now() - start))
 
     return output_path

@@ -90,6 +90,10 @@ class ODMLoadDatasetStage(types.ODM_Stage):
         # check if we rerun cell or not
         images_database_file = os.path.join(tree.root_path, 'images.json')
         if not io.file_exists(images_database_file) or self.rerun():
+            if not os.path.exists(images_dir):
+                log.ODM_ERROR("There are no images in %s! Make sure that your project path and dataset name is correct. The current is set to: %s" % (images_dir, args.project_path))
+                exit(1)
+
             files, rejects = get_images(images_dir)
             if files:
                 # create ODMPhoto list

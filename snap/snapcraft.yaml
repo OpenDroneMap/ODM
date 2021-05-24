@@ -187,27 +187,9 @@ parts:
       chmod -R u=rwX,go=rX $PYTHONUSERBASE/lib/python*
     stage:
       # strip the temporary build files and sources
-      - -odm/SuperBuild/build/opencv
-      - -odm/SuperBuild/build/openmvs 
-      - -odm/SuperBuild/build/odm_orthophoto
+      - -odm/SuperBuild/build
       - -odm/SuperBuild/download
-      - -odm/SuperBuild/src/ceres
-      - -odm/SuperBuild/src/untwine
-      - -odm/SuperBuild/src/entwine
-      - -odm/SuperBuild/src/gflags
-      - -odm/SuperBuild/src/hexer
-      - -odm/SuperBuild/src/lastools
-      - -odm/SuperBuild/src/laszip
-      - -odm/SuperBuild/src/mvstexturing
-      - -odm/SuperBuild/src/opencv
-      - -odm/SuperBuild/src/opengv
-      - -odm/SuperBuild/src/openmvs
-      - -odm/SuperBuild/src/pcl
-      - -odm/SuperBuild/src/pdal
-      - -odm/SuperBuild/src/vcg
-      - -odm/SuperBuild/src/dem2mesh
-      - -odm/SuperBuild/src/dem2points
-      - -odm/SuperBuild/src/odm_orthophoto
+      - -odm/SuperBuild/src
     prime:
       # remove any static-libraries
       - -**/*.a

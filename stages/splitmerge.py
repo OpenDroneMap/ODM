@@ -17,7 +17,7 @@ from opendm.concurrency import get_max_memory
 from opendm.remote import LocalRemoteExecutor
 from opendm.shots import merge_geojson_shots
 from opendm import point_cloud
-from pipes import quote
+from opendm.utils import double_quote
 from opendm.tiles.tiler import generate_dem_tiles
 
 class ODMSplitStage(types.ODM_Stage):
@@ -43,9 +43,9 @@ class ODMSplitStage(types.ODM_Stage):
 
                 log.ODM_INFO("Large dataset detected (%s photos) and split set at %s. Preparing split merge." % (len(photos), args.split))
                 config = [
-                    "submodels_relpath: ../submodels/opensfm",
-                    "submodel_relpath_template: ../submodels/submodel_%04d/opensfm",
-                    "submodel_images_relpath_template: ../submodels/submodel_%04d/images",
+                    "submodels_relpath: " + os.path.join("..", "submodels", "opensfm"),
+                    "submodel_relpath_template: " + os.path.join("..", "submodels", "submodel_%04d", "opensfm"),
+                    "submodel_images_relpath_template: " + os.path.join("..", "submodels", "submodel_%04d", "images"),
                     "submodel_size: %s" % args.split,
                     "submodel_overlap: %s" % args.split_overlap,
                 ]
@@ -219,7 +219,7 @@ class ODMSplitStage(types.ODM_Stage):
                         argv = get_submodel_argv(args, tree.submodels_path, sp_octx.name())
 
                         # Re-run the ODM toolchain on the submodel
-                        system.run(" ".join(map(quote, map(str, argv))), env_vars=os.environ.copy())
+                        system.run(" ".join(map(double_quote, map(str, argv))), env_vars=os.environ.copy())
                 else:
                     lre.set_projects([os.path.abspath(os.path.join(p, "..")) for p in submodel_paths])
                     lre.run_toolchain()

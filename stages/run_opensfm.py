@@ -70,7 +70,7 @@ class ODMOpenSfMStage(types.ODM_Stage):
         geocoords_flag_file = octx.path("exported_geocoords.txt")
 
         if reconstruction.is_georeferenced() and (not io.file_exists(geocoords_flag_file) or self.rerun()):
-            octx.run('export_geocoords --reconstruction --proj \'%s\' --offset-x %s --offset-y %s' % 
+            octx.run('export_geocoords --reconstruction --proj "%s" --offset-x %s --offset-y %s' % 
                 (reconstruction.georef.proj4(), reconstruction.georef.utm_east_offset, reconstruction.georef.utm_north_offset))
             # Destructive
             shutil.move(tree.opensfm_geocoords_reconstruction, tree.opensfm_reconstruction)

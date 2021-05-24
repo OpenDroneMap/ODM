@@ -9,7 +9,7 @@ from opendm import gsd
 from opendm import orthophoto
 from opendm.concurrency import get_max_memory
 from opendm.cutline import compute_cutline
-from pipes import quote
+from opendm.utils import double_quote
 from opendm import pseudogeo
 from opendm.multispectral import get_primary_band_name
 
@@ -63,16 +63,16 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                     if not primary:
                         subdir = band['name'].lower()
                     models.append(os.path.join(base_dir, subdir, model_file))
-                kwargs['bands'] = '-bands %s' % (','.join([quote(b['name']) for b in reconstruction.multi_camera]))
+                kwargs['bands'] = '-bands %s' % (','.join([double_quote(b['name']) for b in reconstruction.multi_camera]))
             else:
                 models.append(os.path.join(base_dir, model_file))
 
-            kwargs['models'] = ','.join(map(quote, models))
+            kwargs['models'] = ','.join(map(double_quote, models))
 
             # run odm_orthophoto
-            system.run('{odm_ortho_bin} -inputFiles {models} '
-                       '-logFile {log} -outputFile {ortho} -resolution {res} {verbose} '
-                       '-outputCornerFile {corners} {bands}'.format(**kwargs))
+            system.run('"{odm_ortho_bin}" -inputFiles {models} '
+                       '-logFile "{log}" -outputFile "{ortho}" -resolution {res} {verbose} '
+                       '-outputCornerFile "{corners}" {bands}'.format(**kwargs))
 
             # Create georeferenced GeoTiff
             geotiffcreated = False
@@ -114,7 +114,7 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                            '-a_srs \"{proj}\" '
                            '--config GDAL_CACHEMAX {max_memory}% '
                            '--config GDAL_TIFF_INTERNAL_MASK YES '
-                           '{input} {output} > {log}'.format(**kwargs))
+                           '"{input}" "{output}" > "{log}"'.format(**kwargs))
 
                 bounds_file_path = os.path.join(tree.odm_georeferencing, 'odm_georeferenced_model.bounds.gpkg')
                     
@@ -147,7 +147,7 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                 if io.file_exists(tree.odm_orthophoto_render):
                     pseudogeo.add_pseudo_georeferencing(tree.odm_orthophoto_render)
                     log.ODM_INFO("Renaming %s --> %s" % (tree.odm_orthophoto_render, tree.odm_orthophoto_tif))
-                    os.rename(tree.odm_orthophoto_render, tree.odm_orthophoto_tif)
+                    os.replace(tree.odm_orthophoto_render, tree.odm_orthophoto_tif)
                 else:
                     log.ODM_WARNING("Could not generate an orthophoto (it did not render)")
         else:

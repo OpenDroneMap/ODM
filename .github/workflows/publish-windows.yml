@@ -1,0 +1,56 @@
+name: Publish Windows Setup
+
+on:
+  push:
+    branches:
+    - master
+    tags:
+    - v*
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.8.1'
+        architecture: 'x64'
+    - name: Setup Visual C++
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
+    - name: Extract code signing cert
+      id: code_sign
+      uses: timheuer/base64-to-file@v1
+      with:
+        fileName: 'comodo.pfx'
+        encodedString: ${{ secrets.CODE_SIGNING_CERT }}
+    - name: Install venv
+      run: |
+        python -m pip install virtualenv
+    - name: Build sources
+      run: |
+        python configure.py build
+    - name: Create setup
+      env: 
+        CODE_SIGN_CERT_PATH: ${{ steps.code_sign.outputs.filePath }}
+      run: |
+        python configure.py dist --signtool-path $((Get-Command signtool).Source) --code-sign-cert-path $env:CODE_SIGN_CERT_PATH
+    - name: Upload Setup File
+      uses: actions/upload-artifact@v2
+      with:
+        name: Setup
+        path: dist\*.exe
+    - name: Upload Setup to Release
+      uses: svenstaro/upload-release-action@v2
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: dist\*.exe
+        file_glob: true
+        tag: ${{ github.ref }}
+        overwrite: true
+

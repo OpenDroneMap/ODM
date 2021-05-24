@@ -15,7 +15,7 @@ If you would rather not type commands in a shell and are looking for a friendly 
 
 ## Quickstart
 
-The easiest way to run ODM is via docker. To install docker, see [docs.docker.com](https://docs.docker.com). Once you have docker installed and [working](https://docs.docker.com/get-started/#test-docker-installation), you can run ODM by placing some images (JPEGs or TIFFs) in a folder named “images” (for example `C:\Users\youruser\datasets\project\images` or `/home/youruser/datasets/project/images`) and simply run from a Command Prompt / Terminal:
+The easiest way to run ODM on is via docker. To install docker, see [docs.docker.com](https://docs.docker.com). Once you have docker installed and [working](https://docs.docker.com/get-started/#test-docker-installation), you can run ODM by placing some images (JPEGs or TIFFs) in a folder named “images” (for example `C:\Users\youruser\datasets\project\images` or `/home/youruser/datasets/project/images`) and simply run from a Command Prompt / Terminal:
 
 ```bash
 # Windows
@@ -74,6 +74,14 @@ See http://docs.opendronemap.org for tutorials and more guides.
 ## Forum
 
 We have a vibrant [community forum](https://community.opendronemap.org/). You can [search it](https://community.opendronemap.org/search?expanded=true) for issues you might be having with ODM and you can post questions there. We encourage users of ODM to partecipate in the forum and to engage with fellow drone mapping users.
+
+## Windows Setup
+
+ODM can be installed natively on Windows. Just download the latest setup from [this page](https://github.com/OpenDroneMap/ODM/releases). The setup will install a ODM Console. After opening the ODM Console you can process a dataset by typing:
+
+```bash
+run C:\Users\youruser\datasets\project  [--additional --parameters --here]
+```
 
 ## Snap Package
 

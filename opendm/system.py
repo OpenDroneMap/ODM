@@ -47,7 +47,10 @@ def exit_gracefully():
 
     for sp in running_subprocesses:
         log.ODM_WARNING("Sending TERM signal to PID %s..." % sp.pid)
-        os.killpg(os.getpgid(sp.pid), signal.SIGTERM)
+        if sys.platform == 'win32':
+            os.kill(sp.pid, signal.CTRL_C_EVENT)
+        else:
+            os.killpg(os.getpgid(sp.pid), signal.SIGTERM)
     
     os._exit(1)
 
@@ -63,16 +66,21 @@ def run(cmd, env_paths=[context.superbuild_bin_path], env_vars={}, packages_path
 
     log.ODM_INFO('running %s' % cmd)
     env = os.environ.copy()
+
+    sep = ":"
+    if sys.platform == 'win32':
+        sep = ";"
+
     if len(env_paths) > 0:
-        env["PATH"] = env["PATH"] + ":" + ":".join(env_paths)
+        env["PATH"] = env["PATH"] + sep + sep.join(env_paths)
     
     if len(packages_paths) > 0:
-        env["PYTHONPATH"] = env.get("PYTHONPATH", "") + ":" + ":".join(packages_paths) 
+        env["PYTHONPATH"] = env.get("PYTHONPATH", "") + sep + sep.join(packages_paths) 
     
     for k in env_vars:
         env[k] = str(env_vars[k])
 
-    p = subprocess.Popen(cmd, shell=True, env=env, preexec_fn=os.setsid)
+    p = subprocess.Popen(cmd, shell=True, env=env, start_new_session=True)
     running_subprocesses.append(p)
     retcode = p.wait()
     running_subprocesses.remove(p)

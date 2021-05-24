@@ -24,8 +24,9 @@ class OSFMContext:
         self.opensfm_project_path = opensfm_project_path
     
     def run(self, command):
-        system.run('%s/bin/opensfm %s "%s"' %
-                    (context.opensfm_path, command, self.opensfm_project_path))
+        osfm_bin = os.path.join(context.opensfm_path, 'bin', 'opensfm')
+        system.run('%s %s "%s"' %
+                    (osfm_bin, command, self.opensfm_project_path))
 
     def is_reconstruction_done(self):
         tracks_file = os.path.join(self.opensfm_project_path, 'tracks.csv')
@@ -348,7 +349,7 @@ class OSFMContext:
             # (containing only the primary band)
             if os.path.exists(self.recon_file()):
                 os.remove(self.recon_file())
-            os.rename(self.recon_backup_file(), self.recon_file())
+            os.replace(self.recon_backup_file(), self.recon_file())
             log.ODM_INFO("Restored reconstruction.json")
 
     def backup_reconstruction(self):
@@ -454,7 +455,16 @@ def get_submodel_argv(args, submodels_path = None, submodel_name = None):
     read_json_always = ['cameras']
 
     argv = sys.argv
-    result = [argv[0]] # Startup script (/path/to/run.py)
+
+    # Startup script (/path/to/run.py)
+    startup_script = argv[0]
+
+    # On Windows, make sure we always invoke the "run.bat" file
+    if sys.platform == 'win32':
+        startup_script_dir = os.path.dirname(startup_script)
+        startup_script = os.path.join(startup_script_dir, "run")
+
+    result = [startup_script] 
 
     args_dict = vars(args).copy()
     set_keys = [k[:-len("_is_set")] for k in args_dict.keys() if k.endswith("_is_set")]

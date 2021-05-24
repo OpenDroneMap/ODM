@@ -1,6 +1,7 @@
 import os
+import sys
 import shutil
-from pipes import quote
+from opendm.utils import double_quote
 from opendm import io
 from opendm import log
 from opendm import system
@@ -27,13 +28,17 @@ def build(input_point_cloud_files, output_path, max_concurrency=8, rerun=False):
     if rerun:
         dir_cleanup()
 
-    # Attempt with entwine (faster, more memory hungry)
-    try:
-        build_entwine(input_point_cloud_files, tmpdir, output_path, max_concurrency=max_concurrency)
-    except Exception as e:
-        log.ODM_WARNING("Cannot build EPT using entwine (%s), attempting with untwine..." % str(e))
-        dir_cleanup()
+    # On Windows we always use Untwine
+    if sys.platform == 'win32':
         build_untwine(input_point_cloud_files, tmpdir, output_path, max_concurrency=max_concurrency)
+    else:
+        # Attempt with entwine (faster, more memory hungry)
+        try:
+            build_entwine(input_point_cloud_files, tmpdir, output_path, max_concurrency=max_concurrency)
+        except Exception as e:
+            log.ODM_WARNING("Cannot build EPT using entwine (%s), attempting with untwine..." % str(e))
+            dir_cleanup()
+            build_untwine(input_point_cloud_files, tmpdir, output_path, max_concurrency=max_concurrency)
         
     if os.path.exists(tmpdir):
         shutil.rmtree(tmpdir)
@@ -43,7 +48,7 @@ def build_entwine(input_point_cloud_files, tmpdir, output_path, max_concurrency=
     kwargs = {
         'threads': max_concurrency,
         'tmpdir': tmpdir,
-        'all_inputs': "-i " + " ".join(map(quote, input_point_cloud_files)),
+        'all_inputs': "-i " + " ".join(map(double_quote, input_point_cloud_files)),
         'outputdir': output_path
     }
 
@@ -56,7 +61,7 @@ def build_untwine(input_point_cloud_files, tmpdir, output_path, max_concurrency=
     kwargs = {
         # 'threads': max_concurrency,
         'tmpdir': tmpdir,
-        'files': "--files " + " ".join(map(quote, input_point_cloud_files)),
+        'files': "--files " + " ".join(map(double_quote, input_point_cloud_files)),
         'outputdir': output_path
     }
 
