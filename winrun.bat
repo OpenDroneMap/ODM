@@ -7,3 +7,6 @@ python "%ODMBASE%\run.py" %*
 
 endlocal
 
+if defined ODM_NONINTERACTIVE (
+    exit
+)
