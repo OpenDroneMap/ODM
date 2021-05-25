@@ -1,3 +1,9 @@
 @echo off
 rem Bypass "Terminate Batch Job" prompt.
-winrun.bat %* <NUL	
+
+setlocal
+
+cd /d %~dp0
+winrun.bat %* <NUL
+
+endlocal
