@@ -145,7 +145,14 @@ def screened_poisson_reconstruction(inPointCloud, outMesh, depth = 8, samples = 
     # ext = .ply
 
     outMeshDirty = os.path.join(mesh_path, "{}.dirty{}".format(basename, ext))
-
+    
+    try:
+        # Since PoissonRecon has some kind of a race condition on ppc64el, and this helps...
+        if sys._multiarch == 'powerpc64le-linux-gnu':
+            threads = 1
+    except AttributeError:
+        pass
+    
     poissonReconArgs = {
       'bin': context.poisson_recon_path,
       'outfile': outMeshDirty,
