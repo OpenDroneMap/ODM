@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-import os, shutil, sys, struct, random, math
+import os, shutil, sys, struct, random, math, platform
 from opendm.dem import commands
 from opendm import system
 from opendm import log
@@ -146,12 +146,9 @@ def screened_poisson_reconstruction(inPointCloud, outMesh, depth = 8, samples = 
 
     outMeshDirty = os.path.join(mesh_path, "{}.dirty{}".format(basename, ext))
     
-    try:
-        # Since PoissonRecon has some kind of a race condition on ppc64el, and this helps...
-        if sys._multiarch == 'powerpc64le-linux-gnu':
-            threads = 1
-    except AttributeError:
-        pass
+    # Since PoissonRecon has some kind of a race condition on ppc64el, and this helps...
+    if platform.machine() == 'ppc64le':
+        threads = 1
     
     poissonReconArgs = {
       'bin': context.poisson_recon_path,
