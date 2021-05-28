@@ -148,6 +148,7 @@ def screened_poisson_reconstruction(inPointCloud, outMesh, depth = 8, samples = 
     
     # Since PoissonRecon has some kind of a race condition on ppc64el, and this helps...
     if platform.machine() == 'ppc64le':
+        log.ODM_WARNING("ppc64le platform detected, forcing single-threaded operation for PoissonRecon")
         threads = 1
     
     poissonReconArgs = {
