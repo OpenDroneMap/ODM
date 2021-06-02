@@ -169,7 +169,7 @@ else()
 endif()
 externalproject_add(poissonrecon
     GIT_REPOSITORY    https://github.com/OpenDroneMap/PoissonRecon.git
-    GIT_TAG           master
+    GIT_TAG           250
     PREFIX            ${SB_BINARY_DIR}/PoissonRecon
     SOURCE_DIR        ${SB_SOURCE_DIR}/PoissonRecon
     UPDATE_COMMAND    ""
@@ -198,7 +198,7 @@ externalproject_add(dem2points
 )
 
 externalproject_add(odm_orthophoto
-    DEPENDS           pcl opencv 
+    DEPENDS           pcl opencv
     GIT_REPOSITORY    https://github.com/OpenDroneMap/odm_orthophoto.git
     GIT_TAG           main
     PREFIX            ${SB_BINARY_DIR}/odm_orthophoto
