@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-import os, shutil, sys, struct, random, math
+import os, shutil, sys, struct, random, math, platform
 from opendm.dem import commands
 from opendm import system
 from opendm import log
@@ -145,7 +145,12 @@ def screened_poisson_reconstruction(inPointCloud, outMesh, depth = 8, samples = 
     # ext = .ply
 
     outMeshDirty = os.path.join(mesh_path, "{}.dirty{}".format(basename, ext))
-
+    
+    # Since PoissonRecon has some kind of a race condition on ppc64el, and this helps...
+    if platform.machine() == 'ppc64le':
+        log.ODM_WARNING("ppc64le platform detected, forcing single-threaded operation for PoissonRecon")
+        threads = 1
+    
     poissonReconArgs = {
       'bin': context.poisson_recon_path,
       'outfile': outMeshDirty,
