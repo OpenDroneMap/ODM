@@ -23,8 +23,6 @@ architectures:
   - build-on: amd64
     run-on: amd64
 
-# Requires snapcraft to be called with --enable-experimental-package-repositories
-# until the feature is released
 package-repositories:
   - type: apt
     ppa: ubuntugis/ubuntugis-unstable

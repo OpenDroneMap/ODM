@@ -14,7 +14,7 @@ from opendm.point_cloud import export_info_json
 from opendm.cropper import Cropper
 from opendm.orthophoto import get_orthophoto_vars, get_max_memory, generate_png
 from opendm.tiles.tiler import generate_colored_hillshade
-from opendm.utils import get_raster_stats
+from opendm.utils import get_raster_stats, copy_paths, get_processing_results_paths
 
 def hms(seconds):
     h = seconds // 3600
@@ -196,3 +196,10 @@ class ODMReport(types.ODM_Stage):
             log.ODM_WARNING("Cannot generate overlap diagram, point cloud stats missing")
 
         octx.export_report(os.path.join(tree.odm_report, "report.pdf"), odm_stats, self.rerun())
+
+        # TODO: does this warrant a new stage?
+        if args.copy_to:
+            try:
+                copy_paths([os.path.join(args.project_path, p) for p in get_processing_results_paths()], args.copy_to, self.rerun())
+            except Exception as e:
+                log.ODM_WARNING("Cannot copy to %s: %s" % (args.copy_to, str(e)))
