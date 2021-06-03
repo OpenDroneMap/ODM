@@ -70,12 +70,6 @@ def get_processing_results_paths():
     ]
 
 def copy_paths(paths, destination, rerun):
-    """
-    Attempt to create hard-links for each path in paths to the destination
-    folder. If hard links fail, this does a normal recursive copy (slower).
-    If previous files/folders exist in destination, they are removed
-    """
-
     if not os.path.isdir(destination):
         os.makedirs(destination)
 
