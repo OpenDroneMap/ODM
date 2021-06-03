@@ -11,7 +11,7 @@ from opendm import config
 from opendm import system
 from opendm import io
 from opendm.progress import progressbc
-from opendm.utils import double_quote
+from opendm.utils import double_quote, get_processing_results_paths
 
 import os
 
@@ -49,18 +49,11 @@ if __name__ == '__main__':
     if args.rerun_all:
         log.ODM_INFO("Rerun all -- Removing old data")
         os.system("rm -rf " + 
-                    " ".join([
-                        double_quote(os.path.join(args.project_path, "odm_georeferencing")),
+                    " ".join([double_quote(os.path.join(args.project_path, p)) for p in get_processing_results_paths()] + [
                         double_quote(os.path.join(args.project_path, "odm_meshing")),
-                        double_quote(os.path.join(args.project_path, "odm_orthophoto")),
-                        double_quote(os.path.join(args.project_path, "odm_dem")),
-                        double_quote(os.path.join(args.project_path, "odm_report")),
-                        double_quote(os.path.join(args.project_path, "odm_texturing")),
                         double_quote(os.path.join(args.project_path, "opensfm")),
-                        double_quote(os.path.join(args.project_path, "odm_filterpoints")),
                         double_quote(os.path.join(args.project_path, "odm_texturing_25d")),
-                        double_quote(os.path.join(args.project_path, "openmvs")),
-                        double_quote(os.path.join(args.project_path, "entwine_pointcloud")),
+                        double_quote(os.path.join(args.project_path, "odm_filterpoints")),
                         double_quote(os.path.join(args.project_path, "submodels")),
                     ]))
 

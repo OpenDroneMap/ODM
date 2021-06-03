@@ -587,6 +587,11 @@ def config(argv=None, parser=None):
                         default=False,
                         help='Print additional messages to the console. '
                              'Default: %(default)s')
+    
+    parser.add_argument('--copy-to',
+                        metavar='<path>',
+                        action=StoreValue,
+                        help='Copy output results to this folder after processing.')
 
     parser.add_argument('--time',
                         action=StoreTrue,
