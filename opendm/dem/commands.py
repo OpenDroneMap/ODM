@@ -270,7 +270,7 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
         if os.path.exists(cleanup_file): os.remove(cleanup_file)
     for t in tiles:
         if os.path.exists(t['filename']): os.remove(t['filename'])
-    
+
     log.ODM_INFO('Completed %s in %s' % (output_file, datetime.now() - start))
 
 

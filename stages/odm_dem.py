@@ -11,6 +11,7 @@ from opendm.dem import commands, utils
 from opendm.cropper import Cropper
 from opendm import pseudogeo
 from opendm.tiles.tiler import generate_dem_tiles
+from opendm.cogeo import convert_to_cogeo
 
 class ODMDEMStage(types.ODM_Stage):
     def process(self, args, outputs):
@@ -126,6 +127,9 @@ class ODMDEMStage(types.ODM_Stage):
                     if args.tiles:
                         generate_dem_tiles(dem_geotiff_path, tree.path("%s_tiles" % product), args.max_concurrency)
                     
+                    if args.cog:
+                        convert_to_cogeo(dem_geotiff_path, max_workers=args.max_concurrency)
+
                     progress += 30
                     self.update_progress(progress)
             else:
