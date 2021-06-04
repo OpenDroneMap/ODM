@@ -99,7 +99,8 @@ class ODMDEMStage(types.ODM_Stage):
                             decimation=args.dem_decimation,
                             verbose=args.verbose,
                             max_workers=args.max_concurrency,
-                            keep_unfilled_copy=args.dem_euclidean_map
+                            keep_unfilled_copy=args.dem_euclidean_map,
+                            cog=args.cog
                         )
 
                     dem_geotiff_path = os.path.join(odm_dem_root, "{}.tif".format(product))

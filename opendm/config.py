@@ -581,6 +581,13 @@ def config(argv=None, parser=None):
                         default=False,
                         help='Build orthophoto overviews for faster display in programs such as QGIS. Default: %(default)s')
 
+    parser.add_argument('--cog',
+                        action=StoreTrue,
+                        nargs=0,
+                        default=False,
+                        help='Create Cloud-Optimized GeoTIFFs instead of normal GeoTIFFs. Default: %(default)s')
+
+
     parser.add_argument('--verbose', '-v',
                         action=StoreTrue,
                         nargs=0,
