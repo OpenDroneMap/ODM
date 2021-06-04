@@ -19,6 +19,7 @@ from opendm.shots import merge_geojson_shots
 from opendm import point_cloud
 from opendm.utils import double_quote
 from opendm.tiles.tiler import generate_dem_tiles
+from opendm.cogeo import convert_to_cogeo
 
 class ODMSplitStage(types.ODM_Stage):
     def process(self, args, outputs):
@@ -337,6 +338,9 @@ class ODMMergeStage(types.ODM_Stage):
                         
                         if args.tiles:
                             generate_dem_tiles(dem_file, tree.path("%s_tiles" % human_name.lower()), args.max_concurrency)
+                        
+                        if args.cog:
+                            convert_to_cogeo(dem_file, max_workers=args.max_concurrency)
                     else:
                         log.ODM_WARNING("Cannot merge %s, %s was not created" % (human_name, dem_file))
                 

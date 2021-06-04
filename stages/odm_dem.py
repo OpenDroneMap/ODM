@@ -11,6 +11,7 @@ from opendm.dem import commands, utils
 from opendm.cropper import Cropper
 from opendm import pseudogeo
 from opendm.tiles.tiler import generate_dem_tiles
+from opendm.cogeo import convert_to_cogeo
 
 class ODMDEMStage(types.ODM_Stage):
     def process(self, args, outputs):
@@ -99,8 +100,7 @@ class ODMDEMStage(types.ODM_Stage):
                             decimation=args.dem_decimation,
                             verbose=args.verbose,
                             max_workers=args.max_concurrency,
-                            keep_unfilled_copy=args.dem_euclidean_map,
-                            cog=args.cog
+                            keep_unfilled_copy=args.dem_euclidean_map
                         )
 
                     dem_geotiff_path = os.path.join(odm_dem_root, "{}.tif".format(product))
@@ -127,6 +127,9 @@ class ODMDEMStage(types.ODM_Stage):
                     if args.tiles:
                         generate_dem_tiles(dem_geotiff_path, tree.path("%s_tiles" % product), args.max_concurrency)
                     
+                    if args.cog:
+                        convert_to_cogeo(dem_geotiff_path, max_workers=args.max_concurrency)
+
                     progress += 30
                     self.update_progress(progress)
             else:

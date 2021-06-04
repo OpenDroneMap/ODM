@@ -53,6 +53,5 @@ commands.create_dem(args.point_cloud,
                     decimation=1,
                     verbose=True,
                     max_workers=multiprocessing.cpu_count(),
-                    keep_unfilled_copy=False,
-                    cog=False
+                    keep_unfilled_copy=False
                 )

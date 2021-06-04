@@ -9,7 +9,6 @@ from opendm.system import run
 from opendm import point_cloud
 from opendm import io
 from opendm import system
-from opendm.cogeo import convert_to_cogeo
 from opendm.concurrency import get_max_memory, parallel_map
 from scipy import ndimage
 from datetime import datetime
@@ -80,7 +79,7 @@ error = None
 def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56'], gapfill=True,
                 outdir='', resolution=0.1, max_workers=1, max_tile_size=4096,
                 verbose=False, decimation=None, keep_unfilled_copy=False,
-                apply_smoothing=True, cog=False):
+                apply_smoothing=True):
     """ Create DEM from multiple radii, and optionally gapfill """
     
     global error
@@ -272,9 +271,6 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
     for t in tiles:
         if os.path.exists(t['filename']): os.remove(t['filename'])
 
-    if cog:
-        convert_to_cogeo(output_path)
-    
     log.ODM_INFO('Completed %s in %s' % (output_file, datetime.now() - start))
 
 

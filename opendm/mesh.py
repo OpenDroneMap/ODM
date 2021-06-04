@@ -32,8 +32,7 @@ def create_25dmesh(inPointCloud, outMesh, dsm_radius=0.07, dsm_resolution=0.05, 
             resolution=dsm_resolution,
             verbose=verbose,
             max_workers=available_cores,
-            apply_smoothing=smooth_dsm,
-            cog=False
+            apply_smoothing=smooth_dsm
         )
 
     if method == 'gridded':
