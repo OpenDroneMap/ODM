@@ -113,7 +113,7 @@ class ODMMvsTexStage(types.ODM_Stage):
                         '{skipLocalSeamLeveling} '
                         '{keepUnseenFaces} '
                         '{nadirMode} '
-                        '"{labelingFile}" '.format(**kwargs))
+                        '{labelingFile} '.format(**kwargs))
                 
                 # Backward compatibility: copy odm_textured_model_geo.mtl to odm_textured_model.mtl
                 # for certain older WebODM clients which expect a odm_textured_model.mtl
