@@ -27,6 +27,8 @@ class ODMApp:
         if args.debug:
             log.logger.show_debug = True
         
+        log.logger.init_json_output(os.path.join(args.project_path, "log.json"), args)
+        
         dataset = ODMLoadDatasetStage('dataset', args, progress=5.0,
                                           verbose=args.verbose)
         split = ODMSplitStage('split', args, progress=75.0)
@@ -107,3 +109,5 @@ class ODMApp:
             # TODO: more?
 
             return code
+        finally:
+            log.logger.close()

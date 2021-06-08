@@ -2,7 +2,7 @@ import os, shutil
 from opendm import log
 from opendm.photo import find_largest_photo_dim
 from osgeo import gdal
-from shlex import _find_unsafe
+from opendm.loghelpers import double_quote
 
 def get_depthmap_resolution(args, photos):
     if 'depthmap_resolution_is_set' in args:
@@ -43,17 +43,6 @@ def get_raster_stats(geotiff):
             
     return stats
 
-def double_quote(s):
-    """Return a shell-escaped version of the string *s*."""
-    if not s:
-        return '""'
-    if _find_unsafe(s) is None:
-        return s
-
-    # use double quotes, and prefix double quotes with a \
-    # the string $"b is then quoted as "$\"b"
-    return '"' + s.replace('"', '\\\"') + '"'
-
 def get_processing_results_paths():
     return [
         "odm_georeferencing",
@@ -67,6 +56,7 @@ def get_processing_results_paths():
         "orthophoto_tiles",
         "images.json",
         "cameras.json",
+        "log.json",
     ]
 
 def copy_paths(paths, destination, rerun):
