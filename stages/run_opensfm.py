@@ -24,8 +24,7 @@ class ODMOpenSfMStage(types.ODM_Stage):
         photos = reconstruction.photos
 
         if not photos:
-            log.ODM_ERROR('Not enough photos in photos array to start OpenSfM')
-            exit(1)
+            raise system.ExitException('Not enough photos in photos array to start OpenSfM')
 
         octx = OSFMContext(tree.opensfm)
         octx.setup(args, tree.dataset_raw, reconstruction=reconstruction, rerun=self.rerun())

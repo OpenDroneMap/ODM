@@ -20,8 +20,7 @@ class ODMOpenMVSStage(types.ODM_Stage):
         octx = OSFMContext(tree.opensfm)
 
         if not photos:
-            log.ODM_ERROR('Not enough photos in photos array to start OpenMVS')
-            exit(1)
+            raise system.ExitException('Not enough photos in photos array to start OpenMVS')
 
         # check if reconstruction was done before
         if not io.file_exists(tree.openmvs_model) or self.rerun():
@@ -96,8 +95,7 @@ class ODMOpenMVSStage(types.ODM_Stage):
                 
                 scene_files = glob.glob(os.path.join(tree.openmvs, "scene_[0-9][0-9][0-9][0-9].mvs"))
                 if len(scene_files) == 0:
-                    log.ODM_ERROR("No OpenMVS scenes found. This could be a bug, or the reconstruction could not be processed.")
-                    exit(1)
+                    raise system.ExitException("No OpenMVS scenes found. This could be a bug, or the reconstruction could not be processed.")
 
                 log.ODM_INFO("Fusing depthmaps for %s scenes" % len(scene_files))
                 
@@ -159,8 +157,7 @@ class ODMOpenMVSStage(types.ODM_Stage):
                     ]
                     system.run('%s %s' % (context.omvs_densify_path, ' '.join(config)))
                 else:
-                    log.ODM_WARNING("Cannot find scene_dense.mvs, dense reconstruction probably failed. Exiting...")
-                    exit(1)
+                    raise system.ExitException("Cannot find scene_dense.mvs, dense reconstruction probably failed. Exiting...")
 
             # TODO: add support for image masks
 

@@ -314,8 +314,10 @@ class ODM_Stage:
     
     def run(self, outputs = {}):
         start_time = system.now_raw()
-        log.ODM_INFO('Running %s stage' % self.name)
+        log.logger.log_json_stage_run(self.name, start_time)
 
+        log.ODM_INFO('Running %s stage' % self.name)
+        
         self.process(self.args, outputs)
 
         # The tree variable should always be populated at this point

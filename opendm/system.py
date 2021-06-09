@@ -6,6 +6,8 @@ import sys
 import subprocess
 import string
 import signal
+import io
+from collections import deque
 
 from opendm import context
 from opendm import log
@@ -14,6 +16,9 @@ class SubprocessException(Exception):
     def __init__(self, msg, errorCode):
         super().__init__(msg)
         self.errorCode = errorCode
+
+class ExitException(Exception):
+    pass
 
 def get_ccd_widths():
     """Return the CCD Width of the camera listed in the JSON defs file."""
@@ -80,9 +85,20 @@ def run(cmd, env_paths=[context.superbuild_bin_path], env_vars={}, packages_path
     for k in env_vars:
         env[k] = str(env_vars[k])
 
-    p = subprocess.Popen(cmd, shell=True, env=env, start_new_session=True)
+    p = subprocess.Popen(cmd, shell=True, env=env, start_new_session=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     running_subprocesses.append(p)
+    lines = deque()
+    for line in io.TextIOWrapper(p.stdout):
+        print(line, end="")
+
+        lines.append(line.strip())
+        if len(lines) == 11:
+            lines.popleft()
+
     retcode = p.wait()
+
+    log.logger.log_json_process(cmd, retcode, list(lines))
+
     running_subprocesses.remove(p)
     if retcode < 0:
         raise SubprocessException("Child was terminated by signal {}".format(-retcode), -retcode)

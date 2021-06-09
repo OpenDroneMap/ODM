@@ -1,4 +1,4 @@
-import os, traceback
+import os, traceback, sys
 
 from opendm import context
 from opendm import types
@@ -83,16 +83,19 @@ class ODMApp:
     def execute(self):
         try:
             self.first_stage.run()
+            log.logger.log_json_success()
             return 0
         except system.SubprocessException as e:
             print("")
             print("===== Dumping Info for Geeks (developers need this to fix bugs) =====")
             print(str(e))
-            traceback.print_exc()
+            stack_trace = traceback.format_exc()
+            print(stack_trace)
             print("===== Done, human-readable information to follow... =====")
             print("")
 
             code = e.errorCode
+            log.logger.log_json_stage_error(str(e), code, stack_trace)
 
             if code == 139 or code == 134 or code == 1:
                 # Segfault
@@ -109,5 +112,12 @@ class ODMApp:
             # TODO: more?
 
             return code
+        except system.ExitException as e:
+            log.ODM_ERROR(str(e))
+            log.logger.log_json_stage_error(str(e), 1, traceback.format_exc())
+            sys.exit(1)
+        except Exception as e:
+            log.logger.log_json_stage_error(str(e), 1, traceback.format_exc())
+            raise e
         finally:
             log.logger.close()
