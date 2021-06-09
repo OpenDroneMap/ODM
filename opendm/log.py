@@ -4,6 +4,7 @@ import os
 import json
 import datetime
 import dateutil.parser
+import shutil
 
 from opendm.loghelpers import double_quote, args_to_dict
 from vmem import virtual_memory
