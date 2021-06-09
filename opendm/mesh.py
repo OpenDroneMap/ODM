@@ -169,6 +169,7 @@ def screened_poisson_reconstruction(inPointCloud, outMesh, depth = 8, samples = 
              '--pointWeight {pointWeight} '
              '--samplesPerNode {samples} '
              '--threads {threads} '
+             '--bType 2 '
              '--linearFit '
              '{verbose}'.format(**poissonReconArgs))
 
@@ -182,7 +183,7 @@ def screened_poisson_reconstruction(inPointCloud, outMesh, depth = 8, samples = 
 
     system.run('"{reconstructmesh}" -i "{infile}" '
          '-o "{outfile}" '
-         '--remove-spikes 0 --remove-spurious 0 --smooth 0 '
+         '--remove-spikes 0 --remove-spurious 20 --smooth 0 '
          '--target-face-num {max_faces} '.format(**cleanupArgs))
 
     # Delete intermediate results
