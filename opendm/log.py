@@ -54,7 +54,7 @@ class ODMLogger:
             sys.stdout.flush()
             if self.json is not None:
                 self.json['stages'][-1]['messages'].append({
-                    'msg': msg,
+                    'message': msg,
                     'type': level_name.lower()
                 })
     
@@ -70,6 +70,7 @@ class ODMLogger:
         self.json['stages'] = []
         self.json['processes'] = []
         self.json['error'] = {}
+        self.json['stackTrace'] = []
         self.json['success'] = False
 
     def log_json_stage_run(self, name, start_time):
@@ -87,10 +88,11 @@ class ODMLogger:
     def log_json_stage_error(self, error, exit_code, stack_trace = ""):
         if self.json is not None:
             self.json['error'] = {
-                'msg': error,
                 'code': exit_code,
-                'stack': stack_trace.split("\n")
+                'message': error,
+                'errors': [{"message": error}],
             }
+            self.json['stackTrace'] = list(map(str.strip, stack_trace.split("\n")))
             self._log_json_end_time()
 
     def log_json_success(self):
