@@ -27,7 +27,11 @@ class ODMApp:
         if args.debug:
             log.logger.show_debug = True
         
-        log.logger.init_json_output(os.path.join(args.project_path, "log.json"), args)
+        json_log_paths = [os.path.join(args.project_path, "log.json")]
+        if args.copy_to:
+            json_log_paths.append(args.copy_to)
+
+        log.logger.init_json_output(json_log_paths, args)
         
         dataset = ODMLoadDatasetStage('dataset', args, progress=5.0,
                                           verbose=args.verbose)

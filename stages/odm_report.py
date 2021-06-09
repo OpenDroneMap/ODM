@@ -198,7 +198,6 @@ class ODMReport(types.ODM_Stage):
         octx.export_report(os.path.join(tree.odm_report, "report.pdf"), odm_stats, self.rerun())
 
         # TODO: does this warrant a new stage?
-        # TODO: move to pipeline end ?
         if args.copy_to:
             try:
                 copy_paths([os.path.join(args.project_path, p) for p in get_processing_results_paths()], args.copy_to, self.rerun())

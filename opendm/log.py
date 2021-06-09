@@ -57,8 +57,9 @@ class ODMLogger:
                     'type': level_name.lower()
                 })
     
-    def init_json_output(self, output_file, args):
-        self.json_output_file = output_file
+    def init_json_output(self, output_files, args):
+        self.json_output_files = output_files
+        self.json_output_file = output_files[0]
         self.json = {}
         self.json['odmVersion'] = odm_version()
         self.json['memory'] = memory()
@@ -137,8 +138,13 @@ class ODMLogger:
 
     def close(self):
         if self.json is not None and self.json_output_file is not None:
-            with open(self.json_output_file, 'w') as f:
-                f.write(json.dumps(self.json, indent=4))
+            try:
+                with open(self.json_output_file, 'w') as f:
+                    f.write(json.dumps(self.json, indent=4))
+                for f in self.json_output_files[1:]:
+                    shutil.copy(self.json_output_file, f)
+            except Exception as e:
+                print("Cannot write log.json: %s" % str(e))
 
 logger = ODMLogger()
 
