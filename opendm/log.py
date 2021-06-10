@@ -5,6 +5,7 @@ import json
 import datetime
 import dateutil.parser
 import shutil
+import multiprocessing
 
 from opendm.loghelpers import double_quote, args_to_dict
 from vmem import virtual_memory
@@ -64,6 +65,7 @@ class ODMLogger:
         self.json = {}
         self.json['odmVersion'] = odm_version()
         self.json['memory'] = memory()
+        self.json['cpus'] = multiprocessing.cpu_count()
         self.json['images'] = -1
         self.json['options'] = args_to_dict(args)
         self.json['startTime'] = self.start_time.isoformat()
