@@ -91,8 +91,7 @@ class ODMLoadDatasetStage(types.ODM_Stage):
         images_database_file = os.path.join(tree.root_path, 'images.json')
         if not io.file_exists(images_database_file) or self.rerun():
             if not os.path.exists(images_dir):
-                log.ODM_ERROR("There are no images in %s! Make sure that your project path and dataset name is correct. The current is set to: %s" % (images_dir, args.project_path))
-                exit(1)
+                raise system.ExitException("There are no images in %s! Make sure that your project path and dataset name is correct. The current is set to: %s" % (images_dir, args.project_path))
 
             files, rejects = get_images(images_dir)
             if files:
@@ -130,13 +129,13 @@ class ODMLoadDatasetStage(types.ODM_Stage):
                 # Save image database for faster restart
                 save_images_database(photos, images_database_file)
             else:
-                log.ODM_ERROR('Not enough supported images in %s' % images_dir)
-                exit(1)
+                raise system.ExitException('Not enough supported images in %s' % images_dir)
         else:
             # We have an images database, just load it
             photos = load_images_database(images_database_file)
 
         log.ODM_INFO('Found %s usable images' % len(photos))
+        log.logger.log_json_images(len(photos))
 
         # Create reconstruction object
         reconstruction = types.ODM_Reconstruction(photos)

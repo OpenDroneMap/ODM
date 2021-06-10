@@ -45,8 +45,7 @@ class LocalRemoteExecutor:
             log.ODM_WARNING("LRE: The node seems to be offline! We'll still process the dataset, but it's going to run entirely locally.")
             self.node_online = False
         except Exception as e:
-            log.ODM_ERROR("LRE: An unexpected problem happened while opening the node connection: %s" % str(e))
-            exit(1)
+            raise system.ExitException("LRE: An unexpected problem happened while opening the node connection: %s" % str(e))
 
     def set_projects(self, paths):
         self.project_paths = paths

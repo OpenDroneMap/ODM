@@ -50,13 +50,12 @@ class OSFMContext:
 
         # Check that a reconstruction file has been created
         if not self.reconstructed():
-            log.ODM_ERROR("The program could not process this dataset using the current settings. "
+            raise system.ExitException("The program could not process this dataset using the current settings. "
                             "Check that the images have enough overlap, "
                             "that there are enough recognizable features "
                             "and that the images are in focus. "
                             "You could also try to increase the --min-num-features parameter."
                             "The program will now exit.")
-            exit(1)
 
 
     def setup(self, args, images_path, reconstruction, append_config = [], rerun=False):

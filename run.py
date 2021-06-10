@@ -12,6 +12,7 @@ from opendm import system
 from opendm import io
 from opendm.progress import progressbc
 from opendm.utils import double_quote, get_processing_results_paths
+from opendm.loghelpers import args_to_dict
 
 import os
 
@@ -23,18 +24,10 @@ if __name__ == '__main__':
     log.ODM_INFO('Initializing ODM - %s' % system.now())
 
     # Print args
-    args_dict = vars(args)
+    args_dict = args_to_dict(args)
     log.ODM_INFO('==============')
-    for k in sorted(args_dict.keys()):
-        # Skip _is_set keys
-        if k.endswith("_is_set"):
-            continue
-
-        # Don't leak token
-        if k == 'sm_cluster' and args_dict[k] is not None:
-            log.ODM_INFO('%s: True' % k)
-        else:
-            log.ODM_INFO('%s: %s' % (k, args_dict[k]))
+    for k in args_dict.keys():
+        log.ODM_INFO('%s: %s' % (k, args_dict[k]))
     log.ODM_INFO('==============')
 
     progressbc.set_project_name(args.name)
