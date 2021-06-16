@@ -72,6 +72,9 @@ class ODMOpenMVSStage(types.ODM_Stage):
 
             if args.pc_tile:
                 config.append("--fusion-mode 1")
+            
+            if not args.pc_geometric:
+                config.append("--geometric-iters 0")
 
             system.run('%s "%s" %s' % (context.omvs_densify_path, 
                                        openmvs_scene_file,
