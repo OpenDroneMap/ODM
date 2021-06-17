@@ -14,7 +14,7 @@ networkx==2.5
 numpy==1.19.4
 Pillow==8.0.1
 vmem==1.0.1
-pyodm==1.5.5
+pyodm==1.5.6
 pyproj==3.0.0.post1
 Pysolar==0.9
 pytz==2020.4
