@@ -17,6 +17,8 @@ from opendm import thermal
 from opendm import nvm
 from opendm.photo import find_largest_photo
 
+from opensfm.undistort import add_image_format_extension
+
 class ODMOpenSfMStage(types.ODM_Stage):
     def process(self, args, outputs):
         tree = outputs['tree']
@@ -214,12 +216,12 @@ class ODMOpenSfMStage(types.ODM_Stage):
                         
                         # Primary band maps to itself
                         if band['name'] == primary_band_name:
-                            img_map[fname] = fname
+                            img_map[add_image_format_extension(fname, 'tif')] = add_image_format_extension(fname, 'tif')
                         else:
                             band_filename = next((p.filename for p in p2s[fname] if p.band_name == band['name']), None)
 
                             if band_filename is not None:
-                                img_map[fname] = band_filename
+                                img_map[add_image_format_extension(fname, 'tif')] = add_image_format_extension(band_filename, 'tif')
                             else:
                                 log.ODM_WARNING("Cannot find %s band equivalent for %s" % (band, fname))
 
