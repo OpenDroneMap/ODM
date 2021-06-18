@@ -73,7 +73,7 @@ See http://docs.opendronemap.org for tutorials and more guides.
 
 ## Forum
 
-We have a vibrant [community forum](https://community.opendronemap.org/). You can [search it](https://community.opendronemap.org/search?expanded=true) for issues you might be having with ODM and you can post questions there. We encourage users of ODM to partecipate in the forum and to engage with fellow drone mapping users.
+We have a vibrant [community forum](https://community.opendronemap.org/). You can [search it](https://community.opendronemap.org/search?expanded=true) for issues you might be having with ODM and you can post questions there. We encourage users of ODM to participate in the forum and to engage with fellow drone mapping users.
 
 ## Windows Setup
 
