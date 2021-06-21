@@ -17,6 +17,10 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
+    - name: Set Swap Space
+      uses: pierotofy/set-swap-space@master
+      with:
+        swap-size-gb: 12
     - name: Build
       id: build
       uses: diddlesnaps/snapcraft-multiarch-action@v1
