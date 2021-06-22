@@ -168,17 +168,20 @@ def screened_poisson_reconstruction(inPointCloud, outMesh, depth = 8, samples = 
         }
 
         # Run PoissonRecon
-        system.run('"{bin}" --in "{infile}" '
-                '--out "{outfile}" '
-                '--depth {depth} '
-                '--pointWeight {pointWeight} '
-                '--samplesPerNode {samples} '
-                '--threads {threads} '
-                '--maxMemory {memory} '
-                '--bType 2 '
-                '--linearFit '
-                '{verbose}'.format(**poissonReconArgs))
-        
+        try:
+            system.run('"{bin}" --in "{infile}" '
+                    '--out "{outfile}" '
+                    '--depth {depth} '
+                    '--pointWeight {pointWeight} '
+                    '--samplesPerNode {samples} '
+                    '--threads {threads} '
+                    '--maxMemory {memory} '
+                    '--bType 2 '
+                    '--linearFit '
+                    '{verbose}'.format(**poissonReconArgs))
+        except Exception as e:
+            log.ODM_WARNING(str(e))
+            
         if os.path.isfile(outMeshDirty):
             break # Done!
         else:
