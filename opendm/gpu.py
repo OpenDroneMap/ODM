@@ -2,6 +2,7 @@ import os
 from opendm import log
 from repoze.lru import lru_cache
 
+
 @lru_cache(maxsize=None)
 def has_gpus():
     if os.environ.get('ODM_NO_GPU'):
@@ -19,5 +20,5 @@ def has_gpus():
             log.ODM_INFO("Found GPU device: %s" % p.name)
 
         return len(platforms) > 0
-    except Exception as e:
+    except Exception:
         return False

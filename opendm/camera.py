@@ -1,5 +1,7 @@
-import os, json
+import os
+import json
 from opendm import log
+
 
 def get_cameras_from_opensfm(reconstruction_file):
     """
@@ -50,19 +52,32 @@ def get_opensfm_camera_models(cameras):
             
             # Add "_prior" keys
             camera = cameras[camera_id]
-            prior_fields = ["focal","focal_x","focal_y","c_x","c_y","k1","k2","p1","p2","k3"]
-            valid_fields = ["id","width","height","projection_type"] + prior_fields + [f + "_prior" for f in prior_fields]
+            prior_fields = [
+                "focal",
+                "focal_x",
+                "focal_y",
+                "c_x",
+                "c_y",
+                "k1",
+                "k2",
+                "p1",
+                "p2",
+                "k3"
+            ]
+            valid_fields = ["id", "width", "height", "projection_type"] \
+                + prior_fields \
+                + [f + "_prior" for f in prior_fields]
 
             keys = list(camera.keys())
             for param in keys:
                 param_prior = param + "_prior"
-                if param in prior_fields and not param_prior in camera:
+                if param in prior_fields and param_prior not in camera:
                     camera[param_prior] = camera[param]
 
             # Remove invalid keys
             keys = list(camera.keys())
             for k in keys:
-                if not k in valid_fields:
+                if k not in valid_fields:
                     camera.pop(k)
                     log.ODM_WARNING("Invalid camera key ignored: %s" % k)
 

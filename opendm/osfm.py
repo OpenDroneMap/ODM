@@ -2,7 +2,10 @@
 OpenSfM related utils
 """
 
-import os, shutil, sys, json, argparse
+import os
+import shutil
+import sys
+import json
 import yaml
 from opendm import io
 from opendm import log
@@ -19,14 +22,14 @@ from opensfm import report
 from opendm.multispectral import get_photos_by_band
 from opendm.gpu import has_gpus
 
+
 class OSFMContext:
     def __init__(self, opensfm_project_path):
         self.opensfm_project_path = opensfm_project_path
     
     def run(self, command):
         osfm_bin = os.path.join(context.opensfm_path, 'bin', 'opensfm')
-        system.run('%s %s "%s"' %
-                    (osfm_bin, command, self.opensfm_project_path))
+        system.run('%s %s "%s"' % (osfm_bin, command, self.opensfm_project_path))
 
     def is_reconstruction_done(self):
         tracks_file = os.path.join(self.opensfm_project_path, 'tracks.csv')
@@ -50,15 +53,15 @@ class OSFMContext:
 
         # Check that a reconstruction file has been created
         if not self.reconstructed():
-            raise system.ExitException("The program could not process this dataset using the current settings. "
-                            "Check that the images have enough overlap, "
-                            "that there are enough recognizable features "
-                            "and that the images are in focus. "
-                            "You could also try to increase the --min-num-features parameter."
-                            "The program will now exit.")
+            raise system.ExitException(
+                "The program could not process this dataset using the current settings. "
+                "Check that the images have enough overlap, "
+                "that there are enough recognizable features "
+                "and that the images are in focus. "
+                "You could also try to increase the --min-num-features parameter."
+                "The program will now exit.")
 
-
-    def setup(self, args, images_path, reconstruction, append_config = [], rerun=False):
+    def setup(self, args, images_path, reconstruction, append_config=[], rerun=False):
         """
         Setup a OpenSfM project
         """
@@ -75,7 +78,8 @@ class OSFMContext:
                 photos = get_photos_by_band(reconstruction.multi_camera, args.primary_band)
                 if len(photos) < 1:
                     raise Exception("Not enough images in selected band %s" % args.primary_band.lower())
-                log.ODM_INFO("Reconstruction will use %s images from %s band" % (len(photos), args.primary_band.lower()))
+                log.ODM_INFO("Reconstruction will use %s images from %s band"
+                             % (len(photos), args.primary_band.lower()))
             else:
                 photos = reconstruction.photos
 
@@ -112,7 +116,6 @@ class OSFMContext:
                     log.ODM_WARNING("Cannot set camera_models_overrides.json: %s" % str(e))
 
             use_bow = args.matcher_type == "bow"
-            feature_type = "SIFT"
 
             # GPSDOP override if we have GPS accuracy information (such as RTK)
             if 'gps_accuracy_is_set' in args:
@@ -127,7 +130,7 @@ class OSFMContext:
                 elif p.get_gps_dop() is not None:
                     dop = p.get_gps_dop()
                 else:
-                    dop = args.gps_accuracy # default value
+                    dop = args.gps_accuracy  # default value
 
                 if p.latitude is not None and p.longitude is not None:
                     exif_overrides[p.filename] = {
@@ -155,11 +158,12 @@ class OSFMContext:
                         f.write("{} {}\n".format(fname, mask))
             
             # Compute feature_process_size
-            feature_process_size = 2048 # default
+            feature_process_size = 2048  # default
 
             if ('resize_to_is_set' in args) and args.resize_to > 0:
                 # Legacy
-                log.ODM_WARNING("Legacy option --resize-to (this might be removed in a future version). Use --feature-quality instead.")
+                log.ODM_WARNING("Legacy option --resize-to (this might be removed in a future version). Use "
+                                "--feature-quality instead.")
                 feature_process_size = int(args.resize_to)
             else:
                 feature_quality_scale = {
@@ -179,12 +183,10 @@ class OSFMContext:
                 else:
                     log.ODM_WARNING("Cannot compute max image dimensions, going with defaults")
 
-            depthmap_resolution = get_depthmap_resolution(args, photos)
-
             # create config file for OpenSfM
             config = [
                 "use_exif_size: no",
-                "flann_algorithm: KDTREE", # more stable, faster than KMEANS
+                "flann_algorithm: KDTREE",  # more stable, faster than KMEANS
                 "feature_process_size: %s" % feature_process_size,
                 "feature_min_frames: %s" % args.min_num_features,
                 "processes: %s" % args.max_concurrency,
@@ -235,9 +237,12 @@ class OSFMContext:
             
             if args.use_hybrid_bundle_adjustment:
                 log.ODM_INFO("Enabling hybrid bundle adjustment")
-                config.append("bundle_interval: 100")          # Bundle after adding 'bundle_interval' cameras
-                config.append("bundle_new_points_ratio: 1.2")  # Bundle when (new points) / (bundled points) > bundle_new_points_ratio
-                config.append("local_bundle_radius: 1")        # Max image graph distance for images to be included in local bundle adjustment
+                # Bundle after adding 'bundle_interval' cameras
+                config.append("bundle_interval: 100")
+                # Bundle when (new points) / (bundled points) > bundle_new_points_ratio
+                config.append("bundle_new_points_ratio: 1.2")
+                # Max image graph distance for images to be included in local bundle adjustment
+                config.append("local_bundle_radius: 1")
             else:
                 config.append("local_bundle_radius: 0")
                 
@@ -298,9 +303,10 @@ class OSFMContext:
             log.ODM_INFO("Aligning submodels...")
             meta_data = metadataset.MetaDataSet(self.opensfm_project_path)
             reconstruction_shots = tools.load_reconstruction_shots(meta_data)
-            transformations = tools.align_reconstructions(reconstruction_shots,
-                                            tools.partial_reconstruction_name,
-                                            False)
+            transformations = tools.align_reconstructions(
+                reconstruction_shots,
+                tools.partial_reconstruction_name,
+                False)
             tools.apply_transformations(transformations)
 
             self.touch(alignment_file)
@@ -385,7 +391,6 @@ class OSFMContext:
         with open(self.recon_file(), 'w') as f:
             f.write(json.dumps(reconstruction))
 
-
     def update_config(self, cfg_dict):
         cfg_file = self.get_config_file_path()
         log.ODM_INFO("Updating %s" % cfg_file)
@@ -431,26 +436,48 @@ class OSFMContext:
     def name(self):
         return os.path.basename(os.path.abspath(self.path("..")))
 
-def get_submodel_argv(args, submodels_path = None, submodel_name = None):
+
+def get_submodel_argv(args, submodels_path=None, submodel_name=None):
     """
     Gets argv for a submodel starting from the args passed to the application startup.
     Additionally, if project_name, submodels_path and submodel_name are passed, the function
     handles the <project name> value and --project-path detection / override.
     When all arguments are set to None, --project-path and project name are always removed.
 
-    :return the same as argv, but removing references to --split, 
+    :return the same as argv, but removing references to --split,
         setting/replacing --project-path and name
         removing --rerun-from, --rerun, --rerun-all, --sm-cluster
         removing --pc-las, --pc-csv, --pc-ept, --tiles flags (processing these is wasteful)
         adding --orthophoto-cutline
         adding --dem-euclidean-map
         adding --skip-3dmodel (split-merge does not support 3D model merging)
-        tweaking --crop if necessary (DEM merging makes assumption about the area of DEMs and their euclidean maps that require cropping. If cropping is skipped, this leads to errors.)
+        tweaking --crop if necessary (DEM merging makes assumption about the area of DEMs and their euclidean maps that
+            require cropping. If cropping is skipped, this leads to errors.)
         removing --gcp (the GCP path if specified is always "gcp_list.txt")
         reading the contents of --cameras
     """
-    assure_always = ['orthophoto_cutline', 'dem_euclidean_map', 'skip_3dmodel', 'skip_report']
-    remove_always = ['split', 'split_overlap', 'rerun_from', 'rerun', 'gcp', 'end_with', 'sm_cluster', 'rerun_all', 'pc_csv', 'pc_las', 'pc_ept', 'tiles', 'copy-to', 'cog']
+    assure_always = [
+        'orthophoto_cutline',
+        'dem_euclidean_map',
+        'skip_3dmodel',
+        'skip_report'
+    ]
+    remove_always = [
+        'split',
+        'split_overlap',
+        'rerun_from',
+        'rerun',
+        'gcp',
+        'end_with',
+        'sm_cluster',
+        'rerun_all',
+        'pc_csv',
+        'pc_las',
+        'pc_ept',
+        'tiles',
+        'copy-to',
+        'cog'
+    ]
     read_json_always = ['cameras']
 
     argv = sys.argv
@@ -482,7 +509,7 @@ def get_submodel_argv(args, submodels_path = None, submodel_name = None):
 
     # Assure parameters
     for k in assure_always:
-        if not k in set_keys:
+        if k not in set_keys:
             set_keys.append(k)
             args_dict[k] = True
     
@@ -509,7 +536,7 @@ def get_submodel_argv(args, submodels_path = None, submodel_name = None):
         result.append("--%s" % k.replace("_", "-"))
         
         # No second value for booleans
-        if isinstance(args_dict[k], bool) and args_dict[k] == True:
+        if isinstance(args_dict[k], bool) and args_dict[k]:
             continue
         
         result.append(str(args_dict[k]))
@@ -522,6 +549,7 @@ def get_submodel_argv(args, submodels_path = None, submodel_name = None):
         result.append(submodel_name)
 
     return result
+
 
 def get_submodel_args_dict(args):
     submodel_argv = get_submodel_argv(args)
@@ -562,6 +590,7 @@ def get_submodel_paths(submodels_path, *paths):
                 log.ODM_WARNING("Missing %s from submodel %s" % (p, f))
 
     return result
+
 
 def get_all_submodel_paths(submodels_path, *all_paths):
     """

@@ -8,11 +8,11 @@ from opendm import log
 from opendm.concurrency import parallel_map
 from opensfm.io import imread
 
-from skimage import exposure
 from skimage.morphology import disk
 from skimage.filters import rank, gaussian
 
 # Loosely based on https://github.com/micasense/imageprocessing/blob/master/micasense/utils.py
+
 
 def dn_to_radiance(photo, image):
     """
@@ -28,7 +28,7 @@ def dn_to_radiance(photo, image):
 
     # Handle thermal bands (experimental)
     if photo.band_name == 'LWIR':
-        image -= (273.15 * 100.0) # Convert Kelvin to Celsius
+        image -= (273.15 * 100.0)  # Convert Kelvin to Celsius
         image *= 0.01
         return image
     
@@ -41,7 +41,8 @@ def dn_to_radiance(photo, image):
     photometric_exp = photo.get_photometric_exposure()
 
     if a1 is None and photometric_exp is None:
-        log.ODM_WARNING("Cannot perform radiometric calibration, no FNumber/Exposure Time or Radiometric Calibration EXIF tags found in %s. Using Digital Number." % photo.filename)
+        log.ODM_WARNING("Cannot perform radiometric calibration, no FNumber/Exposure Time or Radiometric Calibration "
+                        "EXIF tags found in %s. Using Digital Number." % photo.filename)
         return image
     
     if a1 is None and photometric_exp is not None:
@@ -84,6 +85,7 @@ def dn_to_radiance(photo, image):
 
     return image
 
+
 def vignette_map(photo):
     x_vc, y_vc = photo.get_vignetting_center()
     polynomial = photo.get_vignetting_polynomial()
@@ -112,10 +114,12 @@ def vignette_map(photo):
     
     return None, None, None
 
+
 def dn_to_reflectance(photo, image, use_sun_sensor=True):
     radiance = dn_to_radiance(photo, image)
     irradiance = compute_irradiance(photo, use_sun_sensor=use_sun_sensor)
     return radiance * math.pi / irradiance
+
 
 def compute_irradiance(photo, use_sun_sensor=True):
     # Thermal (this should never happen, but just in case..)
@@ -131,18 +135,19 @@ def compute_irradiance(photo, use_sun_sensor=True):
 
     if use_sun_sensor and photo.get_sun_sensor():
         # Estimate it
-        dls_orientation_vector = np.array([0,0,-1])
-        sun_vector_ned, sensor_vector_ned, sun_sensor_angle, \
-        solar_elevation, solar_azimuth = dls.compute_sun_angle([photo.latitude, photo.longitude],
-                                        photo.get_dls_pose(),
-                                        photo.get_utc_time(),
-                                        dls_orientation_vector)
+        dls_orientation_vector = np.array([0, 0, -1])
+        sun_vector_ned, sensor_vector_ned, sun_sensor_angle, solar_elevation, solar_azimuth \
+            = dls.compute_sun_angle(
+                [photo.latitude, photo.longitude],
+                photo.get_dls_pose(),
+                photo.get_utc_time(),
+                dls_orientation_vector)
 
         angular_correction = dls.fresnel(sun_sensor_angle)
 
         # TODO: support for direct and scattered irradiance
 
-        direct_to_diffuse_ratio = 6.0 # Assumption, clear skies
+        direct_to_diffuse_ratio = 6.0  # Assumption, clear skies
         spectral_irradiance = photo.get_sun_sensor()
 
         percent_diffuse = 1.0 / direct_to_diffuse_ratio
@@ -160,6 +165,7 @@ def compute_irradiance(photo, use_sun_sensor=True):
         log.ODM_WARNING("No sun sensor values found for %s" % photo.filename)
     
     return 1.0
+
 
 def get_photos_by_band(multi_camera, user_band_name):
     band_name = get_primary_band_name(multi_camera, user_band_name)
@@ -250,7 +256,8 @@ def compute_band_maps(multi_camera, primary_band):
 
             # Quick check
             if filename_without_band == p.filename:
-                raise Exception("Cannot match bands by filename on %s, make sure to name your files [filename]_band[.ext] uniformly." % p.filename)
+                raise Exception("Cannot match bands by filename on %s, make sure to name your files [filename]_band["
+                                ".ext] uniformly." % p.filename)
 
             filename_map[filename_without_band] = p
 
@@ -262,7 +269,8 @@ def compute_band_maps(multi_camera, primary_band):
 
                 # Quick check
                 if filename_without_band == p.filename:
-                    raise Exception("Cannot match bands by filename on %s, make sure to name your files [filename]_band[.ext] uniformly." % p.filename)
+                    raise Exception("Cannot match bands by filename on %s, make sure to name your files ["
+                                    "filename]_band[.ext] uniformly." % p.filename)
 
                 s2p[p.filename] = filename_map[filename_without_band]
 
@@ -271,7 +279,15 @@ def compute_band_maps(multi_camera, primary_band):
 
         return s2p, p2s
 
-def compute_alignment_matrices(multi_camera, primary_band_name, images_path, s2p, p2s, max_concurrency=1, max_samples=30):
+
+def compute_alignment_matrices(
+        multi_camera,
+        primary_band_name,
+        images_path,
+        s2p,
+        p2s,
+        max_concurrency=1,
+        max_samples=30):
     log.ODM_INFO("Computing band alignment")
 
     alignment_info = {}
@@ -294,8 +310,10 @@ def compute_alignment_matrices(multi_camera, primary_band_name, images_path, s2p
                         log.ODM_WARNING("Cannot find primary band photo for %s" % p['filename'])
                         return
 
-                    warp_matrix, dimension, algo = compute_homography(os.path.join(images_path, p['filename']),
-                                                                os.path.join(images_path, primary_band_photo.filename))
+                    warp_matrix, dimension, algo \
+                        = compute_homography(
+                            os.path.join(images_path, p['filename']),
+                            os.path.join(images_path, primary_band_photo.filename))
                     
                     if warp_matrix is not None:
                         log.ODM_INFO("%s --> %s good match" % (p['filename'], primary_band_photo.filename))
@@ -311,12 +329,16 @@ def compute_alignment_matrices(multi_camera, primary_band_name, images_path, s2p
                 except Exception as e:
                     log.ODM_WARNING("Failed to compute homography for %s: %s" % (p['filename'], str(e)))
 
-            parallel_map(parallel_compute_homography, [{'filename': p.filename} for p in band['photos']], max_concurrency, single_thread_fallback=False)
+            parallel_map(
+                parallel_compute_homography,
+                [{'filename': p.filename} for p in band['photos']],
+                max_concurrency,
+                single_thread_fallback=False)
 
             # Find the matrix that has the most common eigvals
             # among all matrices. That should be the "best" alignment.
             for m1 in matrices:
-                acc = np.array([0.0,0.0,0.0])
+                acc = np.array([0.0, 0.0, 0.0])
                 e = m1['eigvals']
 
                 for m2 in matrices:
@@ -329,11 +351,14 @@ def compute_alignment_matrices(multi_camera, primary_band_name, images_path, s2p
             
             if len(matrices) > 0:
                 alignment_info[band['name']] = matrices[0]
-                log.ODM_INFO("%s band will be aligned using warp matrix %s (score: %s)" % (band['name'], matrices[0]['warp_matrix'], matrices[0]['score']))
+                log.ODM_INFO("%s band will be aligned using warp matrix %s (score: %s)"
+                             % (band['name'], matrices[0]['warp_matrix'], matrices[0]['score']))
             else:
-                log.ODM_WARNING("Cannot find alignment matrix for band %s, The band might end up misaligned!" % band['name'])
+                log.ODM_WARNING("Cannot find alignment matrix for band %s, The band might end up misaligned!"
+                                % band['name'])
 
     return alignment_info
+
 
 def compute_homography(image_filename, align_image_filename):
     try:
@@ -342,17 +367,18 @@ def compute_homography(image_filename, align_image_filename):
         if image.shape[2] == 3:
             image_gray = to_8bit(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY))
         else:
-            image_gray = to_8bit(image[:,:,0])
+            image_gray = to_8bit(image[:, :, 0])
 
         max_dim = max(image_gray.shape)
         if max_dim <= 320:
-            log.ODM_WARNING("Small image for band alignment (%sx%s), this might be tough to compute." % (image_gray.shape[1], image_gray.shape[0]))
+            log.ODM_WARNING("Small image for band alignment (%sx%s), this might be tough to compute."
+                            % (image_gray.shape[1], image_gray.shape[0]))
 
         align_image = imread(align_image_filename, unchanged=True, anydepth=True)
         if align_image.shape[2] == 3:
             align_image_gray = to_8bit(cv2.cvtColor(align_image, cv2.COLOR_BGR2GRAY))
         else:
-            align_image_gray = to_8bit(align_image[:,:,0])
+            align_image_gray = to_8bit(align_image[:, :, 0])
 
         def compute_using(algorithm):
             try:
@@ -398,9 +424,10 @@ def compute_homography(image_filename, align_image_filename):
         log.ODM_WARNING("Compute homography: %s" % str(e))
         return None, None, (None, None)
 
+
 def find_ecc_homography(image_gray, align_image_gray, number_of_iterations=1000, termination_eps=1e-8, start_eps=1e-4):
     pyramid_levels = 0
-    h,w = image_gray.shape
+    h, w = image_gray.shape
     min_dim = min(h, w)
 
     while min_dim > 300:
@@ -413,10 +440,12 @@ def find_ecc_homography(image_gray, align_image_gray, number_of_iterations=1000,
     if align_image_gray.shape[0] != image_gray.shape[0]:
         align_image_gray = to_8bit(align_image_gray)
         image_gray = to_8bit(image_gray)
-        image_gray = cv2.resize(image_gray, None, 
-                        fx=align_image_gray.shape[1]/image_gray.shape[1], 
-                        fy=align_image_gray.shape[0]/image_gray.shape[0],
-                        interpolation=cv2.INTER_AREA)
+        image_gray = cv2.resize(
+            image_gray,
+            None,
+            fx=align_image_gray.shape[1]/image_gray.shape[1],
+            fy=align_image_gray.shape[0]/image_gray.shape[0],
+            interpolation=cv2.INTER_AREA)
 
     # Build pyramids
     image_gray_pyr = [image_gray]
@@ -424,11 +453,13 @@ def find_ecc_homography(image_gray, align_image_gray, number_of_iterations=1000,
 
     for level in range(pyramid_levels):
         image_gray_pyr[0] = to_8bit(image_gray_pyr[0], force_normalize=True)
-        image_gray_pyr.insert(0, cv2.resize(image_gray_pyr[0], None, fx=1/2, fy=1/2,
-                                interpolation=cv2.INTER_AREA))
+        image_gray_pyr.insert(
+            0,
+            cv2.resize(image_gray_pyr[0], None, fx=1/2, fy=1/2, interpolation=cv2.INTER_AREA))
         align_image_pyr[0] = to_8bit(align_image_pyr[0], force_normalize=True)
-        align_image_pyr.insert(0, cv2.resize(align_image_pyr[0], None, fx=1/2, fy=1/2,
-                                interpolation=cv2.INTER_AREA))
+        align_image_pyr.insert(
+            0,
+            cv2.resize(align_image_pyr[0], None, fx=1/2, fy=1/2, interpolation=cv2.INTER_AREA))
 
     # Define the motion model
     warp_matrix = np.eye(3, 3, dtype=np.float32)
@@ -440,15 +471,22 @@ def find_ecc_homography(image_gray, align_image_gray, number_of_iterations=1000,
         if level == pyramid_levels and pyramid_levels == 0:
             eps = termination_eps
         else:
-            eps = start_eps - ((start_eps - termination_eps) / (pyramid_levels)) * level
+            eps = start_eps - ((start_eps - termination_eps) / pyramid_levels) * level
     
         # Define termination criteria
         criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT,
-                number_of_iterations, eps)
+                    number_of_iterations, eps)
 
         try:
             log.ODM_INFO("Computing ECC pyramid level %s" % level)
-            _, warp_matrix = cv2.findTransformECC(ig, aig, warp_matrix, cv2.MOTION_HOMOGRAPHY, criteria, inputMask=None, gaussFiltSize=9)
+            _, warp_matrix = cv2.findTransformECC(
+                ig,
+                aig,
+                warp_matrix,
+                cv2.MOTION_HOMOGRAPHY,
+                criteria,
+                inputMask=None,
+                gaussFiltSize=9)
         except Exception as e:
             if level != pyramid_levels:
                 log.ODM_INFO("Could not compute ECC warp_matrix at pyramid level %s, resetting matrix" % level)
@@ -457,7 +495,7 @@ def find_ecc_homography(image_gray, align_image_gray, number_of_iterations=1000,
                 raise e
 
         if level != pyramid_levels: 
-            warp_matrix = warp_matrix * np.array([[1,1,2],[1,1,2],[0.5,0.5,1]], dtype=np.float32)
+            warp_matrix = warp_matrix * np.array([[1, 1, 2], [1, 1, 2], [0.5, 0.5, 1]], dtype=np.float32)
 
     return warp_matrix
 
@@ -469,10 +507,10 @@ def find_features_homography(image_gray, align_image_gray, feature_retention=0.2
     kp_align_image, desc_align_image = detector.detectAndCompute(align_image_gray, None)
 
     # Match
-    bf = cv2.BFMatcher(cv2.NORM_L1,crossCheck=True)
+    bf = cv2.BFMatcher(cv2.NORM_L1, crossCheck=True)
     try:
         matches = bf.match(desc_image, desc_align_image)
-    except Exception as e:
+    except Exception:
         log.ODM_INFO("Cannot match features")
         return None
 
@@ -503,12 +541,14 @@ def find_features_homography(image_gray, align_image_gray, feature_retention=0.2
     h, _ = cv2.findHomography(points_image, points_align_image, cv2.RANSAC)
     return h
 
+
 def gradient(im, ksize=5):
     im = local_normalize(im)
-    grad_x = cv2.Sobel(im,cv2.CV_32F,1,0,ksize=ksize)
-    grad_y = cv2.Sobel(im,cv2.CV_32F,0,1,ksize=ksize)
+    grad_x = cv2.Sobel(im, cv2.CV_32F, 1, 0, ksize=ksize)
+    grad_y = cv2.Sobel(im, cv2.CV_32F, 0, 1, ksize=ksize)
     grad = cv2.addWeighted(np.absolute(grad_x), 0.5, np.absolute(grad_y), 0.5, 0)
     return grad
+
 
 def local_normalize(im):
     width, _ = im.shape
@@ -550,5 +590,3 @@ def to_8bit(image, force_normalize=False):
     image = image.astype(np.uint8)
 
     return image
-
-

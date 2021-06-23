@@ -1,13 +1,14 @@
-from opendm import context
 from opendm.system import run
 from opendm import log
 from opendm.point_cloud import export_summary_json
 from osgeo import ogr
-import json, os
+import json
+import os
 from opendm.concurrency import get_max_memory
 
+
 class Cropper:
-    def __init__(self, storage_dir, files_prefix = "crop"):
+    def __init__(self, storage_dir, files_prefix="crop"):
         self.storage_dir = storage_dir
         self.files_prefix = files_prefix
 
@@ -69,7 +70,7 @@ class Cropper:
         return geotiff_path
 
     @staticmethod
-    def merge_bounds(input_bound_files, output_bounds, buffer_distance = 0):
+    def merge_bounds(input_bound_files, output_bounds, buffer_distance=0):
         """
         Merge multiple bound files into a single bound computed from the convex hull
         of all bounds (minus a buffer distance in meters)
@@ -80,7 +81,7 @@ class Cropper:
         srs = None
 
         for input_bound_file in input_bound_files:
-            ds = driver.Open(input_bound_file, 0) # ready-only
+            ds = driver.Open(input_bound_file, 0)  # ready-only
 
             layer = ds.GetLayer()
             srs = layer.GetSpatialRef()
@@ -88,8 +89,6 @@ class Cropper:
             # Collect all Geometry
             for feature in layer:
                 geomcol.AddGeometry(feature.GetGeometryRef())
-            
-            ds = None
 
         # Calculate convex hull
         convexhull = geomcol.ConvexHull()
@@ -98,6 +97,7 @@ class Cropper:
         # Create two buffers, one shrinked by
         # N + 3 and then that buffer expanded by 3
         # so that we get smooth corners. \m/
+        # TODO Move this constant to some place where constants are defined
         BUFFER_SMOOTH_DISTANCE = 3
 
         if buffer_distance > 0:
@@ -115,12 +115,8 @@ class Cropper:
         feature = ogr.Feature(feature_def)
         feature.SetGeometry(convexhull)
         layer.CreateFeature(feature)
-        feature = None
 
-        # Save and close output data source
-        out_ds = None
-
-    def create_bounds_geojson(self, pointcloud_path, buffer_distance = 0, decimation_step=40):
+    def create_bounds_geojson(self, pointcloud_path, buffer_distance=0, decimation_step=40):
         """
         Compute a buffered polygon around the data extents (not just a bounding box)
         of the given point cloud.
@@ -140,7 +136,8 @@ class Cropper:
             "--filters.decimation.step={} ".format(pointcloud_path, decimated_pointcloud_path, decimation_step))
 
         if not os.path.exists(decimated_pointcloud_path):
-            log.ODM_WARNING('Could not decimate point cloud, thus cannot generate GPKG bounds {}'.format(decimated_pointcloud_path))
+            log.ODM_WARNING(
+                'Could not decimate point cloud, thus cannot generate GPKG bounds {}'.format(decimated_pointcloud_path))
             return ''
 
         # Use PDAL to dump boundary information
@@ -148,15 +145,17 @@ class Cropper:
 
         boundary_file_path = self.path('boundary.json')
 
-        run('pdal info --boundary --filters.hexbin.edge_size=1 --filters.hexbin.threshold=0 "{0}" > "{1}"'.format(decimated_pointcloud_path,  boundary_file_path))
-        
-        pc_geojson_boundary_feature = None
+        run('pdal info --boundary --filters.hexbin.edge_size=1 --filters.hexbin.threshold=0 "{0}" > "{1}"'
+            .format(decimated_pointcloud_path, boundary_file_path))
+
 
         with open(boundary_file_path, 'r') as f:
             json_f = json.loads(f.read())
             pc_geojson_boundary_feature = json_f['boundary']['boundary_json']
 
-        if pc_geojson_boundary_feature is None: raise RuntimeError("Could not determine point cloud boundaries")
+        # TODO check whether pc_geojson_boundary_feature can be None at all
+        if pc_geojson_boundary_feature is None:
+            raise RuntimeError("Could not determine point cloud boundaries")
 
         # Write bounds to GeoJSON
         tmp_bounds_geojson_path = self.path('tmp-bounds.geojson')
@@ -172,7 +171,7 @@ class Cropper:
         # Create a convex hull around the boundary
         # as to encompass the entire area (no holes)    
         driver = ogr.GetDriverByName('GeoJSON')
-        ds = driver.Open(tmp_bounds_geojson_path, 0) # ready-only
+        ds = driver.Open(tmp_bounds_geojson_path, 0)  # ready-only
         layer = ds.GetLayer()
 
         # Collect all Geometry
@@ -187,6 +186,7 @@ class Cropper:
         # Create two buffers, one shrinked by
         # N + 3 and then that buffer expanded by 3
         # so that we get smooth corners. \m/
+        # TODO Use this constant from some place where constants are defined
         BUFFER_SMOOTH_DISTANCE = 3
 
         if buffer_distance > 0:
@@ -211,10 +211,6 @@ class Cropper:
         feature = ogr.Feature(feature_def)
         feature.SetGeometry(convexhull)
         layer.CreateFeature(feature)
-        feature = None
-
-        # Save and close data sources
-        out_ds = ds = None
 
         # Remove decimated point cloud
         if os.path.exists(decimated_pointcloud_path):
@@ -226,8 +222,7 @@ class Cropper:
 
         return bounds_geojson_path
 
-
-    def create_bounds_gpkg(self, pointcloud_path, buffer_distance = 0, decimation_step=40):
+    def create_bounds_gpkg(self, pointcloud_path, buffer_distance=0, decimation_step=40):
         """
         Compute a buffered polygon around the data extents (not just a bounding box)
         of the given point cloud.
@@ -243,12 +238,13 @@ class Cropper:
         summary_file_path = os.path.join(self.storage_dir, '{}.summary.json'.format(self.files_prefix))
         export_summary_json(pointcloud_path, summary_file_path)
         
-        pc_proj4 = None
         with open(summary_file_path, 'r') as f:
             json_f = json.loads(f.read())
             pc_proj4 = json_f['summary']['srs']['proj4']
 
-        if pc_proj4 is None: raise RuntimeError("Could not determine point cloud proj4 declaration")
+        # TODO check whether pc_proj4 can be None at all
+        if pc_proj4 is None:
+            raise RuntimeError("Could not determine point cloud proj4 declaration")
 
         bounds_gpkg_path = os.path.join(self.storage_dir, '{}.bounds.gpkg'.format(self.files_prefix))
 
@@ -262,4 +258,3 @@ class Cropper:
         run('ogr2ogr -overwrite -f GPKG -a_srs "{proj4}" {output} {input}'.format(**kwargs))
 
         return bounds_gpkg_path
-

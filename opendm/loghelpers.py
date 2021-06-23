@@ -1,5 +1,6 @@
 from shlex import _find_unsafe
 
+
 def double_quote(s):
     """Return a shell-escaped version of the string *s*."""
     if not s:
@@ -10,6 +11,7 @@ def double_quote(s):
     # use double quotes, and prefix double quotes with a \
     # the string $"b is then quoted as "$\"b"
     return '"' + s.replace('"', '\\\"') + '"'
+
 
 def args_to_dict(args):
     args_dict = vars(args)
@@ -24,5 +26,5 @@ def args_to_dict(args):
             result[k] = True
         else:
             result[k] = args_dict[k]
-    
+
     return result

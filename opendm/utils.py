@@ -1,17 +1,19 @@
-import os, shutil
+import os
+import shutil
 from opendm import log
 from opendm.photo import find_largest_photo_dim
 from osgeo import gdal
-from opendm.loghelpers import double_quote
+
 
 def get_depthmap_resolution(args, photos):
     if 'depthmap_resolution_is_set' in args:
         # Legacy
-        log.ODM_WARNING("Legacy option --depthmap-resolution (this might be removed in a future version). Use --pc-quality instead.")
+        log.ODM_WARNING("Legacy option --depthmap-resolution (this might be removed in a future version). Use "
+                        "--pc-quality instead.")
         return int(args.depthmap_resolution)
     else:
         max_dim = find_largest_photo_dim(photos)
-        min_dim = 320 # Never go lower than this
+        min_dim = 320  # Never go lower than this
 
         pc_quality_scale = {
             'ultra': 0.5,
@@ -25,7 +27,8 @@ def get_depthmap_resolution(args, photos):
             return max(min_dim, int(max_dim * pc_quality_scale[args.pc_quality]))
         else:
             log.ODM_WARNING("Cannot compute max image dimensions, going with default depthmap_resolution of 640")
-            return 640 # Sensible default
+            return 640  # Sensible default
+
 
 def get_raster_stats(geotiff):
     stats = []
@@ -43,6 +46,7 @@ def get_raster_stats(geotiff):
             
     return stats
 
+
 def get_processing_results_paths():
     return [
         "odm_georeferencing",
@@ -58,6 +62,7 @@ def get_processing_results_paths():
         "cameras.json",
         "log.json",
     ]
+
 
 def copy_paths(paths, destination, rerun):
     if not os.path.isdir(destination):

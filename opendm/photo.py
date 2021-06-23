@@ -8,12 +8,11 @@ from six import string_types
 from datetime import datetime, timedelta, timezone
 import pytz
 
-from opendm import io
 from opendm import log
-from opendm import system
 import xmltodict as x2d
 from opendm import get_image_size
 from xml.parsers.expat import ExpatError
+
 
 def find_largest_photo(photos):
     max_photo = None
@@ -27,6 +26,7 @@ def find_largest_photo(photos):
                 max_photo = p
     return p
 
+
 def find_largest_photo_dim(photos):
     max_dim = 0
     for p in photos:
@@ -35,6 +35,7 @@ def find_largest_photo_dim(photos):
         max_dim = max(max_dim, max(p.width, p.height))
         
     return max_dim
+
 
 class ODM_Photo:
     """ODMPhoto - a class for ODMPhotos"""
@@ -57,7 +58,7 @@ class ODM_Photo:
         # Multi-band fields
         self.band_name = 'RGB'
         self.band_index = 0
-        self.capture_uuid = None # DJI only
+        self.capture_uuid = None  # DJI only
 
         # Multi-spectral fields
         self.fnumber = None
@@ -85,15 +86,14 @@ class ODM_Photo:
         # self.bandwidth = None
 
         # RTK
-        self.gps_xy_stddev = None # Dilution of Precision X/Y
-        self.gps_z_stddev = None # Dilution of Precision Z
+        self.gps_xy_stddev = None  # Dilution of Precision X/Y
+        self.gps_z_stddev = None  # Dilution of Precision Z
 
         # parse values from metadata
         self.parse_exif_values(path_file)
 
         # print log message
         log.ODM_DEBUG('Loaded {}'.format(self))
-
 
     def __str__(self):
         return '{} | camera: {} {} | dimensions: {} x {} | lat: {} | lon: {} | alt: {} | band: {} ({})'.format(
@@ -161,7 +161,6 @@ class ODM_Photo:
                     self.iso_speed = self.int_value(tags['EXIF PhotographicSensitivity'])
                 elif 'EXIF ISOSpeedRatings' in tags:
                     self.iso_speed = self.int_value(tags['EXIF ISOSpeedRatings'])
-                    
 
                 if 'Image BitsPerSample' in tags:
                     self.bits_per_sample = self.int_value(tags['Image BitsPerSample'])
@@ -178,13 +177,12 @@ class ODM_Photo:
                     subsec = float('0.{}'.format(int(subsec)))
                     subsec *= negative
                     ms = subsec * 1e3
-                    utc_time += timedelta(milliseconds = ms)
+                    utc_time += timedelta(milliseconds=ms)
                     timezone = pytz.timezone('UTC')
                     epoch = timezone.localize(datetime.utcfromtimestamp(0))
                     self.utc_time = (timezone.localize(utc_time) - epoch).total_seconds() * 1000.0
             except Exception as e:
                 log.ODM_WARNING("Cannot read extended EXIF tags for %s: %s" % (_path_file, str(e)))
-
 
             # Extract XMP tags
             f.seek(0)
@@ -197,9 +195,9 @@ class ODM_Photo:
                         self.band_name = band_name.replace(" ", "")
 
                     self.set_attr_from_xmp_tag('band_index', tags, [
-                        'DLS:SensorId', # Micasense RedEdge
-                        '@Camera:RigCameraIndex', # Parrot Sequoia, Sentera 21244-00_3.2MP-GS-0001
-                        'Camera:RigCameraIndex', # MicaSense Altum
+                        'DLS:SensorId',  # Micasense RedEdge
+                        '@Camera:RigCameraIndex',  # Parrot Sequoia, Sentera 21244-00_3.2MP-GS-0001
+                        'Camera:RigCameraIndex',  # MicaSense Altum
                     ])
                     self.set_attr_from_xmp_tag('radiometric_calibration', tags, [
                         'MicaSense:RadiometricCalibration',
@@ -303,7 +301,6 @@ class ODM_Photo:
                 elif isinstance(t, int) or isinstance(t, float):
                     return t
 
-    
     # From https://github.com/mapillary/OpenSfM/blob/master/opensfm/exif.py
     def get_xmp(self, file):
         img_bytes = file.read()
@@ -314,7 +311,7 @@ class ODM_Photo:
             xmp_str = img_bytes[xmp_start:xmp_end + 12].decode('utf8')
             try:
                 xdict = x2d.parse(xmp_str)
-            except ExpatError as e:
+            except ExpatError:
                 from bs4 import BeautifulSoup
                 xmp_str = str(BeautifulSoup(xmp_str, 'xml'))
                 xdict = x2d.parse(xmp_str)
@@ -397,7 +394,7 @@ class ODM_Photo:
             return levels.mean()
 
     def get_gain(self):
-        #(gain = ISO/100)
+        # (gain = ISO/100)
         if self.iso_speed:
             return self.iso_speed / 100.0
 
@@ -430,7 +427,7 @@ class ODM_Photo:
 
     def get_horizontal_irradiance(self):
         if self.horizontal_irradiance is not None:
-            scale = 1.0 # Assumed
+            scale = 1.0  # Assumed
             if self.irradiance_scale_to_si is not None:
                 scale = self.irradiance_scale_to_si
             
@@ -442,9 +439,9 @@ class ODM_Photo:
             # and XMP:SunSensorSensitivity might
             # require additional logic. If these two tags are present, 
             # then sun_sensor is not in physical units?
-            return self.sun_sensor / 65535.0 # normalize uint16 (is this correct?)
+            return self.sun_sensor / 65535.0  # normalize uint16 (is this correct?)
         elif self.spectral_irradiance is not None:
-            scale = 1.0 # Assumed
+            scale = 1.0  # Assumed
             if self.irradiance_scale_to_si is not None:
                 scale = self.irradiance_scale_to_si
             
@@ -480,4 +477,4 @@ class ODM_Photo:
         return None
 
     def is_thermal(self):
-        return self.band_name.upper() in ["LWIR"] # TODO: more?
+        return self.band_name.upper() in ["LWIR"]  # TODO: more?

@@ -1,14 +1,27 @@
 from __future__ import absolute_import
-import os, shutil, sys, struct, random, math, platform
+import os
+import shutil
+import math
+import platform
 from opendm.dem import commands
 from opendm import system
 from opendm import log
 from opendm import context
 from opendm import concurrency
-from scipy import signal
-import numpy as np
 
-def create_25dmesh(inPointCloud, outMesh, dsm_radius=0.07, dsm_resolution=0.05, depth=8, samples=1, maxVertexCount=100000, verbose=False, available_cores=None, method='gridded', smooth_dsm=True):
+
+def create_25dmesh(
+        inPointCloud,
+        outMesh,
+        dsm_radius=0.07,
+        dsm_resolution=0.05,
+        depth=8,
+        samples=1,
+        maxVertexCount=100000,
+        verbose=False,
+        available_cores=None,
+        method='gridded',
+        smooth_dsm=True):
     # Create DSM from point cloud
 
     # Create temporary directory
@@ -37,14 +50,26 @@ def create_25dmesh(inPointCloud, outMesh, dsm_radius=0.07, dsm_resolution=0.05, 
         )
 
     if method == 'gridded':
-        mesh = dem_to_mesh_gridded(os.path.join(tmp_directory, 'mesh_dsm.tif'), outMesh, maxVertexCount, verbose, maxConcurrency=max(1, available_cores))
+        mesh = dem_to_mesh_gridded(
+            os.path.join(tmp_directory, 'mesh_dsm.tif'),
+            outMesh,
+            maxVertexCount,
+            verbose,
+            maxConcurrency=max(1, available_cores))
     elif method == 'poisson':
-        dsm_points = dem_to_points(os.path.join(tmp_directory, 'mesh_dsm.tif'), os.path.join(tmp_directory, 'dsm_points.ply'), verbose)
-        mesh = screened_poisson_reconstruction(dsm_points, outMesh, depth=depth, 
-                                    samples=samples, 
-                                    maxVertexCount=maxVertexCount, 
-                                    threads=max(1, available_cores - 1), # poissonrecon can get stuck on some machines if --threads == all cores
-                                    verbose=verbose)
+        dsm_points = dem_to_points(
+            os.path.join(tmp_directory, 'mesh_dsm.tif'),
+            os.path.join(tmp_directory, 'dsm_points.ply'),
+            verbose)
+        mesh = screened_poisson_reconstruction(
+            dsm_points,
+            outMesh,
+            depth=depth,
+            samples=samples,
+            maxVertexCount=maxVertexCount,
+            threads=max(1, available_cores - 1),  # poissonrecon can get stuck on some machines if --threads == all
+                                                  # cores
+            verbose=verbose)
     else:
         raise 'Not a valid method: ' + method
 
@@ -65,12 +90,13 @@ def dem_to_points(inGeotiff, outPointCloud, verbose=False):
         'verbose': '-verbose' if verbose else ''
     }
 
-    system.run('"{bin}" -inputFile "{infile}" '
-         '-outputFile "{outfile}" '
-         '-skirtHeightThreshold 1.5 '
-         '-skirtIncrements 0.2 '
-         '-skirtHeightCap 100 '
-         ' {verbose} '.format(**kwargs))
+    system.run(
+        '"{bin}" -inputFile "{infile}" '
+        '-outputFile "{outfile}" '
+        '-skirtHeightThreshold 1.5 '
+        '-skirtIncrements 0.2 '
+        '-skirtHeightCap 100 '
+        ' {verbose} '.format(**kwargs))
 
     return outPointCloud
 
@@ -86,7 +112,7 @@ def dem_to_mesh_gridded(inGeotiff, outMesh, maxVertexCount, verbose=False, maxCo
     # basename = odm_mesh
     # ext = .ply
 
-    outMeshDirty = os.path.join(mesh_path, "{}.dirty{}".format(basename, ext))
+    out_mesh_dirty = os.path.join(mesh_path, "{}.dirty{}".format(basename, ext))
 
     # This should work without issues most of the times, 
     # but just in case we lower maxConcurrency if it fails.
@@ -94,13 +120,14 @@ def dem_to_mesh_gridded(inGeotiff, outMesh, maxVertexCount, verbose=False, maxCo
         try:
             kwargs = {
                 'bin': context.dem2mesh_path,
-                'outfile': outMeshDirty,
+                'outfile': out_mesh_dirty,
                 'infile': inGeotiff,
                 'maxVertexCount': maxVertexCount,
                 'maxConcurrency': maxConcurrency,
                 'verbose': '-verbose' if verbose else ''
             }
-            system.run('"{bin}" -inputFile "{infile}" '
+            system.run(
+                '"{bin}" -inputFile "{infile}" '
                 '-outputFile "{outfile}" '
                 '-maxTileLength 2000 '
                 '-maxVertexCount {maxVertexCount} '
@@ -110,32 +137,41 @@ def dem_to_mesh_gridded(inGeotiff, outMesh, maxVertexCount, verbose=False, maxCo
         except Exception as e:
             maxConcurrency = math.floor(maxConcurrency / 2)
             if maxConcurrency >= 1:
-                log.ODM_WARNING("dem2mesh failed, retrying with lower concurrency (%s) in case this is a memory issue" % maxConcurrency)
+                log.ODM_WARNING("dem2mesh failed, retrying with lower concurrency (%s) in case this is a memory issue"
+                                % maxConcurrency)
             else:
                 raise e
 
-
-    # Cleanup and reduce vertex count if necessary 
+    # Cleanup and reduce vertex count if necessary
     # (as dem2mesh cannot guarantee that we'll have the target vertex count)
-    cleanupArgs = {
+    cleanup_args = {
         'reconstructmesh': context.omvs_reconstructmesh_path,
         'outfile': outMesh,
-        'infile': outMeshDirty,
+        'infile': out_mesh_dirty,
         'max_faces': maxVertexCount * 2
     }
 
-    system.run('"{reconstructmesh}" -i "{infile}" '
-         '-o "{outfile}" '
-         '--remove-spikes 0 --remove-spurious 20 --smooth 0 '
-         '--target-face-num {max_faces} '.format(**cleanupArgs))
+    system.run(
+        '"{reconstructmesh}" -i "{infile}" '
+        '-o "{outfile}" '
+        '--remove-spikes 0 --remove-spurious 20 --smooth 0 '
+        '--target-face-num {max_faces} '.format(**cleanup_args))
 
     # Delete intermediate results
-    os.remove(outMeshDirty)
+    os.remove(out_mesh_dirty)
 
     return outMesh
 
 
-def screened_poisson_reconstruction(inPointCloud, outMesh, depth = 8, samples = 1, maxVertexCount=100000, pointWeight=4, threads=context.num_cores, verbose=False):
+def screened_poisson_reconstruction(
+        inPointCloud,
+        outMesh,
+        depth=8,
+        samples=1,
+        maxVertexCount=100000,
+        pointWeight=4,
+        threads=context.num_cores,
+        verbose=False):
 
     mesh_path, mesh_filename = os.path.split(outMesh)
     # mesh_path = path/to
@@ -145,9 +181,9 @@ def screened_poisson_reconstruction(inPointCloud, outMesh, depth = 8, samples = 
     # basename = odm_mesh
     # ext = .ply
 
-    outMeshDirty = os.path.join(mesh_path, "{}.dirty{}".format(basename, ext))
-    if os.path.isfile(outMeshDirty):
-        os.remove(outMeshDirty)
+    out_mesh_dirty = os.path.join(mesh_path, "{}.dirty{}".format(basename, ext))
+    if os.path.isfile(out_mesh_dirty):
+        os.remove(out_mesh_dirty)
     
     # Since PoissonRecon has some kind of a race condition on ppc64el, and this helps...
     if platform.machine() == 'ppc64le':
@@ -155,9 +191,9 @@ def screened_poisson_reconstruction(inPointCloud, outMesh, depth = 8, samples = 
         threads = 1
 
     while True:
-        poissonReconArgs = {
+        poisson_recon_args = {
             'bin': context.poisson_recon_path,
-            'outfile': outMeshDirty,
+            'outfile': out_mesh_dirty,
             'infile': inPointCloud,
             'depth': depth,
             'samples': samples,
@@ -169,21 +205,22 @@ def screened_poisson_reconstruction(inPointCloud, outMesh, depth = 8, samples = 
 
         # Run PoissonRecon
         try:
-            system.run('"{bin}" --in "{infile}" '
-                    '--out "{outfile}" '
-                    '--depth {depth} '
-                    '--pointWeight {pointWeight} '
-                    '--samplesPerNode {samples} '
-                    '--threads {threads} '
-                    '--maxMemory {memory} '
-                    '--bType 2 '
-                    '--linearFit '
-                    '{verbose}'.format(**poissonReconArgs))
+            system.run(
+                '"{bin}" --in "{infile}" '
+                '--out "{outfile}" '
+                '--depth {depth} '
+                '--pointWeight {pointWeight} '
+                '--samplesPerNode {samples} '
+                '--threads {threads} '
+                '--maxMemory {memory} '
+                '--bType 2 '
+                '--linearFit '
+                '{verbose}'.format(**poisson_recon_args))
         except Exception as e:
             log.ODM_WARNING(str(e))
             
-        if os.path.isfile(outMeshDirty):
-            break # Done!
+        if os.path.isfile(out_mesh_dirty):
+            break  # Done!
         else:
 
             # PoissonRecon will sometimes fail due to race conditions
@@ -195,21 +232,21 @@ def screened_poisson_reconstruction(inPointCloud, outMesh, depth = 8, samples = 
             else:
                 log.ODM_WARNING("PoissonRecon failed with %s threads, let's retry with %s..." % (threads, threads // 2))
 
-
     # Cleanup and reduce vertex count if necessary
-    cleanupArgs = {
+    cleanup_args = {
         'reconstructmesh': context.omvs_reconstructmesh_path,
         'outfile': outMesh,
-        'infile':outMeshDirty,
+        'infile': out_mesh_dirty,
         'max_faces': maxVertexCount * 2
     }
 
-    system.run('"{reconstructmesh}" -i "{infile}" '
-         '-o "{outfile}" '
-         '--remove-spikes 0 --remove-spurious 20 --smooth 0 '
-         '--target-face-num {max_faces} '.format(**cleanupArgs))
+    system.run(
+        '"{reconstructmesh}" -i "{infile}" '
+        '-o "{outfile}" '
+        '--remove-spikes 0 --remove-spurious 20 --smooth 0 '
+        '--target-face-num {max_faces} '.format(**cleanup_args))
 
     # Delete intermediate results
-    os.remove(outMeshDirty)
+    os.remove(out_mesh_dirty)
 
     return outMesh

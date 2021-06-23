@@ -2,12 +2,13 @@ import socket
 import os
 from opendm import log
 
-PROGRESS_BROADCAST_PORT = 6367 #ODMR
+PROGRESS_BROADCAST_PORT = 6367  # ODMR
 try:
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 except:
     log.ODM_WARNING("Cannot create UDP socket, progress reporting will be disabled.")
     sock = None
+
 
 class Broadcaster:
     def __init__(self, port):
@@ -36,5 +37,6 @@ class Broadcaster:
                         (UDP_IP, self.port))
         except Exception as e:
             log.ODM_WARNING("Failed to broadcast progress update on UDP port %s (%s)" % (str(self.port), str(e)))
+
 
 progressbc = Broadcaster(PROGRESS_BROADCAST_PORT)

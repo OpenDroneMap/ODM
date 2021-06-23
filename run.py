@@ -41,20 +41,21 @@ if __name__ == '__main__':
     # If user asks to rerun everything, delete all of the existing progress directories.
     if args.rerun_all:
         log.ODM_INFO("Rerun all -- Removing old data")
-        os.system("rm -rf " + 
-                    " ".join([double_quote(os.path.join(args.project_path, p)) for p in get_processing_results_paths()] + [
-                        double_quote(os.path.join(args.project_path, "odm_meshing")),
-                        double_quote(os.path.join(args.project_path, "opensfm")),
-                        double_quote(os.path.join(args.project_path, "odm_texturing_25d")),
-                        double_quote(os.path.join(args.project_path, "odm_filterpoints")),
-                        double_quote(os.path.join(args.project_path, "submodels")),
-                    ]))
+        os.system(
+            "rm -rf " +
+            " ".join([double_quote(os.path.join(args.project_path, p)) for p in get_processing_results_paths()] + [
+                double_quote(os.path.join(args.project_path, "odm_meshing")),
+                double_quote(os.path.join(args.project_path, "opensfm")),
+                double_quote(os.path.join(args.project_path, "odm_texturing_25d")),
+                double_quote(os.path.join(args.project_path, "odm_filterpoints")),
+                double_quote(os.path.join(args.project_path, "submodels")),
+            ]))
 
     app = ODMApp(args)
     retcode = app.execute()
     
     # Do not show ASCII art for local submodels runs
-    if retcode == 0 and not "submodels/submodel_" in args.project_path:
+    if retcode == 0 and "submodels/submodel_" not in args.project_path:
         log.ODM_INFO('MMMMMMMMMMMNNNMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMNNNMMMMMMMMMMM')
         log.ODM_INFO('MMMMMMdo:..---../sNMMMMMMMMMMMMMMMMMMMMMMMMMMNs/..---..:odMMMMMM')
         log.ODM_INFO('MMMMy-.odNMMMMMNy/`/mMMMMMMMMMMMMMMMMMMMMMMm/`/hNMMMMMNdo.-yMMMM')

@@ -5,7 +5,6 @@ from opendm.utils import double_quote
 from opendm import io
 from opendm import log
 from opendm import system
-from opendm import concurrency
 
 
 def build(input_point_cloud_files, output_path, max_concurrency=8, rerun=False):
@@ -54,8 +53,10 @@ def build_entwine(input_point_cloud_files, tmpdir, output_path, max_concurrency=
 
     # for _ in range(len(input_point_cloud_files)):
     #     # One at a time
-    #     system.run('entwine build --threads {threads} --tmp "{tmpdir}" -i "{input}" -o "{outputdir}"'.format(**kwargs))
+    #     system.run('entwine build --threads {threads} --tmp "{tmpdir}" -i "{input}" -o "{outputdir}"'
+    #     .format(**kwargs))
     system.run('entwine build --threads {threads} --tmp "{tmpdir}" {all_inputs} -o "{outputdir}"'.format(**kwargs))
+
 
 def build_untwine(input_point_cloud_files, tmpdir, output_path, max_concurrency=8, rerun=False):
     kwargs = {

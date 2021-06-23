@@ -7,7 +7,7 @@ import dateutil.parser
 import shutil
 import multiprocessing
 
-from opendm.loghelpers import double_quote, args_to_dict
+from opendm.loghelpers import args_to_dict
 from vmem import virtual_memory
 
 if sys.platform == 'win32':
@@ -30,9 +30,11 @@ else:
 
 lock = threading.Lock()
 
+
 def odm_version():
     with open(os.path.join(os.path.dirname(__file__), "..", "VERSION")) as f:
         return f.read().split("\n")[0].strip()
+
 
 def memory():
     mem = virtual_memory()
@@ -41,11 +43,13 @@ def memory():
         'available': round(mem.available / 1024 / 1024)
     }
 
+
 class ODMLogger:
     def __init__(self):
         self.show_debug = False
         self.json = None
         self.json_output_file = None
+        self.json_output_files = None
         self.start_time = datetime.datetime.now()
 
     def log(self, startc, msg, level_name):
@@ -62,16 +66,17 @@ class ODMLogger:
     def init_json_output(self, output_files, args):
         self.json_output_files = output_files
         self.json_output_file = output_files[0]
-        self.json = {}
-        self.json['odmVersion'] = odm_version()
-        self.json['memory'] = memory()
-        self.json['cpus'] = multiprocessing.cpu_count()
-        self.json['images'] = -1
-        self.json['options'] = args_to_dict(args)
-        self.json['startTime'] = self.start_time.isoformat()
-        self.json['stages'] = []
-        self.json['processes'] = []
-        self.json['success'] = False
+        self.json = {
+            'odmVersion': odm_version(),
+            'memory': memory(),
+            'cpus': multiprocessing.cpu_count(),
+            'images': -1,
+            'options': args_to_dict(args),
+            'startTime': self.start_time.isoformat(),
+            'stages': [],
+            'processes': [],
+            'success': False
+        }
 
     def log_json_stage_run(self, name, start_time):
         if self.json is not None:
@@ -85,7 +90,7 @@ class ODMLogger:
         if self.json is not None:
             self.json['images'] = count
     
-    def log_json_stage_error(self, error, exit_code, stack_trace = ""):
+    def log_json_stage_error(self, error, exit_code, stack_trace=""):
         if self.json is not None:
             self.json['error'] = {
                 'code': exit_code,
@@ -99,7 +104,7 @@ class ODMLogger:
             self.json['success'] = True
             self._log_json_end_time()
     
-    def log_json_process(self, cmd, exit_code, output = []):
+    def log_json_process(self, cmd, exit_code, output=[]):
         if self.json is not None:
             d = {
                 'command': cmd,
@@ -147,6 +152,7 @@ class ODMLogger:
                     shutil.copy(self.json_output_file, f)
             except Exception as e:
                 print("Cannot write log.json: %s" % str(e))
+
 
 logger = ODMLogger()
 

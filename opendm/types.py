@@ -2,23 +2,18 @@ import os
 import shutil
 import warnings
 import numpy as np
-from opendm import get_image_size
 from opendm import location
 from opendm.gcp import GCPFile
-from pyproj import CRS
-import xmltodict as x2d
-from six import string_types
 
 from opendm import log
 from opendm import io
 from opendm import system
-from opendm import context
 
 from opendm.progress import progressbc
-from opendm.photo import ODM_Photo
 
 # Ignore warnings about proj information being lost
 warnings.filterwarnings("ignore")
+
 
 class ODM_Reconstruction(object):
     def __init__(self, photos):
@@ -37,21 +32,24 @@ class ODM_Reconstruction(object):
         band_indexes = {}
 
         for p in self.photos:
-            if not p.band_name in band_photos:
+            if p.band_name not in band_photos:
                 band_photos[p.band_name] = []
-            if not p.band_name in band_indexes:
+            if p.band_name not in band_indexes:
                 band_indexes[p.band_name] = str(p.band_index)
 
             band_photos[p.band_name].append(p)
             
         bands_count = len(band_photos)
-        if bands_count >= 2 and bands_count <= 8:
+        if 2 <= bands_count <= 8:
             # Validate that all bands have the same number of images,
             # otherwise this is not a multi-camera setup
             img_per_band = len(band_photos[p.band_name])
             for band in band_photos:
                 if len(band_photos[band]) != img_per_band:
-                    log.ODM_ERROR("Multi-camera setup detected, but band \"%s\" (identified from \"%s\") has only %s images (instead of %s), perhaps images are missing or are corrupted. Please include all necessary files to process all bands and try again." % (band, band_photos[band][0].filename, len(band_photos[band]), img_per_band))
+                    log.ODM_ERROR("Multi-camera setup detected, but band \"%s\" (identified from \"%s\") has only %s "
+                                  "images (instead of %s), perhaps images are missing or are corrupted. Please "
+                                  "include all necessary files to process all bands and try again."
+                                  % (band, band_photos[band][0].filename, len(band_photos[band]), img_per_band))
                     raise RuntimeError("Invalid multi-camera images")
             
             mc = []
@@ -76,15 +74,22 @@ class ODM_Reconstruction(object):
             gcp = GCPFile(gcp_file)
             if gcp.exists():
                 if gcp.entries_count() == 0:
-                    raise RuntimeError("This GCP file does not have any entries. Are the entries entered in the proper format?")
+                    raise RuntimeError("This GCP file does not have any entries. Are the entries entered in the "
+                                       "proper format?")
 
                 # Convert GCP file to a UTM projection since the rest of the pipeline
                 # does not handle other SRS well.
                 rejected_entries = []
-                utm_gcp = GCPFile(gcp.create_utm_copy(output_gcp_file, filenames=[p.filename for p in self.photos], rejected_entries=rejected_entries, include_extras=False))
+                utm_gcp = GCPFile(
+                    gcp.create_utm_copy(
+                        output_gcp_file,
+                        filenames=[p.filename for p in self.photos],
+                        rejected_entries=rejected_entries,
+                        include_extras=False))
                 
                 if not utm_gcp.exists():
-                    raise RuntimeError("Could not project GCP file to UTM. Please double check your GCP file for mistakes.")
+                    raise RuntimeError("Could not project GCP file to UTM. Please double check your GCP file for "
+                                       "mistakes.")
                 
                 for re in rejected_entries:
                     log.ODM_WARNING("GCP line ignored (image not found): %s" % str(re))
@@ -92,7 +97,8 @@ class ODM_Reconstruction(object):
                 if utm_gcp.entries_count() > 0:
                     log.ODM_INFO("%s GCP points will be used for georeferencing" % utm_gcp.entries_count())
                 else:
-                    raise RuntimeError("A GCP file was provided, but no valid GCP entries could be used. Note that the GCP file is case sensitive (\".JPG\" is not the same as \".jpg\").")
+                    raise RuntimeError("A GCP file was provided, but no valid GCP entries could be used. Note that "
+                                       "the GCP file is case sensitive (\".JPG\" is not the same as \".jpg\").")
                 
                 self.gcp = utm_gcp
 
@@ -136,8 +142,8 @@ class ODM_Reconstruction(object):
             if not io.file_exists(output_model_txt_geo) or rerun:
                 with open(output_coords_file, 'r') as f:
                     with open(output_model_txt_geo, 'w+') as w:
-                        w.write(f.readline()) # CRS
-                        w.write(f.readline()) # Offset
+                        w.write(f.readline())  # CRS
+                        w.write(f.readline())  # Offset
             else:
                 log.ODM_INFO("Model geo file already exist: %s" % output_model_txt_geo)
             
@@ -173,10 +179,6 @@ class ODM_GeoRef(object):
             log.ODM_WARNING('Could not find file %s' % coords_file)
             return
 
-        srs = None
-        utm_east_offset = None
-        utm_north_offset = None
-
         with open(coords_file) as f:
             # extract reference system and utm zone from first line.
             # We will assume the following format:
@@ -198,12 +200,13 @@ class ODM_GeoRef(object):
 
     def proj4(self):
         return self.srs.to_proj4()
-    
+
     def utm_offset(self):
-        return (self.utm_east_offset, self.utm_north_offset)
-    
+        return self.utm_east_offset, self.utm_north_offset
+
+
 class ODM_Tree(object):
-    def __init__(self, root_path, gcp_file = None, geo_file = None):
+    def __init__(self, root_path, gcp_file=None, geo_file=None):
         # root path to the project
         self.root_path = io.absolute_path_file(root_path)
         self.input_images = os.path.join(self.root_path, 'images')
@@ -308,11 +311,11 @@ class ODM_Stage:
         """
         Does this stage need to be rerun?
         """
-        return (self.args.rerun is not None and self.args.rerun == self.name) or \
-                     (self.args.rerun_all) or \
-                     (self.args.rerun_from is not None and self.name in self.args.rerun_from)
+        return (self.args.rerun is not None and self.args.rerun == self.name) \
+            or self.args.rerun_all \
+            or (self.args.rerun_from is not None and self.name in self.args.rerun_from)
     
-    def run(self, outputs = {}):
+    def run(self, outputs={}):
         start_time = system.now_raw()
         log.logger.log_json_stage_run(self.name, start_time)
 
@@ -356,9 +359,8 @@ class ODM_Stage:
 
     def update_progress(self, progress):
         progress = max(0.0, min(100.0, progress))
-        progressbc.send_update(self.previous_stages_progress() + 
-                              (self.delta_progress() / 100.0) * float(progress))
+        progressbc.send_update(
+            self.previous_stages_progress() + (self.delta_progress() / 100.0) * float(progress))
 
     def process(self, args, outputs):
         raise NotImplementedError
-

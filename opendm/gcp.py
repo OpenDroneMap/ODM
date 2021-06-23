@@ -4,6 +4,7 @@ from opendm import log
 from opendm import location
 from pyproj import CRS
 
+
 class GCPFile:
     def __init__(self, gcp_path):
         self.gcp_path = gcp_path
@@ -19,7 +20,7 @@ class GCPFile:
     
             lines = list(map(str.strip, contents.split('\n')))
             if lines:
-                self.raw_srs = lines[0] # SRS
+                self.raw_srs = lines[0]  # SRS
                 self.srs = location.parse_srs_header(self.raw_srs)
 
                 for line in lines[1:]:
@@ -120,7 +121,7 @@ class GCPFile:
 
             return gcp_file_output
 
-    def make_micmac_copy(self, output_dir, precisionxy=1, precisionz=1, utm_zone = None):
+    def make_micmac_copy(self, output_dir, precisionxy=1, precisionz=1, utm_zone=None):
         """
         Convert this GCP file in a format compatible with MicMac.
         :param output_dir directory where to save the two MicMac GCP files. The directory must exist.
@@ -154,11 +155,10 @@ class GCPFile:
         for entry in self.iter_entries():
             utm_x, utm_y, utm_z = transformer.TransformPoint(entry.x, entry.y, entry.z)
             k = "{} {} {}".format(utm_x, utm_y, utm_z)
-            if not k in gcps:
+            if k not in gcps:
                 gcps[k] = [entry]
             else:
                 gcps[k].append(entry)
-            
 
         with open(gcp_3d_file, 'w') as f3:
             with open(gcp_2d_file, 'w') as f2:
@@ -171,7 +171,8 @@ class GCPFile:
                     
                     gcp_n += 1
             
-        return (gcp_3d_file, gcp_2d_file)
+        return gcp_3d_file, gcp_2d_file
+
 
 class GCPEntry:
     def __init__(self, x, y, z, px, py, filename, extras=""):

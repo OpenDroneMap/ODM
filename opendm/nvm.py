@@ -1,6 +1,7 @@
 import os
 from opendm import log
 
+
 def replace_nvm_images(src_nvm_file, img_map, dst_nvm_file):
     """
     Create a new NVM file from an existing NVM file
@@ -19,8 +20,8 @@ def replace_nvm_images(src_nvm_file, img_map, dst_nvm_file):
     num_images = int(lines[2])
     entries = []
 
-    for l in lines[3:3+num_images]:
-        image_path, *p = l.split(" ")
+    for line in lines[3:3+num_images]:
+        image_path, *p = line.split(" ")
 
         dir_name = os.path.dirname(image_path)
         file_name = os.path.basename(image_path)
@@ -38,4 +39,3 @@ def replace_nvm_images(src_nvm_file, img_map, dst_nvm_file):
         f.write("NVM_V3\n\n%s\n" % len(entries))
         f.write("\n".join(entries))
         f.write("\n\n0\n0\n\n0")
-            

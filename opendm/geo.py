@@ -1,7 +1,7 @@
-import os
 from opendm import log
 from opendm import location
 from pyproj import CRS
+
 
 class GeoFile:
     def __init__(self, geo_path):
@@ -41,14 +41,14 @@ class GeoFile:
 
                         horizontal_accuracy = vertical_accuracy = None
                         if len(parts) >= 9:
-                            horizontal_accuracy,vertical_accuracy = [float(p) for p in parts[7:9]]
+                            horizontal_accuracy, vertical_accuracy = [float(p) for p in parts[7:9]]
                             i = 9
 
                         extras = " ".join(parts[i:])
                         self.entries[filename] = GeoEntry(filename, x, y, z,
-                                                        omega, phi, kappa,
-                                                        horizontal_accuracy, vertical_accuracy, 
-                                                        extras)
+                                                          omega, phi, kappa,
+                                                          horizontal_accuracy, vertical_accuracy,
+                                                          extras)
                     else:
                         log.ODM_WARNING("Malformed geo line: %s" % line)
     
@@ -57,7 +57,18 @@ class GeoFile:
 
 
 class GeoEntry:
-    def __init__(self, filename, x, y, z, omega=None, phi=None, kappa=None, horizontal_accuracy=None, vertical_accuracy=None, extras=None):
+    def __init__(
+            self,
+            filename,
+            x,
+            y,
+            z,
+            omega=None,
+            phi=None,
+            kappa=None,
+            horizontal_accuracy=None,
+            vertical_accuracy=None,
+            extras=None):
         self.filename = filename
         self.x = x
         self.y = y
@@ -70,11 +81,14 @@ class GeoEntry:
         self.extras = extras
 
     def __str__(self):
-        return "{} ({} {} {}) ({} {} {}) ({} {}) {}".format(self.filename, 
-                                             self.x, self.y, self.z,
-                                             self.omega, self.phi, self.kappa,
-                                             self.horizontal_accuracy, self.vertical_accuracy,
-                                             self.extras).rstrip()
+        return "{} ({} {} {}) ({} {} {}) ({} {}) {}"\
+            .format(
+                self.filename,
+                self.x, self.y, self.z,
+                self.omega, self.phi, self.kappa,
+                self.horizontal_accuracy, self.vertical_accuracy,
+                self.extras)\
+            .rstrip()
     
     def position_string(self):
         return "{} {} {}".format(self.x, self.y, self.z)

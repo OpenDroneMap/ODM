@@ -37,7 +37,7 @@ odm_orthophoto_path = os.path.join(superbuild_bin_path, "odm_orthophoto")
 settings_path = os.path.join(root_path, 'settings.yaml')
 
 # Define supported image extensions
-supported_extensions = {'.jpg','.jpeg','.png', '.tif', '.tiff', '.bmp'}
+supported_extensions = {'.jpg', '.jpeg', '.png', '.tif', '.tiff', '.bmp'}
 
 # Define the number of cores
 num_cores = multiprocessing.cpu_count()

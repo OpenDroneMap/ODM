@@ -27,15 +27,18 @@ def get_orthophoto_vars(args):
         'NUM_THREADS': args.max_concurrency
     }
 
+
 def build_overviews(orthophoto_file):
     log.ODM_INFO("Building Overviews")
     kwargs = {'orthophoto': orthophoto_file}
-    
+
     # Run gdaladdo
-    system.run('gdaladdo -r average '
-                '--config BIGTIFF_OVERVIEW IF_SAFER '
-                '--config COMPRESS_OVERVIEW JPEG '
-                '{orthophoto} 2 4 8 16'.format(**kwargs))
+    system.run(
+        'gdaladdo -r average '
+        '--config BIGTIFF_OVERVIEW IF_SAFER '
+        '--config COMPRESS_OVERVIEW JPEG '
+        '{orthophoto} 2 4 8 16'.format(**kwargs))
+
 
 def generate_png(orthophoto_file, output_file=None, outsize=None):
     if output_file is None:
@@ -55,6 +58,7 @@ def generate_png(orthophoto_file, output_file=None, outsize=None):
     system.run('gdal_translate -of png "%s" "%s" %s %s '
                '--config GDAL_CACHEMAX %s%% ' % (orthophoto_file, output_file, osparam, bandparam, get_max_memory()))
 
+
 def generate_kmz(orthophoto_file, output_file=None, outsize=None):
     if output_file is None:
         base, ext = os.path.splitext(orthophoto_file)
@@ -68,10 +72,16 @@ def generate_kmz(orthophoto_file, output_file=None, outsize=None):
 
     system.run('gdal_translate -of KMLSUPEROVERLAY -co FORMAT=JPEG "%s" "%s" %s '
                '--config GDAL_CACHEMAX %s%% ' % (orthophoto_file, output_file, bandparam, get_max_memory()))    
-    
+
+
 def post_orthophoto_steps(args, bounds_file_path, orthophoto_file, orthophoto_tiles_dir):
     if args.crop > 0:
-        Cropper.crop(bounds_file_path, orthophoto_file, get_orthophoto_vars(args), keep_original=not args.optimize_disk_space, warp_options=['-dstalpha'])
+        Cropper.crop(
+            bounds_file_path,
+            orthophoto_file,
+            get_orthophoto_vars(args),
+            keep_original=not args.optimize_disk_space,
+            warp_options=['-dstalpha'])
 
     if args.build_overviews and not args.cog:
         build_overviews(orthophoto_file)
@@ -87,6 +97,7 @@ def post_orthophoto_steps(args, bounds_file_path, orthophoto_file, orthophoto_ti
 
     if args.cog:
         convert_to_cogeo(orthophoto_file, max_workers=args.max_concurrency)
+
 
 def compute_mask_raster(input_raster, vector_mask, output_raster, blend_distance=20, only_max_coords_feature=False):
     if not os.path.exists(input_raster):
@@ -135,6 +146,7 @@ def compute_mask_raster(input_raster, vector_mask, output_raster, blend_distance
 
             return output_raster
 
+
 def feather_raster(input_raster, output_raster, blend_distance=20):
     if not os.path.exists(input_raster):
         log.ODM_WARNING("Cannot feather raster, %s does not exist" % input_raster)
@@ -160,14 +172,14 @@ def feather_raster(input_raster, output_raster, blend_distance=20):
 
         return output_raster
 
+
 def merge(input_ortho_and_ortho_cuts, output_orthophoto, orthophoto_vars={}):
     """
     Based on https://github.com/mapbox/rio-merge-rgba/
     Merge orthophotos around cutlines using a blend buffer.
     """
     inputs = []
-    bounds=None
-    precision=7
+    precision = 7
 
     for o, c in input_ortho_and_ortho_cuts:
         if not io.file_exists(o):
@@ -186,11 +198,11 @@ def merge(input_ortho_and_ortho_cuts, output_orthophoto, orthophoto_vars={}):
         res = first.res
         dtype = first.dtypes[0]
         profile = first.profile
-        num_bands = first.meta['count'] - 1 # minus alpha
+        num_bands = first.meta['count'] - 1  # minus alpha
         colorinterp = first.colorinterp
 
     log.ODM_INFO("%s valid orthophoto rasters to merge" % len(inputs))
-    sources = [(rasterio.open(o), rasterio.open(c)) for o,c in inputs]
+    sources = [(rasterio.open(o), rasterio.open(c)) for o, c in inputs]
 
     # scan input files.
     # while we're at it, validate assumptions about inputs
@@ -309,7 +321,7 @@ def merge(input_ortho_and_ortho_cuts, output_orthophoto, orthophoto_vars={}):
                 # destination raster and cut raster
                 for b in range(0, num_bands):
                     blended = temp[-1] / 255.0 * temp[b] + (1 - temp[-1] / 255.0) * dstarr[b]
-                    np.copyto(dstarr[b], blended, casting='unsafe', where=temp[-1]!=0)
+                    np.copyto(dstarr[b], blended, casting='unsafe', where=temp[-1] != 0)
 
             dstrast.write(dstarr, window=dst_window)
 

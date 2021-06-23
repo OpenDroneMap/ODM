@@ -1,9 +1,7 @@
 import time
 import datetime
 import os
-import sys
 import threading
-import signal
 import zipfile
 import glob
 from opendm import log
@@ -20,6 +18,7 @@ try:
 except ImportError:
     import Queue as queue
 
+
 class LocalRemoteExecutor:
     """
     A class for performing OpenSfM reconstructions and full ODM pipeline executions
@@ -28,7 +27,7 @@ class LocalRemoteExecutor:
     to use the processing power of the current machine as well as offloading tasks to a 
     network node.
     """
-    def __init__(self, nodeUrl, rerun = False):
+    def __init__(self, nodeUrl, rerun=False):
         self.node = Node.from_url(nodeUrl)
         self.params = {
             'tasks': [],
@@ -36,16 +35,19 @@ class LocalRemoteExecutor:
             'rerun': rerun
         }
         self.node_online = True
+        self.project_paths = None
 
         log.ODM_INFO("LRE: Initializing using cluster node %s:%s" % (self.node.host, self.node.port))
         try:
             info = self.node.info()
-            log.ODM_INFO("LRE: Node is online and running %s version %s"  % (info.engine, info.engine_version))
+            log.ODM_INFO("LRE: Node is online and running %s version %s" % (info.engine, info.engine_version))
         except exceptions.NodeConnectionError:
-            log.ODM_WARNING("LRE: The node seems to be offline! We'll still process the dataset, but it's going to run entirely locally.")
+            log.ODM_WARNING("LRE: The node seems to be offline! We'll still process the dataset, but it's going to "
+                            "run entirely locally.")
             self.node_online = False
         except Exception as e:
-            raise system.ExitException("LRE: An unexpected problem happened while opening the node connection: %s" % str(e))
+            raise system.ExitException("LRE: An unexpected problem happened while opening the node connection: %s"
+                                       % str(e))
 
     def set_projects(self, paths):
         self.project_paths = paths
@@ -90,12 +92,14 @@ class LocalRemoteExecutor:
                 log.ODM_INFO("LRE: No remote tasks left to cleanup")
 
             for task in self.params['tasks']:
-                log.ODM_INFO("LRE: Removing remote task %s... %s" % (task.uuid, 'OK' if remove_task_safe(task) else 'NO'))
+                log.ODM_INFO("LRE: Removing remote task %s... %s"
+                             % (task.uuid, 'OK' if remove_task_safe(task) else 'NO'))
 
-        def handle_result(task, local, error = None, partial=False):
+        def handle_result(task, local, error=None, partial=False):
             def cleanup_remote():
                 if not partial and task.remote_task:
-                    log.ODM_INFO("LRE: Cleaning up remote task (%s)... %s" % (task.remote_task.uuid, 'OK' if remove_task_safe(task.remote_task) else 'NO'))
+                    log.ODM_INFO("LRE: Cleaning up remote task (%s)... %s"
+                                 % (task.remote_task.uuid, 'OK' if remove_task_safe(task.remote_task) else 'NO'))
                     self.params['tasks'].remove(task.remote_task)
                     task.remote_task = None
 
@@ -118,14 +122,16 @@ class LocalRemoteExecutor:
                             for t in self.params['tasks']:
                                 try:
                                     info = t.info(with_output=-3)
-                                    if info.status == TaskStatus.RUNNING and info.processing_time >= 0 and len(info.output) >= 3:
+                                    if info.status == TaskStatus.RUNNING\
+                                            and info.processing_time >= 0\
+                                            and len(info.output) >= 3:
                                         node_task_limit += 1
                                 except exceptions.OdmError:
                                     pass
 
                             nonloc.max_remote_tasks = max(1, node_task_limit)
-                            log.ODM_INFO("LRE: Node task limit reached. Setting max remote tasks to %s" % node_task_limit)
-                                
+                            log.ODM_INFO("LRE: Node task limit reached. Setting max remote tasks to %s"
+                                         % node_task_limit)
 
                 # Retry, but only if the error is not related to a task failure
                 if task.retries < task.max_retries and not isinstance(error, exceptions.TaskFailedError):
@@ -134,26 +140,31 @@ class LocalRemoteExecutor:
                     # limit count.
                     if not task_limit_reached:
                         task.retries += 1
-                    task.wait_until = datetime.datetime.now() + datetime.timedelta(seconds=task.retries * task.retry_timeout)
+                    task.wait_until = datetime.datetime.now() \
+                        + datetime.timedelta(seconds=task.retries * task.retry_timeout)
                     cleanup_remote()
                     q.task_done()
 
                     log.ODM_INFO("LRE: Re-queueing %s (retries: %s)" % (task, task.retries))
                     q.put(task)
-                    if not local: remote_running_tasks.increment(-1)
+                    if not local:
+                        remote_running_tasks.increment(-1)
                     return
                 else:
                     nonloc.error = error
                     finished_tasks.increment()
-                    if not local: remote_running_tasks.increment(-1)
+                    if not local:
+                        remote_running_tasks.increment(-1)
             else:
                 if not partial:
                     log.ODM_INFO("LRE: %s finished successfully" % task)
                     finished_tasks.increment()
-                    if not local: remote_running_tasks.increment(-1)
+                    if not local:
+                        remote_running_tasks.increment(-1)
 
             cleanup_remote()
-            if not partial: q.task_done()
+            if not partial:
+                q.task_done()
             
         def local_worker():
             while True:
@@ -172,7 +183,6 @@ class LocalRemoteExecutor:
                     handle_result(task, True, e)
                 finally:
                     nonloc.local_processing = False
-
 
         def remote_worker():
             while True:
@@ -246,7 +256,8 @@ class LocalRemoteExecutor:
         if nonloc.error is not None:
             # Try not to leak access token
             if isinstance(nonloc.error, exceptions.NodeConnectionError):
-                raise exceptions.NodeConnectionError("A connection error happened. Check the connection to the processing node and try again.")
+                raise exceptions.NodeConnectionError("A connection error happened. Check the connection to the "
+                                                     "processing node and try again.")
             else:
                 raise nonloc.error
         
@@ -254,25 +265,26 @@ class LocalRemoteExecutor:
 class NodeTaskLimitReachedException(Exception):
     pass
 
+
 class Task:
     def __init__(self, project_path, node, params, max_retries=5, retry_timeout=10):
         self.project_path = project_path
         self.node = node
         self.params = params
-        self.wait_until = datetime.datetime.now() # Don't run this task until a certain time
+        self.wait_until = datetime.datetime.now()  # Don't run this task until a certain time
         self.max_retries = max_retries
         self.retries = 0
         self.retry_timeout = retry_timeout
         self.remote_task = None
 
     def process(self, local, done):
-        def handle_result(error = None, partial=False):
+        def handle_result(error=None, partial=False):
             done(self, local, error, partial)
 
         log.ODM_INFO("LRE: About to process %s %s" % (self, 'locally' if local else 'remotely'))
         
         if local:
-            self._process_local(handle_result) # Block until complete
+            self._process_local(handle_result)  # Block until complete
         else:
             now = datetime.datetime.now()
             if self.wait_until > now:
@@ -283,7 +295,7 @@ class Task:
             # TODO: we could consider uploading multiple tasks
             # in parallel. But since we are using the same node
             # perhaps this wouldn't be a big speedup.
-            self._process_remote(handle_result) # Block until upload is complete
+            self._process_remote(handle_result)  # Block until upload is complete
 
     def path(self, *paths):
         return os.path.join(self.project_path, *paths)
@@ -322,11 +334,11 @@ class Task:
     def _process_remote(self, done):
         try:
             self.process_remote(done)
-            done(error=None, partial=True) # Upload is completed, but processing is not (partial)
+            done(error=None, partial=True)  # Upload is completed, but processing is not (partial)
         except Exception as e:
             done(e)
 
-    def execute_remote_task(self, done, seed_files = [], seed_touch_files = [], outputs = [], ):
+    def execute_remote_task(self, done, seed_files=[], seed_touch_files=[], outputs=[], ):
         """
         Run a task by creating a seed file with all files in seed_files, optionally
         creating empty files (for flag checks) specified in seed_touch_files
@@ -353,11 +365,12 @@ class Task:
                 nonloc.last_update = time.time()
 
         # Upload task
-        task = self.node.create_task(images, 
-                get_submodel_args_dict(config.config()),
-                progress_callback=print_progress,
-                skip_post_processing=True,
-                outputs=outputs)
+        task = self.node.create_task(
+            images,
+            get_submodel_args_dict(config.config()),
+            progress_callback=print_progress,
+            skip_post_processing=True,
+            outputs=outputs)
         self.remote_task = task
 
         # Cleanup seed file
@@ -378,7 +391,8 @@ class Task:
                     # If a task switches from RUNNING to QUEUED, then we need to 
                     # stop the process and re-add the task to the queue.
                     if info.status == TaskStatus.QUEUED:
-                        log.ODM_WARNING("LRE: %s (%s) turned from RUNNING to QUEUED. Re-adding to back of the queue." % (self, task.uuid))
+                        log.ODM_WARNING("LRE: %s (%s) turned from RUNNING to QUEUED. Re-adding to back of the queue."
+                                        % (self, task.uuid))
                         raise NodeTaskLimitReachedException("Delayed task limit reached")
                     elif info.status == TaskStatus.RUNNING:
                         # Print a status message once in a while
@@ -407,7 +421,8 @@ class Task:
                         with open(error_log_path, 'w') as f:
                             f.write('\n'.join(output_lines) + '\n')
 
-                        msg = "(%s) failed with task output: %s\nFull log saved at %s" % (task.uuid, "\n".join(output_lines[-10:]), error_log_path)
+                        msg = "(%s) failed with task output: %s\nFull log saved at %s" \
+                              % (task.uuid, "\n".join(output_lines[-10:]), error_log_path)
                         done(exceptions.TaskFailedError(msg))
                     except:
                         log.ODM_WARNING("LRE: Could not retrieve task output for %s (%s)" % (self, task.uuid))
@@ -424,10 +439,9 @@ class Task:
         else:
             raise Exception("Could not send task to node, task status is %s" % str(info.status))
 
-    
     def process_local(self):
         raise NotImplementedError()
-    
+
     def process_remote(self, done):
         raise NotImplementedError()
 
@@ -447,17 +461,27 @@ class ReconstructionTask(Task):
     def process_remote(self, done):
         octx = OSFMContext(self.path("opensfm"))
         if not octx.is_feature_matching_done() or not octx.is_reconstruction_done() or self.params['rerun']:
-            self.execute_remote_task(done, seed_files=["opensfm/exif", 
-                                                "opensfm/camera_models.json",
-                                                "opensfm/reference_lla.json"],
-                                    seed_touch_files=["opensfm/split_merge_stop_at_reconstruction.txt"],
-                                    outputs=["opensfm/matches", "opensfm/features", 
-                                            "opensfm/reconstruction.json",
-                                            "opensfm/tracks.csv",
-                                            "cameras.json"])
+            self.execute_remote_task(
+                done,
+                seed_files=[
+                    "opensfm/exif",
+                    "opensfm/camera_models.json",
+                    "opensfm/reference_lla.json"],
+                seed_touch_files=[
+                    "opensfm/split_merge_stop_at_reconstruction.txt"
+                ],
+                outputs=[
+                    "opensfm/matches",
+                    "opensfm/features",
+                    "opensfm/reconstruction.json",
+                    "opensfm/tracks.csv",
+                    "cameras.json"
+                ]
+            )
         else:
             log.ODM_INFO("Already processed feature matching and reconstruction for %s" % octx.name())
             done()
+
 
 class ToolchainTask(Task):
     def process_local(self):
@@ -484,27 +508,36 @@ class ToolchainTask(Task):
         completed_file = self.path("toolchain_completed.txt")
         submodel_name = os.path.basename(self.project_path)
 
-        def handle_result(error = None):
+        def handle_result(error=None):
             # Mark task as completed if no error
             if error is None:
                 self.touch(completed_file)
             done(error=error)
 
         if not os.path.exists(completed_file) or self.params['rerun']:
-            self.execute_remote_task(handle_result, seed_files=["opensfm/camera_models.json",
-                                                "opensfm/reference_lla.json",
-                                                "opensfm/reconstruction.json",
-                                                "opensfm/tracks.csv"],
-                                seed_touch_files=["opensfm/features/empty",
-                                                "opensfm/matches/empty",
-                                                "opensfm/exif/empty"],
-                                outputs=["odm_orthophoto/odm_orthophoto.tif",
-                                        "odm_orthophoto/cutline.gpkg",
-                                        "odm_orthophoto/odm_orthophoto_cut.tif",
-                                        "odm_orthophoto/odm_orthophoto_feathered.tif",
-                                        "odm_dem",
-                                        "odm_report",
-                                        "odm_georeferencing"])
+            self.execute_remote_task(
+                handle_result,
+                seed_files=[
+                    "opensfm/camera_models.json",
+                    "opensfm/reference_lla.json",
+                    "opensfm/reconstruction.json",
+                    "opensfm/tracks.csv"
+                ],
+                seed_touch_files=[
+                    "opensfm/features/empty",
+                    "opensfm/matches/empty",
+                    "opensfm/exif/empty"
+                ],
+                outputs=[
+                    "odm_orthophoto/odm_orthophoto.tif",
+                    "odm_orthophoto/cutline.gpkg",
+                    "odm_orthophoto/odm_orthophoto_cut.tif",
+                    "odm_orthophoto/odm_orthophoto_feathered.tif",
+                    "odm_dem",
+                    "odm_report",
+                    "odm_georeferencing"
+                ]
+            )
         else:
             log.ODM_INFO("Already processed toolchain for %s" % submodel_name)
             handle_result()

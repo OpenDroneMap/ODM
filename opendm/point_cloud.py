@@ -1,12 +1,16 @@
-import os, sys, shutil, tempfile, json, math
+import os
+import sys
+import shutil
+import tempfile
+import json
 from opendm import system
 from opendm import log
-from opendm import context
 from opendm.system import run
 from opendm import entwine
 from opendm import io
 from opendm.concurrency import parallel_map
 from opendm.utils import double_quote
+
 
 def ply_info(input_ply):
     if not os.path.exists(input_ply):
@@ -33,7 +37,6 @@ def ply_info(input_ply):
             i += 1
             if i > 100:
                 raise IOError("Cannot find end_header field. Invalid PLY?")
-            
 
     return {
         'has_normals': has_normals,
@@ -46,7 +49,8 @@ def split(input_point_cloud, outdir, filename_template, capacity, dims=None):
     log.ODM_INFO("Splitting point cloud filtering in chunks of {} vertices".format(capacity))
 
     if not os.path.exists(input_point_cloud):
-        log.ODM_ERROR("{} does not exist, cannot split point cloud. The program will now exit.".format(input_point_cloud))
+        log.ODM_ERROR("{} does not exist, cannot split point cloud. The program will now exit."
+                      .format(input_point_cloud))
         sys.exit(1)
 
     if not os.path.exists(outdir):
@@ -56,7 +60,8 @@ def split(input_point_cloud, outdir, filename_template, capacity, dims=None):
         log.ODM_ERROR("%s already contains some files. The program will now exit.".format(outdir))
         sys.exit(1)
 
-    cmd = 'pdal split -i "%s" -o "%s" --capacity %s ' % (input_point_cloud, os.path.join(outdir, filename_template), capacity)
+    cmd = 'pdal split -i "%s" -o "%s" --capacity %s ' \
+          % (input_point_cloud, os.path.join(outdir, filename_template), capacity)
     
     if filename_template.endswith(".ply"):
         cmd += ("--writers.ply.sized_types=false "
@@ -68,7 +73,14 @@ def split(input_point_cloud, outdir, filename_template, capacity, dims=None):
     return [os.path.join(outdir, f) for f in os.listdir(outdir)]
 
 
-def filter(input_point_cloud, output_point_cloud, standard_deviation=2.5, meank=16, sample_radius=0, verbose=False, max_concurrency=1):
+def filter(
+        input_point_cloud,
+        output_point_cloud,
+        standard_deviation=2.5,
+        meank=16,
+        sample_radius=0,
+        verbose=False,
+        max_concurrency=1):
     """
     Filters a point cloud
     """
@@ -89,7 +101,8 @@ def filter(input_point_cloud, output_point_cloud, standard_deviation=2.5, meank=
         filters.append('sample')
 
     if standard_deviation > 0 and meank > 0:
-        log.ODM_INFO("Filtering {} (statistical, meanK {}, standard deviation {})".format(input_point_cloud, meank, standard_deviation))
+        log.ODM_INFO("Filtering {} (statistical, meanK {}, standard deviation {})"
+                     .format(input_point_cloud, meank, standard_deviation))
         filters.append('outlier')
 
     if len(filters) > 0:
@@ -108,6 +121,7 @@ def filter(input_point_cloud, output_point_cloud, standard_deviation=2.5, meank=
         sys.exit(1)
 
     # Do we need to split this?
+    # TODO Move this definition somewhere where constants are defined
     VERTEX_THRESHOLD = 250000
     should_split = max_concurrency > 1 and info['vertex_count'] > VERTEX_THRESHOLD*2
 
@@ -121,26 +135,28 @@ def filter(input_point_cloud, output_point_cloud, standard_deviation=2.5, meank=
 
         def run_filter(pcs):
             # Recurse
-            filter(pcs['path'], io.related_file_path(pcs['path'], postfix="_filtered"), 
-                        standard_deviation=standard_deviation, 
-                        meank=meank, 
-                        sample_radius=sample_radius, 
-                        verbose=verbose,
-                        max_concurrency=1)
+            filter(
+                pcs['path'],
+                io.related_file_path(pcs['path'], postfix="_filtered"),
+                standard_deviation=standard_deviation,
+                meank=meank,
+                sample_radius=sample_radius,
+                verbose=verbose,
+                max_concurrency=1)
         # Filter
         parallel_map(run_filter, [{'path': p} for p in point_cloud_submodels], max_concurrency)
 
         # Merge
         log.ODM_INFO("Merging %s point cloud chunks to %s" % (len(point_cloud_submodels), output_point_cloud))
         filtered_pcs = [io.related_file_path(pcs, postfix="_filtered") for pcs in point_cloud_submodels]
-        #merge_ply(filtered_pcs, output_point_cloud, dims)
+        # merge_ply(filtered_pcs, output_point_cloud, dims)
         fast_merge_ply(filtered_pcs, output_point_cloud)
 
         if os.path.exists(partsdir):
             shutil.rmtree(partsdir)
     else:
         # Process point cloud (or a point cloud submodel) in a single step
-        filterArgs = {
+        filter_args = {
             'inputFile': input_point_cloud,
             'outputFile': output_point_cloud,
             'stages': " ".join(filters),
@@ -148,20 +164,20 @@ def filter(input_point_cloud, output_point_cloud, standard_deviation=2.5, meank=
         }
 
         cmd = ("pdal translate -i \"{inputFile}\" "
-                "-o \"{outputFile}\" "
-                "{stages} "
-                "--writers.ply.sized_types=false "
-                "--writers.ply.storage_mode=\"little endian\" "
-                "--writers.ply.dims=\"{dims}\" "
-                "").format(**filterArgs)
+               "-o \"{outputFile}\" "
+               "{stages} "
+               "--writers.ply.sized_types=false "
+               "--writers.ply.storage_mode=\"little endian\" "
+               "--writers.ply.dims=\"{dims}\" "
+               "").format(**filter_args)
 
         if 'sample' in filters:
             cmd += "--filters.sample.radius={} ".format(sample_radius)
         
         if 'outlier' in filters:
             cmd += ("--filters.outlier.method=\"statistical\" "
-                "--filters.outlier.mean_k={} "
-                "--filters.outlier.multiplier={} ").format(meank, standard_deviation)  
+                    "--filters.outlier.mean_k={} "
+                    "--filters.outlier.multiplier={} ").format(meank, standard_deviation)
         
         if 'range' in filters:
             # Remove outliers
@@ -172,12 +188,14 @@ def filter(input_point_cloud, output_point_cloud, standard_deviation=2.5, meank=
     if not os.path.exists(output_point_cloud):
         log.ODM_WARNING("{} not found, filtering has failed.".format(output_point_cloud))
 
+
 def export_info_json(pointcloud_path, info_file_path):
     system.run('pdal info --dimensions "X,Y,Z" "{0}" > "{1}"'.format(pointcloud_path, info_file_path))
 
 
 def export_summary_json(pointcloud_path, summary_file_path):
     system.run('pdal info --summary "{0}" > "{1}"'.format(pointcloud_path, summary_file_path))
+
 
 def get_extent(input_point_cloud):
     fd, json_file = tempfile.mkstemp(suffix='.json')
@@ -204,25 +222,30 @@ def get_extent(input_point_cloud):
         
         if not fallback:
             summary = result.get('summary')
-            if summary is None: raise Exception("Cannot compute summary for %s (summary key missing)" % input_point_cloud)
+            if summary is None:
+                raise Exception("Cannot compute summary for %s (summary key missing)" % input_point_cloud)
             bounds = summary.get('bounds')
         else:
             stats = result.get('stats')
-            if stats is None: raise Exception("Cannot compute bounds for %s (stats key missing)" % input_point_cloud)
+            if stats is None:
+                raise Exception("Cannot compute bounds for %s (stats key missing)" % input_point_cloud)
             bbox = stats.get('bbox')
-            if bbox is None: raise Exception("Cannot compute bounds for %s (bbox key missing)" % input_point_cloud)
+            if bbox is None:
+                raise Exception("Cannot compute bounds for %s (bbox key missing)" % input_point_cloud)
             native = bbox.get('native')
-            if native is None: raise Exception("Cannot compute bounds for %s (native key missing)" % input_point_cloud)
+            if native is None:
+                raise Exception("Cannot compute bounds for %s (native key missing)" % input_point_cloud)
             bounds = native.get('bbox')
 
-        if bounds is None: raise Exception("Cannot compute bounds for %s (bounds key missing)" % input_point_cloud)
+        if bounds is None:
+            raise Exception("Cannot compute bounds for %s (bounds key missing)" % input_point_cloud)
         
-        if bounds.get('maxx', None) is None or \
-            bounds.get('minx', None) is None or \
-            bounds.get('maxy', None) is None or \
-            bounds.get('miny', None) is None or \
-            bounds.get('maxz', None) is None or \
-            bounds.get('minz', None) is None:
+        if bounds.get('maxx', None) is None\
+                or bounds.get('minx', None) is None\
+                or bounds.get('maxy', None) is None\
+                or bounds.get('miny', None) is None\
+                or bounds.get('maxz', None) is None\
+                or bounds.get('minz', None) is None:
             raise Exception("Cannot compute bounds for %s (invalid keys) %s" % (input_point_cloud, str(bounds)))
             
     os.remove(json_file)
@@ -317,13 +340,15 @@ def merge_ply(input_point_cloud_files, output_file, dims=None):
 
     system.run(' '.join(cmd))
 
+
 def post_point_cloud_steps(args, tree, rerun=False):
     # XYZ point cloud output
     if args.pc_csv:
         log.ODM_INFO("Creating CSV file (XYZ format)")
         
         if not io.file_exists(tree.odm_georeferencing_xyz_file) or rerun:
-            system.run("pdal translate -i \"{}\" "
+            system.run(
+                "pdal translate -i \"{}\" "
                 "-o \"{}\" "
                 "--writers.text.format=csv "
                 "--writers.text.order=\"X,Y,Z\" "
@@ -338,7 +363,8 @@ def post_point_cloud_steps(args, tree, rerun=False):
         log.ODM_INFO("Creating LAS file")
         
         if not io.file_exists(tree.odm_georeferencing_model_las) or rerun:
-            system.run("pdal translate -i \"{}\" "
+            system.run(
+                "pdal translate -i \"{}\" "
                 "-o \"{}\" ".format(
                     tree.odm_georeferencing_model_laz,
                     tree.odm_georeferencing_model_las))
@@ -348,4 +374,8 @@ def post_point_cloud_steps(args, tree, rerun=False):
     # EPT point cloud output
     if args.pc_ept:
         log.ODM_INFO("Creating Entwine Point Tile output")
-        entwine.build([tree.odm_georeferencing_model_laz], tree.entwine_pointcloud, max_concurrency=args.max_concurrency, rerun=rerun)
+        entwine.build(
+            [tree.odm_georeferencing_model_laz],
+            tree.entwine_pointcloud,
+            max_concurrency=args.max_concurrency,
+            rerun=rerun)

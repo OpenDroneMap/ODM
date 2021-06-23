@@ -12,13 +12,16 @@ from collections import deque
 from opendm import context
 from opendm import log
 
+
 class SubprocessException(Exception):
     def __init__(self, msg, errorCode):
         super().__init__(msg)
         self.errorCode = errorCode
 
+
 class ExitException(Exception):
     pass
+
 
 def get_ccd_widths():
     """Return the CCD Width of the camera listed in the JSON defs file."""
@@ -26,12 +29,15 @@ def get_ccd_widths():
         sensor_data = json.loads(f.read())
     return dict(zip(map(string.lower, sensor_data.keys()), sensor_data.values()))
 
+
 running_subprocesses = []
 cleanup_callbacks = []
+
 
 def add_cleanup_callback(func):
     global cleanup_callbacks
     cleanup_callbacks.append(func)
+
 
 def remove_cleanup_callback(func):
     global cleanup_callbacks
@@ -40,6 +46,7 @@ def remove_cleanup_callback(func):
         cleanup_callbacks.remove(func)
     except ValueError as e:
         log.ODM_EXCEPTION("Tried to remove %s from cleanup_callbacks but got: %s" % (str(func), str(e)))
+
 
 def exit_gracefully():
     global running_subprocesses
@@ -59,11 +66,14 @@ def exit_gracefully():
     
     os._exit(1)
 
+
 def sighandler(signum, frame):
     exit_gracefully()
 
+
 signal.signal(signal.SIGINT, sighandler)
 signal.signal(signal.SIGTERM, sighandler)
+
 
 def run(cmd, env_paths=[context.superbuild_bin_path], env_vars={}, packages_paths=context.python_packages_paths):
     """Run a system command"""
@@ -85,7 +95,13 @@ def run(cmd, env_paths=[context.superbuild_bin_path], env_vars={}, packages_path
     for k in env_vars:
         env[k] = str(env_vars[k])
 
-    p = subprocess.Popen(cmd, shell=True, env=env, start_new_session=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    p = subprocess.Popen(
+        cmd,
+        shell=True,
+        env=env,
+        start_new_session=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT)
     running_subprocesses.append(p)
     lines = deque()
     for line in io.TextIOWrapper(p.stdout):
@@ -125,6 +141,7 @@ def benchmark(start, benchmarking_file, process):
     with open(benchmarking_file, 'a') as b:
         b.write('%s runtime: %s seconds\n' % (process, delta))
 
+
 def mkdir_p(path):
     """Make a directory including parent directories.
     """
@@ -134,10 +151,11 @@ def mkdir_p(path):
         if exc.errno != errno.EEXIST or not os.path.isdir(path):
             raise
 
+
 # Python2 shutil.which
 def which(program):
-    path=os.getenv('PATH')
+    path = os.getenv('PATH')
     for p in path.split(os.path.pathsep):
-        p=os.path.join(p,program)
-        if os.path.exists(p) and os.access(p,os.X_OK):
+        p = os.path.join(p, program)
+        if os.path.exists(p) and os.access(p, os.X_OK):
             return p
