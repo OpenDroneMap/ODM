@@ -86,7 +86,7 @@ def post_orthophoto_steps(args, bounds_file_path, orthophoto_file, orthophoto_ti
         generate_orthophoto_tiles(orthophoto_file, orthophoto_tiles_dir, args.max_concurrency)
 
     if args.cog:
-        convert_to_cogeo(orthophoto_file, max_workers=args.max_concurrency)
+        convert_to_cogeo(orthophoto_file, max_workers=args.max_concurrency, compression=args.orthophoto_compression)
 
 def compute_mask_raster(input_raster, vector_mask, output_raster, blend_distance=20, only_max_coords_feature=False):
     if not os.path.exists(input_raster):

@@ -55,7 +55,7 @@ if [ "$1" = "--setup" ]; then
 
     # Misc aliases
     echo "alias pdal=/code/SuperBuild/install/bin/pdal" >> $HOME/.bashrc
-    echo "alias opensfm=/code/SuperBuild/src/opensfm/bin/opensfm" >> $HOME/.bashrc
+    echo "alias opensfm=/code/SuperBuild/install/bin/opensfm/bin/opensfm" >> $HOME/.bashrc
     
 
     su -c bash $2
