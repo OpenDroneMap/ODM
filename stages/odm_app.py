@@ -42,7 +42,7 @@ class ODMApp:
         filterpoints = ODMFilterPoints('odm_filterpoints', args, progress=52.0)
         meshing = ODMeshingStage('odm_meshing', args, progress=60.0,
                                     max_vertex=args.mesh_size,
-                                    oct_tree=args.mesh_octree_depth,
+                                    oct_tree=max(1, min(14, args.mesh_octree_depth)),
                                     samples=1.0,
                                     point_weight=4.0,
                                     max_concurrency=args.max_concurrency,

@@ -277,7 +277,7 @@ def config(argv=None, parser=None):
                               'Default: %(default)s'))
 
     parser.add_argument('--mesh-octree-depth',
-                        metavar='<positive integer>',
+                        metavar='<integer: 1 <= x <= 14>',
                         action=StoreValue,
                         default=11,
                         type=int,
