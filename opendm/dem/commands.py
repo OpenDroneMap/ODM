@@ -189,7 +189,12 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
     
     # Create virtual raster
     tiles_vrt_path = os.path.abspath(os.path.join(outdir, "tiles.vrt"))
-    run('gdalbuildvrt "%s" "%s"' % (tiles_vrt_path, '" "'.join(map(lambda t: t['filename'], tiles))))
+    tiles_file_list = os.path.abspath(os.path.join(outdir, "tiles_list.txt"))
+    with open(tiles_file_list, 'w') as f:
+        for t in tiles:
+            f.write(t['filename'] + '\n')
+
+    run('gdalbuildvrt -input_file_list "%s" "%s" ' % (tiles_file_list, tiles_vrt_path))
 
     merged_vrt_path = os.path.abspath(os.path.join(outdir, "merged.vrt"))
     geotiff_tmp_path = os.path.abspath(os.path.join(outdir, 'tiles.tmp.tif'))
@@ -266,7 +271,7 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
         else:
             os.replace(geotiff_tmp_path, io.related_file_path(output_path, postfix=".unfilled"))
     
-    for cleanup_file in [tiles_vrt_path, merged_vrt_path, geotiff_small_path, geotiff_small_filled_path]:
+    for cleanup_file in [tiles_vrt_path, tiles_file_list, merged_vrt_path, geotiff_small_path, geotiff_small_filled_path]:
         if os.path.exists(cleanup_file): os.remove(cleanup_file)
     for t in tiles:
         if os.path.exists(t['filename']): os.remove(t['filename'])

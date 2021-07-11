@@ -31,5 +31,6 @@ class ODMFilterPoints(types.ODM_Stage):
             log.ODM_WARNING('Found a valid point cloud file in: %s' %
                             tree.filtered_point_cloud)
         
-        if args.optimize_disk_space:
-            os.remove(inputPointCloud)
+        if args.optimize_disk_space and inputPointCloud:
+            if os.path.isfile(inputPointCloud):
+                os.remove(inputPointCloud)

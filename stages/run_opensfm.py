@@ -17,6 +17,8 @@ from opendm import thermal
 from opendm import nvm
 from opendm.photo import find_largest_photo
 
+from opensfm.undistort import add_image_format_extension
+
 class ODMOpenSfMStage(types.ODM_Stage):
     def process(self, args, outputs):
         tree = outputs['tree']
@@ -24,8 +26,7 @@ class ODMOpenSfMStage(types.ODM_Stage):
         photos = reconstruction.photos
 
         if not photos:
-            log.ODM_ERROR('Not enough photos in photos array to start OpenSfM')
-            exit(1)
+            raise system.ExitException('Not enough photos in photos array to start OpenSfM')
 
         octx = OSFMContext(tree.opensfm)
         octx.setup(args, tree.dataset_raw, reconstruction=reconstruction, rerun=self.rerun())
@@ -159,6 +160,7 @@ class ODMOpenSfMStage(types.ODM_Stage):
             # We finally restore the original files later
 
             added_shots_file = octx.path('added_shots_done.txt')
+            s2p, p2s = None, None
 
             if not io.file_exists(added_shots_file) or self.rerun():
                 primary_band_name = multispectral.get_primary_band_name(reconstruction.multi_camera, args.primary_band)
@@ -214,12 +216,12 @@ class ODMOpenSfMStage(types.ODM_Stage):
                         
                         # Primary band maps to itself
                         if band['name'] == primary_band_name:
-                            img_map[fname + '.tif'] = fname + '.tif'
+                            img_map[add_image_format_extension(fname, 'tif')] = add_image_format_extension(fname, 'tif')
                         else:
                             band_filename = next((p.filename for p in p2s[fname] if p.band_name == band['name']), None)
 
                             if band_filename is not None:
-                                img_map[fname + '.tif'] = band_filename + '.tif'
+                                img_map[add_image_format_extension(fname, 'tif')] = add_image_format_extension(band_filename, 'tif')
                             else:
                                 log.ODM_WARNING("Cannot find %s band equivalent for %s" % (band, fname))
 

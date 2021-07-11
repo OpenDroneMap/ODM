@@ -277,7 +277,7 @@ def config(argv=None, parser=None):
                               'Default: %(default)s'))
 
     parser.add_argument('--mesh-octree-depth',
-                        metavar='<positive integer>',
+                        metavar='<integer: 1 <= x <= 14>',
                         action=StoreValue,
                         default=11,
                         type=int,
@@ -361,6 +361,13 @@ def config(argv=None, parser=None):
                         default=False,
                         help='Reduce the memory usage needed for depthmap fusion by splitting large scenes into tiles. Turn this on if your machine doesn\'t have much RAM and/or you\'ve set --pc-quality to high or ultra. Experimental. '
                              'Default: %(default)s')
+
+    parser.add_argument('--pc-geometric',
+                        action=StoreTrue,
+                        nargs=0,
+                        default=False,
+                        help='Improve the accuracy of the point cloud by computing geometrically consistent depthmaps. This increases processing time, but can improve results in urban scenes. '
+                             'Default: %(default)s')    
 
     parser.add_argument('--smrf-scalar',
                         metavar='<positive float>',

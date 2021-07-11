@@ -243,8 +243,8 @@ class ODMMergeStage(types.ODM_Stage):
 
         if outputs['large']:
             if not os.path.exists(tree.submodels_path):
-                log.ODM_ERROR("We reached the merge stage, but %s folder does not exist. Something must have gone wrong at an earlier stage. Check the log and fix possible problem before restarting?" % tree.submodels_path)
-                exit(1)
+                raise system.ExitException("We reached the merge stage, but %s folder does not exist. Something must have gone wrong at an earlier stage. Check the log and fix possible problem before restarting?" % tree.submodels_path)
+                
 
             # Merge point clouds
             if args.merge in ['all', 'pointcloud']:

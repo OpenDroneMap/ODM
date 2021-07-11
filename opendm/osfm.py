@@ -50,13 +50,12 @@ class OSFMContext:
 
         # Check that a reconstruction file has been created
         if not self.reconstructed():
-            log.ODM_ERROR("The program could not process this dataset using the current settings. "
+            raise system.ExitException("The program could not process this dataset using the current settings. "
                             "Check that the images have enough overlap, "
                             "that there are enough recognizable features "
                             "and that the images are in focus. "
                             "You could also try to increase the --min-num-features parameter."
                             "The program will now exit.")
-            exit(1)
 
 
     def setup(self, args, images_path, reconstruction, append_config = [], rerun=False):
@@ -194,6 +193,7 @@ class OSFMContext:
                 "optimize_camera_parameters: %s" % ('no' if args.use_fixed_camera_params or args.cameras else 'yes'),
                 "undistorted_image_format: tif",
                 "bundle_outlier_filtering_type: AUTO",
+                "sift_peak_threshold: 0.066",
                 "align_orientation_prior: vertical",
                 "triangulation_type: ROBUST",
                 "retriangulation_ratio: 2",
