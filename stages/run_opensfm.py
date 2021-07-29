@@ -55,18 +55,6 @@ class ODMOpenSfMStage(types.ODM_Stage):
             cleanup_disk_space()
             return
 
-        # Stats are computed in the local CRS (before geoprojection)
-        if not args.skip_report:
-
-            # TODO: this will fail to compute proper statistics if
-            # the pipeline is run with --skip-report and is subsequently
-            # rerun without --skip-report a --rerun-* parameter (due to the reconstruction.json file)
-            # being replaced below. It's an isolated use case.
-
-            octx.export_stats(self.rerun())
-        
-        self.update_progress(75)
-
         # We now switch to a geographic CRS
         geocoords_flag_file = octx.path("exported_geocoords.txt")
 
@@ -78,6 +66,12 @@ class ODMOpenSfMStage(types.ODM_Stage):
             octx.touch(geocoords_flag_file)
         else:
             log.ODM_WARNING("Will skip exporting %s" % tree.opensfm_geocoords_reconstruction)
+        
+        self.update_progress(75)
+
+        # Stats are computed in the geographic CRS
+        if not args.skip_report:
+            octx.export_stats(self.rerun())
         
         self.update_progress(80)
 
