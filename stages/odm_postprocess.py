@@ -39,7 +39,7 @@ class ODMPostProcess(types.ODM_Stage):
                                 log.ODM_INFO("Wrote xml:GROUND_CONTROL_POINTS metadata to %s" % product)
                             else:
                                 skip_embed_gcp = True
-                                log.ODM_WARNING("Already embedded ground control point information.")
+                                log.ODM_WARNING("Already embedded ground control point information")
                                 break
                         else:
                             log.ODM_WARNING("Cannot open %s for writing, skipping GCP embedding" % product)
