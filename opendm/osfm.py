@@ -488,9 +488,11 @@ class OSFMContext:
 
             if triangulated is None:
                 continue
+
+            triangulated_topocentric = np.dot(A.T, triangulated) 
             
-            coordinates = np.array(gcp.coordinates.value)
-            coordinates = np.dot(A, coordinates) + b
+            coordinates_topocentric = np.array(gcp.coordinates.value)
+            coordinates = np.dot(A, coordinates_topocentric) + b
             triangulated = triangulated + b
         
             result.append({
@@ -498,7 +500,7 @@ class OSFMContext:
                 'observations': [obs.shot_id for obs in gcp.observations],
                 'triangulated': triangulated,
                 'coordinates': coordinates,
-                'error': np.abs(triangulated - coordinates)
+                'error': np.abs(triangulated_topocentric - coordinates_topocentric)
             })
 
         return result
