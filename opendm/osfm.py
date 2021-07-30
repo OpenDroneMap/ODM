@@ -457,8 +457,6 @@ class OSFMContext:
     def ground_control_points(self, proj4):
         """
         Load ground control point information.
-        Make sure this function is called *after* update_reference_lla()
-        has been called.
         """
         ds = DataSet(self.opensfm_project_path)
         gcps = ds.load_ground_control_points()

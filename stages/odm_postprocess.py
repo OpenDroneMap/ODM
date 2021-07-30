@@ -22,6 +22,8 @@ class ODMPostProcess(types.ODM_Stage):
 
             if reconstruction.has_gcp() and io.file_exists(gcp_gml_export_file):
                 skip_embed_gcp = False
+                gcp_xml = ""
+
                 with open(gcp_gml_export_file) as f:
                     gcp_xml = f.read()
 
