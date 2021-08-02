@@ -367,8 +367,9 @@ class ODMMergeStage(types.ODM_Stage):
             else:
                 log.ODM_WARNING("Found merged shots.geojson in %s" % tree.odm_report)
 
-            # Stop the pipeline short! We're done.
-            self.next_stage = None
+            # Stop the pipeline short by skipping to the postprocess stage.
+            # Afterwards, we're done.
+            self.next_stage = self.last_stage()
         else:
             log.ODM_INFO("Normal dataset, nothing to merge.")
             self.progress = 0.0
