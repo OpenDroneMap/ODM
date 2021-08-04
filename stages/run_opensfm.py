@@ -40,7 +40,7 @@ class ODMOpenSfMStage(types.ODM_Stage):
 
         def cleanup_disk_space():
             if args.optimize_disk_space:
-                for folder in ["features", "matches", "exif", "reports"]:
+                for folder in ["features", "matches", "reports"]:
                     folder_path = octx.path(folder)
                     if os.path.exists(folder_path):
                         if os.path.islink(folder_path):
