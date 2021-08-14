@@ -6,13 +6,7 @@ if sys.version_info.major < 3:
     print("Ups! ODM needs to run with Python 3. It seems you launched it with Python 2. Try using: python3 run.py ... ")
     sys.exit(1)
 
-# Set PROJ_LIB explicitly unless already set to fix Fiona imports
-# when multiple versions of the proj database are installed
 import os
-import pyproj
-if os.environ.get('PROJ_LIB') is None:
-    os.environ['PROJ_LIB'] = pyproj.datadir.get_data_dir()
-
 from opendm import log
 from opendm import config
 from opendm import system
