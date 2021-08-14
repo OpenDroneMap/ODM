@@ -359,6 +359,13 @@ class ODM_Stage:
         progressbc.send_update(self.previous_stages_progress() + 
                               (self.delta_progress() / 100.0) * float(progress))
 
+    def last_stage(self):
+        if self.next_stage:
+            return self.next_stage.last_stage()
+        else:
+            return self
+        
+
     def process(self, args, outputs):
         raise NotImplementedError
 

@@ -85,4 +85,8 @@ jobs:
       run: |
         echo "Docker image digest: ${{ steps.docker_build.outputs.digest }}"
         echo "WSL AMD64 rootfs URL: ${{ steps.upload-amd64-wsl-rootfs.browser_download_url }}"
-
+    # Trigger NodeODM build
+    - name: Dispatch NodeODM Build Event
+      id: nodeodm_dispatch
+      run: |
+        curl -X POST -u "${{secrets.PAT_USERNAME}}:${{secrets.PAT_TOKEN}}" -H "Accept: application/vnd.github.everest-preview+json" -H "Content-Type: application/json" https://api.github.com/repos/OpenDroneMap/NodeODM/actions/workflows/publish-docker.yaml/dispatches --data '{"ref": "master"}'

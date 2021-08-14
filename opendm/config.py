@@ -11,7 +11,7 @@ import sys
 # parse arguments
 processopts = ['dataset', 'split', 'merge', 'opensfm', 'openmvs', 'odm_filterpoints',
                'odm_meshing', 'mvs_texturing', 'odm_georeferencing',
-               'odm_dem', 'odm_orthophoto', 'odm_report']
+               'odm_dem', 'odm_orthophoto', 'odm_report', 'odm_postprocess']
 
 with open(os.path.join(context.root_path, 'VERSION')) as version_file:
     __version__ = version_file.read().strip()
@@ -95,7 +95,7 @@ def config(argv=None, parser=None):
     parser.add_argument('--end-with', '-e',
                         metavar='<string>',
                         action=StoreValue,
-                        default='odm_report',
+                        default='odm_postprocess',
                         choices=processopts,
                         help='End processing at this stage. Can be one of: %(choices)s. Default: %(default)s')
 
