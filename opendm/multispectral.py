@@ -14,7 +14,7 @@ from skimage.filters import rank, gaussian
 
 # Loosely based on https://github.com/micasense/imageprocessing/blob/master/micasense/utils.py
 
-def dn_to_radiance(photo, image):
+def dn_to_radiance(photo, args, image):
     """
     Convert Digital Number values to Radiance values
     :param photo ODM_Photo
@@ -35,8 +35,18 @@ def dn_to_radiance(photo, image):
     # All others
     a1, a2, a3 = photo.get_radiometric_calibration()
     dark_level = photo.get_dark_level()
+    if photo.band_name == "Blue":
+        dark_level += args.radiometric_offset_darklevel_blue
+    elif photo.band_name == "Green":
+        dark_level += args.radiometric_offset_darklevel_green
+    elif photo.band_name == "Red":
+        dark_level += args.radiometric_offset_darklevel_red
+    elif photo.band_name == "Rededge":
+        dark_level += args.radiometric_offset_darklevel_rededge
+    elif photo.band_name == "NIR":
+        dark_level += args.radiometric_offset_darklevel_nir
 
-    exposure_time = photo.exposure_time
+    exposure_time = photo.exposure_time + args.radiometric_offset_exposuretime
     gain = photo.get_gain()
     photometric_exp = photo.get_photometric_exposure()
 
@@ -53,34 +63,53 @@ def dn_to_radiance(photo, image):
 
     if dark_level is not None:
         image -= dark_level
+        log.ODM_DEBUG("Multi %s Dark=%f" % (photo.filename, dark_level))
+    else:
+        log.ODM_DEBUG("Multi %s Dark=None" % photo.filename)
 
     # Normalize DN to 0 - 1.0
     bit_depth_max = photo.get_bit_depth_max()
     if bit_depth_max:
         image /= bit_depth_max
+        log.ODM_DEBUG("Multi %s Normalize=%f" % (photo.filename, bit_depth_max))
+    else:
+        log.ODM_DEBUG("Multi %s Normalize=None" % photo.filename)
 
     if V is not None:
         # vignette correction
         V = np.repeat(V[:, :, np.newaxis], image.shape[2], axis=2)
         image *= V
+        log.ODM_DEBUG("Multi %s VignettCorr=ON" % photo.filename)
+    else:
+        log.ODM_DEBUG("Multi %s VignettCorr=None" % photo.filename)
 
     if exposure_time and a2 is not None and a3 is not None:
         # row gradient correction
         R = 1.0 / (1.0 + a2 * y / exposure_time - a3 * y)
         R = np.repeat(R[:, :, np.newaxis], image.shape[2], axis=2)
         image *= R
-    
+        log.ODM_DEBUG("Multi %s GradCorr=ON" % photo.filename)
+    else:
+        log.ODM_DEBUG("Multi %s GradCorr=None" % photo.filename)
+
     # Floor any negative radiances to zero (can happend due to noise around blackLevel)
     if dark_level is not None:
         image[image < 0] = 0
-    
+        log.ODM_DEBUG("Multi %s NegZero=ON" % photo.filename)
+    else:
+        log.ODM_DEBUG("Multi %s NegZero=None" % photo.filename)
+
     # apply the radiometric calibration - i.e. scale by the gain-exposure product and
     # multiply with the radiometric calibration coefficient
 
     if gain is not None and exposure_time is not None:
         image /= (gain * exposure_time)
-    
+        log.ODM_DEBUG("Multi %s Gain ExpT=%f %f" % (photo.filename, gain, exposure_time))
+    else:
+        log.ODM_DEBUG("Multi %s Gain ExpT=None" % photo.filename)
+
     image *= a1
+    log.ODM_DEBUG("Multi %s a1=%f" % (photo.filename, a1))
 
     return image
 
@@ -112,9 +141,34 @@ def vignette_map(photo):
     
     return None, None, None
 
-def dn_to_reflectance(photo, image, use_sun_sensor=True):
-    radiance = dn_to_radiance(photo, image)
+def dn_to_reflectance(photo, args, image, use_sun_sensor=True):
+    radiance = dn_to_radiance(photo, args, image)
+
+    if photo.camera_make == "Parrot" and photo.camera_model == "Sequoia":
+        if use_sun_sensor:
+            irrad = photo.get_sun_sensor()
+            if irrad is not None:
+                if photo.band_name == "Blue":
+                    fac = args.radiometric_factor_reflectance_blue
+                elif photo.band_name == "Green":
+                    fac = args.radiometric_factor_reflectance_green
+                elif photo.band_name == "Red":
+                    fac = args.radiometric_factor_reflectance_red
+                elif photo.band_name == "Rededge":
+                    fac = args.radiometric_factor_reflectance_rededge
+                elif photo.band_name == "NIR":
+                    fac = args.radiometric_factor_reflectance_nir
+                log.ODM_DEBUG("Multi %s camera+sun, irrad fac=%f %f" % (photo.filename, irrad, fac))
+                return radiance * fac / irrad
+            else:
+                log.ODM_ERROR("Sun sensor values are missing or less than three in %s" % photo.filename)
+                raise RuntimeError("Invalid camera images")
+        else:
+            log.ODM_DEBUG("Multi %s camera" % photo.filename)
+            return radiance
+
     irradiance = compute_irradiance(photo, use_sun_sensor=use_sun_sensor)
+    log.ODM_DEBUG("Multi %s irradiance=%f" % (photo.filename, irradiance))
     return radiance * math.pi / irradiance
 
 def compute_irradiance(photo, use_sun_sensor=True):
