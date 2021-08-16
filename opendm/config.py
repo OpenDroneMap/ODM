@@ -216,6 +216,83 @@ def config(argv=None, parser=None):
                 'Can be one of: %(choices)s. Default: '
                 '%(default)s'))
 
+    parser.add_argument('--radiometric-offset-exposuretime',
+            metavar='<positive float>',
+            action=StoreValue,
+            type=float,
+            default=0.000100,
+            help=('radiometric-offset-exposuretime'))
+
+    parser.add_argument('--radiometric-offset-darklevel-blue',
+            metavar='<float>',
+            action=StoreValue,
+            type=float,
+            default=0,
+            help=('radiometric-offset-darklevel-blue'))
+
+    parser.add_argument('--radiometric-offset-darklevel-green',
+            metavar='<float>',
+            action=StoreValue,
+            type=float,
+            default=0,
+            help=('radiometric-offset-darklevel-green'))
+
+    parser.add_argument('--radiometric-offset-darklevel-red',
+            metavar='<float>',
+            action=StoreValue,
+            type=float,
+            default=0,
+            help=('radiometric-offset-darklevel-red'))
+
+    parser.add_argument('--radiometric-offset-darklevel-rededge',
+            metavar='<float>',
+            action=StoreValue,
+            type=float,
+            default=0,
+            help=('radiometric-offset-darklevel-rededge'))
+
+    parser.add_argument('--radiometric-offset-darklevel-nir',
+            metavar='<float>',
+            action=StoreValue,
+            type=float,
+            default=0,
+            help=('radiometric-offset-darklevel-nir'))
+
+    parser.add_argument('--radiometric-factor-reflectance-blue',
+            metavar='<float>',
+            action=StoreValue,
+            type=float,
+            default=0.5,
+            help=('radiometric-factor-reflectance-blue'))
+
+    parser.add_argument('--radiometric-factor-reflectance-green',
+            metavar='<float>',
+            action=StoreValue,
+            type=float,
+            default=0.5,
+            help=('radiometric-factor-reflectance-green'))
+
+    parser.add_argument('--radiometric-factor-reflectance-red',
+            metavar='<float>',
+            action=StoreValue,
+            type=float,
+            default=0.5,
+            help=('radiometric-factor-reflectance-red'))
+
+    parser.add_argument('--radiometric-factor-reflectance-rededge',
+            metavar='<float>',
+            action=StoreValue,
+            type=float,
+            default=0.5,
+            help=('radiometric-factor-reflectance-rededge'))
+
+    parser.add_argument('--radiometric-factor-reflectance-nir',
+            metavar='<float>',
+            action=StoreValue,
+            type=float,
+            default=0.5,
+            help=('radiometric-factor-reflectance-nir'))
+
     parser.add_argument('--max-concurrency',
                         metavar='<positive integer>',
                         action=StoreValue,
