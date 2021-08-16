@@ -407,7 +407,7 @@ class ODM_Photo:
 
     def get_radiometric_calibration(self):
         if self.camera_make == "Parrot" and self.camera_model == "Sequoia":
-            if self.sensor_model is None        # Exif SensorModel is missing
+            if self.sensor_model is None:       # Exif SensorModel is missing
                 return [None, None, None]
             else:
                 sensor_pm = np.array([float(v) for v in self.sensor_model.split(",")])
@@ -424,7 +424,7 @@ class ODM_Photo:
     
     def get_dark_level(self):
         if self.camera_make == "Parrot" and self.camera_model == "Sequoia":
-            if self.sensor_model is None        # Exif SensorModel is missing
+            if self.sensor_model is None:       # Exif SensorModel is missing
                 return None
             else:
                 sensor_pm = np.array([float(v) for v in self.sensor_model.split(",")])
@@ -476,7 +476,7 @@ class ODM_Photo:
     
     def get_sun_sensor(self):
         if self.camera_make == "Parrot" and self.camera_model == "Sequoia":
-            if self.irrad_cal is None        # Exif IrradianceCalibrationMeasurement is missing
+            if self.irrad_cal is None:      # Exif IrradianceCalibrationMeasurement is missing
                 return None
             else:
                 irrad_cal_pm = np.array([float(v) for v in self.irrad_cal.split(",")])
