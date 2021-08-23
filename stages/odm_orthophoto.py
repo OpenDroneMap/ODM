@@ -13,6 +13,7 @@ from opendm.utils import double_quote
 from opendm import pseudogeo
 from opendm.multispectral import get_primary_band_name
 
+
 class ODMOrthoPhotoStage(types.ODM_Stage):
     def process(self, args, outputs):
         tree = outputs['tree']
@@ -23,18 +24,11 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
         system.mkdir_p(tree.odm_orthophoto)
 
         if not io.file_exists(tree.odm_orthophoto_tif) or self.rerun():
-            gsd_error_estimate = 0.1
-            ignore_resolution = False
-            if not reconstruction.is_georeferenced():
-                # Match DEMs
-                gsd_error_estimate = -3
-                ignore_resolution = True
 
             resolution = 1.0 / (gsd.cap_resolution(args.orthophoto_resolution, tree.opensfm_reconstruction,
-                                                    gsd_error_estimate=gsd_error_estimate, 
-                                                    ignore_gsd=args.ignore_gsd,
-                                                    ignore_resolution=ignore_resolution,
-                                                    has_gcp=reconstruction.has_gcp()) / 100.0)
+                                                   ignore_gsd=args.ignore_gsd,
+                                                   ignore_resolution=not reconstruction.is_georeferenced(),
+                                                   has_gcp=reconstruction.has_gcp()) / 100.0)
 
             # odm_orthophoto definitions
             kwargs = {
