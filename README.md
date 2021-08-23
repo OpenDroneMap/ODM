@@ -264,7 +264,13 @@ If you have questions, join the developer's chat at https://community.opendronem
 2. Submit a pull request with detailed changes and test results
 3. Have fun!
 
-### Credits
+### Troubleshooting
+The dev environment makes use of `opendronemap/nodeodm` by default. You may want to run 
+`docker pull opendronemap/nodeodm` before running `./start-dev-env.sh` to avoid using an old cached version.
+
+In order to make a clean build, remove `~/.odm-dev-home` and `ODM/.setupdevenv`.
+
+## Credits
 
 ODM makes use of [several libraries](https://github.com/OpenDroneMap/ODM/blob/master/snap/snapcraft.yaml#L36) and other awesome open source projects to perform its tasks. Among them we'd like to highlight:
 
@@ -278,6 +284,6 @@ ODM makes use of [several libraries](https://github.com/OpenDroneMap/ODM/blob/ma
  - [PoissonRecon](https://github.com/mkazhdan/PoissonRecon)
 
 
-### Citation
+## Citation
 
 > *OpenDroneMap Authors* ODM - A command line toolkit to generate maps, point clouds, 3D models and DEMs from drone, balloon or kite images. **OpenDroneMap/ODM GitHub Page** 2020; [https://github.com/OpenDroneMap/ODM](https://github.com/OpenDroneMap/ODM)
