@@ -13,6 +13,7 @@ from opendm import pseudogeo
 from opendm.tiles.tiler import generate_dem_tiles
 from opendm.cogeo import convert_to_cogeo
 
+
 class ODMDEMStage(types.ODM_Stage):
     def process(self, args, outputs):
         tree = outputs['tree']
@@ -28,11 +29,15 @@ class ODMDEMStage(types.ODM_Stage):
             ignore_resolution = True
             pseudo_georeference = True
 
+        # It is probably not reasonable to have accurate DEMs a the same resolution as the source photos, so reduce it
+        # by a factor!
+        gsd_scaling = 2.0
+
         resolution = gsd.cap_resolution(args.dem_resolution, tree.opensfm_reconstruction, 
-                        gsd_error_estimate=-1, 
-                        ignore_gsd=args.ignore_gsd,
-                        ignore_resolution=ignore_resolution,
-                        has_gcp=reconstruction.has_gcp())
+                                        gsd_scaling=gsd_scaling,
+                                        ignore_gsd=args.ignore_gsd,
+                                        ignore_resolution=ignore_resolution,
+                                        has_gcp=reconstruction.has_gcp())
 
         log.ODM_INFO('Classify: ' + str(args.pc_classify))
         log.ODM_INFO('Create DSM: ' + str(args.dsm))
