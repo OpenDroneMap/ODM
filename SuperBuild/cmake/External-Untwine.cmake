@@ -8,8 +8,8 @@ ExternalProject_Add(${_proj_name}
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
-  GIT_REPOSITORY    https://github.com/pierotofy/untwine/
-  GIT_TAG           insttgt
+  GIT_REPOSITORY    https://github.com/hobu/untwine/
+  GIT_TAG           20243113fc7e9a3056f4ec727cc1f69202669156
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   #--Configure step-------------

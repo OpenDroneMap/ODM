@@ -201,6 +201,7 @@ class ODM_Photo:
                         '@Camera:RigCameraIndex', # Parrot Sequoia, Sentera 21244-00_3.2MP-GS-0001
                         'Camera:RigCameraIndex', # MicaSense Altum
                     ])
+
                     self.set_attr_from_xmp_tag('radiometric_calibration', tags, [
                         'MicaSense:RadiometricCalibration',
                     ])
@@ -233,7 +234,8 @@ class ODM_Photo:
                     ], float)
 
                     self.set_attr_from_xmp_tag('capture_uuid', tags, [
-                        '@drone-dji:CaptureUUID'
+                        '@drone-dji:CaptureUUID', # DJI
+                        '@Camera:ImageUniqueID', # sentera 6x
                     ])
 
                     # Phantom 4 RTK
@@ -425,7 +427,7 @@ class ODM_Photo:
 
     def get_photometric_exposure(self):
         # H ~= (exposure_time) / (f_number^2)
-        if self.fnumber is not None and self.exposure_time > 0:
+        if self.fnumber is not None and self.exposure_time is not None and self.exposure_time > 0 and self.fnumber > 0:
             return self.exposure_time / (self.fnumber * self.fnumber)
 
     def get_horizontal_irradiance(self):

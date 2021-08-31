@@ -9,6 +9,10 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
+    - name: Set Swap Space
+      uses: pierotofy/set-swap-space@master
+      with:
+        swap-size-gb: 12
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v1
     - name: Set up Docker Buildx
@@ -29,14 +33,38 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
+    - name: Set Swap Space
+      uses: pierotofy/set-swap-space@master
+      with:
+        swap-size-gb: 12
     - name: Build
       id: build
       uses: diddlesnaps/snapcraft-multiarch-action@v1
       with:
-        snapcraft-args: --enable-experimental-package-repositories
         architecture: ${{ matrix.architecture }}
     - name: Review
       uses: diddlesnaps/snapcraft-review-tools-action@v1
       with:
         snap: ${{ steps.build.outputs.snap }}
         isClassic: 'false'
+
+  windows:
+    runs-on: windows-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.8.1'
+        architecture: 'x64'
+    - name: Setup Visual C++
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
+    - name: Install venv
+      run: |
+        python -m pip install virtualenv
+    - name: Build sources
+      run: |
+        python configure.py build

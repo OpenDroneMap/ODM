@@ -1,6 +1,8 @@
+import os, shutil
 from opendm import log
 from opendm.photo import find_largest_photo_dim
 from osgeo import gdal
+from opendm.loghelpers import double_quote
 
 def get_depthmap_resolution(args, photos):
     if 'depthmap_resolution_is_set' in args:
@@ -40,3 +42,44 @@ def get_raster_stats(geotiff):
         })
             
     return stats
+
+def get_processing_results_paths():
+    return [
+        "odm_georeferencing",
+        "odm_orthophoto",
+        "odm_dem",
+        "odm_report",
+        "odm_texturing",
+        "entwine_pointcloud",
+        "dsm_tiles",
+        "dtm_tiles",
+        "orthophoto_tiles",
+        "images.json",
+        "cameras.json",
+        "log.json",
+    ]
+
+def copy_paths(paths, destination, rerun):
+    if not os.path.isdir(destination):
+        os.makedirs(destination)
+
+    for p in paths:
+        basename = os.path.basename(p)
+        dst_path = os.path.join(destination, basename)
+
+        if rerun:
+            try:
+                if os.path.isfile(dst_path) or os.path.islink(dst_path):
+                    os.remove(dst_path)
+                elif os.path.isdir(dst_path):
+                    shutil.rmtree(dst_path)
+            except Exception as e:
+                log.ODM_WARNING("Cannot remove file %s: %s, skipping..." % (dst_path, str(e)))
+
+        if not os.path.exists(dst_path):
+            if os.path.isfile(p):
+                log.ODM_INFO("Copying %s --> %s" % (p, dst_path))
+                shutil.copy(p, dst_path)
+            elif os.path.isdir(p):
+                shutil.copytree(p, dst_path)
+                log.ODM_INFO("Copying %s --> %s" % (p, dst_path))

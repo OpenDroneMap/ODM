@@ -4,11 +4,15 @@ OpenSfM related utils
 
 import os, shutil, sys, json, argparse
 import yaml
+import numpy as np
+import pyproj
+from pyproj import CRS
 from opendm import io
 from opendm import log
 from opendm import system
 from opendm import context
 from opendm import camera
+from opendm import location
 from opendm.utils import get_depthmap_resolution
 from opendm.photo import find_largest_photo_dim
 from opensfm.large import metadataset
@@ -18,14 +22,17 @@ from opensfm.dataset import DataSet
 from opensfm import report
 from opendm.multispectral import get_photos_by_band
 from opendm.gpu import has_gpus
+from opensfm import multiview
+from opensfm.actions.export_geocoords import _get_transformation
 
 class OSFMContext:
     def __init__(self, opensfm_project_path):
         self.opensfm_project_path = opensfm_project_path
     
     def run(self, command):
-        system.run('%s/bin/opensfm %s "%s"' %
-                    (context.opensfm_path, command, self.opensfm_project_path))
+        osfm_bin = os.path.join(context.opensfm_path, 'bin', 'opensfm')
+        system.run('%s %s "%s"' %
+                    (osfm_bin, command, self.opensfm_project_path))
 
     def is_reconstruction_done(self):
         tracks_file = os.path.join(self.opensfm_project_path, 'tracks.csv')
@@ -49,13 +56,12 @@ class OSFMContext:
 
         # Check that a reconstruction file has been created
         if not self.reconstructed():
-            log.ODM_ERROR("The program could not process this dataset using the current settings. "
+            raise system.ExitException("The program could not process this dataset using the current settings. "
                             "Check that the images have enough overlap, "
                             "that there are enough recognizable features "
                             "and that the images are in focus. "
                             "You could also try to increase the --min-num-features parameter."
                             "The program will now exit.")
-            exit(1)
 
 
     def setup(self, args, images_path, reconstruction, append_config = [], rerun=False):
@@ -193,6 +199,7 @@ class OSFMContext:
                 "optimize_camera_parameters: %s" % ('no' if args.use_fixed_camera_params or args.cameras else 'yes'),
                 "undistorted_image_format: tif",
                 "bundle_outlier_filtering_type: AUTO",
+                "sift_peak_threshold: 0.066",
                 "align_orientation_prior: vertical",
                 "triangulation_type: ROBUST",
                 "retriangulation_ratio: 2",
@@ -254,6 +261,10 @@ class OSFMContext:
             config_filename = self.get_config_file_path()
             with open(config_filename, 'w') as fout:
                 fout.write("\n".join(config))
+            
+            # We impose our own reference_lla
+            if reconstruction.is_georeferenced():
+                self.write_reference_lla(reconstruction.georef.utm_east_offset, reconstruction.georef.utm_north_offset, reconstruction.georef.proj4())
         else:
             log.ODM_WARNING("%s already exists, not rerunning OpenSfM setup" % list_path)
 
@@ -348,7 +359,7 @@ class OSFMContext:
             # (containing only the primary band)
             if os.path.exists(self.recon_file()):
                 os.remove(self.recon_file())
-            os.rename(self.recon_backup_file(), self.recon_file())
+            os.replace(self.recon_backup_file(), self.recon_file())
             log.ODM_INFO("Restored reconstruction.json")
 
     def backup_reconstruction(self):
@@ -427,6 +438,71 @@ class OSFMContext:
                 log.ODM_WARNING("Report could not be generated")
         else:
             log.ODM_WARNING("Report %s already exported" % report_path)
+    
+    def write_reference_lla(self, offset_x, offset_y, proj4):
+        reference_lla = self.path("reference_lla.json")
+
+        longlat = CRS.from_epsg("4326")
+        lon, lat = location.transform2(CRS.from_proj4(proj4), longlat, offset_x, offset_y)
+
+        with open(reference_lla, 'w') as f:
+            f.write(json.dumps({
+                'latitude': lat,
+                'longitude': lon,
+                'altitude': 0.0
+            }, indent=4))
+        
+        log.ODM_INFO("Wrote reference_lla.json")
+
+    def ground_control_points(self, proj4):
+        """
+        Load ground control point information.
+        """
+        ds = DataSet(self.opensfm_project_path)
+        gcps = ds.load_ground_control_points()
+        if not gcps:
+            return []
+        
+        reconstructions = ds.load_reconstruction()
+        reference = ds.load_reference()
+
+        projection = pyproj.Proj(proj4)
+        t = _get_transformation(reference, projection, (0, 0))
+        A, b = t[:3, :3], t[:3, 3]
+
+        result = []
+
+        for gcp in gcps:
+            if not gcp.coordinates.has_value:
+                continue
+            triangulated = None
+
+            for rec in reconstructions:
+                triangulated = multiview.triangulate_gcp(gcp, rec.shots, 1.0, 0.1)
+                if triangulated is None:
+                    continue
+                else:
+                    break
+
+            if triangulated is None:
+                continue
+
+            triangulated_topocentric = np.dot(A.T, triangulated) 
+            
+            coordinates_topocentric = np.array(gcp.coordinates.value)
+            coordinates = np.dot(A, coordinates_topocentric) + b
+            triangulated = triangulated + b
+        
+            result.append({
+                'id': gcp.id,
+                'observations': [obs.shot_id for obs in gcp.observations],
+                'triangulated': triangulated,
+                'coordinates': coordinates,
+                'error': np.abs(triangulated_topocentric - coordinates_topocentric)
+            })
+
+        return result
+    
 
     def name(self):
         return os.path.basename(os.path.abspath(self.path("..")))
@@ -450,11 +526,20 @@ def get_submodel_argv(args, submodels_path = None, submodel_name = None):
         reading the contents of --cameras
     """
     assure_always = ['orthophoto_cutline', 'dem_euclidean_map', 'skip_3dmodel', 'skip_report']
-    remove_always = ['split', 'split_overlap', 'rerun_from', 'rerun', 'gcp', 'end_with', 'sm_cluster', 'rerun_all', 'pc_csv', 'pc_las', 'pc_ept', 'tiles']
+    remove_always = ['split', 'split_overlap', 'rerun_from', 'rerun', 'gcp', 'end_with', 'sm_cluster', 'rerun_all', 'pc_csv', 'pc_las', 'pc_ept', 'tiles', 'copy-to', 'cog']
     read_json_always = ['cameras']
 
     argv = sys.argv
-    result = [argv[0]] # Startup script (/path/to/run.py)
+
+    # Startup script (/path/to/run.py)
+    startup_script = argv[0]
+
+    # On Windows, make sure we always invoke the "run.bat" file
+    if sys.platform == 'win32':
+        startup_script_dir = os.path.dirname(startup_script)
+        startup_script = os.path.join(startup_script_dir, "run")
+
+    result = [startup_script] 
 
     args_dict = vars(args).copy()
     set_keys = [k[:-len("_is_set")] for k in args_dict.keys() if k.endswith("_is_set")]

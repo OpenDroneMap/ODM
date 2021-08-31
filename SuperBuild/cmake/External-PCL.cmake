@@ -42,6 +42,8 @@ ExternalProject_Add(${_proj_name}
     -DCMAKE_BUILD_TYPE=Release
     -DPCL_VERBOSITY_LEVEL=Error
     -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
+    -DPCL_BUILD_WITH_FLANN_DYNAMIC_LINKING_WIN32=ON
+    ${WIN32_CMAKE_ARGS}
   #--Build step-----------------
   BINARY_DIR        ${_SB_BINARY_DIR}
   #--Install step---------------

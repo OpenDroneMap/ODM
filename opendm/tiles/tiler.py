@@ -1,11 +1,12 @@
 import os
+import sys
 from opendm import log
 from opendm import system
 from opendm import io
 
 def generate_tiles(geotiff, output_dir, max_concurrency):
     gdal2tiles = os.path.join(os.path.dirname(__file__), "gdal2tiles.py")
-    system.run('python3 "%s" --processes %s -z 5-21 -n -w none "%s" "%s"' % (gdal2tiles, max_concurrency, geotiff, output_dir))
+    system.run('%s "%s" --processes %s -z 5-21 -n -w none "%s" "%s"' % (sys.executable, gdal2tiles, max_concurrency, geotiff, output_dir))
 
 def generate_orthophoto_tiles(geotiff, output_dir, max_concurrency):
     try:
@@ -29,7 +30,7 @@ def generate_colored_hillshade(geotiff):
 
         system.run('gdaldem color-relief "%s" "%s" "%s" -alpha -co ALPHA=YES' % (geotiff, relief_file, colored_dem))
         system.run('gdaldem hillshade "%s" "%s" -z 1.0 -s 1.0 -az 315.0 -alt 45.0' % (geotiff, hillshade_dem))
-        system.run('python3 "%s" "%s" "%s" "%s"' % (hsv_merge_script, colored_dem, hillshade_dem, colored_hillshade_dem))
+        system.run('%s "%s" "%s" "%s" "%s"' % (sys.executable, hsv_merge_script, colored_dem, hillshade_dem, colored_hillshade_dem))
         
         return outputs
     except Exception as e:

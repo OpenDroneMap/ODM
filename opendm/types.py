@@ -314,8 +314,10 @@ class ODM_Stage:
     
     def run(self, outputs = {}):
         start_time = system.now_raw()
-        log.ODM_INFO('Running %s stage' % self.name)
+        log.logger.log_json_stage_run(self.name, start_time)
 
+        log.ODM_INFO('Running %s stage' % self.name)
+        
         self.process(self.args, outputs)
 
         # The tree variable should always be populated at this point
@@ -356,6 +358,13 @@ class ODM_Stage:
         progress = max(0.0, min(100.0, progress))
         progressbc.send_update(self.previous_stages_progress() + 
                               (self.delta_progress() / 100.0) * float(progress))
+
+    def last_stage(self):
+        if self.next_stage:
+            return self.next_stage.last_stage()
+        else:
+            return self
+        
 
     def process(self, args, outputs):
         raise NotImplementedError

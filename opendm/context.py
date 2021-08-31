@@ -13,19 +13,16 @@ superbuild_bin_path = os.path.join(superbuild_path, 'install', 'bin')
 python_packages_paths = [os.path.join(superbuild_path, p) for p in [
     'install/lib/python3.8/dist-packages',
     'install/lib/python3/dist-packages',
-    'src/opensfm'
+    'install/bin/opensfm'
 ]]
 for p in python_packages_paths:
     sys.path.append(p)
 
 
 # define opensfm path
-opensfm_path = os.path.join(superbuild_path, "src/opensfm")
+opensfm_path = os.path.join(superbuild_bin_path, "opensfm")
 
-# define orb_slam2 path
-orb_slam2_path = os.path.join(superbuild_path, "src/orb_slam2")
-
-poisson_recon_path = os.path.join(superbuild_path, 'src', 'PoissonRecon', 'Bin', 'Linux', 'PoissonRecon')
+poisson_recon_path = os.path.join(superbuild_bin_path, 'PoissonRecon')
 dem2mesh_path = os.path.join(superbuild_bin_path, 'dem2mesh')
 dem2points_path = os.path.join(superbuild_bin_path, 'dem2points')
 
@@ -35,14 +32,6 @@ mvstex_path = os.path.join(superbuild_bin_path, "texrecon")
 # openmvs paths
 omvs_densify_path = os.path.join(superbuild_bin_path, "OpenMVS", "DensifyPointCloud")
 omvs_reconstructmesh_path = os.path.join(superbuild_bin_path, "OpenMVS", "ReconstructMesh")
-
-# define txt2las path
-txt2las_path = os.path.join(superbuild_path, 'src/las-tools/bin')
-pdal_path = os.path.join(superbuild_path, 'build/pdal/bin')
-
-# define odm modules path
-odm_modules_path = os.path.join(root_path, "build/bin")
-odm_modules_src_path = os.path.join(root_path, "modules")
 
 odm_orthophoto_path = os.path.join(superbuild_bin_path, "odm_orthophoto")
 settings_path = os.path.join(root_path, 'settings.yaml')

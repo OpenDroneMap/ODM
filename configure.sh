@@ -97,8 +97,8 @@ installruntimedepsonly() {
     installdepsfromsnapcraft runtime openmvs
     
 }
-    
-install() {
+
+installreqs() {
     cd /code
     
     ## Set up library paths
@@ -123,6 +123,10 @@ install() {
     if [ ! -z "$GPU_INSTALL" ]; then
         pip install --ignore-installed -r requirements.gpu.txt
     fi
+}
+    
+install() {
+    installreqs
 
     if [ ! -z "$PORTABLE_INSTALL" ]; then
         echo "Replacing g++ and gcc with our scripts for portability..."
@@ -166,29 +170,9 @@ reinstall() {
 
 clean() {
     rm -rf \
-        ${RUNPATH}/SuperBuild/build/opencv \
+        ${RUNPATH}/SuperBuild/build \
         ${RUNPATH}/SuperBuild/download \
-        ${RUNPATH}/SuperBuild/src/ceres \
-        ${RUNPATH}/SuperBuild/src/untwine \
-        ${RUNPATH}/SuperBuild/src/entwine \
-        ${RUNPATH}/SuperBuild/src/gflags \
-        ${RUNPATH}/SuperBuild/src/hexer \
-        ${RUNPATH}/SuperBuild/src/lastools \
-        ${RUNPATH}/SuperBuild/src/laszip \
-        ${RUNPATH}/SuperBuild/src/mvstexturing \
-        ${RUNPATH}/SuperBuild/src/opencv \
-        ${RUNPATH}/SuperBuild/src/opengv \
-        ${RUNPATH}/SuperBuild/src/pcl \
-        ${RUNPATH}/SuperBuild/src/pdal \
-        ${RUNPATH}/SuperBuild/src/dem2mesh \
-        ${RUNPATH}/SuperBuild/build/dem2mesh \
-        ${RUNPATH}/SuperBuild/src/dem2points \
-        ${RUNPATH}/SuperBuild/build/dem2points \
-        ${RUNPATH}/SuperBuild/src/openmvs \
-        ${RUNPATH}/SuperBuild/build/openmvs \
-        ${RUNPATH}/SuperBuild/src/odm_orthophoto \
-        ${RUNPATH}/SuperBuild/build/odm_orthophoto \
-        ${RUNPATH}/SuperBuild/src/vcg
+        ${RUNPATH}/SuperBuild/src
 
     # find in /code and delete static libraries and intermediate object files
     find ${RUNPATH} -type f -name "*.a" -delete -or -type f -name "*.o" -delete
@@ -196,7 +180,7 @@ clean() {
 
 usage() {
     echo "Usage:"
-    echo "bash configure.sh <install|update|uninstall|help> [nproc]"
+    echo "bash configure.sh <install|update|uninstall|installreqs|help> [nproc]"
     echo "Subcommands:"
     echo "  install"
     echo "    Installs all dependencies and modules for running OpenDroneMap"
@@ -206,6 +190,8 @@ usage() {
     echo "    Removes SuperBuild and build modules, then re-installs them. Note this does not update OpenDroneMap to the latest version. "
     echo "  uninstall"
     echo "    Removes SuperBuild and build modules. Does not uninstall dependencies"
+    echo "  installreqs"
+    echo "    Only installs the requirements (does not build SuperBuild)"
     echo "  clean"
     echo "    Cleans the SuperBuild directory by removing temporary files. "
     echo "  help"
@@ -213,7 +199,7 @@ usage() {
     echo "[nproc] is an optional argument that can set the number of processes for the make -j tag. By default it uses $(nproc)"
 }
 
-if [[ $1 =~ ^(install|installruntimedepsonly|reinstall|uninstall|clean)$ ]]; then
+if [[ $1 =~ ^(install|installruntimedepsonly|reinstall|uninstall|installreqs|clean)$ ]]; then
     RUNPATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
     "$1"
 else

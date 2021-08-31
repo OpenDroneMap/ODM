@@ -11,18 +11,11 @@ import sys
 # parse arguments
 processopts = ['dataset', 'split', 'merge', 'opensfm', 'openmvs', 'odm_filterpoints',
                'odm_meshing', 'mvs_texturing', 'odm_georeferencing',
-               'odm_dem', 'odm_orthophoto', 'odm_report']
+               'odm_dem', 'odm_orthophoto', 'odm_report', 'odm_postprocess']
 
 with open(os.path.join(context.root_path, 'VERSION')) as version_file:
     __version__ = version_file.read().strip()
 
-
-def alphanumeric_string(string):
-    import re
-    if re.match('^[a-zA-Z0-9_-]+$', string) is None:
-        msg = '{0} is not a valid name. Must use alphanumeric characters.'.format(string)
-        raise argparse.ArgumentTypeError(msg)
-    return string
 
 def path_or_json_string(string):
     try:
@@ -68,9 +61,14 @@ def config(argv=None, parser=None):
     if args is not None and argv is None:
         return args
 
+    if sys.platform == 'win32':
+        usage_bin = 'run'
+    else:
+        usage_bin = 'run.sh'
+
     if parser is None:
-        parser = SettingsParser(description='ODM',
-                            usage='%(prog)s [options] <project name>',
+        parser = SettingsParser(description='ODM is a command line toolkit to generate maps, point clouds, 3D models and DEMs from drone, balloon or kite images.',
+                            usage='%s [options] <dataset name>' % usage_bin,
                             yaml_file=open(context.settings_path))
     
     parser.add_argument('--project-path',
@@ -78,9 +76,9 @@ def config(argv=None, parser=None):
                         action=StoreValue,
                         help='Path to the project folder. Your project folder should contain subfolders for each dataset. Each dataset should have an "images" folder.')
     parser.add_argument('name',
-                        metavar='<project name>',
+                        metavar='<dataset name>',
                         action=StoreValue,
-                        type=alphanumeric_string,
+                        type=str,
                         default='code',
                         nargs='?',
                         help='Name of dataset (i.e subfolder name within project folder). Default: %(default)s')
@@ -97,7 +95,7 @@ def config(argv=None, parser=None):
     parser.add_argument('--end-with', '-e',
                         metavar='<string>',
                         action=StoreValue,
-                        default='odm_report',
+                        default='odm_postprocess',
                         choices=processopts,
                         help='End processing at this stage. Can be one of: %(choices)s. Default: %(default)s')
 
@@ -279,7 +277,7 @@ def config(argv=None, parser=None):
                               'Default: %(default)s'))
 
     parser.add_argument('--mesh-octree-depth',
-                        metavar='<positive integer>',
+                        metavar='<integer: 1 <= x <= 14>',
                         action=StoreValue,
                         default=11,
                         type=int,
@@ -363,6 +361,13 @@ def config(argv=None, parser=None):
                         default=False,
                         help='Reduce the memory usage needed for depthmap fusion by splitting large scenes into tiles. Turn this on if your machine doesn\'t have much RAM and/or you\'ve set --pc-quality to high or ultra. Experimental. '
                              'Default: %(default)s')
+
+    parser.add_argument('--pc-geometric',
+                        action=StoreTrue,
+                        nargs=0,
+                        default=False,
+                        help='Improve the accuracy of the point cloud by computing geometrically consistent depthmaps. This increases processing time, but can improve results in urban scenes. '
+                             'Default: %(default)s')    
 
     parser.add_argument('--smrf-scalar',
                         metavar='<positive float>',
@@ -583,12 +588,24 @@ def config(argv=None, parser=None):
                         default=False,
                         help='Build orthophoto overviews for faster display in programs such as QGIS. Default: %(default)s')
 
+    parser.add_argument('--cog',
+                        action=StoreTrue,
+                        nargs=0,
+                        default=False,
+                        help='Create Cloud-Optimized GeoTIFFs instead of normal GeoTIFFs. Default: %(default)s')
+
+
     parser.add_argument('--verbose', '-v',
                         action=StoreTrue,
                         nargs=0,
                         default=False,
                         help='Print additional messages to the console. '
                              'Default: %(default)s')
+    
+    parser.add_argument('--copy-to',
+                        metavar='<path>',
+                        action=StoreValue,
+                        help='Copy output results to this folder after processing.')
 
     parser.add_argument('--time',
                         action=StoreTrue,

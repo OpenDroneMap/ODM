@@ -105,7 +105,7 @@ class ODMMvsTexStage(types.ODM_Stage):
                     shutil.rmtree(mvs_tmp_dir)
 
                 # run texturing binary
-                system.run('{bin} {nvm_file} {model} {out_dir} '
+                system.run('"{bin}" "{nvm_file}" "{model}" "{out_dir}" '
                         '-d {dataTerm} -o {outlierRemovalType} '
                         '-t {toneMapping} '
                         '{intermediate} '

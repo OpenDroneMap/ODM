@@ -6,7 +6,7 @@ from opendm.system import run
 from opendm import entwine
 from opendm import io
 from opendm.concurrency import parallel_map
-from pipes import quote
+from opendm.utils import double_quote
 
 def ply_info(input_ply):
     if not os.path.exists(input_ply):
@@ -60,7 +60,7 @@ def split(input_point_cloud, outdir, filename_template, capacity, dims=None):
     
     if filename_template.endswith(".ply"):
         cmd += ("--writers.ply.sized_types=false "
-                "--writers.ply.storage_mode='little endian' ")
+                "--writers.ply.storage_mode=\"little endian\" ")
     if dims is not None:
         cmd += '--writers.ply.dims="%s"' % dims
     system.run(cmd)
@@ -151,7 +151,7 @@ def filter(input_point_cloud, output_point_cloud, standard_deviation=2.5, meank=
                 "-o \"{outputFile}\" "
                 "{stages} "
                 "--writers.ply.sized_types=false "
-                "--writers.ply.storage_mode='little endian' "
+                "--writers.ply.storage_mode=\"little endian\" "
                 "--writers.ply.dims=\"{dims}\" "
                 "").format(**filterArgs)
 
@@ -159,13 +159,13 @@ def filter(input_point_cloud, output_point_cloud, standard_deviation=2.5, meank=
             cmd += "--filters.sample.radius={} ".format(sample_radius)
         
         if 'outlier' in filters:
-            cmd += ("--filters.outlier.method='statistical' "
+            cmd += ("--filters.outlier.method=\"statistical\" "
                 "--filters.outlier.mean_k={} "
                 "--filters.outlier.multiplier={} ").format(meank, standard_deviation)  
         
         if 'range' in filters:
             # Remove outliers
-            cmd += "--filters.range.limits='Classification![7:7]' "
+            cmd += "--filters.range.limits=\"Classification![7:7]\" "
 
         system.run(cmd)
 
@@ -189,14 +189,14 @@ def get_extent(input_point_cloud):
     # We know PLY files do not have --summary support
     if input_point_cloud.lower().endswith(".ply"):
         fallback = True
-        run('pdal info {0} > {1}'.format(input_point_cloud, json_file))
+        run('pdal info "{0}" > "{1}"'.format(input_point_cloud, json_file))
 
     try:
         if not fallback:
-            run('pdal info --summary {0} > {1}'.format(input_point_cloud, json_file))
+            run('pdal info --summary "{0}" > "{1}"'.format(input_point_cloud, json_file))
     except:
         fallback = True
-        run('pdal info {0} > {1}'.format(input_point_cloud, json_file))
+        run('pdal info "{0}" > "{1}"'.format(input_point_cloud, json_file))
 
     bounds = {}
     with open(json_file, 'r') as f:
@@ -240,7 +240,7 @@ def merge(input_point_cloud_files, output_file, rerun=False):
         os.remove(output_file)
 
     kwargs = {
-        'all_inputs': " ".join(map(quote, input_point_cloud_files)),
+        'all_inputs': " ".join(map(double_quote, input_point_cloud_files)),
         'output': output_file
     }
 
@@ -312,7 +312,7 @@ def merge_ply(input_point_cloud_files, output_file, dims=None):
         '--writers.ply.sized_types=false',
         '--writers.ply.storage_mode="little endian"',
         ('--writers.ply.dims="%s"' % dims) if dims is not None else '',
-        ' '.join(map(quote, input_point_cloud_files + [output_file])),
+        ' '.join(map(double_quote, input_point_cloud_files + [output_file])),
     ]
 
     system.run(' '.join(cmd))

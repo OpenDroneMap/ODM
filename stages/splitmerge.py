@@ -17,8 +17,9 @@ from opendm.concurrency import get_max_memory
 from opendm.remote import LocalRemoteExecutor
 from opendm.shots import merge_geojson_shots
 from opendm import point_cloud
-from pipes import quote
+from opendm.utils import double_quote
 from opendm.tiles.tiler import generate_dem_tiles
+from opendm.cogeo import convert_to_cogeo
 
 class ODMSplitStage(types.ODM_Stage):
     def process(self, args, outputs):
@@ -43,9 +44,9 @@ class ODMSplitStage(types.ODM_Stage):
 
                 log.ODM_INFO("Large dataset detected (%s photos) and split set at %s. Preparing split merge." % (len(photos), args.split))
                 config = [
-                    "submodels_relpath: ../submodels/opensfm",
-                    "submodel_relpath_template: ../submodels/submodel_%04d/opensfm",
-                    "submodel_images_relpath_template: ../submodels/submodel_%04d/images",
+                    "submodels_relpath: " + os.path.join("..", "submodels", "opensfm"),
+                    "submodel_relpath_template: " + os.path.join("..", "submodels", "submodel_%04d", "opensfm"),
+                    "submodel_images_relpath_template: " + os.path.join("..", "submodels", "submodel_%04d", "images"),
                     "submodel_size: %s" % args.split,
                     "submodel_overlap: %s" % args.split_overlap,
                 ]
@@ -219,7 +220,7 @@ class ODMSplitStage(types.ODM_Stage):
                         argv = get_submodel_argv(args, tree.submodels_path, sp_octx.name())
 
                         # Re-run the ODM toolchain on the submodel
-                        system.run(" ".join(map(quote, map(str, argv))), env_vars=os.environ.copy())
+                        system.run(" ".join(map(double_quote, map(str, argv))), env_vars=os.environ.copy())
                 else:
                     lre.set_projects([os.path.abspath(os.path.join(p, "..")) for p in submodel_paths])
                     lre.run_toolchain()
@@ -242,8 +243,8 @@ class ODMMergeStage(types.ODM_Stage):
 
         if outputs['large']:
             if not os.path.exists(tree.submodels_path):
-                log.ODM_ERROR("We reached the merge stage, but %s folder does not exist. Something must have gone wrong at an earlier stage. Check the log and fix possible problem before restarting?" % tree.submodels_path)
-                exit(1)
+                raise system.ExitException("We reached the merge stage, but %s folder does not exist. Something must have gone wrong at an earlier stage. Check the log and fix possible problem before restarting?" % tree.submodels_path)
+                
 
             # Merge point clouds
             if args.merge in ['all', 'pointcloud']:
@@ -337,6 +338,9 @@ class ODMMergeStage(types.ODM_Stage):
                         
                         if args.tiles:
                             generate_dem_tiles(dem_file, tree.path("%s_tiles" % human_name.lower()), args.max_concurrency)
+                        
+                        if args.cog:
+                            convert_to_cogeo(dem_file, max_workers=args.max_concurrency)
                     else:
                         log.ODM_WARNING("Cannot merge %s, %s was not created" % (human_name, dem_file))
                 
@@ -363,8 +367,9 @@ class ODMMergeStage(types.ODM_Stage):
             else:
                 log.ODM_WARNING("Found merged shots.geojson in %s" % tree.odm_report)
 
-            # Stop the pipeline short! We're done.
-            self.next_stage = None
+            # Stop the pipeline short by skipping to the postprocess stage.
+            # Afterwards, we're done.
+            self.next_stage = self.last_stage()
         else:
             log.ODM_INFO("Normal dataset, nothing to merge.")
             self.progress = 0.0

@@ -13,6 +13,10 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
+    - name: Set Swap Space
+      uses: pierotofy/set-swap-space@master
+      with:
+        swap-size-gb: 12
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v1
     - name: Set up Docker Buildx
@@ -30,3 +34,8 @@ jobs:
         platforms: linux/amd64
         push: true
         tags: opendronemap/odm:gpu
+    # Trigger NodeODM build
+    - name: Dispatch NodeODM Build Event
+      id: nodeodm_dispatch
+      run: |
+        curl -X POST -u "${{secrets.PAT_USERNAME}}:${{secrets.PAT_TOKEN}}" -H "Accept: application/vnd.github.everest-preview+json" -H "Content-Type: application/json" https://api.github.com/repos/OpenDroneMap/NodeODM/actions/workflows/publish-docker-gpu.yaml/dispatches --data '{"ref": "master"}'

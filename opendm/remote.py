@@ -13,7 +13,7 @@ from pyodm import Node, exceptions
 from pyodm.utils import AtomicCounter
 from pyodm.types import TaskStatus
 from opendm.osfm import OSFMContext, get_submodel_args_dict, get_submodel_argv
-from pipes import quote
+from opendm.utils import double_quote
 
 try:
     import queue
@@ -45,8 +45,7 @@ class LocalRemoteExecutor:
             log.ODM_WARNING("LRE: The node seems to be offline! We'll still process the dataset, but it's going to run entirely locally.")
             self.node_online = False
         except Exception as e:
-            log.ODM_ERROR("LRE: An unexpected problem happened while opening the node connection: %s" % str(e))
-            exit(1)
+            raise system.ExitException("LRE: An unexpected problem happened while opening the node connection: %s" % str(e))
 
     def set_projects(self, paths):
         self.project_paths = paths
@@ -474,7 +473,7 @@ class ToolchainTask(Task):
             argv = get_submodel_argv(config.config(), submodels_path, submodel_name)
 
             # Re-run the ODM toolchain on the submodel
-            system.run(" ".join(map(quote, map(str, argv))), env_vars=os.environ.copy())
+            system.run(" ".join(map(double_quote, map(str, argv))), env_vars=os.environ.copy())
 
             # This will only get executed if the command above succeeds
             self.touch(completed_file)

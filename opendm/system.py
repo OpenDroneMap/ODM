@@ -6,6 +6,8 @@ import sys
 import subprocess
 import string
 import signal
+import io
+from collections import deque
 
 from opendm import context
 from opendm import log
@@ -14,6 +16,9 @@ class SubprocessException(Exception):
     def __init__(self, msg, errorCode):
         super().__init__(msg)
         self.errorCode = errorCode
+
+class ExitException(Exception):
+    pass
 
 def get_ccd_widths():
     """Return the CCD Width of the camera listed in the JSON defs file."""
@@ -47,7 +52,10 @@ def exit_gracefully():
 
     for sp in running_subprocesses:
         log.ODM_WARNING("Sending TERM signal to PID %s..." % sp.pid)
-        os.killpg(os.getpgid(sp.pid), signal.SIGTERM)
+        if sys.platform == 'win32':
+            os.kill(sp.pid, signal.CTRL_C_EVENT)
+        else:
+            os.killpg(os.getpgid(sp.pid), signal.SIGTERM)
     
     os._exit(1)
 
@@ -63,18 +71,34 @@ def run(cmd, env_paths=[context.superbuild_bin_path], env_vars={}, packages_path
 
     log.ODM_INFO('running %s' % cmd)
     env = os.environ.copy()
+
+    sep = ":"
+    if sys.platform == 'win32':
+        sep = ";"
+
     if len(env_paths) > 0:
-        env["PATH"] = env["PATH"] + ":" + ":".join(env_paths)
+        env["PATH"] = env["PATH"] + sep + sep.join(env_paths)
     
     if len(packages_paths) > 0:
-        env["PYTHONPATH"] = env.get("PYTHONPATH", "") + ":" + ":".join(packages_paths) 
+        env["PYTHONPATH"] = env.get("PYTHONPATH", "") + sep + sep.join(packages_paths) 
     
     for k in env_vars:
         env[k] = str(env_vars[k])
 
-    p = subprocess.Popen(cmd, shell=True, env=env, preexec_fn=os.setsid)
+    p = subprocess.Popen(cmd, shell=True, env=env, start_new_session=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     running_subprocesses.append(p)
+    lines = deque()
+    for line in io.TextIOWrapper(p.stdout):
+        print(line, end="")
+
+        lines.append(line.strip())
+        if len(lines) == 11:
+            lines.popleft()
+
     retcode = p.wait()
+
+    log.logger.log_json_process(cmd, retcode, list(lines))
+
     running_subprocesses.remove(p)
     if retcode < 0:
         raise SubprocessException("Child was terminated by signal {}".format(-retcode), -retcode)
