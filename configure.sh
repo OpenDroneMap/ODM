@@ -3,21 +3,21 @@
 # Ensure the DEBIAN_FRONTEND environment variable is set for apt-get calls
 APT_GET="env DEBIAN_FRONTEND=noninteractive $(command -v apt-get)"
 
-check_version(){
-  UBUNTU_VERSION=$(lsb_release -r)
+check_version(){  
+  export UBUNTU_VERSION=$(lsb_release -r)
   case "$UBUNTU_VERSION" in
-    *"20.04"*)
+    *"20.04"*|*"21.04"*)
       echo "Ubuntu: $UBUNTU_VERSION, good!"
       ;;
     *"18.04"*|*"16.04"*)
-      echo "ODM 2.1 has upgraded to Ubuntu 20.04, but you're on $UBUNTU_VERSION"
+      echo "ODM 2.1 has upgraded to Ubuntu 21.04, but you're on $UBUNTU_VERSION"
       echo "* The last version of ODM that supports Ubuntu 16.04 is v1.0.2."
       echo "* The last version of ODM that supports Ubuntu 18.04 is v2.0.0."
       echo "We recommend you to upgrade, or better yet, use docker."
       exit 1
       ;;
     *)
-      echo "You are not on Ubuntu 20.04 (detected: $UBUNTU_VERSION)"
+      echo "You are not on Ubuntu 21.04 (detected: $UBUNTU_VERSION)"
       echo "It might be possible to run ODM on a newer version of Ubuntu, however, you cannot rely on this script."
       exit 1
       ;;
@@ -54,10 +54,12 @@ ensure_prereqs() {
     echo "Installing tzdata"
     sudo $APT_GET install -y -qq tzdata
 
-    echo "Enabling PPA for Ubuntu GIS"
-    sudo $APT_GET install -y -qq --no-install-recommends software-properties-common
-    sudo add-apt-repository -y ppa:ubuntugis/ubuntugis-unstable
-    sudo $APT_GET update
+    if [[ "$UBUNTU_VERSION" == *"20.04"* ]]; then
+        echo "Enabling PPA for Ubuntu GIS"
+        sudo $APT_GET install -y -qq --no-install-recommends software-properties-common
+        sudo add-apt-repository -y ppa:ubuntugis/ubuntugis-unstable
+        sudo $APT_GET update
+    fi
 
     echo "Installing Python PIP"
     sudo $APT_GET install -y -qq --no-install-recommends \
@@ -77,7 +79,12 @@ installdepsfromsnapcraft() {
         *) key=build-packages; ;; # shouldn't be needed, but it's here just in case
     esac
 
-    cat snap/snapcraft.yaml | \
+    SNAPCRAFT_FILE="snapcraft.yaml"
+    if [[ "$UBUNTU_VERSION" == *"21.04"* ]]; then
+        SNAPCRAFT_FILE="snapcraft21.yaml"
+    fi
+
+    cat snap/$SNAPCRAFT_FILE | \
         shyaml get-values-0 parts.$section.$key | \
         xargs -0 sudo $APT_GET install -y -qq --no-install-recommends
 }
