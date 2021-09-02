@@ -12,6 +12,11 @@ externalproject_add(vcg
     INSTALL_COMMAND ""
 )
 
+SET(ARM64_CMAKE_ARGS "")
+if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "aarch64" )
+  SET(ARM64_CMAKE_ARGS -DOpenMVS_USE_SSE=OFF)
+endif()
+
 ExternalProject_Add(${_proj_name}
   DEPENDS           ceres opencv vcg
   PREFIX            ${_SB_BINARY_DIR}
@@ -31,6 +36,7 @@ ExternalProject_Add(${_proj_name}
     -DCMAKE_BUILD_TYPE=Release
     -DCMAKE_INSTALL_PREFIX=${SB_INSTALL_DIR}
     ${WIN32_CMAKE_ARGS}
+    ${ARM64_CMAKE_ARGS}
   #--Build step-----------------
   BINARY_DIR        ${_SB_BINARY_DIR}
   #--Install step---------------

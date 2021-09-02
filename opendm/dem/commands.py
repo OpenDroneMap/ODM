@@ -12,7 +12,7 @@ from opendm import system
 from opendm.concurrency import get_max_memory, parallel_map
 from scipy import ndimage
 from datetime import datetime
-from osgeo.utils.gdal_fillnodata import main as gdal_fillnodata
+from opendm.vendor.gdal_fillnodata import main as gdal_fillnodata
 from opendm import log
 try:
     import Queue as queue
