@@ -2,7 +2,7 @@ name: opendronemap
 adopt-info: odm
 grade: stable
 confinement: strict
-base: core20
+base: core21
 
 summary: Command line toolkit for processing aerial drone imagery
 description: >
