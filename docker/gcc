@@ -10,7 +10,7 @@ do
 done
 
 ARCH=nehalem
-if [[ $(uname -m) == "aarch64" ]];
+if [[ $(uname -m) == "aarch64" ]]; then
     ARCH=armv8-a
 fi
 
