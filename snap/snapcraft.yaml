@@ -61,7 +61,7 @@ parts:
       - libspqr2
       - libssl1.1
       - libusb-1.0-0
-      - proj-data=6*
+      - proj-data
       - procps
       - python3
       - python3-distutils
