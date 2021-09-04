@@ -145,7 +145,7 @@ endif()
 
 externalproject_add(mve
     GIT_REPOSITORY  https://github.com/OpenDroneMap/mve.git
-    GIT_TAG         250
+    GIT_TAG         262
     UPDATE_COMMAND  ""
     SOURCE_DIR      ${SB_SOURCE_DIR}/mve
     CMAKE_ARGS      ${WIN32_CMAKE_ARGS}
@@ -169,7 +169,7 @@ else()
 endif()
 externalproject_add(poissonrecon
     GIT_REPOSITORY    https://github.com/OpenDroneMap/PoissonRecon.git
-    GIT_TAG           257
+    GIT_TAG           262
     PREFIX            ${SB_BINARY_DIR}/PoissonRecon
     SOURCE_DIR        ${SB_SOURCE_DIR}/PoissonRecon
     UPDATE_COMMAND    ""

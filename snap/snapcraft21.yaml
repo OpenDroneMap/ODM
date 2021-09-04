@@ -2,7 +2,7 @@ name: opendronemap
 adopt-info: odm
 grade: stable
 confinement: strict
-base: core20
+base: core21
 
 summary: Command line toolkit for processing aerial drone imagery
 description: >
@@ -54,10 +54,10 @@ parts:
       - swig3.0
     stage-packages:
       - gdal-bin
-      - libboost-log1.71.0
-      - libgdal26
+      - libboost-log1.74.0
+      - libgdal28
       - libgeotiff5
-      - libjsoncpp1
+      - libjsoncpp24
       - libspqr2
       - libssl1.1
       - libusb-1.0-0
@@ -115,7 +115,7 @@ parts:
       - libcgal-dev
       - libboost-program-options-dev
     stage-packages:
-      - libboost-program-options1.71.0
+      - libboost-program-options1.74.0
 
   opensfm:
     source: .
@@ -133,14 +133,14 @@ parts:
       - libsuitesparse-dev
     stage-packages:
       - libamd2
-      - libboost-date-time1.71.0
-      - libboost-filesystem1.71.0
-      - libboost-iostreams1.71.0
-      - libboost-python1.71.0
-      - libboost-regex1.71.0
-      - libboost-serialization1.71.0
-      - libboost-system1.71.0
-      - libboost-thread1.71.0
+      - libboost-date-time1.74.0
+      - libboost-filesystem1.74.0
+      - libboost-iostreams1.74.0
+      - libboost-python1.74.0
+      - libboost-regex1.74.0
+      - libboost-serialization1.74.0
+      - libboost-system1.74.0
+      - libboost-thread1.74.0
       - libcamd2
       - libccolamd2
       - libcholmod3
