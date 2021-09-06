@@ -4,7 +4,7 @@
 APT_GET="env DEBIAN_FRONTEND=noninteractive $(command -v apt-get)"
 
 check_version(){  
-  export UBUNTU_VERSION=$(lsb_release -r)
+  UBUNTU_VERSION=$(lsb_release -r)
   case "$UBUNTU_VERSION" in
     *"20.04"*|*"21.04"*)
       echo "Ubuntu: $UBUNTU_VERSION, good!"
@@ -54,6 +54,7 @@ ensure_prereqs() {
     echo "Installing tzdata"
     sudo $APT_GET install -y -qq tzdata
 
+    UBUNTU_VERSION=$(lsb_release -r)
     if [[ "$UBUNTU_VERSION" == *"20.04"* ]]; then
         echo "Enabling PPA for Ubuntu GIS"
         sudo $APT_GET install -y -qq --no-install-recommends software-properties-common
@@ -79,6 +80,7 @@ installdepsfromsnapcraft() {
         *) key=build-packages; ;; # shouldn't be needed, but it's here just in case
     esac
 
+    UBUNTU_VERSION=$(lsb_release -r)
     SNAPCRAFT_FILE="snapcraft.yaml"
     if [[ "$UBUNTU_VERSION" == *"21.04"* ]]; then
         SNAPCRAFT_FILE="snapcraft21.yaml"
