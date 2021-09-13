@@ -85,8 +85,6 @@ def filter(input_point_cloud, output_point_cloud, standard_deviation=2.5, meank=
     if standard_deviation > 0 and meank > 0:
         log.ODM_INFO("Filtering {} (statistical, meanK {}, standard deviation {})".format(input_point_cloud, meank, standard_deviation))
         filters.append('outlier')
-
-    if len(filters) > 0:
         filters.append('range')
 
     info = ply_info(input_point_cloud)
