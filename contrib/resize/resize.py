@@ -143,12 +143,12 @@ create_dir = len(files) > 1 or args.output.endswith("/") or len(gcps) > 1
 
 if create_dir and os.path.isdir(args.output):
     if not args.force:
-        die("{} exists, pass --force to overwrite results")
+        die("{} exists, pass --force to overwrite results".format(args.output))
     else:
         shutil.rmtree(args.output)
 elif not create_dir and os.path.isfile(args.output):
     if not args.force:
-        die("{} exists, pass --force to overwrite results")
+        die("{} exists, pass --force to overwrite results".format(args.output))
     else:
         os.remove(args.output)
 
