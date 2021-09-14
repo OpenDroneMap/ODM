@@ -51,6 +51,25 @@ class GCPFile:
     def exists(self):
         return bool(self.gcp_path and os.path.exists(self.gcp_path))
 
+    def make_resized_copy(self, gcp_file_output, ratio):
+        """
+        Creates a new resized GCP file from an existing GCP file. If one already exists, it will be removed.
+        :param gcp_file_output output path of new GCP file
+        :param ratio scale GCP coordinates by this value
+        :return path to new GCP file
+        """
+        output = [self.raw_srs]
+
+        for entry in self.iter_entries():
+            entry.px *= ratio
+            entry.py *= ratio
+            output.append(str(entry))
+
+        with open(gcp_file_output, 'w') as f:
+            f.write('\n'.join(output) + '\n')
+
+        return gcp_file_output
+
     def wgs84_utm_zone(self):
         """
         Finds the UTM zone where the first point of the GCP falls into
