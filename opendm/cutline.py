@@ -145,9 +145,12 @@ def compute_cutline(orthophoto_file, crop_area_file, destination, max_concurrenc
         if len(polygons) == 0:
             log.ODM_WARNING("No polygons, cannot compute cutline")
             return
-        
+
         log.ODM_INFO("Merging polygons")
         cutline_polygons = unary_union(polygons)
+        if not hasattr(cutline_polygons, '__getitem__'):
+            cutline_polygons = [cutline_polygons]
+
         largest_cutline = cutline_polygons[0]
         max_area = largest_cutline.area
         for p in cutline_polygons:
