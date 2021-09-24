@@ -88,6 +88,7 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                     del properties['coordinates']
 
                     geojson['features'].append({
+                        'type': 'Feature',
                         'geometry': {
                             'type': 'Point',
                             'coordinates': transformer.TransformPoint(*gcp['coordinates']),
