@@ -189,7 +189,7 @@ def dist():
     # Run
     cs_flags = ""
     if args.code_sign_cert_path and args.signtool_path:
-        cs_flags = '"/Ssigntool=%s sign /f %s /t http://timestamp.sectigo.com $f"' % (args.signtool_path, args.code_sign_cert_path)
+        cs_flags = '"/Ssigntool=%s sign /f %s /fd SHA1 /t http://timestamp.sectigo.com $f"' % (args.signtool_path, args.code_sign_cert_path)
     run("innosetup\\iscc /Qp " + cs_flags  + " \"innosetup.iss\"")
 
     print("Done! Setup created in dist/")
