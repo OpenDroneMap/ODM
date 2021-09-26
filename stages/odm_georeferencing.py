@@ -3,17 +3,21 @@ import struct
 import pipes
 import fiona
 import fiona.crs
+import json
 from collections import OrderedDict
+from pyproj import CRS
 
 from opendm import io
 from opendm import log
 from opendm import types
 from opendm import system
 from opendm import context
+from opendm import location
 from opendm.cropper import Cropper
 from opendm import point_cloud
 from opendm.multispectral import get_primary_band_name
 from opendm.osfm import OSFMContext
+
 
 class ODMGeoreferencingStage(types.ODM_Stage):
     def process(self, args, outputs):
@@ -24,6 +28,7 @@ class ODMGeoreferencingStage(types.ODM_Stage):
 
         gcp_export_file = tree.path("odm_georeferencing", "ground_control_points.gpkg")
         gcp_gml_export_file = tree.path("odm_georeferencing", "ground_control_points.gml")
+        gcp_geojson_export_file = tree.path("odm_georeferencing", "ground_control_points.geojson")
 
         if reconstruction.has_gcp() and (not io.file_exists(gcp_export_file) or self.rerun()):
             octx = OSFMContext(tree.opensfm)
@@ -36,9 +41,6 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                         ('id', 'str'),
                         ('observations_count', 'int'),
                         ('observations_list', 'str'),
-                        ('triangulated_x', 'float'),
-                        ('triangulated_y', 'float'),
-                        ('triangulated_z', 'float'),
                         ('error_x', 'float'),
                         ('error_y', 'float'),
                         ('error_z', 'float'),
@@ -58,10 +60,7 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                             'properties': OrderedDict([
                                 ('id', gcp['id']),
                                 ('observations_count', len(gcp['observations'])),
-                                ('observations_list', ",".join(gcp['observations'])),
-                                ('triangulated_x', gcp['triangulated'][0]),
-                                ('triangulated_y', gcp['triangulated'][1]),
-                                ('triangulated_z', gcp['triangulated'][2]),
+                                ('observations_list', ",".join([obs['shot_id'] for obs in gcp['observations']])),
                                 ('error_x', gcp['error'][0]),
                                 ('error_y', gcp['error'][1]),
                                 ('error_z', gcp['error'][2]),
@@ -73,9 +72,35 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                     system.run('ogr2ogr -of GML "{}" "{}"'.format(gcp_gml_export_file, gcp_export_file))
                 except Exception as e:
                     log.ODM_WARNING("Cannot generate ground control points GML file: %s" % str(e))
+            
+                # Write GeoJSON
+                geojson = {
+                    'type': 'FeatureCollection',
+                    'features': []
+                }
+
+                from_srs = CRS.from_proj4(reconstruction.georef.proj4())
+                to_srs = CRS.from_epsg(4326)
+                transformer = location.transformer(from_srs, to_srs)
+
+                for gcp in gcps:
+                    properties = gcp.copy()
+                    del properties['coordinates']
+
+                    geojson['features'].append({
+                        'type': 'Feature',
+                        'geometry': {
+                            'type': 'Point',
+                            'coordinates': transformer.TransformPoint(*gcp['coordinates']),
+                        },
+                        'properties': properties
+                    })
+                
+                with open(gcp_geojson_export_file, 'w') as f:
+                    f.write(json.dumps(geojson, indent=4))
+
             else:
                 log.ODM_WARNING("GCPs could not be loaded for writing to %s" % gcp_export_file)
-
 
         if not io.file_exists(tree.odm_georeferencing_model_laz) or self.rerun():
             cmd = ('pdal translate -i "%s" -o \"%s\"' % (tree.filtered_point_cloud, tree.odm_georeferencing_model_laz))
