@@ -303,6 +303,16 @@ def config(argv=None, parser=None):
                           'Use 0 to disable cropping. '
                           'Default: %(default)s'))
 
+    parser.add_argument('--boundary',
+                    default='',
+                    metavar='<json>',
+                    action=StoreValue,
+                    type=path_or_json_string,
+                    help='GeoJSON polygon defining the boundary of the reconstruction. '
+                            'Can be specified either as path to a GeoJSON file or as a '
+                            'JSON string representing the contents of a '
+                            'GeoJSON file. Default: %(default)s')
+
     parser.add_argument('--pc-quality',
                     metavar='<string>',
                     action=StoreValue,
