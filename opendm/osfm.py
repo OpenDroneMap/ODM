@@ -510,10 +510,11 @@ def get_submodel_argv(args, submodels_path = None, submodel_name = None):
         tweaking --crop if necessary (DEM merging makes assumption about the area of DEMs and their euclidean maps that require cropping. If cropping is skipped, this leads to errors.)
         removing --gcp (the GCP path if specified is always "gcp_list.txt")
         reading the contents of --cameras
+        reading the contents of --boundary
     """
     assure_always = ['orthophoto_cutline', 'dem_euclidean_map', 'skip_3dmodel', 'skip_report']
     remove_always = ['split', 'split_overlap', 'rerun_from', 'rerun', 'gcp', 'end_with', 'sm_cluster', 'rerun_all', 'pc_csv', 'pc_las', 'pc_ept', 'tiles', 'copy-to', 'cog']
-    read_json_always = ['cameras']
+    read_json_always = ['cameras', 'boundary']
 
     argv = sys.argv
 

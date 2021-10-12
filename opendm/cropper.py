@@ -5,6 +5,7 @@ from opendm.point_cloud import export_summary_json
 from osgeo import ogr
 import json, os
 from opendm.concurrency import get_max_memory
+from opendm.utils import double_quote
 
 class Cropper:
     def __init__(self, storage_dir, files_prefix = "crop"):
@@ -41,9 +42,9 @@ class Cropper:
 
         try:
             kwargs = {
-                'gpkg_path': gpkg_path,
-                'geotiffInput': original_geotiff,
-                'geotiffOutput': geotiff_path,
+                'gpkg_path': double_quote(gpkg_path),
+                'geotiffInput': double_quote(original_geotiff),
+                'geotiffOutput': double_quote(geotiff_path),
                 'options': ' '.join(map(lambda k: '-co {}={}'.format(k, gdal_options[k]), gdal_options)),
                 'warpOptions': ' '.join(warp_options),
                 'max_memory': get_max_memory()
@@ -252,10 +253,13 @@ class Cropper:
 
         bounds_gpkg_path = os.path.join(self.storage_dir, '{}.bounds.gpkg'.format(self.files_prefix))
 
+        if os.path.isfile(bounds_gpkg_path):
+            os.remove(bounds_gpkg_path)
+
         # Convert bounds to GPKG
         kwargs = {
-            'input': bounds_geojson_path,
-            'output': bounds_gpkg_path,
+            'input': double_quote(bounds_geojson_path),
+            'output': double_quote(bounds_gpkg_path),
             'proj4': pc_proj4
         }
 
