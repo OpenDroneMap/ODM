@@ -1,6 +1,8 @@
 import logging
 import re
 import os
+import base64
+import struct
 
 import exifread
 import numpy as np
@@ -74,6 +76,9 @@ class ODM_Photo:
         self.horizontal_irradiance = None
         self.irradiance_scale_to_si = None
         self.utc_time = None
+        self.sensor_model = None
+        self.irrad_cal = None
+        self.irrad_list = None
 
         # DLS
         self.sun_sensor = None
@@ -238,6 +243,21 @@ class ODM_Photo:
                         '@Camera:ImageUniqueID', # sentera 6x
                     ])
 
+                    # Sequoia
+                    self.set_attr_from_xmp_tag('sensor_model', tags, [
+                        'Camera:SensorModel',
+                    ])
+
+                    # Sequoia
+                    self.set_attr_from_xmp_tag('irrad_cal', tags, [
+                        '@Camera:IrradianceCalibrationMeasurement',
+                    ])
+
+                    # Sequoia
+                    self.set_attr_from_xmp_tag('irrad_list', tags, [
+                        'Camera:IrradianceList',
+                    ])
+
                     # Phantom 4 RTK
                     if '@drone-dji:RtkStdLon' in tags:
                         y = float(self.get_xmp_tag(tags, '@drone-dji:RtkStdLon'))
@@ -386,6 +406,15 @@ class ODM_Photo:
         return val 
 
     def get_radiometric_calibration(self):
+        if self.camera_make == "Parrot" and self.camera_model == "Sequoia":
+            if self.sensor_model is None:       # Exif SensorModel is missing
+                return [None, None, None]
+            else:
+                sensor_pm = np.array([float(v) for v in self.sensor_model.split(",")])
+                sfac = self.fnumber * self.fnumber / ((100.0 / 65536.0) * sensor_pm[0])
+                #                           sensor_pm[0];1st. parameter of sensor model
+                return [sfac, None, None]
+
         if isinstance(self.radiometric_calibration, str):
             parts = self.radiometric_calibration.split(" ")
             if len(parts) == 3:
@@ -394,6 +423,13 @@ class ODM_Photo:
         return [None, None, None]                
     
     def get_dark_level(self):
+        if self.camera_make == "Parrot" and self.camera_model == "Sequoia":
+            if self.sensor_model is None:       # Exif SensorModel is missing
+                return None
+            else:
+                sensor_pm = np.array([float(v) for v in self.sensor_model.split(",")])
+                return sensor_pm[1]         # sensor_pm[1];2nd. parameter of sensor model
+
         if self.black_level:
             levels = np.array([float(v) for v in self.black_level.split(" ")])
             return levels.mean()
@@ -439,6 +475,45 @@ class ODM_Photo:
             return self.horizontal_irradiance * scale
     
     def get_sun_sensor(self):
+        if self.camera_make == "Parrot" and self.camera_model == "Sequoia":
+            if self.irrad_cal is None:      # Exif IrradianceCalibrationMeasurement is missing
+                return None
+            else:
+                irrad_cal_pm = np.array([float(v) for v in self.irrad_cal.split(",")])
+                #    GainIndex          IntegTime              CH0              CH1
+                # irrad_cal_pm[0]=0  irrad_cal_pm[1]  irrad_cal_pm[2]  irrad_cal_pm[3]
+                # irrad_cal_pm[4]=1  irrad_cal_pm[5]  irrad_cal_pm[6]  irrad_cal_pm[7]
+                # irrad_cal_pm[8]=2  irrad_cal_pm[9]  irrad_cal_pm[10] irrad_cal_pm[11]
+                # irrad_cal_pm[12]=3 irrad_cal_pm[13] irrad_cal_pm[14] irrad_cal_pm[15]
+                irrad_cal_0 = irrad_cal_pm[2] * (600.0 / irrad_cal_pm[1])
+                irrad_cal_1 = irrad_cal_pm[6] * (600.0 / irrad_cal_pm[5])
+                irrad_cal_2 = irrad_cal_pm[10] * (600.0 / irrad_cal_pm[9])
+                irrad_cal_3 = irrad_cal_pm[14] * (600.0 / irrad_cal_pm[13])
+                irrad_cal_fac = [irrad_cal_0, irrad_cal_1, irrad_cal_2, irrad_cal_3]
+
+            irrad_binary = base64.b64decode(self.irrad_list)
+
+            irrad_last3 = None
+            irrad_last2 = None
+            irrad_last1 = None
+
+            for irrad_pm in struct.iter_unpack("QHHHHfff", irrad_binary):
+                #                               Q=uint64 H=uint16 f=float32
+                # irrad_pm[0]=TimeStamp     irrad_pm[1]=CH0 count   irrad_pm[2]=CH1 count
+                # irrad_pm[3]=GainIndex     irrad_pm[4]=IntegTime
+                # irrad_pm[5]=Yaw           irrad_pm[6]=Pitch       irrad_pm[7]=Roll
+                #
+                irrad_fac = irrad_cal_fac[1]/irrad_cal_fac[irrad_pm[3]] * 600.0/irrad_pm[4]
+                irrad_last3 = irrad_last2
+                irrad_last2 = irrad_last1
+                irrad_last1 = irrad_pm[1] * irrad_fac
+
+            if irrad_last3 is None:     # No. of records less than 3
+                return None
+            else:
+                irrad_ave = (irrad_last1 + irrad_last2 + irrad_last3) / 3.0
+                return irrad_ave / irrad_cal_1
+                
         if self.sun_sensor is not None:
             # TODO: Presence of XMP:SunSensorExposureTime
             # and XMP:SunSensorSensitivity might
