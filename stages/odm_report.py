@@ -152,7 +152,7 @@ class ODMReport(types.ODM_Stage):
                 overlap_color_map = os.path.join(report_assets, "overlap_color_map.txt")
 
                 bounds_file_path = os.path.join(tree.odm_georeferencing, 'odm_georeferenced_model.bounds.gpkg')
-                if args.crop > 0 and os.path.isfile(bounds_file_path):
+                if (args.crop > 0 or args.boundary) and os.path.isfile(bounds_file_path):
                     Cropper.crop(bounds_file_path, diagram_tiff, get_orthophoto_vars(args), keep_original=False)
 
                 system.run("gdaldem color-relief \"{}\" \"{}\" \"{}\" -of PNG -alpha".format(diagram_tiff, overlap_color_map, diagram_png))

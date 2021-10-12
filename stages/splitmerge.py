@@ -332,7 +332,7 @@ class ODMMergeStage(types.ODM_Stage):
 
                     if io.file_exists(dem_file):
                         # Crop
-                        if args.crop > 0:
+                        if args.crop > 0 or args.boundary:
                             Cropper.crop(merged_bounds_file, dem_file, dem_vars, keep_original=not args.optimize_disk_space)
                         log.ODM_INFO("Created %s" % dem_file)
                         
