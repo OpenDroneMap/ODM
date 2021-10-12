@@ -6,6 +6,7 @@ from opendm import system
 from opendm import context
 from opendm import point_cloud
 from opendm import types
+from opendm.boundary import boundary_offset
 
 class ODMFilterPoints(types.ODM_Stage):
     def process(self, args, outputs):
@@ -24,6 +25,7 @@ class ODMFilterPoints(types.ODM_Stage):
             point_cloud.filter(inputPointCloud, tree.filtered_point_cloud, 
                                 standard_deviation=args.pc_filter, 
                                 sample_radius=args.pc_sample,
+                                boundary=boundary_offset(outputs.get('boundary'), reconstruction.get_proj_offset()),
                                 verbose=args.verbose,
                                 max_concurrency=args.max_concurrency)
             

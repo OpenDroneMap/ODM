@@ -36,6 +36,20 @@ def load_boundary(boundary_json, reproject_to_proj4=None):
         
         return coords
 
+def boundary_offset(boundary, reconstruction_offset):
+    if boundary is None or reconstruction_offset is None:
+        return boundary
+    
+    res = []
+    dims = len(boundary[0])
+    for c in boundary:
+        if dims == 2:
+            res.append((c[0] - reconstruction_offset[0], c[1] - reconstruction_offset[1]))
+        else:
+            res.append((c[0] - reconstruction_offset[0], c[1] - reconstruction_offset[1], c[2]))
+    
+    return res
+
 def as_polygon(boundary):
     return "POLYGON((" + ", ".join([" ".join(map(str, c)) for c in boundary]) + "))"
 

@@ -158,6 +158,12 @@ class ODM_Reconstruction(object):
     def get_proj_srs(self):
         if self.is_georeferenced():
             return self.georef.proj4()
+    
+    def get_proj_offset(self):
+        if self.is_georeferenced():
+            return (self.georef.utm_east_offset, self.georef.utm_north_offset)
+        else:
+            return (None, None)
 
     def get_photo(self, filename):
         for p in self.photos:

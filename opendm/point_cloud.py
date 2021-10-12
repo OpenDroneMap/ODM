@@ -7,6 +7,7 @@ from opendm import entwine
 from opendm import io
 from opendm.concurrency import parallel_map
 from opendm.utils import double_quote
+from opendm.boundary import as_polygon
 
 def ply_info(input_ply):
     if not os.path.exists(input_ply):
@@ -38,7 +39,8 @@ def ply_info(input_ply):
     return {
         'has_normals': has_normals,
         'vertex_count': vertex_count,
-        'has_views': has_views
+        'has_views': has_views,
+        'header_lines': i + 1
     }
 
 
@@ -68,7 +70,7 @@ def split(input_point_cloud, outdir, filename_template, capacity, dims=None):
     return [os.path.join(outdir, f) for f in os.listdir(outdir)]
 
 
-def filter(input_point_cloud, output_point_cloud, standard_deviation=2.5, meank=16, sample_radius=0, verbose=False, max_concurrency=1):
+def filter(input_point_cloud, output_point_cloud, standard_deviation=2.5, meank=16, sample_radius=0, boundary=None, verbose=False, max_concurrency=1):
     """
     Filters a point cloud
     """
@@ -86,6 +88,10 @@ def filter(input_point_cloud, output_point_cloud, standard_deviation=2.5, meank=
         log.ODM_INFO("Filtering {} (statistical, meanK {}, standard deviation {})".format(input_point_cloud, meank, standard_deviation))
         filters.append('outlier')
         filters.append('range')
+    
+    if boundary is not None:
+        log.ODM_INFO("Boundary {}".format(boundary))
+        filters.append('crop')
 
     info = ply_info(input_point_cloud)
     dims = "x=float,y=float,z=float,"
@@ -116,7 +122,8 @@ def filter(input_point_cloud, output_point_cloud, standard_deviation=2.5, meank=
             filter(pcs['path'], io.related_file_path(pcs['path'], postfix="_filtered"), 
                         standard_deviation=standard_deviation, 
                         meank=meank, 
-                        sample_radius=sample_radius, 
+                        sample_radius=sample_radius,
+                        boundary=boundary,
                         verbose=verbose,
                         max_concurrency=1)
         # Filter
@@ -158,6 +165,9 @@ def filter(input_point_cloud, output_point_cloud, standard_deviation=2.5, meank=
         if 'range' in filters:
             # Remove outliers
             cmd += "--filters.range.limits=\"Classification![7:7]\" "
+
+        if 'crop' in filters:
+            cmd += "--filters.crop.polygon=\"%s\"" % as_polygon(boundary)
 
         system.run(cmd)
 

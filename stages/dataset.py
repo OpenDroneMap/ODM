@@ -160,4 +160,5 @@ class ODMLoadDatasetStage(types.ODM_Stage):
             if reconstruction.is_georeferenced():
                 outputs['boundary'] = boundary.load_boundary(args.boundary, reconstruction.get_proj_srs())
             else:
+                args.boundary = None
                 log.ODM_WARNING("Reconstruction is not georeferenced, but boundary file provided (will ignore boundary file)")

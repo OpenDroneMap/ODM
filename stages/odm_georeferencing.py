@@ -128,12 +128,6 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                         '--writers.las.vlrs="{\\\"filename\\\": \\\"%s\\\", \\\"user_id\\\": \\\"ODM_GCP\\\", \\\"description\\\": \\\"Ground Control Points (GML)\\\"}"' % gcp_gml_export_file.replace(os.sep, "/")
                     ]
                 
-                if 'boundary' in outputs:
-                    stages.append("crop")
-                    params += [
-                        '--filters.crop.polygon="%s"' % as_polygon(outputs['boundary'])
-                    ]
-                
                 system.run(cmd + ' ' + ' '.join(stages) + ' ' + ' '.join(params))
 
                 self.update_progress(50)
