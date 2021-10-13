@@ -308,10 +308,18 @@ def config(argv=None, parser=None):
                     metavar='<json>',
                     action=StoreValue,
                     type=path_or_json_string,
-                    help='GeoJSON polygon defining the boundary of the reconstruction. '
+                    help='GeoJSON polygon limiting the area of the reconstruction. '
                             'Can be specified either as path to a GeoJSON file or as a '
                             'JSON string representing the contents of a '
                             'GeoJSON file. Default: %(default)s')
+
+    parser.add_argument('--auto-boundary',
+                    action=StoreTrue,
+                    nargs=0,
+                    default=False,
+                    help='Automatically set a boundary using camera shot locations to limit the area of the reconstruction. '
+                    'This can help remove far away background artifacts (sky, background landscapes, etc.). See also --boundary. '
+                    'Default: %(default)s')
 
     parser.add_argument('--pc-quality',
                     metavar='<string>',
