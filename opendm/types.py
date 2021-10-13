@@ -69,7 +69,7 @@ class ODM_Reconstruction(object):
         return self.georef is not None
 
     def has_gcp(self):
-        return self.is_georeferenced() and self.gcp is not None
+        return self.is_georeferenced() and self.gcp is not None and self.gcp.exists()
 
     def georeference_with_gcp(self, gcp_file, output_coords_file, output_gcp_file, output_model_txt_geo, rerun=False):
         if not io.file_exists(output_coords_file) or not io.file_exists(output_gcp_file) or rerun:
@@ -158,6 +158,12 @@ class ODM_Reconstruction(object):
     def get_proj_srs(self):
         if self.is_georeferenced():
             return self.georef.proj4()
+    
+    def get_proj_offset(self):
+        if self.is_georeferenced():
+            return (self.georef.utm_east_offset, self.georef.utm_north_offset)
+        else:
+            return (None, None)
 
     def get_photo(self, filename):
         for p in self.photos:

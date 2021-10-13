@@ -9,7 +9,7 @@ from opendm import system
 from opendm.geo import GeoFile
 from shutil import copyfile
 from opendm import progress
-
+from opendm import boundary
 
 def save_images_database(photos, database_file):
     with open(database_file, 'w') as f:
@@ -154,3 +154,11 @@ class ODMLoadDatasetStage(types.ODM_Stage):
         
         reconstruction.save_proj_srs(os.path.join(tree.odm_georeferencing, tree.odm_georeferencing_proj))
         outputs['reconstruction'] = reconstruction
+
+        # Try to load boundaries
+        if args.boundary:
+            if reconstruction.is_georeferenced():
+                outputs['boundary'] = boundary.load_boundary(args.boundary, reconstruction.get_proj_srs())
+            else:
+                args.boundary = None
+                log.ODM_WARNING("Reconstruction is not georeferenced, but boundary file provided (will ignore boundary file)")

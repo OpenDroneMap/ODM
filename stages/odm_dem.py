@@ -111,14 +111,14 @@ class ODMDEMStage(types.ODM_Stage):
                     dem_geotiff_path = os.path.join(odm_dem_root, "{}.tif".format(product))
                     bounds_file_path = os.path.join(tree.odm_georeferencing, 'odm_georeferenced_model.bounds.gpkg')
 
-                    if args.crop > 0:
+                    if args.crop > 0 or args.boundary:
                         # Crop DEM
                         Cropper.crop(bounds_file_path, dem_geotiff_path, utils.get_dem_vars(args), keep_original=not args.optimize_disk_space)
 
                     if args.dem_euclidean_map:
                         unfilled_dem_path = io.related_file_path(dem_geotiff_path, postfix=".unfilled")
                         
-                        if args.crop > 0:
+                        if args.crop > 0 or args.boundary:
                             # Crop unfilled DEM
                             Cropper.crop(bounds_file_path, unfilled_dem_path, utils.get_dem_vars(args), keep_original=not args.optimize_disk_space)
 

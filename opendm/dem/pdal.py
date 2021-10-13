@@ -155,7 +155,7 @@ def run_pipeline(json, verbose=False):
     cmd = [
         'pdal',
         'pipeline',
-        '-i %s' % jsonfile
+        '-i %s' % double_quote(jsonfile)
     ]
     if verbose or sys.platform == 'win32':
         system.run(' '.join(cmd))
