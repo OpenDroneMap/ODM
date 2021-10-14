@@ -2,6 +2,7 @@ import os
 import json
 import numpy as np
 import math
+import cv2
 from repoze.lru import lru_cache
 from opendm import log
 
@@ -122,7 +123,8 @@ def opensfm_reconstruction_average_gsd(reconstruction_json, use_all_shots=False)
         shot = reconstruction['shots'][shotImage]
         if use_all_shots or shot['gps_dop'] < 999999:
             camera = reconstruction['cameras'][shot['camera']]
-            shot_height = shot['translation'][2]
+            shot_origin = calculate_shot_origin(shot['rotation'], shot['translation'])
+            shot_height = shot_origin[2]
             focal_ratio = camera.get('focal', camera.get('focal_x'))
             if not focal_ratio:
                 log.ODM_WARNING("Cannot parse focal values from %s. This is likely an unsupported camera model." % reconstruction_json)
@@ -140,6 +142,11 @@ def opensfm_reconstruction_average_gsd(reconstruction_json, use_all_shots=False)
     
     return None
 
+def calculate_shot_origin(rotation, translation):
+    rotation = np.array(rotation)
+    translation = np.array(translation)
+    rotation_matrix = cv2.Rodrigues(rotation)[0]
+    return -rotation_matrix.T.dot(translation)
 
 def calculate_gsd(sensor_width, flight_height, focal_length, image_width):
     """
