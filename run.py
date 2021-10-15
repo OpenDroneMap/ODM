@@ -53,7 +53,7 @@ if __name__ == '__main__':
     retcode = app.execute()
     
     # Do not show ASCII art for local submodels runs
-    if retcode == 0 and not "submodels/submodel_" in args.project_path:
+    if retcode == 0 and not "submodels" in args.project_path:
         log.ODM_INFO('MMMMMMMMMMMNNNMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMNNNMMMMMMMMMMM')
         log.ODM_INFO('MMMMMMdo:..---../sNMMMMMMMMMMMMMMMMMMMMMMMMMMNs/..---..:odMMMMMM')
         log.ODM_INFO('MMMMy-.odNMMMMMNy/`/mMMMMMMMMMMMMMMMMMMMMMMm/`/hNMMMMMNdo.-yMMMM')
