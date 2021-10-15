@@ -106,7 +106,7 @@ class ODMApp:
             code = e.errorCode
             log.logger.log_json_stage_error(str(e), code, stack_trace)
 
-            if code == 139 or code == 134 or code == 1:
+            if code == 139 or code == 134 or code == 1 or code == 3221225477:
                 # Segfault
                 log.ODM_ERROR("Uh oh! Processing stopped because of strange values in the reconstruction. This is often a sign that the input data has some issues or the software cannot deal with it. Have you followed best practices for data acquisition? See https://docs.opendronemap.org/flying/")
             elif code == 137:
