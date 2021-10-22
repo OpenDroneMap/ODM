@@ -21,3 +21,4 @@ def has_gpus():
         return len(platforms) > 0
     except Exception as e:
         return False
+

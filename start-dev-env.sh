@@ -23,6 +23,7 @@ if [ "$1" = "--setup" ]; then
     echo "Adding $2 to /etc/shadow"
     echo "$2:x:14871::::::" >> /etc/shadow
     echo "$2   ALL=(ALL)   NOPASSWD:ALL" >> /etc/sudoers
+    echo "odm   ALL=(ALL)   NOPASSWD:ALL" >> /etc/sudoers
     echo "echo '' && echo '' && echo '' && echo '###################################' && echo 'ODM Dev Environment Ready. Hack on!' && echo '###################################' && echo '' && cd /code" > $HOME/.bashrc
 
     # Install qt creator
@@ -81,12 +82,20 @@ fi
 if hash docker 2>/dev/null; then
     has_docker="YES"
 fi
+if hash nvidia-smi 2>/dev/null; then
+    has_nvidia_smi="YES"
+fi
+
 
 if [ "$has_docker" != "YES" ]; then
     echo "You need to install docker before running this script."
     exit 1
 fi
 
+IMAGE_SET=NO
+if [[ ! -z $IMAGE ]]; then
+    IMAGE_SET=YES
+fi
 export PORT="${PORT:=3000}"
 export QTC="${QTC:=NO}"
 export IMAGE="${IMAGE:=opendronemap/nodeodm}"
@@ -119,11 +128,18 @@ fi
 USER_ID=$(id -u)
 GROUP_ID=$(id -g)
 USER=$(id -un)
-GPU_FLAG=""
+GPU_FLAGS=""
 if [[ "$GPU" != "NO" ]]; then
-    GPU_FLAG="--gpus all"
+    if [[ "$IMAGE_SET" = "NO" ]]; then
+        IMAGE="$IMAGE:gpu"
+    fi
+
+    GPU_FLAGS="--gpus all"
+    if [[ "$has_nvidia_smi" = "YES" ]]; then
+        GPU_FLAGS="$GPU_FLAGS --device /dev/nvidia0 --device /dev/nvidia-uvm --device /dev/nvidia-uvm-tools --device /dev/nvidia-modeset --device /dev/nvidiactl"
+    fi
 fi
 
 xhost + || true
-docker run -ti --entrypoint bash --name odmdev -v $(pwd):/code -v "$DATA":/datasets -p $PORT:3000 $GPU_FLAG --privileged -e DISPLAY -e LANG=C.UTF-8 -e LC_ALL=C.UTF-8 -v="/tmp/.X11-unix:/tmp/.X11-unix:rw" -v="$HOME/.odm-dev-home:/home/$USER" $IMAGE -c "/code/start-dev-env.sh --setup $USER $USER_ID $GROUP_ID $QTC"
+docker run -ti --entrypoint bash --name odmdev --user root -v $(pwd):/code -v "$DATA":/datasets -p $PORT:3000 $GPU_FLAGS --privileged -e DISPLAY -e LANG=C.UTF-8 -e LC_ALL=C.UTF-8 -v="/tmp/.X11-unix:/tmp/.X11-unix:rw" -v="$HOME/.odm-dev-home:/home/$USER" $IMAGE -c "/code/start-dev-env.sh --setup $USER $USER_ID $GROUP_ID $QTC"
 exit 0
