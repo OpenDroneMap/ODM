@@ -20,7 +20,7 @@ endif()
 SET(GPU_CMAKE_ARGS "")
 if(UNIX)
     if (EXISTS "/usr/local/cuda/lib64/stubs")
-        SET(GPU_CMAKE_ARGS "-DCMAKE_LIBRARY_PATH=/usr/local/cuda/lib64/stubs")
+        SET(GPU_CMAKE_ARGS -DCMAKE_LIBRARY_PATH=/usr/local/cuda/lib64/stubs)
     endif()
 endif()
 
