@@ -43,7 +43,7 @@ ExternalProject_Add(${_proj_name}
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
   GIT_REPOSITORY    https://github.com/OpenDroneMap/openMVS
-  GIT_TAG           266
+  GIT_TAG           267
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   #--Configure step-------------

@@ -62,6 +62,7 @@ class ODMOpenMVSStage(types.ODM_Stage):
             
             config = [
                 " --resolution-level %s" % int(resolution_level),
+                #"--cuda-device -1", # TODO REMOVE
 	            "--min-resolution %s" % depthmap_resolution,
                 "--max-resolution %s" % int(outputs['undist_image_max_size']),
                 "--max-threads %s" % args.max_concurrency,
