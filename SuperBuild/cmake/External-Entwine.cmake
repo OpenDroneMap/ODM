@@ -23,7 +23,7 @@ ExternalProject_Add(${_proj_name}
     -DADDITIONAL_LINK_DIRECTORIES_PATHS=${SB_INSTALL_DIR}/lib
     -DWITH_TESTS=OFF
     -DWITH_ZSTD=OFF
-    -DCMAKE_BUILD_TYPE=Release
+    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
     -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
   #--Build step-----------------
   BINARY_DIR        ${_SB_BINARY_DIR}

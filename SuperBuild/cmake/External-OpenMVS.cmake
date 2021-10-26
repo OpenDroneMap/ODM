@@ -52,7 +52,7 @@ ExternalProject_Add(${_proj_name}
     -DOpenCV_DIR=${SB_INSTALL_DIR}/lib/cmake/opencv4
     -DVCG_ROOT=${SB_SOURCE_DIR}/vcg
     -DEIGEN3_INCLUDE_DIR=${SB_SOURCE_DIR}/eigen34/
-    -DCMAKE_BUILD_TYPE=Release
+    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
     -DCMAKE_INSTALL_PREFIX=${SB_INSTALL_DIR}
     ${GPU_CMAKE_ARGS}
     ${WIN32_CMAKE_ARGS}
