@@ -16,7 +16,10 @@ class GCPFile:
         if self.exists():
             with open(self.gcp_path, 'r') as f:
                 contents = f.read().strip()
-    
+
+            # Strip eventual BOM characters
+            contents = contents.replace('\ufeff', '')
+            
             lines = list(map(str.strip, contents.split('\n')))
             if lines:
                 self.raw_srs = lines[0] # SRS
