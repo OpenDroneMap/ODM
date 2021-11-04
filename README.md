@@ -25,7 +25,7 @@ docker run -ti --rm -v c:/Users/youruser/datasets:/datasets opendronemap/odm --p
 docker run -ti --rm -v /home/youruser/datasets:/datasets opendronemap/odm --project-path /datasets project
 ```
 
-You can pass [additional parameters](https://docs.opendronemap.org/arguments.html) by appending them to the command:
+You can pass [additional parameters](https://docs.opendronemap.org/arguments/) by appending them to the command:
 
 ```bash
 docker run -ti --rm -v /datasets:/datasets opendronemap/odm --project-path /datasets project [--additional --parameters --here]
