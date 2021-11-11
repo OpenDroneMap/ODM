@@ -22,6 +22,10 @@ jobs:
       uses: ilammy/msvc-dev-cmd@v1
       with:
         arch: x64
+    - uses: Jimver/cuda-toolkit@v0.2.4
+      id: cuda-toolkit
+      with:
+        cuda: '11.2.2'
     - name: Extract code signing cert
       id: code_sign
       uses: timheuer/base64-to-file@v1
