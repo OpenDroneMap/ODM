@@ -223,7 +223,7 @@ class OSFMContext:
                     feature_type = "HAHOG"
             
             # GPU acceleration?
-            if has_gpus() and feature_type == "SIFT":
+            if has_gpus() and feature_type == "SIFT" and (not 'min_num_features_is_set' in args):
                 log.ODM_INFO("Using GPU for extracting SIFT features")
                 log.ODM_INFO("--min-num-features will be ignored")
                 feature_type = "SIFT_GPU"
