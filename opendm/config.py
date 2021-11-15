@@ -151,7 +151,7 @@ def config(argv=None, parser=None):
                         metavar='<string>',
                         action=StoreValue,
                         default='flann',
-                        choices=['bow', 'bruteforce'. 'flann'],
+                        choices=['bow', 'bruteforce', 'flann'],
                         help=('Matcher algorithm, Fast Library for Approximate Nearest Neighbors or Bag of Words. FLANN is slower, but more stable. BOW is faster, but can sometimes miss valid matches. BRUTEFORCE is very slow but robust.'
                             'Can be one of: %(choices)s. Default: '
                             '%(default)s'))

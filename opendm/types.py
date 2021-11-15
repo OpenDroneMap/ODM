@@ -5,6 +5,7 @@ import numpy as np
 from opendm import get_image_size
 from opendm import location
 from opendm.gcp import GCPFile
+from opendm.geo import GeoFile
 from pyproj import CRS
 import xmltodict as x2d
 from six import string_types
@@ -25,7 +26,6 @@ class ODM_Reconstruction(object):
         self.photos = photos
         self.georef = None
         self.gcp = None
-        self.geo_file = None
         self.multi_camera = self.detect_multi_camera()
 
     def detect_multi_camera(self):

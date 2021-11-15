@@ -115,7 +115,7 @@ class ODMLoadDatasetStage(types.ODM_Stage):
                         dataset_list.write(photos[-1].filename + '\n')
                 
                 # Check if a geo file is available
-                if tree.odm_geo_file is not None and os.path.exists(tree.odm_geo_file):
+                if tree.odm_geo_file is not None and os.path.isfile(tree.odm_geo_file):
                     log.ODM_INFO("Found image geolocation file")
                     gf = GeoFile(tree.odm_geo_file)
                     updated = 0
