@@ -5,7 +5,6 @@ import numpy as np
 from opendm import get_image_size
 from opendm import location
 from opendm.gcp import GCPFile
-from opendm.geo import GeoFile
 from pyproj import CRS
 import xmltodict as x2d
 from six import string_types

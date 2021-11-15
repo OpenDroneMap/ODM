@@ -224,12 +224,6 @@ class OSFMContext:
                     log.ODM_WARNING("Using BOW matching, will use HAHOG feature type, not SIFT")
                     feature_type = "HAHOG"
             
-            if feature_type == "AKAZE" or feature_type == "ORB":
-                # Cannot use anything other than BRUTEFORCE with AKAZE/ORB
-                if matcher_type != "bruteforce":
-                    log.ODM_WARNING("Using BRUTEFORCE matching (needed since %s is selected)" % feature_type)
-                    matcher_type = "bruteforce"
-
             config.append("matcher_type: %s" % osfm_matchers[matcher_type])
 
             # GPU acceleration?
