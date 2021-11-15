@@ -89,7 +89,13 @@ class ODMSplitStage(types.ODM_Stage):
                             io.copy(submodel_gcp_file, os.path.abspath(sp_octx.path("gcp_list.txt")))
                         else:
                             log.ODM_INFO("No GCP will be copied for %s, not enough images in the submodel are referenced by the GCP" % sp_octx.name())
-                        
+                    
+                    # Copy GEO file if needed (one for each submodel project directory)
+                    if tree.odm_geo_file is not None and os.path.isfile(tree.odm_geo_file):
+                        geo_dst_path = os.path.abspath(sp_octx.path("..", "geo.txt"))
+                        io.copy(tree.odm_geo_file, geo_dst_path)
+                        log.ODM_INFO("Copied GEO file to %s" % geo_dst_path)
+
                 # Reconstruct each submodel
                 log.ODM_INFO("Dataset has been split into %s submodels. Reconstructing each submodel..." % len(submodel_paths))
                 self.update_progress(25)

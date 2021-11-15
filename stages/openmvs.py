@@ -6,6 +6,7 @@ from opendm import system
 from opendm import context
 from opendm import point_cloud
 from opendm import types
+from opendm.gpu import gpu_disabled_by_user
 from opendm.utils import get_depthmap_resolution
 from opendm.osfm import OSFMContext
 from opendm.multispectral import get_primary_band_name
@@ -62,13 +63,16 @@ class ODMOpenMVSStage(types.ODM_Stage):
             
             config = [
                 " --resolution-level %s" % int(resolution_level),
-	            "--min-resolution %s" % depthmap_resolution,
+                "--min-resolution %s" % depthmap_resolution,
                 "--max-resolution %s" % int(outputs['undist_image_max_size']),
                 "--max-threads %s" % args.max_concurrency,
                 "--number-views-fuse 2",
                 '-w "%s"' % depthmaps_dir, 
                 "-v 0"
             ]
+
+            if gpu_disabled_by_user():
+                config.append("--cuda-device -1")
 
             if args.pc_tile:
                 config.append("--fusion-mode 1")

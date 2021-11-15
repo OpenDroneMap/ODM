@@ -25,7 +25,6 @@ class ODM_Reconstruction(object):
         self.photos = photos
         self.georef = None
         self.gcp = None
-        self.geo_file = None
         self.multi_camera = self.detect_multi_camera()
 
     def detect_multi_camera(self):

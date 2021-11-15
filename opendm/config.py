@@ -133,7 +133,7 @@ def config(argv=None, parser=None):
                         metavar='<string>',
                         action=StoreValue,
                         default='sift',
-                        choices=['sift', 'orb', 'hahog'],
+                        choices=['akaze', 'hahog', 'orb', 'sift'],
                         help=('Choose the algorithm for extracting keypoints and computing descriptors. '
                             'Can be one of: %(choices)s. Default: '
                             '%(default)s'))
@@ -151,8 +151,8 @@ def config(argv=None, parser=None):
                         metavar='<string>',
                         action=StoreValue,
                         default='flann',
-                        choices=['flann', 'bow'],
-                        help=('Matcher algorithm, Fast Library for Approximate Nearest Neighbors or Bag of Words. FLANN is slower, but more stable. BOW is faster, but can sometimes miss valid matches. '
+                        choices=['bow', 'bruteforce', 'flann'],
+                        help=('Matcher algorithm, Fast Library for Approximate Nearest Neighbors or Bag of Words. FLANN is slower, but more stable. BOW is faster, but can sometimes miss valid matches. BRUTEFORCE is very slow but robust.'
                             'Can be one of: %(choices)s. Default: '
                             '%(default)s'))
 

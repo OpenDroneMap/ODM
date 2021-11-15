@@ -117,9 +117,6 @@ class OSFMContext:
                 except Exception as e:
                     log.ODM_WARNING("Cannot set camera_models_overrides.json: %s" % str(e))
 
-            use_bow = args.matcher_type == "bow"
-            feature_type = "SIFT"
-
             # GPSDOP override if we have GPS accuracy information (such as RTK)
             if 'gps_accuracy_is_set' in args:
                 log.ODM_INFO("Forcing GPS DOP to %s for all images" % args.gps_accuracy)
@@ -208,22 +205,29 @@ class OSFMContext:
             if args.camera_lens != 'auto':
                 config.append("camera_projection_type: %s" % args.camera_lens.upper())
 
-            if not has_gps:
-                log.ODM_INFO("No GPS information, using BOW matching")
-                use_bow = True
-
+            matcher_type = args.matcher_type
             feature_type = args.feature_type.upper()
 
-            if use_bow:
-                config.append("matcher_type: WORDS")
+            osfm_matchers = {
+                "bow": "WORDS",
+                "flann": "FLANN",
+                "bruteforce": "BRUTEFORCE"
+            }
 
-                # Cannot use SIFT with BOW
-                if feature_type == "SIFT":
+            if not has_gps and not 'matcher_type_is_set' in args:
+                log.ODM_INFO("No GPS information, using BOW matching by default (you can override this by setting --matcher-type explicitly)")
+                matcher_type = "bow"
+
+            if matcher_type == "bow":
+                # Cannot use anything other than HAHOG with BOW
+                if feature_type != "HAHOG":
                     log.ODM_WARNING("Using BOW matching, will use HAHOG feature type, not SIFT")
                     feature_type = "HAHOG"
             
+            config.append("matcher_type: %s" % osfm_matchers[matcher_type])
+
             # GPU acceleration?
-            if has_gpus() and feature_type == "SIFT":
+            if has_gpus() and feature_type == "SIFT" and (not 'min_num_features_is_set' in args):
                 log.ODM_INFO("Using GPU for extracting SIFT features")
                 log.ODM_INFO("--min-num-features will be ignored")
                 feature_type = "SIFT_GPU"

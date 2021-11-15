@@ -122,6 +122,7 @@ def parse_srs_header(header):
     log.ODM_INFO('Parsing SRS header: %s' % header)
     header = header.strip()
     ref = header.split(' ')
+
     try:
         if ref[0] == 'WGS84' and ref[1] == 'UTM':
             datum = ref[0]
