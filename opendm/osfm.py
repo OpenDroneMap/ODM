@@ -215,7 +215,7 @@ class OSFMContext:
             }
 
             if not has_gps and not 'matcher_type_is_set' in args:
-                log.ODM_INFO("No GPS information, using BOW matching by default (you can override this by setting --matcher-type explicitely)")
+                log.ODM_INFO("No GPS information, using BOW matching by default (you can override this by setting --matcher-type explicitly)")
                 matcher_type = "bow"
 
             if matcher_type == "bow":
