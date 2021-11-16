@@ -25,7 +25,7 @@ jobs:
     - uses: Jimver/cuda-toolkit@v0.2.4
       id: cuda-toolkit
       with:
-        cuda: '11.2.2'
+        cuda: '11.4.0'
     - name: Extract code signing cert
       id: code_sign
       uses: timheuer/base64-to-file@v1
