@@ -38,9 +38,11 @@ COPY --from=builder /usr/local /usr/local
 
 # Install shared libraries that we depend on via APT, but *not*
 # the -dev packages to save space!
+# Also run a smoke test
 RUN bash configure.sh installruntimedepsonly \
   && apt-get clean \
-  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* 
+  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
+  && bash run.sh --help
 
 # Entry point
 ENTRYPOINT ["python3", "/code/run.py"]
