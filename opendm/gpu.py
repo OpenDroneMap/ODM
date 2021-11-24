@@ -24,3 +24,20 @@ def has_gpus():
         return len(platforms) > 0
     except Exception as e:
         return False
+
+@lru_cache(maxsize=None)
+def windows_no_cuda():
+    """
+    Check if CUDA lib is available on Windows
+    Returns true if OS is windows and CUDA is not found.
+    """
+    if sys.platform == 'win32':
+        nvcuda_path = os.path.join(os.environ.get('SYSTEMROOT'), 'system32', 'nvcuda.dll')
+        if os.path.isfile(nvcuda_path):
+            return False
+        else:
+            log.ODM_INFO("No CUDA drivers detected, using CPU")
+            return True
+    else:
+        return False
+

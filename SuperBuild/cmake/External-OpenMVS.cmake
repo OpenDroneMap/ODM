@@ -35,6 +35,13 @@ if(UNIX)
     endif()
 endif()
 
+if(WIN32)
+  SET(NVDRIVER "$ENV{SystemRoot}\\System32\\nvcuda.dll")
+  if (EXISTS ${NVDRIVER})
+    file(COPY ${NVDRIVER} DESTINATION "${SB_INSTALL_DIR}/bin")
+  endif()
+endif()
+
 ExternalProject_Add(${_proj_name}
   DEPENDS           ceres opencv vcg eigen34
   PREFIX            ${_SB_BINARY_DIR}
