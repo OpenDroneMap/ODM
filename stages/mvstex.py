@@ -6,11 +6,19 @@ from opendm import system
 from opendm import context
 from opendm import types
 from opendm.multispectral import get_primary_band_name
+from opendm.photo import find_largest_photo_dim
 
 class ODMMvsTexStage(types.ODM_Stage):
     def process(self, args, outputs):
         tree = outputs['tree']
         reconstruction = outputs['reconstruction']
+
+        max_dim = find_largest_photo_dim(reconstruction.photos)
+        max_texture_size = 8 * 1024 # default
+
+        if max_dim > 8000:
+            log.ODM_INFO("Large input images (%s pixels), increasing maximum texture size." % max_dim)
+            max_texture_size *= 3
 
         class nonloc:
             runs = []
@@ -92,6 +100,7 @@ class ODMMvsTexStage(types.ODM_Stage):
                     'keepUnseenFaces': keepUnseenFaces,
                     'toneMapping': self.params.get('tone_mapping'),
                     'nadirMode': nadir,
+                    'maxTextureSize': '--max_texture_size=%s' % max_texture_size,
                     'nvm_file': r['nvm_file'],
                     'intermediate': '--no_intermediate_results' if (r['labeling_file'] or not reconstruction.multi_camera) else '',
                     'labelingFile': '-L "%s"' % r['labeling_file'] if r['labeling_file'] else ''
@@ -113,7 +122,8 @@ class ODMMvsTexStage(types.ODM_Stage):
                         '{skipLocalSeamLeveling} '
                         '{keepUnseenFaces} '
                         '{nadirMode} '
-                        '{labelingFile} '.format(**kwargs))
+                        '{labelingFile} '
+                        '{maxTextureSize} '.format(**kwargs))
                 
                 # Backward compatibility: copy odm_textured_model_geo.mtl to odm_textured_model.mtl
                 # for certain older WebODM clients which expect a odm_textured_model.mtl
