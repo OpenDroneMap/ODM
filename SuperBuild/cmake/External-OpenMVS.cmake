@@ -36,10 +36,12 @@ if(UNIX)
 endif()
 
 if(WIN32)
-  SET(NVDRIVER "$ENV{SystemRoot}\\System32\\nvcuda.dll")
-  if (EXISTS ${NVDRIVER})
-    file(COPY ${NVDRIVER} DESTINATION "${SB_INSTALL_DIR}/bin")
-  endif()
+  # On Windows systems without NVIDIA GPUs, OpenMVS will not launch
+  # unless a CUDA DLL is available; we download a dummy DLL 
+  # generated with https://github.com/ykhwong/dummy-dll-generator that is 
+  # loaded UNLESS the real CUDA DLL is available, since it will
+  # be loaded before our dummy DLL.
+  file(DOWNLOAD "https://github.com/OpenDroneMap/windows-deps/releases/download/2.5.0/nvcuda_dummy.dll" "${SB_INSTALL_DIR}/bin/nvcuda.dll")
 endif()
 
 ExternalProject_Add(${_proj_name}
