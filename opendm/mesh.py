@@ -163,7 +163,6 @@ def screened_poisson_reconstruction(inPointCloud, outMesh, depth = 8, samples = 
             'samples': samples,
             'pointWeight': pointWeight,
             'threads': int(threads),
-            'memory': int(concurrency.get_max_memory_mb(4, 0.8) // 1024),
             'verbose': '--verbose' if verbose else ''
         }
 
@@ -175,7 +174,6 @@ def screened_poisson_reconstruction(inPointCloud, outMesh, depth = 8, samples = 
                     '--pointWeight {pointWeight} '
                     '--samplesPerNode {samples} '
                     '--threads {threads} '
-                    '--maxMemory {memory} '
                     '--bType 2 '
                     '--linearFit '
                     '{verbose}'.format(**poissonReconArgs))
