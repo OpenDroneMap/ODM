@@ -7,7 +7,7 @@ from opendm import entwine
 from opendm import io
 from opendm.concurrency import parallel_map
 from opendm.utils import double_quote
-from opendm.boundary import as_polygon
+from opendm.boundary import as_polygon, as_geojson
 from opendm.dem.pdal import run_pipeline
 
 def ply_info(input_ply):
@@ -79,101 +79,31 @@ def filter(input_point_cloud, output_point_cloud, standard_deviation=2.5, meank=
         log.ODM_ERROR("{} does not exist. The program will now exit.".format(input_point_cloud))
         sys.exit(1)
 
-    filters = []
+    args = [
+        '--input "%s"' % input_point_cloud,
+        '--output "%s"' % output_point_cloud,
+        '--concurrency %s' % max_concurrency,
+        '--verbose' if verbose else '',
+    ]
 
     if sample_radius > 0:
         log.ODM_INFO("Sampling points around a %sm radius" % sample_radius)
-        filters.append('sample')
+        args.append('--radius %s' % sample_radius)
 
     if standard_deviation > 0 and meank > 0:
         log.ODM_INFO("Filtering {} (statistical, meanK {}, standard deviation {})".format(input_point_cloud, meank, standard_deviation))
-        filters.append('outlier')
-        filters.append('range')
+        args.append('--meank %s' % meank)
+        args.append('--std %s' % standard_deviation)
     
     if boundary is not None:
         log.ODM_INFO("Boundary {}".format(boundary))
-        filters.append('crop')
+        fd, boundary_json_file = tempfile.mkstemp(suffix='.boundary.json')
+        os.close(fd)
+        with open(boundary_json_file, 'w') as f:
+            f.write(as_geojson(boundary))
+        args.append('--boundary "%s"' % boundary_json_file)
 
-    info = ply_info(input_point_cloud)
-    dims = "x=float,y=float,z=float,"
-    if info['has_normals']:
-        dims += "nx=float,ny=float,nz=float,"
-    dims += "red=uchar,blue=uchar,green=uchar"
-    if info['has_views']:
-        dims += ",views=uchar"
-
-    if info['vertex_count'] == 0:
-        log.ODM_ERROR("Cannot read vertex count for {}".format(input_point_cloud))
-        sys.exit(1)
-
-    # Do we need to split this?
-    VERTEX_THRESHOLD = 250000
-    should_split = max_concurrency > 1 and info['vertex_count'] > VERTEX_THRESHOLD*2
-
-    if should_split:
-        partsdir = os.path.join(os.path.dirname(output_point_cloud), "parts")
-        if os.path.exists(partsdir):
-            log.ODM_WARNING("Removing existing directory %s" % partsdir)
-            shutil.rmtree(partsdir)
-
-        point_cloud_submodels = split(input_point_cloud, partsdir, "part.ply", capacity=VERTEX_THRESHOLD, dims=dims)
-
-        def run_filter(pcs):
-            # Recurse
-            filter(pcs['path'], io.related_file_path(pcs['path'], postfix="_filtered"), 
-                        standard_deviation=standard_deviation, 
-                        meank=meank, 
-                        sample_radius=sample_radius,
-                        boundary=boundary,
-                        verbose=verbose,
-                        max_concurrency=1)
-        # Filter
-        parallel_map(run_filter, [{'path': p} for p in point_cloud_submodels], max_concurrency)
-
-        # Merge
-        log.ODM_INFO("Merging %s point cloud chunks to %s" % (len(point_cloud_submodels), output_point_cloud))
-        filtered_pcs = [io.related_file_path(pcs, postfix="_filtered") for pcs in point_cloud_submodels]
-        #merge_ply(filtered_pcs, output_point_cloud, dims)
-        fast_merge_ply(filtered_pcs, output_point_cloud)
-
-        if os.path.exists(partsdir):
-            shutil.rmtree(partsdir)
-    else:
-        # Process point cloud (or a point cloud submodel) in a single step
-        pipeline = []
-
-        # Input
-        pipeline.append(input_point_cloud)
-
-        # Filters
-        for f in filters:
-            params = {}
-            
-            if f == 'sample':
-                params = {'radius': sample_radius}
-            elif f == 'outlier':
-                params = {'method': 'statistical', 'mean_k': meank, 'multiplier': standard_deviation}
-            elif f == 'range':
-                params = {'limits': 'Classification![7:7]'}
-            elif f == 'crop':
-                params = {'polygon': as_polygon(boundary)}
-            else:
-                raise RuntimeError("Invalid filter in PDAL pipeline (this should not have happened, please report it: https://github.com/OpenDroneMap/ODM/issues")
-            
-            pipeline.append(dict({
-                'type': "filters.%s" % f,
-            }, **params))
-
-        # Output
-        pipeline.append({
-            'type': 'writers.ply',
-            'sized_types': False,
-            'storage_mode': 'little endian',
-            'dims': dims,
-            'filename': output_point_cloud
-        })
-
-        run_pipeline(pipeline, verbose=verbose)
+    system.run('"%s" %s' % (context.fpcfilter_path, " ".join(args)))
 
     if not os.path.exists(output_point_cloud):
         log.ODM_WARNING("{} not found, filtering has failed.".format(output_point_cloud))

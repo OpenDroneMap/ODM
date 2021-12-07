@@ -136,6 +136,7 @@ set(custom_libs OpenSfM
 				Untwine
 				MvsTexturing
 				OpenMVS
+				FPCFilter
 )
 
 # Build entwine only on Linux

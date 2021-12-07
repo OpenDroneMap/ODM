@@ -34,6 +34,8 @@ mvstex_path = os.path.join(superbuild_bin_path, "texrecon")
 omvs_densify_path = os.path.join(superbuild_bin_path, "OpenMVS", "DensifyPointCloud")
 omvs_reconstructmesh_path = os.path.join(superbuild_bin_path, "OpenMVS", "ReconstructMesh")
 
+fpcfilter_path = os.path.join(superbuild_bin_path, "FPCFilter")
+
 odm_orthophoto_path = os.path.join(superbuild_bin_path, "odm_orthophoto")
 settings_path = os.path.join(root_path, 'settings.yaml')
 
