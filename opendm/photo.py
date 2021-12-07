@@ -36,6 +36,9 @@ def find_largest_photo_dim(photos):
         
     return max_dim
 
+class PhotoCorruptedException(Exception):
+    pass
+
 class ODM_Photo:
     """ODMPhoto - a class for ODMPhotos"""
 
@@ -270,8 +273,11 @@ class ODM_Photo:
                 # self.set_attr_from_xmp_tag('bandwidth', tags, [
                 #     'Camera:WavelengthFWHM'
                 # ], float)
+        try:
+            self.width, self.height = get_image_size.get_image_size(_path_file)
+        except Exception as e:
+            raise PhotoCorruptedException(str(e))
 
-        self.width, self.height = get_image_size.get_image_size(_path_file)
         # Sanitize band name since we use it in folder paths
         self.band_name = re.sub('[^A-Za-z0-9]+', '', self.band_name)
 

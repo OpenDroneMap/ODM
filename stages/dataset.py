@@ -4,6 +4,7 @@ import json
 from opendm import context
 from opendm import io
 from opendm import types
+from opendm.photo import PhotoCorruptedException
 from opendm import log
 from opendm import system
 from opendm.geo import GeoFile
@@ -109,11 +110,14 @@ class ODMLoadDatasetStage(types.ODM_Stage):
                 with open(tree.dataset_list, 'w') as dataset_list:
                     log.ODM_INFO("Loading %s images" % len(path_files))
                     for f in path_files:
-                        p = types.ODM_Photo(f)
-                        p.set_mask(find_mask(f, masks))
-                        photos += [p]
-                        dataset_list.write(photos[-1].filename + '\n')
-                
+                        try:
+                            p = types.ODM_Photo(f)
+                            p.set_mask(find_mask(f, masks))
+                            photos += [p]
+                            dataset_list.write(photos[-1].filename + '\n')
+                        except PhotoCorruptedException:
+                            log.ODM_WARNING("%s seems corrupted and will not be used" % os.path.basename(f))
+
                 # Check if a geo file is available
                 if tree.odm_geo_file is not None and os.path.isfile(tree.odm_geo_file):
                     log.ODM_INFO("Found image geolocation file")

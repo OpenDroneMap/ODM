@@ -24,7 +24,7 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
         system.mkdir_p(tree.odm_orthophoto)
 
         if args.skip_orthophoto:
-            log.ODM_WARNING("--skip-orthophoto is set, skipping orthophoto generation.")
+            log.ODM_WARNING("--skip-orthophoto is set, no orthophoto will be generated")
             return
 
         if not io.file_exists(tree.odm_orthophoto_tif) or self.rerun():
