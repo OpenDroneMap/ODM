@@ -258,7 +258,13 @@ def config(argv=None, parser=None):
                     nargs=0,
                     default=False,
                     help='Skip generation of PDF report. This can save time if you don\'t need a report. Default: %(default)s')
-
+    
+    parser.add_argument('--skip-orthophoto',
+                    action=StoreTrue,
+                    nargs=0,
+                    default=False,
+                    help='Skip generation of the orthophoto. This can save time if you only need 3D results or DEMs. Default: %(default)s')
+    
     parser.add_argument('--ignore-gsd',
                         action=StoreTrue,
                         nargs=0,
