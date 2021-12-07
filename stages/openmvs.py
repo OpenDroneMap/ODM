@@ -6,7 +6,7 @@ from opendm import system
 from opendm import context
 from opendm import point_cloud
 from opendm import types
-from opendm.gpu import gpu_disabled_by_user
+from opendm.gpu import gpu_disabled_by_user, windows_no_cuda
 from opendm.utils import get_depthmap_resolution
 from opendm.osfm import OSFMContext
 from opendm.multispectral import get_primary_band_name
@@ -71,8 +71,10 @@ class ODMOpenMVSStage(types.ODM_Stage):
                 "-v 0"
             ]
 
-            if gpu_disabled_by_user():
-                config.append("--cuda-device -1")
+            gpu_config = []
+
+            if gpu_disabled_by_user() or windows_no_cuda():
+                gpu_config.append("--cuda-device -1")
 
             if args.pc_tile:
                 config.append("--fusion-mode 1")
@@ -82,7 +84,7 @@ class ODMOpenMVSStage(types.ODM_Stage):
 
             system.run('%s "%s" %s' % (context.omvs_densify_path, 
                                        openmvs_scene_file,
-                                      ' '.join(config)))
+                                      ' '.join(config + gpu_config)))
 
             self.update_progress(85)
             files_to_remove = []
@@ -98,7 +100,7 @@ class ODMOpenMVSStage(types.ODM_Stage):
                 ]
                 system.run('%s "%s" %s' % (context.omvs_densify_path, 
                                         openmvs_scene_file,
-                                        ' '.join(config)))
+                                        ' '.join(config + gpu_config)))
                 
                 scene_files = glob.glob(os.path.join(tree.openmvs, "scene_[0-9][0-9][0-9][0-9].mvs"))
                 if len(scene_files) == 0:
@@ -130,10 +132,10 @@ class ODMOpenMVSStage(types.ODM_Stage):
                         ]
 
                         try:
-                            system.run('%s "%s" %s' % (context.omvs_densify_path, sf, ' '.join(config)))
+                            system.run('%s "%s" %s' % (context.omvs_densify_path, sf, ' '.join(config + gpu_config)))
 
                             # Filter
-                            system.run('%s "%s" --filter-point-cloud -1 -v 0' % (context.omvs_densify_path, scene_dense_mvs))
+                            system.run('%s "%s" --filter-point-cloud -1 -v 0 %s' % (context.omvs_densify_path, scene_dense_mvs, ' '.join(gpu_config)))
                         except:
                             log.ODM_WARNING("Sub-scene %s could not be reconstructed, skipping..." % sf)
 
@@ -162,7 +164,7 @@ class ODMOpenMVSStage(types.ODM_Stage):
                         '-i "%s"' % scene_dense,
                         "-v 0"
                     ]
-                    system.run('%s %s' % (context.omvs_densify_path, ' '.join(config)))
+                    system.run('%s %s' % (context.omvs_densify_path, ' '.join(config + gpu_config)))
                 else:
                     raise system.ExitException("Cannot find scene_dense.mvs, dense reconstruction probably failed. Exiting...")
 
