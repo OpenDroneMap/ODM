@@ -90,9 +90,9 @@ class ODMOpenMVSStage(types.ODM_Stage):
             try:
                 run_densify()
             except system.SubprocessException as e:
-                # On Windows if the GPU was enabled and the program failed,
+                # If the GPU was enabled and the program failed,
                 # try to run it again without GPU
-                if sys.platform == 'win32' and len(gpu_config) == 0:
+                if e.errorCode == 1 and len(gpu_config) == 0:
                     log.ODM_WARNING("OpenMVS failed with GPU, is your graphics card driver up to date? Falling back to CPU.")
                     gpu_config.append("--cuda-device -1")
                     run_densify()

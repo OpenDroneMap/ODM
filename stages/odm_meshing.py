@@ -56,10 +56,9 @@ class ODMeshingStage(types.ODM_Stage):
               
               dsm_radius = dsm_resolution * math.sqrt(2)
 
-              # Sparse point clouds benefits from using
-              # a larger radius interolation --> less holes
               if args.fast_orthophoto:
                   dsm_radius *= 2
+                  dsm_resolution *= 8
 
               log.ODM_INFO('ODM 2.5D DSM resolution: %s' % dsm_resolution)
               
@@ -72,7 +71,7 @@ class ODMeshingStage(types.ODM_Stage):
                     verbose=self.params.get('verbose'),
                     available_cores=args.max_concurrency,
                     method='poisson' if args.fast_orthophoto else 'gridded',
-                    smooth_dsm=not args.fast_orthophoto)
+                    smooth_dsm=True)
           else:
               log.ODM_WARNING('Found a valid ODM 2.5D Mesh file in: %s' %
                               tree.odm_25dmesh)

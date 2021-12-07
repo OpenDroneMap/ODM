@@ -137,7 +137,7 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                     cropper = Cropper(tree.odm_georeferencing, 'odm_georeferenced_model')
                     
                     if args.fast_orthophoto:
-                        decimation_step = 10
+                        decimation_step = 4
                     else:
                         decimation_step = 40
                     
