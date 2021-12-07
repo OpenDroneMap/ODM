@@ -1,4 +1,4 @@
-import shutil, os, glob, math
+import shutil, os, glob, math, sys
 
 from opendm import log
 from opendm import io
@@ -82,9 +82,22 @@ class ODMOpenMVSStage(types.ODM_Stage):
             if not args.pc_geometric:
                 config.append("--geometric-iters 0")
 
-            system.run('%s "%s" %s' % (context.omvs_densify_path, 
-                                       openmvs_scene_file,
-                                      ' '.join(config + gpu_config)))
+            def run_densify():
+                system.run('%s "%s" %s' % (context.omvs_densify_path, 
+                                        openmvs_scene_file,
+                                        ' '.join(config + gpu_config)))
+
+            try:
+                run_densify()
+            except system.SubprocessException as e:
+                # On Windows if the GPU was enabled and the program failed,
+                # try to run it again without GPU
+                if sys.platform == 'win32' and len(gpu_config) == 0:
+                    log.ODM_WARNING("OpenMVS failed with GPU, is your graphics card driver up to date? Falling back to CPU.")
+                    gpu_config.append("--cuda-device -1")
+                    run_densify()
+                else:
+                    raise e
 
             self.update_progress(85)
             files_to_remove = []
