@@ -14,6 +14,9 @@ from opendm import system
 import xmltodict as x2d
 from opendm import get_image_size
 from xml.parsers.expat import ExpatError
+from opensfm.sensors import sensor_data
+
+projections = ['perspective', 'fisheye', 'brown', 'dual', 'equirectangular', 'spherical']
 
 def find_largest_photo(photos):
     max_photo = None
@@ -36,6 +39,27 @@ def find_largest_photo_dim(photos):
         
     return max_dim
 
+def get_mm_per_unit(resolution_unit):
+    """Length of a resolution unit in millimeters.
+
+    Uses the values from the EXIF specs in
+    https://www.sno.phy.queensu.ca/~phil/exiftool/TagNames/EXIF.html
+
+    Args:
+        resolution_unit: the resolution unit value given in the EXIF
+    """
+    if resolution_unit == 2:  # inch
+        return 25.4
+    elif resolution_unit == 3:  # cm
+        return 10
+    elif resolution_unit == 4:  # mm
+        return 1
+    elif resolution_unit == 5:  # um
+        return 0.001
+    else:
+        log.ODM_WARNING("Unknown EXIF resolution unit value: {}".format(resolution_unit))
+        return None
+
 class PhotoCorruptedException(Exception):
     pass
 
@@ -51,6 +75,7 @@ class ODM_Photo:
         self.height = None
         self.camera_make = ''
         self.camera_model = ''
+        self.orientation = 1
 
         # Geo tags
         self.latitude = None
@@ -90,6 +115,10 @@ class ODM_Photo:
         # RTK
         self.gps_xy_stddev = None # Dilution of Precision X/Y
         self.gps_z_stddev = None # Dilution of Precision Z
+
+        # Misc SFM
+        self.camera_projection = 'brown'
+        self.focal_ratio = 0.0
 
         # parse values from metadata
         self.parse_exif_values(path_file)
@@ -143,8 +172,15 @@ class ODM_Photo:
                     self.latitude = self.dms_to_decimal(tags['GPS GPSLatitude'], tags['GPS GPSLatitudeRef'])
                 if 'GPS GPSLongitude' in tags and 'GPS GPSLongitudeRef' in tags:
                     self.longitude = self.dms_to_decimal(tags['GPS GPSLongitude'], tags['GPS GPSLongitudeRef'])
+                if 'Image Orientation' in tags:
+                    self.orientation = self.int_value(tags['Image Orientation'])
             except (IndexError, ValueError) as e:
                 log.ODM_WARNING("Cannot read basic EXIF tags for %s: %s" % (_path_file, str(e)))
+
+            try:
+                self.focal_ratio = self.extract_focal(self.camera_make, self.camera_model, tags)
+            except (IndexError, ValueError) as e:
+                log.ODM_WARNING("Cannot extract focal ratio for %s: %s" % (_path_file, str(e)))
 
             try:
                 if 'Image Tag 0xC61A' in tags:
@@ -241,6 +277,17 @@ class ODM_Photo:
                         '@Camera:ImageUniqueID', # sentera 6x
                     ])
 
+                    # DJI GPS tags
+                    self.set_attr_from_xmp_tag('longitude', tags, [
+                        '@drone-dji:Longitude'
+                    ], float)
+                    self.set_attr_from_xmp_tag('latitude', tags, [
+                        '@drone-dji:Latitude'
+                    ], float)
+                    self.set_attr_from_xmp_tag('altitude', tags, [
+                        '@drone-dji:AbsoluteAltitude'
+                    ], float)
+
                     # Phantom 4 RTK
                     if '@drone-dji:RtkStdLon' in tags:
                         y = float(self.get_xmp_tag(tags, '@drone-dji:RtkStdLon'))
@@ -263,6 +310,13 @@ class ODM_Photo:
                         self.set_attr_from_xmp_tag('dls_yaw', tags, ['DLS:Yaw'], float)
                         self.set_attr_from_xmp_tag('dls_pitch', tags, ['DLS:Pitch'], float)
                         self.set_attr_from_xmp_tag('dls_roll', tags, ['DLS:Roll'], float)
+                
+                    camera_projection = self.get_xmp_tag(tags, ['@Camera:ModelType', 'Camera:ModelType'])
+                    if camera_projection is not None:
+                        camera_projection = camera_projection.lower()
+                        if camera_projection in projections:
+                            self.camera_projection = camera_projection
+
                 except Exception as e:
                     log.ODM_WARNING("Cannot read XMP tags for %s: %s" % (_path_file, str(e)))
 
@@ -280,6 +334,45 @@ class ODM_Photo:
 
         # Sanitize band name since we use it in folder paths
         self.band_name = re.sub('[^A-Za-z0-9]+', '', self.band_name)
+
+    def extract_focal(self, make, model, tags):
+        if make != "unknown":
+            # remove duplicate 'make' information in 'model'
+            model = model.replace(make, "")
+        
+        sensor_string = (make.strip() + " " + model.strip()).strip().lower()
+
+        sensor_width = None
+        if ("EXIF FocalPlaneResolutionUnit" in tags and "EXIF FocalPlaneXResolution" in tags):
+            resolution_unit = self.float_value(tags["EXIF FocalPlaneResolutionUnit"])
+            mm_per_unit = get_mm_per_unit(resolution_unit)
+            if mm_per_unit:
+                pixels_per_unit = self.float_value(tags["EXIF FocalPlaneXResolution"])
+                if pixels_per_unit <= 0 and "EXIF FocalPlaneYResolution" in tags:
+                    pixels_per_unit = self.float_value(tags["EXIF FocalPlaneYResolution"])
+                
+                if pixels_per_unit > 0 and self.width is not None:
+                    units_per_pixel = 1 / pixels_per_unit
+                    sensor_width = self.width * units_per_pixel * mm_per_unit
+
+        focal_35 = None
+        focal = None
+        if "EXIF FocalLengthIn35mmFilm" in tags:
+            focal_35 = self.float_value(tags["EXIF FocalLengthIn35mmFilm"])
+        if "EXIF FocalLength" in tags:
+            focal = self.float_value(tags["EXIF FocalLength"])
+
+        if focal_35 is not None and focal_35 > 0:
+            focal_ratio = focal_35 / 36.0  # 35mm film produces 36x24mm pictures.
+        else:
+            if not sensor_width:
+                sensor_width = sensor_data().get(sensor_string, None)
+            if sensor_width and focal:
+                focal_ratio = focal / sensor_width
+            else:
+                focal_ratio = 0.0
+
+        return focal_ratio
 
     def set_attr_from_xmp_tag(self, attr, xmp_tags, tags, cast=None):
         v = self.get_xmp_tag(xmp_tags, tags)
@@ -487,5 +580,51 @@ class ODM_Photo:
 
         return None
 
+    def override_gps_dop(self, dop):
+        self.gps_xy_stddev = self.gps_z_stddev = dop
+
     def is_thermal(self):
         return self.band_name.upper() in ["LWIR"] # TODO: more?
+
+    def to_opensfm_exif(self):
+        capture_time = 0.0
+        if self.utc_time is not None:
+            capture_time = self.utc_time / 1000.0
+        
+        gps = {}
+        if self.latitude is not None and self.longitude is not None:
+            gps['latitude'] = self.latitude
+            gps['longitude'] = self.longitude
+            if self.altitude is not None:
+                gps['altitude'] = self.altitude
+            else:
+                gps['altitude'] = 0.0
+
+            dop = self.get_gps_dop()
+            if dop is None:
+                dop = 10.0 # Default
+            
+            gps['dop'] = dop
+
+        return {
+            "make": self.camera_make,
+            "model": self.camera_model,
+            "width": self.width,
+            "height": self.height,
+            "projection_type": self.camera_projection,
+            "focal_ratio": self.focal_ratio,
+            "orientation": self.orientation,
+            "capture_time": capture_time,
+            "gps": gps,
+            "camera": " ".join(
+                [
+                    "v2",
+                    self.camera_make.strip(),
+                    self.camera_model.strip(),
+                    str(int(self.width)),
+                    str(int(self.height)),
+                    self.camera_projection,
+                    str(float(self.focal_ratio))[:6],
+                ]
+            ).lower()
+        }

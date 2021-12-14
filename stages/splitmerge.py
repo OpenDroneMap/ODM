@@ -52,7 +52,7 @@ class ODMSplitStage(types.ODM_Stage):
                 ]
 
                 octx.setup(args, tree.dataset_raw, reconstruction=reconstruction, append_config=config, rerun=self.rerun())
-                octx.extract_metadata(self.rerun())
+                octx.photos_to_metadata(photos, self.rerun())
 
                 self.update_progress(5)
 

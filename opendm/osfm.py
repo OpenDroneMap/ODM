@@ -120,30 +120,10 @@ class OSFMContext:
             # GPSDOP override if we have GPS accuracy information (such as RTK)
             if 'gps_accuracy_is_set' in args:
                 log.ODM_INFO("Forcing GPS DOP to %s for all images" % args.gps_accuracy)
-            
-            log.ODM_INFO("Writing exif overrides")
 
-            exif_overrides = {}
-            for p in photos:
-                if 'gps_accuracy_is_set' in args:
-                    dop = args.gps_accuracy
-                elif p.get_gps_dop() is not None:
-                    dop = p.get_gps_dop()
-                else:
-                    dop = args.gps_accuracy # default value
+                for p in photos:
+                    p.override_gps_dop(args.gps_accuracy)
 
-                if p.latitude is not None and p.longitude is not None:
-                    exif_overrides[p.filename] = {
-                        'gps': {
-                            'latitude': p.latitude,
-                            'longitude': p.longitude,
-                            'altitude': p.altitude if p.altitude is not None else 0,
-                            'dop': dop,
-                        }
-                    }
-
-            with open(os.path.join(self.opensfm_project_path, "exif_overrides.json"), 'w') as f:
-                f.write(json.dumps(exif_overrides))
 
             # Check image masks
             masks = []
@@ -287,6 +267,17 @@ class OSFMContext:
         metadata_dir = self.path("exif")
         if not io.dir_exists(metadata_dir) or rerun:
             self.run('extract_metadata')
+    
+    def photos_to_metadata(self, photos, rerun=False):
+        metadata_dir = self.path("exif")
+        if io.dir_exists(metadata_dir) and rerun:
+            shutil.rmtree(metadata_dir)
+        
+        os.makedirs(metadata_dir)
+        
+        for p in photos:
+            with open(os.path.join(metadata_dir, "%s.exif" % p.filename), 'w') as f:
+                f.write(json.dumps(p.to_opensfm_exif()))
 
     def is_feature_matching_done(self):
         features_dir = self.path("features")
