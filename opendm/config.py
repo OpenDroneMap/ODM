@@ -166,16 +166,6 @@ def config(argv=None, parser=None):
                              'Neighbors works together with Distance parameter, '
                              'set both to 0 to not use pre-matching. Default: %(default)s')
 
-    parser.add_argument('--matcher-distance',
-                        metavar='<integer>',
-                        action=StoreValue,
-                        default=0,
-                        type=int,
-                        help='Distance threshold in meters to find pre-matching '
-                             'images based on GPS exif data. Set both '
-                             'matcher-neighbors and this to 0 to skip '
-                             'pre-matching. Default: %(default)s')
-
     parser.add_argument('--use-fixed-camera-params',
                         action=StoreTrue,
                         nargs=0,
@@ -240,6 +230,15 @@ def config(argv=None, parser=None):
                         default=False,
                         help='Run local bundle adjustment for every image added to the reconstruction and a global '
                              'adjustment every 100 images. Speeds up reconstruction for very large datasets. Default: %(default)s')
+
+    parser.add_argument('--sfm-algorithm',
+                    metavar='<string>',
+                    action=StoreValue,
+                    default='incremental',
+                    choices=['incremental', 'triangulation'],
+                    help=('Choose the structure from motion algorithm. If camera positions and angles are available, triangulation is significantly faster for aerial datasets. '
+                        'Can be one of: %(choices)s. Default: '
+                        '%(default)s'))
 
     parser.add_argument('--use-3dmesh',
                     action=StoreTrue,
@@ -771,6 +770,9 @@ def config(argv=None, parser=None):
     if args.fast_orthophoto:
       log.ODM_INFO('Fast orthophoto is turned on, automatically setting --skip-3dmodel')
       args.skip_3dmodel = True
+      if not 'sfm_algorithm_is_set' in args:
+        log.ODM_INFO('Fast orthophoto is turned on, automatically setting --sfm-algorithm to triangulation')
+        args.sfm_algorithm = 'triangulation'
 
     if args.pc_rectify and not args.pc_classify:
       log.ODM_INFO("Ground rectify is turned on, automatically turning on point cloud classification")

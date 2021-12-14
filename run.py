@@ -17,10 +17,17 @@ from opendm.loghelpers import args_to_dict
 
 from stages.odm_app import ODMApp
 
+def odm_version():
+    try:
+        with open("VERSION") as f:
+            return f.read().split("\n")[0].strip()
+    except:
+        return "?"
+
 if __name__ == '__main__':
     args = config.config()
 
-    log.ODM_INFO('Initializing ODM - %s' % system.now())
+    log.ODM_INFO('Initializing ODM %s - %s' % (odm_version(), system.now()))
 
     # Print args
     args_dict = args_to_dict(args)
