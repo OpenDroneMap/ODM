@@ -712,6 +712,6 @@ class ODM_Photo:
             # OPK rotation matrix
             ceb = cen.dot(cnb).dot(cbb)
 
-            self.omega = math.atan2(-ceb[1][2], ceb[2][2])
-            self.phi = math.asin(ceb[0][2])
-            self.kappa = math.atan2(-ceb[0][1], ceb[0][0])
+            self.omega = math.degrees(math.atan2(-ceb[1][2], ceb[2][2]))
+            self.phi = math.degrees(math.asin(ceb[0][2]))
+            self.kappa = math.degrees(math.atan2(-ceb[0][1], ceb[0][0]))
