@@ -130,6 +130,13 @@ class ODMLoadDatasetStage(types.ODM_Stage):
                             updated += 1
                     log.ODM_INFO("Updated %s image positions" % updated)
 
+                # GPSDOP override if we have GPS accuracy information (such as RTK)
+                if 'gps_accuracy_is_set' in args:
+                    log.ODM_INFO("Forcing GPS DOP to %s for all images" % args.gps_accuracy)
+
+                    for p in photos:
+                        p.override_gps_dop(args.gps_accuracy)
+
                 # Save image database for faster restart
                 save_images_database(photos, images_database_file)
             else:

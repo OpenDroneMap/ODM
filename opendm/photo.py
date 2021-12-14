@@ -1,6 +1,7 @@
 import logging
 import re
 import os
+import math
 
 import exifread
 import numpy as np
@@ -15,6 +16,7 @@ import xmltodict as x2d
 from opendm import get_image_size
 from xml.parsers.expat import ExpatError
 from opensfm.sensors import sensor_data
+from opensfm.geo import ecef_from_lla
 
 projections = ['perspective', 'fisheye', 'brown', 'dual', 'equirectangular', 'spherical']
 
@@ -103,6 +105,14 @@ class ODM_Photo:
         self.irradiance_scale_to_si = None
         self.utc_time = None
 
+        # OPK angles
+        self.yaw = None
+        self.pitch = None
+        self.roll = None
+        self.omega = None
+        self.phi = None
+        self.kappa = None
+
         # DLS
         self.sun_sensor = None
         self.dls_yaw = None
@@ -139,6 +149,9 @@ class ODM_Photo:
         self.latitude = geo_entry.y
         self.longitude = geo_entry.x
         self.altitude = geo_entry.z
+        self.omega = geo_entry.omega
+        self.phi = geo_entry.phi
+        self.kappa = geo_entry.kappa
         self.dls_yaw = geo_entry.omega
         self.dls_pitch = geo_entry.phi
         self.dls_roll = geo_entry.kappa
@@ -317,6 +330,11 @@ class ODM_Photo:
                         if camera_projection in projections:
                             self.camera_projection = camera_projection
 
+                    # OPK
+                    self.set_attr_from_xmp_tag('yaw', tags, ['@drone-dji:GimbalYawDegree', '@Camera:Yaw', 'Camera:Yaw'], float)
+                    self.set_attr_from_xmp_tag('pitch', tags, ['@drone-dji:GimbalPitchDegree', '@Camera:Pitch', 'Camera:Pitch'], float)
+                    self.set_attr_from_xmp_tag('roll', tags, ['@drone-dji:GimbalRollDegree', '@Camera:Roll', 'Camera:Roll'], float)
+                
                 except Exception as e:
                     log.ODM_WARNING("Cannot read XMP tags for %s: %s" % (_path_file, str(e)))
 
@@ -334,6 +352,8 @@ class ODM_Photo:
 
         # Sanitize band name since we use it in folder paths
         self.band_name = re.sub('[^A-Za-z0-9]+', '', self.band_name)
+
+        self.compute_opk()
 
     def extract_focal(self, make, model, tags):
         if make != "unknown":
@@ -586,6 +606,19 @@ class ODM_Photo:
     def is_thermal(self):
         return self.band_name.upper() in ["LWIR"] # TODO: more?
 
+    def camera_id(self):
+        return " ".join(
+                [
+                    "v2",
+                    self.camera_make.strip(),
+                    self.camera_model.strip(),
+                    str(int(self.width)),
+                    str(int(self.height)),
+                    self.camera_projection,
+                    str(float(self.focal_ratio))[:6],
+                ]
+            ).lower()
+
     def to_opensfm_exif(self):
         capture_time = 0.0
         if self.utc_time is not None:
@@ -606,6 +639,14 @@ class ODM_Photo:
             
             gps['dop'] = dop
 
+        opk = {}
+        if self.omega and self.phi and self.kappa:
+            opk = {
+                'omega': self.omega,
+                'phi': self.phi,
+                'kappa': self.kappa
+            }
+
         return {
             "make": self.camera_make,
             "model": self.camera_model,
@@ -616,15 +657,61 @@ class ODM_Photo:
             "orientation": self.orientation,
             "capture_time": capture_time,
             "gps": gps,
-            "camera": " ".join(
-                [
-                    "v2",
-                    self.camera_make.strip(),
-                    self.camera_model.strip(),
-                    str(int(self.width)),
-                    str(int(self.height)),
-                    self.camera_projection,
-                    str(float(self.focal_ratio))[:6],
-                ]
-            ).lower()
+            "opk": opk,
+            "camera": self.camera_id()
         }
+    
+    def compute_opk(self):
+        if self.yaw is not None and \
+            self.pitch is not None and \
+            self.roll is not None:
+
+            y, p, r = self.yaw, self.pitch, self.roll
+
+            # Ref: New Calibration and Computing Method for Direct 
+            # Georeferencing of Image and Scanner Data Using the 
+            # Position and Angular Data of an Hybrid Inertial Navigation System 
+            # by Manfred Bäumker
+
+            # YPR rotation matrix
+            cnb = np.array([[ math.cos(y) * math.cos(p), math.cos(y) * math.sin(p) * math.sin(r) - math.sin(y) * math.cos(r), math.cos(y) * math.sin(p) * math.cos(r) - math.sin(y) * math.sin(r)],
+                            [ math.sin(y) * math.cos(p), math.sin(y) * math.sin(p) * math.sin(r) + math.cos(y) * math.cos(r), math.sin(y) * math.sin(p) * math.cos(r) - math.cos(y) * math.sin(r)],
+                            [ -math.sin(p), math.cos(p) * math.sin(r), math.cos(p) * math.cos(r)],
+                           ])
+
+            # Convert between image and body coordinates
+            # Top of image pixels point to flying direction
+            # and camera is looking down.
+            # We might need to change this if we want different
+            # camera mount orientations (e.g. backward or sideways)
+
+            # (Swap X/Y, flip Z)
+            cbb = np.array([[0, 1, 0],
+                            [1, 0, 0],
+                            [0, 0, -1]])
+            
+            delta = 1e-7
+            
+            p1 = np.array(ecef_from_lla(self.latitude + delta, self.longitude, self.altitude))
+            p2 = np.array(ecef_from_lla(self.latitude - delta, self.longitude, self.altitude))
+            xnp = p1 - p2
+            m = np.linalg.norm(xnp)
+            
+            if m == 0:
+                log.ODM_WARNING("Cannot compute OPK angles, divider = 0")
+                return
+            
+            # Unit vector pointing north
+            xnp /= m
+
+            znp = np.array([0, 0, -1]).T
+            ynp = np.cross(znp, xnp)
+
+            cen = np.array([xnp, ynp, znp])
+
+            # OPK rotation matrix
+            ceb = cen.dot(cnb).dot(cbb)
+
+            self.omega = math.atan2(-ceb[1][2], ceb[2][2])
+            self.phi = math.asin(ceb[0][2])
+            self.kappa = math.atan2(-ceb[0][1], ceb[0][0])

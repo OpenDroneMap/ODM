@@ -22,7 +22,7 @@ from opensfm.dataset import DataSet
 from opensfm import report
 from opendm.multispectral import get_photos_by_band
 from opendm.gpu import has_gpus
-from opensfm import multiview
+from opensfm import multiview, exif
 from opensfm.actions.export_geocoords import _transform
 
 class OSFMContext:
@@ -116,14 +116,6 @@ class OSFMContext:
                     log.ODM_INFO("Wrote camera_models_overrides.json to OpenSfM directory")
                 except Exception as e:
                     log.ODM_WARNING("Cannot set camera_models_overrides.json: %s" % str(e))
-
-            # GPSDOP override if we have GPS accuracy information (such as RTK)
-            if 'gps_accuracy_is_set' in args:
-                log.ODM_INFO("Forcing GPS DOP to %s for all images" % args.gps_accuracy)
-
-                for p in photos:
-                    p.override_gps_dop(args.gps_accuracy)
-
 
             # Check image masks
             masks = []
@@ -270,14 +262,40 @@ class OSFMContext:
     
     def photos_to_metadata(self, photos, rerun=False):
         metadata_dir = self.path("exif")
-        if io.dir_exists(metadata_dir) and rerun:
+
+        if io.dir_exists(metadata_dir) and not rerun:
+            log.ODM_WARNING("%s already exists, not rerunning photo to metadata" % metadata_dir)
+            return
+        
+        if io.dir_exists(metadata_dir):
             shutil.rmtree(metadata_dir)
         
-        os.makedirs(metadata_dir)
+        os.makedirs(metadata_dir, exist_ok=True)
         
+        camera_models = {}
+        data = DataSet(self.opensfm_project_path)
+
         for p in photos:
+            d = p.to_opensfm_exif()
             with open(os.path.join(metadata_dir, "%s.exif" % p.filename), 'w') as f:
-                f.write(json.dumps(p.to_opensfm_exif()))
+                f.write(json.dumps(d))
+
+            camera_id = p.camera_id()
+            if camera_id not in camera_models:
+                camera = exif.camera_from_exif_metadata(d, data)
+                camera_models[camera_id] = camera
+
+        # Override any camera specified in the camera models overrides file.
+        if data.camera_models_overrides_exists():
+            overrides = data.load_camera_models_overrides()
+            if "all" in overrides:
+                for key in camera_models:
+                    camera_models[key] = copy.copy(overrides["all"])
+                    camera_models[key].id = key
+            else:
+                for key, value in overrides.items():
+                    camera_models[key] = value
+        data.save_camera_models(camera_models)
 
     def is_feature_matching_done(self):
         features_dir = self.path("features")
