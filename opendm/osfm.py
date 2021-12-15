@@ -278,7 +278,7 @@ class OSFMContext:
         for p in photos:
             d = p.to_opensfm_exif()
             with open(os.path.join(metadata_dir, "%s.exif" % p.filename), 'w') as f:
-                f.write(json.dumps(d))
+                f.write(json.dumps(d, indent=4))
 
             camera_id = p.camera_id()
             if camera_id not in camera_models:

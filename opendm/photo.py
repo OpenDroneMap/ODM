@@ -334,7 +334,18 @@ class ODM_Photo:
                     self.set_attr_from_xmp_tag('yaw', tags, ['@drone-dji:GimbalYawDegree', '@Camera:Yaw', 'Camera:Yaw'], float)
                     self.set_attr_from_xmp_tag('pitch', tags, ['@drone-dji:GimbalPitchDegree', '@Camera:Pitch', 'Camera:Pitch'], float)
                     self.set_attr_from_xmp_tag('roll', tags, ['@drone-dji:GimbalRollDegree', '@Camera:Roll', 'Camera:Roll'], float)
-                
+
+                    # Normalize YPR conventions (assuming nadir camera)
+                    # Yaw: 0 --> top of image points north
+                    # Yaw: 90 --> top of image points east
+                    # Yaw: 270 --> top of image points west
+                    # Pitch: 0 --> nadir camera
+                    # Pitch: 90 --> camera is looking forward
+                    # Roll: 0 (assuming gimbal)
+                    if self.has_ypr():
+                        if self.camera_make.lower() == 'dji':
+                            self.pitch = 90 + self.pitch
+
                 except Exception as e:
                     log.ODM_WARNING("Cannot read XMP tags for %s: %s" % (_path_file, str(e)))
 
@@ -639,15 +650,7 @@ class ODM_Photo:
             
             gps['dop'] = dop
 
-        opk = {}
-        if self.omega and self.phi and self.kappa:
-            opk = {
-                'omega': self.omega,
-                'phi': self.phi,
-                'kappa': self.kappa
-            }
-
-        return {
+        d = {
             "make": self.camera_make,
             "model": self.camera_model,
             "width": self.width,
@@ -657,16 +660,31 @@ class ODM_Photo:
             "orientation": self.orientation,
             "capture_time": capture_time,
             "gps": gps,
-            "opk": opk,
             "camera": self.camera_id()
         }
+
+        if self.has_opk():
+            d['opk'] = {
+                'omega': self.omega,
+                'phi': self.phi,
+                'kappa': self.kappa
+            }
+        
+        return d
+
+    def has_ypr(self):
+        return self.yaw is not None and \
+            self.pitch is not None and \
+            self.roll is not None
+    
+    def has_opk(self):
+        return self.omega is not None and \
+            self.phi is not None and \
+            self.kappa is not None
     
     def compute_opk(self):
-        if self.yaw is not None and \
-            self.pitch is not None and \
-            self.roll is not None:
-
-            y, p, r = self.yaw, self.pitch, self.roll
+        if self.has_ypr():
+            y, p, r = math.radians(self.yaw), math.radians(self.pitch), math.radians(self.roll)
 
             # Ref: New Calibration and Computing Method for Direct 
             # Georeferencing of Image and Scanner Data Using the 
@@ -674,7 +692,7 @@ class ODM_Photo:
             # by Manfred Bäumker
 
             # YPR rotation matrix
-            cnb = np.array([[ math.cos(y) * math.cos(p), math.cos(y) * math.sin(p) * math.sin(r) - math.sin(y) * math.cos(r), math.cos(y) * math.sin(p) * math.cos(r) - math.sin(y) * math.sin(r)],
+            cnb = np.array([[ math.cos(y) * math.cos(p), math.cos(y) * math.sin(p) * math.sin(r) - math.sin(y) * math.cos(r), math.cos(y) * math.sin(p) * math.cos(r) + math.sin(y) * math.sin(r)],
                             [ math.sin(y) * math.cos(p), math.sin(y) * math.sin(p) * math.sin(r) + math.cos(y) * math.cos(r), math.sin(y) * math.sin(p) * math.cos(r) - math.cos(y) * math.sin(r)],
                             [ -math.sin(p), math.cos(p) * math.sin(r), math.cos(p) * math.cos(r)],
                            ])
@@ -707,7 +725,7 @@ class ODM_Photo:
             znp = np.array([0, 0, -1]).T
             ynp = np.cross(znp, xnp)
 
-            cen = np.array([xnp, ynp, znp])
+            cen = np.array([xnp, ynp, znp]).T
 
             # OPK rotation matrix
             ceb = cen.dot(cnb).dot(cbb)
