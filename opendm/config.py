@@ -162,9 +162,7 @@ def config(argv=None, parser=None):
                         default=8,
                         type=int,
                         help='Number of nearest images to pre-match based on GPS '
-                             'exif data. Set to 0 to skip pre-matching. '
-                             'Neighbors works together with Distance parameter, '
-                             'set both to 0 to not use pre-matching. Default: %(default)s')
+                             'exif data. Set to 0 to skip pre-matching. Default: %(default)s')
 
     parser.add_argument('--use-fixed-camera-params',
                         action=StoreTrue,
@@ -236,7 +234,7 @@ def config(argv=None, parser=None):
                     action=StoreValue,
                     default='incremental',
                     choices=['incremental', 'triangulation'],
-                    help=('Choose the structure from motion algorithm. If camera positions and angles are available, triangulation is significantly faster for aerial datasets. '
+                    help=('Choose the structure from motion algorithm. For aerial datasets, if camera GPS positions and angles are available, triangulation is faster. '
                         'Can be one of: %(choices)s. Default: '
                         '%(default)s'))
 
@@ -770,9 +768,9 @@ def config(argv=None, parser=None):
     if args.fast_orthophoto:
       log.ODM_INFO('Fast orthophoto is turned on, automatically setting --skip-3dmodel')
       args.skip_3dmodel = True
-      if not 'sfm_algorithm_is_set' in args:
-        log.ODM_INFO('Fast orthophoto is turned on, automatically setting --sfm-algorithm to triangulation')
-        args.sfm_algorithm = 'triangulation'
+    #   if not 'sfm_algorithm_is_set' in args:
+    #     log.ODM_INFO('Fast orthophoto is turned on, automatically setting --sfm-algorithm to triangulation')
+    #     args.sfm_algorithm = 'triangulation'
 
     if args.pc_rectify and not args.pc_classify:
       log.ODM_INFO("Ground rectify is turned on, automatically turning on point cloud classification")

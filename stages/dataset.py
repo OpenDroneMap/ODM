@@ -173,3 +173,11 @@ class ODMLoadDatasetStage(types.ODM_Stage):
             else:
                 args.boundary = None
                 log.ODM_WARNING("Reconstruction is not georeferenced, but boundary file provided (will ignore boundary file)")
+
+        # If sfm-algorithm is triangulation, check if photos have OPK
+        if args.sfm_algorithm == 'triangulation':
+            for p in photos:
+                if not p.has_opk():
+                    log.ODM_WARNING("No omega/phi/kappa angles found in input photos (%s), switching sfm-algorithm to incremental" % p.filename)
+                    args.sfm_algorithm = 'incremental'
+                    break

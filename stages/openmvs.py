@@ -6,7 +6,7 @@ from opendm import system
 from opendm import context
 from opendm import point_cloud
 from opendm import types
-from opendm.gpu import gpu_disabled_by_user, windows_no_cuda
+from opendm.gpu import has_gpu
 from opendm.utils import get_depthmap_resolution
 from opendm.osfm import OSFMContext
 from opendm.multispectral import get_primary_band_name
@@ -73,7 +73,7 @@ class ODMOpenMVSStage(types.ODM_Stage):
 
             gpu_config = []
 
-            if gpu_disabled_by_user() or windows_no_cuda():
+            if not has_gpu():
                 gpu_config.append("--cuda-device -1")
 
             if args.pc_tile:

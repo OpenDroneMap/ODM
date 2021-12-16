@@ -137,6 +137,7 @@ set(custom_libs OpenSfM
 				MvsTexturing
 				OpenMVS
 				FPCFilter
+				PyPopsift
 )
 
 # Build entwine only on Linux

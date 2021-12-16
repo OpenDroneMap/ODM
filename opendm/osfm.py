@@ -21,7 +21,7 @@ from opensfm.actions import undistort
 from opensfm.dataset import DataSet
 from opensfm import report
 from opendm.multispectral import get_photos_by_band
-from opendm.gpu import has_gpus
+from opendm.gpu import has_popsift, has_gpu
 from opensfm import multiview, exif
 from opensfm.actions.export_geocoords import _transform
 
@@ -164,6 +164,7 @@ class OSFMContext:
                 "feature_min_frames: %s" % args.min_num_features,
                 "processes: %s" % args.max_concurrency,
                 "matching_gps_neighbors: %s" % args.matcher_neighbors,
+                "matching_gps_distance: 0",
                 "matching_graph_rounds: 50",
                 "optimize_camera_parameters: %s" % ('no' if args.use_fixed_camera_params or args.cameras else 'yes'),
                 "reconstruction_algorithm: %s" % (args.sfm_algorithm),
@@ -200,9 +201,8 @@ class OSFMContext:
             config.append("matcher_type: %s" % osfm_matchers[matcher_type])
 
             # GPU acceleration?
-            if has_gpus() and feature_type == "SIFT" and (not 'min_num_features_is_set' in args):
+            if has_gpu() and has_popsift() and feature_type == "SIFT":
                 log.ODM_INFO("Using GPU for extracting SIFT features")
-                log.ODM_INFO("--min-num-features will be ignored")
                 feature_type = "SIFT_GPU"
             
             config.append("feature_type: %s" % feature_type)
