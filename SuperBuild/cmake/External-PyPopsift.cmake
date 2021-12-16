@@ -11,7 +11,7 @@ if(CUDA_FOUND)
         STAMP_DIR         ${_SB_BINARY_DIR}/stamp
         #--Download step--------------
         DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
-        GIT_REPOSITORY    https://github.com/uav4geo/pypopsift
+        GIT_REPOSITORY    https://github.com/OpenDroneMap/pypopsift
         GIT_TAG           270
         #--Update/Patch step----------
         UPDATE_COMMAND    ""
@@ -20,7 +20,6 @@ if(CUDA_FOUND)
         CMAKE_ARGS
             -DOUTPUT_DIR=${SB_INSTALL_DIR}/bin/opensfm/opensfm
             -DCMAKE_INSTALL_PREFIX=${SB_INSTALL_DIR}
-            ${GPU_CMAKE_ARGS}
             ${WIN32_CMAKE_ARGS}
             ${ARM64_CMAKE_ARGS}
         #--Build step-----------------
