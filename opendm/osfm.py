@@ -205,11 +205,11 @@ class OSFMContext:
                 max_photo = find_largest_photo(photos)
                 w, h = max_photo.width, max_photo.height
                 if w > h:
-                    h = (h / w) * feature_process_size
-                    w = feature_process_size
+                    h = int((h / w) * feature_process_size)
+                    w = int(feature_process_size)
                 else:
-                    w = (w / h) * feature_process_size
-                    h = feature_process_size
+                    w = int((w / h) * feature_process_size)
+                    h = int(feature_process_size)
 
                 if has_popsift_and_can_handle_texsize(w, h) and feature_type == "SIFT":
                     log.ODM_INFO("Using GPU for extracting SIFT features")

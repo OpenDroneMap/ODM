@@ -15,7 +15,10 @@ def has_popsift_and_can_handle_texsize(width, height):
         if not fits:
             log.ODM_WARNING("Image size (%sx%spx) would not fit in GPU memory, falling back to CPU" % (width, height))
         return fits
-    except:
+    except (ModuleNotFoundError, ImportError):
+        return False
+    except Exception as e:
+        log.ODM_WARNING(str(e))
         return False
 
 @lru_cache(maxsize=None)
