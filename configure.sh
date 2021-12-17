@@ -129,9 +129,8 @@ installreqs() {
     
     set -e
     pip install --ignore-installed -r requirements.txt
-    if [ ! -z "$GPU_INSTALL" ]; then
-        # Nothing, add extra GPU-related build instructions here
-    fi
+    #if [ ! -z "$GPU_INSTALL" ]; then
+    #fi
     set +e
 }
     
