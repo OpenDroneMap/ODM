@@ -41,6 +41,20 @@ def find_largest_photo_dim(photos):
         
     return max_dim
 
+def find_largest_photo(photos):
+    max_p = None
+    max_area = 0
+    for p in photos:
+        if p.width is None:
+            continue
+        area = p.width * p.height
+
+        if area > max_area:
+            max_area = area
+            max_p = p
+
+    return p
+
 def get_mm_per_unit(resolution_unit):
     """Length of a resolution unit in millimeters.
 

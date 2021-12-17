@@ -8,10 +8,13 @@ def gpu_disabled_by_user():
     return bool(os.environ.get('ODM_NO_GPU'))
 
 @lru_cache(maxsize=None)
-def has_popsift():
+def has_popsift_and_can_handle_texsize(width, height):
     try:
         from opensfm import pypopsift
-        return True
+        fits = pypopsift.fits_texture(width, height)
+        if not fits:
+            log.ODM_WARNING("Image size (%sx%spx) would not fit in GPU memory, falling back to CPU" % (width, height))
+        return fits
     except:
         return False
 

@@ -14,14 +14,14 @@ from opendm import context
 from opendm import camera
 from opendm import location
 from opendm.utils import get_depthmap_resolution
-from opendm.photo import find_largest_photo_dim
+from opendm.photo import find_largest_photo_dim, find_largest_photo
 from opensfm.large import metadataset
 from opensfm.large import tools
 from opensfm.actions import undistort
 from opensfm.dataset import DataSet
 from opensfm import report
 from opendm.multispectral import get_photos_by_band
-from opendm.gpu import has_popsift, has_gpu
+from opendm.gpu import has_popsift_and_can_handle_texsize, has_gpu
 from opensfm import multiview, exif
 from opensfm.actions.export_geocoords import _transform
 
@@ -201,9 +201,19 @@ class OSFMContext:
             config.append("matcher_type: %s" % osfm_matchers[matcher_type])
 
             # GPU acceleration?
-            if has_gpu() and has_popsift() and feature_type == "SIFT":
-                log.ODM_INFO("Using GPU for extracting SIFT features")
-                feature_type = "SIFT_GPU"
+            if has_gpu():
+                max_photo = find_largest_photo(photos)
+                w, h = max_photo.width, max_photo.height
+                if w > h:
+                    h = (h / w) * feature_process_size
+                    w = feature_process_size
+                else:
+                    w = (w / h) * feature_process_size
+                    h = feature_process_size
+
+                if has_popsift_and_can_handle_texsize(w, h) and feature_type == "SIFT":
+                    log.ODM_INFO("Using GPU for extracting SIFT features")
+                    feature_type = "SIFT_GPU"
             
             config.append("feature_type: %s" % feature_type)
 
