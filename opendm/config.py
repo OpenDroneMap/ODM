@@ -234,7 +234,7 @@ def config(argv=None, parser=None):
                     action=StoreValue,
                     default='incremental',
                     choices=['incremental', 'triangulation'],
-                    help=('Choose the structure from motion algorithm. For aerial datasets, if camera GPS positions and angles are available, triangulation is faster. '
+                    help=('Choose the structure from motion algorithm. For aerial datasets, if camera GPS positions and angles are available, triangulation can generate better results. '
                         'Can be one of: %(choices)s. Default: '
                         '%(default)s'))
 
