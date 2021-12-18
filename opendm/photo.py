@@ -695,9 +695,13 @@ class ODM_Photo:
         return self.omega is not None and \
             self.phi is not None and \
             self.kappa is not None
+
+    def has_geo(self):
+        return self.latitude is not None and \
+            self.longitude is not None
     
     def compute_opk(self):
-        if self.has_ypr():
+        if self.has_ypr() and self.has_geo():
             y, p, r = math.radians(self.yaw), math.radians(self.pitch), math.radians(self.roll)
 
             # Ref: New Calibration and Computing Method for Direct 
@@ -724,8 +728,9 @@ class ODM_Photo:
             
             delta = 1e-7
             
-            p1 = np.array(ecef_from_lla(self.latitude + delta, self.longitude, self.altitude))
-            p2 = np.array(ecef_from_lla(self.latitude - delta, self.longitude, self.altitude))
+            alt = self.altitude if self.altitude is not None else 0.0
+            p1 = np.array(ecef_from_lla(self.latitude + delta, self.longitude, alt))
+            p2 = np.array(ecef_from_lla(self.latitude - delta, self.longitude, alt))
             xnp = p1 - p2
             m = np.linalg.norm(xnp)
             
