@@ -162,19 +162,7 @@ def config(argv=None, parser=None):
                         default=8,
                         type=int,
                         help='Number of nearest images to pre-match based on GPS '
-                             'exif data. Set to 0 to skip pre-matching. '
-                             'Neighbors works together with Distance parameter, '
-                             'set both to 0 to not use pre-matching. Default: %(default)s')
-
-    parser.add_argument('--matcher-distance',
-                        metavar='<integer>',
-                        action=StoreValue,
-                        default=0,
-                        type=int,
-                        help='Distance threshold in meters to find pre-matching '
-                             'images based on GPS exif data. Set both '
-                             'matcher-neighbors and this to 0 to skip '
-                             'pre-matching. Default: %(default)s')
+                             'exif data. Set to 0 to skip pre-matching. Default: %(default)s')
 
     parser.add_argument('--use-fixed-camera-params',
                         action=StoreTrue,
@@ -241,6 +229,15 @@ def config(argv=None, parser=None):
                         help='Run local bundle adjustment for every image added to the reconstruction and a global '
                              'adjustment every 100 images. Speeds up reconstruction for very large datasets. Default: %(default)s')
 
+    parser.add_argument('--sfm-algorithm',
+                    metavar='<string>',
+                    action=StoreValue,
+                    default='incremental',
+                    choices=['incremental', 'triangulation'],
+                    help=('Choose the structure from motion algorithm. For aerial datasets, if camera GPS positions and angles are available, triangulation can generate better results. '
+                        'Can be one of: %(choices)s. Default: '
+                        '%(default)s'))
+
     parser.add_argument('--use-3dmesh',
                     action=StoreTrue,
                     nargs=0,
@@ -258,7 +255,13 @@ def config(argv=None, parser=None):
                     nargs=0,
                     default=False,
                     help='Skip generation of PDF report. This can save time if you don\'t need a report. Default: %(default)s')
-
+    
+    parser.add_argument('--skip-orthophoto',
+                    action=StoreTrue,
+                    nargs=0,
+                    default=False,
+                    help='Skip generation of the orthophoto. This can save time if you only need 3D results or DEMs. Default: %(default)s')
+    
     parser.add_argument('--ignore-gsd',
                         action=StoreTrue,
                         nargs=0,
@@ -765,6 +768,9 @@ def config(argv=None, parser=None):
     if args.fast_orthophoto:
       log.ODM_INFO('Fast orthophoto is turned on, automatically setting --skip-3dmodel')
       args.skip_3dmodel = True
+    #   if not 'sfm_algorithm_is_set' in args:
+    #     log.ODM_INFO('Fast orthophoto is turned on, automatically setting --sfm-algorithm to triangulation')
+    #     args.sfm_algorithm = 'triangulation'
 
     if args.pc_rectify and not args.pc_classify:
       log.ODM_INFO("Ground rectify is turned on, automatically turning on point cloud classification")
@@ -789,8 +795,4 @@ def config(argv=None, parser=None):
             log.ODM_ERROR("Cluster node seems to be offline: %s"  % str(e))
             sys.exit(1)
     
-    # if args.radiometric_calibration != "none" and not args.texturing_skip_global_seam_leveling:
-    #     log.ODM_WARNING("radiometric-calibration is turned on, automatically setting --texturing-skip-global-seam-leveling")
-    #     args.texturing_skip_global_seam_leveling = True
-
     return args

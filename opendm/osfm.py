@@ -14,15 +14,15 @@ from opendm import context
 from opendm import camera
 from opendm import location
 from opendm.utils import get_depthmap_resolution
-from opendm.photo import find_largest_photo_dim
+from opendm.photo import find_largest_photo_dim, find_largest_photo
 from opensfm.large import metadataset
 from opensfm.large import tools
 from opensfm.actions import undistort
 from opensfm.dataset import DataSet
 from opensfm import report
 from opendm.multispectral import get_photos_by_band
-from opendm.gpu import has_gpus
-from opensfm import multiview
+from opendm.gpu import has_popsift_and_can_handle_texsize, has_gpu
+from opensfm import multiview, exif
 from opensfm.actions.export_geocoords import _transform
 
 class OSFMContext:
@@ -117,34 +117,6 @@ class OSFMContext:
                 except Exception as e:
                     log.ODM_WARNING("Cannot set camera_models_overrides.json: %s" % str(e))
 
-            # GPSDOP override if we have GPS accuracy information (such as RTK)
-            if 'gps_accuracy_is_set' in args:
-                log.ODM_INFO("Forcing GPS DOP to %s for all images" % args.gps_accuracy)
-            
-            log.ODM_INFO("Writing exif overrides")
-
-            exif_overrides = {}
-            for p in photos:
-                if 'gps_accuracy_is_set' in args:
-                    dop = args.gps_accuracy
-                elif p.get_gps_dop() is not None:
-                    dop = p.get_gps_dop()
-                else:
-                    dop = args.gps_accuracy # default value
-
-                if p.latitude is not None and p.longitude is not None:
-                    exif_overrides[p.filename] = {
-                        'gps': {
-                            'latitude': p.latitude,
-                            'longitude': p.longitude,
-                            'altitude': p.altitude if p.altitude is not None else 0,
-                            'dop': dop,
-                        }
-                    }
-
-            with open(os.path.join(self.opensfm_project_path, "exif_overrides.json"), 'w') as f:
-                f.write(json.dumps(exif_overrides))
-
             # Check image masks
             masks = []
             for p in photos:
@@ -192,8 +164,10 @@ class OSFMContext:
                 "feature_min_frames: %s" % args.min_num_features,
                 "processes: %s" % args.max_concurrency,
                 "matching_gps_neighbors: %s" % args.matcher_neighbors,
-                "matching_gps_distance: %s" % args.matcher_distance,
+                "matching_gps_distance: 0",
+                "matching_graph_rounds: 50",
                 "optimize_camera_parameters: %s" % ('no' if args.use_fixed_camera_params or args.cameras else 'yes'),
+                "reconstruction_algorithm: %s" % (args.sfm_algorithm),
                 "undistorted_image_format: tif",
                 "bundle_outlier_filtering_type: AUTO",
                 "sift_peak_threshold: 0.066",
@@ -227,10 +201,19 @@ class OSFMContext:
             config.append("matcher_type: %s" % osfm_matchers[matcher_type])
 
             # GPU acceleration?
-            if has_gpus() and feature_type == "SIFT" and (not 'min_num_features_is_set' in args):
-                log.ODM_INFO("Using GPU for extracting SIFT features")
-                log.ODM_INFO("--min-num-features will be ignored")
-                feature_type = "SIFT_GPU"
+            if has_gpu():
+                max_photo = find_largest_photo(photos)
+                w, h = max_photo.width, max_photo.height
+                if w > h:
+                    h = int((h / w) * feature_process_size)
+                    w = int(feature_process_size)
+                else:
+                    w = int((w / h) * feature_process_size)
+                    h = int(feature_process_size)
+
+                if has_popsift_and_can_handle_texsize(w, h) and feature_type == "SIFT":
+                    log.ODM_INFO("Using GPU for extracting SIFT features")
+                    feature_type = "SIFT_GPU"
             
             config.append("feature_type: %s" % feature_type)
 
@@ -286,6 +269,43 @@ class OSFMContext:
         metadata_dir = self.path("exif")
         if not io.dir_exists(metadata_dir) or rerun:
             self.run('extract_metadata')
+    
+    def photos_to_metadata(self, photos, rerun=False):
+        metadata_dir = self.path("exif")
+
+        if io.dir_exists(metadata_dir) and not rerun:
+            log.ODM_WARNING("%s already exists, not rerunning photo to metadata" % metadata_dir)
+            return
+        
+        if io.dir_exists(metadata_dir):
+            shutil.rmtree(metadata_dir)
+        
+        os.makedirs(metadata_dir, exist_ok=True)
+        
+        camera_models = {}
+        data = DataSet(self.opensfm_project_path)
+
+        for p in photos:
+            d = p.to_opensfm_exif()
+            with open(os.path.join(metadata_dir, "%s.exif" % p.filename), 'w') as f:
+                f.write(json.dumps(d, indent=4))
+
+            camera_id = p.camera_id()
+            if camera_id not in camera_models:
+                camera = exif.camera_from_exif_metadata(d, data)
+                camera_models[camera_id] = camera
+
+        # Override any camera specified in the camera models overrides file.
+        if data.camera_models_overrides_exists():
+            overrides = data.load_camera_models_overrides()
+            if "all" in overrides:
+                for key in camera_models:
+                    camera_models[key] = copy.copy(overrides["all"])
+                    camera_models[key].id = key
+            else:
+                for key, value in overrides.items():
+                    camera_models[key] = value
+        data.save_camera_models(camera_models)
 
     def is_feature_matching_done(self):
         features_dir = self.path("features")

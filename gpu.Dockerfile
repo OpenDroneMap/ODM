@@ -37,9 +37,6 @@ COPY --from=builder /code /code
 # Copy the Python libraries installed via pip from the builder
 COPY --from=builder /usr/local /usr/local
 
-# Install OpenCL Drivers
-RUN apt update && apt install -y nvidia-opencl-icd-340 intel-opencl-icd
-
 # Install shared libraries that we depend on via APT, but *not*
 # the -dev packages to save space!
 # Also run a smoke test

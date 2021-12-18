@@ -23,6 +23,10 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
         # define paths and create working directories
         system.mkdir_p(tree.odm_orthophoto)
 
+        if args.skip_orthophoto:
+            log.ODM_WARNING("--skip-orthophoto is set, no orthophoto will be generated")
+            return
+
         if not io.file_exists(tree.odm_orthophoto_tif) or self.rerun():
 
             resolution = 1.0 / (gsd.cap_resolution(args.orthophoto_resolution, tree.opensfm_reconstruction,

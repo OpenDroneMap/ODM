@@ -90,6 +90,9 @@ def as_polygon(boundary):
 
     return "POLYGON((" + ", ".join([" ".join(map(str, c)) for c in boundary]) + "))"
 
+def as_geojson(boundary):
+    return '{"type":"FeatureCollection","features":[{"type":"Feature","properties":{},"geometry":{"type":"Polygon","coordinates":[%s]}}]}' % str(list(map(list, boundary)))
+
 def export_to_bounds_files(boundary, proj4, bounds_json_file, bounds_gpkg_file):
     with open(bounds_json_file, "w") as f:
         f.write(json.dumps({
