@@ -83,7 +83,7 @@ class ODMOpenMVSStage(types.ODM_Stage):
                 config.append("--geometric-iters 0")
 
             def run_densify():
-                system.run('%s "%s" %s' % (context.omvs_densify_path, 
+                system.run('"%s" "%s" %s' % (context.omvs_densify_path, 
                                         openmvs_scene_file,
                                         ' '.join(config + gpu_config)))
 
@@ -111,7 +111,7 @@ class ODMOpenMVSStage(types.ODM_Stage):
                     '-w "%s"' % depthmaps_dir, 
                     "-v 0",
                 ]
-                system.run('%s "%s" %s' % (context.omvs_densify_path, 
+                system.run('"%s" "%s" %s' % (context.omvs_densify_path, 
                                         openmvs_scene_file,
                                         ' '.join(config + gpu_config)))
                 
@@ -145,10 +145,10 @@ class ODMOpenMVSStage(types.ODM_Stage):
                         ]
 
                         try:
-                            system.run('%s "%s" %s' % (context.omvs_densify_path, sf, ' '.join(config + gpu_config)))
+                            system.run('"%s" "%s" %s' % (context.omvs_densify_path, sf, ' '.join(config + gpu_config)))
 
                             # Filter
-                            system.run('%s "%s" --filter-point-cloud -1 -v 0 %s' % (context.omvs_densify_path, scene_dense_mvs, ' '.join(gpu_config)))
+                            system.run('"%s" "%s" --filter-point-cloud -1 -v 0 %s' % (context.omvs_densify_path, scene_dense_mvs, ' '.join(gpu_config)))
                         except:
                             log.ODM_WARNING("Sub-scene %s could not be reconstructed, skipping..." % sf)
 
@@ -177,7 +177,7 @@ class ODMOpenMVSStage(types.ODM_Stage):
                         '-i "%s"' % scene_dense,
                         "-v 0"
                     ]
-                    system.run('%s %s' % (context.omvs_densify_path, ' '.join(config + gpu_config)))
+                    system.run('"%s" %s' % (context.omvs_densify_path, ' '.join(config + gpu_config)))
                 else:
                     raise system.ExitException("Cannot find scene_dense.mvs, dense reconstruction probably failed. Exiting...")
 
