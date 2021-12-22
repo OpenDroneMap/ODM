@@ -18,10 +18,6 @@ jobs:
       with:
         python-version: '3.8.1'
         architecture: 'x64'
-    - name: Setup Visual C++
-      uses: ilammy/msvc-dev-cmd@v1
-      with:
-        arch: x64
     - uses: Jimver/cuda-toolkit@v0.2.4
       id: cuda-toolkit
       with:
