@@ -38,7 +38,7 @@ jobs:
       env: 
         CODE_SIGN_CERT_PATH: ${{ steps.code_sign.outputs.filePath }}
       run: |
-        python configure.py dist --signtool-path $((Get-Command signtool).Source) --code-sign-cert-path $env:CODE_SIGN_CERT_PATH
+        python configure.py dist --code-sign-cert-path $env:CODE_SIGN_CERT_PATH
     - name: Upload Setup File
       uses: actions/upload-artifact@v2
       with:
