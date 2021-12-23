@@ -31,7 +31,7 @@ class OSFMContext:
     
     def run(self, command):
         osfm_bin = os.path.join(context.opensfm_path, 'bin', 'opensfm')
-        system.run('%s %s "%s"' %
+        system.run('"%s" %s "%s"' %
                     (osfm_bin, command, self.opensfm_project_path))
 
     def is_reconstruction_done(self):
