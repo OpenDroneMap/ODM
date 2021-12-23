@@ -70,6 +70,10 @@ if (WIN32)
   file(GLOB COPY_DLLS "${VCPKG_ROOT}/installed/x64-windows/bin/*.dll")
   file(COPY ${COPY_DLLS} DESTINATION "${SB_INSTALL_DIR}/bin")
 
+  message("Copying CUDA DLLs...")
+  file(GLOB CUDA_DLLS "$ENV{CUDA_PATH}/bin/cudart64*.dll")
+  file(COPY ${CUDA_DLLS} DESTINATION "${SB_INSTALL_DIR}/bin")
+
   set(WIN32_GDAL_ARGS -DGDAL_FOUND=TRUE -DGDAL_LIBRARY=${GDAL_LIBRARY} -DGDAL_INCLUDE_DIR=${GDAL_INCLUDE_DIR})
 else()
   set(PYTHON_EXE_PATH "/usr/bin/python3")
