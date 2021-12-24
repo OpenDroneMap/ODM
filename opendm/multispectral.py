@@ -14,7 +14,8 @@ from skimage.filters import rank, gaussian
 
 # Loosely based on https://github.com/micasense/imageprocessing/blob/master/micasense/utils.py
 
-def dn_to_radiance(photo, image):
+def dn_to_radiance(photo, args, image):                                                     # args+
+# def dn_to_radiance(photo, image):                                                         # args-
     """
     Convert Digital Number values to Radiance values
     :param photo ODM_Photo
@@ -32,6 +33,79 @@ def dn_to_radiance(photo, image):
         image *= 0.01
         return image
     
+    if photo.camera_make == 'Parrot' and photo.camera_model == 'Sequoia':                   # Seq++
+        dark_level = photo.get_dark_level()                                                 # Seq++
+        if photo.band_name == 'Green':                                                      # Seq++
+            if args.radiometric_seq_darklevel_green != 0.0:                                 # Seq++
+                dark_level = args.radiometric_seq_darklevel_green                           # Seq++
+        elif photo.band_name == 'Red':                                                      # Seq++
+            if args.radiometric_seq_darklevel_red != 0.0:                                   # Seq++
+                dark_level = args.radiometric_seq_darklevel_red                             # Seq++
+        elif photo.band_name == 'Rededge' or photo.band_name == 'RedEdge':                  # Seq++
+            if args.radiometric_seq_darklevel_rededge != 0.0:                               # Seq++
+                dark_level = args.radiometric_seq_darklevel_rededge                         # Seq++
+        elif photo.band_name == 'NIR':                                                      # Seq++
+            if args.radiometric_seq_darklevel_nir != 0.0:                                   # Seq++
+                dark_level = args.radiometric_seq_darklevel_nir                             # Seq++
+                                                                                            # Seq++
+        exposure_time = photo.exposure_time                                                 # Seq++
+        if exposure_time is not None:                                                       # Seq++
+            if photo.band_name == 'Green':                                                  # Seq++
+                exposure_time += args.radiometric_seq_exposuretimezero_green                # Seq++
+            elif photo.band_name == 'Red':                                                  # Seq++
+                exposure_time += args.radiometric_seq_exposuretimezero_red                  # Seq++
+            elif photo.band_name == 'Rededge' or photo.band_name == 'RedEdge':              # Seq++
+                exposure_time += args.radiometric_seq_exposuretimezero_rededge              # Seq++
+            elif photo.band_name == 'NIR':                                                  # Seq++
+                exposure_time += args.radiometric_seq_exposuretimezero_nir                  # Seq++
+                                                                                            # Seq++
+        gain = photo.get_gain()                                                             # Seq++
+        a1, a2, a3 = photo.get_radiometric_calibration()                                    # Seq++
+                                                                                            # Seq++
+        if dark_level is None or exposure_time is None or gain is None or a1 is None:       # Seq++
+            log.ODM_ERROR("Error in %s." % photo.filename)                                  # Seq++
+            raise RuntimeError("Invalid EXIF tags.")                                        # Seq++
+        else:                                                                               # Seq++
+            image -= dark_level                                                             # Seq++
+            log.ODM_DEBUG("Multi %s (-= dark_level) %f" % (photo.filename, dark_level))     # Seq++
+                                                                                            # Seq++
+            image *= photo.fnumber * photo.fnumber / exposure_time / gain * a1              # Seq++
+            log.ODM_DEBUG("Multi %s (*= fn*fn/exposure_time/gain * a1) %f %f %f %f" % (photo.filename, photo.fnumber, exposure_time, gain, a1))    # Seq++
+            return image                                                                    # Seq++
+                                                                                            # Seq++
+    if photo.camera_make == 'DJI' and photo.camera_model == 'FC6360':                       # P4M++
+        dark_level = photo.get_dark_level()                                                 # P4M++
+        exposure_time = photo.exposure_time                                                 # P4M++
+        gain = photo.get_gain()                                                             # P4M++
+        a1, a2, a3 = photo.get_radiometric_calibration()                                    # P4M++
+                                                                                            # P4M++
+        if dark_level is None or exposure_time is None or gain is None or a1 is None:       # P4M++
+            log.ODM_ERROR("Error in %s." % photo.filename)                                  # P4M++
+            raise RuntimeError("Invalid EXIF tags.")                                        # P4M++
+        else:                                                                               # P4M++
+            image -= dark_level                                                             # P4M++
+            log.ODM_DEBUG("Multi %s (-= dark_level) %f" % (photo.filename, dark_level))     # P4M++
+                                                                                            # P4M++
+            V, x, y = vignette_map(photo)                                                   # P4M++
+                                                                                            # P4M++
+            if x is None:                                                                   # P4M++
+                x, y = np.meshgrid(np.arange(photo.width), np.arange(photo.height))         # P4M++
+                log.ODM_DEBUG("Multi %s meshgrid=ON" % photo.filename)                      # P4M++
+            else:                                                                           # P4M++
+                log.ODM_DEBUG("Multi %s meshgrid=None" % photo.filename)                    # P4M++
+                                                                                            # P4M++
+            if V is not None:                                                               # P4M++
+                # vignette correction                                                       # P4M++
+                V = np.repeat(V[:, :, np.newaxis], image.shape[2], axis=2)                  # P4M++
+                image *= V                                                                  # P4M++
+                log.ODM_DEBUG("Multi %s VignetCorr=ON" % photo.filename)                    # P4M++
+            else:                                                                           # P4M++
+                log.ODM_DEBUG("Multi %s VignetCorr=None" % photo.filename)                  # P4M++
+                                                                                            # P4M++
+            image *= photo.fnumber * photo.fnumber / exposure_time / gain * a1              # P4M++
+            log.ODM_DEBUG("Multi %s (*= fn*fn/exposure_time/gain * a1)) %f %f %f %f" % (photo.filename, photo.fnumber, exposure_time, gain, a1))    # P4M++
+            return image                                                                    # P4M++
+                                                                                            # P4M++
     # All others
     a1, a2, a3 = photo.get_radiometric_calibration()
     dark_level = photo.get_dark_level()
@@ -112,8 +186,55 @@ def vignette_map(photo):
     
     return None, None, None
 
-def dn_to_reflectance(photo, image, use_sun_sensor=True):
-    radiance = dn_to_radiance(photo, image)
+def dn_to_reflectance(photo, args, image, use_sun_sensor=True):                             # args+
+# def dn_to_reflectance(photo, image, use_sun_sensor=True):                                 # args-
+    radiance = dn_to_radiance(photo, args, image)                                           # args+
+#   radiance = dn_to_radiance(photo, image)                                                 # args-
+                                                                                            # Seq++
+    if photo.camera_make == 'Parrot' and photo.camera_model == 'Sequoia':                   # Seq++
+        if not use_sun_sensor:                                                              # Seq++
+            log.ODM_DEBUG("Multi %s camera (*= 1)" % photo.filename)                        # Seq++
+            return radiance                                                                 # Seq++
+        else:                                                                               # Seq++
+            irrad = photo.get_sun_sensor()                                                  # Seq++
+            if irrad is None:                                                               # Seq++
+                log.ODM_ERROR("No sun sensor values found for %s" % photo.filename)         # Seq++
+                raise RuntimeError("Invalid camera images")                                 # Seq++
+            else:                                                                           # Seq++
+                if photo.band_name == 'Green':                                              # Seq++
+                    fac = args.radiometric_seq_reflectancefactor_green                      # Seq++
+                elif photo.band_name == 'Red':                                              # Seq++
+                    fac = args.radiometric_seq_reflectancefactor_red                        # Seq++
+                elif photo.band_name == 'Rededge' or photo.band_name == 'RedEdge':          # Seq++
+                    fac = args.radiometric_seq_reflectancefactor_rededge                    # Seq++
+                elif photo.band_name == 'NIR':                                              # Seq++
+                    fac = args.radiometric_seq_reflectancefactor_nir                        # Seq++
+                log.ODM_DEBUG("Multi %s camera+sun (*= fac/irrad) %f %f" % (photo.filename, fac, irrad))    # Seq++
+                return radiance * fac / irrad                                               # Seq++
+                                                                                            # Seq++
+    if photo.camera_make == 'DJI' and photo.camera_model == 'FC6360':                       # P4M++
+        if not use_sun_sensor:                                                              # P4M++
+            log.ODM_DEBUG("Multi %s camera (*= 1)" % photo.filename)                        # P4M++
+            return radiance                                                                 # P4M++
+        else:                                                                               # P4M++
+            irrad = photo.get_sun_sensor()                                                  # P4M++
+            if irrad is None:                                                               # P4M++
+                log.ODM_ERROR("No sun sensor values found for %s" % photo.filename)         # P4M++
+                raise RuntimeError("Invalid camera images")                                 # P4M++
+            else:                                                                           # P4M++
+                if photo.band_name == 'Blue':                                               # P4M++
+                    fac = args.radiometric_p4m_reflectancefactor_blue                       # P4M++
+                elif photo.band_name == 'Green':                                            # P4M++
+                    fac = args.radiometric_p4m_reflectancefactor_green                      # P4M++
+                elif photo.band_name == 'Red':                                              # P4M++
+                    fac = args.radiometric_p4m_reflectancefactor_red                        # P4M++
+                elif photo.band_name == 'Rededge' or photo.band_name == 'RedEdge':          # P4M++
+                    fac = args.radiometric_p4m_reflectancefactor_rededge                    # P4M++
+                elif photo.band_name == 'NIR':                                              # P4M++
+                    fac = args.radiometric_p4m_reflectancefactor_nir                        # P4M++
+                log.ODM_DEBUG("Multi %s camera+sun (*= fac/irrad) %f %f" % (photo.filename, fac, irrad))    # P4M++
+                return radiance * fac / irrad                                               # P4M++
+                                                                                            # P4M++
     irradiance = compute_irradiance(photo, use_sun_sensor=use_sun_sensor)
     return radiance * math.pi / irradiance
 

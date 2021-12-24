@@ -115,7 +115,8 @@ class ODMOpenSfMStage(types.ODM_Stage):
             if photo.is_thermal():
                 return thermal.dn_to_temperature(photo, image)
             else:
-                return multispectral.dn_to_reflectance(photo, image, use_sun_sensor=args.radiometric_calibration=="camera+sun")
+                return multispectral.dn_to_reflectance(photo, args, image, use_sun_sensor=args.radiometric_calibration=="camera+sun")   # args+
+#               return multispectral.dn_to_reflectance(photo, image, use_sun_sensor=args.radiometric_calibration=="camera+sun")         # args-
 
 
         def align_to_primary_band(shot_id, image):

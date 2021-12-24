@@ -204,6 +204,133 @@ def config(argv=None, parser=None):
                 'Can be one of: %(choices)s. Default: '
                 '%(default)s'))
 
+    parser.add_argument('--radiometric-seq-darklevel-green',                                # args+
+            metavar='<float>',                                                              # args+
+            action=StoreValue,                                                              # args+
+            type=float,                                                                     # args+
+            default=4760,                                                                   # args+
+            help=('radiometric-seq-darklevel-green'))                                       # args+
+                                                                                            # args+
+    parser.add_argument('--radiometric-seq-darklevel-red',                                  # args+
+            metavar='<float>',                                                              # args+
+            action=StoreValue,                                                              # args+
+            type=float,                                                                     # args+
+            default=4810,                                                                   # args+
+            help=('radiometric-seq-darklevel-red'))                                         # args+
+                                                                                            # args+
+    parser.add_argument('--radiometric-seq-darklevel-rededge',                              # args+
+            metavar='<float>',                                                              # args+
+            action=StoreValue,                                                              # args+
+            type=float,                                                                     # args+
+            default=4750,                                                                   # args+
+            help=('radiometric-seq-darklevel-rededge'))                                     # args+
+                                                                                            # args+
+    parser.add_argument('--radiometric-seq-darklevel-nir',                                  # args+
+            metavar='<float>',                                                              # args+
+            action=StoreValue,                                                              # args+
+            type=float,                                                                     # args+
+            default=4820,                                                                   # args+
+            help=('radiometric-seq-darklevel-nir'))                                         # args+
+                                                                                            # args+
+                                                                                            # args+
+                                                                                            # args+
+    parser.add_argument('--radiometric-seq-exposuretimezero-green',                         # args+
+            metavar='<float>',                                                              # args+
+            action=StoreValue,                                                              # args+
+            type=float,                                                                     # args+
+            default=0.000135,                                                               # args+
+            help=('radiometric-seq-exposuretimezero-green'))                                # args+
+                                                                                            # args+
+    parser.add_argument('--radiometric-seq-exposuretimezero-red',                           # args+
+            metavar='<float>',                                                              # args+
+            action=StoreValue,                                                              # args+
+            type=float,                                                                     # args+
+            default=0.000118,                                                               # args+
+            help=('radiometric-seq-exposuretimezero-red'))                                  # args+
+                                                                                            # args+
+    parser.add_argument('--radiometric-seq-exposuretimezero-rededge',                       # args+
+            metavar='<float>',                                                              # args+
+            action=StoreValue,                                                              # args+
+            type=float,                                                                     # args+
+            default=0.000116,                                                               # args+
+            help=('radiometric-seq-exposuretimezero-rededge'))                              # args+
+                                                                                            # args+
+    parser.add_argument('--radiometric-seq-exposuretimezero-nir',                           # args+
+            metavar='<float>',                                                              # args+
+            action=StoreValue,                                                              # args+
+            type=float,                                                                     # args+
+            default=0.000110,                                                               # args+
+            help=('radiometric-seq-exposuretimezero-nir'))                                  # args+
+                                                                                            # args+
+                                                                                            # args+
+                                                                                            # args+
+    parser.add_argument('--radiometric-seq-reflectancefactor-green',                        # args+
+            metavar='<float>',                                                              # args+
+            action=StoreValue,                                                              # args+
+            type=float,                                                                     # args+
+            default=0.485,                                                                  # args+
+            help=('radiometric-seq-reflectancefactor-green'))                               # args+
+                                                                                            # args+
+    parser.add_argument('--radiometric-seq-reflectancefactor-red',                          # args+
+            metavar='<float>',                                                              # args+
+            action=StoreValue,                                                              # args+
+            type=float,                                                                     # args+
+            default=0.298,                                                                  # args+
+            help=('radiometric-seq-reflectancefactor-red'))                                 # args+
+                                                                                            # args+
+    parser.add_argument('--radiometric-seq-reflectancefactor-rededge',                      # args+
+            metavar='<float>',                                                              # args+
+            action=StoreValue,                                                              # args+
+            type=float,                                                                     # args+
+            default=0.270,                                                                  # args+
+            help=('radiometric-seq-reflectancefactor-rededge'))                             # args+
+                                                                                            # args+
+    parser.add_argument('--radiometric-seq-reflectancefactor-nir',                          # args+
+            metavar='<float>',                                                              # args+
+            action=StoreValue,                                                              # args+
+            type=float,                                                                     # args+
+            default=0.369,                                                                  # args+
+            help=('radiometric-seq-reflectancefactor-nir'))                                 # args+
+                                                                                            # args+
+                                                                                            # args+
+                                                                                            # args+
+    parser.add_argument('--radiometric-p4m-reflectancefactor-blue',                         # args+
+            metavar='<float>',                                                              # args+
+            action=StoreValue,                                                              # args+
+            type=float,                                                                     # args+
+            default=0.00140,                                                                # args+
+            help=('radiometric-p4m-reflectancefactor-blue'))                                # args+
+                                                                                            # args+
+    parser.add_argument('--radiometric-p4m-reflectancefactor-green',                        # args+
+            metavar='<float>',                                                              # args+
+            action=StoreValue,                                                              # args+
+            type=float,                                                                     # args+
+            default=0.00140,                                                                # args+
+            help=('radiometric-p4m-reflectancefactor-green'))                               # args+
+                                                                                            # args+
+    parser.add_argument('--radiometric-p4m-reflectancefactor-red',                          # args+
+            metavar='<float>',                                                              # args+
+            action=StoreValue,                                                              # args+
+            type=float,                                                                     # args+
+            default=0.00140,                                                                # args+
+            help=('radiometric-p4m-reflectancefactor-red'))                                 # args+
+                                                                                            # args+
+    parser.add_argument('--radiometric-p4m-reflectancefactor-rededge',                      # args+
+            metavar='<float>',                                                              # args+
+            action=StoreValue,                                                              # args+
+            type=float,                                                                     # args+
+            default=0.00140,                                                                # args+
+            help=('radiometric-p4m-reflectancefactor-rededge'))                             # args+
+                                                                                            # args+
+    parser.add_argument('--radiometric-p4m-reflectancefactor-nir',                          # args+
+            metavar='<float>',                                                              # args+
+            action=StoreValue,                                                              # args+
+            type=float,                                                                     # args+
+            default=0.00140,                                                                # args+
+            help=('radiometric-p4m-reflectancefactor-nir'))                                 # args+
+                                                                                            # args+
+                                                                                            # args+
+                                                                                            # args+
     parser.add_argument('--max-concurrency',
                         metavar='<positive integer>',
                         action=StoreValue,
