@@ -2,7 +2,7 @@
 OpenSfM related utils
 """
 
-import os, shutil, sys, json, argparse
+import os, shutil, sys, json, argparse, copy
 import yaml
 import numpy as np
 import pyproj
