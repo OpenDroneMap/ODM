@@ -41,7 +41,7 @@ def find_largest_photo(photos):
             max_area = area
             max_p = p
 
-    return p
+    return max_p
 
 def get_mm_per_unit(resolution_unit):
     """Length of a resolution unit in millimeters.
