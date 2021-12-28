@@ -20,18 +20,6 @@ from opensfm.geo import ecef_from_lla
 
 projections = ['perspective', 'fisheye', 'brown', 'dual', 'equirectangular', 'spherical']
 
-def find_largest_photo(photos):
-    max_photo = None
-    for p in photos:
-        if p.width is None:
-            continue
-        if max_photo is None:
-            max_photo = p
-        else:
-            if max_photo.width * max_photo.height < p.width * p.height:
-                max_photo = p
-    return p
-
 def find_largest_photo_dim(photos):
     max_dim = 0
     for p in photos:
