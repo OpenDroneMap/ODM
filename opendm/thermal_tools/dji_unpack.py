@@ -39,8 +39,7 @@ def extract_temperatures_dji(photo, image, dataset_tree):
             try:
                 img = Image.frombytes("I;16L", (640, 512), a)
             except ValueError as e:
-                log.ODM_ERROR(e)
-                log.ODM_ERROR(photo.filename)
+                log.ODM_ERROR("Error during extracting temperature values for file %s : %s" % photo.filename, e)
         else:
             log.ODM_DEBUG("Only DJI M2EA currently supported, please wait for new updates")
             return image
