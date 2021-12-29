@@ -1,4 +1,5 @@
 from opendm import log
+from opendm.thermal_tools import dji_unpack
 import cv2
 
 def resize_to_match(image, match_photo = None):
@@ -17,16 +18,16 @@ def resize_to_match(image, match_photo = None):
                     interpolation=cv2.INTER_LANCZOS4)
     return image
 
-def dn_to_temperature(photo, image):
+def dn_to_temperature(photo, image, dataset_tree):
     """
     Convert Digital Number values to temperature (C) values
     :param photo ODM_Photo
     :param image numpy array containing image data
-    :param resize_to_photo ODM_Photo that photo should be resized to (to match its dimensions)
+    :param dataset_tree path to original source image to read data using PIL for DJI thermal photos
     :return numpy array with temperature (C) image values
     """
 
-    image = image.astype("float32")
+   
 
     # Handle thermal bands
     if photo.is_thermal():
@@ -34,12 +35,18 @@ def dn_to_temperature(photo, image):
         # The following will work for MicaSense Altum cameras
         # but not necessarily for others
         if photo.camera_make == "MicaSense" and photo.camera_model == "Altum":
+            image = image.astype("float32")
             image -= (273.15 * 100.0) # Convert Kelvin to Celsius
             image *= 0.01
+            return image
+        elif photo.camera_make == "DJI" and photo.camera_model == "MAVIC2-ENTERPRISE-ADVANCED":
+            image = dji_unpack.extract_temperatures_dji(photo, image, dataset_tree)
+            image = image.astype("float32")
             return image
         else:
             log.ODM_WARNING("Unsupported camera [%s %s], thermal band will have digital numbers." % (photo.camera_make, photo.camera_model))
     else:
+        image = image.astype("float32")
         log.ODM_WARNING("Tried to radiometrically calibrate a non-thermal image with temperature values (%s)" % photo.filename)
         return image
 
