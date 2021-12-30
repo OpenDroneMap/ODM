@@ -617,6 +617,9 @@ class ODM_Photo:
         self.gps_xy_stddev = self.gps_z_stddev = dop
 
     def is_thermal(self):
+        #Added for support M2EA camera sensor
+        if(self.camera_make == "DJI"):
+            return self.camera_model == "MAVIC2-ENTERPRISE-ADVANCED" and self.width == 640 and self.height == 512
         return self.band_name.upper() in ["LWIR"] # TODO: more?
 
     def camera_id(self):
