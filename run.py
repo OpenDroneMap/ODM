@@ -47,14 +47,20 @@ if __name__ == '__main__':
     # If user asks to rerun everything, delete all of the existing progress directories.
     if args.rerun_all:
         log.ODM_INFO("Rerun all -- Removing old data")
-        os.system("rm -rf " + 
-                    " ".join([double_quote(os.path.join(args.project_path, p)) for p in get_processing_results_paths()] + [
-                        double_quote(os.path.join(args.project_path, "odm_meshing")),
-                        double_quote(os.path.join(args.project_path, "opensfm")),
-                        double_quote(os.path.join(args.project_path, "odm_texturing_25d")),
-                        double_quote(os.path.join(args.project_path, "odm_filterpoints")),
-                        double_quote(os.path.join(args.project_path, "submodels")),
-                    ]))
+        dirs_to_delete = [double_quote(os.path.join(args.project_path, p)) for p in get_processing_results_paths()] + [
+                            double_quote(os.path.join(args.project_path, "odm_meshing")),
+                            double_quote(os.path.join(args.project_path, "opensfm")),
+                            double_quote(os.path.join(args.project_path, "odm_texturing_25d")),
+                            double_quote(os.path.join(args.project_path, "odm_filterpoints")),
+                            double_quote(os.path.join(args.project_path, "submodels")),
+                        ]
+        if sys.platform == 'win32':
+            for d in dirs_to_delete:
+                if os.path.isdir(d):
+                    os.system("rmdir /S /Q " + dirs_to_delete)
+        else:
+            os.system("rm -rf " + 
+                        " ".join(dirs_to_delete))
 
     app = ODMApp(args)
     retcode = app.execute()
