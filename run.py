@@ -12,7 +12,7 @@ from opendm import config
 from opendm import system
 from opendm import io
 from opendm.progress import progressbc
-from opendm.utils import double_quote, get_processing_results_paths
+from opendm.utils import get_processing_results_paths, rm_r
 from opendm.loghelpers import args_to_dict
 
 from stages.odm_app import ODMApp
@@ -47,20 +47,13 @@ if __name__ == '__main__':
     # If user asks to rerun everything, delete all of the existing progress directories.
     if args.rerun_all:
         log.ODM_INFO("Rerun all -- Removing old data")
-        dirs_to_delete = [double_quote(os.path.join(args.project_path, p)) for p in get_processing_results_paths()] + [
-                            double_quote(os.path.join(args.project_path, "odm_meshing")),
-                            double_quote(os.path.join(args.project_path, "opensfm")),
-                            double_quote(os.path.join(args.project_path, "odm_texturing_25d")),
-                            double_quote(os.path.join(args.project_path, "odm_filterpoints")),
-                            double_quote(os.path.join(args.project_path, "submodels")),
-                        ]
-        if sys.platform == 'win32':
-            for d in dirs_to_delete:
-                if os.path.isdir(d):
-                    os.system("rmdir /S /Q " + dirs_to_delete)
-        else:
-            os.system("rm -rf " + 
-                        " ".join(dirs_to_delete))
+        for d in [os.path.join(args.project_path, p) for p in get_processing_results_paths()] + [
+                  os.path.join(args.project_path, "odm_meshing"),
+                  os.path.join(args.project_path, "opensfm"),
+                  os.path.join(args.project_path, "odm_texturing_25d"),
+                  os.path.join(args.project_path, "odm_filterpoints"),
+                  os.path.join(args.project_path, "submodels")]:
+            rm_r(d)
 
     app = ODMApp(args)
     retcode = app.execute()

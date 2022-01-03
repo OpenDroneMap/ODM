@@ -83,3 +83,12 @@ def copy_paths(paths, destination, rerun):
             elif os.path.isdir(p):
                 shutil.copytree(p, dst_path)
                 log.ODM_INFO("Copying %s --> %s" % (p, dst_path))
+
+def rm_r(path):
+    try:
+        if os.path.isdir(path) and not os.path.islink(path):
+            shutil.rmtree(path)
+        elif os.path.exists(path):
+            os.remove(path)
+    except:
+        log.ODM_WARNING("Cannot remove %s" % path)
