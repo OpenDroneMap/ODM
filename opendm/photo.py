@@ -617,6 +617,10 @@ class ODM_Photo:
     def override_gps_dop(self, dop):
         self.gps_xy_stddev = self.gps_z_stddev = dop
 
+    def override_camera_projection(self, camera_projection):
+        if camera_projection in projections:
+            self.camera_projection = camera_projection
+
     def is_thermal(self):
         #Added for support M2EA camera sensor
         if(self.camera_make == "DJI"):
