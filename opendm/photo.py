@@ -130,7 +130,7 @@ class ODM_Photo:
 
         # Misc SFM
         self.camera_projection = 'brown'
-        self.focal_ratio = 0.0
+        self.focal_ratio = 0.85
 
         # parse values from metadata
         self.parse_exif_values(path_file)
@@ -403,7 +403,7 @@ class ODM_Photo:
             if sensor_width and focal:
                 focal_ratio = focal / sensor_width
             else:
-                focal_ratio = 0.0
+                focal_ratio = 0.85
 
         return focal_ratio
 
