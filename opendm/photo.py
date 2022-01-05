@@ -164,6 +164,11 @@ class ODM_Photo:
         # Disable exifread log
         logging.getLogger('exifread').setLevel(logging.CRITICAL)
 
+        try:
+            self.width, self.height = get_image_size.get_image_size(_path_file)
+        except Exception as e:
+            raise PhotoCorruptedException(str(e))
+
         with open(_path_file, 'rb') as f:
             tags = exifread.process_file(f, details=False)
             try:
@@ -358,10 +363,6 @@ class ODM_Photo:
                 # self.set_attr_from_xmp_tag('bandwidth', tags, [
                 #     'Camera:WavelengthFWHM'
                 # ], float)
-        try:
-            self.width, self.height = get_image_size.get_image_size(_path_file)
-        except Exception as e:
-            raise PhotoCorruptedException(str(e))
 
         # Sanitize band name since we use it in folder paths
         self.band_name = re.sub('[^A-Za-z0-9]+', '', self.band_name)
