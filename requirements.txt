@@ -7,7 +7,7 @@ ExifRead==2.3.2
 Fiona==1.8.20 ; sys_platform == 'linux' or sys_platform == 'darwin'
 https://github.com/OpenDroneMap/windows-deps/raw/main/Fiona-1.8.19-cp38-cp38-win_amd64.whl ; sys_platform == 'win32'
 fpdf2==2.4.6
-gdal==3.4.0
+gdal==3.4.0 ;  ; sys_platform == 'linux' or sys_platform == 'darwin'
 https://github.com/OpenDroneMap/windows-deps/raw/main/GDAL-3.2.3-cp38-cp38-win_amd64.whl ; sys_platform == 'win32'
 joblib==1.1.0
 laspy==1.7.1
