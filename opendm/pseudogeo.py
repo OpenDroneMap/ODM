@@ -27,4 +27,4 @@ def add_pseudo_georeferencing(geotiff):
         dst_ds = None
 
     except Exception as e:
-        log.ODM_WARNING("Cannot add psuedo georeferencing to %s (%s), skipping..." % (geotiff, str(e)))
+        log.ODM_WARNING("Cannot add pseudo georeferencing to %s (%s), skipping..." % (geotiff, str(e)))

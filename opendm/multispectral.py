@@ -70,7 +70,7 @@ def dn_to_radiance(photo, image):
         R = np.repeat(R[:, :, np.newaxis], image.shape[2], axis=2)
         image *= R
     
-    # Floor any negative radiances to zero (can happend due to noise around blackLevel)
+    # Floor any negative radiances to zero (can happen due to noise around blackLevel)
     if dark_level is not None:
         image[image < 0] = 0
     
