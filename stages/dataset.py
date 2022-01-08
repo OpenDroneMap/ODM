@@ -136,6 +136,13 @@ class ODMLoadDatasetStage(types.ODM_Stage):
 
                     for p in photos:
                         p.override_gps_dop(args.gps_accuracy)
+                
+                # Override projection type
+                if args.camera_lens != "auto":
+                    log.ODM_INFO("Setting camera lens to %s for all images" % args.camera_lens)
+
+                    for p in photos:
+                        p.override_camera_projection(args.camera_lens)
 
                 # Save image database for faster restart
                 save_images_database(photos, images_database_file)
