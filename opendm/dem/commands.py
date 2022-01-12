@@ -39,7 +39,7 @@ def rectify(lasFile, debug=False, reclassify_threshold=5, min_area=750, min_poin
 
     try:
         # Currently, no Python 2 lib that supports reading and writing LAZ, so we will do it manually until ODM is migrated to Python 3
-        # When migration is done, we can move to pylas and avoid using PDAL for convertion
+        # When migration is done, we can move to pylas and avoid using PDAL for conversion
         tempLasFile = os.path.join(os.path.dirname(lasFile), 'tmp.las')
 
         # Convert LAZ to LAS

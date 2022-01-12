@@ -3,7 +3,7 @@ if sys.platform != 'win32':
     print("This script is for Windows only! Use configure.sh instead.")
     exit(1)
 if sys.version_info.major != 3 or sys.version_info.minor != 8:
-    print("You neeed to use Python 3.8.x (due to the requirements.txt). You are using %s instead." % platform.python_version())
+    print("You need to use Python 3.8.x (due to the requirements.txt). You are using %s instead." % platform.python_version())
     exit(1)
 
 import argparse

@@ -11,7 +11,7 @@ def extract_temperatures_dji(photo, image, dataset_tree):
         The executable file is run and generates a 16 bit unsigned RAW image with Little Endian byte order.
         Link to DJI Forum post: https://forum.dji.com/forum.php?mod=redirect&goto=findpost&ptid=230321&pid=2389016
         """
-        # Harcoded metadata for mean of values
+        # Hardcoded metadata for mean of values
         # This is added to support the possibility of extracting RJPEG from DJI M2EA 
         meta = {
             "Emissivity": 0.95,
