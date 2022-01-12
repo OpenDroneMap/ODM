@@ -12,7 +12,7 @@ if(CUDA_FOUND)
         #--Download step--------------
         DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
         GIT_REPOSITORY    https://github.com/OpenDroneMap/pypopsift
-        GIT_TAG           270
+        GIT_TAG           271
         #--Update/Patch step----------
         UPDATE_COMMAND    ""
         #--Configure step-------------
