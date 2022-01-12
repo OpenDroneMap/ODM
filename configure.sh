@@ -104,9 +104,6 @@ installruntimedepsonly() {
     installdepsfromsnapcraft runtime opensfm
     echo "Installing OpenMVS Dependencies"
     installdepsfromsnapcraft runtime openmvs
-    
-    # Fix: numpy.ndarray size changed
-    pip install -U numpy==1.21.1
 }
 
 installreqs() {
