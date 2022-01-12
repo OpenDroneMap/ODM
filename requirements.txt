@@ -14,9 +14,10 @@ laspy==1.7.1
 lxml==4.7.1
 matplotlib==3.5.1
 networkx==2.6.3
-numpy==1.22.0
-opencv-python==4.5.5.62
+numpy==1.21.5
+opencv-python-headless==4.5.5.62
 Pillow==9.0.0
+pip==21.3.1
 pyodm==1.5.9
 pyproj==3.3.0
 Pysolar==0.10
