@@ -43,7 +43,7 @@ COPY --from=builder /usr/local /usr/local
 RUN bash configure.sh installruntimedepsonly \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
-  && bash run.sh --help
+  && bash run.sh --help \
   && bash -c "eval $(python3 /code/opendm/context.py) && python3 -c 'from opensfm import io, pymap'"
 # Entry point
 ENTRYPOINT ["python3", "/code/run.py"]
