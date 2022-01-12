@@ -11,7 +11,7 @@ laspy==1.7.0
 lxml==4.6.1
 matplotlib==3.3.3
 networkx==2.5
-numpy==1.22.0
+numpy==1.21.1
 Pillow==8.0.1
 vmem==1.0.1
 pyodm==1.5.8
