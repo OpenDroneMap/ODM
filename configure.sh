@@ -105,6 +105,8 @@ installruntimedepsonly() {
     echo "Installing OpenMVS Dependencies"
     installdepsfromsnapcraft runtime openmvs
     
+    # Fix: numpy.ndarray size changed
+    pip install -U numpy==1.21.1
 }
 
 installreqs() {
@@ -155,9 +157,6 @@ install() {
     cd ${RUNPATH}/SuperBuild
     mkdir -p build && cd build
     cmake .. && make -j$processes
-
-    # Fix: numpy.ndarray size changed
-    pip install -U numpy==1.21.1
 
     echo "Configuration Finished"
 }
