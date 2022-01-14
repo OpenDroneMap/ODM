@@ -36,7 +36,7 @@ class ODMDEMStage(types.ODM_Stage):
         resolution = gsd.cap_resolution(args.dem_resolution, tree.opensfm_reconstruction, 
                                         gsd_scaling=gsd_scaling,
                                         ignore_gsd=args.ignore_gsd,
-                                        ignore_resolution=ignore_resolution,
+                                        ignore_resolution=ignore_resolution and args.ignore_gsd,
                                         has_gcp=reconstruction.has_gcp())
 
         log.ODM_INFO('Classify: ' + str(args.pc_classify))

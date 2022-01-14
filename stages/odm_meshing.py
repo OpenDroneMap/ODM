@@ -44,7 +44,7 @@ class ODMeshingStage(types.ODM_Stage):
               log.ODM_INFO('Writing ODM 2.5D Mesh file in: %s' % tree.odm_25dmesh)
               ortho_resolution = gsd.cap_resolution(args.orthophoto_resolution, tree.opensfm_reconstruction, 
                                                     ignore_gsd=args.ignore_gsd,
-                                                    ignore_resolution=not reconstruction.is_georeferenced(),
+                                                    ignore_resolution=(not reconstruction.is_georeferenced()) and args.ignore_gsd,
                                                     has_gcp=reconstruction.has_gcp()) / 100.0 
               
               dsm_multiplier = max(1.0, gsd.rounded_gsd(tree.opensfm_reconstruction, default_value=4, ndigits=3, ignore_gsd=args.ignore_gsd))
