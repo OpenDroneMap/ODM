@@ -31,7 +31,7 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
 
             resolution = 1.0 / (gsd.cap_resolution(args.orthophoto_resolution, tree.opensfm_reconstruction,
                                                    ignore_gsd=args.ignore_gsd,
-                                                   ignore_resolution=not reconstruction.is_georeferenced(),
+                                                   ignore_resolution=(not reconstruction.is_georeferenced()) and args.ignore_gsd,
                                                    has_gcp=reconstruction.has_gcp()) / 100.0)
 
             # odm_orthophoto definitions
