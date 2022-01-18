@@ -175,12 +175,14 @@ class ODM_Photo:
                 if 'Image Make' in tags:
                     try:
                         self.camera_make = tags['Image Make'].values
+                        self.camera_make = self.camera_make.strip()
                     except UnicodeDecodeError:
                         log.ODM_WARNING("EXIF Image Make might be corrupted")
                         self.camera_make = "unknown"
                 if 'Image Model' in tags:
                     try:
                         self.camera_model = tags['Image Model'].values
+                        self.camera_model = self.camera_model.strip()
                     except UnicodeDecodeError:
                         log.ODM_WARNING("EXIF Image Model might be corrupted")
                         self.camera_model = "unknown"
@@ -350,8 +352,11 @@ class ODM_Photo:
                     # Pitch: 90 --> camera is looking forward
                     # Roll: 0 (assuming gimbal)
                     if self.has_ypr():
-                        if self.camera_make.lower() == 'dji':
+                        if self.camera_make.lower() in ['dji', 'hasselblad']:
                             self.pitch = 90 + self.pitch
+                    
+                        if self.camera_make.lower() == 'sensefly':
+                            self.roll *= -1
 
                 except Exception as e:
                     log.ODM_WARNING("Cannot read XMP tags for %s: %s" % (_path_file, str(e)))

@@ -122,7 +122,7 @@ def config(argv=None, parser=None):
     parser.add_argument('--min-num-features',
                         metavar='<integer>',
                         action=StoreValue,
-                        default=8000,
+                        default=10000,
                         type=int,
                         help=('Minimum number of features to extract per image. '
                               'More features can be useful for finding more matches between images, '
