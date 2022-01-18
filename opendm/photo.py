@@ -350,7 +350,7 @@ class ODM_Photo:
                     # Pitch: 90 --> camera is looking forward
                     # Roll: 0 (assuming gimbal)
                     if self.has_ypr():
-                        if self.camera_make.lower() == 'dji':
+                        if self.camera_make.lower() in ['dji', 'hasselblad']:
                             self.pitch = 90 + self.pitch
 
                 except Exception as e:
