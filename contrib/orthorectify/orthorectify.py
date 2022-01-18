@@ -45,7 +45,7 @@ parser.add_argument('--image-list',
 parser.add_argument('--images',
                     type=str,
                     default="",
-                    help="Comma-separeted list of filenames to rectify. Use as an alternative to --image-list. Default: process all images.")
+                    help="Comma-separated list of filenames to rectify. Use as an alternative to --image-list. Default: process all images.")
 parser.add_argument('--threads',
                     type=int,
                     default=multiprocessing.cpu_count(),

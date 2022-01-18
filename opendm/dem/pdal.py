@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ################################################################################
-#   lidar2dems - utilties for creating DEMs from LiDAR data
+#   lidar2dems - utilities for creating DEMs from LiDAR data
 #
 #   AUTHOR: Matthew Hanson, matt.a.hanson@gmail.com
 #

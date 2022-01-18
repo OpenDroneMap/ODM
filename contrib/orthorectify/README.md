@@ -50,7 +50,7 @@ optional arguments:
                         image filenames to orthorectify. By
                         default all images in a dataset are
                         processed. Default: img_list.txt
-  --images IMAGES       Comma-separeted list of filenames to
+  --images IMAGES       Comma-separated list of filenames to
                         rectify. Use as an alternative to --image-
                         list. Default: process all images.
 ```

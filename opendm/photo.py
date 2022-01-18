@@ -132,7 +132,7 @@ class ODM_Photo:
 
         # Misc SFM
         self.camera_projection = 'brown'
-        self.focal_ratio = 0.0
+        self.focal_ratio = 0.85
 
         # Sequoia                                                                           # Seq
         self.seq_sensor_model = None                                                        # Seq cam++
@@ -175,6 +175,11 @@ class ODM_Photo:
     def parse_exif_values(self, _path_file):
         # Disable exifread log
         logging.getLogger('exifread').setLevel(logging.CRITICAL)
+
+        try:
+            self.width, self.height = get_image_size.get_image_size(_path_file)
+        except Exception as e:
+            raise PhotoCorruptedException(str(e))
 
         with open(_path_file, 'rb') as f:
             tags = exifread.process_file(f, details=False)
@@ -345,7 +350,7 @@ class ODM_Photo:
                             self.camera_projection = camera_projection
 
                     # OPK
-                    self.set_attr_from_xmp_tag('yaw', tags, ['@drone-dji:GimbalYawDegree', '@Camera:Yaw', 'Camera:Yaw'], float)
+                    self.set_attr_from_xmp_tag('yaw', tags, ['@drone-dji:FlightYawDegree', '@Camera:Yaw', 'Camera:Yaw'], float)
                     self.set_attr_from_xmp_tag('pitch', tags, ['@drone-dji:GimbalPitchDegree', '@Camera:Pitch', 'Camera:Pitch'], float)
                     self.set_attr_from_xmp_tag('roll', tags, ['@drone-dji:GimbalRollDegree', '@Camera:Roll', 'Camera:Roll'], float)
 
@@ -400,10 +405,6 @@ class ODM_Photo:
                 # self.set_attr_from_xmp_tag('bandwidth', tags, [
                 #     'Camera:WavelengthFWHM'
                 # ], float)
-        try:
-            self.width, self.height = get_image_size.get_image_size(_path_file)
-        except Exception as e:
-            raise PhotoCorruptedException(str(e))
 
         # Sanitize band name since we use it in folder paths
         self.band_name = re.sub('[^A-Za-z0-9]+', '', self.band_name)
@@ -445,7 +446,7 @@ class ODM_Photo:
             if sensor_width and focal:
                 focal_ratio = focal / sensor_width
             else:
-                focal_ratio = 0.0
+                focal_ratio = 0.85
 
         return focal_ratio
 
@@ -730,6 +731,10 @@ class ODM_Photo:
 
     def override_gps_dop(self, dop):
         self.gps_xy_stddev = self.gps_z_stddev = dop
+
+    def override_camera_projection(self, camera_projection):
+        if camera_projection in projections:
+            self.camera_projection = camera_projection
 
     def is_thermal(self):
         #Added for support M2EA camera sensor

@@ -109,7 +109,7 @@ class ODMApp:
             if code == 139 or code == 134 or code == 1 or code == 3221225477:
                 # Segfault
                 log.ODM_ERROR("Uh oh! Processing stopped because of strange values in the reconstruction. This is often a sign that the input data has some issues or the software cannot deal with it. Have you followed best practices for data acquisition? See https://docs.opendronemap.org/flying/")
-            elif code == 137:
+            elif code == 137 or code == 3221226505:
                 log.ODM_ERROR("Whoops! You ran out of memory! Add more RAM to your computer, if you're using docker configure it to use more memory, for WSL2 make use of .wslconfig (https://docs.microsoft.com/en-us/windows/wsl/wsl-config#configure-global-options-with-wslconfig), resize your images, lower the quality settings or process the images using a cloud provider (e.g. https://webodm.net).")
             elif code == 132:
                 log.ODM_ERROR("Oh no! It looks like your CPU is not supported (is it fairly old?). You can still use ODM, but you will need to build your own docker image. See https://github.com/OpenDroneMap/ODM#build-from-source")

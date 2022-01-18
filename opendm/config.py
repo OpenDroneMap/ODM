@@ -180,12 +180,12 @@ def config(argv=None, parser=None):
                              'Can be specified either as path to a cameras.json file or as a '
                              'JSON string representing the contents of a '
                              'cameras.json file. Default: %(default)s')
-    
+
     parser.add_argument('--camera-lens',
             metavar='<string>',
             action=StoreValue,
             default='auto',
-            choices=['auto', 'perspective', 'brown', 'fisheye', 'spherical'],
+            choices=['auto', 'perspective', 'brown', 'fisheye', 'spherical', 'equirectangular', 'dual'],
             help=('Set a camera projection type. Manually setting a value '
                 'can help improve geometric undistortion. By default the application '
                 'tries to determine a lens type from the images metadata. Can be one of: %(choices)s. Default: '

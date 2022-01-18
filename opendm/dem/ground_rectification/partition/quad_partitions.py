@@ -5,7 +5,7 @@ from .partition_plan import PartitionPlan, Partition
 
 class QuadPartitions(PartitionPlan):
     """This partition plan starts with one big partition that includes the whole point cloud. It then divides it into four partitions, based on some criteria.
-       Each of these partitions are then divided into four other partitions and so on. The algorithm has two possible stopping criterias:
+       Each of these partitions are then divided into four other partitions and so on. The algorithm has two possible stopping criteria:
        if subdividing a partition would imply that one of the new partitions contains fewer that a given amount of points, or that one of the new partitions as an area smaller that the given size,
        then the partition is not divided."""
 
