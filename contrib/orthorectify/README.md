@@ -2,7 +2,7 @@
 
 ![image](https://user-images.githubusercontent.com/1951843/111536715-fc91c380-8740-11eb-844c-5b7960186391.png)
 
-This tool is capable of orthorectifying individual images (or all images) from an ODM reconstruction. It does not account for visibility occlusion, so you will get artifacts near buildings (help us improve this?).
+This tool is capable of orthorectifying individual images (or all images) from an existing ODM reconstruction.
 
 ![image](https://user-images.githubusercontent.com/1951843/111529183-3ad6b500-8738-11eb-9960-b1aa676f863b.png)
 
@@ -17,7 +17,7 @@ docker run -ti --rm -v /home/youruser/datasets:/datasets opendronemap/odm --proj
 You can run the orthorectification module by running:
 
 ```
-docker run -ti --rm -v /home/youruser/datasets:/datasets --entrypoint /code/contrib/orthorectify/orthorectify.py opendronemap/odm /datasets/project
+docker run -ti --rm -v /home/youruser/datasets:/datasets --entrypoint /code/contrib/orthorectify/run.sh opendronemap/odm /datasets/project
 ```
 
 This will start the orthorectification process for all images in the dataset. See additional flags you can pass at the end of the command above:
@@ -26,7 +26,8 @@ This will start the orthorectification process for all images in the dataset. Se
 usage: orthorectify.py [-h] [--dem DEM] [--no-alpha NO_ALPHA]
                        [--interpolation {nearest,bilinear}]
                        [--outdir OUTDIR] [--image-list IMAGE_LIST]
-                       [--images IMAGES]
+                       [--images IMAGES] [--threads THREADS]
+                       [--skip-visibility-test SKIP_VISIBILITY_TEST]
                        dataset
 
 Orthorectification Tool
@@ -53,6 +54,9 @@ optional arguments:
   --images IMAGES       Comma-separated list of filenames to
                         rectify. Use as an alternative to --image-
                         list. Default: process all images.
+  --skip-visibility-test SKIP_VISIBILITY_TEST
+                        Skip visibility testing (faster but leaves
+                        artifacts due to relief displacement)
 ```
 
 ## Roadmap
@@ -60,5 +64,6 @@ optional arguments:
 Help us improve this module! We could add:
 
  - [ ] GPU support for faster processing
- - [ ] Visibility checks
  - [ ] Merging of multiple orthorectified images (blending, filtering, seam leveling)
+ - [ ] Faster visibility test
+ - [ ] Different methods for orthorectification (direct)
