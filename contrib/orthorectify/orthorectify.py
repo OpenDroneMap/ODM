@@ -6,12 +6,14 @@ import os
 import sys
 sys.path.insert(0, os.path.join("..", "..", os.path.dirname(__file__)))
 
+from math import sqrt
 import rasterio
 import numpy as np
 import numpy.ma as ma
 import multiprocessing
 import argparse
 import functools
+from skimage.draw import line
 from opensfm import dataset
 
 default_dem_path = "odm_dem/dsm.tif"
@@ -50,7 +52,9 @@ parser.add_argument('--threads',
                     type=int,
                     default=multiprocessing.cpu_count(),
                     help="Number of CPU processes to use. Default: %(default)s")
-
+parser.add_argument('--skip-visibility-test',
+                    type=bool,
+                    help="Skip visibility testing (faster but leaves artifacts due to relief displacement)")
 args = parser.parse_args()
 
 dataset_path = args.dataset
@@ -112,11 +116,16 @@ with rasterio.open(dem_path) as dem_raster:
     dem_has_nodata = dem_raster.profile.get('nodata') is not None
 
     if dem_has_nodata:
-        dem_min_value = ma.array(dem, mask=dem==dem_raster.nodata).min()
+        m = ma.array(dem, mask=dem==dem_raster.nodata)
+        dem_min_value = m.min()
+        dem_max_value = m.max()
     else:
         dem_min_value = dem.min()
-    
+        dem_max_value = dem.max()
+
     print("DEM Minimum: %s" % dem_min_value)
+    print("DEM Maximum: %s" % dem_max_value)
+    
     h, w = dem.shape
 
     crs = dem_raster.profile.get('crs')
@@ -132,18 +141,18 @@ with rasterio.open(dem_path) as dem_raster:
             exit(1)
         
         with open(coords_file) as f:
-            line = f.readline() # discard
+            l = f.readline() # discard
 
             # second line is a northing/easting offset
-            line = f.readline().rstrip()
-            dem_offset_x, dem_offset_y = map(float, line.split(" "))
+            l = f.readline().rstrip()
+            dem_offset_x, dem_offset_y = map(float, l.split(" "))
         
         print("DEM offset: (%s, %s)" % (dem_offset_x, dem_offset_y))
 
     print("DEM dimensions: %sx%s pixels" % (w, h))
-   
+
     # Read reconstruction
-    udata = dataset.UndistortedDataSet(dataset.DataSet(os.path.join(dataset_path, "opensfm")))
+    udata = dataset.UndistortedDataSet(dataset.DataSet(os.path.join(dataset_path, "opensfm")), undistorted_data_path=os.path.join(dataset_path, "opensfm", "undistorted"))
     reconstructions = udata.load_undistorted_reconstruction()
     if len(reconstructions) == 0:
         raise Exception("No reconstructions available")
@@ -160,6 +169,8 @@ with rasterio.open(dem_path) as dem_raster:
 
             r = shot.pose.get_rotation_matrix()
             Xs, Ys, Zs = shot.pose.get_origin()
+            cam_grid_y, cam_grid_x = dem_raster.index(Xs + dem_offset_x, Ys + dem_offset_y)
+
             a1 = r[0][0]
             b1 = r[0][1]
             c1 = r[0][2]
@@ -170,15 +181,26 @@ with rasterio.open(dem_path) as dem_raster:
             b3 = r[2][1]
             c3 = r[2][2]
 
+            if not args.skip_visibility_test:
+                distance_map = np.full((h, w), np.nan)
+
+                for j in range(0, h):
+                    for i in range(0, w):
+                        distance_map[j][i] = sqrt((cam_grid_x - i) ** 2 + (cam_grid_y - j) ** 2)
+                distance_map[distance_map==0] = 1e-7
+
             print("Camera pose: (%f, %f, %f)" % (Xs, Ys, Zs))
 
             img_h, img_w, num_bands = shot_image.shape
+            half_img_w = (img_w - 1) / 2.0
+            half_img_h = (img_h - 1) / 2.0
             print("Image dimensions: %sx%s pixels" % (img_w, img_h))
             f = shot.camera.focal * max(img_h, img_w)
             has_nodata = dem_raster.profile.get('nodata') is not None
 
             def process_pixels(step):
                 imgout = np.full((num_bands, dem_bbox_h, dem_bbox_w), np.nan)
+
                 minx = dem_bbox_w
                 miny = dem_bbox_h
                 maxx = 0
@@ -192,12 +214,13 @@ with rasterio.open(dem_path) as dem_raster:
                             im_i = i - dem_bbox_minx
 
                             # World coordinates
-                            Xa, Ya = dem_raster.xy(j, i)
                             Za = dem[j][i]
 
                             # Skip nodata
                             if has_nodata and Za == dem_raster.nodata:
                                 continue
+
+                            Xa, Ya = dem_raster.xy(j, i)
 
                             # Remove offset (our cameras don't have the geographic offset)
                             Xa -= dem_offset_x
@@ -209,11 +232,27 @@ with rasterio.open(dem_path) as dem_raster:
                             dz = (Za - Zs)
 
                             den = a3 * dx + b3 * dy + c3 * dz
-                            x = (img_w - 1) / 2.0 - (f * (a1 * dx + b1 * dy + c1 * dz) / den)
-                            y = (img_h - 1) / 2.0 - (f * (a2 * dx + b2 * dy + c2 * dz) / den)
+                            x = half_img_w - (f * (a1 * dx + b1 * dy + c1 * dz) / den)
+                            y = half_img_h - (f * (a2 * dx + b2 * dy + c2 * dz) / den)
 
                             if x >= 0 and y >= 0 and x <= img_w - 1 and y <= img_h - 1:
-                                
+                                # Visibility test
+                                if not args.skip_visibility_test:
+                                    check_dem_points = np.column_stack(line(i, j, cam_grid_x, cam_grid_y))
+                                    check_dem_points = check_dem_points[np.all(np.logical_and(np.array([0, 0]) <= check_dem_points, check_dem_points < [w, h]), axis=1)]
+
+                                    visible = True
+                                    for p in check_dem_points:
+                                        ray_z = Zs + (distance_map[p[1]][p[0]] / distance_map[j][i]) * dz
+                                        if ray_z > dem_max_value:
+                                            break
+
+                                        if dem[p[1]][p[0]] > ray_z:
+                                            visible = False
+                                            break
+                                    if not visible:
+                                        continue
+
                                 if interpolation == 'bilinear':
                                     xi = img_w - 1 - x
                                     yi = img_h - 1 - y
@@ -291,6 +330,7 @@ with rasterio.open(dem_path) as dem_raster:
 
             # Merge image
             imgout, _ = results[0]
+
             for j in range(dem_bbox_miny, dem_bbox_maxy + 1):
                 im_j = j - dem_bbox_miny
                 resimg, _ = results[j % max_workers]
@@ -308,10 +348,10 @@ with rasterio.open(dem_path) as dem_raster:
                 miny = min(bounds[1], miny)
                 maxx = max(bounds[2], maxx)
                 maxy = max(bounds[3], maxy)
-
+            
             print("Output bounds: (%s, %s), (%s, %s) pixels" % (minx, miny, maxx, maxy))
             if minx <= maxx and miny <= maxy:
-                imgout = imgout[:,miny:maxy,minx:maxx]
+                imgout = imgout[:,miny:maxy+1,minx:maxx+1]
 
                 if with_alpha:
                     alpha = np.zeros((imgout.shape[1], imgout.shape[2]), dtype=np.uint8)
