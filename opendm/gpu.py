@@ -30,12 +30,14 @@ def has_gpu():
     if sys.platform == 'win32':
         nvcuda_path = os.path.join(os.environ.get('SYSTEMROOT'), 'system32', 'nvcuda.dll')
         if os.path.isfile(nvcuda_path):
+            log.ODM_INFO("CUDA drivers detected")
             return True
         else:
             log.ODM_INFO("No CUDA drivers detected, using CPU")
             return False
     else:
         if shutil.which('nvidia-smi') is not None:
+            log.ODM_INFO("nvidia-smi detected")
             return True
         else:
             log.ODM_INFO("nvidia-smi not found in PATH, using CPU")
