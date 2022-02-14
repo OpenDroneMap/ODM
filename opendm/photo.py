@@ -169,6 +169,9 @@ class ODM_Photo:
         except Exception as e:
             raise PhotoCorruptedException(str(e))
 
+        tags = {}
+        xtags = {}
+
         with open(_path_file, 'rb') as f:
             tags = exifread.process_file(f, details=False)
             try:
