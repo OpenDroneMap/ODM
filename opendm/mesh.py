@@ -105,7 +105,7 @@ def dem_to_mesh_gridded(inGeotiff, outMesh, maxVertexCount, verbose=False, maxCo
                 '-maxTileLength 2000 '
                 '-maxVertexCount {maxVertexCount} '
                 '-maxConcurrency {maxConcurrency} '
-                '-edgeSwapThreshold 0.5 '
+                '-edgeSwapThreshold 0.15 '
                 ' {verbose} '.format(**kwargs))
             break
         except Exception as e:
