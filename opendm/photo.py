@@ -169,6 +169,9 @@ class ODM_Photo:
         except Exception as e:
             raise PhotoCorruptedException(str(e))
 
+        tags = {}
+        xtags = {}
+
         with open(_path_file, 'rb') as f:
             tags = exifread.process_file(f, details=False)
             try:
@@ -198,11 +201,6 @@ class ODM_Photo:
                     self.orientation = self.int_value(tags['Image Orientation'])
             except (IndexError, ValueError) as e:
                 log.ODM_WARNING("Cannot read basic EXIF tags for %s: %s" % (_path_file, str(e)))
-
-            try:
-                self.focal_ratio = self.extract_focal(self.camera_make, self.camera_model, tags)
-            except (IndexError, ValueError) as e:
-                log.ODM_WARNING("Cannot extract focal ratio for %s: %s" % (_path_file, str(e)))
 
             try:
                 if 'Image Tag 0xC61A' in tags:
@@ -251,98 +249,108 @@ class ODM_Photo:
             f.seek(0)
             xmp = self.get_xmp(f)
 
-            for tags in xmp:
+            for xtags in xmp:
                 try:
-                    band_name = self.get_xmp_tag(tags, ['Camera:BandName', '@Camera:BandName'])
+                    band_name = self.get_xmp_tag(xtags, ['Camera:BandName', '@Camera:BandName'])
                     if band_name is not None:
                         self.band_name = band_name.replace(" ", "")
 
-                    self.set_attr_from_xmp_tag('band_index', tags, [
+                    self.set_attr_from_xmp_tag('band_index', xtags, [
                         'DLS:SensorId', # Micasense RedEdge
                         '@Camera:RigCameraIndex', # Parrot Sequoia, Sentera 21244-00_3.2MP-GS-0001
                         'Camera:RigCameraIndex', # MicaSense Altum
                     ])
 
-                    self.set_attr_from_xmp_tag('radiometric_calibration', tags, [
+                    self.set_attr_from_xmp_tag('radiometric_calibration', xtags, [
                         'MicaSense:RadiometricCalibration',
                     ])
 
-                    self.set_attr_from_xmp_tag('vignetting_center', tags, [
+                    self.set_attr_from_xmp_tag('vignetting_center', xtags, [
                         'Camera:VignettingCenter',
                         'Sentera:VignettingCenter',
                     ])
 
-                    self.set_attr_from_xmp_tag('vignetting_polynomial', tags, [
+                    self.set_attr_from_xmp_tag('vignetting_polynomial', xtags, [
                         'Camera:VignettingPolynomial',
                         'Sentera:VignettingPolynomial',
                     ])
                     
-                    self.set_attr_from_xmp_tag('horizontal_irradiance', tags, [
+                    self.set_attr_from_xmp_tag('horizontal_irradiance', xtags, [
                         'Camera:HorizontalIrradiance'
                     ], float)
 
-                    self.set_attr_from_xmp_tag('irradiance_scale_to_si', tags, [
+                    self.set_attr_from_xmp_tag('irradiance_scale_to_si', xtags, [
                         'Camera:IrradianceScaleToSIUnits'
                     ], float)
 
-                    self.set_attr_from_xmp_tag('sun_sensor', tags, [
+                    self.set_attr_from_xmp_tag('sun_sensor', xtags, [
                         'Camera:SunSensor',
                     ], float)
 
-                    self.set_attr_from_xmp_tag('spectral_irradiance', tags, [
+                    self.set_attr_from_xmp_tag('spectral_irradiance', xtags, [
                         'Camera:SpectralIrradiance',
                         'Camera:Irradiance',
                     ], float)
 
-                    self.set_attr_from_xmp_tag('capture_uuid', tags, [
+                    self.set_attr_from_xmp_tag('capture_uuid', xtags, [
                         '@drone-dji:CaptureUUID', # DJI
                         '@Camera:ImageUniqueID', # sentera 6x
                     ])
 
+                    # Camera make / model for some cameras is stored in the XMP
+                    if self.camera_make == '':
+                        self.set_attr_from_xmp_tag('camera_make', xtags, [
+                            '@tiff:Make'
+                        ])
+                    if self.camera_model == '':
+                        self.set_attr_from_xmp_tag('camera_model', xtags, [
+                            '@tiff:Model'
+                        ])
+
                     # DJI GPS tags
-                    self.set_attr_from_xmp_tag('longitude', tags, [
+                    self.set_attr_from_xmp_tag('longitude', xtags, [
                         '@drone-dji:Longitude'
                     ], float)
-                    self.set_attr_from_xmp_tag('latitude', tags, [
+                    self.set_attr_from_xmp_tag('latitude', xtags, [
                         '@drone-dji:Latitude'
                     ], float)
-                    self.set_attr_from_xmp_tag('altitude', tags, [
+                    self.set_attr_from_xmp_tag('altitude', xtags, [
                         '@drone-dji:AbsoluteAltitude'
                     ], float)
 
                     # Phantom 4 RTK
-                    if '@drone-dji:RtkStdLon' in tags:
-                        y = float(self.get_xmp_tag(tags, '@drone-dji:RtkStdLon'))
-                        x = float(self.get_xmp_tag(tags, '@drone-dji:RtkStdLat'))
+                    if '@drone-dji:RtkStdLon' in xtags:
+                        y = float(self.get_xmp_tag(xtags, '@drone-dji:RtkStdLon'))
+                        x = float(self.get_xmp_tag(xtags, '@drone-dji:RtkStdLat'))
                         self.gps_xy_stddev = max(x, y)
                     
-                        if '@drone-dji:RtkStdHgt' in tags:
-                            self.gps_z_stddev = float(self.get_xmp_tag(tags, '@drone-dji:RtkStdHgt'))
+                        if '@drone-dji:RtkStdHgt' in xtags:
+                            self.gps_z_stddev = float(self.get_xmp_tag(xtags, '@drone-dji:RtkStdHgt'))
                     else:
-                        self.set_attr_from_xmp_tag('gps_xy_stddev', tags, [
+                        self.set_attr_from_xmp_tag('gps_xy_stddev', xtags, [
                             '@Camera:GPSXYAccuracy',
                             'GPSXYAccuracy'
                         ], float)
-                        self.set_attr_from_xmp_tag('gps_z_stddev', tags, [
+                        self.set_attr_from_xmp_tag('gps_z_stddev', xtags, [
                             '@Camera:GPSZAccuracy',
                             'GPSZAccuracy'
                         ], float)
 
-                    if 'DLS:Yaw' in tags:
-                        self.set_attr_from_xmp_tag('dls_yaw', tags, ['DLS:Yaw'], float)
-                        self.set_attr_from_xmp_tag('dls_pitch', tags, ['DLS:Pitch'], float)
-                        self.set_attr_from_xmp_tag('dls_roll', tags, ['DLS:Roll'], float)
+                    if 'DLS:Yaw' in xtags:
+                        self.set_attr_from_xmp_tag('dls_yaw', xtags, ['DLS:Yaw'], float)
+                        self.set_attr_from_xmp_tag('dls_pitch', xtags, ['DLS:Pitch'], float)
+                        self.set_attr_from_xmp_tag('dls_roll', xtags, ['DLS:Roll'], float)
                 
-                    camera_projection = self.get_xmp_tag(tags, ['@Camera:ModelType', 'Camera:ModelType'])
+                    camera_projection = self.get_xmp_tag(xtags, ['@Camera:ModelType', 'Camera:ModelType'])
                     if camera_projection is not None:
                         camera_projection = camera_projection.lower()
                         if camera_projection in projections:
                             self.camera_projection = camera_projection
 
                     # OPK
-                    self.set_attr_from_xmp_tag('yaw', tags, ['@drone-dji:FlightYawDegree', '@Camera:Yaw', 'Camera:Yaw'], float)
-                    self.set_attr_from_xmp_tag('pitch', tags, ['@drone-dji:GimbalPitchDegree', '@Camera:Pitch', 'Camera:Pitch'], float)
-                    self.set_attr_from_xmp_tag('roll', tags, ['@drone-dji:GimbalRollDegree', '@Camera:Roll', 'Camera:Roll'], float)
+                    self.set_attr_from_xmp_tag('yaw', xtags, ['@drone-dji:FlightYawDegree', '@Camera:Yaw', 'Camera:Yaw'], float)
+                    self.set_attr_from_xmp_tag('pitch', xtags, ['@drone-dji:GimbalPitchDegree', '@Camera:Pitch', 'Camera:Pitch'], float)
+                    self.set_attr_from_xmp_tag('roll', xtags, ['@drone-dji:GimbalRollDegree', '@Camera:Roll', 'Camera:Roll'], float)
 
                     # Normalize YPR conventions (assuming nadir camera)
                     # Yaw: 0 --> top of image points north
@@ -361,20 +369,27 @@ class ODM_Photo:
                 except Exception as e:
                     log.ODM_WARNING("Cannot read XMP tags for %s: %s" % (_path_file, str(e)))
 
-                # self.set_attr_from_xmp_tag('center_wavelength', tags, [
+                # self.set_attr_from_xmp_tag('center_wavelength', xtags, [
                 #     'Camera:CentralWavelength'
                 # ], float)
 
-                # self.set_attr_from_xmp_tag('bandwidth', tags, [
+                # self.set_attr_from_xmp_tag('bandwidth', xtags, [
                 #     'Camera:WavelengthFWHM'
                 # ], float)
 
         # Sanitize band name since we use it in folder paths
         self.band_name = re.sub('[^A-Za-z0-9]+', '', self.band_name)
 
+        self.compute_focal(tags, xtags)
         self.compute_opk()
 
-    def extract_focal(self, make, model, tags):
+    def compute_focal(self, tags, xtags):
+        try:
+            self.focal_ratio = self.extract_focal(self.camera_make, self.camera_model, tags, xtags)
+        except (IndexError, ValueError) as e:
+            log.ODM_WARNING("Cannot extract focal ratio for %s: %s" % (self.filename, str(e)))
+
+    def extract_focal(self, make, model, tags, xtags):
         if make != "unknown":
             # remove duplicate 'make' information in 'model'
             model = model.replace(make, "")
@@ -400,6 +415,11 @@ class ODM_Photo:
             focal_35 = self.float_value(tags["EXIF FocalLengthIn35mmFilm"])
         if "EXIF FocalLength" in tags:
             focal = self.float_value(tags["EXIF FocalLength"])
+        if focal is None and "@aux:Lens" in xtags:
+            lens = self.get_xmp_tag(xtags, ["@aux:Lens"])
+            matches = re.search('([\d\.]+)mm', str(lens))
+            if matches:
+                focal = float(matches.group(1))
 
         if focal_35 is not None and focal_35 > 0:
             focal_ratio = focal_35 / 36.0  # 35mm film produces 36x24mm pictures.
