@@ -13,7 +13,7 @@ set GDALBASE=%ODMBASE%venv\Lib\site-packages\osgeo
 set OSFMBASE=%ODMBASE%SuperBuild\install\bin\opensfm\bin
 set SBBIN=%ODMBASE%SuperBuild\install\bin
 
-set PATH="%GDALBASE%";"%SBBIN%";"%OSFMBASE%"
+set PATH=%GDALBASE%;%SBBIN%;%OSFMBASE%
 set PROJ_LIB=%GDALBASE%\data\proj
 
 set VIRTUAL_ENV=%ODMBASE%venv
