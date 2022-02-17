@@ -1,34 +1,31 @@
 appsettings==0.8
-attrs==21.4.0
-beautifulsoup4==4.10.0
-cloudpickle==2.0.0
-edt==2.1.1
+attrs==20.3.0
+beautifulsoup4==4.9.3
+cloudpickle==1.6.0
+edt==2.0.2
 ExifRead==2.3.2
-Fiona==1.8.20 ; sys_platform == 'linux' or sys_platform == 'darwin'
+Fiona==1.8.17 ; sys_platform == 'linux' or sys_platform == 'darwin'
 https://github.com/OpenDroneMap/windows-deps/raw/main/Fiona-1.8.19-cp38-cp38-win_amd64.whl ; sys_platform == 'win32'
-fpdf2==2.4.6
-gdal==3.4.1 ; sys_platform == 'linux' or sys_platform == 'darwin'
-https://github.com/OpenDroneMap/windows-deps/raw/main/GDAL-3.2.3-cp38-cp38-win_amd64.whl ; sys_platform == 'win32'
-joblib==1.1.0
-laspy==2.1.1
-lxml==4.7.1
-matplotlib==3.5.1
-networkx==2.6.3
-numpy==1.21.5
-opencv-python-headless==4.5.5.62
-Pillow==9.0.0
-pip==21.3.1
-pyodm==1.5.9
-pyproj==3.3.0
-Pysolar==0.10
-pytz==2021.3
-PyYAML==6.0
-rasterio==1.2.10 ; sys_platform == 'linux' or sys_platform == 'darwin'
-https://github.com/OpenDroneMap/windows-deps/raw/main/rasterio-1.2.3-cp38-cp38-win_amd64.whl ; sys_platform == 'win32'
-repoze.lru==0.7
-scikit-image==0.19.1
-scikit-learn==1.0.2
-scipy==1.7.3
-Shapely==1.8.0
+joblib==0.17.0
+laspy==1.7.0
+lxml==4.6.1
+matplotlib==3.3.3
+networkx==2.5
+numpy==1.21.1
+Pillow==8.3.2
 vmem==1.0.1
+pyodm==1.5.8
+pyproj==3.0.0.post1
+Pysolar==0.9
+pytz==2020.4
+PyYAML==5.1
+rasterio==1.2.3 ; sys_platform == 'linux' or sys_platform == 'darwin'
+https://github.com/OpenDroneMap/windows-deps/raw/main/rasterio-1.2.3-cp38-cp38-win_amd64.whl ; sys_platform == 'win32'
+https://github.com/OpenDroneMap/windows-deps/raw/main/GDAL-3.2.3-cp38-cp38-win_amd64.whl ; sys_platform == 'win32'
+repoze.lru==0.7
+scikit-learn==0.24.2
+scikit-image==0.18.3
+scipy==1.5.4
 xmltodict==0.12.0
+fpdf2==2.4.6
+Shapely==1.7.1
