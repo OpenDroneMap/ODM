@@ -379,32 +379,32 @@ class ODM_Photo:
                             self.roll *= -1
 
                     # Sequoia                                                               # Seq
-                    self.set_attr_from_xmp_tag('seq_sensor_model', tags, [                  # Seq cam++
+                    self.set_attr_from_xmp_tag('seq_sensor_model', xtags, [                 # Seq cam++
                         'Camera:SensorModel',                                               # Seq cam++
                     ])                                                                      # Seq cam++
                                                                                             # Seq
                     # Sequoia                                                               # Seq
-                    self.set_attr_from_xmp_tag('seq_iradcal_list', tags, [                  # Seq sun++
+                    self.set_attr_from_xmp_tag('seq_iradcal_list', xtags, [                 # Seq sun++
                         '@Camera:IrradianceCalibrationMeasurement',                         # Seq sun++
                     ])                                                                      # Seq sun++
                                                                                             # Seq
                     # Sequoia                                                               # Seq
-                    self.set_attr_from_xmp_tag('seq_irad_list', tags, [                     # Seq sun++
+                    self.set_attr_from_xmp_tag('seq_irad_list', xtags, [                    # Seq sun++
                         'Camera:IrradianceList',                                            # Seq sun++
                     ])                                                                      # Seq sun++
                                                                                             # Seq
                     # P4M                                                                   # P4M
-                    self.set_attr_from_xmp_tag('p4m_sensor_gain', tags, [                   # P4M gain+
+                    self.set_attr_from_xmp_tag('p4m_sensor_gain', xtags, [                  # P4M gain+
                         '@drone-dji:SensorGain',                                            # P4M gain+
                     ], float)                                                               # P4M gain+
                                                                                             # P4M
                     # P4M                                                                   # P4M
-                    self.set_attr_from_xmp_tag('p4m_sensor_gain_adjustment', tags, [        # P4M cam++
+                    self.set_attr_from_xmp_tag('p4m_sensor_gain_adjustment', xtags, [       # P4M cam++
                         '@drone-dji:SensorGainAdjustment',                                  # P4M cam++
                     ], float)                                                               # P4M cam++
                                                                                             # P4M
                     # P4M                                                                   # P4M
-                    self.set_attr_from_xmp_tag('p4m_black_current', tags, [                 # P4M cam++
+                    self.set_attr_from_xmp_tag('p4m_black_current', xtags, [                # P4M cam++
                         'Camera:BlackCurrent',                                              # P4M cam++
                     ], float)                                                               # P4M cam++
                                                                                             # P4M
