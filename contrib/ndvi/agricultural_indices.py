@@ -3,11 +3,8 @@
 # NDVI - Normalized Difference Vegetation Index - (NIR−RED)/(NIR + RED)
 # NDRE - Normalized Difference Red Edge - (NIR−RE)/(NIR + RE)
 # GNDVI - Green NDVI - (NIR−GREEN)/(NIR + GREEN)
-# GRVI - Green RVI - NIR/GREEN
 # https://support.micasense.com/hc/en-us/articles/226531127-Creating-agricultural-indices-NDVI-NDRE-in-QGIS-
 # requires python-gdal
-
-
 
 import numpy
 import argparse
@@ -26,7 +23,7 @@ except ImportError:
 
 def parse_args():
     argument_parser = argparse.ArgumentParser('Createa from a multispectral orthophoto \
-a Geotif with  NDVI, NDRE, GNDVI and GRVI agricultural indices')
+a Geotif with  NDVI, NDRE and GNDVI  agricultural indices')
 
     argument_parser.add_argument("orthophoto", metavar="<orthophoto.tif>",
                    type=argparse.FileType('r'),
@@ -49,64 +46,6 @@ a Geotif with  NDVI, NDRE, GNDVI and GRVI agricultural indices')
                    default=False,
                    help="Will overwrite output file if it exists. ")
     return argument_parser.parse_args()
-
-
-def calc_ndvi(nir, red):
-    """
-    Calculates the NDVI of an orthophoto using nir and red bands.
-    :param nir: An array containing the nir band
-    :param vis: An array containing the red band
-    :return: An array that will be exported as a tif
-    """
-
-    # Take the orthophoto and do nir - red / nir + red
-    # for each cell, calculate ndvi (masking out where divide by 0)
-    ndvi = numpy.empty(nir.shape, dtype=float)
-    mask = numpy.not_equal((nir + red), 0.0)
-    return numpy.choose(mask, (-1.0, numpy.true_divide(numpy.subtract(nir, red), numpy.add(nir, red))))
-
-def  calc_ndre(nir, re):
-    """
-    Calculates the NDRE of an orthophoto using nir and re bands.
-    :param nir: An array containing the nir band
-    :param re: An array containing the rededge band
-    :return: An array that will be exported as a tif
-    """
-
-    # Take the orthophoto and do nir - re / nir + re
-    # for each cell, calculate ndre (masking out where divide by 0)
-    ndre = numpy.empty(nir.shape, dtype=float)
-    mask = numpy.not_equal((nir + re), 0.0)
-    return numpy.choose(mask, (-1.0, numpy.true_divide(numpy.subtract(nir, re), numpy.add(nir, re))))
-
-def  calc_gndvi(nir, green):
-    """
-    Calculates the GNDVI of an orthophoto using nir and green bands.
-    :param nir: An array containing the nir band
-    :param green: An array containing the green band
-    :return: An array that will be exported as a tif
-    """
-
-    # Take the orthophoto and do nir - re / nir + re
-    # for each cell, calculate ndre (masking out where divide by 0)
-    gndvi = numpy.empty(nir.shape, dtype=float)
-    mask = numpy.not_equal((nir + green), 0.0)
-    return numpy.choose(mask, (-1.0, numpy.true_divide(numpy.subtract(nir, green), numpy.add(nir, green))))
-
-def  calc_grvi(nir, green):
-    """
-    Calculates the GRVI of an orthophoto using nir and green bands.
-    :param nir: An array containing the nir band
-    :param green: An array containing the green band
-    :return: An array that will be exported as a tif
-    """
-
-    # Take the orthophoto and do nir - re / nir + re
-    # for each cell, calculate ndre (masking out where divide by 0)
-    grvi = numpy.empty(nir.shape, dtype=float)
-    mask = numpy.not_equal((nir + green), 0.0)
-    return numpy.choose(mask, (-1.0, numpy.true_divide(nir,  green)))
-
 
 
 if __name__ == "__main__":
@@ -136,7 +75,6 @@ if __name__ == "__main__":
     re_matrix=orthophoto[args.re-1].astype(float)
     nir_matrix=orthophoto[args.nir-1].astype(float)
 
-
     outfile = args.out
 
     # NDVI
@@ -153,17 +91,12 @@ if __name__ == "__main__":
     #gndvi = calc_gndvi(nir_matrix, green_matrix)
     gndvi = (nir_matrix.astype(float) - green_matrix.astype(float)) / (nir_matrix + green_matrix)
 
-    # GRVI
-    print("Computing GRVI")
-    #grvi = calc_grvi(nir_matrix, green_matrix)
-    grvi =  (nir_matrix.astype(float) / green_matrix)
-
     __import__("IPython").embed()
 
     print("Saving Files")
     # export raster
 
-    for name, matrix in zip(['ndvi', 'ndre', 'gndvi' ,'grvi'] ,[ndvi,ndre,gndvi,grvi] ):
+    for name, matrix in zip(['ndvi', 'ndre', 'gndvi' ] ,[ndvi,ndre,gndvi] ):
         print(name)
         out_driver = gdal.GetDriverByName('GTiff')\
             .Create(name+'_'+outfile.name, int(ndvi.shape[1]), int(ndvi.shape[0]), 1, gdal.GDT_Float32)
