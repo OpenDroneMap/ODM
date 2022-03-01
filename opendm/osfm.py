@@ -19,6 +19,7 @@ from opensfm.large import metadataset
 from opensfm.large import tools
 from opensfm.actions import undistort
 from opensfm.dataset import DataSet
+from opensfm.types import Reconstruction
 from opensfm import report
 from opendm.multispectral import get_photos_by_band
 from opendm.gpu import has_popsift_and_can_handle_texsize, has_gpu
@@ -51,6 +52,7 @@ class OSFMContext:
 
         if not io.file_exists(reconstruction_file) or rerun:
             self.run('reconstruct')
+            self.check_merge_partial_reconstructions()
         else:
             log.ODM_WARNING('Found a valid OpenSfM reconstruction file in: %s' % reconstruction_file)
 
@@ -63,6 +65,45 @@ class OSFMContext:
                             "You could also try to increase the --min-num-features parameter."
                             "The program will now exit.")
 
+    def check_merge_partial_reconstructions(self):
+        if self.reconstructed():
+            data = DataSet(self.opensfm_project_path)
+            reconstructions = data.load_reconstruction()
+            tracks_manager = data.load_tracks_manager()
+
+            if len(reconstructions) > 1:
+                log.ODM_WARNING("Multiple reconstructions detected (%s), this might be an indicator that some areas did not have sufficient overlap" % len(reconstructions))
+                log.ODM_INFO("Attempting merge")
+
+                merged = Reconstruction()
+                merged.set_reference(reconstructions[0].reference)
+
+                for ix_r, rec in enumerate(reconstructions):
+                    if merged.reference != rec.reference:
+                        # Should never happen
+                        continue
+
+                    log.ODM_INFO("Merging reconstruction %s" % ix_r)
+
+                    for camera in rec.cameras.values():
+                        merged.add_camera(camera)
+
+                    for point in rec.points.values():
+                        new_point = merged.create_point(point.id, point.coordinates)
+                        new_point.color = point.color
+
+                    for shot in rec.shots.values():
+                        merged.add_shot(shot)
+                        try:
+                            obsdict = tracks_manager.get_shot_observations(shot.id)
+                        except RuntimeError:
+                            log.ODM_WARNING("Shot id %s missing from tracks_manager!" % shot.id)
+                            continue
+                        for track_id, obs in obsdict.items():
+                            if track_id in merged.points:
+                                merged.add_observation(shot.id, track_id, obs)
+
+                data.save_reconstruction([merged])
 
     def setup(self, args, images_path, reconstruction, append_config = [], rerun=False):
         """
