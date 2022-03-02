@@ -218,8 +218,8 @@ def config(argv=None, parser=None):
                         action=StoreValue,
                         type=float,
                         default=640,
-                        help=('Legacy option (use --pc-quality instead). Controls the density of the point cloud by setting the resolution of the depthmap images. Higher values take longer to compute '
-                              'but produce denser point clouds. '
+                        help=('Controls the density of the point cloud by setting the resolution of the depthmap images. Higher values take longer to compute '
+                              'but produce denser point clouds. Overrides the value calculated by --pc-quality.'
                               'Default: %(default)s'))
 
     parser.add_argument('--use-hybrid-bundle-adjustment',

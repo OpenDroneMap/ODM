@@ -46,8 +46,10 @@ class ODMOpenMVSStage(types.ODM_Stage):
 
             if not io.dir_exists(depthmaps_dir):
                 os.mkdir(depthmaps_dir)
-            
+
             depthmap_resolution = get_depthmap_resolution(args, photos)
+            log.ODM_INFO("Depthmap resolution set to: %spx" % depthmap_resolution)
+
             if outputs["undist_image_max_size"] <= depthmap_resolution:
                 resolution_level = 0
             else:
