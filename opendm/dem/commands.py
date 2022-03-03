@@ -322,14 +322,7 @@ def median_smoothing(geotiff_path, output_path, smoothing_iterations=1):
         # these edge cases, but it's slower.
         for i in range(smoothing_iterations):
             log.ODM_INFO("Smoothing iteration %s" % str(i + 1))
-            arr = ndimage.median_filter(arr, size=5, output=dtype)
-
-        # Fill corner points with nearest value
-        if arr.shape >= (4, 4):
-            arr[0][:2] = arr[1][0] = arr[1][1]
-            arr[0][-2:] = arr[1][-1] = arr[2][-1]
-            arr[-1][:2] = arr[-2][0] = arr[-2][1]
-            arr[-1][-2:] = arr[-2][-1] = arr[-2][-2]
+            arr = ndimage.median_filter(arr, size=9, output=dtype, mode='nearest')
 
         # Median filter leaves a bunch of zeros in nodata areas
         arr[nodata_locs] = nodata
