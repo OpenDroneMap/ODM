@@ -88,8 +88,12 @@ class OSFMContext:
                         merged.add_camera(camera)
 
                     for point in rec.points.values():
-                        new_point = merged.create_point(point.id, point.coordinates)
-                        new_point.color = point.color
+                        try:
+                            new_point = merged.create_point(point.id, point.coordinates)
+                            new_point.color = point.color
+                        except RuntimeError as e:
+                            log.ODM_WARNING("Cannot merge shot id %s (%s)" % (shot.id, str(e)))
+                            continue
 
                     for shot in rec.shots.values():
                         merged.add_shot(shot)
