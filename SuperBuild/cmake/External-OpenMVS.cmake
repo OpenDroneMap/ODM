@@ -2,8 +2,8 @@ set(_proj_name openmvs)
 set(_SB_BINARY_DIR "${SB_BINARY_DIR}/${_proj_name}")
 
 externalproject_add(vcg
-    GIT_REPOSITORY  https://github.com/cdcseacave/VCG.git
-    GIT_TAG         master
+    GIT_REPOSITORY  https://github.com/OpenDroneMap/VCG.git
+    GIT_TAG         280
     UPDATE_COMMAND  ""
     SOURCE_DIR      ${SB_SOURCE_DIR}/vcg
     CONFIGURE_COMMAND ""

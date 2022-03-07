@@ -13,7 +13,6 @@ from opendm import system
 from opendm import context
 from opendm import camera
 from opendm import location
-from opendm.utils import get_depthmap_resolution
 from opendm.photo import find_largest_photo_dim, find_largest_photo
 from opensfm.large import metadataset
 from opensfm.large import tools
@@ -89,8 +88,12 @@ class OSFMContext:
                         merged.add_camera(camera)
 
                     for point in rec.points.values():
-                        new_point = merged.create_point(point.id, point.coordinates)
-                        new_point.color = point.color
+                        try:
+                            new_point = merged.create_point(point.id, point.coordinates)
+                            new_point.color = point.color
+                        except RuntimeError as e:
+                            log.ODM_WARNING("Cannot merge shot id %s (%s)" % (shot.id, str(e)))
+                            continue
 
                     for shot in rec.shots.values():
                         merged.add_shot(shot)
@@ -194,8 +197,6 @@ class OSFMContext:
                     log.ODM_INFO("Photo dimensions for feature extraction: %ipx" % feature_process_size)
                 else:
                     log.ODM_WARNING("Cannot compute max image dimensions, going with defaults")
-
-            depthmap_resolution = get_depthmap_resolution(args, photos)
 
             # create config file for OpenSfM
             config = [
