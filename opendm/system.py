@@ -7,6 +7,7 @@ import subprocess
 import string
 import signal
 import io
+import ctypes
 from collections import deque
 
 from opendm import context
@@ -73,8 +74,11 @@ def run(cmd, env_paths=[context.superbuild_bin_path], env_vars={}, packages_path
     env = os.environ.copy()
 
     sep = ":"
+    flags = 0
     if sys.platform == 'win32':
         sep = ";"
+        ctypes.windll.kernel32.SetErrorMode(0x0002) #SEM_NOGPFAULTERRORBOX
+        flags = 0x8000000 #CREATE_NO_WINDOW
 
     if len(env_paths) > 0:
         env["PATH"] = env["PATH"] + sep + sep.join(env_paths)
@@ -85,7 +89,7 @@ def run(cmd, env_paths=[context.superbuild_bin_path], env_vars={}, packages_path
     for k in env_vars:
         env[k] = str(env_vars[k])
 
-    p = subprocess.Popen(cmd, shell=True, env=env, start_new_session=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    p = subprocess.Popen(cmd, shell=True, env=env, start_new_session=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, creationflags=flags)
     running_subprocesses.append(p)
     lines = deque()
     for line in io.TextIOWrapper(p.stdout):
