@@ -364,7 +364,7 @@ class OSFMContext:
         if not io.dir_exists(features_dir) or rerun:
             try:
                 self.run('detect_features')
-            except SubprocessException as e:
+            except system.SubprocessException as e:
                 # Sometimes feature extraction by GPU can fail
                 # for various reasons, so before giving up
                 # we try to fallback to CPU
