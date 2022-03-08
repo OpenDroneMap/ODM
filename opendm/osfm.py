@@ -369,7 +369,7 @@ class OSFMContext:
                 # for various reasons, so before giving up
                 # we try to fallback to CPU
                 if hasattr(self, 'gpu_sift_feature_extraction'):
-                    log.ODM_WARNING("GPU SIFT extraction failed, maybe your graphics card is too old, attempting fallback to CPU")
+                    log.ODM_WARNING("GPU SIFT extraction failed, maybe the graphics card is not supported? Attempting fallback to CPU")
                     self.update_config({'feature_type': "SIFT"})
                     self.run('detect_features')
                 else:
