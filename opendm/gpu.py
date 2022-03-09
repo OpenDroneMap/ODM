@@ -20,6 +20,7 @@ def has_popsift_and_can_handle_texsize(width, height):
             return False
     except Exception as e:
         log.ODM_WARNING("Cannot use GPU for feature extraction: %s" % str(e))
+        return False
 
     try:
         from opensfm import pypopsift
