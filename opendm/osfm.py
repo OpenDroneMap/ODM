@@ -257,6 +257,7 @@ class OSFMContext:
                 if has_popsift_and_can_handle_texsize(w, h) and feature_type == "SIFT":
                     log.ODM_INFO("Using GPU for extracting SIFT features")
                     feature_type = "SIFT_GPU"
+                    self.gpu_sift_feature_extraction = True
             
             config.append("feature_type: %s" % feature_type)
 
@@ -361,7 +362,18 @@ class OSFMContext:
         matches_dir = self.path("matches")
         
         if not io.dir_exists(features_dir) or rerun:
-            self.run('detect_features')
+            try:
+                self.run('detect_features')
+            except system.SubprocessException as e:
+                # Sometimes feature extraction by GPU can fail
+                # for various reasons, so before giving up
+                # we try to fallback to CPU
+                if hasattr(self, 'gpu_sift_feature_extraction'):
+                    log.ODM_WARNING("GPU SIFT extraction failed, maybe the graphics card is not supported? Attempting fallback to CPU")
+                    self.update_config({'feature_type': "SIFT"})
+                    self.run('detect_features')
+                else:
+                    raise e
         else:
             log.ODM_WARNING('Detect features already done: %s exists' % features_dir)
 
