@@ -118,6 +118,8 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                     '--filters.transformation.matrix="1 0 0 %s 0 1 0 %s 0 0 1 0 0 0 0 1"' % reconstruction.georef.utm_offset(),
                     '--writers.las.offset_x=%s' % reconstruction.georef.utm_east_offset,
                     '--writers.las.offset_y=%s' % reconstruction.georef.utm_north_offset,
+                    '--writers.las.scale_x="auto"',
+                    '--writers.las.scale_y="auto"',
                     '--writers.las.offset_z=0',
                     '--writers.las.a_srs="%s"' % reconstruction.georef.proj4()
                 ]
