@@ -1,6 +1,7 @@
 import logging
 import re
 import os
+import math
 
 import exifread
 import numpy as np
@@ -14,18 +15,24 @@ from opendm import system
 import xmltodict as x2d
 from opendm import get_image_size
 from xml.parsers.expat import ExpatError
+from opensfm.sensors import sensor_data
+from opensfm.geo import ecef_from_lla
 
-def find_largest_photo(photos):
-    max_photo = None
+projections = ['perspective', 'fisheye', 'brown', 'dual', 'equirectangular', 'spherical']
+
+def find_largest_photo_dims(photos):
+    max_mp = 0
+    max_dims = None
+
     for p in photos:
-        if p.width is None:
+        if p.width is None or p.height is None:
             continue
-        if max_photo is None:
-            max_photo = p
-        else:
-            if max_photo.width * max_photo.height < p.width * p.height:
-                max_photo = p
-    return p
+        mp = p.width * p.height
+        if mp > max_mp:
+            max_mp = mp
+            max_dims = (p.width, p.height)
+        
+    return max_dims
 
 def find_largest_photo_dim(photos):
     max_dim = 0
@@ -35,6 +42,44 @@ def find_largest_photo_dim(photos):
         max_dim = max(max_dim, max(p.width, p.height))
         
     return max_dim
+
+def find_largest_photo(photos):
+    max_p = None
+    max_area = 0
+    for p in photos:
+        if p.width is None:
+            continue
+        area = p.width * p.height
+
+        if area > max_area:
+            max_area = area
+            max_p = p
+
+    return max_p
+
+def get_mm_per_unit(resolution_unit):
+    """Length of a resolution unit in millimeters.
+
+    Uses the values from the EXIF specs in
+    https://www.sno.phy.queensu.ca/~phil/exiftool/TagNames/EXIF.html
+
+    Args:
+        resolution_unit: the resolution unit value given in the EXIF
+    """
+    if resolution_unit == 2:  # inch
+        return 25.4
+    elif resolution_unit == 3:  # cm
+        return 10
+    elif resolution_unit == 4:  # mm
+        return 1
+    elif resolution_unit == 5:  # um
+        return 0.001
+    else:
+        log.ODM_WARNING("Unknown EXIF resolution unit value: {}".format(resolution_unit))
+        return None
+
+class PhotoCorruptedException(Exception):
+    pass
 
 class ODM_Photo:
     """ODMPhoto - a class for ODMPhotos"""
@@ -48,6 +93,7 @@ class ODM_Photo:
         self.height = None
         self.camera_make = ''
         self.camera_model = ''
+        self.orientation = 1
 
         # Geo tags
         self.latitude = None
@@ -75,6 +121,14 @@ class ODM_Photo:
         self.irradiance_scale_to_si = None
         self.utc_time = None
 
+        # OPK angles
+        self.yaw = None
+        self.pitch = None
+        self.roll = None
+        self.omega = None
+        self.phi = None
+        self.kappa = None
+
         # DLS
         self.sun_sensor = None
         self.dls_yaw = None
@@ -87,6 +141,10 @@ class ODM_Photo:
         # RTK
         self.gps_xy_stddev = None # Dilution of Precision X/Y
         self.gps_z_stddev = None # Dilution of Precision Z
+
+        # Misc SFM
+        self.camera_projection = 'brown'
+        self.focal_ratio = 0.85
 
         # parse values from metadata
         self.parse_exif_values(path_file)
@@ -107,6 +165,9 @@ class ODM_Photo:
         self.latitude = geo_entry.y
         self.longitude = geo_entry.x
         self.altitude = geo_entry.z
+        self.omega = geo_entry.omega
+        self.phi = geo_entry.phi
+        self.kappa = geo_entry.kappa
         self.dls_yaw = geo_entry.omega
         self.dls_pitch = geo_entry.phi
         self.dls_roll = geo_entry.kappa
@@ -117,18 +178,28 @@ class ODM_Photo:
         # Disable exifread log
         logging.getLogger('exifread').setLevel(logging.CRITICAL)
 
+        try:
+            self.width, self.height = get_image_size.get_image_size(_path_file)
+        except Exception as e:
+            raise PhotoCorruptedException(str(e))
+
+        tags = {}
+        xtags = {}
+
         with open(_path_file, 'rb') as f:
             tags = exifread.process_file(f, details=False)
             try:
                 if 'Image Make' in tags:
                     try:
                         self.camera_make = tags['Image Make'].values
+                        self.camera_make = self.camera_make.strip()
                     except UnicodeDecodeError:
                         log.ODM_WARNING("EXIF Image Make might be corrupted")
                         self.camera_make = "unknown"
                 if 'Image Model' in tags:
                     try:
                         self.camera_model = tags['Image Model'].values
+                        self.camera_model = self.camera_model.strip()
                     except UnicodeDecodeError:
                         log.ODM_WARNING("EXIF Image Model might be corrupted")
                         self.camera_model = "unknown"
@@ -140,8 +211,10 @@ class ODM_Photo:
                     self.latitude = self.dms_to_decimal(tags['GPS GPSLatitude'], tags['GPS GPSLatitudeRef'])
                 if 'GPS GPSLongitude' in tags and 'GPS GPSLongitudeRef' in tags:
                     self.longitude = self.dms_to_decimal(tags['GPS GPSLongitude'], tags['GPS GPSLongitudeRef'])
+                if 'Image Orientation' in tags:
+                    self.orientation = self.int_value(tags['Image Orientation'])
             except (IndexError, ValueError) as e:
-                log.ODM_WARNING("Cannot read basic EXIF tags for %s: %s" % (_path_file, str(e)))
+                log.ODM_WARNING("Cannot read basic EXIF tags for %s: %s" % (self.filename, str(e)))
 
             try:
                 if 'Image Tag 0xC61A' in tags:
@@ -183,95 +256,201 @@ class ODM_Photo:
                     epoch = timezone.localize(datetime.utcfromtimestamp(0))
                     self.utc_time = (timezone.localize(utc_time) - epoch).total_seconds() * 1000.0
             except Exception as e:
-                log.ODM_WARNING("Cannot read extended EXIF tags for %s: %s" % (_path_file, str(e)))
+                log.ODM_WARNING("Cannot read extended EXIF tags for %s: %s" % (self.filename, str(e)))
+
+            # Warn if GPS coordinates are suspiciously wrong
+            if self.latitude is not None and self.latitude == 0 and \
+                self.longitude is not None and self.longitude == 0:
+                log.ODM_WARNING("%s has GPS position (0,0), possibly corrupted" % self.filename)
 
 
             # Extract XMP tags
             f.seek(0)
             xmp = self.get_xmp(f)
 
-            for tags in xmp:
+            for xtags in xmp:
                 try:
-                    band_name = self.get_xmp_tag(tags, ['Camera:BandName', '@Camera:BandName'])
+                    band_name = self.get_xmp_tag(xtags, ['Camera:BandName', '@Camera:BandName'])
                     if band_name is not None:
                         self.band_name = band_name.replace(" ", "")
 
-                    self.set_attr_from_xmp_tag('band_index', tags, [
+                    self.set_attr_from_xmp_tag('band_index', xtags, [
                         'DLS:SensorId', # Micasense RedEdge
                         '@Camera:RigCameraIndex', # Parrot Sequoia, Sentera 21244-00_3.2MP-GS-0001
                         'Camera:RigCameraIndex', # MicaSense Altum
                     ])
-                    self.set_attr_from_xmp_tag('radiometric_calibration', tags, [
+
+                    self.set_attr_from_xmp_tag('radiometric_calibration', xtags, [
                         'MicaSense:RadiometricCalibration',
                     ])
 
-                    self.set_attr_from_xmp_tag('vignetting_center', tags, [
+                    self.set_attr_from_xmp_tag('vignetting_center', xtags, [
                         'Camera:VignettingCenter',
                         'Sentera:VignettingCenter',
                     ])
 
-                    self.set_attr_from_xmp_tag('vignetting_polynomial', tags, [
+                    self.set_attr_from_xmp_tag('vignetting_polynomial', xtags, [
                         'Camera:VignettingPolynomial',
                         'Sentera:VignettingPolynomial',
                     ])
                     
-                    self.set_attr_from_xmp_tag('horizontal_irradiance', tags, [
+                    self.set_attr_from_xmp_tag('horizontal_irradiance', xtags, [
                         'Camera:HorizontalIrradiance'
                     ], float)
 
-                    self.set_attr_from_xmp_tag('irradiance_scale_to_si', tags, [
+                    self.set_attr_from_xmp_tag('irradiance_scale_to_si', xtags, [
                         'Camera:IrradianceScaleToSIUnits'
                     ], float)
 
-                    self.set_attr_from_xmp_tag('sun_sensor', tags, [
+                    self.set_attr_from_xmp_tag('sun_sensor', xtags, [
                         'Camera:SunSensor',
                     ], float)
 
-                    self.set_attr_from_xmp_tag('spectral_irradiance', tags, [
+                    self.set_attr_from_xmp_tag('spectral_irradiance', xtags, [
                         'Camera:SpectralIrradiance',
                         'Camera:Irradiance',
                     ], float)
 
-                    self.set_attr_from_xmp_tag('capture_uuid', tags, [
-                        '@drone-dji:CaptureUUID'
+                    self.set_attr_from_xmp_tag('capture_uuid', xtags, [
+                        '@drone-dji:CaptureUUID', # DJI
+                        '@Camera:ImageUniqueID', # sentera 6x
                     ])
 
+                    # Camera make / model for some cameras is stored in the XMP
+                    if self.camera_make == '':
+                        self.set_attr_from_xmp_tag('camera_make', xtags, [
+                            '@tiff:Make'
+                        ])
+                    if self.camera_model == '':
+                        self.set_attr_from_xmp_tag('camera_model', xtags, [
+                            '@tiff:Model'
+                        ])
+
+                    # DJI GPS tags
+                    self.set_attr_from_xmp_tag('longitude', xtags, [
+                        '@drone-dji:Longitude'
+                    ], float)
+                    self.set_attr_from_xmp_tag('latitude', xtags, [
+                        '@drone-dji:Latitude'
+                    ], float)
+                    self.set_attr_from_xmp_tag('altitude', xtags, [
+                        '@drone-dji:AbsoluteAltitude'
+                    ], float)
+
                     # Phantom 4 RTK
-                    if '@drone-dji:RtkStdLon' in tags:
-                        y = float(self.get_xmp_tag(tags, '@drone-dji:RtkStdLon'))
-                        x = float(self.get_xmp_tag(tags, '@drone-dji:RtkStdLat'))
+                    if '@drone-dji:RtkStdLon' in xtags:
+                        y = float(self.get_xmp_tag(xtags, '@drone-dji:RtkStdLon'))
+                        x = float(self.get_xmp_tag(xtags, '@drone-dji:RtkStdLat'))
                         self.gps_xy_stddev = max(x, y)
                     
-                        if '@drone-dji:RtkStdHgt' in tags:
-                            self.gps_z_stddev = float(self.get_xmp_tag(tags, '@drone-dji:RtkStdHgt'))
+                        if '@drone-dji:RtkStdHgt' in xtags:
+                            self.gps_z_stddev = float(self.get_xmp_tag(xtags, '@drone-dji:RtkStdHgt'))
                     else:
-                        self.set_attr_from_xmp_tag('gps_xy_stddev', tags, [
+                        self.set_attr_from_xmp_tag('gps_xy_stddev', xtags, [
                             '@Camera:GPSXYAccuracy',
                             'GPSXYAccuracy'
                         ], float)
-                        self.set_attr_from_xmp_tag('gps_z_stddev', tags, [
+                        self.set_attr_from_xmp_tag('gps_z_stddev', xtags, [
                             '@Camera:GPSZAccuracy',
                             'GPSZAccuracy'
                         ], float)
 
-                    if 'DLS:Yaw' in tags:
-                        self.set_attr_from_xmp_tag('dls_yaw', tags, ['DLS:Yaw'], float)
-                        self.set_attr_from_xmp_tag('dls_pitch', tags, ['DLS:Pitch'], float)
-                        self.set_attr_from_xmp_tag('dls_roll', tags, ['DLS:Roll'], float)
-                except Exception as e:
-                    log.ODM_WARNING("Cannot read XMP tags for %s: %s" % (_path_file, str(e)))
+                    if 'DLS:Yaw' in xtags:
+                        self.set_attr_from_xmp_tag('dls_yaw', xtags, ['DLS:Yaw'], float)
+                        self.set_attr_from_xmp_tag('dls_pitch', xtags, ['DLS:Pitch'], float)
+                        self.set_attr_from_xmp_tag('dls_roll', xtags, ['DLS:Roll'], float)
+                
+                    camera_projection = self.get_xmp_tag(xtags, ['@Camera:ModelType', 'Camera:ModelType'])
+                    if camera_projection is not None:
+                        camera_projection = camera_projection.lower()
+                        if camera_projection in projections:
+                            self.camera_projection = camera_projection
 
-                # self.set_attr_from_xmp_tag('center_wavelength', tags, [
+                    # OPK
+                    self.set_attr_from_xmp_tag('yaw', xtags, ['@drone-dji:FlightYawDegree', '@Camera:Yaw', 'Camera:Yaw'], float)
+                    self.set_attr_from_xmp_tag('pitch', xtags, ['@drone-dji:GimbalPitchDegree', '@Camera:Pitch', 'Camera:Pitch'], float)
+                    self.set_attr_from_xmp_tag('roll', xtags, ['@drone-dji:GimbalRollDegree', '@Camera:Roll', 'Camera:Roll'], float)
+
+                    # Normalize YPR conventions (assuming nadir camera)
+                    # Yaw: 0 --> top of image points north
+                    # Yaw: 90 --> top of image points east
+                    # Yaw: 270 --> top of image points west
+                    # Pitch: 0 --> nadir camera
+                    # Pitch: 90 --> camera is looking forward
+                    # Roll: 0 (assuming gimbal)
+                    if self.has_ypr():
+                        if self.camera_make.lower() in ['dji', 'hasselblad']:
+                            self.pitch = 90 + self.pitch
+                    
+                        if self.camera_make.lower() == 'sensefly':
+                            self.roll *= -1
+
+                except Exception as e:
+                    log.ODM_WARNING("Cannot read XMP tags for %s: %s" % (self.filename, str(e)))
+
+                # self.set_attr_from_xmp_tag('center_wavelength', xtags, [
                 #     'Camera:CentralWavelength'
                 # ], float)
 
-                # self.set_attr_from_xmp_tag('bandwidth', tags, [
+                # self.set_attr_from_xmp_tag('bandwidth', xtags, [
                 #     'Camera:WavelengthFWHM'
                 # ], float)
 
-        self.width, self.height = get_image_size.get_image_size(_path_file)
         # Sanitize band name since we use it in folder paths
         self.band_name = re.sub('[^A-Za-z0-9]+', '', self.band_name)
+
+        self.compute_focal(tags, xtags)
+        self.compute_opk()
+
+    def compute_focal(self, tags, xtags):
+        try:
+            self.focal_ratio = self.extract_focal(self.camera_make, self.camera_model, tags, xtags)
+        except (IndexError, ValueError) as e:
+            log.ODM_WARNING("Cannot extract focal ratio for %s: %s" % (self.filename, str(e)))
+
+    def extract_focal(self, make, model, tags, xtags):
+        if make != "unknown":
+            # remove duplicate 'make' information in 'model'
+            model = model.replace(make, "")
+        
+        sensor_string = (make.strip() + " " + model.strip()).strip().lower()
+
+        sensor_width = None
+        if ("EXIF FocalPlaneResolutionUnit" in tags and "EXIF FocalPlaneXResolution" in tags):
+            resolution_unit = self.float_value(tags["EXIF FocalPlaneResolutionUnit"])
+            mm_per_unit = get_mm_per_unit(resolution_unit)
+            if mm_per_unit:
+                pixels_per_unit = self.float_value(tags["EXIF FocalPlaneXResolution"])
+                if pixels_per_unit <= 0 and "EXIF FocalPlaneYResolution" in tags:
+                    pixels_per_unit = self.float_value(tags["EXIF FocalPlaneYResolution"])
+                
+                if pixels_per_unit > 0 and self.width is not None:
+                    units_per_pixel = 1 / pixels_per_unit
+                    sensor_width = self.width * units_per_pixel * mm_per_unit
+
+        focal_35 = None
+        focal = None
+        if "EXIF FocalLengthIn35mmFilm" in tags:
+            focal_35 = self.float_value(tags["EXIF FocalLengthIn35mmFilm"])
+        if "EXIF FocalLength" in tags:
+            focal = self.float_value(tags["EXIF FocalLength"])
+        if focal is None and "@aux:Lens" in xtags:
+            lens = self.get_xmp_tag(xtags, ["@aux:Lens"])
+            matches = re.search('([\d\.]+)mm', str(lens))
+            if matches:
+                focal = float(matches.group(1))
+
+        if focal_35 is not None and focal_35 > 0:
+            focal_ratio = focal_35 / 36.0  # 35mm film produces 36x24mm pictures.
+        else:
+            if not sensor_width:
+                sensor_width = sensor_data().get(sensor_string, None)
+            if sensor_width and focal:
+                focal_ratio = focal / sensor_width
+            else:
+                focal_ratio = 0.85
+
+        return focal_ratio
 
     def set_attr_from_xmp_tag(self, attr, xmp_tags, tags, cast=None):
         v = self.get_xmp_tag(xmp_tags, tags)
@@ -479,5 +658,137 @@ class ODM_Photo:
 
         return None
 
+    def override_gps_dop(self, dop):
+        self.gps_xy_stddev = self.gps_z_stddev = dop
+
+    def override_camera_projection(self, camera_projection):
+        if camera_projection in projections:
+            self.camera_projection = camera_projection
+
     def is_thermal(self):
+        #Added for support M2EA camera sensor
+        if(self.camera_make == "DJI"):
+            return self.camera_model == "MAVIC2-ENTERPRISE-ADVANCED" and self.width == 640 and self.height == 512
         return self.band_name.upper() in ["LWIR"] # TODO: more?
+
+    def camera_id(self):
+        return " ".join(
+                [
+                    "v2",
+                    self.camera_make.strip(),
+                    self.camera_model.strip(),
+                    str(int(self.width)),
+                    str(int(self.height)),
+                    self.camera_projection,
+                    str(float(self.focal_ratio))[:6],
+                ]
+            ).lower()
+
+    def to_opensfm_exif(self):
+        capture_time = 0.0
+        if self.utc_time is not None:
+            capture_time = self.utc_time / 1000.0
+        
+        gps = {}
+        if self.latitude is not None and self.longitude is not None:
+            gps['latitude'] = self.latitude
+            gps['longitude'] = self.longitude
+            if self.altitude is not None:
+                gps['altitude'] = self.altitude
+            else:
+                gps['altitude'] = 0.0
+
+            dop = self.get_gps_dop()
+            if dop is None:
+                dop = 10.0 # Default
+            
+            gps['dop'] = dop
+
+        d = {
+            "make": self.camera_make,
+            "model": self.camera_model,
+            "width": self.width,
+            "height": self.height,
+            "projection_type": self.camera_projection,
+            "focal_ratio": self.focal_ratio,
+            "orientation": self.orientation,
+            "capture_time": capture_time,
+            "gps": gps,
+            "camera": self.camera_id()
+        }
+
+        if self.has_opk():
+            d['opk'] = {
+                'omega': self.omega,
+                'phi': self.phi,
+                'kappa': self.kappa
+            }
+        
+        return d
+
+    def has_ypr(self):
+        return self.yaw is not None and \
+            self.pitch is not None and \
+            self.roll is not None
+    
+    def has_opk(self):
+        return self.omega is not None and \
+            self.phi is not None and \
+            self.kappa is not None
+
+    def has_geo(self):
+        return self.latitude is not None and \
+            self.longitude is not None
+    
+    def compute_opk(self):
+        if self.has_ypr() and self.has_geo():
+            y, p, r = math.radians(self.yaw), math.radians(self.pitch), math.radians(self.roll)
+
+            # Ref: New Calibration and Computing Method for Direct 
+            # Georeferencing of Image and Scanner Data Using the 
+            # Position and Angular Data of an Hybrid Inertial Navigation System 
+            # by Manfred Bäumker
+
+            # YPR rotation matrix
+            cnb = np.array([[ math.cos(y) * math.cos(p), math.cos(y) * math.sin(p) * math.sin(r) - math.sin(y) * math.cos(r), math.cos(y) * math.sin(p) * math.cos(r) + math.sin(y) * math.sin(r)],
+                            [ math.sin(y) * math.cos(p), math.sin(y) * math.sin(p) * math.sin(r) + math.cos(y) * math.cos(r), math.sin(y) * math.sin(p) * math.cos(r) - math.cos(y) * math.sin(r)],
+                            [ -math.sin(p), math.cos(p) * math.sin(r), math.cos(p) * math.cos(r)],
+                           ])
+
+            # Convert between image and body coordinates
+            # Top of image pixels point to flying direction
+            # and camera is looking down.
+            # We might need to change this if we want different
+            # camera mount orientations (e.g. backward or sideways)
+
+            # (Swap X/Y, flip Z)
+            cbb = np.array([[0, 1, 0],
+                            [1, 0, 0],
+                            [0, 0, -1]])
+            
+            delta = 1e-7
+            
+            alt = self.altitude if self.altitude is not None else 0.0
+            p1 = np.array(ecef_from_lla(self.latitude + delta, self.longitude, alt))
+            p2 = np.array(ecef_from_lla(self.latitude - delta, self.longitude, alt))
+            xnp = p1 - p2
+            m = np.linalg.norm(xnp)
+            
+            if m == 0:
+                log.ODM_WARNING("Cannot compute OPK angles, divider = 0")
+                return
+            
+            # Unit vector pointing north
+            xnp /= m
+
+            znp = np.array([0, 0, -1]).T
+            ynp = np.cross(znp, xnp)
+
+            cen = np.array([xnp, ynp, znp]).T
+
+            # OPK rotation matrix
+            ceb = cen.dot(cnb).dot(cbb)
+
+            self.omega = math.degrees(math.atan2(-ceb[1][2], ceb[2][2]))
+            self.phi = math.degrees(math.asin(ceb[0][2]))
+            self.kappa = math.degrees(math.atan2(-ceb[0][1], ceb[0][0]))

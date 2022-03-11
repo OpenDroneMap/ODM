@@ -16,7 +16,7 @@ ExternalProject_Add(${_proj_name}
   SOURCE_DIR        ${SB_SOURCE_DIR}/${_proj_name}
   CMAKE_ARGS
     -DPDAL_DIR=${SB_INSTALL_DIR}/lib/cmake/PDAL
-	-DCMAKE_BUILD_TYPE=Release
+	-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
     -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
   #--Build step-----------------
   BINARY_DIR        ${_SB_BINARY_DIR}

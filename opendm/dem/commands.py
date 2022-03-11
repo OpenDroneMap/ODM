@@ -12,7 +12,7 @@ from opendm import system
 from opendm.concurrency import get_max_memory, parallel_map
 from scipy import ndimage
 from datetime import datetime
-from osgeo.utils.gdal_fillnodata import main as gdal_fillnodata
+from opendm.vendor.gdal_fillnodata import main as gdal_fillnodata
 from opendm import log
 try:
     import Queue as queue
@@ -39,7 +39,7 @@ def rectify(lasFile, debug=False, reclassify_threshold=5, min_area=750, min_poin
 
     try:
         # Currently, no Python 2 lib that supports reading and writing LAZ, so we will do it manually until ODM is migrated to Python 3
-        # When migration is done, we can move to pylas and avoid using PDAL for convertion
+        # When migration is done, we can move to pylas and avoid using PDAL for conversion
         tempLasFile = os.path.join(os.path.dirname(lasFile), 'tmp.las')
 
         # Convert LAZ to LAS
@@ -186,7 +186,7 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
     for t in tiles: 
         if not os.path.exists(t['filename']):
             raise Exception("Error creating %s, %s failed to be created" % (output_file, t['filename']))
-    
+
     # Create virtual raster
     tiles_vrt_path = os.path.abspath(os.path.join(outdir, "tiles.vrt"))
     tiles_file_list = os.path.abspath(os.path.join(outdir, "tiles_list.txt"))
@@ -315,23 +315,17 @@ def median_smoothing(geotiff_path, output_path, smoothing_iterations=1):
         dtype = img.dtypes[0]
         arr = img.read()[0]
 
+        nodata_locs = numpy.where(arr == nodata)
+
         # Median filter (careful, changing the value 5 might require tweaking)
         # the lines below. There's another numpy function that takes care of 
         # these edge cases, but it's slower.
         for i in range(smoothing_iterations):
             log.ODM_INFO("Smoothing iteration %s" % str(i + 1))
-            arr = ndimage.median_filter(arr, size=5, output=dtype)
-
-        # Fill corner points with nearest value
-        if arr.shape >= (4, 4):
-            arr[0][:2] = arr[1][0] = arr[1][1]
-            arr[0][-2:] = arr[1][-1] = arr[2][-1]
-            arr[-1][:2] = arr[-2][0] = arr[-2][1]
-            arr[-1][-2:] = arr[-2][-1] = arr[-2][-2]
+            arr = ndimage.median_filter(arr, size=9, output=dtype, mode='nearest')
 
         # Median filter leaves a bunch of zeros in nodata areas
-        locs = numpy.where(arr == 0.0)
-        arr[locs] = nodata
+        arr[nodata_locs] = nodata
 
         # write output
         with rasterio.open(output_path, 'w', **img.profile) as imgout:

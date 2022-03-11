@@ -103,7 +103,7 @@ def writeMetadata(filename, format3d):
                     '--stereo='+format3d,
                     filename,
                     filename+'.injected'])
-    # check metadata injector was succesful
+    # check metadata injector was successful
     if os.path.exists(filename+'.injected'):
         os.remove(filename)
         os.rename(filename+'.injected', filename)

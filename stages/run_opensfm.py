@@ -30,7 +30,7 @@ class ODMOpenSfMStage(types.ODM_Stage):
 
         octx = OSFMContext(tree.opensfm)
         octx.setup(args, tree.dataset_raw, reconstruction=reconstruction, rerun=self.rerun())
-        octx.extract_metadata(self.rerun())
+        octx.photos_to_metadata(photos, self.rerun())
         self.update_progress(20)
         octx.feature_matching(self.rerun())
         self.update_progress(30)
@@ -40,7 +40,7 @@ class ODMOpenSfMStage(types.ODM_Stage):
 
         def cleanup_disk_space():
             if args.optimize_disk_space:
-                for folder in ["features", "matches", "exif", "reports"]:
+                for folder in ["features", "matches", "reports"]:
                     folder_path = octx.path(folder)
                     if os.path.exists(folder_path):
                         if os.path.islink(folder_path):
@@ -68,14 +68,11 @@ class ODMOpenSfMStage(types.ODM_Stage):
         self.update_progress(75)
 
         # We now switch to a geographic CRS
-        geocoords_flag_file = octx.path("exported_geocoords.txt")
-
-        if reconstruction.is_georeferenced() and (not io.file_exists(geocoords_flag_file) or self.rerun()):
+        if reconstruction.is_georeferenced() and (not io.file_exists(tree.opensfm_topocentric_reconstruction) or self.rerun()):
             octx.run('export_geocoords --reconstruction --proj "%s" --offset-x %s --offset-y %s' % 
                 (reconstruction.georef.proj4(), reconstruction.georef.utm_east_offset, reconstruction.georef.utm_north_offset))
-            # Destructive
+            shutil.move(tree.opensfm_reconstruction, tree.opensfm_topocentric_reconstruction)
             shutil.move(tree.opensfm_geocoords_reconstruction, tree.opensfm_reconstruction)
-            octx.touch(geocoords_flag_file)
         else:
             log.ODM_WARNING("Will skip exporting %s" % tree.opensfm_geocoords_reconstruction)
         
@@ -116,7 +113,7 @@ class ODMOpenSfMStage(types.ODM_Stage):
         def radiometric_calibrate(shot_id, image):
             photo = reconstruction.get_photo(shot_id)
             if photo.is_thermal():
-                return thermal.dn_to_temperature(photo, image)
+                return thermal.dn_to_temperature(photo, image, tree.dataset_raw)
             else:
                 return multispectral.dn_to_reflectance(photo, image, use_sun_sensor=args.radiometric_calibration=="camera+sun")
 

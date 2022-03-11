@@ -9,7 +9,7 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: windows-2019
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -18,10 +18,10 @@ jobs:
       with:
         python-version: '3.8.1'
         architecture: 'x64'
-    - name: Setup Visual C++
-      uses: ilammy/msvc-dev-cmd@v1
+    - uses: Jimver/cuda-toolkit@v0.2.4
+      id: cuda-toolkit
       with:
-        arch: x64
+        cuda: '11.4.0'
     - name: Extract code signing cert
       id: code_sign
       uses: timheuer/base64-to-file@v1
@@ -38,7 +38,7 @@ jobs:
       env: 
         CODE_SIGN_CERT_PATH: ${{ steps.code_sign.outputs.filePath }}
       run: |
-        python configure.py dist --signtool-path $((Get-Command signtool).Source) --code-sign-cert-path $env:CODE_SIGN_CERT_PATH
+        python configure.py dist --code-sign-cert-path $env:CODE_SIGN_CERT_PATH
     - name: Upload Setup File
       uses: actions/upload-artifact@v2
       with:

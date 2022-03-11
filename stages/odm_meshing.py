@@ -44,7 +44,7 @@ class ODMeshingStage(types.ODM_Stage):
               log.ODM_INFO('Writing ODM 2.5D Mesh file in: %s' % tree.odm_25dmesh)
               ortho_resolution = gsd.cap_resolution(args.orthophoto_resolution, tree.opensfm_reconstruction, 
                                                     ignore_gsd=args.ignore_gsd,
-                                                    ignore_resolution=not reconstruction.is_georeferenced(),
+                                                    ignore_resolution=(not reconstruction.is_georeferenced()) and args.ignore_gsd,
                                                     has_gcp=reconstruction.has_gcp()) / 100.0 
               
               dsm_multiplier = max(1.0, gsd.rounded_gsd(tree.opensfm_reconstruction, default_value=4, ndigits=3, ignore_gsd=args.ignore_gsd))
@@ -56,10 +56,9 @@ class ODMeshingStage(types.ODM_Stage):
               
               dsm_radius = dsm_resolution * math.sqrt(2)
 
-              # Sparse point clouds benefits from using
-              # a larger radius interolation --> less holes
               if args.fast_orthophoto:
                   dsm_radius *= 2
+                  dsm_resolution *= 8
 
               log.ODM_INFO('ODM 2.5D DSM resolution: %s' % dsm_resolution)
               
@@ -72,7 +71,7 @@ class ODMeshingStage(types.ODM_Stage):
                     verbose=self.params.get('verbose'),
                     available_cores=args.max_concurrency,
                     method='poisson' if args.fast_orthophoto else 'gridded',
-                    smooth_dsm=not args.fast_orthophoto)
+                    smooth_dsm=True)
           else:
               log.ODM_WARNING('Found a valid ODM 2.5D Mesh file in: %s' %
                               tree.odm_25dmesh)

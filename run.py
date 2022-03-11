@@ -6,22 +6,28 @@ if sys.version_info.major < 3:
     print("Ups! ODM needs to run with Python 3. It seems you launched it with Python 2. Try using: python3 run.py ... ")
     sys.exit(1)
 
+import os
 from opendm import log
 from opendm import config
 from opendm import system
 from opendm import io
 from opendm.progress import progressbc
-from opendm.utils import double_quote, get_processing_results_paths
+from opendm.utils import get_processing_results_paths, rm_r
 from opendm.loghelpers import args_to_dict
 
-import os
-
 from stages.odm_app import ODMApp
+
+def odm_version():
+    try:
+        with open("VERSION") as f:
+            return f.read().split("\n")[0].strip()
+    except:
+        return "?"
 
 if __name__ == '__main__':
     args = config.config()
 
-    log.ODM_INFO('Initializing ODM - %s' % system.now())
+    log.ODM_INFO('Initializing ODM %s - %s' % (odm_version(), system.now()))
 
     # Print args
     args_dict = args_to_dict(args)
@@ -41,20 +47,19 @@ if __name__ == '__main__':
     # If user asks to rerun everything, delete all of the existing progress directories.
     if args.rerun_all:
         log.ODM_INFO("Rerun all -- Removing old data")
-        os.system("rm -rf " + 
-                    " ".join([double_quote(os.path.join(args.project_path, p)) for p in get_processing_results_paths()] + [
-                        double_quote(os.path.join(args.project_path, "odm_meshing")),
-                        double_quote(os.path.join(args.project_path, "opensfm")),
-                        double_quote(os.path.join(args.project_path, "odm_texturing_25d")),
-                        double_quote(os.path.join(args.project_path, "odm_filterpoints")),
-                        double_quote(os.path.join(args.project_path, "submodels")),
-                    ]))
+        for d in [os.path.join(args.project_path, p) for p in get_processing_results_paths()] + [
+                  os.path.join(args.project_path, "odm_meshing"),
+                  os.path.join(args.project_path, "opensfm"),
+                  os.path.join(args.project_path, "odm_texturing_25d"),
+                  os.path.join(args.project_path, "odm_filterpoints"),
+                  os.path.join(args.project_path, "submodels")]:
+            rm_r(d)
 
     app = ODMApp(args)
     retcode = app.execute()
     
     # Do not show ASCII art for local submodels runs
-    if retcode == 0 and not "submodels/submodel_" in args.project_path:
+    if retcode == 0 and not "submodels" in args.project_path:
         log.ODM_INFO('MMMMMMMMMMMNNNMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMNNNMMMMMMMMMMM')
         log.ODM_INFO('MMMMMMdo:..---../sNMMMMMMMMMMMMMMMMMMMMMMMMMMNs/..---..:odMMMMMM')
         log.ODM_INFO('MMMMy-.odNMMMMMNy/`/mMMMMMMMMMMMMMMMMMMMMMMm/`/hNMMMMMNdo.-yMMMM')

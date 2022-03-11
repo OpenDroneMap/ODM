@@ -9,4 +9,9 @@ do
     fi
 done
 
-/usr/bin/g++_real -march=nehalem "${args[@]}"
+ARCH=nehalem
+if [[ $(uname -m) == "aarch64" ]]; then
+    ARCH=armv8-a
+fi
+
+/usr/bin/g++_real -march=$ARCH "${args[@]}"

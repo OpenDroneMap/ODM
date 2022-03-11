@@ -46,6 +46,10 @@ def get_geojson_shots_from_opensfm(reconstruction_file, utm_srs=None, utm_offset
                               [0, 0, 0, 1]])
         raster = None
         pseudo = True
+    
+    # Couldn't get a SRS?
+    if utm_srs is None:
+        return None
 
     crstrans = transformer(CRS.from_proj4(utm_srs), CRS.from_epsg("4326"))
 

@@ -18,6 +18,8 @@ from stages.odm_filterpoints import ODMFilterPoints
 from stages.splitmerge import ODMSplitStage, ODMMergeStage
 
 from stages.odm_report import ODMReport
+from stages.odm_postprocess import ODMPostProcess
+
 
 class ODMApp:
     def __init__(self, args):
@@ -61,7 +63,9 @@ class ODMApp:
                             max_concurrency=args.max_concurrency,
                             verbose=args.verbose)
         orthophoto = ODMOrthoPhotoStage('odm_orthophoto', args, progress=98.0)
-        report = ODMReport('odm_report', args, progress=100.0)
+        report = ODMReport('odm_report', args, progress=99.0)
+        postprocess = ODMPostProcess('odm_postprocess', args, progress=100.0)
+        
 
         # Normal pipeline
         self.first_stage = dataset
@@ -82,7 +86,8 @@ class ODMApp:
             .connect(georeferencing) \
             .connect(dem) \
             .connect(orthophoto) \
-            .connect(report)
+            .connect(report) \
+            .connect(postprocess)
                 
     def execute(self):
         try:
@@ -101,10 +106,10 @@ class ODMApp:
             code = e.errorCode
             log.logger.log_json_stage_error(str(e), code, stack_trace)
 
-            if code == 139 or code == 134 or code == 1:
+            if code == 139 or code == 134 or code == 1 or code == 3221225477:
                 # Segfault
-                log.ODM_ERROR("Uh oh! Processing stopped because of strange values in the reconstruction. This is often a sign that the input data has some issues or the software cannot deal with it. Have you followed best practices for data acquisition? See https://docs.opendronemap.org/flying.html")
-            elif code == 137:
+                log.ODM_ERROR("Uh oh! Processing stopped because of strange values in the reconstruction. This is often a sign that the input data has some issues or the software cannot deal with it. Have you followed best practices for data acquisition? See https://docs.opendronemap.org/flying/")
+            elif code == 137 or code == 3221226505:
                 log.ODM_ERROR("Whoops! You ran out of memory! Add more RAM to your computer, if you're using docker configure it to use more memory, for WSL2 make use of .wslconfig (https://docs.microsoft.com/en-us/windows/wsl/wsl-config#configure-global-options-with-wslconfig), resize your images, lower the quality settings or process the images using a cloud provider (e.g. https://webodm.net).")
             elif code == 132:
                 log.ODM_ERROR("Oh no! It looks like your CPU is not supported (is it fairly old?). You can still use ODM, but you will need to build your own docker image. See https://github.com/OpenDroneMap/ODM#build-from-source")

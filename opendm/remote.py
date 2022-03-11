@@ -341,6 +341,10 @@ class Task:
         if os.path.exists(self.path("gcp_list.txt")):
             images.append(self.path("gcp_list.txt"))
         
+        # Add GEO (optional)
+        if os.path.exists(self.path("geo.txt")):
+            images.append(self.path("geo.txt"))
+        
         # Add seed file
         images.append(seed_file)
 

@@ -11,21 +11,21 @@ laspy==1.7.0
 lxml==4.6.1
 matplotlib==3.3.3
 networkx==2.5
-numpy==1.19.4
-Pillow==8.0.1
+numpy==1.21.1
+Pillow==8.3.2
 vmem==1.0.1
-pyodm==1.5.6
+pyodm==1.5.8
 pyproj==3.0.0.post1
 Pysolar==0.9
 pytz==2020.4
 PyYAML==5.1
-rasterio==1.1.8 ; sys_platform == 'linux' or sys_platform == 'darwin'
+rasterio==1.2.3 ; sys_platform == 'linux' or sys_platform == 'darwin'
 https://github.com/OpenDroneMap/windows-deps/raw/main/rasterio-1.2.3-cp38-cp38-win_amd64.whl ; sys_platform == 'win32'
 https://github.com/OpenDroneMap/windows-deps/raw/main/GDAL-3.2.3-cp38-cp38-win_amd64.whl ; sys_platform == 'win32'
 repoze.lru==0.7
-scikit-learn==0.23.2
-scikit-image==0.17.2
+scikit-learn==0.24.2
+scikit-image==0.18.3
 scipy==1.5.4
 xmltodict==0.12.0
-fpdf2==2.2.0rc2
+fpdf2==2.4.6
 Shapely==1.7.1

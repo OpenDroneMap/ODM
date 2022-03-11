@@ -4,6 +4,7 @@ import numpy as np
 import math
 from repoze.lru import lru_cache
 from opendm import log
+from opendm.shots import get_origin
 
 def rounded_gsd(reconstruction_json, default_value=None, ndigits=0, ignore_gsd=False):
     """
@@ -61,12 +62,15 @@ def image_scale_factor(target_resolution, reconstruction_json, gsd_error_estimat
         return 1
 
 
-def cap_resolution(resolution, reconstruction_json, gsd_error_estimate = 0.1, ignore_gsd=False, ignore_resolution=False, has_gcp=False):
+def cap_resolution(resolution, reconstruction_json, gsd_error_estimate = 0.1, gsd_scaling = 1.0, ignore_gsd=False,
+                   ignore_resolution=False, has_gcp=False):
     """
     :param resolution resolution in cm / pixel
     :param reconstruction_json path to OpenSfM's reconstruction.json
     :param gsd_error_estimate percentage of estimated error in the GSD calculation to set an upper bound on resolution.
+    :param gsd_scaling scaling of estimated GSD.
     :param ignore_gsd when set to True, forces the function to just return resolution.
+    :param ignore_resolution when set to True, forces the function to return a value based on GSD.
     :return The max value between resolution and the GSD computed from the reconstruction.
         If a GSD cannot be computed, or ignore_gsd is set to True, it just returns resolution. Units are in cm / pixel.
     """
@@ -76,14 +80,16 @@ def cap_resolution(resolution, reconstruction_json, gsd_error_estimate = 0.1, ig
     gsd = opensfm_reconstruction_average_gsd(reconstruction_json, use_all_shots=has_gcp or ignore_resolution)
 
     if gsd is not None:
-        gsd = gsd * (1 - gsd_error_estimate)
+        gsd = gsd * (1 - gsd_error_estimate) * gsd_scaling
         if gsd > resolution or ignore_resolution:
-            log.ODM_WARNING('Maximum resolution set to GSD - {}% ({} cm / pixel, requested resolution was {} cm / pixel)'.format(gsd_error_estimate * 100, round(gsd, 2), round(resolution, 2)))
+            log.ODM_WARNING('Maximum resolution set to {} * (GSD - {}%) '
+                            '({:.2f} cm / pixel, requested resolution was {:.2f} cm / pixel)'
+                            .format(gsd_scaling, gsd_error_estimate * 100, gsd, resolution))
             return gsd
         else:
             return resolution
     else:
-        log.ODM_WARNING('Cannot calculate GSD, using requested resolution of {}'.format(round(resolution, 2)))
+        log.ODM_WARNING('Cannot calculate GSD, using requested resolution of {:.2f}'.format(resolution))
         return resolution
 
 
@@ -116,7 +122,8 @@ def opensfm_reconstruction_average_gsd(reconstruction_json, use_all_shots=False)
         shot = reconstruction['shots'][shotImage]
         if use_all_shots or shot['gps_dop'] < 999999:
             camera = reconstruction['cameras'][shot['camera']]
-            shot_height = shot['translation'][2]
+            shot_origin = get_origin(shot)
+            shot_height = shot_origin[2]
             focal_ratio = camera.get('focal', camera.get('focal_x'))
             if not focal_ratio:
                 log.ODM_WARNING("Cannot parse focal values from %s. This is likely an unsupported camera model." % reconstruction_json)
@@ -133,6 +140,7 @@ def opensfm_reconstruction_average_gsd(reconstruction_json, use_all_shots=False)
         return abs(mean)
     
     return None
+
 
 def calculate_gsd(sensor_width, flight_height, focal_length, image_width):
     """
@@ -153,6 +161,7 @@ def calculate_gsd(sensor_width, flight_height, focal_length, image_width):
                                                 image_width)
     else:
         return None
+
 
 def calculate_gsd_from_focal_ratio(focal_ratio, flight_height, image_width):
     """

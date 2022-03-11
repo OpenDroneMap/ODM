@@ -25,7 +25,6 @@ class ODM_Reconstruction(object):
         self.photos = photos
         self.georef = None
         self.gcp = None
-        self.geo_file = None
         self.multi_camera = self.detect_multi_camera()
 
     def detect_multi_camera(self):
@@ -69,7 +68,7 @@ class ODM_Reconstruction(object):
         return self.georef is not None
 
     def has_gcp(self):
-        return self.is_georeferenced() and self.gcp is not None
+        return self.is_georeferenced() and self.gcp is not None and self.gcp.exists()
 
     def georeference_with_gcp(self, gcp_file, output_coords_file, output_gcp_file, output_model_txt_geo, rerun=False):
         if not io.file_exists(output_coords_file) or not io.file_exists(output_gcp_file) or rerun:
@@ -158,6 +157,12 @@ class ODM_Reconstruction(object):
     def get_proj_srs(self):
         if self.is_georeferenced():
             return self.georef.proj4()
+    
+    def get_proj_offset(self):
+        if self.is_georeferenced():
+            return (self.georef.utm_east_offset, self.georef.utm_north_offset)
+        else:
+            return (None, None)
 
     def get_photo(self, filename):
         for p in self.photos:
@@ -235,6 +240,7 @@ class ODM_Tree(object):
         self.opensfm_reconstruction = os.path.join(self.opensfm, 'reconstruction.json')
         self.opensfm_reconstruction_nvm = os.path.join(self.opensfm, 'undistorted/reconstruction.nvm')
         self.opensfm_geocoords_reconstruction = os.path.join(self.opensfm, 'reconstruction.geocoords.json')
+        self.opensfm_topocentric_reconstruction = os.path.join(self.opensfm, 'reconstruction.topocentric.json')
 
         # OpenMVS
         self.openmvs_model = os.path.join(self.openmvs, 'scene_dense_dense_filtered.ply')
@@ -358,6 +364,13 @@ class ODM_Stage:
         progress = max(0.0, min(100.0, progress))
         progressbc.send_update(self.previous_stages_progress() + 
                               (self.delta_progress() / 100.0) * float(progress))
+
+    def last_stage(self):
+        if self.next_stage:
+            return self.next_stage.last_stage()
+        else:
+            return self
+        
 
     def process(self, args, outputs):
         raise NotImplementedError

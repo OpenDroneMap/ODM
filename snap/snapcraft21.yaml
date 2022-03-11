@@ -1,0 +1,228 @@
+name: opendronemap
+adopt-info: odm
+grade: stable
+confinement: strict
+base: core21
+
+summary: Command line toolkit for processing aerial drone imagery
+description: >
+  An open source command line toolkit for processing aerial drone imagery. ODM turns simple 2D images into:
+
+  * Classified Point Clouds
+  * 3D Textured Models
+  * Georeferenced Orthorectified Imagery
+  * Georeferenced Digital Elevation Models
+
+  The application is available for Windows, Mac and Linux and it works from the command line, making it ideal for power users, scripts and for integration with other software.
+
+# The UbuntuGIS PPA only has i386 and amd64 packages so we can't build any
+# other architectures. Therefore let's limit to those here.
+architectures:
+  - build-on: i386
+    run-on: i386
+  - build-on: amd64
+    run-on: amd64
+
+package-repositories:
+  - type: apt
+    ppa: ubuntugis/ubuntugis-unstable
+
+parts:
+  prereqs:
+    source: .
+    plugin: nil
+    build-packages:
+      - build-essential
+      - cmake
+      - gdal-bin
+      - gfortran # to build scipy
+      - git
+      - libboost-log-dev
+      - libgdal-dev
+      - libgeotiff-dev
+      - libjsoncpp-dev
+      - libssl-dev
+      - libusb-1.0-0-dev
+      - ninja-build
+      - pkg-config
+      - python3-dev
+      - python3-gdal
+      - python3-pip
+      - python3-setuptools
+      - python3-wheel
+      - rsync
+      - swig3.0
+    stage-packages:
+      - gdal-bin
+      - libboost-log1.74.0
+      - libgdal28
+      - libgeotiff5
+      - libjsoncpp24
+      - libspqr2
+      - libssl1.1
+      - libusb-1.0-0
+      - proj-data
+      - procps
+      - python3
+      - python3-distutils
+      - python3-gdal
+      - python3-pkg-resources # required base package for core20
+      - python3-requests # required base package for core20
+      - python3-setuptools
+    stage:
+      # remove deb-based numpy because it conflicts with our pip-installed version
+      - -usr/lib/python3/dist-packages/numpy
+
+  opencv:
+    source: .
+    plugin: nil
+    build-packages:
+      - libavcodec-dev
+      - libavformat-dev
+      - libeigen3-dev
+      - libflann-dev
+      - libgtk2.0-dev
+      - libjpeg-dev
+      - liblapack-dev
+      - libopenjpip7
+      - libpng-dev
+      - libproj-dev
+      - libswscale-dev
+      - libtbb-dev
+      - libtiff-dev
+      - libxext-dev
+      - proj-bin
+    stage-packages:
+      - libavcodec58
+      - libavformat58
+      - libflann1.9
+      - libgtk2.0-0
+      - libjpeg-turbo8
+      - libopenjpip7
+      - liblapack3
+      - libpng16-16
+      - libproj19
+      - libswscale5
+      - libtbb2
+      - libtiff5
+      - libwebpdemux2
+      - libxext6
+  
+  openmvs:
+    source: .
+    plugin: nil
+    build-packages:
+      - libcgal-dev
+      - libboost-program-options-dev
+    stage-packages:
+      - libboost-program-options1.74.0
+
+  opensfm:
+    source: .
+    plugin: nil
+    build-packages:
+      - libboost-date-time-dev
+      - libboost-filesystem-dev
+      - libboost-iostreams-dev
+      - libboost-python-dev
+      - libboost-regex-dev
+      - libboost-serialization-dev
+      - libboost-system-dev
+      - libboost-thread-dev
+      - libgoogle-glog-dev
+      - libsuitesparse-dev
+    stage-packages:
+      - libamd2
+      - libboost-date-time1.74.0
+      - libboost-filesystem1.74.0
+      - libboost-iostreams1.74.0
+      - libboost-python1.74.0
+      - libboost-regex1.74.0
+      - libboost-serialization1.74.0
+      - libboost-system1.74.0
+      - libboost-thread1.74.0
+      - libcamd2
+      - libccolamd2
+      - libcholmod3
+      - libcolamd2
+      - libcxsparse3
+      - libgoogle-glog0v5
+      - libsuitesparseconfig5
+
+  odm:
+    after:
+      - prereqs
+      - opencv
+      - opensfm
+      - openmvs
+    source: .
+    plugin: nil # We will script everything ourselves
+    build-environment:
+      # Set Python location to build host's system so that we can
+      # use system libraries while building the Snap Package
+      - PYTHONHOME: /usr
+      # Set the location for pip to install requirements into inside
+      # the Snap package
+      - PYTHONUSERBASE: $SNAPCRAFT_PART_INSTALL
+    override-build: |
+      snapcraftctl set-version $(cat VERSION)
+
+      # Portable build
+      test -f /usr/bin/gcc_real || mv -v /usr/bin/gcc /usr/bin/gcc_real
+      test -f /usr/bin/gcc || cp -v ./docker/gcc /usr/bin/gcc
+      test -f /usr/bin/g++_real || mv -v /usr/bin/g++ /usr/bin/g++_real
+      test -f /usr/bin/g++ || cp -v ./docker/g++ /usr/bin/g++
+
+      pip3 install --user -r requirements.txt
+
+      # Build the SuperBuild libraries
+      mkdir -p SuperBuild/build
+      cd SuperBuild/build
+      cmake -G Ninja ..
+      cmake --build .  --parallel 1
+
+      rsync -av --exclude .git \
+        $SNAPCRAFT_PART_BUILD/ $SNAPCRAFT_PART_INSTALL/odm/
+      chmod -R u=rwX,go=rX $PYTHONUSERBASE/lib/python*
+    stage:
+      # strip the temporary build files and sources
+      - -odm/SuperBuild/build
+      - -odm/SuperBuild/download
+      - -odm/SuperBuild/src
+    prime:
+      # remove any static-libraries
+      - -**/*.a
+      # remove any header files
+      - -**/*.h
+      # remove any left-over temporary compiled 'object' files
+      - -**/*.o
+    build-snaps:
+      - cmake
+
+  snap-specifics:
+    source: snap/local
+    plugin: dump
+
+  snapcraft-preload:
+    source: https://github.com/sergiusens/snapcraft-preload.git
+    plugin: cmake
+    cmake-parameters:
+      - -DCMAKE_INSTALL_PREFIX=/
+    build-packages:
+      - on amd64:
+        - gcc-multilib
+        - g++-multilib
+
+apps:
+  opendronemap:
+    command: odm/run.sh
+    command-chain:
+      - bin/snapcraft-preload # Fixes multiprocessing python module
+    environment:
+      # Ensure libraries are found
+      LD_LIBRARY_PATH: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/blas:$SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/lapack:$LD_LIBRARY_PATH
+    plugs:
+      - home
+      - network
+      - network-bind
+      - removable-media

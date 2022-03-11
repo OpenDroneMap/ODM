@@ -2,22 +2,28 @@
 OpenSfM related utils
 """
 
-import os, shutil, sys, json, argparse
+import os, shutil, sys, json, argparse, copy
 import yaml
+import numpy as np
+import pyproj
+from pyproj import CRS
 from opendm import io
 from opendm import log
 from opendm import system
 from opendm import context
 from opendm import camera
-from opendm.utils import get_depthmap_resolution
-from opendm.photo import find_largest_photo_dim
+from opendm import location
+from opendm.photo import find_largest_photo_dim, find_largest_photo
 from opensfm.large import metadataset
 from opensfm.large import tools
 from opensfm.actions import undistort
 from opensfm.dataset import DataSet
+from opensfm.types import Reconstruction
 from opensfm import report
 from opendm.multispectral import get_photos_by_band
-from opendm.gpu import has_gpus
+from opendm.gpu import has_popsift_and_can_handle_texsize, has_gpu
+from opensfm import multiview, exif
+from opensfm.actions.export_geocoords import _transform
 
 class OSFMContext:
     def __init__(self, opensfm_project_path):
@@ -25,7 +31,7 @@ class OSFMContext:
     
     def run(self, command):
         osfm_bin = os.path.join(context.opensfm_path, 'bin', 'opensfm')
-        system.run('%s %s "%s"' %
+        system.run('"%s" %s "%s"' %
                     (osfm_bin, command, self.opensfm_project_path))
 
     def is_reconstruction_done(self):
@@ -45,6 +51,7 @@ class OSFMContext:
 
         if not io.file_exists(reconstruction_file) or rerun:
             self.run('reconstruct')
+            self.check_merge_partial_reconstructions()
         else:
             log.ODM_WARNING('Found a valid OpenSfM reconstruction file in: %s' % reconstruction_file)
 
@@ -57,6 +64,49 @@ class OSFMContext:
                             "You could also try to increase the --min-num-features parameter."
                             "The program will now exit.")
 
+    def check_merge_partial_reconstructions(self):
+        if self.reconstructed():
+            data = DataSet(self.opensfm_project_path)
+            reconstructions = data.load_reconstruction()
+            tracks_manager = data.load_tracks_manager()
+
+            if len(reconstructions) > 1:
+                log.ODM_WARNING("Multiple reconstructions detected (%s), this might be an indicator that some areas did not have sufficient overlap" % len(reconstructions))
+                log.ODM_INFO("Attempting merge")
+
+                merged = Reconstruction()
+                merged.set_reference(reconstructions[0].reference)
+
+                for ix_r, rec in enumerate(reconstructions):
+                    if merged.reference != rec.reference:
+                        # Should never happen
+                        continue
+
+                    log.ODM_INFO("Merging reconstruction %s" % ix_r)
+
+                    for camera in rec.cameras.values():
+                        merged.add_camera(camera)
+
+                    for point in rec.points.values():
+                        try:
+                            new_point = merged.create_point(point.id, point.coordinates)
+                            new_point.color = point.color
+                        except RuntimeError as e:
+                            log.ODM_WARNING("Cannot merge shot id %s (%s)" % (shot.id, str(e)))
+                            continue
+
+                    for shot in rec.shots.values():
+                        merged.add_shot(shot)
+                        try:
+                            obsdict = tracks_manager.get_shot_observations(shot.id)
+                        except RuntimeError:
+                            log.ODM_WARNING("Shot id %s missing from tracks_manager!" % shot.id)
+                            continue
+                        for track_id, obs in obsdict.items():
+                            if track_id in merged.points:
+                                merged.add_observation(shot.id, track_id, obs)
+
+                data.save_reconstruction([merged])
 
     def setup(self, args, images_path, reconstruction, append_config = [], rerun=False):
         """
@@ -111,37 +161,6 @@ class OSFMContext:
                 except Exception as e:
                     log.ODM_WARNING("Cannot set camera_models_overrides.json: %s" % str(e))
 
-            use_bow = args.matcher_type == "bow"
-            feature_type = "SIFT"
-
-            # GPSDOP override if we have GPS accuracy information (such as RTK)
-            if 'gps_accuracy_is_set' in args:
-                log.ODM_INFO("Forcing GPS DOP to %s for all images" % args.gps_accuracy)
-            
-            log.ODM_INFO("Writing exif overrides")
-
-            exif_overrides = {}
-            for p in photos:
-                if 'gps_accuracy_is_set' in args:
-                    dop = args.gps_accuracy
-                elif p.get_gps_dop() is not None:
-                    dop = p.get_gps_dop()
-                else:
-                    dop = args.gps_accuracy # default value
-
-                if p.latitude is not None and p.longitude is not None:
-                    exif_overrides[p.filename] = {
-                        'gps': {
-                            'latitude': p.latitude,
-                            'longitude': p.longitude,
-                            'altitude': p.altitude if p.altitude is not None else 0,
-                            'dop': dop,
-                        }
-                    }
-
-            with open(os.path.join(self.opensfm_project_path, "exif_overrides.json"), 'w') as f:
-                f.write(json.dumps(exif_overrides))
-
             # Check image masks
             masks = []
             for p in photos:
@@ -179,8 +198,6 @@ class OSFMContext:
                 else:
                     log.ODM_WARNING("Cannot compute max image dimensions, going with defaults")
 
-            depthmap_resolution = get_depthmap_resolution(args, photos)
-
             # create config file for OpenSfM
             config = [
                 "use_exif_size: no",
@@ -189,38 +206,58 @@ class OSFMContext:
                 "feature_min_frames: %s" % args.min_num_features,
                 "processes: %s" % args.max_concurrency,
                 "matching_gps_neighbors: %s" % args.matcher_neighbors,
-                "matching_gps_distance: %s" % args.matcher_distance,
+                "matching_gps_distance: 0",
+                "matching_graph_rounds: 50",
                 "optimize_camera_parameters: %s" % ('no' if args.use_fixed_camera_params or args.cameras else 'yes'),
+                "reconstruction_algorithm: %s" % (args.sfm_algorithm),
                 "undistorted_image_format: tif",
                 "bundle_outlier_filtering_type: AUTO",
                 "sift_peak_threshold: 0.066",
                 "align_orientation_prior: vertical",
                 "triangulation_type: ROBUST",
                 "retriangulation_ratio: 2",
+                "bundle_compensate_gps_bias: yes",
             ]
 
             if args.camera_lens != 'auto':
                 config.append("camera_projection_type: %s" % args.camera_lens.upper())
 
-            if not has_gps:
-                log.ODM_INFO("No GPS information, using BOW matching")
-                use_bow = True
-
+            matcher_type = args.matcher_type
             feature_type = args.feature_type.upper()
 
-            if use_bow:
-                config.append("matcher_type: WORDS")
+            osfm_matchers = {
+                "bow": "WORDS",
+                "flann": "FLANN",
+                "bruteforce": "BRUTEFORCE"
+            }
 
-                # Cannot use SIFT with BOW
-                if feature_type == "SIFT":
+            if not has_gps and not 'matcher_type_is_set' in args:
+                log.ODM_INFO("No GPS information, using BOW matching by default (you can override this by setting --matcher-type explicitly)")
+                matcher_type = "bow"
+
+            if matcher_type == "bow":
+                # Cannot use anything other than HAHOG with BOW
+                if feature_type != "HAHOG":
                     log.ODM_WARNING("Using BOW matching, will use HAHOG feature type, not SIFT")
                     feature_type = "HAHOG"
             
+            config.append("matcher_type: %s" % osfm_matchers[matcher_type])
+
             # GPU acceleration?
-            if has_gpus() and feature_type == "SIFT":
-                log.ODM_INFO("Using GPU for extracting SIFT features")
-                log.ODM_INFO("--min-num-features will be ignored")
-                feature_type = "SIFT_GPU"
+            if has_gpu():
+                max_photo = find_largest_photo(photos)
+                w, h = max_photo.width, max_photo.height
+                if w > h:
+                    h = int((h / w) * feature_process_size)
+                    w = int(feature_process_size)
+                else:
+                    w = int((w / h) * feature_process_size)
+                    h = int(feature_process_size)
+
+                if has_popsift_and_can_handle_texsize(w, h) and feature_type == "SIFT":
+                    log.ODM_INFO("Using GPU for extracting SIFT features")
+                    feature_type = "SIFT_GPU"
+                    self.gpu_sift_feature_extraction = True
             
             config.append("feature_type: %s" % feature_type)
 
@@ -255,6 +292,10 @@ class OSFMContext:
             config_filename = self.get_config_file_path()
             with open(config_filename, 'w') as fout:
                 fout.write("\n".join(config))
+            
+            # We impose our own reference_lla
+            if reconstruction.is_georeferenced():
+                self.write_reference_lla(reconstruction.georef.utm_east_offset, reconstruction.georef.utm_north_offset, reconstruction.georef.proj4())
         else:
             log.ODM_WARNING("%s already exists, not rerunning OpenSfM setup" % list_path)
 
@@ -272,6 +313,43 @@ class OSFMContext:
         metadata_dir = self.path("exif")
         if not io.dir_exists(metadata_dir) or rerun:
             self.run('extract_metadata')
+    
+    def photos_to_metadata(self, photos, rerun=False):
+        metadata_dir = self.path("exif")
+
+        if io.dir_exists(metadata_dir) and not rerun:
+            log.ODM_WARNING("%s already exists, not rerunning photo to metadata" % metadata_dir)
+            return
+        
+        if io.dir_exists(metadata_dir):
+            shutil.rmtree(metadata_dir)
+        
+        os.makedirs(metadata_dir, exist_ok=True)
+        
+        camera_models = {}
+        data = DataSet(self.opensfm_project_path)
+
+        for p in photos:
+            d = p.to_opensfm_exif()
+            with open(os.path.join(metadata_dir, "%s.exif" % p.filename), 'w') as f:
+                f.write(json.dumps(d, indent=4))
+
+            camera_id = p.camera_id()
+            if camera_id not in camera_models:
+                camera = exif.camera_from_exif_metadata(d, data)
+                camera_models[camera_id] = camera
+
+        # Override any camera specified in the camera models overrides file.
+        if data.camera_models_overrides_exists():
+            overrides = data.load_camera_models_overrides()
+            if "all" in overrides:
+                for key in camera_models:
+                    camera_models[key] = copy.copy(overrides["all"])
+                    camera_models[key].id = key
+            else:
+                for key, value in overrides.items():
+                    camera_models[key] = value
+        data.save_camera_models(camera_models)
 
     def is_feature_matching_done(self):
         features_dir = self.path("features")
@@ -284,7 +362,18 @@ class OSFMContext:
         matches_dir = self.path("matches")
         
         if not io.dir_exists(features_dir) or rerun:
-            self.run('detect_features')
+            try:
+                self.run('detect_features')
+            except system.SubprocessException as e:
+                # Sometimes feature extraction by GPU can fail
+                # for various reasons, so before giving up
+                # we try to fallback to CPU
+                if hasattr(self, 'gpu_sift_feature_extraction'):
+                    log.ODM_WARNING("GPU SIFT extraction failed, maybe the graphics card is not supported? Attempting fallback to CPU")
+                    self.update_config({'feature_type': "SIFT"})
+                    self.run('detect_features')
+                else:
+                    raise e
         else:
             log.ODM_WARNING('Detect features already done: %s exists' % features_dir)
 
@@ -428,6 +517,57 @@ class OSFMContext:
                 log.ODM_WARNING("Report could not be generated")
         else:
             log.ODM_WARNING("Report %s already exported" % report_path)
+    
+    def write_reference_lla(self, offset_x, offset_y, proj4):
+        reference_lla = self.path("reference_lla.json")
+
+        longlat = CRS.from_epsg("4326")
+        lon, lat = location.transform2(CRS.from_proj4(proj4), longlat, offset_x, offset_y)
+
+        with open(reference_lla, 'w') as f:
+            f.write(json.dumps({
+                'latitude': lat,
+                'longitude': lon,
+                'altitude': 0.0
+            }, indent=4))
+        
+        log.ODM_INFO("Wrote reference_lla.json")
+
+    def ground_control_points(self, proj4):
+        """
+        Load ground control point information.
+        """
+        gcp_stats_file = self.path("stats", "ground_control_points.json")
+
+        if not io.file_exists(gcp_stats_file):
+            return []
+        
+        gcps_stats = {}
+        try:
+            with open(gcp_stats_file) as f:
+                gcps_stats = json.loads(f.read())
+        except:
+            log.ODM_INFO("Cannot parse %s" % gcp_stats_file)
+
+        if not gcps_stats:
+            return []
+        
+        ds = DataSet(self.opensfm_project_path)
+        reference = ds.load_reference()
+        projection = pyproj.Proj(proj4)
+
+        result = []
+        for gcp in gcps_stats:
+            geocoords = _transform(gcp['coordinates'], reference, projection)
+            result.append({
+                'id': gcp['id'],
+                'observations': gcp['observations'],
+                'coordinates': geocoords,
+                'error': gcp['error']
+            })
+
+        return result
+    
 
     def name(self):
         return os.path.basename(os.path.abspath(self.path("..")))
@@ -449,10 +589,11 @@ def get_submodel_argv(args, submodels_path = None, submodel_name = None):
         tweaking --crop if necessary (DEM merging makes assumption about the area of DEMs and their euclidean maps that require cropping. If cropping is skipped, this leads to errors.)
         removing --gcp (the GCP path if specified is always "gcp_list.txt")
         reading the contents of --cameras
+        reading the contents of --boundary
     """
     assure_always = ['orthophoto_cutline', 'dem_euclidean_map', 'skip_3dmodel', 'skip_report']
     remove_always = ['split', 'split_overlap', 'rerun_from', 'rerun', 'gcp', 'end_with', 'sm_cluster', 'rerun_all', 'pc_csv', 'pc_las', 'pc_ept', 'tiles', 'copy-to', 'cog']
-    read_json_always = ['cameras']
+    read_json_always = ['cameras', 'boundary']
 
     argv = sys.argv
 

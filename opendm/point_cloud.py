@@ -1,4 +1,4 @@
-import os, sys, shutil, tempfile, json, math
+import os, sys, shutil, tempfile, math, json
 from opendm import system
 from opendm import log
 from opendm import context
@@ -7,6 +7,8 @@ from opendm import entwine
 from opendm import io
 from opendm.concurrency import parallel_map
 from opendm.utils import double_quote
+from opendm.boundary import as_polygon, as_geojson
+from opendm.dem.pdal import run_pipeline
 
 def ply_info(input_ply):
     if not os.path.exists(input_ply):
@@ -38,7 +40,8 @@ def ply_info(input_ply):
     return {
         'has_normals': has_normals,
         'vertex_count': vertex_count,
-        'has_views': has_views
+        'has_views': has_views,
+        'header_lines': i + 1
     }
 
 
@@ -68,7 +71,7 @@ def split(input_point_cloud, outdir, filename_template, capacity, dims=None):
     return [os.path.join(outdir, f) for f in os.listdir(outdir)]
 
 
-def filter(input_point_cloud, output_point_cloud, standard_deviation=2.5, meank=16, sample_radius=0, verbose=False, max_concurrency=1):
+def filter(input_point_cloud, output_point_cloud, standard_deviation=2.5, meank=16, sample_radius=0, boundary=None, verbose=False, max_concurrency=1):
     """
     Filters a point cloud
     """
@@ -76,98 +79,31 @@ def filter(input_point_cloud, output_point_cloud, standard_deviation=2.5, meank=
         log.ODM_ERROR("{} does not exist. The program will now exit.".format(input_point_cloud))
         sys.exit(1)
 
-    if (standard_deviation <= 0 or meank <= 0) and sample_radius <= 0:
-        log.ODM_INFO("Skipping point cloud filtering")
-        # if using the option `--pc-filter 0`, we need copy input_point_cloud
-        shutil.copy(input_point_cloud, output_point_cloud)
-        return
-
-    filters = []
+    args = [
+        '--input "%s"' % input_point_cloud,
+        '--output "%s"' % output_point_cloud,
+        '--concurrency %s' % max_concurrency,
+        '--verbose' if verbose else '',
+    ]
 
     if sample_radius > 0:
         log.ODM_INFO("Sampling points around a %sm radius" % sample_radius)
-        filters.append('sample')
+        args.append('--radius %s' % sample_radius)
 
     if standard_deviation > 0 and meank > 0:
         log.ODM_INFO("Filtering {} (statistical, meanK {}, standard deviation {})".format(input_point_cloud, meank, standard_deviation))
-        filters.append('outlier')
+        args.append('--meank %s' % meank)
+        args.append('--std %s' % standard_deviation)
+    
+    if boundary is not None:
+        log.ODM_INFO("Boundary {}".format(boundary))
+        fd, boundary_json_file = tempfile.mkstemp(suffix='.boundary.json')
+        os.close(fd)
+        with open(boundary_json_file, 'w') as f:
+            f.write(as_geojson(boundary))
+        args.append('--boundary "%s"' % boundary_json_file)
 
-    if len(filters) > 0:
-        filters.append('range')
-
-    info = ply_info(input_point_cloud)
-    dims = "x=float,y=float,z=float,"
-    if info['has_normals']:
-        dims += "nx=float,ny=float,nz=float,"
-    dims += "red=uchar,blue=uchar,green=uchar"
-    if info['has_views']:
-        dims += ",views=uchar"
-
-    if info['vertex_count'] == 0:
-        log.ODM_ERROR("Cannot read vertex count for {}".format(input_point_cloud))
-        sys.exit(1)
-
-    # Do we need to split this?
-    VERTEX_THRESHOLD = 250000
-    should_split = max_concurrency > 1 and info['vertex_count'] > VERTEX_THRESHOLD*2
-
-    if should_split:
-        partsdir = os.path.join(os.path.dirname(output_point_cloud), "parts")
-        if os.path.exists(partsdir):
-            log.ODM_WARNING("Removing existing directory %s" % partsdir)
-            shutil.rmtree(partsdir)
-
-        point_cloud_submodels = split(input_point_cloud, partsdir, "part.ply", capacity=VERTEX_THRESHOLD, dims=dims)
-
-        def run_filter(pcs):
-            # Recurse
-            filter(pcs['path'], io.related_file_path(pcs['path'], postfix="_filtered"), 
-                        standard_deviation=standard_deviation, 
-                        meank=meank, 
-                        sample_radius=sample_radius, 
-                        verbose=verbose,
-                        max_concurrency=1)
-        # Filter
-        parallel_map(run_filter, [{'path': p} for p in point_cloud_submodels], max_concurrency)
-
-        # Merge
-        log.ODM_INFO("Merging %s point cloud chunks to %s" % (len(point_cloud_submodels), output_point_cloud))
-        filtered_pcs = [io.related_file_path(pcs, postfix="_filtered") for pcs in point_cloud_submodels]
-        #merge_ply(filtered_pcs, output_point_cloud, dims)
-        fast_merge_ply(filtered_pcs, output_point_cloud)
-
-        if os.path.exists(partsdir):
-            shutil.rmtree(partsdir)
-    else:
-        # Process point cloud (or a point cloud submodel) in a single step
-        filterArgs = {
-            'inputFile': input_point_cloud,
-            'outputFile': output_point_cloud,
-            'stages': " ".join(filters),
-            'dims': dims
-        }
-
-        cmd = ("pdal translate -i \"{inputFile}\" "
-                "-o \"{outputFile}\" "
-                "{stages} "
-                "--writers.ply.sized_types=false "
-                "--writers.ply.storage_mode=\"little endian\" "
-                "--writers.ply.dims=\"{dims}\" "
-                "").format(**filterArgs)
-
-        if 'sample' in filters:
-            cmd += "--filters.sample.radius={} ".format(sample_radius)
-        
-        if 'outlier' in filters:
-            cmd += ("--filters.outlier.method=\"statistical\" "
-                "--filters.outlier.mean_k={} "
-                "--filters.outlier.multiplier={} ").format(meank, standard_deviation)  
-        
-        if 'range' in filters:
-            # Remove outliers
-            cmd += "--filters.range.limits=\"Classification![7:7]\" "
-
-        system.run(cmd)
+    system.run('"%s" %s' % (context.fpcfilter_path, " ".join(args)))
 
     if not os.path.exists(output_point_cloud):
         log.ODM_WARNING("{} not found, filtering has failed.".format(output_point_cloud))

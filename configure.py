@@ -3,7 +3,7 @@ if sys.platform != 'win32':
     print("This script is for Windows only! Use configure.sh instead.")
     exit(1)
 if sys.version_info.major != 3 or sys.version_info.minor != 8:
-    print("You neeed to use Python 3.8.x (due to the requirements.txt). You are using %s instead." % platform.python_version())
+    print("You need to use Python 3.8.x (due to the requirements.txt). You are using %s instead." % platform.python_version())
     exit(1)
 
 import argparse
@@ -34,11 +34,6 @@ parser.add_argument('--code-sign-cert-path',
                     default='',
                     required=False,
                     help='Path to pfx code signing certificate')
-parser.add_argument('--signtool-path',
-                    type=str,
-                    default='',
-                    required=False,
-                    help='Path to signtool.exe')
 
 args = parser.parse_args()
 
@@ -171,6 +166,14 @@ def dist():
         with zipfile.ZipFile(pythonzip_path) as z:
             z.extractall("python38")
 
+    # Download signtool
+    signtool_path = os.path.join("SuperBuild", "download", "signtool.exe")
+    signtool_url = "https://github.com/OpenDroneMap/windows-deps/releases/download/2.5.0/signtool.exe"
+    if not os.path.exists(signtool_path):
+        print("Downloading %s" % signtool_url)
+        with urllib.request.urlopen(signtool_url) as response, open(signtool_path, 'wb') as out_file:
+            shutil.copyfileobj(response, out_file)
+
     # Download innosetup
     if not os.path.isdir("innosetup"):
         innosetupzip_path = os.path.join("SuperBuild", "download", "innosetup.zip")
@@ -188,8 +191,8 @@ def dist():
 
     # Run
     cs_flags = ""
-    if args.code_sign_cert_path and args.signtool_path:
-        cs_flags = '"/Ssigntool=%s sign /f %s /t http://timestamp.sectigo.com $f"' % (args.signtool_path, args.code_sign_cert_path)
+    if args.code_sign_cert_path:
+        cs_flags = '"/Ssigntool=%s sign /f %s /fd SHA1 /t http://timestamp.sectigo.com $f"' % (signtool_path, args.code_sign_cert_path)
     run("innosetup\\iscc /Qp " + cs_flags  + " \"innosetup.iss\"")
 
     print("Done! Setup created in dist/")

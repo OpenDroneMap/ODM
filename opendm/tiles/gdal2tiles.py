@@ -1405,7 +1405,7 @@ class GDAL2Tiles(object):
         # Not for 'raster' profile
         self.scaledquery = True
         # How big should be query window be for scaling down
-        # Later on reset according the chosen resampling algorightm
+        # Later on reset according the chosen resampling algorithm
         self.querysize = 4 * self.tilesize
 
         # Should we use Read on the input file for generating overview tiles?

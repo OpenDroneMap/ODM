@@ -20,6 +20,8 @@ def create_25dmesh(inPointCloud, outMesh, dsm_radius=0.07, dsm_resolution=0.05, 
     log.ODM_INFO('Created temporary directory: %s' % tmp_directory)
 
     radius_steps = [dsm_radius]
+    for _ in range(2):
+        radius_steps.append(radius_steps[-1] * 2) # 2 is arbitrary
 
     log.ODM_INFO('Creating DSM for 2.5D mesh')
 
@@ -105,6 +107,7 @@ def dem_to_mesh_gridded(inGeotiff, outMesh, maxVertexCount, verbose=False, maxCo
                 '-maxTileLength 2000 '
                 '-maxVertexCount {maxVertexCount} '
                 '-maxConcurrency {maxConcurrency} '
+                '-edgeSwapThreshold 0.15 '
                 ' {verbose} '.format(**kwargs))
             break
         except Exception as e:
@@ -126,8 +129,8 @@ def dem_to_mesh_gridded(inGeotiff, outMesh, maxVertexCount, verbose=False, maxCo
 
     system.run('"{reconstructmesh}" -i "{infile}" '
          '-o "{outfile}" '
-         '--remove-spikes 0 --remove-spurious 20 --smooth 0 '
-         '--target-face-num {max_faces} '.format(**cleanupArgs))
+         '--remove-spikes 0 --remove-spurious 0 --smooth 0 '
+         '--target-face-num {max_faces} -v 0'.format(**cleanupArgs))
 
     # Delete intermediate results
     os.remove(outMeshDirty)
@@ -163,7 +166,6 @@ def screened_poisson_reconstruction(inPointCloud, outMesh, depth = 8, samples = 
             'samples': samples,
             'pointWeight': pointWeight,
             'threads': int(threads),
-            'memory': int(concurrency.get_max_memory_mb(4, 0.8) // 1024),
             'verbose': '--verbose' if verbose else ''
         }
 
@@ -175,7 +177,6 @@ def screened_poisson_reconstruction(inPointCloud, outMesh, depth = 8, samples = 
                     '--pointWeight {pointWeight} '
                     '--samplesPerNode {samples} '
                     '--threads {threads} '
-                    '--maxMemory {memory} '
                     '--bType 2 '
                     '--linearFit '
                     '{verbose}'.format(**poissonReconArgs))
@@ -207,7 +208,7 @@ def screened_poisson_reconstruction(inPointCloud, outMesh, depth = 8, samples = 
     system.run('"{reconstructmesh}" -i "{infile}" '
          '-o "{outfile}" '
          '--remove-spikes 0 --remove-spurious 20 --smooth 0 '
-         '--target-face-num {max_faces} '.format(**cleanupArgs))
+         '--target-face-num {max_faces} -v 0'.format(**cleanupArgs))
 
     # Delete intermediate results
     os.remove(outMeshDirty)
