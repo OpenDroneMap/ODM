@@ -120,6 +120,7 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                     '--writers.las.offset_y=%s' % reconstruction.georef.utm_north_offset,
                     '--writers.las.scale_x=0.001',
                     '--writers.las.scale_y=0.001',
+                    '--writers.las.scale_z=0.001',
                     '--writers.las.offset_z=0',
                     '--writers.las.a_srs="%s"' % reconstruction.georef.proj4()
                 ]
