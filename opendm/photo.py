@@ -226,7 +226,7 @@ class ODM_Photo:
                 if 'Image Orientation' in tags:
                     self.orientation = self.int_value(tags['Image Orientation'])
             except (IndexError, ValueError) as e:
-                log.ODM_WARNING("Cannot read basic EXIF tags for %s: %s" % (_path_file, str(e)))
+                log.ODM_WARNING("Cannot read basic EXIF tags for %s: %s" % (self.filename, str(e)))
 
             try:
                 if 'Image Tag 0xC61A' in tags:
@@ -268,7 +268,12 @@ class ODM_Photo:
                     epoch = timezone.localize(datetime.utcfromtimestamp(0))
                     self.utc_time = (timezone.localize(utc_time) - epoch).total_seconds() * 1000.0
             except Exception as e:
-                log.ODM_WARNING("Cannot read extended EXIF tags for %s: %s" % (_path_file, str(e)))
+                log.ODM_WARNING("Cannot read extended EXIF tags for %s: %s" % (self.filename, str(e)))
+
+            # Warn if GPS coordinates are suspiciously wrong
+            if self.latitude is not None and self.latitude == 0 and \
+                self.longitude is not None and self.longitude == 0:
+                log.ODM_WARNING("%s has GPS position (0,0), possibly corrupted" % self.filename)
 
 
             # Extract XMP tags
@@ -423,7 +428,7 @@ class ODM_Photo:
                     ], float)                                                               # P4M cam++
                                                                                             # P4M
                 except Exception as e:
-                    log.ODM_WARNING("Cannot read XMP tags for %s: %s" % (_path_file, str(e)))
+                    log.ODM_WARNING("Cannot read XMP tags for %s: %s" % (self.filename, str(e)))
 
                 # self.set_attr_from_xmp_tag('center_wavelength', xtags, [
                 #     'Camera:CentralWavelength'
