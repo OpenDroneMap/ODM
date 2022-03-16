@@ -124,7 +124,7 @@ When you run ODM, if the GPU is recognized, in the first few lines of output you
 [INFO]    Using GPU for extracting SIFT features
 ```
 
-The SIFT GPU implementation is OpenCL-based, so should work with most graphics card (not just NVIDIA).
+The SIFT GPU implementation is CUDA-based, so should work with most NVIDIA graphics cards of the GTX 9xx Generation or newer.
 
 If you have an NVIDIA card, you can test that docker is recognizing the GPU by running:
 
