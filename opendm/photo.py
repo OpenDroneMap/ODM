@@ -701,6 +701,8 @@ class ODM_Photo:
             dop = self.get_gps_dop()
             if dop is None:
                 dop = 10.0 # Default
+            else:
+                dop *= 2.0 # Account for over-estimation
             
             gps['dop'] = dop
 
