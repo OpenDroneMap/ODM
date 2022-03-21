@@ -354,6 +354,12 @@ class ODM_Photo:
                             '@Camera:GPSZAccuracy',
                             'GPSZAccuracy'
                         ], float)
+                    
+                    # Account for over-estimation
+                    if self.gps_xy_stddev is not None:
+                        self.gps_xy_stddev *= 2.0
+                    if self.gps_z_stddev is not None:
+                        self.gps_z_stddev *= 2.0
 
                     if 'DLS:Yaw' in xtags:
                         self.set_attr_from_xmp_tag('dls_yaw', xtags, ['DLS:Yaw'], float)
@@ -701,8 +707,6 @@ class ODM_Photo:
             dop = self.get_gps_dop()
             if dop is None:
                 dop = 10.0 # Default
-            else:
-                dop *= 2.0 # Account for over-estimation
             
             gps['dop'] = dop
 
