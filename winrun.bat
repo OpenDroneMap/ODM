@@ -3,7 +3,7 @@
 setlocal
 
 call win32env.bat
-python "%ODMBASE%\run.py" %*
+python -X utf8 "%ODMBASE%\run.py" %*
 
 endlocal
 
