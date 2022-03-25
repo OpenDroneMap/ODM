@@ -206,17 +206,19 @@ class OSFMContext:
                 "feature_min_frames: %s" % args.min_num_features,
                 "processes: %s" % args.max_concurrency,
                 "matching_gps_neighbors: %s" % args.matcher_neighbors,
-                "matching_gps_distance: 0",
+                "matching_gps_distance: 30",
                 "matching_graph_rounds: 50",
                 "optimize_camera_parameters: %s" % ('no' if args.use_fixed_camera_params or args.cameras else 'yes'),
                 "reconstruction_algorithm: %s" % (args.sfm_algorithm),
                 "undistorted_image_format: tif",
                 "bundle_outlier_filtering_type: AUTO",
                 "sift_peak_threshold: 0.066",
-                "align_orientation_prior: vertical",
                 "triangulation_type: ROBUST",
                 "retriangulation_ratio: 2",
                 "bundle_compensate_gps_bias: yes",
+                "undistorted_image_max_size: 8400000",
+                "align_method: naive",
+                "align_orientation_prior: vertical",
             ]
 
             if args.camera_lens != 'auto':
@@ -266,10 +268,11 @@ class OSFMContext:
                 config.append("use_altitude_tag: yes")
 
             gcp_path = reconstruction.gcp.gcp_path
-            if has_alt or gcp_path:
+            if gcp_path:
                 config.append("align_method: auto")
             else:
-                config.append("align_method: orientation_prior")
+                config.append("align_method: naive")
+                # config.update("align_method: orientation_prior")
             
             if args.use_hybrid_bundle_adjustment:
                 log.ODM_INFO("Enabling hybrid bundle adjustment")
