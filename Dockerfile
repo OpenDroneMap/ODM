@@ -11,7 +11,6 @@ WORKDIR /code
 # Copy everything
 # COPY . ./
 COPY docker     ./docker
-COPY opendm     ./opendm
 COPY snap       ./snap
 COPY SuperBuild ./SuperBuild
 COPY CNAME  VERSION ./
@@ -49,6 +48,7 @@ RUN bash configure.sh installruntimedepsonly
 
 COPY stages ./stages
 COPY run.sh run.py /code/
+COPY opendm        /code/opendm
 
 RUN apt-get clean \
   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \

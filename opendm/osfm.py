@@ -206,7 +206,7 @@ class OSFMContext:
                 "feature_min_frames: %s" % args.min_num_features,
                 "processes: %s" % args.max_concurrency,
                 "matching_gps_neighbors: %s" % args.matcher_neighbors,
-                "matching_gps_distance: 30",
+                "matching_gps_distance: 0",
                 "matching_graph_rounds: 50",
                 "optimize_camera_parameters: %s" % ('no' if args.use_fixed_camera_params or args.cameras else 'yes'),
                 "reconstruction_algorithm: %s" % (args.sfm_algorithm),
