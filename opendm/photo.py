@@ -148,16 +148,16 @@ class ODM_Photo:
         self.camera_projection = 'brown'
         self.focal_ratio = 0.85
 
-        # Sequoia                                                                           # Seq
+        # Sequoia                                                                           # Seq cam++
         self.seq_sensor_model = None                                                        # Seq cam++
         self.seq_iradcal_list = None                                                        # Seq sun++
         self.seq_irad_list = None                                                           # Seq sun++
-                                                                                            # Seq
-        # P4M                                                                               # P4M
+                                                                                            # Seq sun++
+        # P4M                                                                               # P4M gain+
         self.p4m_sensor_gain = None                                                         # P4M gain+
         self.p4m_sensor_gain_adjustment = None                                              # P4M cam++
         self.p4m_black_current = None                                                       # P4M cam++
-                                                                                            # P4M
+                                                                                            # P4M cam++
         # parse values from metadata
         self.parse_exif_values(path_file)
 
@@ -166,9 +166,14 @@ class ODM_Photo:
 
 
     def __str__(self):
-        return '{} | camera: {} {} | dimensions: {} x {} | lat: {} | lon: {} | alt: {} | band: {} ({})'.format(
-                            self.filename, self.camera_make, self.camera_model, self.width, self.height, 
-                            self.latitude, self.longitude, self.altitude, self.band_name, self.band_index)
+        return '{} | camera: {} {} | dimensions: {} x {} | lat: {} | lon: {} | alt: {} | band: {} ({}) | ypr: {} {} {} | opk: {} {} {}'.format(     # YPR++
+                            self.filename, self.camera_make, self.camera_model, self.width, self.height,            # YPR++
+                            self.latitude, self.longitude, self.altitude, self.band_name, self.band_index,          # YPK++
+                            self.yaw, self.pitch, self.roll, self.omega, self.phi, self.kappa)                      # YPR++
+                                                                                                                    # YPR++
+#       return '{} | camera: {} {} | dimensions: {} x {} | lat: {} | lon: {} | alt: {} | band: {} ({})'.format(     # YPR--
+#                           self.filename, self.camera_make, self.camera_model, self.width, self.height,            # YPR--
+#                           self.latitude, self.longitude, self.altitude, self.band_name, self.band_index)          # YPR--
 
     def set_mask(self, mask):
         self.mask = mask
@@ -403,36 +408,36 @@ class ODM_Photo:
                         if self.camera_make.lower() == 'sensefly':
                             self.roll *= -1
 
-                    # Sequoia                                                               # Seq
+                    # Sequoia                                                               # Seq cam++
                     self.set_attr_from_xmp_tag('seq_sensor_model', xtags, [                 # Seq cam++
                         'Camera:SensorModel',                                               # Seq cam++
                     ])                                                                      # Seq cam++
-                                                                                            # Seq
-                    # Sequoia                                                               # Seq
+                                                                                            # Seq cam++
+                    # Sequoia                                                               # Seq sun++
                     self.set_attr_from_xmp_tag('seq_iradcal_list', xtags, [                 # Seq sun++
                         '@Camera:IrradianceCalibrationMeasurement',                         # Seq sun++
                     ])                                                                      # Seq sun++
-                                                                                            # Seq
-                    # Sequoia                                                               # Seq
+                                                                                            # Seq sun++
+                    # Sequoia                                                               # Seq sun++
                     self.set_attr_from_xmp_tag('seq_irad_list', xtags, [                    # Seq sun++
                         'Camera:IrradianceList',                                            # Seq sun++
                     ])                                                                      # Seq sun++
-                                                                                            # Seq
-                    # P4M                                                                   # P4M
+                                                                                            # Seq sun++
+                    # P4M                                                                   # P4M gain+
                     self.set_attr_from_xmp_tag('p4m_sensor_gain', xtags, [                  # P4M gain+
                         '@drone-dji:SensorGain',                                            # P4M gain+
                     ], float)                                                               # P4M gain+
-                                                                                            # P4M
-                    # P4M                                                                   # P4M
+                                                                                            # P4M gain+
+                    # P4M                                                                   # P4M cam++
                     self.set_attr_from_xmp_tag('p4m_sensor_gain_adjustment', xtags, [       # P4M cam++
                         '@drone-dji:SensorGainAdjustment',                                  # P4M cam++
                     ], float)                                                               # P4M cam++
-                                                                                            # P4M
-                    # P4M                                                                   # P4M
+                                                                                            # P4M cam++
+                    # P4M                                                                   # P4M cam++
                     self.set_attr_from_xmp_tag('p4m_black_current', xtags, [                # P4M cam++
                         'Camera:BlackCurrent',                                              # P4M cam++
                     ], float)                                                               # P4M cam++
-                                                                                            # P4M
+                                                                                            # P4M cam++
                 except Exception as e:
                     log.ODM_WARNING("Cannot read XMP tags for %s: %s" % (self.filename, str(e)))
 
@@ -651,6 +656,7 @@ class ODM_Photo:
         #(gain = ISO/100)
         if self.camera_make == 'DJI' and self.camera_model == 'FC6360':                     # P4M gain+
             return self.p4m_sensor_gain                                                     # P4M gain+
+                                                                                            # P4M gain+
         if self.iso_speed:
             return self.iso_speed / 100.0
 
