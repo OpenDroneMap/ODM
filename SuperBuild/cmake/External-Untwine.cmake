@@ -9,7 +9,7 @@ ExternalProject_Add(${_proj_name}
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
   GIT_REPOSITORY    https://github.com/hobu/untwine/
-  GIT_TAG           20243113fc7e9a3056f4ec727cc1f69202669156
+  GIT_TAG           69c240a7225180f7d8c5bc0eee500ffaf987f81a
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   #--Configure step-------------
