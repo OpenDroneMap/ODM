@@ -290,9 +290,5 @@ def post_point_cloud_steps(args, tree, rerun=False):
     if args.pc_copc:
         log.ODM_INFO("Creating Cloud Optimized Point Cloud (COPC)")
 
-        copc_output = io.related_file_path(tree.odm_georeferencing_model_laz, postfix="-copc")
+        copc_output = io.related_file_path(tree.odm_georeferencing_model_laz, postfix=".copc")
         entwine.build_copc([tree.odm_georeferencing_model_laz], copc_output)
-        if os.path.exists(copc_output):
-            # Swap
-            os.remove(tree.odm_georeferencing_model_laz)
-            shutil.move(copc_output, tree.odm_georeferencing_model_laz)
