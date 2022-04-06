@@ -285,3 +285,10 @@ def post_point_cloud_steps(args, tree, rerun=False):
     if args.pc_ept:
         log.ODM_INFO("Creating Entwine Point Tile output")
         entwine.build([tree.odm_georeferencing_model_laz], tree.entwine_pointcloud, max_concurrency=args.max_concurrency, rerun=rerun)
+
+    # COPC point clouds
+    if args.pc_copc:
+        log.ODM_INFO("Creating Cloud Optimized Point Cloud (COPC)")
+
+        copc_output = io.related_file_path(tree.odm_georeferencing_model_laz, postfix=".copc")
+        entwine.build_copc([tree.odm_georeferencing_model_laz], copc_output)

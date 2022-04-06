@@ -487,6 +487,12 @@ def config(argv=None, parser=None):
                 default=False,
                 help='Export the georeferenced point cloud in Entwine Point Tile (EPT) format. Default: %(default)s')
 
+    parser.add_argument('--pc-copc',
+                action=StoreTrue,
+                nargs=0,
+                default=False,
+                help='Save the georeferenced point cloud in Cloud Optimized Point Cloud (COPC) format. Default: %(default)s')
+
     parser.add_argument('--pc-filter',
                         metavar='<positive float>',
                         action=StoreValue,
