@@ -199,15 +199,22 @@ class OSFMContext:
                     log.ODM_WARNING("Cannot compute max image dimensions, going with defaults")
 
             # create config file for OpenSfM
+            if args.matcher_neighbors > 0:
+                matcher_graph_rounds = 0
+                matcher_neighbors = args.matcher_neighbors
+            else:
+                matcher_graph_rounds = 50
+                matcher_neighbors = 0
+
             config = [
                 "use_exif_size: no",
                 "flann_algorithm: KDTREE", # more stable, faster than KMEANS
                 "feature_process_size: %s" % feature_process_size,
                 "feature_min_frames: %s" % args.min_num_features,
                 "processes: %s" % args.max_concurrency,
-                "matching_gps_neighbors: %s" % args.matcher_neighbors,
+                "matching_gps_neighbors: %s" % matcher_neighbors,
                 "matching_gps_distance: 0",
-                "matching_graph_rounds: 50",
+                "matching_graph_rounds: %s" % matcher_graph_rounds,
                 "optimize_camera_parameters: %s" % ('no' if args.use_fixed_camera_params or args.cameras else 'yes'),
                 "reconstruction_algorithm: %s" % (args.sfm_algorithm),
                 "undistorted_image_format: tif",
