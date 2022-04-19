@@ -163,17 +163,13 @@ class ODM_Photo:
 
         # print log message
         log.ODM_DEBUG('Loaded {}'.format(self))
+        log.ODM_DEBUG('Load_A %s | yaw: %f | pitch: %f | roll: %f | omega: %f | phi: %f | kappa: %f' % (self.filename, self.yaw, self.pitch, self.roll, self.omega, self.phi, self.kappa))      # YPR++
 
 
     def __str__(self):
-        return '{} | camera: {} {} | dimensions: {} x {} | lat: {} | lon: {} | alt: {} | band: {} ({}) | ypr: {} {} {} | opk: {} {} {}'.format(     # YPR++
-                            self.filename, self.camera_make, self.camera_model, self.width, self.height,            # YPR++
-                            self.latitude, self.longitude, self.altitude, self.band_name, self.band_index,          # YPK++
-                            self.yaw, self.pitch, self.roll, self.omega, self.phi, self.kappa)                      # YPR++
-                                                                                                                    # YPR++
-#       return '{} | camera: {} {} | dimensions: {} x {} | lat: {} | lon: {} | alt: {} | band: {} ({})'.format(     # YPR--
-#                           self.filename, self.camera_make, self.camera_model, self.width, self.height,            # YPR--
-#                           self.latitude, self.longitude, self.altitude, self.band_name, self.band_index)          # YPR--
+        return '{} | camera: {} {} | dimensions: {} x {} | lat: {} | lon: {} | alt: {} | band: {} ({})'.format(
+                            self.filename, self.camera_make, self.camera_model, self.width, self.height, 
+                            self.latitude, self.longitude, self.altitude, self.band_name, self.band_index)
 
     def set_mask(self, mask):
         self.mask = mask
