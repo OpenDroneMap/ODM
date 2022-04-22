@@ -24,29 +24,29 @@ jobs:
         platforms: linux/amd64
         push: false
   
-  snapcraft:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        architecture:
-        - amd64
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - name: Set Swap Space
-      uses: pierotofy/set-swap-space@master
-      with:
-        swap-size-gb: 12
-    - name: Build
-      id: build
-      uses: diddlesnaps/snapcraft-multiarch-action@v1
-      with:
-        architecture: ${{ matrix.architecture }}
-    - name: Review
-      uses: diddlesnaps/snapcraft-review-tools-action@v1
-      with:
-        snap: ${{ steps.build.outputs.snap }}
-        isClassic: 'false'
+  # snapcraft:
+  #   runs-on: ubuntu-latest
+  #   strategy:
+  #     matrix:
+  #       architecture:
+  #       - amd64
+  #   steps:
+  #   - name: Checkout
+  #     uses: actions/checkout@v2
+  #   - name: Set Swap Space
+  #     uses: pierotofy/set-swap-space@master
+  #     with:
+  #       swap-size-gb: 12
+  #   - name: Build
+  #     id: build
+  #     uses: diddlesnaps/snapcraft-multiarch-action@v1
+  #     with:
+  #       architecture: ${{ matrix.architecture }}
+  #   - name: Review
+  #     uses: diddlesnaps/snapcraft-review-tools-action@v1
+  #     with:
+  #       snap: ${{ steps.build.outputs.snap }}
+  #       isClassic: 'false'
 
   windows:
     runs-on: windows-2019
