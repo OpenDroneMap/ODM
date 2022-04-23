@@ -359,8 +359,8 @@ def config(argv=None, parser=None):
                     metavar='<string>',
                     action=StoreValue,
                     default='incremental',
-                    choices=['incremental', 'triangulation'],
-                    help=('Choose the structure from motion algorithm. For aerial datasets, if camera GPS positions and angles are available, triangulation can generate better results. '
+                    choices=['incremental', 'triangulation', 'planar'],
+                    help=('Choose the structure from motion algorithm. For aerial datasets, if camera GPS positions and angles are available, triangulation can generate better results. For planar scenes captured at fixed altitude with nadir-only images, planar can be much faster. '
                         'Can be one of: %(choices)s. Default: '
                         '%(default)s'))
 
