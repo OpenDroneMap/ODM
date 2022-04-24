@@ -193,9 +193,9 @@ Finally you'll want to delete the files by using your Windows File Manager (Expl
 
 If you have installed to a different directory by changing the `--import` command you ran to install you must use that directory name to delete the correct files. This is likely the case if you have multiple ODM installations or are updating an already-installed installation.
 
-## Native Install (Ubuntu 20.04)
+## Native Install (Ubuntu 21.04)
 
-You can run ODM natively on Ubuntu 20.04 LTS (although we don't recommend it):  
+You can run ODM natively on Ubuntu 21.04 (although we don't recommend it):  
 
 1. Download the source from [here](https://github.com/OpenDroneMap/ODM/archive/master.zip)
 2. Run `bash configure.sh install`
