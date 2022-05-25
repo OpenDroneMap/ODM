@@ -48,9 +48,6 @@ def build_entwine(input_point_cloud_files, tmpdir, output_path, max_concurrency=
         'outputdir': output_path
     }
 
-    # for _ in range(len(input_point_cloud_files)):
-    #     # One at a time
-    #     system.run('entwine build --threads {threads} --tmp "{tmpdir}" -i "{input}" -o "{outputdir}"'.format(**kwargs))
     system.run('entwine build --threads {threads} --tmp "{tmpdir}" {all_inputs} -o "{outputdir}"'.format(**kwargs))
 
 def build_untwine(input_point_cloud_files, tmpdir, output_path, max_concurrency=8, rerun=False):
