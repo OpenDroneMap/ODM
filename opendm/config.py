@@ -156,6 +156,12 @@ def config(argv=None, parser=None):
                             'Can be one of: %(choices)s. Default: '
                             '%(default)s'))
 
+    parser.add_argument('--3d-tiles',
+                        action=StoreTrue,
+                        nargs=0,
+                        default=False,
+                        help='Generate OGC 3D Tiles outputs. Default: %(default)s')
+
     parser.add_argument('--matcher-neighbors',
                         metavar='<positive integer>',
                         action=StoreValue,
@@ -773,9 +779,6 @@ def config(argv=None, parser=None):
     if args.fast_orthophoto:
       log.ODM_INFO('Fast orthophoto is turned on, automatically setting --skip-3dmodel')
       args.skip_3dmodel = True
-    #   if not 'sfm_algorithm_is_set' in args:
-    #     log.ODM_INFO('Fast orthophoto is turned on, automatically setting --sfm-algorithm to triangulation')
-    #     args.sfm_algorithm = 'triangulation'
 
     if args.pc_rectify and not args.pc_classify:
       log.ODM_INFO("Ground rectify is turned on, automatically turning on point cloud classification")

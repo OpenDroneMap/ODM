@@ -142,6 +142,7 @@ set(custom_libs OpenSfM
 				OpenMVS
 				FPCFilter
 				PyPopsift
+				Obj2Tiles
 )
 
 # Build entwine only on Linux

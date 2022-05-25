@@ -5,6 +5,7 @@ from opendm import io
 from opendm import log
 from opendm import types
 from opendm.utils import copy_paths, get_processing_results_paths
+from opendm.ogctiles import build_3dtiles
 
 class ODMPostProcess(types.ODM_Stage):
     def process(self, args, outputs):
@@ -43,7 +44,10 @@ class ODMPostProcess(types.ODM_Stage):
                                 break
                         else:
                             log.ODM_WARNING("Cannot open %s for writing, skipping GCP embedding" % product)
-                
+
+        if getattr(args, '3d_tiles'):
+            build_3dtiles(args, tree, reconstruction, self.rerun())
+
         if args.copy_to:
             try:
                 copy_paths([os.path.join(args.project_path, p) for p in get_processing_results_paths()], args.copy_to, self.rerun())

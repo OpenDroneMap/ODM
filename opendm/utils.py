@@ -64,6 +64,7 @@ def get_processing_results_paths():
         "dsm_tiles",
         "dtm_tiles",
         "orthophoto_tiles",
+        "3d_tiles",
         "images.json",
         "cameras.json",
         "log.json",
