@@ -7,7 +7,6 @@ from opendm.utils import double_quote
 from opendm import io
 from opendm import log
 from opendm import system
-from opendm import concurrency
 import fiona
 from shapely.geometry import shape
 
