@@ -138,17 +138,13 @@ set(custom_libs OpenSfM
 				LASzip
 				PDAL
 				Untwine
+				Entwine
 				MvsTexturing
 				OpenMVS
 				FPCFilter
 				PyPopsift
 				Obj2Tiles
 )
-
-# Build entwine only on Linux
-if (NOT WIN32)
-    set(custom_libs ${custom_libs} Entwine)
-endif()
 
 externalproject_add(mve
     GIT_REPOSITORY  https://github.com/OpenDroneMap/mve.git
