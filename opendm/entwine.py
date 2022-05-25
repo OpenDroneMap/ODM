@@ -28,17 +28,13 @@ def build(input_point_cloud_files, output_path, max_concurrency=8, rerun=False):
     if rerun:
         dir_cleanup()
 
-    # On Windows we always use Untwine
-    if sys.platform == 'win32':
+    # Attempt with entwine (faster, more memory hungry)
+    try:
+        build_entwine(input_point_cloud_files, tmpdir, output_path, max_concurrency=max_concurrency)
+    except Exception as e:
+        log.ODM_WARNING("Cannot build EPT using entwine (%s), attempting with untwine..." % str(e))
+        dir_cleanup()
         build_untwine(input_point_cloud_files, tmpdir, output_path, max_concurrency=max_concurrency)
-    else:
-        # Attempt with entwine (faster, more memory hungry)
-        try:
-            build_entwine(input_point_cloud_files, tmpdir, output_path, max_concurrency=max_concurrency)
-        except Exception as e:
-            log.ODM_WARNING("Cannot build EPT using entwine (%s), attempting with untwine..." % str(e))
-            dir_cleanup()
-            build_untwine(input_point_cloud_files, tmpdir, output_path, max_concurrency=max_concurrency)
 
     if os.path.exists(tmpdir):
         shutil.rmtree(tmpdir)
