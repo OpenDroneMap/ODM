@@ -401,6 +401,21 @@ def config(argv=None, parser=None):
                         help='Improve the accuracy of the point cloud by computing geometrically consistent depthmaps. This increases processing time, but can improve results in urban scenes. '
                              'Default: %(default)s')    
 
+    parser.add_argument('--pc-sharp',
+                        action=StoreTrue,
+                        nargs=0,
+                        default=False,
+                        help='Improve the accuracy of the point cloud by applying filters to sharpen the pointcloud, but reduces the completeness of the reconstruction. '
+                             'Default: %(default)s')    
+
+    parser.add_argument('--pc-subreslevel',
+                        metavar='<positive integer>',
+                        action=StoreValue,
+                        default=2,
+                        type=int,
+                        help=('The number of lower resolutions to process before estimating output resolution depthmap. '
+                              'Default: %(default)s'))
+
     parser.add_argument('--smrf-scalar',
                         metavar='<positive float>',
                         action=StoreValue,

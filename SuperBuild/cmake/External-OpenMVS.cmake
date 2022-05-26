@@ -3,7 +3,7 @@ set(_SB_BINARY_DIR "${SB_BINARY_DIR}/${_proj_name}")
 
 externalproject_add(vcg
     GIT_REPOSITORY  https://github.com/OpenDroneMap/VCG.git
-    GIT_TAG         280
+    GIT_TAG         285
     UPDATE_COMMAND  ""
     SOURCE_DIR      ${SB_SOURCE_DIR}/vcg
     CONFIGURE_COMMAND ""
@@ -52,7 +52,7 @@ ExternalProject_Add(${_proj_name}
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
   GIT_REPOSITORY    https://github.com/OpenDroneMap/openMVS
-  GIT_TAG           270
+  GIT_TAG           285
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   #--Configure step-------------
