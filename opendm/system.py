@@ -65,7 +65,7 @@ def sighandler(signum, frame):
 signal.signal(signal.SIGINT, sighandler)
 signal.signal(signal.SIGTERM, sighandler)
 
-def run(cmd, env_paths=[context.superbuild_bin_path], env_vars={}, packages_paths=context.python_packages_paths):
+def run(cmd, env_paths=[context.superbuild_bin_path], env_vars={}, packages_paths=context.python_packages_paths, on_output=None):
     """Run a system command"""
     global running_subprocesses
 
@@ -89,7 +89,10 @@ def run(cmd, env_paths=[context.superbuild_bin_path], env_vars={}, packages_path
     running_subprocesses.append(p)
     lines = deque()
     for line in io.TextIOWrapper(p.stdout):
-        print(line, end="")
+        if on_output is not None:
+            on_output(line)
+        else:
+            print(line, end="")
 
         lines.append(line.strip())
         if len(lines) == 11:

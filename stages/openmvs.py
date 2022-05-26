@@ -12,6 +12,23 @@ from opendm.osfm import OSFMContext
 from opendm.multispectral import get_primary_band_name
 from opendm.point_cloud import fast_merge_ply
 
+def check_built_with_cuda():
+    # Little hack to see if OpenMVS was built with CUDA..
+    cuda_build = False
+    try:
+        def on_output(line):
+            global cuda_build
+            if "--cuda-device arg" in line:
+                cuda_build = True
+
+        system.run('"%s" --help' % context.omvs_densify_path, on_output=on_output)
+        return cuda_build
+    except system.SubprocessException as e:
+        return cuda_build # OpenMVS returns 1 on --help
+    except Exception as e:
+        log.ODM_WARNING("Cannot detect if OpenMVS was built with CUDA (assuming no): %s" % str(e))
+        return False
+
 class ODMOpenMVSStage(types.ODM_Stage):
     def process(self, args, outputs):
         # get inputs
@@ -75,8 +92,10 @@ class ODMOpenMVSStage(types.ODM_Stage):
             ]
 
             gpu_config = []
+            omvs_cuda = check_built_with_cuda()
+            log.ODM_INFO("OpenMVS built with CUDA support: %s" % ("YES" if omvs_cuda else "NO"))
 
-            if not has_gpu():
+            if (not has_gpu()) and omvs_cuda:
                 gpu_config.append("--cuda-device -2")
 
             if args.pc_tile:
@@ -99,7 +118,7 @@ class ODMOpenMVSStage(types.ODM_Stage):
             except system.SubprocessException as e:
                 # If the GPU was enabled and the program failed,
                 # try to run it again without GPU
-                if e.errorCode == 1 and len(gpu_config) == 0:
+                if e.errorCode == 1 and len(gpu_config) == 0 and omvs_cuda:
                     log.ODM_WARNING("OpenMVS failed with GPU, is your graphics card driver up to date? Falling back to CPU.")
                     gpu_config.append("--cuda-device -2")
                     run_densify()
