@@ -40,15 +40,16 @@ def build(input_point_cloud_files, output_path, max_concurrency=8, rerun=False):
         shutil.rmtree(tmpdir)
 
 
-def build_entwine(input_point_cloud_files, tmpdir, output_path, max_concurrency=8):
+def build_entwine(input_point_cloud_files, tmpdir, output_path, max_concurrency=8, reproject=None):
     kwargs = {
         'threads': max_concurrency,
         'tmpdir': tmpdir,
         'all_inputs': "-i " + " ".join(map(double_quote, input_point_cloud_files)),
-        'outputdir': output_path
+        'outputdir': output_path,
+        'reproject': (" -r %s " % reproject) if reproject is not None else "" 
     }
 
-    system.run('entwine build --threads {threads} --tmp "{tmpdir}" {all_inputs} -o "{outputdir}"'.format(**kwargs))
+    system.run('entwine build --threads {threads} --tmp "{tmpdir}" {all_inputs} -o "{outputdir}" {reproject}'.format(**kwargs))
 
 def build_untwine(input_point_cloud_files, tmpdir, output_path, max_concurrency=8, rerun=False):
     kwargs = {
