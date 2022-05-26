@@ -64,7 +64,7 @@ def build_textured_model(input_obj, output_path, reference_lla = None, model_bou
             'lon': lon,
             'alt': alt,
         }
-        system.run('Obj2Tiles --input "{input}" --output "{output}" --divisions {divisions} '.format(**kwargs))
+        system.run('Obj2Tiles "{input}" "{output}" --divisions {divisions} '.format(**kwargs))
 
     except Exception as e:
         log.ODM_WARNING("Cannot build 3D tiles textured model: %s" % str(e))
@@ -105,7 +105,7 @@ def build_pointcloud(input_pointcloud, output_path, max_concurrency, rerun=False
 def build_3dtiles(args, tree, reconstruction, rerun=False):
     tiles_output_path = tree.ogc_tiles
     model_output_path = os.path.join(tiles_output_path, "model")
-    pointcloud_output_path = os.path.join(tiles.output_path, "pointcloud")
+    pointcloud_output_path = os.path.join(tiles_output_path, "pointcloud")
 
     if rerun and os.path.exists(tiles_output_path):
         shutil.rmtree(tiles_output_path)
