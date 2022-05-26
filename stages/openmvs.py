@@ -60,6 +60,7 @@ class ODMOpenMVSStage(types.ODM_Stage):
             log.ODM_INFO("Estimating depthmaps")
             number_views_fuse = 2
             densify_ini_file = os.path.join(tree.openmvs, 'Densify.ini')
+            subres_levels = 2 # The number of lower resolutions to process before estimating output resolution depthmap.
 
             config = [
                 " --resolution-level %s" % int(resolution_level),
@@ -68,7 +69,7 @@ class ODMOpenMVSStage(types.ODM_Stage):
                 "--max-resolution %s" % int(outputs['undist_image_max_size']),
                 "--max-threads %s" % args.max_concurrency,
                 "--number-views-fuse %s" % number_views_fuse,
-                "--sub-resolution-levels %s" % args.pc_subreslevel,
+                "--sub-resolution-levels %s" % subres_levels,
                 '-w "%s"' % depthmaps_dir, 
                 "-v 0"
             ]
@@ -84,12 +85,9 @@ class ODMOpenMVSStage(types.ODM_Stage):
             if not args.pc_geometric:
                 config.append("--geometric-iters 0")
 
-            if args.pc_sharp:
-                with open(densify_ini_file, 'w+') as f:
-                    f.write("Optimize = 7\n")
-            else:
-                with open(densify_ini_file, 'w+') as f:
-                    f.write("Optimize = 3\n")
+            sharp = args.pc_filter > 0
+            with open(densify_ini_file, 'w+') as f:
+                f.write("Optimize = %s\n" % (7 if sharp else 3))
 
             def run_densify():
                 system.run('"%s" "%s" %s' % (context.omvs_densify_path, 
