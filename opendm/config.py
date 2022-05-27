@@ -156,6 +156,12 @@ def config(argv=None, parser=None):
                             'Can be one of: %(choices)s. Default: '
                             '%(default)s'))
 
+    parser.add_argument('--3d-tiles',
+                        action=StoreTrue,
+                        nargs=0,
+                        default=False,
+                        help='Generate OGC 3D Tiles outputs. Default: %(default)s')
+
     parser.add_argument('--matcher-neighbors',
                         metavar='<positive integer>',
                         action=StoreValue,
@@ -607,12 +613,6 @@ def config(argv=None, parser=None):
                     help='Generate static tiles for orthophotos and DEMs that are '
                          'suitable for viewers like Leaflet or OpenLayers. '
                          'Default: %(default)s')
-
-    parser.add_argument('--3d-tiles',
-                        action=StoreTrue,
-                        nargs=0,
-                        default=False,
-                        help='Generate OGC 3D Tiles outputs. Default: %(default)s')
 
     parser.add_argument('--build-overviews',
                         action=StoreTrue,
