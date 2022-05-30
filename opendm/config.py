@@ -269,7 +269,13 @@ def config(argv=None, parser=None):
                         'caps the maximum resolution of image outputs and '
                         'resizes images when necessary, resulting in faster processing and '
                         'lower memory usage. Since GSD is an estimate, sometimes ignoring it can result in slightly better image output quality. Default: %(default)s')
-
+    
+    parser.add_argument('--no-gpu',
+                    action=StoreTrue,
+                    nargs=0,
+                    default=False,
+                    help='Do not use GPU acceleration, even if it\'s available. Default: %(default)s')
+    
     parser.add_argument('--mesh-size',
                         metavar='<positive integer>',
                         action=StoreValue,

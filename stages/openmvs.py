@@ -76,7 +76,7 @@ class ODMOpenMVSStage(types.ODM_Stage):
 
             gpu_config = []
 
-            if not has_gpu():
+            if not has_gpu(args):
                 gpu_config.append("--cuda-device -2")
 
             if args.pc_tile:
