@@ -33,10 +33,10 @@ def idw(data):
     return data
 
 
-def dmpdtm(lasfile):
+def dmpdtm(fin, fout):
 
     #readin in full res .las , subsampled with Poisson- change radius to reach desired resolution
-    p = pdal.Reader.las(lasfile).pipeline() | pdal.Filter.sample(radius=1).pipeline()
+    p = pdal.Reader.las(fin).pipeline() | pdal.Filter.sample(radius=1).pipeline()
     p.execute()
 
     cls = p.arrays[0]['Classification']
@@ -150,9 +150,9 @@ def dmpdtm(lasfile):
 
     
     #write out las file with ground points only 
-    outputfile = lasfile.replace(".las","_dtm.las")
+#    outputfile = lasfile.replace(".las","_dtm.las")
     final_out = p.arrays[0]
-    p = pdal.Writer.las(filename= outputfile).pipeline(final_out)
+    p = pdal.Writer.las(filename= fout).pipeline(final_out)
     p.execute()
 
     return outputfile

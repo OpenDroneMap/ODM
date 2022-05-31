@@ -14,6 +14,7 @@ from scipy import ndimage
 from datetime import datetime
 from opendm.vendor.gdal_fillnodata import main as gdal_fillnodata
 from opendm import log
+from opendm.dem import dmpdtm
 try:
     import Queue as queue
 except:
@@ -27,7 +28,8 @@ def classify(lasFile, scalar, slope, threshold, window, verbose=False):
     start = datetime.now()
 
     try:
-        pdal.run_pdaltranslate_smrf(lasFile, lasFile, scalar, slope, threshold, window, verbose)
+        #pdal.run_pdaltranslate_smrf(lasFile, lasFile, scalar, slope, threshold, window, verbose)
+        dmpdtm.dmpdtm(lasFile, lasFile)
     except:
         log.ODM_WARNING("Error creating classified file %s" % lasFile)
 
