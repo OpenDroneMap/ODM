@@ -23,6 +23,16 @@ import threading
 from .ground_rectification.rectify import run_rectification
 from . import pdal
 
+try:
+    # GDAL >= 3.3
+    from osgeo_utils.gdal_proximity import main as gdal_proximity
+except ModuleNotFoundError:
+    # GDAL <= 3.2
+    try:
+        from osgeo.utils.gdal_proximity import main as gdal_proximity
+    except:
+        pass
+
 def classify(lasFile, scalar, slope, threshold, window, verbose=False):
     start = datetime.now()
 
@@ -290,14 +300,20 @@ def compute_euclidean_map(geotiff_path, output_path, overwrite=False):
 
     if not os.path.exists(output_path) or overwrite:
         log.ODM_INFO("Computing euclidean distance: %s" % output_path)
-        gdal_proximity_path = shutil.which("gdal_proximity.py")
-        gdal_proximity_cmd = '"%s" "%s"' % (sys.executable, gdal_proximity_path) if gdal_proximity_path is not None else "gdal_proximity.py"
-        run('%s "%s" "%s" -values %s' % (gdal_proximity_cmd, geotiff_path, output_path, nodata))
 
-        if os.path.exists(output_path):
-            return output_path
+        if gdal_proximity is not None:
+            try:
+                gdal_proximity(['gdal_proximity.py', geotiff_path, output_path, '-values', str(nodata)])
+            except Exception as e:
+                log.ODM_WARNING("Cannot compute euclidean distance: %s" % str(e))
+
+            if os.path.exists(output_path):
+                return output_path
+            else:
+                log.ODM_WARNING("Cannot compute euclidean distance file: %s" % output_path)
         else:
-            log.ODM_WARNING("Cannot compute euclidean distance file: %s" % output_path)
+            log.ODM_WARNING("Cannot compute euclidean map, gdal_proximity is missing")
+            
     else:
         log.ODM_INFO("Found a euclidean distance map: %s" % output_path)
         return output_path
