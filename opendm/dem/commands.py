@@ -290,7 +290,9 @@ def compute_euclidean_map(geotiff_path, output_path, overwrite=False):
 
     if not os.path.exists(output_path) or overwrite:
         log.ODM_INFO("Computing euclidean distance: %s" % output_path)
-        run('gdal_proximity.py "%s" "%s" -values %s' % (geotiff_path, output_path, nodata))
+        gdal_proximity_path = shutil.which("gdal_proximity.py")
+        gdal_proximity_cmd = '"%s" "%s"' % (sys.executable, gdal_proximity_path) if gdal_proximity_path is not None else "gdal_proximity.py"
+        run('%s "%s" "%s" -values %s' % (gdal_proximity_cmd, geotiff_path, output_path, nodata))
 
         if os.path.exists(output_path):
             return output_path
