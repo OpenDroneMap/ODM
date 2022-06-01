@@ -13,7 +13,7 @@ matplotlib==3.3.3
 networkx==2.5
 numpy==1.21.1
 Pillow==8.3.2
-pandas=1.4.2
+pandas==1.4.2
 vmem==1.0.1
 pyodm==1.5.8
 pyproj==3.0.0.post1
