@@ -320,7 +320,7 @@ class OSFMContext:
         if not io.dir_exists(metadata_dir) or rerun:
             self.run('extract_metadata')
     
-    def photos_to_metadata(self, photos, rerun=False):
+    def photos_to_metadata(self, photos, rolling_shutter, rolling_shutter_readout, rerun=False):
         metadata_dir = self.path("exif")
 
         if io.dir_exists(metadata_dir) and not rerun:
@@ -336,7 +336,7 @@ class OSFMContext:
         data = DataSet(self.opensfm_project_path)
 
         for p in photos:
-            d = p.to_opensfm_exif()
+            d = p.to_opensfm_exif(rolling_shutter, rolling_shutter_readout)
             with open(os.path.join(metadata_dir, "%s.exif" % p.filename), 'w') as f:
                 f.write(json.dumps(d, indent=4))
 

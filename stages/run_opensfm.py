@@ -30,7 +30,7 @@ class ODMOpenSfMStage(types.ODM_Stage):
 
         octx = OSFMContext(tree.opensfm)
         octx.setup(args, tree.dataset_raw, reconstruction=reconstruction, rerun=self.rerun())
-        octx.photos_to_metadata(photos, self.rerun())
+        octx.photos_to_metadata(photos, args.rolling_shutter, args.rolling_shutter_readout, self.rerun())
         self.update_progress(20)
         octx.feature_matching(self.rerun())
         self.update_progress(30)

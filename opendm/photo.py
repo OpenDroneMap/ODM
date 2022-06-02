@@ -12,6 +12,7 @@ import pytz
 from opendm import io
 from opendm import log
 from opendm import system
+from opendm.rollingshutter import get_rolling_shutter_readout
 import xmltodict as x2d
 from opendm import get_image_size
 from xml.parsers.expat import ExpatError
@@ -701,7 +702,7 @@ class ODM_Photo:
                 ]
             ).lower()
 
-    def to_opensfm_exif(self):
+    def to_opensfm_exif(self, rolling_shutter = False, rolling_shutter_readout = 0):
         capture_time = 0.0
         if self.utc_time is not None:
             capture_time = self.utc_time / 1000.0
@@ -740,6 +741,9 @@ class ODM_Photo:
                 'phi': self.phi,
                 'kappa': self.kappa
             }
+        
+        if rolling_shutter:
+            d['rolling_shutter'] = get_rolling_shutter_readout(self.camera_make, self.camera_model, rolling_shutter_readout)
         
         return d
 
