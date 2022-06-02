@@ -223,7 +223,6 @@ class OSFMContext:
                 "align_orientation_prior: vertical",
                 "triangulation_type: ROBUST",
                 "retriangulation_ratio: 2",
-                "bundle_compensate_gps_bias: yes",
             ]
 
             if args.camera_lens != 'auto':
