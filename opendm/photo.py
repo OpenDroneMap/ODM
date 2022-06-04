@@ -141,6 +141,11 @@ class ODM_Photo:
         self.dls_pitch = None
         self.dls_roll = None
 
+        # Aircraft speed
+        self.speedX = None
+        self.speedY = None
+        self.speedZ = None
+
         # self.center_wavelength = None
         # self.bandwidth = None
 
