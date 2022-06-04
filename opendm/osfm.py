@@ -251,7 +251,7 @@ class OSFMContext:
             config.append("matcher_type: %s" % osfm_matchers[matcher_type])
 
             # GPU acceleration?
-            if has_gpu():
+            if has_gpu(args):
                 max_photo = find_largest_photo(photos)
                 w, h = max_photo.width, max_photo.height
                 if w > h:

@@ -289,6 +289,7 @@ class ODM_Tree(object):
 
         # Tiles
         self.entwine_pointcloud = self.path("entwine_pointcloud")
+        self.ogc_tiles = self.path("3d_tiles")
 
     def path(self, *args):
         return os.path.join(self.root_path, *args)

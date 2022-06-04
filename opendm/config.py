@@ -269,7 +269,13 @@ def config(argv=None, parser=None):
                         'caps the maximum resolution of image outputs and '
                         'resizes images when necessary, resulting in faster processing and '
                         'lower memory usage. Since GSD is an estimate, sometimes ignoring it can result in slightly better image output quality. Default: %(default)s')
-
+    
+    parser.add_argument('--no-gpu',
+                    action=StoreTrue,
+                    nargs=0,
+                    default=False,
+                    help='Do not use GPU acceleration, even if it\'s available. Default: %(default)s')
+    
     parser.add_argument('--mesh-size',
                         metavar='<positive integer>',
                         action=StoreValue,
@@ -608,6 +614,12 @@ def config(argv=None, parser=None):
                          'suitable for viewers like Leaflet or OpenLayers. '
                          'Default: %(default)s')
 
+    parser.add_argument('--3d-tiles',
+                        action=StoreTrue,
+                        nargs=0,
+                        default=False,
+                        help='Generate OGC 3D Tiles outputs. Default: %(default)s')
+
     parser.add_argument('--build-overviews',
                         action=StoreTrue,
                         nargs=0,
@@ -773,9 +785,6 @@ def config(argv=None, parser=None):
     if args.fast_orthophoto:
       log.ODM_INFO('Fast orthophoto is turned on, automatically setting --skip-3dmodel')
       args.skip_3dmodel = True
-    #   if not 'sfm_algorithm_is_set' in args:
-    #     log.ODM_INFO('Fast orthophoto is turned on, automatically setting --sfm-algorithm to triangulation')
-    #     args.sfm_algorithm = 'triangulation'
 
     if args.pc_rectify and not args.pc_classify:
       log.ODM_INFO("Ground rectify is turned on, automatically turning on point cloud classification")

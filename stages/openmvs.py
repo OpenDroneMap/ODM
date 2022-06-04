@@ -59,27 +59,35 @@ class ODMOpenMVSStage(types.ODM_Stage):
             
             log.ODM_INFO("Estimating depthmaps")
             number_views_fuse = 2
+            densify_ini_file = os.path.join(tree.openmvs, 'Densify.ini')
+            subres_levels = 2 # The number of lower resolutions to process before estimating output resolution depthmap.
 
             config = [
                 " --resolution-level %s" % int(resolution_level),
+                '--dense-config-file "%s"' % densify_ini_file,
                 "--min-resolution %s" % depthmap_resolution,
                 "--max-resolution %s" % int(outputs['undist_image_max_size']),
                 "--max-threads %s" % args.max_concurrency,
                 "--number-views-fuse %s" % number_views_fuse,
+                "--sub-resolution-levels %s" % subres_levels,
                 '-w "%s"' % depthmaps_dir, 
                 "-v 0"
             ]
 
             gpu_config = []
 
-            if not has_gpu():
-                gpu_config.append("--cuda-device -1")
+            if not has_gpu(args):
+                gpu_config.append("--cuda-device -2")
 
             if args.pc_tile:
                 config.append("--fusion-mode 1")
             
             if not args.pc_geometric:
                 config.append("--geometric-iters 0")
+
+            sharp = args.pc_filter > 0
+            with open(densify_ini_file, 'w+') as f:
+                f.write("Optimize = %s\n" % (7 if sharp else 3))
 
             def run_densify():
                 system.run('"%s" "%s" %s' % (context.omvs_densify_path, 
@@ -93,7 +101,7 @@ class ODMOpenMVSStage(types.ODM_Stage):
                 # try to run it again without GPU
                 if e.errorCode == 1 and len(gpu_config) == 0:
                     log.ODM_WARNING("OpenMVS failed with GPU, is your graphics card driver up to date? Falling back to CPU.")
-                    gpu_config.append("--cuda-device -1")
+                    gpu_config.append("--cuda-device -2")
                     run_densify()
                 else:
                     raise e
