@@ -5,7 +5,7 @@ import ctypes
 from opendm import log
 from repoze.lru import lru_cache
 
-def gpu_disabled_by_user():
+def gpu_disabled_by_user_env():
     return bool(os.environ.get('ODM_NO_GPU'))
 
 @lru_cache(maxsize=None)
@@ -68,10 +68,12 @@ def get_cuda_compute_version(device_id = 0):
 
     return (compute_major.value, compute_minor.value)
 
-@lru_cache(maxsize=None)
-def has_gpu():
-    if gpu_disabled_by_user():
+def has_gpu(args):
+    if gpu_disabled_by_user_env():
         log.ODM_INFO("Disabling GPU features (ODM_NO_GPU is set)")
+        return False
+    if args.no_gpu:
+        log.ODM_INFO("Disabling GPU features (--no-gpu is set)")
         return False
 
     if sys.platform == 'win32':

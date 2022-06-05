@@ -85,6 +85,11 @@ def get_mm_per_unit(resolution_unit):
 class PhotoCorruptedException(Exception):
     pass
 
+class GPSRefMock:
+    def __init__(self, ref):
+        self.values = [ref]
+
+
 class ODM_Photo:
     """ODMPhoto - a class for ODMPhotos"""
 
@@ -233,14 +238,23 @@ class ODM_Photo:
                         self.altitude *= -1
                 if 'GPS GPSLatitude' in tags and 'GPS GPSLatitudeRef' in tags:
                     self.latitude = self.dms_to_decimal(tags['GPS GPSLatitude'], tags['GPS GPSLatitudeRef'])
+                elif 'GPS GPSLatitude' in tags:
+                    log.ODM_WARNING("GPS position for %s might be incorrect, GPSLatitudeRef tag is missing (assuming N)" % self.filename)
+                    self.latitude = self.dms_to_decimal(tags['GPS GPSLatitude'], GPSRefMock('N'))
                 if 'GPS GPSLongitude' in tags and 'GPS GPSLongitudeRef' in tags:
                     self.longitude = self.dms_to_decimal(tags['GPS GPSLongitude'], tags['GPS GPSLongitudeRef'])
+<<<<<<< HEAD
                 if self.altitude is None:                                                                                   # Cam.GPS++
                     log.ODM_WARNING("Basic_EXIF_tags {} GPSAltitude_not_found".format(self.filename))                       # Cam.GPS++
                 if self.latitude is None:                                                                                   # Cam.GPS++
                     log.ODM_WARNING("Basic_EXIF_tags {} GPSLatitude_not_found".format(self.filename))                       # Cam.GPS++
                 if self.longitude is None:                                                                                  # Cam.GPS++
                     log.ODM_WARNING("Basic_EXIF_tags {} GPSLongitude_not_found".format(self.filename))                      # Cam.GPS++
+=======
+                elif 'GPS GPSLongitude' in tags:
+                    log.ODM_WARNING("GPS position for %s might be incorrect, GPSLongitudeRef tag is missing (assuming E)" % self.filename)
+                    self.longitude = self.dms_to_decimal(tags['GPS GPSLongitude'], GPSRefMock('E'))
+>>>>>>> upstream/master
                 if 'Image Orientation' in tags:
                     self.orientation = self.int_value(tags['Image Orientation'])
             except (IndexError, ValueError) as e:
