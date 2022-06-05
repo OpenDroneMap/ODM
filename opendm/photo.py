@@ -2,8 +2,10 @@ import logging
 import re
 import os
 import math
-import base64                                                                               # Seq sun++
-import struct                                                                               # Seq sun++
+from timezonefinder import TimezoneFinder                                                                                   # Timezone++
+from opendm import dls                                                                                                      # DLS++
+import base64                                                                                                               # DLS(Seq)++
+import struct                                                                                                               # DLS(Seq)++
 
 import exifread
 import numpy as np
@@ -121,6 +123,8 @@ class ODM_Photo:
         self.spectral_irradiance = None
         self.horizontal_irradiance = None
         self.irradiance_scale_to_si = None
+                                                                                                                            # Timezone++
+        self.str_naive = None                                                                                               # Timezone++
         self.utc_time = None
 
         # OPK angles
@@ -148,22 +152,29 @@ class ODM_Photo:
         self.camera_projection = 'brown'
         self.focal_ratio = 0.85
 
-        # Sequoia                                                                           # Seq cam++
-        self.seq_sensor_model = None                                                        # Seq cam++
-        self.seq_iradcal_list = None                                                        # Seq sun++
-        self.seq_irad_list = None                                                           # Seq sun++
-                                                                                            # Seq sun++
-        # P4M                                                                               # P4M gain+
-        self.p4m_sensor_gain = None                                                         # P4M gain+
-        self.p4m_sensor_gain_adjustment = None                                              # P4M cam++
-        self.p4m_black_current = None                                                       # P4M cam++
-                                                                                            # P4M cam++
+        self.seq_sensor_model = None                                                                                        # Cam(Seq)++
+                                                                                                                            # Cam(Seq)++
+        self.p4m_black_current = None                                                                                       # Cam(P4M)++
+        self.p4m_sensor_gain = None                                                                                         # Cam(P4M)++
+        self.p4m_sensor_gain_adjustment = None                                                                              # Cam(P4M)++
+                                                                                                                            # Cam(P4M)++
+        self.seq_iradcal_list = None                                                                                        # DLS(Seq)++
+        self.seq_irad_list = None                                                                                           # DLS(Seq)++
+                                                                                                                            # DLS(Seq)++
         # parse values from metadata
         self.parse_exif_values(path_file)
 
         # print log message
         log.ODM_DEBUG('Loaded {}'.format(self))
-        log.ODM_DEBUG('Load_A %s | yaw: %f | pitch: %f | roll: %f | omega: %f | phi: %f | kappa: %f' % (self.filename, self.yaw, self.pitch, self.roll, self.omega, self.phi, self.kappa))      # YPR++
+        log.ODM_DEBUG('Ld_Cam,{},  YPR,  {},  {},  {},  OPK,  {},  {},  {}'.format(                                         # Cam.YPR++
+                self.filename, self.yaw, self.pitch, self.roll, self.omega, self.phi, self.kappa))                          # Cam.YPR++
+        ut = self.get_utc_time()                                                                                            # DLS++
+        ned_sun, ned_dls, radian_dls_sun, radian_solar_elevation, solar_azimuth = dls.compute_sun_angle(                    # DLS++
+                [self.latitude, self.longitude], np.radians(self.get_dls_pose()), ut, np.array([0, 0, -1]))                 # DLS++
+        log.ODM_DEBUG('Ld_UTC,{},  {},  {},  nedSun,  {},  degSolarElevation,  {}'.format(                                  # DLS++
+                self.filename, ut, self.utc_time, ned_sun, np.degrees(radian_solar_elevation)))                             # DLS++
+        log.ODM_DEBUG('Ld_DLS,{},  YPR,  {},  {},  {},  nedDLS,  {},  degDLS_Sun,  {}'.format(                              # DLS++
+                self.filename, self.dls_yaw, self.dls_pitch, self.dls_roll, ned_dls, np.degrees(radian_dls_sun)))           # DLS++
 
 
     def __str__(self):
@@ -224,6 +235,12 @@ class ODM_Photo:
                     self.latitude = self.dms_to_decimal(tags['GPS GPSLatitude'], tags['GPS GPSLatitudeRef'])
                 if 'GPS GPSLongitude' in tags and 'GPS GPSLongitudeRef' in tags:
                     self.longitude = self.dms_to_decimal(tags['GPS GPSLongitude'], tags['GPS GPSLongitudeRef'])
+                if self.altitude is None:                                                                                   # Cam.GPS++
+                    log.ODM_WARNING("Basic_EXIF_tags {} GPSAltitude_not_found".format(self.filename))                       # Cam.GPS++
+                if self.latitude is None:                                                                                   # Cam.GPS++
+                    log.ODM_WARNING("Basic_EXIF_tags {} GPSLatitude_not_found".format(self.filename))                       # Cam.GPS++
+                if self.longitude is None:                                                                                  # Cam.GPS++
+                    log.ODM_WARNING("Basic_EXIF_tags {} GPSLongitude_not_found".format(self.filename))                      # Cam.GPS++
                 if 'Image Orientation' in tags:
                     self.orientation = self.int_value(tags['Image Orientation'])
             except (IndexError, ValueError) as e:
@@ -265,9 +282,13 @@ class ODM_Photo:
                     subsec *= negative
                     ms = subsec * 1e3
                     utc_time += timedelta(milliseconds = ms)
+                    self.str_naive = utc_time.isoformat()                               # stored for timezone correction    # Timezone++
+                                                                                                                            # Timezone++
                     timezone = pytz.timezone('UTC')
                     epoch = timezone.localize(datetime.utcfromtimestamp(0))
                     self.utc_time = (timezone.localize(utc_time) - epoch).total_seconds() * 1000.0
+                    log.ODM_DEBUG('C1_UTC {},  utc_time,  {},  self.str_naive,  {},  epoch,  {},  self.utc_time,  {}'.format(   # Timezone++
+                            self.filename, utc_time, self.str_naive, epoch, self.utc_time))                                     # Timezone++
             except Exception as e:
                 log.ODM_WARNING("Cannot read extended EXIF tags for %s: %s" % (self.filename, str(e)))
 
@@ -340,12 +361,20 @@ class ODM_Photo:
                         ])
 
                     # DJI GPS tags
-                    self.set_attr_from_xmp_tag('longitude', xtags, [
-                        '@drone-dji:Longitude'
-                    ], float)
-                    self.set_attr_from_xmp_tag('latitude', xtags, [
-                        '@drone-dji:Latitude'
-                    ], float)
+                    # self.set_attr_from_xmp_tag('longitude', xtags, [                                                      # Cam.GPS(P4M)--
+                    #     '@drone-dji:Longitude'                                                                            # Cam.GPS(P4M)--
+                    # ], float)                                                                                             # Cam.GPS(P4M)--
+                    self.set_attr_from_xmp_tag('longitude', xtags, [                                                        # Cam.GPS(P4M)++
+                        '@drone-dji:Longitude', '@drone-dji:GpsLongitude'                                                   # Cam.GPS(P4M)++
+                    ], float)                                                                                               # Cam.GPS(P4M)++
+                                                                                                                            # Cam.GPS(P4M)++
+                    # self.set_attr_from_xmp_tag('latitude', xtags, [                                                       # Cam.GPS(P4M)--
+                    #     '@drone-dji:Latitude'                                                                             # Cam.GPS(P4M)--
+                    # ], float)                                                                                             # Cam.GPS(P4M)--
+                    self.set_attr_from_xmp_tag('latitude', xtags, [                                                         # Cam.GPS(P4M)++
+                        '@drone-dji:Latitude', '@drone-dji:GpsLatitude'                                                     # Cam.GPS(P4M)++
+                    ], float)                                                                                               # Cam.GPS(P4M)++
+                                                                                                                            # Cam.GPS(P4M)++
                     self.set_attr_from_xmp_tag('altitude', xtags, [
                         '@drone-dji:AbsoluteAltitude'
                     ], float)
@@ -386,7 +415,8 @@ class ODM_Photo:
                             self.camera_projection = camera_projection
 
                     # OPK
-                    self.set_attr_from_xmp_tag('yaw', xtags, ['@drone-dji:FlightYawDegree', '@Camera:Yaw', 'Camera:Yaw'], float)
+                    # self.set_attr_from_xmp_tag('yaw', xtags, ['@drone-dji:FlightYawDegree', '@Camera:Yaw', 'Camera:Yaw'], float)  # Cam.YPR--
+                    self.set_attr_from_xmp_tag('yaw', xtags, ['@drone-dji:GimbalYawDegree', '@Camera:Yaw', 'Camera:Yaw'], float)    # Cam.YPR++
                     self.set_attr_from_xmp_tag('pitch', xtags, ['@drone-dji:GimbalPitchDegree', '@Camera:Pitch', 'Camera:Pitch'], float)
                     self.set_attr_from_xmp_tag('roll', xtags, ['@drone-dji:GimbalRollDegree', '@Camera:Roll', 'Camera:Roll'], float)
 
@@ -398,42 +428,32 @@ class ODM_Photo:
                     # Pitch: 90 --> camera is looking forward
                     # Roll: 0 (assuming gimbal)
                     if self.has_ypr():
+                        if self.yaw < 0.0:                                                                                  # Cam.YPR++
+                            self.yaw += 360.0                                                                               # Cam.YPR++
+                        elif self.yaw >= 360.0:                                                                             # Cam.YPR++
+                            self.yaw -= 360.0                                                                               # Cam.YPR++
+                                                                                                                            # Cam.YPR++
                         if self.camera_make.lower() in ['dji', 'hasselblad']:
                             self.pitch = 90 + self.pitch
                     
                         if self.camera_make.lower() == 'sensefly':
                             self.roll *= -1
 
-                    # Sequoia                                                               # Seq cam++
-                    self.set_attr_from_xmp_tag('seq_sensor_model', xtags, [                 # Seq cam++
-                        'Camera:SensorModel',                                               # Seq cam++
-                    ])                                                                      # Seq cam++
-                                                                                            # Seq cam++
-                    # Sequoia                                                               # Seq sun++
-                    self.set_attr_from_xmp_tag('seq_iradcal_list', xtags, [                 # Seq sun++
-                        '@Camera:IrradianceCalibrationMeasurement',                         # Seq sun++
-                    ])                                                                      # Seq sun++
-                                                                                            # Seq sun++
-                    # Sequoia                                                               # Seq sun++
-                    self.set_attr_from_xmp_tag('seq_irad_list', xtags, [                    # Seq sun++
-                        'Camera:IrradianceList',                                            # Seq sun++
-                    ])                                                                      # Seq sun++
-                                                                                            # Seq sun++
-                    # P4M                                                                   # P4M gain+
-                    self.set_attr_from_xmp_tag('p4m_sensor_gain', xtags, [                  # P4M gain+
-                        '@drone-dji:SensorGain',                                            # P4M gain+
-                    ], float)                                                               # P4M gain+
-                                                                                            # P4M gain+
-                    # P4M                                                                   # P4M cam++
-                    self.set_attr_from_xmp_tag('p4m_sensor_gain_adjustment', xtags, [       # P4M cam++
-                        '@drone-dji:SensorGainAdjustment',                                  # P4M cam++
-                    ], float)                                                               # P4M cam++
-                                                                                            # P4M cam++
-                    # P4M                                                                   # P4M cam++
-                    self.set_attr_from_xmp_tag('p4m_black_current', xtags, [                # P4M cam++
-                        'Camera:BlackCurrent',                                              # P4M cam++
-                    ], float)                                                               # P4M cam++
-                                                                                            # P4M cam++
+                    self.set_attr_from_xmp_tag('seq_sensor_model', xtags, ['Camera:SensorModel'])                           # Cam(Seq)++
+                                                                                                                            # Cam(Seq)++
+                    self.set_attr_from_xmp_tag('p4m_black_current', xtags, ['Camera:BlackCurrent'], float)                  # Cam(P4M)++
+                    self.set_attr_from_xmp_tag('p4m_sensor_gain', xtags, ['@drone-dji:SensorGain'], float)                  # Cam(P4M)++
+                    self.set_attr_from_xmp_tag('p4m_sensor_gain_adjustment', xtags, [                                       # Cam(P4M)++
+                        '@drone-dji:SensorGainAdjustment',                                                                  # Cam(P4M)++
+                    ], float)                                                                                               # Cam(P4M)++
+                                                                                                                            # Cam(P4M)++
+                    self.set_attr_from_xmp_tag('seq_iradcal_list', xtags, ['@Camera:IrradianceCalibrationMeasurement'])     # DLS(Seq)++
+                    self.set_attr_from_xmp_tag('seq_irad_list', xtags, ['Camera:IrradianceList'])                           # DLS(Seq)++
+                                                                                                                            # DLS(Seq)++
+                    self.set_attr_from_xmp_tag('dls_yaw', xtags, ['@drone-dji:FlightYawDegree'], float)                     # DLS.YPR(P4M)++
+                    self.set_attr_from_xmp_tag('dls_pitch', xtags, ['@drone-dji:FlightPitchDegree'], float)                 # DLS.YPR(P4M)++
+                    self.set_attr_from_xmp_tag('dls_roll', xtags, ['@drone-dji:FlightRollDegree'], float)                   # DLS.YPR(P4M)++
+                                                                                                                            # DLS.YPR(P4M)++
                 except Exception as e:
                     log.ODM_WARNING("Cannot read XMP tags for %s: %s" % (self.filename, str(e)))
 
@@ -445,6 +465,53 @@ class ODM_Photo:
                 #     'Camera:WavelengthFWHM'
                 # ], float)
 
+        if self.camera_make == 'DJI' and self.camera_model == 'FC6360':                                                     # Timezone(P4M)++
+            naive = datetime.fromisoformat(self.str_naive)                                                                  # Timezone(P4M)++
+            tf = TimezoneFinder()                                                                                           # Timezone(P4M)++
+            tz_local = pytz.timezone(tf.timezone_at(lng=self.longitude, lat=self.latitude))                                 # Timezone(P4M)++
+            aware_local = tz_local.normalize(tz_local.localize(naive))                                                      # Timezone(P4M)++
+            tz_utc = pytz.timezone('UTC')                                                                                   # Timezone(P4M)++
+            aware_utc = aware_local.astimezone(tz_utc)                                                                      # Timezone(P4M)++
+            epoch = tz_utc.localize(datetime.utcfromtimestamp(0))                                                           # Timezone(P4M)++
+            self.utc_time = (aware_utc - epoch).total_seconds() * 1000.0                                                    # Timezone(P4M)++
+            log.ODM_DEBUG('C2_UTC {},  naive,  {},  tz_local,  {},  aware_local,  {},  aware_utc,  {},  epoch,  {},  self.utc_time,  {}'.format(    # Timezone(P4M)++
+                    self.filename, naive, tz_local, aware_local, aware_utc, epoch, self.utc_time))                                                  # Timezone(P4M)++
+                                                                                                                            # Timezone(P4M)++
+        if self.camera_make == 'Parrot' and self.camera_model == 'Sequoia':                                                 # DLS(Seq)++
+            if self.seq_iradcal_list is not None:                                                                           # DLS(Seq)++
+                iradcal_pm = np.array([float(v) for v in self.seq_iradcal_list.split(",")])                                 # DLS(Seq)++
+                #                                                                                                           # DLS(Seq)++
+                #   GainIndex           IntegTime       CH0             CH1                                                 # DLS(Seq)++
+                #   iradcal_pm[0]=0     iradcal_pm[1]   iradcal_pm[2]   iradcal_pm[3]                                       # DLS(Seq)++
+                #   iradcal_pm[4]=1     iradcal_pm[5]   iradcal_pm[6]   iradcal_pm[7]                                       # DLS(Seq)++
+                #   iradcal_pm[8]=2     iradcal_pm[9]   iradcal_pm[10]  iradcal_pm[11]                                      # DLS(Seq)++
+                #   iradcal_pm[12]=3    iradcal_pm[13]  iradcal_pm[14]  iradcal_pm[15]                                      # DLS(Seq)++
+                #                                                                                                           # DLS(Seq)++
+                iradcal_0 = iradcal_pm[2]  * (600.0 / iradcal_pm[1])                                                        # DLS(Seq)++
+                iradcal_1 = iradcal_pm[6]  * (600.0 / iradcal_pm[5])                                                        # DLS(Seq)++
+                iradcal_2 = iradcal_pm[10] * (600.0 / iradcal_pm[9])                                                        # DLS(Seq)++
+                iradcal_3 = iradcal_pm[14] * (600.0 / iradcal_pm[13])                                                       # DLS(Seq)++
+                iradcal = [iradcal_0, iradcal_1, iradcal_2, iradcal_3]                                                      # DLS(Seq)++
+                                                                                                                            # DLS(Seq)++
+                irad_binary = base64.b64decode(self.seq_irad_list)                                                          # DLS(Seq)++
+                for irad_pm in struct.iter_unpack("QHHHHfff", irad_binary):                                                 # DLS(Seq)++
+                    #                              Q=uint64 H=uint16 f=float32                                              # DLS(Seq)++
+                    #                                                                                                       # DLS(Seq)++
+                    # irad_pm[0]=TimeStamp     irad_pm[1]=CH0 count   irad_pm[2]=CH1 count                                  # DLS(Seq)++
+                    # irad_pm[3]=GainIndex     irad_pm[4]=IntegTime                                                         # DLS(Seq)++
+                    # irad_pm[5]=Yaw           irad_pm[6]=Pitch       irad_pm[7]=Roll                                       # DLS(Seq)++
+                    #                                                                                                       # DLS(Seq)++
+                    self.dls_yaw = irad_pm[5] + 180                                                                         # DLS(Seq)++
+                    self.dls_pitch = -irad_pm[6]                                                                            # DLS(Seq)++
+                    self.dls_roll = -irad_pm[7]                                                                             # DLS(Seq)++
+                    self.sun_sensor = irad_pm[1] * (600.0 / irad_pm[4]) / iradcal[irad_pm[3]]                               # DLS(Seq)++
+                                                                                                                            # DLS(Seq)++
+        if self.dls_yaw is not None:                                                                                        # DLS.YPR++
+            if self.dls_yaw < 0.0:                                                                                          # DLS.YPR++
+                self.dls_yaw += 360.0                                                                                       # DLS.YPR++
+            elif self.dls_yaw >= 360.0:                                                                                     # DLS.YPR++
+                self.dls_yaw -= 360.0                                                                                       # DLS.YPR++
+                                                                                                                            # DLS.YPR++
         # Sanitize band name since we use it in folder paths
         self.band_name = re.sub('[^A-Za-z0-9]+', '', self.band_name)
 
@@ -612,20 +679,20 @@ class ODM_Photo:
         return val 
 
     def get_radiometric_calibration(self):
-        if self.camera_make == 'Parrot' and self.camera_model == 'Sequoia':                 # Seq cam++
-            if self.seq_sensor_model is None:   # Exif SensorModel is missing               # Seq cam++
-                return [None, None, None]                                                   # Seq cam++
-            else:                                                                           # Seq cam++
-                sensor_pm = np.array([float(v) for v in self.seq_sensor_model.split(",")])  # Seq cam++
-                sfac = sensor_pm[0]         # sensor_pm[0];1st. parameter of sensor model   # Seq cam++
-                sfac = 1.0 / (100.0 * sfac)                                                 # Seq cam++
-                return [sfac, None, None]                                                   # Seq cam++
-                                                                                            # Seq cam++
-        if self.camera_make == 'DJI' and self.camera_model == 'FC6360':                     # P4M cam++
-            sfac = self.p4m_sensor_gain_adjustment                                          # P4M cam++
-            sfac = sfac / 100.0                                                             # P4M cam++
-            return [sfac, None, None]                                                       # P4M cam++
-                                                                                            # P4M cam++
+        if self.camera_make == 'Parrot' and self.camera_model == 'Sequoia':                                                 # Cam(Seq)++
+            if self.seq_sensor_model is None:   # Exif SensorModel is missing                                               # Cam(Seq)++
+                return [None, None, None]                                                                                   # Cam(Seq)++
+            else:                                                                                                           # Cam(Seq)++
+                sensor_pm = np.array([float(v) for v in self.seq_sensor_model.split(",")])                                  # Cam(Seq)++
+                sfac = sensor_pm[0]         # sensor_pm[0];1st. parameter of sensor model                                   # Cam(Seq)++
+                sfac = 1.0 / (100.0 * sfac)                                                                                 # Cam(Seq)++
+                return [sfac, None, None]                                                                                   # Cam(Seq)++
+                                                                                                                            # Cam(Seq)++
+        if self.camera_make == 'DJI' and self.camera_model == 'FC6360':                                                     # Cam(P4M)++
+            sfac = self.p4m_sensor_gain_adjustment                                                                          # Cam(P4M)++
+            sfac = sfac / 100.0                                                                                             # Cam(P4M)++
+            return [sfac, None, None]                                                                                       # Cam(P4M)++
+                                                                                                                            # Cam(P4M)++
         if isinstance(self.radiometric_calibration, str):
             parts = self.radiometric_calibration.split(" ")
             if len(parts) == 3:
@@ -634,25 +701,25 @@ class ODM_Photo:
         return [None, None, None]                
     
     def get_dark_level(self):
-        if self.camera_make == 'Parrot' and self.camera_model == 'Sequoia':                 # Seq cam++
-            if self.seq_sensor_model is None:   # Exif SensorModel is missing               # Seq cam++
-                return None                                                                 # Seq cam++
-            else:                                                                           # Seq cam++
-                sensor_pm = np.array([float(v) for v in self.seq_sensor_model.split(",")])  # Seq cam++
-                return sensor_pm[1]         # sensor_pm[1];2nd. parameter of sensor model   # Seq cam++
-                                                                                            # Seq cam++
-        if self.camera_make == 'DJI' and self.camera_model == 'FC6360':                     # P4M cam++
-            return self.p4m_black_current                                                   # P4M cam++
-                                                                                            # P4M cam++
+        if self.camera_make == 'Parrot' and self.camera_model == 'Sequoia':                                                 # Cam(Seq)++
+            if self.seq_sensor_model is None:   # Exif SensorModel is missing                                               # Cam(Seq)++
+                return None                                                                                                 # Cam(Seq)++
+            else:                                                                                                           # Cam(Seq)++
+                sensor_pm = np.array([float(v) for v in self.seq_sensor_model.split(",")])                                  # Cam(Seq)++
+                return sensor_pm[1]         # sensor_pm[1];2nd. parameter of sensor model                                   # Cam(Seq)++
+                                                                                                                            # Cam(Seq)++
+        if self.camera_make == 'DJI' and self.camera_model == 'FC6360':                                                     # Cam(P4M)++
+            return self.p4m_black_current                                                                                   # Cam(P4M)++
+                                                                                                                            # Cam(P4M)++
         if self.black_level:
             levels = np.array([float(v) for v in self.black_level.split(" ")])
             return levels.mean()
 
     def get_gain(self):
         #(gain = ISO/100)
-        if self.camera_make == 'DJI' and self.camera_model == 'FC6360':                     # P4M gain+
-            return self.p4m_sensor_gain                                                     # P4M gain+
-                                                                                            # P4M gain+
+        if self.camera_make == 'DJI' and self.camera_model == 'FC6360':                                                     # Cam(P4M)++
+            return self.p4m_sensor_gain                                                                                     # Cam(P4M)++
+                                                                                                                            # Cam(P4M)++
         if self.iso_speed:
             return self.iso_speed / 100.0
 
@@ -692,53 +759,12 @@ class ODM_Photo:
             return self.horizontal_irradiance * scale
     
     def get_sun_sensor(self):
-        if self.camera_make == 'Parrot' and self.camera_model == 'Sequoia':                 # Seq sun++
-            if self.seq_iradcal_list is None:                                               # Seq sun++
-                return None                 # Exif IrradianceCalibrationMeasurement missing # Seq sun++
-            else:                                                                           # Seq sun++
-                iradcal_pm = np.array([float(v) for v in self.seq_iradcal_list.split(",")]) # Seq sun++
-                #                                                                           # Seq sun++
-                #   GainIndex           IntegTime       CH0             CH1                 # Seq sun++
-                #   iradcal_pm[0]=0     iradcal_pm[1]   iradcal_pm[2]   iradcal_pm[3]       # Seq sun++
-                #   iradcal_pm[4]=1     iradcal_pm[5]   iradcal_pm[6]   iradcal_pm[7]       # Seq sun++
-                #   iradcal_pm[8]=2     iradcal_pm[9]   iradcal_pm[10]  iradcal_pm[11]      # Seq sun++
-                #   iradcal_pm[12]=3    iradcal_pm[13]  iradcal_pm[14]  iradcal_pm[15]      # Seq sun++
-                #                                                                           # Seq sun++
-                iradcal_0 = iradcal_pm[2]  * (600.0 / iradcal_pm[1])                        # Seq sun++
-                iradcal_1 = iradcal_pm[6]  * (600.0 / iradcal_pm[5])                        # Seq sun++
-                iradcal_2 = iradcal_pm[10] * (600.0 / iradcal_pm[9])                        # Seq sun++
-                iradcal_3 = iradcal_pm[14] * (600.0 / iradcal_pm[13])                       # Seq sun++
-                iradcal = [iradcal_0, iradcal_1, iradcal_2, iradcal_3]                      # Seq sun++
-                                                                                            # Seq sun++
-            irad_binary = base64.b64decode(self.seq_irad_list)                              # Seq sun++
-                                                                                            # Seq sun++
-            irad_last3 = None                                                               # Seq sun++
-            irad_last2 = None                                                               # Seq sun++
-            irad_last1 = None                                                               # Seq sun++
-                                                                                            # Seq sun++
-            for irad_pm in struct.iter_unpack("QHHHHfff", irad_binary):                     # Seq sun++
-                #                              Q=uint64 H=uint16 f=float32                  # Seq sun++
-                #                                                                           # Seq sun++
-                # irad_pm[0]=TimeStamp     irad_pm[1]=CH0 count   irad_pm[2]=CH1 count      # Seq sun++
-                # irad_pm[3]=GainIndex     irad_pm[4]=IntegTime                             # Seq sun++
-                # irad_pm[5]=Yaw           irad_pm[6]=Pitch       irad_pm[7]=Roll           # Seq sun++
-                #                                                                           # Seq sun++
-                irad_last3 = irad_last2                                                     # Seq sun++
-                irad_last2 = irad_last1                                                     # Seq sun++
-                irad_last1 = irad_pm[1] * (600.0 / irad_pm[4]) / iradcal[irad_pm[3]]        # Seq sun++
-                                                                                            # Seq sun++
-            if irad_last1 is None:                                                          # Seq sun++
-                return None                                     # sun sensor value missing  # Seq sun++
-            elif irad_last2 is None:                                                        # Seq sun++
-                return irad_last1                                       # last one          # Seq sun++
-            elif irad_last3 is None:                                                        # Seq sun++
-                return (irad_last1 + irad_last2) / 2.0                  # ave. of last 2    # Seq sun++
-            else:                                                                           # Seq sun++
-                return (irad_last1 + irad_last2 + irad_last3) / 3.0     # ave. of last 3    # Seq sun++
-                                                                                            # Seq sun++
-        if self.camera_make == 'DJI' and self.camera_model == 'FC6360':                     # P4M sun++
-            return self.sun_sensor                                                          # P4M sun++
-                                                                                            # P4M sun++
+        if self.camera_make == 'Parrot' and self.camera_model == 'Sequoia':                                                 # DLS(Seq)++
+            return self.sun_sensor                                                                                          # DLS(Seq)++
+                                                                                                                            # DLS(Seq)++
+        if self.camera_make == 'DJI' and self.camera_model == 'FC6360':                                                     # DLS(P4M)++
+            return self.sun_sensor                                                                                          # DLS(P4M)++
+                                                                                                                            # DLS(P4M)++
         if self.sun_sensor is not None:
             # TODO: Presence of XMP:SunSensorExposureTime
             # and XMP:SunSensorSensitivity might

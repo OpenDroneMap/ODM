@@ -18,6 +18,7 @@ pyodm==1.5.8
 pyproj==3.0.0.post1
 Pysolar==0.9
 pytz==2020.4
+timezonefinder==6.0.0                                                                                                       # Timezone++
 PyYAML==5.1
 rasterio==1.2.3 ; sys_platform == 'linux' or sys_platform == 'darwin'
 https://github.com/OpenDroneMap/windows-deps/raw/main/rasterio-1.2.3-cp38-cp38-win_amd64.whl ; sys_platform == 'win32'
