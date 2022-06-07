@@ -690,20 +690,6 @@ class ODM_Photo:
         return val 
 
     def get_radiometric_calibration(self):
-        if self.camera_make == 'Parrot' and self.camera_model == 'Sequoia':                                                 # Cam(Seq)++
-            if self.seq_sensor_model is None:   # Exif SensorModel is missing                                               # Cam(Seq)++
-                return [None, None, None]                                                                                   # Cam(Seq)++
-            else:                                                                                                           # Cam(Seq)++
-                sensor_pm = np.array([float(v) for v in self.seq_sensor_model.split(",")])                                  # Cam(Seq)++
-                sfac = sensor_pm[0]         # sensor_pm[0];1st. parameter of sensor model                                   # Cam(Seq)++
-                sfac = 1.0 / (100.0 * sfac)                                                                                 # Cam(Seq)++
-                return [sfac, None, None]                                                                                   # Cam(Seq)++
-                                                                                                                            # Cam(Seq)++
-        if self.camera_make == 'DJI' and self.camera_model == 'FC6360':                                                     # Cam(P4M)++
-            sfac = self.p4m_sensor_gain_adjustment                                                                          # Cam(P4M)++
-            sfac = sfac / 100.0                                                                                             # Cam(P4M)++
-            return [sfac, None, None]                                                                                       # Cam(P4M)++
-                                                                                                                            # Cam(P4M)++
         if isinstance(self.radiometric_calibration, str):
             parts = self.radiometric_calibration.split(" ")
             if len(parts) == 3:
@@ -712,25 +698,12 @@ class ODM_Photo:
         return [None, None, None]                
     
     def get_dark_level(self):
-        if self.camera_make == 'Parrot' and self.camera_model == 'Sequoia':                                                 # Cam(Seq)++
-            if self.seq_sensor_model is None:   # Exif SensorModel is missing                                               # Cam(Seq)++
-                return None                                                                                                 # Cam(Seq)++
-            else:                                                                                                           # Cam(Seq)++
-                sensor_pm = np.array([float(v) for v in self.seq_sensor_model.split(",")])                                  # Cam(Seq)++
-                return sensor_pm[1]         # sensor_pm[1];2nd. parameter of sensor model                                   # Cam(Seq)++
-                                                                                                                            # Cam(Seq)++
-        if self.camera_make == 'DJI' and self.camera_model == 'FC6360':                                                     # Cam(P4M)++
-            return self.p4m_black_current                                                                                   # Cam(P4M)++
-                                                                                                                            # Cam(P4M)++
         if self.black_level:
             levels = np.array([float(v) for v in self.black_level.split(" ")])
             return levels.mean()
 
     def get_gain(self):
         #(gain = ISO/100)
-        if self.camera_make == 'DJI' and self.camera_model == 'FC6360':                                                     # Cam(P4M)++
-            return self.p4m_sensor_gain                                                                                     # Cam(P4M)++
-                                                                                                                            # Cam(P4M)++
         if self.iso_speed:
             return self.iso_speed / 100.0
 
