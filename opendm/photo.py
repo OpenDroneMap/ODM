@@ -198,7 +198,7 @@ class ODM_Photo:
         xtags = {}
 
         with open(_path_file, 'rb') as f:
-            tags = exifread.process_file(f, details=False)
+            tags = exifread.process_file(f, details=True, extract_thumbnail=False)
             try:
                 if 'Image Make' in tags:
                     try:
