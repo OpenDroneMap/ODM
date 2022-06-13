@@ -272,6 +272,14 @@ class ODM_Photo:
                     timezone = pytz.timezone('UTC')
                     epoch = timezone.localize(datetime.utcfromtimestamp(0))
                     self.utc_time = (timezone.localize(utc_time) - epoch).total_seconds() * 1000.0
+                
+                if 'MakerNote SpeedX' in tags and \
+                    'MakerNote SpeedY' in tags and \
+                    'MakerNote SpeedZ' in tags:
+                    self.speedX = self.float_value(tags['MakerNote SpeedX'])
+                    self.speedY = self.float_value(tags['MakerNote SpeedY'])
+                    self.speedZ = self.float_value(tags['MakerNote SpeedZ'])
+
             except Exception as e:
                 log.ODM_WARNING("Cannot read extended EXIF tags for %s: %s" % (self.filename, str(e)))
 
@@ -372,6 +380,20 @@ class ODM_Photo:
                             'GPSZAccuracy'
                         ], float)
                     
+                    # DJI Speed tags
+                    if '@drone-dji:FlightXSpeed' in xtags and \
+                       '@drone-dji:FlightYSpeed' in xtags and \
+                       '@drone-dji:FlightZSpeed' in xtags:
+                        self.set_attr_from_xmp_tag('speedX', xtags, [
+                            '@drone-dji:FlightXSpeed'
+                        ], float)
+                        self.set_attr_from_xmp_tag('speedY', xtags, [
+                            '@drone-dji:FlightYSpeed',
+                        ], float)
+                        self.set_attr_from_xmp_tag('speedZ', xtags, [
+                            '@drone-dji:FlightZSpeed',
+                        ], float)
+
                     # Account for over-estimation
                     if self.gps_xy_stddev is not None:
                         self.gps_xy_stddev *= 2.0
@@ -548,6 +570,8 @@ class ODM_Photo:
             for v in tag.values:
                 if isinstance(v, int):
                     result.append(float(v))
+                elif isinstance(v, tuple) and len(v) == 1 and isinstance(v[0], float):
+                    result.append(v[0])
                 elif v.den != 0:
                     result.append(float(v.num) / float(v.den))
                 else:
@@ -713,7 +737,8 @@ class ODM_Photo:
             capture_time = self.utc_time / 1000.0
         
         gps = {}
-        if self.latitude is not None and self.longitude is not None:
+        has_gps = self.latitude is not None and self.longitude is not None
+        if has_gps:
             gps['latitude'] = self.latitude
             gps['longitude'] = self.longitude
             if self.altitude is not None:
@@ -747,6 +772,10 @@ class ODM_Photo:
                 'kappa': self.kappa
             }
         
+        # Speed is not useful without GPS
+        if self.has_speed() and has_gps:
+            d['speed'] = [self.speedY, self.speedX, self.speedZ]
+        
         if rolling_shutter:
             d['rolling_shutter'] = get_rolling_shutter_readout(self.camera_make, self.camera_model, rolling_shutter_readout)
         
@@ -761,6 +790,11 @@ class ODM_Photo:
         return self.omega is not None and \
             self.phi is not None and \
             self.kappa is not None
+    
+    def has_speed(self):
+        return self.speedX is not None and \
+                self.speedY is not None and \
+                self.speedZ is not None
 
     def has_geo(self):
         return self.latitude is not None and \

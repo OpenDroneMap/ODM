@@ -5,7 +5,7 @@ RS_DATABASE = {
     'dji phantom vision fc200': 74, # Phantom 2
     
     'dji fc300s': 33, # Phantom 3 Advanced
-    'dji fc300s': 33, # Phantom 3 Standard
+    'dji fc300c': 33, # Phantom 3 Standard
     'dji fc300x': 33, # Phantom 3 Professional
 
     'dji fc330': 33, # Phantom 4
