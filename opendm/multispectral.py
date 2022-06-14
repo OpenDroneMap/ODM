@@ -381,12 +381,24 @@ def compute_homography(image_filename, align_image_filename):
 
             return h, (align_image_gray.shape[1], align_image_gray.shape[0])
         
-        algo = 'feat'
-        result = compute_using(find_features_homography)
+        warp_matrix = None
+        dimension = None
+        algo = None
 
-        if result[0] is None:
+        if max_dim > 320:
+            algo = 'feat'
+            result = compute_using(find_features_homography)
+            
+            if result[0] is None:
+                algo = 'ecc'
+                log.ODM_INFO("Can't use features matching, will use ECC (this might take a bit)")
+                result = compute_using(find_ecc_homography)
+                if result[0] is None:
+                    algo = None
+
+        else: # ECC only for low resolution images
             algo = 'ecc'
-            log.ODM_INFO("Can't use features matching, will use ECC (this might take a bit)")
+            log.ODM_INFO("Using ECC (this might take a bit)")
             result = compute_using(find_ecc_homography)
             if result[0] is None:
                 algo = None
@@ -396,7 +408,7 @@ def compute_homography(image_filename, align_image_filename):
 
     except Exception as e:
         log.ODM_WARNING("Compute homography: %s" % str(e))
-        return None, None, (None, None)
+        return None, (None, None), None
 
 def find_ecc_homography(image_gray, align_image_gray, number_of_iterations=1000, termination_eps=1e-8, start_eps=1e-4):
     pyramid_levels = 0
