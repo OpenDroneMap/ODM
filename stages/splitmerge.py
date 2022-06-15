@@ -105,8 +105,9 @@ class ODMSplitStage(types.ODM_Stage):
                         log.ODM_INFO("Reconstructing %s" % sp)
                         local_sp_octx = OSFMContext(sp)
                         local_sp_octx.create_tracks(self.rerun())
-                        local_sp_octx.reconstruct(self.rerun())
+                        local_sp_octx.reconstruct(args.rolling_shutter, self.rerun())
                 else:
+                    # TODO: pass rolling shutter param here
                     lre = LocalRemoteExecutor(args.sm_cluster, self.rerun())
                     lre.set_projects([os.path.abspath(os.path.join(p, "..")) for p in submodel_paths])
                     lre.run_reconstruction()

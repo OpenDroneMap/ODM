@@ -73,6 +73,12 @@ class OSFMContext:
 
             if not io.file_exists(rs_file) or rerun:
                 self.run('rs_correct --output reconstruction.json --output-tracks tracks.csv')
+
+                log.ODM_INFO("Re-running the reconstruction pipeline")
+                self.match_features(True)
+                self.create_tracks(True)
+                self.reconstruct(rolling_shutter_correct=False, rerun=True)
+
                 self.touch(rs_file)
             else:
                 log.ODM_WARNING("Rolling shutter correction already applied")
@@ -381,7 +387,6 @@ class OSFMContext:
 
     def feature_matching(self, rerun=False):
         features_dir = self.path("features")
-        matches_dir = self.path("matches")
         
         if not io.dir_exists(features_dir) or rerun:
             try:
@@ -399,6 +404,10 @@ class OSFMContext:
         else:
             log.ODM_WARNING('Detect features already done: %s exists' % features_dir)
 
+        self.match_features(rerun)
+
+    def match_features(self, rerun=False):
+        matches_dir = self.path("matches")
         if not io.dir_exists(matches_dir) or rerun:
             self.run('match_features')
         else:
