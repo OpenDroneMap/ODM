@@ -26,6 +26,10 @@ def dn_to_radiance(photo, image):
     if len(image.shape) != 3:
         raise ValueError("Image should have shape length of 3 (got: %s)" % len(image.shape))
     
+    # Thermal (this should never happen, but just in case..)
+    if photo.is_thermal():
+        return image
+
     # All others
     a1, a2, a3 = photo.get_radiometric_calibration()
     dark_level = photo.get_dark_level()
