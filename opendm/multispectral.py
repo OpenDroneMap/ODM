@@ -25,12 +25,6 @@ def dn_to_radiance(photo, image):
     image = image.astype("float32")
     if len(image.shape) != 3:
         raise ValueError("Image should have shape length of 3 (got: %s)" % len(image.shape))
-
-    # Handle thermal bands (experimental)
-    if photo.band_name == 'LWIR':
-        image -= (273.15 * 100.0) # Convert Kelvin to Celsius
-        image *= 0.01
-        return image
     
     # All others
     a1, a2, a3 = photo.get_radiometric_calibration()
