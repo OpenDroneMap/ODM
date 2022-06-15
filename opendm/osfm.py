@@ -40,15 +40,19 @@ class OSFMContext:
 
         return io.file_exists(tracks_file) and io.file_exists(reconstruction_file)
 
-    def reconstruct(self, rerun=False):
+    def create_tracks(self, rerun=False):
         tracks_file = os.path.join(self.opensfm_project_path, 'tracks.csv')
-        reconstruction_file = os.path.join(self.opensfm_project_path, 'reconstruction.json')
+        rs_file = self.path('rs_done.txt')
 
         if not io.file_exists(tracks_file) or rerun:
             self.run('create_tracks')
         else:
             log.ODM_WARNING('Found a valid OpenSfM tracks file in: %s' % tracks_file)
 
+    def reconstruct(self, rolling_shutter_correct=False, rerun=False):
+        # TODO: FIX calls from split-merge
+
+        reconstruction_file = os.path.join(self.opensfm_project_path, 'reconstruction.json')
         if not io.file_exists(reconstruction_file) or rerun:
             self.run('reconstruct')
             self.check_merge_partial_reconstructions()
@@ -63,6 +67,15 @@ class OSFMContext:
                             "and that the images are in focus. "
                             "You could also try to increase the --min-num-features parameter."
                             "The program will now exit.")
+
+        if rolling_shutter_correct:
+            rs_file = self.path('rs_done.txt')
+
+            if not io.file_exists(rs_file) or rerun:
+                self.run('rs_correct --output reconstruction.json --output-tracks tracks.csv')
+                self.touch(rs_file)
+            else:
+                log.ODM_WARNING("Rolling shutter correction already applied")
 
     def check_merge_partial_reconstructions(self):
         if self.reconstructed():

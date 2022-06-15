@@ -103,7 +103,9 @@ class ODMSplitStage(types.ODM_Stage):
                 if local_workflow:
                     for sp in submodel_paths:
                         log.ODM_INFO("Reconstructing %s" % sp)
-                        OSFMContext(sp).reconstruct(self.rerun())
+                        local_sp_octx = OSFMContext(sp)
+                        local_sp_octx.create_tracks(self.rerun())
+                        local_sp_octx.reconstruct(self.rerun())
                 else:
                     lre = LocalRemoteExecutor(args.sm_cluster, self.rerun())
                     lre.set_projects([os.path.abspath(os.path.join(p, "..")) for p in submodel_paths])

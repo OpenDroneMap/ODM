@@ -446,6 +446,7 @@ class ReconstructionTask(Task):
         log.ODM_INFO("Local Reconstruction %s" % octx.name())
         log.ODM_INFO("==================================")
         octx.feature_matching(self.params['rerun'])
+        octx.create_tracks(self.params['rerun'])
         octx.reconstruct(self.params['rerun'])
     
     def process_remote(self, done):

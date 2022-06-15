@@ -11,6 +11,8 @@ RS_DATABASE = {
     'dji fc330': 33, # Phantom 4
     'dji fc6310': 33, # Phantom 4 Professional
 
+    'dji fc7203': 20, # Mavic Mini v1
+
     'dji fc350': 30, # Inspire 1
 
     'gopro hero4 black': 30 # GoPro Hero 4 Black
