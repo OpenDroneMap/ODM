@@ -223,7 +223,6 @@ class OSFMContext:
                 "align_orientation_prior: vertical",
                 "triangulation_type: ROBUST",
                 "retriangulation_ratio: 2",
-                "bundle_compensate_gps_bias: yes",
             ]
 
             if args.camera_lens != 'auto':
@@ -290,6 +289,9 @@ class OSFMContext:
                 config.append("bundle_use_gcp: yes")
                 if not args.force_gps:
                     config.append("bundle_use_gps: no")
+                else:
+                    config.append("bundle_compensate_gps_bias: yes")
+                    
                 io.copy(gcp_path, self.path("gcp_list.txt"))
             
             config = config + append_config
