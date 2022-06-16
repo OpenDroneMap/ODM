@@ -311,7 +311,7 @@ class OSFMContext:
                     config.append("bundle_use_gps: no")
                 else:
                     config.append("bundle_compensate_gps_bias: yes")
-
+                    
                 io.copy(gcp_path, self.path("gcp_list.txt"))
             
             config = config + append_config
