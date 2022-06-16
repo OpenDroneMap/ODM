@@ -15,7 +15,8 @@ RS_DATABASE = {
 
     'dji fc350': 30, # Inspire 1
 
-    'gopro hero4 black': 30 # GoPro Hero 4 Black
+    'gopro hero4 black': 30, # GoPro Hero 4 Black
+    'gopro hero8 black': 17 # GoPro Hero 8 Black
 
     # Help us add more! Open a pull request.
 }

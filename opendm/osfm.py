@@ -75,6 +75,7 @@ class OSFMContext:
                 self.run('rs_correct --output reconstruction.json --output-tracks tracks.csv')
 
                 log.ODM_INFO("Re-running the reconstruction pipeline")
+
                 self.match_features(True)
                 self.create_tracks(True)
                 self.reconstruct(rolling_shutter_correct=False, rerun=True)
