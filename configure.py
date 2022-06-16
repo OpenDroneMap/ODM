@@ -60,7 +60,6 @@ def vcpkg_requirements():
     with open("vcpkg-requirements.txt") as f:
         pckgs = list(filter(lambda l: len(l) > 0, map(str.strip, f.read().split("\n"))))
     return pckgs
-        
 
 def build():
     # Create python virtual env
@@ -94,6 +93,7 @@ def build():
                         os.rename(top_dir, "vcpkg")
                     else:
                         print("Warning! Something looks wrong in the VCPKG archive... check the vcpkg/ directory.")
+                safe_remove("vcpkg-env.zip")
 
     if not os.path.exists(os.path.join("SuperBuild", "build")) or not os.path.exists(os.path.join("SuperBuild", "install")):
         print("Compiling SuperBuild")
