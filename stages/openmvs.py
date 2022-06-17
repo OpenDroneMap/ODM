@@ -85,7 +85,7 @@ class ODMOpenMVSStage(types.ODM_Stage):
             if not args.pc_geometric:
                 config.append("--geometric-iters 0")
 
-            sharp = args.pc_filter > 0
+            sharp = args.pc_geometric
             with open(densify_ini_file, 'w+') as f:
                 f.write("Optimize = %s\n" % (7 if sharp else 3))
 

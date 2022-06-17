@@ -40,15 +40,17 @@ class OSFMContext:
 
         return io.file_exists(tracks_file) and io.file_exists(reconstruction_file)
 
-    def reconstruct(self, rerun=False):
+    def create_tracks(self, rerun=False):
         tracks_file = os.path.join(self.opensfm_project_path, 'tracks.csv')
-        reconstruction_file = os.path.join(self.opensfm_project_path, 'reconstruction.json')
+        rs_file = self.path('rs_done.txt')
 
         if not io.file_exists(tracks_file) or rerun:
             self.run('create_tracks')
         else:
             log.ODM_WARNING('Found a valid OpenSfM tracks file in: %s' % tracks_file)
 
+    def reconstruct(self, rolling_shutter_correct=False, rerun=False):
+        reconstruction_file = os.path.join(self.opensfm_project_path, 'reconstruction.json')
         if not io.file_exists(reconstruction_file) or rerun:
             self.run('reconstruct')
             self.check_merge_partial_reconstructions()
@@ -63,6 +65,22 @@ class OSFMContext:
                             "and that the images are in focus. "
                             "You could also try to increase the --min-num-features parameter."
                             "The program will now exit.")
+
+        if rolling_shutter_correct:
+            rs_file = self.path('rs_done.txt')
+
+            if not io.file_exists(rs_file) or rerun:
+                self.run('rs_correct')
+
+                log.ODM_INFO("Re-running the reconstruction pipeline")
+
+                self.match_features(True)
+                self.create_tracks(True)
+                self.reconstruct(rolling_shutter_correct=False, rerun=True)
+
+                self.touch(rs_file)
+            else:
+                log.ODM_WARNING("Rolling shutter correction already applied")
 
     def check_merge_partial_reconstructions(self):
         if self.reconstructed():
@@ -215,7 +233,7 @@ class OSFMContext:
                 "matching_gps_neighbors: %s" % matcher_neighbors,
                 "matching_gps_distance: 0",
                 "matching_graph_rounds: %s" % matcher_graph_rounds,
-                "optimize_camera_parameters: %s" % ('no' if args.use_fixed_camera_params or args.cameras else 'yes'),
+                "optimize_camera_parameters: %s" % ('no' if args.use_fixed_camera_params else 'yes'),
                 "reconstruction_algorithm: %s" % (args.sfm_algorithm),
                 "undistorted_image_format: tif",
                 "bundle_outlier_filtering_type: AUTO",
@@ -323,7 +341,7 @@ class OSFMContext:
         if not io.dir_exists(metadata_dir) or rerun:
             self.run('extract_metadata')
     
-    def photos_to_metadata(self, photos, rerun=False):
+    def photos_to_metadata(self, photos, rolling_shutter, rolling_shutter_readout, rerun=False):
         metadata_dir = self.path("exif")
 
         if io.dir_exists(metadata_dir) and not rerun:
@@ -339,7 +357,7 @@ class OSFMContext:
         data = DataSet(self.opensfm_project_path)
 
         for p in photos:
-            d = p.to_opensfm_exif()
+            d = p.to_opensfm_exif(rolling_shutter, rolling_shutter_readout)
             with open(os.path.join(metadata_dir, "%s.exif" % p.filename), 'w') as f:
                 f.write(json.dumps(d, indent=4))
 
@@ -368,7 +386,6 @@ class OSFMContext:
 
     def feature_matching(self, rerun=False):
         features_dir = self.path("features")
-        matches_dir = self.path("matches")
         
         if not io.dir_exists(features_dir) or rerun:
             try:
@@ -386,6 +403,10 @@ class OSFMContext:
         else:
             log.ODM_WARNING('Detect features already done: %s exists' % features_dir)
 
+        self.match_features(rerun)
+
+    def match_features(self, rerun=False):
+        matches_dir = self.path("matches")
         if not io.dir_exists(matches_dir) or rerun:
             self.run('match_features')
         else:
