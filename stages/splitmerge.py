@@ -107,8 +107,7 @@ class ODMSplitStage(types.ODM_Stage):
                         local_sp_octx.create_tracks(self.rerun())
                         local_sp_octx.reconstruct(args.rolling_shutter, self.rerun())
                 else:
-                    # TODO: pass rolling shutter param here
-                    lre = LocalRemoteExecutor(args.sm_cluster, self.rerun())
+                    lre = LocalRemoteExecutor(args.sm_cluster, args.rolling_shutter, self.rerun())
                     lre.set_projects([os.path.abspath(os.path.join(p, "..")) for p in submodel_paths])
                     lre.run_reconstruction()
 

@@ -50,8 +50,6 @@ class OSFMContext:
             log.ODM_WARNING('Found a valid OpenSfM tracks file in: %s' % tracks_file)
 
     def reconstruct(self, rolling_shutter_correct=False, rerun=False):
-        # TODO: FIX calls from split-merge
-
         reconstruction_file = os.path.join(self.opensfm_project_path, 'reconstruction.json')
         if not io.file_exists(reconstruction_file) or rerun:
             self.run('reconstruct')
