@@ -339,6 +339,7 @@ class ODM_Photo:
 
                     self.set_attr_from_xmp_tag('capture_uuid', xtags, [
                         '@drone-dji:CaptureUUID', # DJI
+                        'MicaSense:CaptureId', # MicaSense Altum
                         '@Camera:ImageUniqueID', # sentera 6x
                     ])
 
