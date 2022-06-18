@@ -12,6 +12,7 @@ RS_DATABASE = {
     'dji fc6310': 33, # Phantom 4 Professional
 
     'dji fc7203': 20, # Mavic Mini v1
+    'dji fc3170': 27, # DJI Mavic Air 2
 
     'dji fc350': 30, # Inspire 1
 
