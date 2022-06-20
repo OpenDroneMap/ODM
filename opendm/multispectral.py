@@ -249,7 +249,7 @@ def get_irradiance(photo):                                                      
     # get radian_solar_elevation, radian_dls_sun                                                                            # DLS++
     orientation_dls = np.array([0, 0, -1])                                                                                  # DLS++
     ned_sun, ned_dls, radian_dls_sun, radian_solar_elevation, solar_azimuth = dls.compute_sun_angle(                        # DLS++
-            [photo.latitude, photo.longitude], np.radians(photo.get_dls_pose()), ut, orientation_dls)                       # DLS++, convert deg. to rad.
+            [photo.latitude, photo.longitude], np.radians(photo.get_dls_pose()), ut, orientation_dls)                       # DLS++  convert deg. to rad.
     log.ODM_DEBUG("MulQ,  {},  ned_sun,  {},  degSolarElevation,  {},".format(                                              # DLS++
             photo.filename, ned_sun, np.degrees(radian_solar_elevation)))                                                   # DLS++
     log.ODM_DEBUG("MulR,  {},  DLS_YPR,  {},  ned_DLS,  {},  degDLS_sun,  {},".format(                                      # DLS++

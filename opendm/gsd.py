@@ -120,7 +120,7 @@ def opensfm_reconstruction_average_gsd(reconstruction_json, use_all_shots=False)
     gsds = []
     for shotImage in reconstruction['shots']:
         shot = reconstruction['shots'][shotImage]
-        if use_all_shots or shot['gps_dop'] < 999999:
+        if use_all_shots or shot.get('gps_dop', 999999) < 999999:
             camera = reconstruction['cameras'][shot['camera']]
             shot_origin = get_origin(shot)
             shot_height = shot_origin[2]

@@ -38,7 +38,9 @@ def has_popsift_and_can_handle_texsize(width, height):
 def get_cuda_compute_version(device_id = 0):
     cuda_lib = "libcuda.so"
     if sys.platform == 'win32':
-        cuda_lib = "nvcuda.dll"
+        cuda_lib = os.path.join(os.environ.get('SYSTEMROOT'), 'system32', 'nvcuda.dll')
+        if not os.path.isfile(cuda_lib):
+            cuda_lib = "nvcuda.dll"
 
     nvcuda = ctypes.cdll.LoadLibrary(cuda_lib)
 

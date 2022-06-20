@@ -536,7 +536,7 @@ def config(argv=None, parser=None):
                         action=StoreValue,
                         type=float,
                         default=5,
-                        help='DSM/DTM resolution in cm / pixel. Note that this value is capped by a ground sampling distance (GSD) estimate. To remove the cap, check --ignore-gsd also.'
+                        help='DSM/DTM resolution in cm / pixel. Note that this value is capped to 2x the ground sampling distance (GSD) estimate. To remove the cap, check --ignore-gsd also.'
                              ' Default: %(default)s')
 
     parser.add_argument('--dem-decimation',
@@ -619,6 +619,24 @@ def config(argv=None, parser=None):
                         nargs=0,
                         default=False,
                         help='Generate OGC 3D Tiles outputs. Default: %(default)s')
+
+    parser.add_argument('--rolling-shutter',
+                    action=StoreTrue,
+                    nargs=0,
+                    default=False,
+                    help='Turn on rolling shutter correction. If the camera '
+                         'has a rolling shutter and the images were taken in motion, you can turn on this option '
+                         'to improve the accuracy of the results. See also --rolling-shutter-readout. '
+                         'Default: %(default)s')
+
+    parser.add_argument('--rolling-shutter-readout',
+                        type=float,
+                        action=StoreValue,
+                        metavar='<positive integer>',
+                        default=0,
+                    help='Override the rolling shutter readout time for your camera sensor (in milliseconds), instead of using the rolling shutter readout database. ' 
+                    'Note that not all cameras are present in the database. Set to 0 to use the database value. '
+                    'Default: %(default)s')
 
     parser.add_argument('--build-overviews',
                         action=StoreTrue,
