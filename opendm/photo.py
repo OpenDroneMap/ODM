@@ -162,9 +162,9 @@ class ODM_Photo:
         ##################################################################################################################### Cam(Seq)++
         self.seq_sensor_model = None                                                                                        # Cam(Seq)++
         ##################################################################################################################### Cam(P4M)++
-        self.p4m_black_current = None                                                                                       # Cam(P4M)++
-        self.p4m_sensor_gain = None                                                                                         # Cam(P4M)++
-        self.p4m_sensor_gain_adjustment = None                                                                              # Cam(P4M)++
+        self.p4m_dark = None                                                                                                # Cam(P4M)++
+        self.p4m_gain = None                                                                                                # Cam(P4M)++
+        self.p4m_gain_adj = None                                                                                            # Cam(P4M)++
         ##################################################################################################################### DLS(Seq)++
         self.seq_iradcal_list = None                                                                                        # DLS(Seq)++
         self.seq_irad_list = None                                                                                           # DLS(Seq)++
@@ -291,7 +291,7 @@ class ODM_Photo:
                     self.utc_time = (timezone.localize(utc_time) - epoch).total_seconds() * 1000.0
                     ######################################################################################################### Timezone++
                     self.str_naive = utc_time.isoformat()                       # stored for later timezone correction      # Timezone++
-                    log.ODM_DEBUG('C1_UTC {},  utc_tm,  {},  self.str_naive,  {},  epoch,  {},  self.utc_tm,  {}'.format(   # Timezone++
+                    log.ODM_DEBUG('C1_UTC {},  utc_tm,  {},  self.str_naive,  {},  epoch,  {},  self.utc_tm,  {},'.format(  # Timezone++
                             self.filename, utc_time, self.str_naive, epoch, self.utc_time))                                 # Timezone++
                     ######################################################################################################### Timezone++
             except Exception as e:
@@ -469,11 +469,9 @@ class ODM_Photo:
                     self.set_attr_from_xmp_tag('seq_sensor_model', xtags, ['Camera:SensorModel'])                           # Cam(Seq)++
                                                                                                                             # Cam(Seq)++
                     ######################################################################################################### Cam(P4M)++
-                    self.set_attr_from_xmp_tag('p4m_black_current', xtags, ['Camera:BlackCurrent'], float)                  # Cam(P4M)++
-                    self.set_attr_from_xmp_tag('p4m_sensor_gain', xtags, ['@drone-dji:SensorGain'], float)                  # Cam(P4M)++
-                    self.set_attr_from_xmp_tag('p4m_sensor_gain_adjustment', xtags, [                                       # Cam(P4M)++
-                        '@drone-dji:SensorGainAdjustment',                                                                  # Cam(P4M)++
-                    ], float)                                                                                               # Cam(P4M)++
+                    self.set_attr_from_xmp_tag('p4m_dark', xtags, ['Camera:BlackCurrent'], float)                           # Cam(P4M)++
+                    self.set_attr_from_xmp_tag('p4m_gain', xtags, ['@drone-dji:SensorGain'], float)                         # Cam(P4M)++
+                    self.set_attr_from_xmp_tag('p4m_gain_adj', xtags, ['@drone-dji:SensorGainAdjustment'], float)           # Cam(P4M)++
                                                                                                                             # Cam(P4M)++
                     ######################################################################################################### DLS(Seq)++
                     self.set_attr_from_xmp_tag('seq_iradcal_list', xtags, ['@Camera:IrradianceCalibrationMeasurement'])     # DLS(Seq)++
@@ -506,7 +504,7 @@ class ODM_Photo:
             aware_utc = aware_local.astimezone(tz_utc)                                                                      # Timezone(P4M)++
             epoch = tz_utc.localize(datetime.utcfromtimestamp(0))                                                           # Timezone(P4M)++
             self.utc_time = (aware_utc - epoch).total_seconds() * 1000.0                                                    # Timezone(P4M)++
-            log.ODM_DEBUG('C2_UTC {},  naive,  {},  tzLocal,  {},  awLocal,  {},  awUTC,  {},  self.utc_tm,  {}'.format(    # Timezone(P4M)++
+            log.ODM_DEBUG('C2_UTC {},  naive,  {},  tzLocal,  {},  awLocal,  {},  awUTC,  {},  self.utc_tm,  {},'.format(   # Timezone(P4M)++
                     self.filename, naive, tz_local, aware_local, aware_utc, self.utc_time))                                 # Timezone(P4M)++
                                                                                                                             # Timezone(P4M)++
         ##################################################################################################################### DLS(Seq)++
