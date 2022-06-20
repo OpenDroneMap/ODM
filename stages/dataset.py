@@ -127,6 +127,7 @@ class ODMLoadDatasetStage(types.ODM_Stage):
                         entry = gf.get_entry(p.filename)
                         if entry:
                             p.update_with_geo_entry(entry)
+                            p.compute_opk()
                             updated += 1
                     log.ODM_INFO("Updated %s image positions" % updated)
 
