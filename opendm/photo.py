@@ -199,12 +199,13 @@ class ODM_Photo:
         self.latitude = geo_entry.y
         self.longitude = geo_entry.x
         self.altitude = geo_entry.z
-        self.omega = geo_entry.omega
-        self.phi = geo_entry.phi
-        self.kappa = geo_entry.kappa
-        self.dls_yaw = geo_entry.omega
-        self.dls_pitch = geo_entry.phi
-        self.dls_roll = geo_entry.kappa
+        if geo_entry.yaw is not None and geo_entry.pitch is not None and geo_entry.roll is not None:
+            self.yaw = geo_entry.yaw 
+            self.pitch = geo_entry.pitch
+            self.roll = geo_entry.roll
+            self.dls_yaw = geo_entry.yaw
+            self.dls_pitch = geo_entry.pitch
+            self.dls_roll = geo_entry.roll
         self.gps_xy_stddev = geo_entry.horizontal_accuracy
         self.gps_z_stddev = geo_entry.vertical_accuracy
 

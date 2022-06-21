@@ -1,4 +1,5 @@
 import os
+import math
 from opendm import log
 from opendm import location
 from pyproj import CRS
@@ -33,10 +34,12 @@ class GeoFile:
                         else:
                             x, y = location.transform2(self.srs, longlat, x, y)
 
-                        omega = phi = kappa = None
+                        yaw = pitch = roll = None
 
                         if len(parts) >= 7:
-                            omega, phi, kappa = [float(p) for p in parts[4:7]]
+                            yaw, pitch, roll = [float(p) for p in parts[4:7]]
+                            if math.isnan(yaw) or math.isnan(pitch) or math.isnan(roll):
+                                yaw = pitch = roll = None
                             i = 7
 
                         horizontal_accuracy = vertical_accuracy = None
@@ -46,7 +49,7 @@ class GeoFile:
 
                         extras = " ".join(parts[i:])
                         self.entries[filename] = GeoEntry(filename, x, y, z,
-                                                        omega, phi, kappa,
+                                                        yaw, pitch, roll,
                                                         horizontal_accuracy, vertical_accuracy, 
                                                         extras)
                     else:
@@ -57,14 +60,14 @@ class GeoFile:
 
 
 class GeoEntry:
-    def __init__(self, filename, x, y, z, omega=None, phi=None, kappa=None, horizontal_accuracy=None, vertical_accuracy=None, extras=None):
+    def __init__(self, filename, x, y, z, yaw=None, pitch=None, roll=None, horizontal_accuracy=None, vertical_accuracy=None, extras=None):
         self.filename = filename
         self.x = x
         self.y = y
         self.z = z
-        self.omega = omega
-        self.phi = phi
-        self.kappa = kappa
+        self.yaw = yaw
+        self.pitch = pitch
+        self.roll = roll
         self.horizontal_accuracy = horizontal_accuracy
         self.vertical_accuracy = vertical_accuracy
         self.extras = extras
@@ -72,7 +75,7 @@ class GeoEntry:
     def __str__(self):
         return "{} ({} {} {}) ({} {} {}) ({} {}) {}".format(self.filename, 
                                              self.x, self.y, self.z,
-                                             self.omega, self.phi, self.kappa,
+                                             self.yaw, self.pitch, self.roll,
                                              self.horizontal_accuracy, self.vertical_accuracy,
                                              self.extras).rstrip()
     

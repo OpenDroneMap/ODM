@@ -129,7 +129,7 @@ def compute_mask_raster(input_raster, vector_mask, output_raster, blend_distance
                 else:
                     log.ODM_WARNING("%s does not have an alpha band, cannot blend cutline!" % input_raster)
 
-            with rasterio.open(output_raster, 'w', **rast.profile) as dst:
+            with rasterio.open(output_raster, 'w', BIGTIFF="IF_SAFER", **rast.profile) as dst:
                 dst.colorinterp = rast.colorinterp
                 dst.write(out_image)
 
