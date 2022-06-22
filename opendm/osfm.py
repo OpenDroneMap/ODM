@@ -148,17 +148,25 @@ class OSFMContext:
                 photos = reconstruction.photos
 
             # create file list
+            num_zero_alt = 0
             has_alt = True
             has_gps = False
             with open(list_path, 'w') as fout:
                 for photo in photos:
-                    if not photo.altitude:
+                    if photo.altitude is None:
                         has_alt = False
+                    elif photo.altitude == 0:
+                        num_zero_alt += 1
                     if photo.latitude is not None and photo.longitude is not None:
                         has_gps = True
 
                     fout.write('%s\n' % os.path.join(images_path, photo.filename))
             
+            # check 0 altitude images percentage when has_alt is True
+            if has_alt and num_zero_alt / len(photos) > 0.05:
+                log.ODM_WARNING("More than 5% of images have zero altitude, this might be an indicator that the images have no altitude information")
+                has_alt = False
+
             # check for image_groups.txt (split-merge)
             image_groups_file = os.path.join(args.project_path, "image_groups.txt")
             if 'split_image_groups_is_set' in args:
