@@ -152,7 +152,7 @@ class OSFMContext:
             has_gps = False
             with open(list_path, 'w') as fout:
                 for photo in photos:
-                    if not photo.altitude:
+                    if photo.altitude is None:
                         has_alt = False
                     if photo.latitude is not None and photo.longitude is not None:
                         has_gps = True
