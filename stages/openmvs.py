@@ -87,7 +87,8 @@ class ODMOpenMVSStage(types.ODM_Stage):
             if not args.pc_geometric:
                 extra_config.append("--geometric-iters 0")
             
-            masks = len(os.listdir(os.path.join(tree.opensfm, "undistorted", "masks"))) > 0
+            masks_dir = os.path.join(tree.opensfm, "undistorted", "masks")
+            masks = os.path.exists(masks_dir) and len(os.listdir(masks_dir)) > 0
             if masks:
                 extra_config.append("--ignore-mask-label 0")
 
