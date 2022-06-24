@@ -17,8 +17,10 @@ RS_DATABASE = {
     'dji fc350': 30, # Inspire 1
 
     'gopro hero4 black': 30, # GoPro Hero 4 Black
-    'gopro hero8 black': 17 # GoPro Hero 8 Black
+    'gopro hero8 black': 17, # GoPro Hero 8 Black
 
+    'teracube teracube one': 32 # TeraCube TeraCube_One TR1907Q Mobile Phone
+    
     # Help us add more! 
     # See: https://github.com/OpenDroneMap/RSCalibration for instructions
 }
