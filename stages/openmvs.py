@@ -81,9 +81,16 @@ class ODMOpenMVSStage(types.ODM_Stage):
 
             if args.pc_tile:
                 config.append("--fusion-mode 1")
+
+            extra_config = []
             
             if not args.pc_geometric:
-                config.append("--geometric-iters 0")
+                extra_config.append("--geometric-iters 0")
+            
+            masks_dir = os.path.join(tree.opensfm, "undistorted", "masks")
+            masks = os.path.exists(masks_dir) and len(os.listdir(masks_dir)) > 0
+            if masks:
+                extra_config.append("--ignore-mask-label 0")
 
             sharp = args.pc_geometric
             with open(densify_ini_file, 'w+') as f:
@@ -92,7 +99,7 @@ class ODMOpenMVSStage(types.ODM_Stage):
             def run_densify():
                 system.run('"%s" "%s" %s' % (context.omvs_densify_path, 
                                         openmvs_scene_file,
-                                        ' '.join(config + gpu_config)))
+                                        ' '.join(config + gpu_config + extra_config)))
 
             try:
                 run_densify()
@@ -157,11 +164,8 @@ class ODMOpenMVSStage(types.ODM_Stage):
                             '-v 0',
                         ]
 
-                        if not args.pc_geometric:
-                            config.append("--geometric-iters 0")
-
                         try:
-                            system.run('"%s" "%s" %s' % (context.omvs_densify_path, sf, ' '.join(config + gpu_config)))
+                            system.run('"%s" "%s" %s' % (context.omvs_densify_path, sf, ' '.join(config + gpu_config + extra_config)))
 
                             # Filter
                             if args.pc_filter > 0:
@@ -199,7 +203,7 @@ class ODMOpenMVSStage(types.ODM_Stage):
                             '-i "%s"' % scene_dense,
                             "-v 0"
                         ]
-                        system.run('"%s" %s' % (context.omvs_densify_path, ' '.join(config + gpu_config)))
+                        system.run('"%s" %s' % (context.omvs_densify_path, ' '.join(config + gpu_config + extra_config)))
                     else:
                         raise system.ExitException("Cannot find scene_dense.mvs, dense reconstruction probably failed. Exiting...")
                 else:
@@ -207,8 +211,6 @@ class ODMOpenMVSStage(types.ODM_Stage):
                     scene_dense_ply = os.path.join(tree.openmvs, 'scene_dense.ply')
                     log.ODM_INFO("Skipped filtering, %s --> %s" % (scene_dense_ply, tree.openmvs_model))
                     os.rename(scene_dense_ply, tree.openmvs_model)
-
-            # TODO: add support for image masks
 
             self.update_progress(95)
 
