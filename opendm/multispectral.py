@@ -472,7 +472,9 @@ def find_ecc_homography(image_gray, align_image_gray, number_of_iterations=1000,
     return warp_matrix
 
 
-def find_features_homography(image_gray, align_image_gray, feature_retention=0.25):
+def find_features_homography(image_gray, align_image_gray, feature_retention=0.7):
+    min_match_count = 10
+
     # Detect SIFT features and compute descriptors.
     detector = cv2.SIFT_create(edgeThreshold=10, contrastThreshold=0.1)
     kp_image, desc_image = detector.detectAndCompute(image_gray, None)
@@ -487,13 +489,21 @@ def find_features_homography(image_gray, align_image_gray, feature_retention=0.2
         return None
 
     # Sort by score
-    matches.sort(key=lambda x: x.distance, reverse=False)
+    # matches.sort(key=lambda x: x.distance, reverse=False)
 
     # Remove bad matches
-    num_good_matches = int(len(matches) * feature_retention)
-    matches = matches[:num_good_matches]
+    # num_good_matches = int(len(matches) * feature_retention)
+    # matches = matches[:num_good_matches]
 
-    if len(matches) < 4:
+    # Filter good matches following Lowe's ratio test
+    good_matches = []
+    for m, n in matches:
+        if m.distance < feature_retention * n.distance:
+            good_matches.append(m)
+
+    matches = good_matches
+
+    if len(matches) < min_match_count:
         log.ODM_INFO("Insufficient features: %s" % len(matches))
         return None
 
