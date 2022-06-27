@@ -6,7 +6,7 @@ edt==2.0.2
 ODMExifRead==3.0.3
 Fiona==1.8.17 ; sys_platform == 'linux' or sys_platform == 'darwin'
 https://github.com/OpenDroneMap/windows-deps/raw/main/Fiona-1.8.19-cp38-cp38-win_amd64.whl ; sys_platform == 'win32'
-joblib==0.17.0
+joblib==1.1.0
 laspy==1.7.0
 lxml==4.6.1
 matplotlib==3.3.3
@@ -23,9 +23,9 @@ rasterio==1.2.3 ; sys_platform == 'linux' or sys_platform == 'darwin'
 https://github.com/OpenDroneMap/windows-deps/raw/main/rasterio-1.2.3-cp38-cp38-win_amd64.whl ; sys_platform == 'win32'
 https://github.com/OpenDroneMap/windows-deps/raw/main/GDAL-3.2.3-cp38-cp38-win_amd64.whl ; sys_platform == 'win32'
 repoze.lru==0.7
-scikit-learn==0.24.2
-scikit-image==0.18.3
-scipy==1.5.4
+scikit-learn==1.1.1
+scikit-image==0.19.3
+scipy==1.8.1
 xmltodict==0.12.0
 fpdf2==2.4.6
 Shapely==1.7.1
