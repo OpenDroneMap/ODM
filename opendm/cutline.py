@@ -35,7 +35,7 @@ def write_raster(data, file):
         'crs': None
     }
 
-    with rasterio.open(file, 'w', **profile) as wout:
+    with rasterio.open(file, 'w', BIGTIFF="IF_SAFER", **profile) as wout:
         wout.write(data, 1)
 
 def compute_cutline(orthophoto_file, crop_area_file, destination, max_concurrency=1, scale=1):

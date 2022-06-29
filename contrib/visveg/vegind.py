@@ -88,7 +88,7 @@ try:
         elif typ == 'tgi':
             indeks = calcTgi(red, green, blue)
 
-        with rasterio.open(outFileName, 'w', **profile) as dst:
+        with rasterio.open(outFileName, 'w', BIGTIFF="IF_SAFER", **profile) as dst:
             dst.write(indeks.astype(rasterio.float32), 1)
 except rasterio.errors.RasterioIOError:
     print bcolors.FAIL + 'Orthophoto file not found or access denied' + bcolors.ENDC
