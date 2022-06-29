@@ -46,11 +46,28 @@ def generate_png(orthophoto_file, output_file=None, outsize=None):
     bandparam = ""
     gtif = gdal.Open(orthophoto_file)
     if gtif.RasterCount > 4:
-        bandparam = "-b 1 -b 2 -b 3 -a_nodata 0"
+        try:
+            bands = []
+            for idx in range(1, gtif.RasterCount+1):
+                bands.append(gtif.GetRasterBand(idx).GetColorInterpretation())
+
+            bands = dict(zip(bands, range(1, len(bands)+1)))
+            red = bands.get(3)
+            green = bands.get(4)
+            blue = bands.get(5)
+            alpha = bands.get(6)
+            if alpha is not None:
+                bandparam = "-b %s -b %s -b %s -b %s -a_nodata 0" % (red, green, blue, alpha)
+            else:
+                bandparam = "-b %s -b %s -b %s -a_nodata 0" % (red, green, blue)
+        except Exception as e:
+            bandparam = "-b 1 -b 2 -b 3 -a_nodata 0"
 
     osparam = ""
     if outsize is not None:
-        osparam = "-outsize %s 0" % outsize
+        osparam = "-outsize %s 0 -ot Byte -scale 0 0.5 0 255" % outsize
+    else:
+        osparam = "-outsize %s%% %s%% ot Byte -scale 0 0.5 0 255" % (10, 10)
 
     system.run('gdal_translate -of png "%s" "%s" %s %s '
                '--config GDAL_CACHEMAX %s%% ' % (orthophoto_file, output_file, osparam, bandparam, get_max_memory()))
