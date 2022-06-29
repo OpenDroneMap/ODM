@@ -34,6 +34,7 @@ info_db_found = {}
 
 def get_rolling_shutter_readout(make, model, override_value=0):
     global warn_db_missing
+    global info_db_found
 
     if override_value > 0:
         return override_value
