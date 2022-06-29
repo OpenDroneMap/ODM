@@ -30,15 +30,20 @@ def make_model_key(make, model):
     return ("%s %s" % (make.strip(), model.strip())).lower().strip()
 
 warn_db_missing = {}
+info_db_found = {}
 
 def get_rolling_shutter_readout(make, model, override_value=0):
     global warn_db_missing
+    global info_db_found
 
     if override_value > 0:
         return override_value
     
     key = make_model_key(make, model)
     if key in RS_DATABASE:
+        if not key in info_db_found:
+            log.ODM_INFO("Rolling shutter profile for \"%s %s\" selected, using %sms as --rolling-shutter-readout." % (make, model, RS_DATABASE[key]))
+            info_db_found[key] = True
         return float(RS_DATABASE[key])
     else:
         # Warn once
