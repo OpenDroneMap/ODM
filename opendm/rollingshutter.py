@@ -39,6 +39,8 @@ def get_rolling_shutter_readout(make, model, override_value=0):
     
     key = make_model_key(make, model)
     if key in RS_DATABASE:
+        log.ODM_INFO("Rolling shutter profile for \"%s %s\" selected, using %sms as --rolling-shutter-readout." % (make, model, RS_DATABASE[key]))
+        warn_db_missing[key] = False
         return float(RS_DATABASE[key])
     else:
         # Warn once
