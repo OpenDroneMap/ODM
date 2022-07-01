@@ -346,7 +346,7 @@ def median_smoothing(geotiff_path, output_path, smoothing_iterations=1):
         arr[nodata_locs] = nodata
 
         # write output
-        with rasterio.open(output_path, 'w', **img.profile) as imgout:
+        with rasterio.open(output_path, 'w', BIGTIFF="IF_SAFER", **img.profile) as imgout:
             imgout.write(arr, 1)
     
     log.ODM_INFO('Completed smoothing to create %s in %s' % (output_path, datetime.now() - start))
