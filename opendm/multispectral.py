@@ -430,7 +430,7 @@ def find_ecc_homography(image_gray, align_image_gray, number_of_iterations=1000,
         image_gray = cv2.resize(image_gray, None, 
                         fx=fx, 
                         fy=fy,
-                        interpolation=(cv2.INTER_AREA if (fx < 1.0 and fy < 1.0) else cv2.INTER_CUBIC))
+                        interpolation=(cv2.INTER_AREA if (fx < 1.0 and fy < 1.0) else cv2.INTER_LANCZOS4))
 
     # Build pyramids
     image_gray_pyr = [image_gray]
