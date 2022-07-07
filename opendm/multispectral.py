@@ -424,14 +424,13 @@ def find_ecc_homography(image_gray, align_image_gray, number_of_iterations=1000,
         align_image_gray = to_8bit(align_image_gray)
         image_gray = to_8bit(image_gray)
 
-        interpolation_mode = cv2.INTER_CUBIC
-        if image_gray.shape[0] < align_image_gray.shape[0] and image_gray.shape[1] < align_image_gray.shape[1]:
-            interpolation_mode = cv2.INTER_AREA
+        fx = align_image_gray.shape[1]/image_gray.shape[1]
+        fy = align_image_gray.shape[0]/image_gray.shape[0]
 
         image_gray = cv2.resize(image_gray, None, 
-                        fx=align_image_gray.shape[1]/image_gray.shape[1], 
-                        fy=align_image_gray.shape[0]/image_gray.shape[0],
-                        interpolation=interpolation_mode)
+                        fx=fx, 
+                        fy=fy,
+                        interpolation=(cv2.INTER_AREA if (fx < 1.0 and fy < 1.0) else cv2.INTER_CUBIC))
 
     # Build pyramids
     image_gray_pyr = [image_gray]
