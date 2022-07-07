@@ -488,7 +488,6 @@ def find_features_homography(image_gray, align_image_gray, feature_retention=0.7
     try:
         matches = flann.knnMatch(desc_image, desc_align_image, k=2)
     except Exception as e:
-        log.ODM_INFO("Cannot match features")
         return None
 
     # Filter good matches following Lowe's ratio test
@@ -500,13 +499,11 @@ def find_features_homography(image_gray, align_image_gray, feature_retention=0.7
     matches = good_matches
 
     if len(matches) < min_match_count:
-        log.ODM_INFO("Insufficient features: %s" % len(matches))
         return None
 
     # Debug
     # imMatches = cv2.drawMatches(im1, kp_image, im2, kp_align_image, matches, None)
     # cv2.imwrite("matches.jpg", imMatches)
-    log.ODM_INFO("Good feature matches: %s" % len(matches))
 
     # Extract location of good matches
     points_image = np.zeros((len(matches), 2), dtype=np.float32)
