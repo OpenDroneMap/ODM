@@ -481,21 +481,6 @@ def find_features_homography(image_gray, align_image_gray, feature_retention=0.7
     kp_align_image, desc_align_image = detector.detectAndCompute(align_image_gray, None)
 
     # Match
-    # bf = cv2.BFMatcher(cv2.NORM_L1,crossCheck=True)
-    # try:
-    #    matches = bf.match(desc_image, desc_align_image)
-    # except Exception as e:
-    #    log.ODM_INFO("Cannot match features")
-    #    return None
-
-    # Sort by score
-    # matches.sort(key=lambda x: x.distance, reverse=False)
-
-    # Remove bad matches
-    # num_good_matches = int(len(matches) * feature_retention)
-    # matches = matches[:num_good_matches]
-
-    # Use FLANN based method to match keypoints
     FLANN_INDEX_KDTREE = 1
     index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
     search_params = dict(checks=50)
@@ -505,7 +490,7 @@ def find_features_homography(image_gray, align_image_gray, feature_retention=0.7
         matches = flann.knnMatch(desc_image, desc_align_image, k=2)
     except Exception as e:
         log.ODM_INFO("Cannot match features")
-        return None    
+        return None
 
     # Filter good matches following Lowe's ratio test
     good_matches = []
