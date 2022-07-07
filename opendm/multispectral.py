@@ -444,8 +444,9 @@ def find_ecc_homography(image_gray, align_image_gray, number_of_iterations=1000,
         align_image_pyr.insert(0, cv2.resize(align_image_pyr[0], None, fx=1/2, fy=1/2,
                                 interpolation=cv2.INTER_AREA))
 
-    # Define the motion model
+    # Define the motion model, scale the initial warp matrix to smallest level
     warp_matrix = np.eye(3, 3, dtype=np.float32)
+    warp_matrix = warp_matrix * np.array([[1,1,2],[1,1,2],[0.5,0.5,1]], dtype=np.float32)**(1-(pyramid_levels+1))
 
     for level in range(pyramid_levels+1):
         ig = gradient(gaussian(image_gray_pyr[level]))
@@ -467,6 +468,7 @@ def find_ecc_homography(image_gray, align_image_gray, number_of_iterations=1000,
             if level != pyramid_levels:
                 log.ODM_INFO("Could not compute ECC warp_matrix at pyramid level %s, resetting matrix" % level)
                 warp_matrix = np.eye(3, 3, dtype=np.float32)
+                warp_matrix = warp_matrix * np.array([[1,1,2],[1,1,2],[0.5,0.5,1]], dtype=np.float32)**(1-(pyramid_levels+1))
             else:
                 raise e
 
