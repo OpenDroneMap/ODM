@@ -44,9 +44,22 @@ def generate_png(orthophoto_file, output_file=None, outsize=None):
     
     # See if we need to select top three bands
     bandparam = ""
+
     gtif = gdal.Open(orthophoto_file)
     if gtif.RasterCount > 4:
-        bandparam = "-b 1 -b 2 -b 3 -a_nodata 0"
+        bands = []
+        for idx in range(1, gtif.RasterCount+1):
+            bands.append(gtif.GetRasterBand(idx).GetColorInterpretation())
+        bands = dict(zip(bands, range(1, len(bands)+1)))
+
+        try:
+            red = bands.get(gdal.GCI_RedBand)
+            green = bands.get(gdal.GCI_GreenBand)
+            blue = bands.get(gdal.GCI_BlueBand)
+            bandparam = "-b %s -b %s -b %s -a_nodata 0" % (red, green, blue)
+        except:
+            bandparam = "-b 1 -b 2 -b 3 -a_nodata 0"
+    gtif = None
 
     osparam = ""
     if outsize is not None:
