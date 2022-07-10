@@ -333,7 +333,7 @@ def median_smoothing(geotiff_path, output_path, smoothing_iterations=1):
         dtype = img.dtypes[0]
         arr = img.read()[0]
 
-        nodata_locs = numpy.where(arr == nodata)
+        nodata_locs = arr == nodata
 
         # Median filter (careful, changing the value 5 might require tweaking)
         # the lines below. There's another numpy function that takes care of 
