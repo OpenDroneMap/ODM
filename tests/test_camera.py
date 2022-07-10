@@ -18,7 +18,7 @@ class TestCamera(unittest.TestCase):
         camera_id = list(c.keys())[0]
         self.assertTrue('v2 ' not in camera_id)
 
-        self.assertRaises(RuntimeError, camera.get_cameras_from_opensfm, 'tests/assets/nonexistant.json')
+        self.assertRaises(RuntimeError, camera.get_cameras_from_opensfm, 'tests/assets/nonexistent.json')
         self.assertRaises(ValueError, camera.get_cameras_from_opensfm, 'tests/assets/gcp_extras.txt')
         self.assertFalse('k1_prior' in c[camera_id])
         

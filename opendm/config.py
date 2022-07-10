@@ -307,7 +307,7 @@ def config(argv=None, parser=None):
                     default=3,
                     type=float,
                     help=('Automatically crop image outputs by creating a smooth buffer '
-                          'around the dataset boundaries, shrinked by N meters. '
+                          'around the dataset boundaries, shrunk by N meters. '
                           'Use 0 to disable cropping. '
                           'Default: %(default)s'))
 
