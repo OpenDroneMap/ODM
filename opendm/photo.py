@@ -217,7 +217,7 @@ class ODM_Photo:
                         self.camera_model = "unknown"
                 if 'GPS GPSAltitude' in tags:
                     self.altitude = self.float_value(tags['GPS GPSAltitude'])
-                    if 'GPS GPSAltitudeRef' in tags and self.int_value(tags['GPS GPSAltitudeRef']) > 0:
+                    if 'GPS GPSAltitudeRef' in tags and self.int_value(tags['GPS GPSAltitudeRef']) is not None and self.int_value(tags['GPS GPSAltitudeRef']) > 0:
                         self.altitude *= -1
                 if 'GPS GPSLatitude' in tags and 'GPS GPSLatitudeRef' in tags:
                     self.latitude = self.dms_to_decimal(tags['GPS GPSLatitude'], tags['GPS GPSLatitudeRef'])
