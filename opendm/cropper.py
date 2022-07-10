@@ -96,7 +96,7 @@ class Cropper:
         convexhull = geomcol.ConvexHull()
 
         # If buffer distance is specified
-        # Create two buffers, one shrinked by
+        # Create two buffers, one shrunk by
         # N + 3 and then that buffer expanded by 3
         # so that we get smooth corners. \m/
         BUFFER_SMOOTH_DISTANCE = 3
@@ -185,7 +185,7 @@ class Cropper:
         convexhull = geomcol.ConvexHull()
 
         # If buffer distance is specified
-        # Create two buffers, one shrinked by
+        # Create two buffers, one shrunk by
         # N + 3 and then that buffer expanded by 3
         # so that we get smooth corners. \m/
         BUFFER_SMOOTH_DISTANCE = 3
