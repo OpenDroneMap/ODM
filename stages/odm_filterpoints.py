@@ -16,6 +16,8 @@ class ODMFilterPoints(types.ODM_Stage):
 
         if not os.path.exists(tree.odm_filterpoints): system.mkdir_p(tree.odm_filterpoints)
 
+        inputPointCloud = ""
+        
         # check if reconstruction was done before
         if not io.file_exists(tree.filtered_point_cloud) or self.rerun():
             if args.fast_orthophoto:

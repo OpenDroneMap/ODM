@@ -142,9 +142,9 @@ class ODM_Photo:
         self.dls_roll = None
 
         # Aircraft speed
-        self.speedX = None
-        self.speedY = None
-        self.speedZ = None
+        self.speed_x = None
+        self.speed_y = None
+        self.speed_z = None
 
         # self.center_wavelength = None
         # self.bandwidth = None
@@ -277,9 +277,9 @@ class ODM_Photo:
                 if 'MakerNote SpeedX' in tags and \
                     'MakerNote SpeedY' in tags and \
                     'MakerNote SpeedZ' in tags:
-                    self.speedX = self.float_value(tags['MakerNote SpeedX'])
-                    self.speedY = self.float_value(tags['MakerNote SpeedY'])
-                    self.speedZ = self.float_value(tags['MakerNote SpeedZ'])
+                    self.speed_x = self.float_value(tags['MakerNote SpeedX'])
+                    self.speed_y = self.float_value(tags['MakerNote SpeedY'])
+                    self.speed_z = self.float_value(tags['MakerNote SpeedZ'])
 
             except Exception as e:
                 log.ODM_WARNING("Cannot read extended EXIF tags for %s: %s" % (self.filename, str(e)))
@@ -386,13 +386,13 @@ class ODM_Photo:
                     if '@drone-dji:FlightXSpeed' in xtags and \
                        '@drone-dji:FlightYSpeed' in xtags and \
                        '@drone-dji:FlightZSpeed' in xtags:
-                        self.set_attr_from_xmp_tag('speedX', xtags, [
+                        self.set_attr_from_xmp_tag('speed_x', xtags, [
                             '@drone-dji:FlightXSpeed'
                         ], float)
-                        self.set_attr_from_xmp_tag('speedY', xtags, [
+                        self.set_attr_from_xmp_tag('speed_y', xtags, [
                             '@drone-dji:FlightYSpeed',
                         ], float)
-                        self.set_attr_from_xmp_tag('speedZ', xtags, [
+                        self.set_attr_from_xmp_tag('speed_z', xtags, [
                             '@drone-dji:FlightZSpeed',
                         ], float)
 
@@ -776,7 +776,7 @@ class ODM_Photo:
         
         # Speed is not useful without GPS
         if self.has_speed() and has_gps:
-            d['speed'] = [self.speedY, self.speedX, self.speedZ]
+            d['speed'] = [self.speed_y, self.speed_x, self.speed_z]
         
         if rolling_shutter:
             d['rolling_shutter'] = get_rolling_shutter_readout(self.camera_make, self.camera_model, rolling_shutter_readout)
@@ -794,9 +794,9 @@ class ODM_Photo:
             self.kappa is not None
     
     def has_speed(self):
-        return self.speedX is not None and \
-                self.speedY is not None and \
-                self.speedZ is not None
+        return self.speed_x is not None and \
+                self.speed_y is not None and \
+                self.speed_z is not None
 
     def has_geo(self):
         return self.latitude is not None and \
