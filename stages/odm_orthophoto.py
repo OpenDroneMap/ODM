@@ -42,7 +42,9 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                 'corners': tree.odm_orthophoto_corners,
                 'res': resolution,
                 'bands': '',
-                'verbose': verbose
+                'verbose': verbose,
+                'a_srs': reconstruction.georef.proj4(),
+                'offsets': '{} {}'.format(reconstruction.georef.utm_east_offset, reconstruction.georef.utm_north_offset)
             }
 
             models = []
@@ -70,46 +72,26 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
             # run odm_orthophoto
             system.run('"{odm_ortho_bin}" -inputFiles {models} '
                        '-logFile "{log}" -outputFile "{ortho}" -resolution {res} {verbose} '
-                       '-outputCornerFile "{corners}" {bands}'.format(**kwargs))
+                       '-outputCornerFile "{corners}" -a_srs "{a_srs}" -offsets {offsets} {bands}'.format(**kwargs))
 
             # Create georeferenced GeoTiff
             geotiffcreated = False
 
             if reconstruction.is_georeferenced():
-                ulx = uly = lrx = lry = 0.0
-                with open(tree.odm_orthophoto_corners) as f:
-                    for lineNumber, line in enumerate(f):
-                        if lineNumber == 0:
-                            tokens = line.split(' ')
-                            if len(tokens) == 4:
-                                ulx = float(tokens[0]) + \
-                                    float(reconstruction.georef.utm_east_offset)
-                                lry = float(tokens[1]) + \
-                                    float(reconstruction.georef.utm_north_offset)
-                                lrx = float(tokens[2]) + \
-                                    float(reconstruction.georef.utm_east_offset)
-                                uly = float(tokens[3]) + \
-                                    float(reconstruction.georef.utm_north_offset)
                 log.ODM_INFO('Creating GeoTIFF')
 
                 orthophoto_vars = orthophoto.get_orthophoto_vars(args)
 
                 kwargs = {
-                    'ulx': ulx,
-                    'uly': uly,
-                    'lrx': lrx,
-                    'lry': lry,
                     'vars': ' '.join(['-co %s=%s' % (k, orthophoto_vars[k]) for k in orthophoto_vars]),
-                    'proj': reconstruction.georef.proj4(),
                     'input': tree.odm_orthophoto_render,
                     'output': tree.odm_orthophoto_tif,
                     'log': tree.odm_orthophoto_tif_log,
                     'max_memory': get_max_memory(),
                 }
 
-                system.run('gdal_translate -a_ullr {ulx} {uly} {lrx} {lry} '
+                system.run('gdal_translate '
                            '{vars} '
-                           '-a_srs \"{proj}\" '
                            '--config GDAL_CACHEMAX {max_memory}% '
                            '--config GDAL_TIFF_INTERNAL_MASK YES '
                            '"{input}" "{output}" > "{log}"'.format(**kwargs))
