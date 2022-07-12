@@ -92,7 +92,7 @@ def euclidean_merge_dems(input_dems, output_dem, creation_options={}, euclidean_
     profile.update(creation_options)
 
     # create destination file
-    with rasterio.open(output_dem, "w", BIGTIFF="IF_SAFER", **profile) as dstrast:
+    with rasterio.open(output_dem, "w", **profile) as dstrast:
 
         for idx, dst_window in dstrast.block_windows():
 
