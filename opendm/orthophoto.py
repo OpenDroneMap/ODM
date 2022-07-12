@@ -243,7 +243,7 @@ def merge(input_ortho_and_ortho_cuts, output_orthophoto, orthophoto_vars={}):
     profile.update()
 
     # create destination file
-    with rasterio.open(output_orthophoto, "w", BIGTIFF="IF_SAFER", **profile) as dstrast:
+    with rasterio.open(output_orthophoto, "w", **profile) as dstrast:
         dstrast.colorinterp = colorinterp
         for idx, dst_window in dstrast.block_windows():
             left, bottom, right, top = dstrast.window_bounds(dst_window)
