@@ -203,7 +203,7 @@ externalproject_add(dem2points
 externalproject_add(odm_orthophoto
     DEPENDS           pcl opencv 
     GIT_REPOSITORY    https://github.com/OpenDroneMap/odm_orthophoto.git
-    GIT_TAG           main
+    GIT_TAG           288
     PREFIX            ${SB_BINARY_DIR}/odm_orthophoto
     SOURCE_DIR        ${SB_SOURCE_DIR}/odm_orthophoto
     CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
