@@ -43,9 +43,13 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                 'res': resolution,
                 'bands': '',
                 'verbose': verbose,
-                'a_srs': reconstruction.georef.proj4(),
-                'offsets': '{} {}'.format(reconstruction.georef.utm_east_offset, reconstruction.georef.utm_north_offset)
+                'a_srs': '',
+                'offsets': '',
             }
+
+            if reconstruction.is_georeferenced():
+                kwargs['a_srs'] = '-a_srs "{}"'.format(reconstruction.georef.proj4())
+                kwargs['offsets'] = '-offsets {} {}'.format(reconstruction.georef.utm_east_offset, reconstruction.georef.utm_north_offset)
 
             models = []
 
@@ -72,7 +76,7 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
             # run odm_orthophoto
             system.run('"{odm_ortho_bin}" -inputFiles {models} '
                        '-logFile "{log}" -outputFile "{ortho}" -resolution {res} {verbose} '
-                       '-outputCornerFile "{corners}" -a_srs "{a_srs}" -offsets {offsets} {bands}'.format(**kwargs))
+                       '-outputCornerFile "{corners}" {a_srs} {offsets} {bands}'.format(**kwargs))
 
             # Create georeferenced GeoTiff
             geotiffcreated = False
