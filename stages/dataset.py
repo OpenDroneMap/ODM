@@ -159,7 +159,8 @@ class ODMLoadDatasetStage(types.ODM_Stage):
                     # Generate list of sky images
                     sky_images = []
                     for p in photos:
-                        if p.mask is None and (p.pitch is None or (-10 > p.pitch > 10)) and (not " " in p.filename):
+                        print(p.pitch)
+                        if p.mask is None and (p.pitch is None or (abs(p.pitch) > 20)) and (not " " in p.filename):
                             sky_images.append({'file': os.path.join(images_dir, p.filename), 'p': p})
 
                     if len(sky_images) > 0:
