@@ -237,6 +237,12 @@ def config(argv=None, parser=None):
                         'Can be one of: %(choices)s. Default: '
                         '%(default)s'))
 
+    parser.add_argument('--sky-removal',
+                action=StoreTrue,
+                nargs=0,
+                default=False,
+                help='Automatically compute image masks using AI to remove the sky. Default: %(default)s')
+
     parser.add_argument('--use-3dmesh',
                     action=StoreTrue,
                     nargs=0,
