@@ -25,7 +25,7 @@ def get_max_memory_mb(minimum = 100, use_at_most = 0.5):
     """
     return max(minimum, (virtual_memory().available / 1024 / 1024) * use_at_most)
 
-def parallel_map(func, items, max_workers=1, single_thread_fallback=True, copy_queue_items=True):
+def parallel_map(func, items, max_workers=1, single_thread_fallback=True):
     """
     Our own implementation for parallel processing
     which handles gracefully CTRL+C and reverts to 
@@ -66,10 +66,7 @@ def parallel_map(func, items, max_workers=1, single_thread_fallback=True, copy_q
 
         i = 1
         for t in items:
-            if copy_queue_items:
-                pq.put((i, t.copy()))
-            else:
-                pq.put((i, t))
+            pq.put((i, t))
             i += 1
 
         def stop_workers():
