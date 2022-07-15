@@ -66,7 +66,7 @@ def parallel_map(func, items, max_workers=1, single_thread_fallback=True):
 
         i = 1
         for t in items:
-            pq.put((i, t.copy()))
+            pq.put((i, t))
             i += 1
 
         def stop_workers():

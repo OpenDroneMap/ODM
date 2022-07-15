@@ -29,9 +29,17 @@ class ODMFilterPoints(types.ODM_Stage):
             if args.auto_boundary:
                 if reconstruction.is_georeferenced():
                     if not 'boundary' in outputs:
-                        avg_gsd = gsd.opensfm_reconstruction_average_gsd(tree.opensfm_reconstruction)
-                        if avg_gsd is not None:
-                            outputs['boundary'] = compute_boundary_from_shots(tree.opensfm_reconstruction, avg_gsd * 20, reconstruction.get_proj_offset()) # 20 is arbitrary
+                        boundary_distance = None
+
+                        if args.auto_boundary_distance > 0:
+                            boundary_distance = args.auto_boundary_distance
+                        else:
+                            avg_gsd = gsd.opensfm_reconstruction_average_gsd(tree.opensfm_reconstruction)
+                            if avg_gsd is not None:
+                                boundary_distance = avg_gsd * 20 # 20 is arbitrary
+                            
+                        if boundary_distance is not None:
+                            outputs['boundary'] = compute_boundary_from_shots(tree.opensfm_reconstruction, boundary_distance, reconstruction.get_proj_offset())
                             if outputs['boundary'] is None:
                                 log.ODM_WANING("Cannot compute boundary from camera shots")
                         else:
