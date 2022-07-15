@@ -187,7 +187,7 @@ class ODMLoadDatasetStage(types.ODM_Stage):
                         else:
                             log.ODM_WARNING("Cannot load AI model (you might need to be connected to the internet?)")
                     else:
-                        log.ODM_WARNING("No images suitable for sky mask generation detected (are they all nadir?)")
+                        log.ODM_INFO("No sky masks will be generated (masks already provided, or images are nadir)")
 
                 # End sky removal
 
