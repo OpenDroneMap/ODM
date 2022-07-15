@@ -241,7 +241,7 @@ def config(argv=None, parser=None):
                 action=StoreTrue,
                 nargs=0,
                 default=False,
-                help='Automatically compute image masks using AI to remove the sky. Default: %(default)s')
+                help='Automatically compute image masks using AI to remove the sky. Experimental. Default: %(default)s')
 
     parser.add_argument('--use-3dmesh',
                     action=StoreTrue,
@@ -334,6 +334,14 @@ def config(argv=None, parser=None):
                     help='Automatically set a boundary using camera shot locations to limit the area of the reconstruction. '
                     'This can help remove far away background artifacts (sky, background landscapes, etc.). See also --boundary. '
                     'Default: %(default)s')
+
+    parser.add_argument('--auto-boundary-distance',
+                    metavar='<positive float>',
+                    action=StoreValue,
+                    type=float,
+                    default=0,
+                    help='Specify the distance between camera shot locations and the outer edge of the boundary when computing the boundary with --auto-boundary. Set to 0 to automatically choose a value. '
+                         'Default: %(default)s')
 
     parser.add_argument('--pc-quality',
                     metavar='<string>',
