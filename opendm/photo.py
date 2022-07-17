@@ -725,8 +725,11 @@ class ODM_Photo:
 
     def is_thermal(self):
         #Added for support M2EA camera sensor
-        if(self.camera_make == "DJI"):
-            return self.camera_model == "MAVIC2-ENTERPRISE-ADVANCED" and self.width == 640 and self.height == 512
+        if(self.camera_make == "DJI" and self.camera_model == "MAVIC2-ENTERPRISE-ADVANCED" and self.width == 640 and self.height == 512):
+            return True
+        #Added for support DJI H20T camera sensor
+        if(self.camera_make == "DJI" and self.camera_model == "ZH20T" and self.width == 640 and self.height == 512):
+            return True
         return self.band_name.upper() in ["LWIR"] # TODO: more?
 
     def camera_id(self):
