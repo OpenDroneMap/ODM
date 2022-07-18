@@ -43,7 +43,7 @@ def dn_to_temperature(photo, image, dataset_tree):
         elif photo.camera_make == "DJI" and photo.camera_model == "ZH20T":            
             filename, file_extension = os.path.splitext(photo.filename)
             # DJI H20T high gain mode supports measurement of -40~150 celsius degrees
-            if file_extension.lower() in ["tif", "tiff"] and image.min() >= 23315: # Calibrated grayscale tif
+            if file_extension.lower() in [".tif", ".tiff"] and image.min() >= 23315: # Calibrated grayscale tif
                 image = image.astype("float32")
                 image -= (273.15 * 100.0) # Convert Kelvin to Celsius
                 image *= 0.01
