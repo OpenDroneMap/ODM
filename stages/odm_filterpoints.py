@@ -41,7 +41,7 @@ class ODMFilterPoints(types.ODM_Stage):
                         if boundary_distance is not None:
                             outputs['boundary'] = compute_boundary_from_shots(tree.opensfm_reconstruction, boundary_distance, reconstruction.get_proj_offset())
                             if outputs['boundary'] is None:
-                                log.ODM_WANING("Cannot compute boundary from camera shots")
+                                log.ODM_WARNING("Cannot compute boundary from camera shots")
                         else:
                             log.ODM_WARNING("Cannot compute boundary (GSD cannot be estimated)")
                     else:
