@@ -99,15 +99,6 @@ SETUP_EXTERNAL_PROJECT(OpenCV ${ODM_OpenCV_Version} ${ODM_BUILD_OpenCV})
 
 
 # ---------------------------------------------------------------------------------------------
-# Point Cloud Library (PCL)
-#
-set(ODM_PCL_Version 1.8.0)
-option(ODM_BUILD_PCL "Force to build PCL library" OFF)
-
-SETUP_EXTERNAL_PROJECT(PCL ${ODM_PCL_Version} ${ODM_BUILD_PCL})
-
-
-# ---------------------------------------------------------------------------------------------
 # Google Flags library (GFlags)
 #
 set(ODM_GFlags_Version 2.1.2)
@@ -201,9 +192,9 @@ externalproject_add(dem2points
 )
 
 externalproject_add(odm_orthophoto
-    DEPENDS           pcl opencv 
+    DEPENDS           opencv 
     GIT_REPOSITORY    https://github.com/OpenDroneMap/odm_orthophoto.git
-    GIT_TAG           main
+    GIT_TAG           288a
     PREFIX            ${SB_BINARY_DIR}/odm_orthophoto
     SOURCE_DIR        ${SB_SOURCE_DIR}/odm_orthophoto
     CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
