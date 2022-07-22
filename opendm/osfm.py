@@ -405,6 +405,8 @@ class OSFMContext:
                 if hasattr(self, 'gpu_sift_feature_extraction'):
                     log.ODM_WARNING("GPU SIFT extraction failed, maybe the graphics card is not supported? Attempting fallback to CPU")
                     self.update_config({'feature_type': "SIFT"})
+                    if os.path.exists(features_dir):
+                        shutil.rmtree(features_dir)
                     self.run('detect_features')
                 else:
                     raise e
