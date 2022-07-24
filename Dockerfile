@@ -1,4 +1,4 @@
-FROM ubuntu:21.04 AS builder
+FROM ubuntu:22.04 AS builder
 
 # Env variables
 ENV DEBIAN_FRONTEND=noninteractive \
@@ -21,7 +21,7 @@ RUN bash configure.sh clean
 
 ### Use a second image for the final asset to reduce the number and
 # size of the layers.
-FROM ubuntu:21.04
+FROM ubuntu:22.04
 
 # Env variables
 ENV DEBIAN_FRONTEND=noninteractive \
