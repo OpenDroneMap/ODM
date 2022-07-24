@@ -33,6 +33,7 @@ jobs:
         file: ./gpu.Dockerfile
         platforms: linux/amd64
         push: true
+        no-cache: true
         tags: opendronemap/odm:gpu
     # Trigger NodeODM build
     - name: Dispatch NodeODM Build Event
