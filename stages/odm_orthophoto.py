@@ -42,6 +42,7 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                 'corners': tree.odm_orthophoto_corners,
                 'res': resolution,
                 'bands': '',
+                'depth_idx': '',
                 'verbose': verbose
             }
 
@@ -62,6 +63,21 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                         subdir = band['name'].lower()
                     models.append(os.path.join(base_dir, subdir, model_file))
                 kwargs['bands'] = '-bands %s' % (','.join([double_quote(b['name']) for b in reconstruction.multi_camera]))
+
+                # If a RGB band is present, 
+                # use bit depth of the first non-RGB band
+                depth_idx = None
+                all_bands = [b['name'].lower() for b in reconstruction.multi_camera]
+                for b in ['rgb', 'redgreenblue']:
+                    if b in all_bands:
+                        for idx in range(len(all_bands)):
+                            if all_bands[idx] != b:
+                                depth_idx = idx
+                                break
+                        break
+                
+                if depth_idx is not None:
+                    kwargs['depth_idx'] = '-outputDepthIdx %s' % depth_idx
             else:
                 models.append(os.path.join(base_dir, model_file))
 
@@ -70,7 +86,7 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
             # run odm_orthophoto
             system.run('"{odm_ortho_bin}" -inputFiles {models} '
                        '-logFile "{log}" -outputFile "{ortho}" -resolution {res} {verbose} '
-                       '-outputCornerFile "{corners}" {bands}'.format(**kwargs))
+                       '-outputCornerFile "{corners}" {bands} {depth_idx}'.format(**kwargs))
 
             # Create georeferenced GeoTiff
             geotiffcreated = False
