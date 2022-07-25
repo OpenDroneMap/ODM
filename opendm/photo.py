@@ -146,6 +146,10 @@ class ODM_Photo:
         self.speed_y = None
         self.speed_z = None
 
+        # Original image width/height at capture time (before possible resizes)
+        self.exif_width = None
+        self.exif_height = None
+
         # self.center_wavelength = None
         # self.bandwidth = None
 
@@ -281,6 +285,11 @@ class ODM_Photo:
                     self.speed_y = self.float_value(tags['MakerNote SpeedY'])
                     self.speed_z = self.float_value(tags['MakerNote SpeedZ'])
 
+                if 'EXIF ExifImageWidth' in tags and \
+                   'EXIF ExifImageLength' in tags:
+                   self.exif_width = self.int_value(tags['EXIF ExifImageWidth'])
+                   self.exif_height = self.int_value(tags['EXIF ExifImageLength'])
+                
             except Exception as e:
                 log.ODM_WARNING("Cannot read extended EXIF tags for %s: %s" % (self.filename, str(e)))
 
@@ -779,7 +788,7 @@ class ODM_Photo:
             d['speed'] = [self.speed_y, self.speed_x, self.speed_z]
         
         if rolling_shutter:
-            d['rolling_shutter'] = get_rolling_shutter_readout(self.camera_make, self.camera_model, rolling_shutter_readout)
+            d['rolling_shutter'] = get_rolling_shutter_readout(self, rolling_shutter_readout)
         
         return d
 
@@ -854,3 +863,15 @@ class ODM_Photo:
             self.omega = math.degrees(math.atan2(-ceb[1][2], ceb[2][2]))
             self.phi = math.degrees(math.asin(ceb[0][2]))
             self.kappa = math.degrees(math.atan2(-ceb[0][1], ceb[0][0]))
+
+    def get_capture_megapixels(self):
+        if self.exif_width is not None and self.exif_height is not None:
+            # Accurate so long as resizing / postprocess software
+            # did not fiddle with the tags
+            return self.exif_width * self.exif_height / 1e6
+        elif self.width is not None and self.height is not None:
+            # Fallback, might not be accurate since the image
+            # could have been resized
+            return self.width * self.height / 1e6
+        else:
+            return 0.0
