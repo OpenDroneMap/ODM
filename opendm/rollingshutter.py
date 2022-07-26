@@ -48,7 +48,7 @@ def get_rolling_shutter_readout(photo, override_value=0):
     key = make_model_key(make, model)
     if key in RS_DATABASE:
         rsd = RS_DATABASE[key]
-        val = 0.0
+        val = DEFAULT_RS_READOUT
 
         if isinstance(rsd, int) or isinstance(rsd, float):
             val = float(rsd)

@@ -26,6 +26,7 @@ class ODM_Reconstruction(object):
         self.georef = None
         self.gcp = None
         self.multi_camera = self.detect_multi_camera()
+        self.filter_photos()
 
     def detect_multi_camera(self):
         """
@@ -63,6 +64,29 @@ class ODM_Reconstruction(object):
             return mc
 
         return None
+
+    def filter_photos(self):
+        if not self.multi_camera:
+            return # Nothing to do, use all images
+        
+        else:
+            # Sometimes people might try process both RGB + Blue/Red/Green bands
+            # because these are the contents of the SD card from a drone (e.g. DJI P4 Multispectral)
+            # But we don't want to process both, so we discard the RGB files in favor
+            bands = {}
+            for b in self.multi_camera:
+                bands[b['name'].lower()] = b['name']
+
+            if ('rgb' in bands or 'redgreenblue' in bands) and \
+                ('red' in bands and 'green' in bands and 'blue' in bands):
+                band_to_remove = bands['rgb'] if 'rgb' in bands else bands['redgreenblue']
+
+                self.multi_camera = [b for b in self.multi_camera if b['name'] != band_to_remove]
+                photos_before = len(self.photos)
+                self.photos = [p for p in self.photos if p.band_name != band_to_remove]
+                photos_after = len(self.photos)
+
+                log.ODM_WARNING("RGB images detected alongside individual Red/Green/Blue images, we will use individual bands (skipping %s images)" % (photos_before - photos_after))
 
     def is_georeferenced(self):
         return self.georef is not None

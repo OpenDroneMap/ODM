@@ -56,7 +56,9 @@ def dn_to_radiance(photo, image):
     bit_depth_max = photo.get_bit_depth_max()
     if bit_depth_max:
         image /= bit_depth_max
-
+    else:
+        log.ODM_WARNING("Cannot normalize DN for %s, bit depth is missing" % photo.filename)
+    
     if V is not None:
         # vignette correction
         V = np.repeat(V[:, :, np.newaxis], image.shape[2], axis=2)

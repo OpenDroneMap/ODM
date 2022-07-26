@@ -56,6 +56,9 @@ def generate_png(orthophoto_file, output_file=None, outsize=None):
             red = bands.get(gdal.GCI_RedBand)
             green = bands.get(gdal.GCI_GreenBand)
             blue = bands.get(gdal.GCI_BlueBand)
+            if red is None or green is None or blue is None:
+                raise Exception("Cannot find bands")
+
             bandparam = "-b %s -b %s -b %s -a_nodata 0" % (red, green, blue)
         except:
             bandparam = "-b 1 -b 2 -b 3 -a_nodata 0"

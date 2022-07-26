@@ -1,6 +1,7 @@
 from opendm import log
 from opendm.thermal_tools import dji_unpack
 import cv2
+import os
 
 def resize_to_match(image, match_photo = None):
     """
@@ -39,6 +40,16 @@ def dn_to_temperature(photo, image, dataset_tree):
             image -= (273.15 * 100.0) # Convert Kelvin to Celsius
             image *= 0.01
             return image
+        elif photo.camera_make == "DJI" and photo.camera_model == "ZH20T":            
+            filename, file_extension = os.path.splitext(photo.filename)
+            # DJI H20T high gain mode supports measurement of -40~150 celsius degrees
+            if file_extension.lower() in [".tif", ".tiff"] and image.min() >= 23315: # Calibrated grayscale tif
+                image = image.astype("float32")
+                image -= (273.15 * 100.0) # Convert Kelvin to Celsius
+                image *= 0.01
+                return image
+            else:
+                return image
         elif photo.camera_make == "DJI" and photo.camera_model == "MAVIC2-ENTERPRISE-ADVANCED":
             image = dji_unpack.extract_temperatures_dji(photo, image, dataset_tree)
             image = image.astype("float32")
