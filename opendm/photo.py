@@ -256,10 +256,10 @@ class ODM_Photo:
                     self.iso_speed = self.int_value(tags['EXIF PhotographicSensitivity'])
                 elif 'EXIF ISOSpeedRatings' in tags:
                     self.iso_speed = self.int_value(tags['EXIF ISOSpeedRatings'])
-                    
-
+                
                 if 'Image BitsPerSample' in tags:
                     self.bits_per_sample = self.int_value(tags['Image BitsPerSample'])
+
                 if 'EXIF DateTimeOriginal' in tags:
                     str_time = tags['EXIF DateTimeOriginal'].values
                     utc_time = datetime.strptime(str_time, "%Y:%m:%d %H:%M:%S")
@@ -626,7 +626,7 @@ class ODM_Photo:
             if len(parts) == 3:
                 return list(map(float, parts))
 
-        return [None, None, None]                
+        return [None, None, None]
     
     def get_dark_level(self):
         if self.black_level:
@@ -695,6 +695,11 @@ class ODM_Photo:
     def get_bit_depth_max(self):
         if self.bits_per_sample:
             return float(2 ** self.bits_per_sample)
+        else:
+            # If it's a JPEG, this must be 256
+            _, ext = os.path.splitext(self.filename)
+            if ext.lower() in [".jpeg", ".jpg"]:
+                return 256.0
 
         return None
 
@@ -731,6 +736,9 @@ class ODM_Photo:
         if(self.camera_make == "DJI" and self.camera_model == "ZH20T" and self.width == 640 and self.height == 512):
             return True
         return self.band_name.upper() in ["LWIR"] # TODO: more?
+    
+    def is_rgb(self):
+        return self.band_name.upper() in ["RGB", "REDGREENBLUE"]
 
     def camera_id(self):
         return " ".join(
