@@ -109,12 +109,14 @@ class ODM_Photo:
         # Multi-band fields
         self.band_name = 'RGB'
         self.band_index = 0
-        self.capture_uuid = None # DJI only
+        self.capture_uuid = None
 
         # Multi-spectral fields
         self.fnumber = None
         self.radiometric_calibration = None
         self.black_level = None
+        self.gain = None
+        self.gain_adjustment = None
 
         # Capture info
         self.exposure_time = None
@@ -243,7 +245,9 @@ class ODM_Photo:
                     self.black_level = self.list_values(tags['Image Tag 0xC61A'])
                 elif 'BlackLevel' in tags:
                     self.black_level = self.list_values(tags['BlackLevel'])
-                
+                elif 'Image BlackLevel' in tags:
+                    self.black_level = self.list_values(tags['Image BlackLevel'])
+
                 if 'EXIF ExposureTime' in tags:
                     self.exposure_time = self.float_value(tags['EXIF ExposureTime'])
 
@@ -351,6 +355,14 @@ class ODM_Photo:
                         'MicaSense:CaptureId', # MicaSense Altum
                         '@Camera:ImageUniqueID', # sentera 6x
                     ])
+
+                    self.set_attr_from_xmp_tag('gain', xtags, [
+                        '@drone-dji:SensorGain'
+                    ], float)
+
+                    self.set_attr_from_xmp_tag('gain_adjustment', xtags, [
+                        '@drone-dji:SensorGainAdjustment'
+                    ], float)
 
                     # Camera make / model for some cameras is stored in the XMP
                     if self.camera_make == '':
@@ -634,8 +646,10 @@ class ODM_Photo:
             return levels.mean()
 
     def get_gain(self):
-        #(gain = ISO/100)
-        if self.iso_speed:
+        if self.gain is not None:
+            return self.gain
+        elif self.iso_speed:
+            #(gain = ISO/100)
             return self.iso_speed / 100.0
 
     def get_vignetting_center(self):
@@ -654,6 +668,7 @@ class ODM_Photo:
                 # Different camera vendors seem to use different ordering for the coefficients
                 if self.camera_make != "Sentera":
                     coeffs.reverse()
+
                 return coeffs
 
     def get_utc_time(self):
@@ -672,6 +687,9 @@ class ODM_Photo:
                 scale = self.irradiance_scale_to_si
             
             return self.horizontal_irradiance * scale
+        elif self.camera_make == "DJI" and self.spectral_irradiance is not None:
+            # Phantom 4 Multispectral saves this value in @drone-dji:Irradiance
+            return self.spectral_irradiance
     
     def get_sun_sensor(self):
         if self.sun_sensor is not None:
