@@ -110,8 +110,12 @@ def vignette_map(photo):
 
         # compute the vignette polynomial for each distance - we divide by the polynomial so that the
         # corrected image is image_corrected = image_original * vignetteCorrection
+        vignette = np.polyval(vignette_poly, r)
 
-        vignette = 1.0 / np.polyval(vignette_poly, r)
+        # DJI is special apparently
+        if photo.camera_make != "DJI":
+            vignette = 1.0 / vignette
+
         return vignette, x, y
     
     return None, None, None

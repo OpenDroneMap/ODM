@@ -668,6 +668,7 @@ class ODM_Photo:
                 # Different camera vendors seem to use different ordering for the coefficients
                 if self.camera_make != "Sentera":
                     coeffs.reverse()
+
                 return coeffs
 
     def get_utc_time(self):
