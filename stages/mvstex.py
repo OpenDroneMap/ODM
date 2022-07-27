@@ -28,14 +28,6 @@ class ODMMvsTexStage(types.ODM_Stage):
             if not primary and band is not None:
                 subdir = band
             
-            skip_global_seam_leveling = args.texturing_skip_global_seam_leveling
-            if not skip_global_seam_leveling and args.radiometric_calibration != "none":
-                # If radiometric calibration is turned on, we need
-                # to skip global seam leveling, otherwise we tamper the measured values
-                # - unless - this is an RGB band, in which case we probably couldn't calibrate it
-                # (A user can pass --texturing-skip-global-seam-leveling to force a skip)
-                skip_global_seam_leveling = band is None or band not in ["rgb", "redgreenblue"]
-
             if not args.skip_3dmodel and (primary or args.use_3dmesh):
                 nonloc.runs += [{
                     'out_dir': os.path.join(tree.odm_texturing, subdir),
@@ -43,8 +35,7 @@ class ODMMvsTexStage(types.ODM_Stage):
                     'nadir': False,
                     'primary': primary,
                     'nvm_file': nvm_file,
-                    'labeling_file': os.path.join(tree.odm_texturing, "odm_textured_model_geo_labeling.vec") if subdir else None,
-                    'skip_global_seam_leveling': skip_global_seam_leveling
+                    'labeling_file': os.path.join(tree.odm_texturing, "odm_textured_model_geo_labeling.vec") if subdir else None
                 }]
 
             if not args.use_3dmesh:
@@ -54,8 +45,7 @@ class ODMMvsTexStage(types.ODM_Stage):
                     'nadir': True,
                     'primary': primary,
                     'nvm_file': nvm_file,
-                    'labeling_file': os.path.join(tree.odm_25dtexturing, "odm_textured_model_geo_labeling.vec") if subdir else None,
-                    'skip_global_seam_leveling': skip_global_seam_leveling
+                    'labeling_file': os.path.join(tree.odm_25dtexturing, "odm_textured_model_geo_labeling.vec") if subdir else None
                 }]
 
         if reconstruction.multi_camera:
@@ -89,7 +79,7 @@ class ODMMvsTexStage(types.ODM_Stage):
                 keepUnseenFaces = ""
                 nadir = ""
 
-                if r['skip_global_seam_leveling']:
+                if args.texturing_skip_global_seam_leveling:
                     skipGlobalSeamLeveling = "--skip_global_seam_leveling"
                 if args.texturing_skip_local_seam_leveling:
                     skipLocalSeamLeveling = "--skip_local_seam_leveling"
