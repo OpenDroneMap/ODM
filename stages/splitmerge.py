@@ -113,9 +113,6 @@ class ODMSplitStage(types.ODM_Stage):
 
                 self.update_progress(50)
 
-                mds = metadataset.MetaDataSet(tree.opensfm)
-                submodel_paths = [os.path.abspath(p) for p in mds.get_submodel_paths()]
-
                 # Align
                 octx.align_reconstructions(self.rerun())
 
