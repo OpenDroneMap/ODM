@@ -365,7 +365,7 @@ def window_filter_2d(arr, nodata, window, kernel_size, filter):
     Apply a filter to dem within a window, expects to work with kernal based filters
 
     :param geotiff_path: path to the geotiff to filter
-    :param window: the window to apply the filter, should be a list contains column and row offsets and width and height, (col_off, row_off, width, height)
+    :param window: the window to apply the filter, should be a list contains row start, col_start, row_end, col_end
     :param kernel_size: the size of the kernel for the filter, works with odd numbers, need to test if it works with even numbers
     :param filter: the filter function which takes a 2d array as input and filter results as output.
     """
