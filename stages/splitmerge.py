@@ -35,9 +35,13 @@ class ODMSplitStage(types.ODM_Stage):
         if io.file_exists(image_groups_file) or reconstruction.has_geotagged_photos():
             gps_info_available = True
 
-        outputs['large'] = len(photos) > args.split
+        should_split = len(photos) > args.split
+        if should_split and not gps_info_available:
+            log.ODM_WARNING('Could not perform split-merge as GPS information in photos or image_groups.txt is missing.')
 
-        if outputs['large'] and gps_info_available:
+        outputs['large'] = should_split and gps_info_available
+
+        if outputs['large']:
             # If we have a cluster address, we'll use a distributed workflow
             local_workflow = not bool(args.sm_cluster)
 
@@ -180,9 +184,6 @@ class ODMSplitStage(types.ODM_Stage):
             else:
                 log.ODM_WARNING('Found a split done file in: %s' % split_done_file)
         else:
-            if not gps_info_available:
-                log.ODM_WARNING('Could not perform split-merge as GPS information in photos or image_groups.txt is missing.')
-
             log.ODM_INFO("Normal dataset, will process all at once.")
             self.progress = 0.0
 
