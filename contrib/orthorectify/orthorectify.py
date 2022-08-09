@@ -381,7 +381,7 @@ with rasterio.open(dem_path) as dem_raster:
                 if not outfile.endswith(".tif"):
                     outfile = outfile + ".tif"
 
-                with rasterio.open(outfile, 'w', **profile) as wout:
+                with rasterio.open(outfile, 'w', BIGTIFF="IF_SAFER", **profile) as wout:
                     for b in range(num_bands):
                         wout.write(imgout[b], b + 1)
                     if with_alpha:

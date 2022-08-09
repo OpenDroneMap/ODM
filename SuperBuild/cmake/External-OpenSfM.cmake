@@ -19,7 +19,11 @@ ExternalProject_Add(${_proj_name}
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
   GIT_REPOSITORY    https://github.com/OpenDroneMap/OpenSfM/
+<<<<<<< HEAD
   GIT_TAG           m1native
+=======
+  GIT_TAG           288
+>>>>>>> 0bbd16d24fa4a1367ff540b22bce24016872a910
   #--Update/Patch step----------
   UPDATE_COMMAND    git submodule update --init --recursive
   #--Configure step-------------

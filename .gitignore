@@ -27,3 +27,4 @@ settings.yaml
 .setupdevenv
 __pycache__
 *.snap
+storage/

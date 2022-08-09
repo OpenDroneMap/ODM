@@ -25,19 +25,18 @@ def dn_to_radiance(photo, image):
     image = image.astype("float32")
     if len(image.shape) != 3:
         raise ValueError("Image should have shape length of 3 (got: %s)" % len(image.shape))
-
-    # Handle thermal bands (experimental)
-    if photo.band_name == 'LWIR':
-        image -= (273.15 * 100.0) # Convert Kelvin to Celsius
-        image *= 0.01
-        return image
     
+    # Thermal (this should never happen, but just in case..)
+    if photo.is_thermal():
+        return image
+
     # All others
     a1, a2, a3 = photo.get_radiometric_calibration()
     dark_level = photo.get_dark_level()
 
     exposure_time = photo.exposure_time
     gain = photo.get_gain()
+    gain_adjustment = photo.gain_adjustment
     photometric_exp = photo.get_photometric_exposure()
 
     if a1 is None and photometric_exp is None:
@@ -58,7 +57,9 @@ def dn_to_radiance(photo, image):
     bit_depth_max = photo.get_bit_depth_max()
     if bit_depth_max:
         image /= bit_depth_max
-
+    else:
+        log.ODM_WARNING("Cannot normalize DN for %s, bit depth is missing" % photo.filename)
+    
     if V is not None:
         # vignette correction
         V = np.repeat(V[:, :, np.newaxis], image.shape[2], axis=2)
@@ -81,6 +82,9 @@ def dn_to_radiance(photo, image):
         image /= (gain * exposure_time)
     
     image *= a1
+
+    if gain_adjustment is not None:
+        image *= gain_adjustment
 
     return image
 
@@ -106,8 +110,12 @@ def vignette_map(photo):
 
         # compute the vignette polynomial for each distance - we divide by the polynomial so that the
         # corrected image is image_corrected = image_original * vignetteCorrection
+        vignette = np.polyval(vignette_poly, r)
 
-        vignette = 1.0 / np.polyval(vignette_poly, r)
+        # DJI is special apparently
+        if photo.camera_make != "DJI":
+            vignette = 1.0 / vignette
+
         return vignette, x, y
     
     return None, None, None
@@ -122,7 +130,7 @@ def compute_irradiance(photo, use_sun_sensor=True):
     if photo.is_thermal():
         return 1.0
 
-    # Some cameras (Micasense) store the value (nice! just return)
+    # Some cameras (Micasense, DJI) store the value (nice! just return)
     hirradiance = photo.get_horizontal_irradiance()
     if hirradiance is not None:
         return hirradiance
@@ -381,12 +389,24 @@ def compute_homography(image_filename, align_image_filename):
 
             return h, (align_image_gray.shape[1], align_image_gray.shape[0])
         
-        algo = 'feat'
-        result = compute_using(find_features_homography)
+        warp_matrix = None
+        dimension = None
+        algo = None
 
-        if result[0] is None:
+        if max_dim > 320:
+            algo = 'feat'
+            result = compute_using(find_features_homography)
+            
+            if result[0] is None:
+                algo = 'ecc'
+                log.ODM_INFO("Can't use features matching, will use ECC (this might take a bit)")
+                result = compute_using(find_ecc_homography)
+                if result[0] is None:
+                    algo = None
+
+        else: # ECC only for low resolution images
             algo = 'ecc'
-            log.ODM_INFO("Can't use features matching, will use ECC (this might take a bit)")
+            log.ODM_INFO("Using ECC (this might take a bit)")
             result = compute_using(find_ecc_homography)
             if result[0] is None:
                 algo = None
@@ -396,7 +416,7 @@ def compute_homography(image_filename, align_image_filename):
 
     except Exception as e:
         log.ODM_WARNING("Compute homography: %s" % str(e))
-        return None, None, (None, None)
+        return None, (None, None), None
 
 def find_ecc_homography(image_gray, align_image_gray, number_of_iterations=1000, termination_eps=1e-8, start_eps=1e-4):
     pyramid_levels = 0
@@ -413,10 +433,14 @@ def find_ecc_homography(image_gray, align_image_gray, number_of_iterations=1000,
     if align_image_gray.shape[0] != image_gray.shape[0]:
         align_image_gray = to_8bit(align_image_gray)
         image_gray = to_8bit(image_gray)
+
+        fx = align_image_gray.shape[1]/image_gray.shape[1]
+        fy = align_image_gray.shape[0]/image_gray.shape[0]
+
         image_gray = cv2.resize(image_gray, None, 
-                        fx=align_image_gray.shape[1]/image_gray.shape[1], 
-                        fy=align_image_gray.shape[0]/image_gray.shape[0],
-                        interpolation=cv2.INTER_AREA)
+                        fx=fx, 
+                        fy=fy,
+                        interpolation=(cv2.INTER_AREA if (fx < 1.0 and fy < 1.0) else cv2.INTER_LANCZOS4))
 
     # Build pyramids
     image_gray_pyr = [image_gray]
@@ -430,8 +454,9 @@ def find_ecc_homography(image_gray, align_image_gray, number_of_iterations=1000,
         align_image_pyr.insert(0, cv2.resize(align_image_pyr[0], None, fx=1/2, fy=1/2,
                                 interpolation=cv2.INTER_AREA))
 
-    # Define the motion model
+    # Define the motion model, scale the initial warp matrix to smallest level
     warp_matrix = np.eye(3, 3, dtype=np.float32)
+    warp_matrix = warp_matrix * np.array([[1,1,2],[1,1,2],[0.5,0.5,1]], dtype=np.float32)**(1-(pyramid_levels+1))
 
     for level in range(pyramid_levels+1):
         ig = gradient(gaussian(image_gray_pyr[level]))
@@ -453,6 +478,7 @@ def find_ecc_homography(image_gray, align_image_gray, number_of_iterations=1000,
             if level != pyramid_levels:
                 log.ODM_INFO("Could not compute ECC warp_matrix at pyramid level %s, resetting matrix" % level)
                 warp_matrix = np.eye(3, 3, dtype=np.float32)
+                warp_matrix = warp_matrix * np.array([[1,1,2],[1,1,2],[0.5,0.5,1]], dtype=np.float32)**(1-(pyramid_levels+1))
             else:
                 raise e
 
@@ -462,29 +488,33 @@ def find_ecc_homography(image_gray, align_image_gray, number_of_iterations=1000,
     return warp_matrix
 
 
-def find_features_homography(image_gray, align_image_gray, feature_retention=0.25):
+def find_features_homography(image_gray, align_image_gray, feature_retention=0.7, min_match_count=10):
+
     # Detect SIFT features and compute descriptors.
     detector = cv2.SIFT_create(edgeThreshold=10, contrastThreshold=0.1)
     kp_image, desc_image = detector.detectAndCompute(image_gray, None)
     kp_align_image, desc_align_image = detector.detectAndCompute(align_image_gray, None)
 
     # Match
-    bf = cv2.BFMatcher(cv2.NORM_L1,crossCheck=True)
+    FLANN_INDEX_KDTREE = 1
+    index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
+    search_params = dict(checks=50)
+
+    flann = cv2.FlannBasedMatcher(index_params, search_params)
     try:
-        matches = bf.match(desc_image, desc_align_image)
+        matches = flann.knnMatch(desc_image, desc_align_image, k=2)
     except Exception as e:
-        log.ODM_INFO("Cannot match features")
         return None
 
-    # Sort by score
-    matches.sort(key=lambda x: x.distance, reverse=False)
+    # Filter good matches following Lowe's ratio test
+    good_matches = []
+    for m, n in matches:
+        if m.distance < feature_retention * n.distance:
+            good_matches.append(m)
 
-    # Remove bad matches
-    num_good_matches = int(len(matches) * feature_retention)
-    matches = matches[:num_good_matches]
+    matches = good_matches
 
-    if len(matches) < 4:
-        log.ODM_INFO("Insufficient features: %s" % len(matches))
+    if len(matches) < min_match_count:
         return None
 
     # Debug

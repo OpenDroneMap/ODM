@@ -11,7 +11,7 @@ except ImportError:
                        run `sudo apt-get install libgdal-dev` \
                        # Check Gdal version with \
                        gdal-config --version \
-                       #install correspondig gdal version with pip : \
+                       #install corresponding gdal version with pip : \
                        pip3 install GDAL==2.4.0")
 
 def parse_args():

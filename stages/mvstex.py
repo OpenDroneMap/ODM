@@ -27,7 +27,7 @@ class ODMMvsTexStage(types.ODM_Stage):
             subdir = ""
             if not primary and band is not None:
                 subdir = band
-
+            
             if not args.skip_3dmodel and (primary or args.use_3dmesh):
                 nonloc.runs += [{
                     'out_dir': os.path.join(tree.odm_texturing, subdir),
@@ -79,11 +79,11 @@ class ODMMvsTexStage(types.ODM_Stage):
                 keepUnseenFaces = ""
                 nadir = ""
 
-                if (self.params.get('skip_glob_seam_leveling')):
+                if args.texturing_skip_global_seam_leveling:
                     skipGlobalSeamLeveling = "--skip_global_seam_leveling"
-                if (self.params.get('skip_loc_seam_leveling')):
+                if args.texturing_skip_local_seam_leveling:
                     skipLocalSeamLeveling = "--skip_local_seam_leveling"
-                if (self.params.get('keep_unseen_faces')):
+                if args.texturing_keep_unseen_faces:
                     keepUnseenFaces = "--keep_unseen_faces"
                 if (r['nadir']):
                     nadir = '--nadir_mode'
@@ -93,12 +93,12 @@ class ODMMvsTexStage(types.ODM_Stage):
                     'bin': context.mvstex_path,
                     'out_dir': os.path.join(r['out_dir'], "odm_textured_model_geo"),
                     'model': r['model'],
-                    'dataTerm': self.params.get('data_term'),
-                    'outlierRemovalType': self.params.get('outlier_rem_type'),
+                    'dataTerm': args.texturing_data_term,
+                    'outlierRemovalType': args.texturing_outlier_removal_type,
                     'skipGlobalSeamLeveling': skipGlobalSeamLeveling,
                     'skipLocalSeamLeveling': skipLocalSeamLeveling,
                     'keepUnseenFaces': keepUnseenFaces,
-                    'toneMapping': self.params.get('tone_mapping'),
+                    'toneMapping': args.texturing_tone_mapping,
                     'nadirMode': nadir,
                     'maxTextureSize': '--max_texture_size=%s' % max_texture_size,
                     'nvm_file': r['nvm_file'],

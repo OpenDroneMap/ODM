@@ -46,6 +46,7 @@ jobs:
         file: ./portable.Dockerfile
         platforms: linux/amd64,linux/arm64
         push: true
+        no-cache: true
         tags: |
           ${{ steps.docker_meta.outputs.tags }}
           opendronemap/odm:latest

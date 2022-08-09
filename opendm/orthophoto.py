@@ -44,9 +44,25 @@ def generate_png(orthophoto_file, output_file=None, outsize=None):
     
     # See if we need to select top three bands
     bandparam = ""
+
     gtif = gdal.Open(orthophoto_file)
     if gtif.RasterCount > 4:
-        bandparam = "-b 1 -b 2 -b 3 -a_nodata 0"
+        bands = []
+        for idx in range(1, gtif.RasterCount+1):
+            bands.append(gtif.GetRasterBand(idx).GetColorInterpretation())
+        bands = dict(zip(bands, range(1, len(bands)+1)))
+
+        try:
+            red = bands.get(gdal.GCI_RedBand)
+            green = bands.get(gdal.GCI_GreenBand)
+            blue = bands.get(gdal.GCI_BlueBand)
+            if red is None or green is None or blue is None:
+                raise Exception("Cannot find bands")
+
+            bandparam = "-b %s -b %s -b %s -a_nodata 0" % (red, green, blue)
+        except:
+            bandparam = "-b 1 -b 2 -b 3 -a_nodata 0"
+    gtif = None
 
     osparam = ""
     if outsize is not None:
@@ -154,7 +170,7 @@ def feather_raster(input_raster, output_raster, blend_distance=20):
             else:
                 log.ODM_WARNING("%s does not have an alpha band, cannot feather raster!" % input_raster)
 
-        with rasterio.open(output_raster, 'w', **rast.profile) as dst:
+        with rasterio.open(output_raster, 'w', BIGTIFF="IF_SAFER", **rast.profile) as dst:
             dst.colorinterp = rast.colorinterp
             dst.write(out_image)
 

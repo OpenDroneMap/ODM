@@ -37,7 +37,6 @@ parts:
       - gdal-bin
       - gfortran # to build scipy
       - git
-      - libboost-log-dev
       - libgdal-dev
       - libgeotiff-dev
       - libjsoncpp-dev
@@ -54,7 +53,6 @@ parts:
       - swig3.0
     stage-packages:
       - gdal-bin
-      - libboost-log1.74.0
       - libgdal28
       - libgeotiff5
       - libjsoncpp24
@@ -114,33 +112,23 @@ parts:
     build-packages:
       - libcgal-dev
       - libboost-program-options-dev
+      - libboost-iostreams-dev
+      - libboost-serialization-dev
+      - libboost-system-dev
     stage-packages:
       - libboost-program-options1.74.0
+      - libboost-iostreams1.74.0
+      - libboost-serialization1.74.0
+      - libboost-system1.74.0
 
   opensfm:
     source: .
     plugin: nil
     build-packages:
-      - libboost-date-time-dev
-      - libboost-filesystem-dev
-      - libboost-iostreams-dev
-      - libboost-python-dev
-      - libboost-regex-dev
-      - libboost-serialization-dev
-      - libboost-system-dev
-      - libboost-thread-dev
       - libgoogle-glog-dev
       - libsuitesparse-dev
     stage-packages:
       - libamd2
-      - libboost-date-time1.74.0
-      - libboost-filesystem1.74.0
-      - libboost-iostreams1.74.0
-      - libboost-python1.74.0
-      - libboost-regex1.74.0
-      - libboost-serialization1.74.0
-      - libboost-system1.74.0
-      - libboost-thread1.74.0
       - libcamd2
       - libccolamd2
       - libcholmod3

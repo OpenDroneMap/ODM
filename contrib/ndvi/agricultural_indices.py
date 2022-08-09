@@ -17,7 +17,7 @@ except ImportError:
                        run `sudo apt-get install libgdal-dev` \
                        # Check Gdal version with \
                        gdal-config --version \
-                       #install correspondig gdal version with pip : \
+                       #install corresponding gdal version with pip : \
                        pip3 install GDAL==2.4.0")
 
 
@@ -50,7 +50,7 @@ a Geotif with  NDVI, NDRE and GNDVI  agricultural indices')
 
 if __name__ == "__main__":
     
-    # Supress/hide warning when dividing by zero
+    # Suppress/hide warning when dividing by zero
     numpy.seterr(divide='ignore', invalid='ignore')
 
     rootdir = os.path.dirname(os.path.abspath(__file__))

@@ -10,6 +10,10 @@ if (WIN32)
                              -DOPENCV_BIN_INSTALL_PATH=${SB_INSTALL_DIR}/bin)
 endif()
 
+# TODO: - add PYTHON HOME
+#       - add NUMPY paths, packages paths?
+#       - re-run cmake . from opencv dir, check that bindings are being built. 
+
 ExternalProject_Add(${_proj_name}
   PREFIX            ${_SB_BINARY_DIR}
   TMP_DIR           ${_SB_BINARY_DIR}/tmp

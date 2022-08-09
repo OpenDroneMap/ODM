@@ -16,6 +16,8 @@ class ODMFilterPoints(types.ODM_Stage):
 
         if not os.path.exists(tree.odm_filterpoints): system.mkdir_p(tree.odm_filterpoints)
 
+        inputPointCloud = ""
+        
         # check if reconstruction was done before
         if not io.file_exists(tree.filtered_point_cloud) or self.rerun():
             if args.fast_orthophoto:
@@ -27,10 +29,21 @@ class ODMFilterPoints(types.ODM_Stage):
             if args.auto_boundary:
                 if reconstruction.is_georeferenced():
                     if not 'boundary' in outputs:
-                        avg_gsd = gsd.opensfm_reconstruction_average_gsd(tree.opensfm_reconstruction)
-                        outputs['boundary'] = compute_boundary_from_shots(tree.opensfm_reconstruction, avg_gsd * 20, reconstruction.get_proj_offset()) # 20 is arbitrary
-                        if outputs['boundary'] is None:
-                            log.ODM_WARNING("Cannot compute boundary from camera shots")
+                        boundary_distance = None
+
+                        if args.auto_boundary_distance > 0:
+                            boundary_distance = args.auto_boundary_distance
+                        else:
+                            avg_gsd = gsd.opensfm_reconstruction_average_gsd(tree.opensfm_reconstruction)
+                            if avg_gsd is not None:
+                                boundary_distance = avg_gsd * 20 # 20 is arbitrary
+                            
+                        if boundary_distance is not None:
+                            outputs['boundary'] = compute_boundary_from_shots(tree.opensfm_reconstruction, boundary_distance, reconstruction.get_proj_offset())
+                            if outputs['boundary'] is None:
+                                log.ODM_WARNING("Cannot compute boundary from camera shots")
+                        else:
+                            log.ODM_WARNING("Cannot compute boundary (GSD cannot be estimated)")
                     else:
                         log.ODM_WARNING("--auto-boundary set but so is --boundary, will use --boundary")
                 else:

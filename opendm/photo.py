@@ -109,12 +109,14 @@ class ODM_Photo:
         # Multi-band fields
         self.band_name = 'RGB'
         self.band_index = 0
-        self.capture_uuid = None # DJI only
+        self.capture_uuid = None
 
         # Multi-spectral fields
         self.fnumber = None
         self.radiometric_calibration = None
         self.black_level = None
+        self.gain = None
+        self.gain_adjustment = None
 
         # Capture info
         self.exposure_time = None
@@ -142,9 +144,13 @@ class ODM_Photo:
         self.dls_roll = None
 
         # Aircraft speed
-        self.speedX = None
-        self.speedY = None
-        self.speedZ = None
+        self.speed_x = None
+        self.speed_y = None
+        self.speed_z = None
+
+        # Original image width/height at capture time (before possible resizes)
+        self.exif_width = None
+        self.exif_height = None
 
         # self.center_wavelength = None
         # self.bandwidth = None
@@ -217,7 +223,7 @@ class ODM_Photo:
                         self.camera_model = "unknown"
                 if 'GPS GPSAltitude' in tags:
                     self.altitude = self.float_value(tags['GPS GPSAltitude'])
-                    if 'GPS GPSAltitudeRef' in tags and self.int_value(tags['GPS GPSAltitudeRef']) > 0:
+                    if 'GPS GPSAltitudeRef' in tags and self.int_value(tags['GPS GPSAltitudeRef']) is not None and self.int_value(tags['GPS GPSAltitudeRef']) > 0:
                         self.altitude *= -1
                 if 'GPS GPSLatitude' in tags and 'GPS GPSLatitudeRef' in tags:
                     self.latitude = self.dms_to_decimal(tags['GPS GPSLatitude'], tags['GPS GPSLatitudeRef'])
@@ -239,7 +245,9 @@ class ODM_Photo:
                     self.black_level = self.list_values(tags['Image Tag 0xC61A'])
                 elif 'BlackLevel' in tags:
                     self.black_level = self.list_values(tags['BlackLevel'])
-                
+                elif 'Image BlackLevel' in tags:
+                    self.black_level = self.list_values(tags['Image BlackLevel'])
+
                 if 'EXIF ExposureTime' in tags:
                     self.exposure_time = self.float_value(tags['EXIF ExposureTime'])
 
@@ -252,10 +260,10 @@ class ODM_Photo:
                     self.iso_speed = self.int_value(tags['EXIF PhotographicSensitivity'])
                 elif 'EXIF ISOSpeedRatings' in tags:
                     self.iso_speed = self.int_value(tags['EXIF ISOSpeedRatings'])
-                    
-
+                
                 if 'Image BitsPerSample' in tags:
                     self.bits_per_sample = self.int_value(tags['Image BitsPerSample'])
+
                 if 'EXIF DateTimeOriginal' in tags:
                     str_time = tags['EXIF DateTimeOriginal'].values
                     utc_time = datetime.strptime(str_time, "%Y:%m:%d %H:%M:%S")
@@ -277,10 +285,15 @@ class ODM_Photo:
                 if 'MakerNote SpeedX' in tags and \
                     'MakerNote SpeedY' in tags and \
                     'MakerNote SpeedZ' in tags:
-                    self.speedX = self.float_value(tags['MakerNote SpeedX'])
-                    self.speedY = self.float_value(tags['MakerNote SpeedY'])
-                    self.speedZ = self.float_value(tags['MakerNote SpeedZ'])
+                    self.speed_x = self.float_value(tags['MakerNote SpeedX'])
+                    self.speed_y = self.float_value(tags['MakerNote SpeedY'])
+                    self.speed_z = self.float_value(tags['MakerNote SpeedZ'])
 
+                if 'EXIF ExifImageWidth' in tags and \
+                   'EXIF ExifImageLength' in tags:
+                   self.exif_width = self.int_value(tags['EXIF ExifImageWidth'])
+                   self.exif_height = self.int_value(tags['EXIF ExifImageLength'])
+                
             except Exception as e:
                 log.ODM_WARNING("Cannot read extended EXIF tags for %s: %s" % (self.filename, str(e)))
 
@@ -339,8 +352,17 @@ class ODM_Photo:
 
                     self.set_attr_from_xmp_tag('capture_uuid', xtags, [
                         '@drone-dji:CaptureUUID', # DJI
+                        'MicaSense:CaptureId', # MicaSense Altum
                         '@Camera:ImageUniqueID', # sentera 6x
                     ])
+
+                    self.set_attr_from_xmp_tag('gain', xtags, [
+                        '@drone-dji:SensorGain'
+                    ], float)
+
+                    self.set_attr_from_xmp_tag('gain_adjustment', xtags, [
+                        '@drone-dji:SensorGainAdjustment'
+                    ], float)
 
                     # Camera make / model for some cameras is stored in the XMP
                     if self.camera_make == '':
@@ -385,13 +407,13 @@ class ODM_Photo:
                     if '@drone-dji:FlightXSpeed' in xtags and \
                        '@drone-dji:FlightYSpeed' in xtags and \
                        '@drone-dji:FlightZSpeed' in xtags:
-                        self.set_attr_from_xmp_tag('speedX', xtags, [
+                        self.set_attr_from_xmp_tag('speed_x', xtags, [
                             '@drone-dji:FlightXSpeed'
                         ], float)
-                        self.set_attr_from_xmp_tag('speedY', xtags, [
+                        self.set_attr_from_xmp_tag('speed_y', xtags, [
                             '@drone-dji:FlightYSpeed',
                         ], float)
-                        self.set_attr_from_xmp_tag('speedZ', xtags, [
+                        self.set_attr_from_xmp_tag('speed_z', xtags, [
                             '@drone-dji:FlightZSpeed',
                         ], float)
 
@@ -616,7 +638,7 @@ class ODM_Photo:
             if len(parts) == 3:
                 return list(map(float, parts))
 
-        return [None, None, None]                
+        return [None, None, None]
     
     def get_dark_level(self):
         if self.black_level:
@@ -624,8 +646,10 @@ class ODM_Photo:
             return levels.mean()
 
     def get_gain(self):
-        #(gain = ISO/100)
-        if self.iso_speed:
+        if self.gain is not None:
+            return self.gain
+        elif self.iso_speed:
+            #(gain = ISO/100)
             return self.iso_speed / 100.0
 
     def get_vignetting_center(self):
@@ -644,6 +668,7 @@ class ODM_Photo:
                 # Different camera vendors seem to use different ordering for the coefficients
                 if self.camera_make != "Sentera":
                     coeffs.reverse()
+
                 return coeffs
 
     def get_utc_time(self):
@@ -662,6 +687,9 @@ class ODM_Photo:
                 scale = self.irradiance_scale_to_si
             
             return self.horizontal_irradiance * scale
+        elif self.camera_make == "DJI" and self.spectral_irradiance is not None:
+            # Phantom 4 Multispectral saves this value in @drone-dji:Irradiance
+            return self.spectral_irradiance
     
     def get_sun_sensor(self):
         if self.sun_sensor is not None:
@@ -685,6 +713,11 @@ class ODM_Photo:
     def get_bit_depth_max(self):
         if self.bits_per_sample:
             return float(2 ** self.bits_per_sample)
+        else:
+            # If it's a JPEG, this must be 256
+            _, ext = os.path.splitext(self.filename)
+            if ext.lower() in [".jpeg", ".jpg"]:
+                return 256.0
 
         return None
 
@@ -715,9 +748,15 @@ class ODM_Photo:
 
     def is_thermal(self):
         #Added for support M2EA camera sensor
-        if(self.camera_make == "DJI"):
-            return self.camera_model == "MAVIC2-ENTERPRISE-ADVANCED" and self.width == 640 and self.height == 512
+        if(self.camera_make == "DJI" and self.camera_model == "MAVIC2-ENTERPRISE-ADVANCED" and self.width == 640 and self.height == 512):
+            return True
+        #Added for support DJI H20T camera sensor
+        if(self.camera_make == "DJI" and self.camera_model == "ZH20T" and self.width == 640 and self.height == 512):
+            return True
         return self.band_name.upper() in ["LWIR"] # TODO: more?
+    
+    def is_rgb(self):
+        return self.band_name.upper() in ["RGB", "REDGREENBLUE"]
 
     def camera_id(self):
         return " ".join(
@@ -775,10 +814,10 @@ class ODM_Photo:
         
         # Speed is not useful without GPS
         if self.has_speed() and has_gps:
-            d['speed'] = [self.speedY, self.speedX, self.speedZ]
+            d['speed'] = [self.speed_y, self.speed_x, self.speed_z]
         
         if rolling_shutter:
-            d['rolling_shutter'] = get_rolling_shutter_readout(self.camera_make, self.camera_model, rolling_shutter_readout)
+            d['rolling_shutter'] = get_rolling_shutter_readout(self, rolling_shutter_readout)
         
         return d
 
@@ -793,9 +832,9 @@ class ODM_Photo:
             self.kappa is not None
     
     def has_speed(self):
-        return self.speedX is not None and \
-                self.speedY is not None and \
-                self.speedZ is not None
+        return self.speed_x is not None and \
+                self.speed_y is not None and \
+                self.speed_z is not None
 
     def has_geo(self):
         return self.latitude is not None and \
@@ -853,3 +892,15 @@ class ODM_Photo:
             self.omega = math.degrees(math.atan2(-ceb[1][2], ceb[2][2]))
             self.phi = math.degrees(math.asin(ceb[0][2]))
             self.kappa = math.degrees(math.atan2(-ceb[0][1], ceb[0][0]))
+
+    def get_capture_megapixels(self):
+        if self.exif_width is not None and self.exif_height is not None:
+            # Accurate so long as resizing / postprocess software
+            # did not fiddle with the tags
+            return self.exif_width * self.exif_height / 1e6
+        elif self.width is not None and self.height is not None:
+            # Fallback, might not be accurate since the image
+            # could have been resized
+            return self.width * self.height / 1e6
+        else:
+            return 0.0

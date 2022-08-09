@@ -10,6 +10,8 @@ if defined _OLD_CODEPAGE (
 
 set ODMBASE=%~dp0
 set GDALBASE=%ODMBASE%venv\Lib\site-packages\osgeo
+set GDAL_DATA=%GDALBASE%\data\gdal
+set GDAL_DRIVER_PATH=%GDALBASE%\gdalplugins
 set OSFMBASE=%ODMBASE%SuperBuild\install\bin\opensfm\bin
 set SBBIN=%ODMBASE%SuperBuild\install\bin
 

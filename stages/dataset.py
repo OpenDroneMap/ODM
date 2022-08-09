@@ -11,6 +11,9 @@ from opendm.geo import GeoFile
 from shutil import copyfile
 from opendm import progress
 from opendm import boundary
+from opendm import ai
+from opendm.skyremoval.skyfilter import SkyFilter
+from opendm.concurrency import parallel_map
 
 def save_images_database(photos, database_file):
     with open(database_file, 'w') as f:
@@ -113,7 +116,7 @@ class ODMLoadDatasetStage(types.ODM_Stage):
                         try:
                             p = types.ODM_Photo(f)
                             p.set_mask(find_mask(f, masks))
-                            photos += [p]
+                            photos.append(p)
                             dataset_list.write(photos[-1].filename + '\n')
                         except PhotoCorruptedException:
                             log.ODM_WARNING("%s seems corrupted and will not be used" % os.path.basename(f))
@@ -144,6 +147,49 @@ class ODMLoadDatasetStage(types.ODM_Stage):
 
                     for p in photos:
                         p.override_camera_projection(args.camera_lens)
+
+                # Automatic sky removal
+                if args.sky_removal:
+                    # For each image that :
+                    #  - Doesn't already have a mask, AND
+                    #  - Is not nadir (or if orientation info is missing), AND
+                    #  - There are no spaces in the image filename (OpenSfM requirement)
+                    # Automatically generate a sky mask
+                    
+                    # Generate list of sky images
+                    sky_images = []
+                    for p in photos:
+                        if p.mask is None and (p.pitch is None or (abs(p.pitch) > 20)) and (not " " in p.filename):
+                            sky_images.append({'file': os.path.join(images_dir, p.filename), 'p': p})
+
+                    if len(sky_images) > 0:
+                        log.ODM_INFO("Automatically generating sky masks for %s images" % len(sky_images))
+                        model = ai.get_model("skyremoval", "https://github.com/OpenDroneMap/SkyRemoval/releases/download/v1.0.5/model.zip", "v1.0.5")
+                        if model is not None:
+                            sf = SkyFilter(model=model)
+
+                            def parallel_sky_filter(item):
+                                try:
+                                    mask_file = sf.run_img(item['file'], images_dir)
+
+                                    # Check and set
+                                    if mask_file is not None and os.path.isfile(mask_file):
+                                        item['p'].set_mask(os.path.basename(mask_file))
+                                        log.ODM_INFO("Wrote %s" % os.path.basename(mask_file))
+                                    else:
+                                        log.ODM_WARNING("Cannot generate mask for %s" % img)
+                                except Exception as e:
+                                    log.ODM_WARNING("Cannot generate mask for %s: %s" % (img, str(e)))
+
+                            parallel_map(parallel_sky_filter, sky_images, max_workers=args.max_concurrency)
+
+                            log.ODM_INFO("Sky masks generation completed!")
+                        else:
+                            log.ODM_WARNING("Cannot load AI model (you might need to be connected to the internet?)")
+                    else:
+                        log.ODM_INFO("No sky masks will be generated (masks already provided, or images are nadir)")
+
+                # End sky removal
 
                 # Save image database for faster restart
                 save_images_database(photos, images_database_file)
