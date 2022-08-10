@@ -7,6 +7,23 @@ if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release")
 endif()
 
+if (APPLE)
+    # Use homebrew's clang compiler since Apple
+    # does not allow us to link to libomp
+    foreach(CXX_PATH /opt/homebrew/bin/c++-12 /usr/local/c++-12)
+        message("Checking for ${CXX_PATH}...")
+        if(EXISTS "${CXX_PATH}")
+            message("Found Homebrew's compiler: ${CXX_PATH}")
+            set(CMAKE_CXX_COMPILER ${CXX_PATH})
+            set(APPLE_CMAKE_ARGS "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}")
+            break()
+        endif()
+    endforeach()
+    if (NOT APPLE_CMAKE_ARGS)
+        message(WARNING "Cannot find Homebrew's compiler, compilation might fail...")
+    endif()
+endif()
+
 # Setup SuperBuild root location
 set(SB_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -160,10 +177,13 @@ if (WIN32)
 else()
     set (POISSON_BUILD_CMD  make -j${nproc} poissonrecon)
     set (POISSON_BIN_PATH "Linux/PoissonRecon")
+    if (APPLE)
+        set(POISSON_BUILD_CMD COMPILER=${CMAKE_CXX_COMPILER} make -j${nproc} -f Makefile.macos poissonrecon)
+    endif()
 endif()
 externalproject_add(poissonrecon
     GIT_REPOSITORY    https://github.com/OpenDroneMap/PoissonRecon.git
-    GIT_TAG           272
+    GIT_TAG           m1native
     PREFIX            ${SB_BINARY_DIR}/PoissonRecon
     SOURCE_DIR        ${SB_SOURCE_DIR}/PoissonRecon
     UPDATE_COMMAND    ""
@@ -180,6 +200,7 @@ externalproject_add(dem2mesh
     SOURCE_DIR        ${SB_SOURCE_DIR}/dem2mesh
     CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
                       ${WIN32_GDAL_ARGS}
+                      ${APPLE_CMAKE_ARGS}
 )
 
 externalproject_add(dem2points
