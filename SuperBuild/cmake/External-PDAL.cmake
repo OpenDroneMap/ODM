@@ -3,6 +3,8 @@ set(_SB_BINARY_DIR "${SB_BINARY_DIR}/${_proj_name}")
 
 if (WIN32)
 set(LASZIP_LIB "${SB_INSTALL_DIR}/lib/laszip.lib")
+elseif(APPLE)
+set(LASZIP_LIB "${SB_INSTALL_DIR}/lib/liblaszip.dylib")
 else()
 set(LASZIP_LIB "${SB_INSTALL_DIR}/lib/liblaszip.so")
 endif()
