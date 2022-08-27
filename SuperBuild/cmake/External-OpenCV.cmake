@@ -2,16 +2,20 @@ set(_proj_name opencv)
 set(_SB_BINARY_DIR "${SB_BINARY_DIR}/${_proj_name}")
 
 if (WIN32)
-  set(WIN32_CMAKE_EXTRA_ARGS -DPYTHON3_NUMPY_INCLUDE_DIRS=${PYTHON_HOME}/lib/site-packages/numpy/core/include
+  set(OCV_CMAKE_EXTRA_ARGS -DPYTHON3_NUMPY_INCLUDE_DIRS=${PYTHON_HOME}/lib/site-packages/numpy/core/include
                              -DPYTHON3_PACKAGES_PATH=${PYTHON_HOME}/lib/site-packages
                              -DPYTHON3_EXECUTABLE=${PYTHON_EXE_PATH}
                              -DWITH_MSMF=OFF
                              -DOPENCV_LIB_INSTALL_PATH=${SB_INSTALL_DIR}/lib
                              -DOPENCV_BIN_INSTALL_PATH=${SB_INSTALL_DIR}/bin)
+elseif(APPLE)
+  set(OCV_CMAKE_EXTRA_ARGS -DPYTHON3_EXECUTABLE=${PYTHON_EXE_PATH}
+                           -DMIN_VER_PYTHON3="3.8")
+  #-DPYTHON_LIBRARY=/opt/homebrew/Cellar/python@3.8/3.8.13_2/Frameworks/Python.framework/Versions/3.8/lib/)                        
 endif()
 
-# TODO: - add PYTHON HOME
-#       - add NUMPY paths, packages paths?
+#  TODO: need to find (install?) PythonLibs via find_package 
+# 
 #       - re-run cmake . from opencv dir, check that bindings are being built. 
 
 ExternalProject_Add(${_proj_name}
@@ -64,7 +68,7 @@ ExternalProject_Add(${_proj_name}
     -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
     -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
     ${WIN32_CMAKE_ARGS}
-    ${WIN32_CMAKE_EXTRA_ARGS}
+    ${OCV_CMAKE_EXTRA_ARGS}
   #--Build step-----------------
   BINARY_DIR        ${_SB_BINARY_DIR}
   #--Install step---------------
