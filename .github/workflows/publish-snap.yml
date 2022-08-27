@@ -1,56 +1,56 @@
-# name: Publish Snap
+name: Publish Snap
 
-# on:
-#   push:
-#     branches:
-#     - master
-#     tags:
-#     - v**
+on:
+  push:
+    branches:
+    - master
+    tags:
+    - v**
 
-# jobs:
-#   build-and-release:
-#     runs-on: ubuntu-latest
-#     strategy:
-#       matrix:
-#         architecture:
-#         - amd64
-#     steps:
-#     - name: Checkout
-#       uses: actions/checkout@v2
-#     - name: Set Swap Space
-#       uses: pierotofy/set-swap-space@master
-#       with:
-#         swap-size-gb: 12
-#     - name: Build
-#       id: build
-#       uses: diddlesnaps/snapcraft-multiarch-action@v1
-#       with:
-#         architecture: ${{ matrix.architecture }}
-#     - name: Review
-#       uses: diddlesnaps/snapcraft-review-tools-action@v1
-#       with:
-#         snap: ${{ steps.build.outputs.snap }}
-#         isClassic: 'false'
-#     - name: Publish unstable builds to Edge
-#       if: github.ref == 'refs/heads/master'
-#       uses: snapcore/action-publish@v1
-#       with:
-#         store_login: ${{ secrets.STORE_LOGIN }}
-#         snap: ${{ steps.build.outputs.snap }}
-#         release: edge
-#     - name: Publish tagged prerelease builds to Beta
-#       # These are identified by having a hyphen in the tag name, e.g.: v1.0.0-beta1
-#       if: startsWith(github.ref, 'refs/tags/v') && contains(github.ref, '-')
-#       uses: snapcore/action-publish@v1
-#       with:
-#         store_login: ${{ secrets.STORE_LOGIN }}
-#         snap: ${{ steps.build.outputs.snap }}
-#         release: beta
-#     - name: Publish tagged stable or release-candidate builds to Candidate
-#       # These are identified by NOT having a hyphen in the tag name, OR having "-RC" or "-rc" in the tag name.
-#       if: startsWith(github.ref, 'refs/tags/v1') && ( ( ! contains(github.ref, '-') ) || contains(github.ref, '-RC') || contains(github.ref, '-rc') )
-#       uses: snapcore/action-publish@v1
-#       with:
-#         store_login: ${{ secrets.STORE_LOGIN }}
-#         snap: ${{ steps.build.outputs.snap }}
-#         release: candidate
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        architecture:
+        - amd64
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Set Swap Space
+      uses: pierotofy/set-swap-space@master
+      with:
+        swap-size-gb: 12
+    - name: Build
+      id: build
+      uses: diddlesnaps/snapcraft-multiarch-action@v1
+      with:
+        architecture: ${{ matrix.architecture }}
+    - name: Review
+      uses: diddlesnaps/snapcraft-review-tools-action@v1
+      with:
+        snap: ${{ steps.build.outputs.snap }}
+        isClassic: 'false'
+    - name: Publish unstable builds to Edge
+      if: github.ref == 'refs/heads/master'
+      uses: snapcore/action-publish@v1
+      with:
+        store_login: ${{ secrets.STORE_LOGIN }}
+        snap: ${{ steps.build.outputs.snap }}
+        release: edge
+    - name: Publish tagged prerelease builds to Beta
+      # These are identified by having a hyphen in the tag name, e.g.: v1.0.0-beta1
+      if: startsWith(github.ref, 'refs/tags/v') && contains(github.ref, '-')
+      uses: snapcore/action-publish@v1
+      with:
+        store_login: ${{ secrets.STORE_LOGIN }}
+        snap: ${{ steps.build.outputs.snap }}
+        release: beta
+    - name: Publish tagged stable or release-candidate builds to Candidate
+      # These are identified by NOT having a hyphen in the tag name, OR having "-RC" or "-rc" in the tag name.
+      if: startsWith(github.ref, 'refs/tags/v1') && ( ( ! contains(github.ref, '-') ) || contains(github.ref, '-RC') || contains(github.ref, '-rc') )
+      uses: snapcore/action-publish@v1
+      with:
+        store_login: ${{ secrets.STORE_LOGIN }}
+        snap: ${{ steps.build.outputs.snap }}
+        release: candidate
