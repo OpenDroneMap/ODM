@@ -209,6 +209,7 @@ apps:
     environment:
       # Ensure libraries are found
       LD_LIBRARY_PATH: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/blas:$SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/lapack:$LD_LIBRARY_PATH
+      PYTHONPATH: $SNAP/odm/SuperBuild/install:$SNAP/lib/python3.8/site-packages:$SNAP/usr/lib/python3/dist-packages/:$SNAP/usr/lib/python3.8
     plugs:
       - home
       - network
