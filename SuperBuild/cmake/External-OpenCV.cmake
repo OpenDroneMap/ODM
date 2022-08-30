@@ -9,9 +9,21 @@ if (WIN32)
                              -DOPENCV_LIB_INSTALL_PATH=${SB_INSTALL_DIR}/lib
                              -DOPENCV_BIN_INSTALL_PATH=${SB_INSTALL_DIR}/bin)
 elseif(APPLE)
-  set(OCV_CMAKE_EXTRA_ARGS -DPYTHON3_EXECUTABLE=${PYTHON_EXE_PATH}
-                           -DMIN_VER_PYTHON3="3.8")
-  #-DPYTHON_LIBRARY=/opt/homebrew/Cellar/python@3.8/3.8.13_2/Frameworks/Python.framework/Versions/3.8/lib/)                        
+  set(OCV_CMAKE_EXTRA_ARGS -DPYTHON3_NUMPY_INCLUDE_DIRS=${PYTHON_HOME}/lib/site-packages/numpy/core/include
+                           -DPYTHON3_PACKAGES_PATH=${PYTHON_HOME}/lib/site-packages
+                           -DPYTHON3_EXECUTABLE=${PYTHON_EXE_PATH}
+                           -DPYTHON3_LIBRARIES=/opt/homebrew/Cellar/python@3.8/3.8.13_2/Frameworks/Python.framework/Versions/3.8/lib/libpython3.8.dylib
+                           -DPYTHON3_INCLUDE_DIR=/opt/homebrew//Cellar/python@3.8/3.8.13_2/Frameworks/Python.framework/Versions/3.8/include/python3.8/
+                           -DPYTHON3INTERP_FOUND=ON
+                           -DPYTHON3LIBS_FOUND=ON
+                           -DPYTHON_DEFAULT_AVAILABLE=ON
+                           -DPYTHON_DEFAULT_EXECUTABLE=${PYTHON_EXE_PATH}
+                           -DOPENCV_PYTHON_INSTALL_PATH=${SB_INSTALL_DIR}/lib/python3.8
+                           -D__INSTALL_PATH_PYTHON3=${SB_INSTALL_DIR}/lib/python3.8
+                           -DHAVE_opencv_python3=ON
+                           -DOPENCV_PYTHON_SKIP_DETECTION=ON
+                           -DOPENCV_LIB_INSTALL_PATH=${SB_INSTALL_DIR}/lib
+                           -DOPENCV_BIN_INSTALL_PATH=${SB_INSTALL_DIR}/bin)
 endif()
 
 #  TODO: need to find (install?) PythonLibs via find_package 
