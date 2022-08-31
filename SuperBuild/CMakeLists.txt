@@ -8,17 +8,29 @@ if (NOT CMAKE_BUILD_TYPE)
 endif()
 
 if (APPLE)
+    find_program(HOMEBREW_EXECUTABLE brew)
+    mark_as_advanced(FORCE HOMEBREW_EXECUTABLE)
+    if (HOMEBREW_EXECUTABLE)
+        # Detected a Homebrew install, query for its install prefix.
+        execute_process(COMMAND ${HOMEBREW_EXECUTABLE} --prefix
+            OUTPUT_VARIABLE HOMEBREW_INSTALL_PREFIX
+            OUTPUT_STRIP_TRAILING_WHITESPACE)
+        message(STATUS "Detected Homebrew with install prefix: "
+            "${HOMEBREW_INSTALL_PREFIX}, adding to CMake search paths.")
+        list(APPEND CMAKE_PREFIX_PATH "${HOMEBREW_INSTALL_PREFIX}")
+    endif()
+
     # Use homebrew's clang compiler since Apple
     # does not allow us to link to libomp
-    foreach(CXX_PATH /opt/homebrew/bin/c++-12 /usr/local/c++-12)
-        message("Checking for ${CXX_PATH}...")
-        if(EXISTS "${CXX_PATH}")
-            message("Found Homebrew's compiler: ${CXX_PATH}")
-            set(CMAKE_CXX_COMPILER ${CXX_PATH})
-            set(APPLE_CMAKE_ARGS "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}")
-            break()
-        endif()
-    endforeach()
+    set(CXX_PATH ${HOMEBREW_INSTALL_PREFIX}/bin/c++-12)
+    message("Checking for ${CXX_PATH}...")
+    if(EXISTS "${CXX_PATH}")
+        message("Found Homebrew's compiler: ${CXX_PATH}")
+        set(CMAKE_CXX_COMPILER ${CXX_PATH})
+        set(APPLE_CMAKE_ARGS "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}")
+        break()
+    endif()
+
     if (NOT APPLE_CMAKE_ARGS)
         message(WARNING "Cannot find Homebrew's compiler, compilation might fail...")
     endif()
