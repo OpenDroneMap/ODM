@@ -22,8 +22,8 @@ elseif(APPLE)
                            -DPYTHON_DEFAULT_EXECUTABLE=${PYTHON_EXE_PATH}
                            -DPYTHON3_VERSION_MAJOR=3
                            -DPYTHON3_VERSION_MINOR=8
+                           -DOPENCV_CONFIG_INSTALL_PATH=
                            -DOPENCV_PYTHON_INSTALL_PATH=${SB_INSTALL_DIR}/lib/python3.8/dist-packages
-                           -D__INSTALL_PATH_PYTHON3=${SB_INSTALL_DIR}/lib/python3.8/dist-packages
                            -DHAVE_opencv_python3=ON
                            -DOPENCV_PYTHON_SKIP_DETECTION=ON
                            -DOPENCV_LIB_INSTALL_PATH=${SB_INSTALL_DIR}/lib
