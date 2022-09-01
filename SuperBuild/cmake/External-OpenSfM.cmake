@@ -38,7 +38,6 @@ ExternalProject_Add(${_proj_name}
     -DOPENSFM_BUILD_TESTS=off
     -DPYTHON_EXECUTABLE=${PYTHON_EXE_PATH}
     ${WIN32_CMAKE_ARGS}
-    ${APPLE_CMAKE_ARGS}
   BUILD_COMMAND ${BUILD_CMD}
   #--Build step-----------------
   BINARY_DIR        ${_SB_BINARY_DIR}
