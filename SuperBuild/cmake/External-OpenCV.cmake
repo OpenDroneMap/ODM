@@ -90,3 +90,14 @@ ExternalProject_Add(${_proj_name}
   LOG_CONFIGURE     OFF
   LOG_BUILD         OFF
 )
+
+if (APPLE)  
+  set(INSTALL_NAME_TOOL "${SB_ROOT_DIR}/scripts/macos_fix_rpath.sh")
+  set(CV2_BINDINGS "${SB_INSTALL_DIR}/lib/python3.8/dist-packages/cv2/python-3.8/cv2.cpython-38-darwin.so")
+
+  add_custom_command(
+    TARGET ${_proj_name} POST_BUILD
+    COMMAND ${INSTALL_NAME_TOOL} "SuperBuild/install/lib" ${CV2_BINDINGS}
+    COMMENT "Fixing rpath for Python bindings"
+  )
+endif()
