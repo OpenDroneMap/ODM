@@ -187,10 +187,6 @@ parts:
     build-snaps:
       - cmake
 
-  snap-specifics:
-    source: snap/local
-    plugin: dump
-
 plugs:
   shared-memory:
     private: true
