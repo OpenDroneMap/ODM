@@ -3,7 +3,6 @@ import time
 import numpy as np
 import cv2
 import os
-import onnx
 import onnxruntime as ort
 from .guidedfilter import guided_filter
 from opendm import log
@@ -27,17 +26,6 @@ class SkyFilter():
     
     def load_model(self):
         log.ODM_INFO(' -> Loading the model')
-        onnx_model = onnx.load(self.model)
-
-        # Check the model
-        try:
-            onnx.checker.check_model(onnx_model)
-        except onnx.checker.ValidationError as e:
-            log.ODM_INFO(' !> The model is invalid: %s' % e)
-            raise
-        else:
-            log.ODM_INFO(' ?> The model is valid!')
-
         self.session = ort.InferenceSession(self.model, providers=[provider])     
 
 

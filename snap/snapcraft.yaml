@@ -187,28 +187,17 @@ parts:
     build-snaps:
       - cmake
 
-  snap-specifics:
-    source: snap/local
-    plugin: dump
-
-  snapcraft-preload:
-    source: https://github.com/sergiusens/snapcraft-preload.git
-    plugin: cmake
-    cmake-parameters:
-      - -DCMAKE_INSTALL_PREFIX=/
-    build-packages:
-      - on amd64:
-        - gcc-multilib
-        - g++-multilib
+plugs:
+  shared-memory:
+    private: true
 
 apps:
   opendronemap:
     command: odm/run.sh
-    command-chain:
-      - bin/snapcraft-preload # Fixes multiprocessing python module
     environment:
       # Ensure libraries are found
-      LD_LIBRARY_PATH: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/blas:$SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/lapack:$LD_LIBRARY_PATH
+      LD_LIBRARY_PATH: $SNAP/odm/SuperBuild/install/lib:$SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/blas:$SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/lapack
+      PYTHONPATH: $SNAP/odm/SuperBuild/install:$SNAP/lib/python3.8/site-packages:$SNAP/usr/lib/python3/dist-packages/:$SNAP/usr/lib/python3.8
     plugs:
       - home
       - network
