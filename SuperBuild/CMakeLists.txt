@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.1)
 
 project(ODM-SuperBuild)
 
+# Setup SuperBuild root location
+set(SB_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+
 if (NOT CMAKE_BUILD_TYPE)
     message(STATUS "No build type selected, default to Release")
     set(CMAKE_BUILD_TYPE "Release")
@@ -28,16 +31,21 @@ if (APPLE)
         message("Found Homebrew's compiler: ${CXX_PATH}")
         set(CMAKE_CXX_COMPILER ${CXX_PATH})
         set(APPLE_CMAKE_ARGS "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}")
-        break()
     endif()
 
     if (NOT APPLE_CMAKE_ARGS)
         message(WARNING "Cannot find Homebrew's compiler, compilation might fail...")
     endif()
-endif()
 
-# Setup SuperBuild root location
-set(SB_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+    set(INSTALL_NAME_TOOL "${SB_ROOT_DIR}/scripts/macos_fix_rpath.sh")
+    macro(macos_fix_rpath project library)
+        add_custom_command(
+            TARGET ${project} POST_BUILD
+            COMMAND ${INSTALL_NAME_TOOL} "SuperBuild/install/lib" ${library}
+            COMMENT "Fixing rpath for ${library}"
+        )
+    endmacro()
+endif()
 
 ################################
 # Setup SuperBuild directories #
