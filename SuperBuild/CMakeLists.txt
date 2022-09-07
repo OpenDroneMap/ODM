@@ -245,6 +245,9 @@ externalproject_add(odm_orthophoto
     CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
                       ${WIN32_CMAKE_ARGS} ${WIN32_GDAL_ARGS}
 )
+if(APPLE)
+    macos_fix_rpath(odm_orthophoto "${SB_INSTALL_DIR}/bin/odm_orthophoto")
+endif()
 
 externalproject_add(lastools
     GIT_REPOSITORY    https://github.com/OpenDroneMap/LAStools.git
