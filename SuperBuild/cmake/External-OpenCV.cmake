@@ -90,7 +90,3 @@ ExternalProject_Add(${_proj_name}
   LOG_CONFIGURE     OFF
   LOG_BUILD         OFF
 )
-
-if (APPLE)  
-  macos_fix_rpath(${_proj_name} "${SB_INSTALL_DIR}/lib/python3.8/dist-packages/cv2/python-3.8/cv2.cpython-38-darwin.so")
-endif()

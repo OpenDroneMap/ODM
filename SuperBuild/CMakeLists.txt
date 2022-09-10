@@ -36,15 +36,6 @@ if (APPLE)
     if (NOT APPLE_CMAKE_ARGS)
         message(WARNING "Cannot find Homebrew's compiler, compilation might fail...")
     endif()
-
-    set(INSTALL_NAME_TOOL "${SB_ROOT_DIR}/scripts/macos_fix_rpath.sh")
-    macro(macos_fix_rpath project library)
-        add_custom_command(
-            TARGET ${project} POST_BUILD
-            COMMAND ${INSTALL_NAME_TOOL} "SuperBuild/install/lib" ${library}
-            COMMENT "Fixing rpath for ${library}"
-        )
-    endmacro()
 endif()
 
 ################################
@@ -245,9 +236,6 @@ externalproject_add(odm_orthophoto
     CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
                       ${WIN32_CMAKE_ARGS} ${WIN32_GDAL_ARGS}
 )
-if(APPLE)
-    macos_fix_rpath(odm_orthophoto "${SB_INSTALL_DIR}/bin/odm_orthophoto")
-endif()
 
 externalproject_add(lastools
     GIT_REPOSITORY    https://github.com/OpenDroneMap/LAStools.git
