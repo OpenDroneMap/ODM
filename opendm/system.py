@@ -81,7 +81,10 @@ def run(cmd, env_paths=[context.superbuild_bin_path], env_vars={}, packages_path
     
     if len(packages_paths) > 0:
         env["PYTHONPATH"] = env.get("PYTHONPATH", "") + sep + sep.join(packages_paths) 
-    
+    if sys.platform == 'darwin':
+        # Propagate DYLD_LIBRARY_PATH
+        cmd = "export DYLD_LIBRARY_PATH=\"%s\" && %s" % (env.get("DYLD_LIBRARY_PATH", ""), cmd)
+
     for k in env_vars:
         env[k] = str(env_vars[k])
 
