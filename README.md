@@ -219,7 +219,7 @@ Then Run:
 ```bash
 git clone https://github.com/OpenDroneMap/ODM
 cd ODM
-bash configure.sh install
+bash configure_macos.sh install
 ```
 
 You can then process datasets with `./run.sh /datasets/odm_data_aukerman`
