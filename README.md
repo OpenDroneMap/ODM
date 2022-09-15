@@ -211,7 +211,7 @@ You can run ODM natively on Intel/ARM MacOS.
 
 First install:
 
- * Xcode
+ * Xcode 13 (not 14, there's currently a bug)
  * [Homebrew](https://docs.brew.sh/Installation)
 
 Then Run:
