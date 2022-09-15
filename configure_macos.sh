@@ -34,7 +34,7 @@ installreqs() {
 
     python3.8 -m pip install virtualenv
 
-    if [ ! -e ./venv ]; then
+    if [ ! -e ${RUNPATH}/venv ]; then
         python3.8 -m virtualenv venv
     fi
 
@@ -48,7 +48,7 @@ install() {
     echo "Compiling SuperBuild"
     cd ${RUNPATH}/SuperBuild
     mkdir -p build && cd build
-    cmake .. && make -j$processes && make -j$processes opensfm
+    cmake .. && make -j$processes
 
     cd /tmp
     pip download GDAL==3.5.1
