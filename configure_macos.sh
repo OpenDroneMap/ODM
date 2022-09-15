@@ -29,7 +29,7 @@ ensure_prereqs() {
 installreqs() {
     ensure_prereqs
     
-    brew install cmake gcc@12 python@3.8 tbb@2020 eigen gdal boost@1.76 cgal libomp
+    brew install cmake gcc@12 python@3.8 tbb@2020 eigen gdal boost cgal libomp
     brew link tbb@2020
 
     python3.8 -m pip install virtualenv
