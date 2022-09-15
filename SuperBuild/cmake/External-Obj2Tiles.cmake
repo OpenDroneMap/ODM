@@ -10,6 +10,8 @@ if (WIN32)
     set(OBJ2TILES_EXT ".exe")
 elseif(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "aarch64")
     set(OBJ2TILES_ARCH "LinuxArm")
+elseif(APPLE)
+    set(OBJ2TILES_ARCH "Osx64")
 endif()
 
 

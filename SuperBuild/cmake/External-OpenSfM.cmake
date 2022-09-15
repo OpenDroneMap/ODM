@@ -3,12 +3,18 @@ set(_SB_BINARY_DIR "${SB_BINARY_DIR}/${_proj_name}")
 include(ProcessorCount)
 ProcessorCount(nproc)
 
+set(EXTRA_INCLUDE_DIRS "")
 if(WIN32)
   set(OpenCV_DIR "${SB_INSTALL_DIR}/x64/vc16/lib")
   set(BUILD_CMD ${CMAKE_COMMAND} --build "${SB_BUILD_DIR}/opensfm" --config "${CMAKE_BUILD_TYPE}")
 else()
-  set(OpenCV_DIR "${SB_INSTALL_DIR}/lib/cmake/opencv4")
   set(BUILD_CMD make "-j${nproc}")
+  if (APPLE)
+    set(OpenCV_DIR "${SB_INSTALL_DIR}")
+    set(EXTRA_INCLUDE_DIRS "${HOMEBREW_INSTALL_PREFIX}/include")
+  else()
+    set(OpenCV_DIR "${SB_INSTALL_DIR}/lib/cmake/opencv4")
+  endif()
 endif()
 
 ExternalProject_Add(${_proj_name}
@@ -19,7 +25,7 @@ ExternalProject_Add(${_proj_name}
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
   GIT_REPOSITORY    https://github.com/OpenDroneMap/OpenSfM/
-  GIT_TAG           288
+  GIT_TAG           290
   #--Update/Patch step----------
   UPDATE_COMMAND    git submodule update --init --recursive
   #--Configure step-------------
@@ -28,6 +34,7 @@ ExternalProject_Add(${_proj_name}
     -DCERES_ROOT_DIR=${SB_INSTALL_DIR}
     -DOpenCV_DIR=${OpenCV_DIR}
     -DADDITIONAL_INCLUDE_DIRS=${SB_INSTALL_DIR}/include
+    -DYET_ADDITIONAL_INCLUDE_DIRS=${EXTRA_INCLUDE_DIRS}
     -DOPENSFM_BUILD_TESTS=off
     -DPYTHON_EXECUTABLE=${PYTHON_EXE_PATH}
     ${WIN32_CMAKE_ARGS}

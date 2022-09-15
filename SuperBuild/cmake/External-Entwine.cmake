@@ -13,7 +13,7 @@ ExternalProject_Add(${_proj_name}
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
   GIT_REPOSITORY    https://github.com/OpenDroneMap/entwine/
-  GIT_TAG           285
+  GIT_TAG           290
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   #--Configure step-------------

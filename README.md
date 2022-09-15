@@ -197,20 +197,44 @@ If you have installed to a different directory by changing the `--import` comman
 
 You can run ODM natively on Ubuntu 21.04 (although we don't recommend it):  
 
-1. Download the source from [here](https://github.com/OpenDroneMap/ODM/archive/master.zip)
-2. Run `bash configure.sh install`
-3. Download a sample dataset from [here](https://github.com/OpenDroneMap/odm_data_aukerman/archive/master.zip) (about 550MB) and extract it in `/datasets/aukerman`
-4. Run `./run.sh --project-path /datasets odm_data_aukerman`
+```bash
+git clone https://github.com/OpenDroneMap/ODM
+cd ODM
+bash configure.sh install
+```
+
+You can then process datasets with `./run.sh /datasets/odm_data_aukerman`
+
+## Native Install (MacOS)
+
+You can run ODM natively on Intel/ARM MacOS.
+
+First install:
+
+ * Xcode 13 (not 14, there's currently a bug)
+ * [Homebrew](https://docs.brew.sh/Installation)
+
+Then Run:
+
+```bash
+git clone https://github.com/OpenDroneMap/ODM
+cd ODM
+bash configure_macos.sh install
+```
+
+You can then process datasets with `./run.sh /datasets/odm_data_aukerman`
+
+This could be improved in the future. [Helps us create a Homebrew formula](https://github.com/OpenDroneMap/ODM/issues/1531).
 
 ### Updating a native installation
 
-When updating to a newer version of ODM, it is recommended that you run
+When updating to a newer version of native ODM, it is recommended that you run:
 
-    bash configure.sh reinstall
+`bash configure.sh reinstall`
 
 to ensure all the dependent packages and modules get updated.
 
-### Build From Source
+### Build Docker Images From Source
 
 If you want to rebuild your own docker image (if you have changed the source code, for example), from the ODM folder you can type:
 
