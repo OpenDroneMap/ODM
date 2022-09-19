@@ -13,6 +13,7 @@ from opendm import progress
 from opendm import boundary
 from opendm import ai
 from opendm.skyremoval.skyfilter import SkyFilter
+from opendm.bgfilter import BgFilter
 from opendm.concurrency import parallel_map
 
 def save_images_database(photos, database_file):
@@ -190,6 +191,47 @@ class ODMLoadDatasetStage(types.ODM_Stage):
                         log.ODM_INFO("No sky masks will be generated (masks already provided, or images are nadir)")
 
                 # End sky removal
+
+                # Automatic background removal
+                if args.bg_removal:
+                    # For each image that :
+                    #  - Doesn't already have a mask, AND
+                    #  - There are no spaces in the image filename (OpenSfM requirement)
+                    
+                    # Generate list of sky images
+                    bg_images = []
+                    for p in photos:
+                        if p.mask is None and (not " " in p.filename):
+                            bg_images.append({'file': os.path.join(images_dir, p.filename), 'p': p})
+
+                    if len(bg_images) > 0:
+                        log.ODM_INFO("Automatically generating background masks for %s images" % len(bg_images))
+                        model = ai.get_model("bgremoval", "https://github.com/OpenDroneMap/ODM/releases/download/v2.9.0/u2net.zip", "v2.9.0")
+                        if model is not None:
+                            bg = BgFilter(model=model)
+
+                            def parallel_bg_filter(item):
+                                try:
+                                    mask_file = bg.run_img(item['file'], images_dir)
+
+                                    # Check and set
+                                    if mask_file is not None and os.path.isfile(mask_file):
+                                        item['p'].set_mask(os.path.basename(mask_file))
+                                        log.ODM_INFO("Wrote %s" % os.path.basename(mask_file))
+                                    else:
+                                        log.ODM_WARNING("Cannot generate mask for %s" % img)
+                                except Exception as e:
+                                    log.ODM_WARNING("Cannot generate mask for %s: %s" % (img, str(e)))
+
+                            parallel_map(parallel_bg_filter, bg_images, max_workers=args.max_concurrency)
+
+                            log.ODM_INFO("Background masks generation completed!")
+                        else:
+                            log.ODM_WARNING("Cannot load AI model (you might need to be connected to the internet?)")
+                    else:
+                        log.ODM_INFO("No background masks will be generated (masks already provided)")
+
+                # End bg removal
 
                 # Save image database for faster restart
                 save_images_database(photos, images_database_file)

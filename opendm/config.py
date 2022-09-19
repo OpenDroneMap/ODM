@@ -242,6 +242,12 @@ def config(argv=None, parser=None):
                 nargs=0,
                 default=False,
                 help='Automatically compute image masks using AI to remove the sky. Experimental. Default: %(default)s')
+    
+    parser.add_argument('--bg-removal',
+                action=StoreTrue,
+                nargs=0,
+                default=False,
+                help='Automatically compute image masks using AI to remove the background. Experimental. Default: %(default)s')
 
     parser.add_argument('--use-3dmesh',
                     action=StoreTrue,
