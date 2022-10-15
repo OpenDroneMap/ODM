@@ -197,7 +197,7 @@ apps:
     environment:
       # Ensure libraries are found
       LD_LIBRARY_PATH: $SNAP/odm/SuperBuild/install/lib:$SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/blas:$SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/lapack
-      PYTHONPATH: $SNAP/odm/SuperBuild/install/lib/python3.8/dist-packages:$SNAP/lib/python3.8/site-packages:$SNAP/usr/lib/python3/dist-packages/:$SNAP/usr/lib/python3.8:$SNAP/odm/SuperBuild/install/bin/opensfm
+      PYTHONPATH: $SNAP/odm/SuperBuild/install/lib/python3.8/site-packages:$SNAP/lib/python3.8/site-packages:$SNAP/usr/lib/python3/dist-packages/:$SNAP/usr/lib/python3.8:$SNAP/odm/SuperBuild/install/bin/opensfm
     plugs:
       - home
       - network
