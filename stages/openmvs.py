@@ -75,8 +75,10 @@ class ODMOpenMVSStage(types.ODM_Stage):
             ]
 
             gpu_config = []
-
-            if not has_gpu(args):
+            use_gpu = has_gpu(args)
+            if use_gpu:
+                gpu_config.append("--cuda-device -3")
+            else:
                 gpu_config.append("--cuda-device -2")
 
             if args.pc_tile:
@@ -106,9 +108,9 @@ class ODMOpenMVSStage(types.ODM_Stage):
             except system.SubprocessException as e:
                 # If the GPU was enabled and the program failed,
                 # try to run it again without GPU
-                if e.errorCode == 1 and len(gpu_config) == 0:
+                if e.errorCode == 1 and use_gpu:
                     log.ODM_WARNING("OpenMVS failed with GPU, is your graphics card driver up to date? Falling back to CPU.")
-                    gpu_config.append("--cuda-device -2")
+                    gpu_config = ["--cuda-device -2"]
                     run_densify()
                 else:
                     raise e
