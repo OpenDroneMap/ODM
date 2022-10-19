@@ -124,37 +124,39 @@ class ODMSplitStage(types.ODM_Stage):
 
                 self.update_progress(50)
 
-                # Align
-                octx.align_reconstructions(self.rerun())
-
-                self.update_progress(55)
-
-                # Aligned reconstruction is in reconstruction.aligned.json
-                # We need to rename it to reconstruction.json
                 remove_paths = []
-                for sp in submodel_paths:
-                    sp_octx = OSFMContext(sp)
 
-                    aligned_recon = sp_octx.path('reconstruction.aligned.json')
-                    unaligned_recon = sp_octx.path('reconstruction.unaligned.json')
-                    main_recon = sp_octx.path('reconstruction.json')
+                # Align
+                if not args.sm_no_align:
+                    octx.align_reconstructions(self.rerun())
 
-                    if io.file_exists(main_recon) and io.file_exists(unaligned_recon) and not self.rerun():
-                        log.ODM_INFO("Submodel %s has already been aligned." % sp_octx.name())
-                        continue
+                    self.update_progress(55)
 
-                    if not io.file_exists(aligned_recon):
-                        log.ODM_WARNING("Submodel %s does not have an aligned reconstruction (%s). "
-                                        "This could mean that the submodel could not be reconstructed "
-                                        " (are there enough features to reconstruct it?). Skipping." % (sp_octx.name(), aligned_recon))
-                        remove_paths.append(sp)
-                        continue
+                    # Aligned reconstruction is in reconstruction.aligned.json
+                    # We need to rename it to reconstruction.json
+                    for sp in submodel_paths:
+                        sp_octx = OSFMContext(sp)
 
-                    if io.file_exists(main_recon):
-                        shutil.move(main_recon, unaligned_recon)
+                        aligned_recon = sp_octx.path('reconstruction.aligned.json')
+                        unaligned_recon = sp_octx.path('reconstruction.unaligned.json')
+                        main_recon = sp_octx.path('reconstruction.json')
 
-                    shutil.move(aligned_recon, main_recon)
-                    log.ODM_INFO("%s is now %s" % (aligned_recon, main_recon))
+                        if io.file_exists(main_recon) and io.file_exists(unaligned_recon) and not self.rerun():
+                            log.ODM_INFO("Submodel %s has already been aligned." % sp_octx.name())
+                            continue
+
+                        if not io.file_exists(aligned_recon):
+                            log.ODM_WARNING("Submodel %s does not have an aligned reconstruction (%s). "
+                                            "This could mean that the submodel could not be reconstructed "
+                                            " (are there enough features to reconstruct it?). Skipping." % (sp_octx.name(), aligned_recon))
+                            remove_paths.append(sp)
+                            continue
+
+                        if io.file_exists(main_recon):
+                            shutil.move(main_recon, unaligned_recon)
+
+                        shutil.move(aligned_recon, main_recon)
+                        log.ODM_INFO("%s is now %s" % (aligned_recon, main_recon))
 
                 # Remove invalid submodels
                 submodel_paths = [p for p in submodel_paths if not p in remove_paths]
