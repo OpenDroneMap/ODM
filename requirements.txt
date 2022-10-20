@@ -31,3 +31,4 @@ xmltodict==0.12.0
 fpdf2==2.4.6
 Shapely==1.7.1
 onnxruntime==1.12.1
+pygltflib==1.15.3
