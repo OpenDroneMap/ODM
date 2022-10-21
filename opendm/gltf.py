@@ -140,8 +140,6 @@ def obj2glb(input_obj, output_glb, _info=print):
 
     for material in obj['faces'].keys():
         faces = obj['faces'][material]
-        texture_blob = paddedBuffer(obj['materials'][material], 4)
-
         faces = np.array(faces, dtype=np.uint32)
 
         prim_vertices = vertices[faces[:,0:3].flatten()]
@@ -160,14 +158,13 @@ def obj2glb(input_obj, output_glb, _info=print):
         binary += vertices_blob + uvs_blob
         if normals_blob is not None:
             binary += normals_blob
-        binary += texture_blob
-
+        
         verticesBufferView = addBufferView(vertices_blob, pygltflib.ARRAY_BUFFER)
         uvsBufferView = addBufferView(uvs_blob, pygltflib.ARRAY_BUFFER)
+        normalsBufferView = None
         if normals_blob is not None:
             normalsBufferView = addBufferView(normals_blob, pygltflib.ARRAY_BUFFER)
-        textureBufferView = addBufferView(texture_blob)
-
+        
         accessors += [
             pygltflib.Accessor(
                 bufferView=verticesBufferView,
@@ -199,15 +196,19 @@ def obj2glb(input_obj, output_glb, _info=print):
                 )
             ]
 
+        primitives += [pygltflib.Primitive(
+                attributes=pygltflib.Attributes(POSITION=verticesBufferView, TEXCOORD_0=uvsBufferView, NORMAL=normalsBufferView), material=len(primitives)
+            )]
+
+    for material in obj['faces'].keys():
+        texture_blob = paddedBuffer(obj['materials'][material], 4)
+        binary += texture_blob
+        textureBufferView = addBufferView(texture_blob)
+
         images += [pygltflib.Image(bufferView=textureBufferView, mimeType="image/jpeg")]
         textures += [pygltflib.Texture(source=len(images) - 1, sampler=0)]
-        materials += [pygltflib.Material(pbrMetallicRoughness=pygltflib.PbrMetallicRoughness(baseColorTexture=pygltflib.TextureInfo(index=0), metallicFactor=0, roughnessFactor=1), 
+        materials += [pygltflib.Material(pbrMetallicRoughness=pygltflib.PbrMetallicRoughness(baseColorTexture=pygltflib.TextureInfo(index=len(textures) - 1), metallicFactor=0, roughnessFactor=1), 
                         alphaMode=pygltflib.MASK)]
-        primitives += [pygltflib.Primitive(
-                attributes=pygltflib.Attributes(POSITION=verticesBufferView, TEXCOORD_0=uvsBufferView), material=len(materials) - 1
-            )]
-        if len(primitives) == 2:
-            break
 
     gltf = pygltflib.GLTF2(
         scene=0,
