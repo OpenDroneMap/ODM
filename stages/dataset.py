@@ -153,14 +153,14 @@ class ODMLoadDatasetStage(types.ODM_Stage):
                 if args.sky_removal:
                     # For each image that :
                     #  - Doesn't already have a mask, AND
-                    #  - Is not nadir (or if orientation info is missing), AND
+                    #  - Is not nadir (or if orientation info is missing, or if camera lens is fisheye), AND
                     #  - There are no spaces in the image filename (OpenSfM requirement)
                     # Automatically generate a sky mask
                     
                     # Generate list of sky images
                     sky_images = []
                     for p in photos:
-                        if p.mask is None and (p.pitch is None or (abs(p.pitch) > 20)) and (not " " in p.filename):
+                        if p.mask is None and (args.camera_lens in ['fisheye', 'spherical'] or p.pitch is None or (abs(p.pitch) > 20)) and (not " " in p.filename):
                             sky_images.append({'file': os.path.join(images_dir, p.filename), 'p': p})
 
                     if len(sky_images) > 0:
