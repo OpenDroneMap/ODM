@@ -62,11 +62,6 @@ def load_obj(obj_path, _info=print):
                     cv, ct = map(int, c.split("/")[0:2])
                     faces[current_material].append((av - 1, bv - 1, cv - 1, at - 1, bt - 1, ct - 1)) 
 
-    if len(vertices) > len(uvs):
-        # Pad with empty UV coordinates
-        add_uvs = len(vertices) - len(uvs)
-        uvs += [[0,0]] * add_uvs
-
     obj['vertices'] = np.array(vertices, dtype=np.float32)
     obj['uvs'] = np.array(uvs, dtype=np.float32)
     obj['normals'] = np.array(normals, dtype=np.float32)
@@ -96,142 +91,143 @@ def load_mtl(mtl_file, obj_base_path, _info=print):
                 _info("Loading %s" % map_kd_filename)
 
                 with MemoryFile() as memfile:
-                    with rasterio.open(map_kd, 'r') as r:
-                        mats[current_mtl] = r.read()
-                        # TODO: copy code from export-rgb (webodm)
+                    with rasterio.open(map_kd, 'r') as src:
+                        data = src.read()
+                        with memfile.open(driver='JPEG', jpeg_quality=90, count=3, width=src.width, height=src.height, dtype=rasterio.dtypes.uint8) as dst:
+                            for b in range(1, min(3, src.count) + 1):
+                                # TODO: convert if uint16 or float
+                                dst.write(data[b - 1], b)
+                    memfile.seek(0)
+                    mats[current_mtl] = memfile.read()
     return mats
 
+def paddedBuffer(buf, boundary):
+    r = len(buf) % boundary
+    if r == 0: 
+        return buf 
+    pad = boundary - r
+    return buf + b'\x00' * pad
 
 def obj2glb(input_obj, output_glb, _info=print):
+    _info("Converting %s --> %s" % (input_obj, output_glb))
     obj = load_obj(input_obj, _info=_info)
-    
+
     vertices = obj['vertices']
     uvs = obj['uvs']
+    # Flip Y
+    uvs = (([0, 1] - (uvs * [0, 1])) + uvs * [1, 0]).astype(np.float32)
     normals = obj['normals']
 
-    vertices_blob = vertices.tobytes()
-    uvs_blob = uvs.tobytes()
+    binary = b''
+    accessors = []
+    bufferViews = []
+    primitives = []
+    materials = []
+    textures = []
+    images = []
 
-    faces = obj['faces']['material0000']
-    material = obj['materials']['material0000']
-    print(material.shape)
-    print(material.)
-    exit(1)
-    # TODO: all faces
+    bufOffset = 0
+    def addBufferView(buf, target=None):
+        nonlocal bufferViews, bufOffset
+        bufferViews += [pygltflib.BufferView(
+            buffer=0,
+            byteOffset=bufOffset,
+            byteLength=len(buf),
+            target=target,
+        )]
+        bufOffset += len(buf)
+        return len(bufferViews) - 1
 
-    faces = np.array(faces, dtype=np.uint32)
+    for material in obj['faces'].keys():
+        faces = obj['faces'][material]
+        texture_blob = paddedBuffer(obj['materials'][material], 4)
 
-    indices = faces[:,0:3].flatten()
-    uv_indices = faces[:,3:6].flatten()
+        faces = np.array(faces, dtype=np.uint32)
 
-    if faces.shape[1] == 9:
-        normal_indices = faces[:,6:9].flatten()
-    else:
-        normal_indices = None
+        prim_vertices = vertices[faces[:,0:3].flatten()]
+        prim_uvs = uvs[faces[:,3:6].flatten()]
 
-    #faces_blob = faces.tobytes()
+        if faces.shape[1] == 9:
+            prim_normals = normals[faces[:,6:9].flatten()]
+            normals_blob = prim_normals.tobytes()
+        else:
+            prim_normals = None
+            normals_blob = None
 
-    indices_blob = indices.tobytes()
-    uv_indices_blob = uv_indices.tobytes()
+        vertices_blob = prim_vertices.tobytes()
+        uvs_blob = prim_uvs.tobytes()
 
-    binary = vertices_blob + uvs_blob + indices_blob + uv_indices_blob
+        binary += vertices_blob + uvs_blob
+        if normals_blob is not None:
+            binary += normals_blob
+        binary += texture_blob
+
+        verticesBufferView = addBufferView(vertices_blob, pygltflib.ARRAY_BUFFER)
+        uvsBufferView = addBufferView(uvs_blob, pygltflib.ARRAY_BUFFER)
+        if normals_blob is not None:
+            normalsBufferView = addBufferView(normals_blob, pygltflib.ARRAY_BUFFER)
+        textureBufferView = addBufferView(texture_blob)
+
+        accessors += [
+            pygltflib.Accessor(
+                bufferView=verticesBufferView,
+                componentType=pygltflib.FLOAT,
+                count=len(prim_vertices),
+                type=pygltflib.VEC3,
+                max=prim_vertices.max(axis=0).tolist(),
+                min=prim_vertices.min(axis=0).tolist(),
+            ),
+            pygltflib.Accessor(
+                bufferView=uvsBufferView,
+                componentType=pygltflib.FLOAT,
+                count=len(prim_uvs),
+                type=pygltflib.VEC2,
+                max=prim_uvs.max(axis=0).tolist(),
+                min=prim_uvs.min(axis=0).tolist(),
+            ),
+        ]
+
+        if prim_normals is not None:
+            accessors += [
+                pygltflib.Accessor(
+                    bufferView=normalsBufferView,
+                    componentType=pygltflib.FLOAT,
+                    count=len(prim_normals),
+                    type=pygltflib.VEC3,
+                    max=prim_normals.max(axis=0).tolist(),
+                    min=prim_normals.min(axis=0).tolist(),
+                )
+            ]
+
+        images += [pygltflib.Image(bufferView=textureBufferView, mimeType="image/jpeg")]
+        textures += [pygltflib.Texture(source=len(images) - 1, sampler=0)]
+        materials += [pygltflib.Material(pbrMetallicRoughness=pygltflib.PbrMetallicRoughness(baseColorTexture=pygltflib.TextureInfo(index=0), metallicFactor=0, roughnessFactor=1), 
+                        alphaMode=pygltflib.MASK)]
+        primitives += [pygltflib.Primitive(
+                attributes=pygltflib.Attributes(POSITION=verticesBufferView, TEXCOORD_0=uvsBufferView), material=len(materials) - 1
+            )]
+        if len(primitives) == 2:
+            break
 
     gltf = pygltflib.GLTF2(
         scene=0,
         scenes=[pygltflib.Scene(nodes=[0])],
         nodes=[pygltflib.Node(mesh=0)],
-        meshes=[
-            pygltflib.Mesh(
-                primitives=[
-                    pygltflib.Primitive(
-                        attributes=pygltflib.Attributes(POSITION=0, TEXCOORD_0=1), indices=2, material=0
-                    )
-                ]
-            )
-        ],
-        materials=[
-
-        ],
-        textures=[
-            pygltflib.Texture(source=0, sampler=0)
-        ],
-        images=[
-            pygltflib.Image(bufferView=0, mimeType="image/png") # TODO: use JPG
-        ],
-        accessors=[
-            pygltflib.Accessor(
-                bufferView=0,
-                componentType=pygltflib.FLOAT,
-                count=len(vertices),
-                type=pygltflib.VEC3,
-                max=vertices.max(axis=0).tolist(),
-                min=vertices.min(axis=0).tolist(),
-            ),
-            pygltflib.Accessor(
-                bufferView=1,
-                componentType=pygltflib.FLOAT,
-                count=len(uvs),
-                type=pygltflib.VEC2,
-                max=uvs.max(axis=0).tolist(),
-                min=uvs.min(axis=0).tolist(),
-            ),
-            pygltflib.Accessor(
-                bufferView=2,
-                componentType=pygltflib.UNSIGNED_INT,
-                count=len(indices),
-                type=pygltflib.SCALAR,
-                max=[int(indices.max())],
-                min=[int(indices.min())],
-            ),
-            pygltflib.Accessor(
-                bufferView=3,
-                componentType=pygltflib.UNSIGNED_INT,
-                count=len(uv_indices),
-                type=pygltflib.SCALAR,
-                max=[int(uv_indices.max())],
-                min=[int(uv_indices.min())],
-            ),
-        ],
-        bufferViews=[
-            pygltflib.BufferView(
-                buffer=0,
-                byteLength=len(vertices_blob),
-                target=pygltflib.ARRAY_BUFFER,
-            ),
-            pygltflib.BufferView(
-                buffer=0,
-                byteOffset=len(vertices_blob),
-                byteLength=len(uvs_blob),
-                target=pygltflib.ARRAY_BUFFER,
-            ),
-            pygltflib.BufferView(
-                buffer=0,
-                byteOffset=len(vertices_blob) + len(uvs_blob),
-                byteLength=len(indices_blob),
-                target=pygltflib.ELEMENT_ARRAY_BUFFER,
-            ),
-            pygltflib.BufferView(
-                buffer=0,
-                byteOffset=len(vertices_blob) + len(uvs_blob) + len(indices_blob),
-                byteLength=len(uv_indices_blob),
-                target=pygltflib.ELEMENT_ARRAY_BUFFER,
-            ),
-            pygltflib.BufferView(
-                buffer=0,
-                byteOffset=len(vertices_blob) + len(uvs_blob) + len(indices_blob) + len(uv_indices_blob),
-                byteLength=len(texture_blob),
-                target=pygltflib.ARRAY_BUFFER
-            )
-        ],
-        buffers=[
-            pygltflib.Buffer(
-                byteLength=len(binary)
-            )
-        ],
+        meshes=[pygltflib.Mesh(
+                primitives=primitives
+            )],
+        materials=materials,
+        textures=textures,
+        samplers=[pygltflib.Sampler(magFilter=pygltflib.LINEAR, minFilter=pygltflib.LINEAR)],
+        images=images,
+        accessors=accessors,
+        bufferViews=bufferViews,
+        buffers=[pygltflib.Buffer(byteLength=len(binary))],
     )
 
     gltf.set_binary_blob(binary)
 
+    _info("Writing...")
     gltf.save(output_glb)
-    print("OK")
+    _info("Wrote %s" % output_glb)
 
