@@ -449,6 +449,9 @@ class ODM_Photo:
                     if self.has_ypr():
                         if self.camera_make.lower() in ['dji', 'hasselblad']:
                             self.pitch = 90 + self.pitch
+                            
+                    if self.camera_make.lower() in ['dji', 'zenmusep1']:
+                            self.pitch = 90 + self.pitch 
                     
                         if self.camera_make.lower() == 'sensefly':
                             self.roll *= -1
