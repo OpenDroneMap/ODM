@@ -77,8 +77,7 @@ class ODMOpenMVSStage(types.ODM_Stage):
             gpu_config = []
             use_gpu = has_gpu(args)
             if use_gpu:
-                # gpu_config.append("--cuda-device -3")
-                gpu_config.append("--cuda-device -1")
+                gpu_config.append("--cuda-device -3")
             else:
                 gpu_config.append("--cuda-device -2")
 
