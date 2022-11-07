@@ -29,7 +29,7 @@ class GCPFile:
                     if line != "" and line[0] != "#":
                         parts = line.split()
                         if len(parts) >= 6:
-                            self.entries.append(line)                          
+                            self.entries.append(line)
                         else:
                             log.ODM_WARNING("Malformed GCP line: %s" % line)
 

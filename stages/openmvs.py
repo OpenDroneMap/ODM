@@ -103,7 +103,6 @@ class ODMOpenMVSStage(types.ODM_Stage):
                 system.run('"%s" "%s" %s' % (context.omvs_densify_path, 
                                         openmvs_scene_file,
                                         ' '.join(config + gpu_config + extra_config)))
-
             try:
                 run_densify()
             except system.SubprocessException as e:
@@ -112,6 +111,11 @@ class ODMOpenMVSStage(types.ODM_Stage):
                 if e.errorCode == 1 and use_gpu:
                     log.ODM_WARNING("OpenMVS failed with GPU, is your graphics card driver up to date? Falling back to CPU.")
                     gpu_config = ["--cuda-device -2"]
+                    run_densify()
+                elif (e.errorCode == 137 or e.errorCode == 3221226505) and not args.pc_tile:
+                    log.ODM_WARNING("OpenMVS ran out of memory, we're going to turn on tiling to see if we can process this.")
+                    args.pc_tile = True
+                    config.append("--fusion-mode 1")
                     run_densify()
                 else:
                     raise e
@@ -198,6 +202,12 @@ class ODMOpenMVSStage(types.ODM_Stage):
                     # Merge
                     fast_merge_ply(scene_ply_files, tree.openmvs_model)
             else:
+                def skip_filtering():
+                    # Just rename
+                    scene_dense_ply = os.path.join(tree.openmvs, 'scene_dense.ply')
+                    log.ODM_INFO("Skipped filtering, %s --> %s" % (scene_dense_ply, tree.openmvs_model))
+                    os.rename(scene_dense_ply, tree.openmvs_model)
+                
                 # Filter all at once
                 if args.pc_filter > 0:
                     if os.path.exists(scene_dense):
@@ -206,14 +216,18 @@ class ODMOpenMVSStage(types.ODM_Stage):
                             '-i "%s"' % scene_dense,
                             "-v 0"
                         ]
-                        system.run('"%s" %s' % (context.omvs_densify_path, ' '.join(config + gpu_config + extra_config)))
+                        try:
+                            system.run('"%s" %s' % (context.omvs_densify_path, ' '.join(config + gpu_config + extra_config)))
+                        except system.SubprocessException as e:
+                            if e.errorCode == 137 or e.errorCode == 3221226505:
+                                log.ODM_WARNING("OpenMVS filtering ran out of memory, visibility checks will be skipped.")
+                                skip_filtering()
+                            else:
+                                raise e
                     else:
                         raise system.ExitException("Cannot find scene_dense.mvs, dense reconstruction probably failed. Exiting...")
                 else:
-                    # Just rename
-                    scene_dense_ply = os.path.join(tree.openmvs, 'scene_dense.ply')
-                    log.ODM_INFO("Skipped filtering, %s --> %s" % (scene_dense_ply, tree.openmvs_model))
-                    os.rename(scene_dense_ply, tree.openmvs_model)
+                    skip_filtering()
 
             self.update_progress(95)
 
