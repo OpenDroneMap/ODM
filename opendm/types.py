@@ -107,6 +107,8 @@ class ODM_Reconstruction(object):
             if gcp.exists():
                 if gcp.entries_count() == 0:
                     raise RuntimeError("This GCP file does not have any entries. Are the entries entered in the proper format?")
+                
+                gcp.check_entries()
 
                 # Convert GCP file to a UTM projection since the rest of the pipeline
                 # does not handle other SRS well.

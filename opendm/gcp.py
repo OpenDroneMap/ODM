@@ -29,7 +29,7 @@ class GCPFile:
                     if line != "" and line[0] != "#":
                         parts = line.split()
                         if len(parts) >= 6:
-                            self.entries.append(line)                          
+                            self.entries.append(line)
                         else:
                             log.ODM_WARNING("Malformed GCP line: %s" % line)
 
@@ -37,6 +37,35 @@ class GCPFile:
         for entry in self.entries:
             yield self.parse_entry(entry)
     
+    def check_entries(self):
+        coords = {}
+        gcps = {}
+        errors = 0
+
+        for entry in self.iter_entries():
+            k = entry.coords_key()
+            coords[k] = coords.get(k, 0) + 1
+            if k not in gcps:
+                gcps[k] = []
+            gcps[k].append(entry)
+
+        for k in coords:
+            if coords[k] < 3:
+                description = "insufficient" if coords[k] < 2 else "not ideal"
+                for entry in gcps[k]:
+                    log.ODM_WARNING(str(entry))
+                log.ODM_WARNING("The number of images where the GCP %s has been tagged are %s" % (k, description))
+                log.ODM_WARNING("You should tag at least %s more images" % (3 - coords[k]))
+                log.ODM_WARNING("=====================================")
+                errors += 1
+        if len(coords) < 3:
+            log.ODM_WARNING("Low number of GCPs detected (%s). For best results use at least 5." % (3 - len(coords)))
+            log.ODM_WARNING("=====================================")
+            errors += 1
+
+        if errors > 0:
+            log.ODM_WARNING("Some issues detected with GCPs (but we're going to process this anyway)")
+
     def parse_entry(self, entry):
         if entry:
             parts = entry.split()
@@ -204,6 +233,9 @@ class GCPEntry:
         self.py = py
         self.filename = filename
         self.extras = extras
+
+    def coords_key(self):
+        return "{} {} {}".format(self.x, self.y, self.z)
     
     def __str__(self):
         return "{} {} {} {} {} {} {}".format(self.x, self.y, self.z, 
