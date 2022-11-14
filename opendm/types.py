@@ -364,8 +364,10 @@ class ODM_Stage:
         if outputs.get('tree') is None:
             raise Exception("Assert violation: tree variable is missing from outputs dictionary.")
 
-        if self.args.time:
+        try:
             system.benchmark(start_time, outputs['tree'].benchmarking, self.name)
+        except Exception as e:
+            log.ODM_WARNING("Cannot write benchmark file: %s" % str(e))
 
         log.ODM_INFO('Finished %s stage' % self.name)
         self.update_progress_end()

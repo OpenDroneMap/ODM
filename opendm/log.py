@@ -43,7 +43,6 @@ def memory():
 
 class ODMLogger:
     def __init__(self):
-        self.show_debug = False
         self.json = None
         self.json_output_file = None
         self.start_time = datetime.datetime.now()
@@ -134,10 +133,6 @@ class ODMLogger:
     def exception(self, msg):
         self.log(FAIL, msg, "EXCEPTION")
 
-    def debug(self, msg):
-        if self.show_debug:
-            self.log(OKGREEN, msg, "DEBUG")
-
     def close(self):
         if self.json is not None and self.json_output_file is not None:
             try:
@@ -154,4 +149,3 @@ ODM_INFO = logger.info
 ODM_WARNING = logger.warning
 ODM_ERROR = logger.error
 ODM_EXCEPTION = logger.exception
-ODM_DEBUG = logger.debug

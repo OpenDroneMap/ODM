@@ -380,5 +380,4 @@ def window_filter_2d(arr, nodata, window, kernel_size, filter):
     win_arr = filter(win_arr)
     win_arr[nodata_locs] = nodata
     win_arr = win_arr[window[0] - expanded_window[0] : window[2] - expanded_window[0], window[1] - expanded_window[1] : window[3] - expanded_window[1]]
-    log.ODM_DEBUG("Filtered window: %s" % str(window))
     return win_arr
