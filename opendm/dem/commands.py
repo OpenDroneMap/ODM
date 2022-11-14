@@ -35,11 +35,11 @@ except ModuleNotFoundError:
     except:
         pass
 
-def classify(lasFile, scalar, slope, threshold, window, verbose=False):
+def classify(lasFile, scalar, slope, threshold, window):
     start = datetime.now()
 
     try:
-        pdal.run_pdaltranslate_smrf(lasFile, lasFile, scalar, slope, threshold, window, verbose)
+        pdal.run_pdaltranslate_smrf(lasFile, lasFile, scalar, slope, threshold, window)
     except:
         log.ODM_WARNING("Error creating classified file %s" % lasFile)
 
@@ -90,7 +90,7 @@ error = None
 
 def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56'], gapfill=True,
                 outdir='', resolution=0.1, max_workers=1, max_tile_size=4096,
-                verbose=False, decimation=None, keep_unfilled_copy=False,
+                decimation=None, keep_unfilled_copy=False,
                 apply_smoothing=True):
     """ Create DEM from multiple radii, and optionally gapfill """
     
@@ -187,7 +187,7 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
             d = pdal.json_add_decimation_filter(d, decimation)
 
         pdal.json_add_readers(d, [input_point_cloud])
-        pdal.run_pipeline(d, verbose=verbose)
+        pdal.run_pipeline(d)
 
     parallel_map(process_tile, tiles, max_workers)
 

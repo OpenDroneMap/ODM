@@ -53,7 +53,6 @@ class ODMFilterPoints(types.ODM_Stage):
                                 standard_deviation=args.pc_filter, 
                                 sample_radius=args.pc_sample,
                                 boundary=boundary_offset(outputs.get('boundary'), reconstruction.get_proj_offset()),
-                                verbose=args.verbose,
                                 max_concurrency=args.max_concurrency)
             
             # Quick check

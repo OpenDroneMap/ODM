@@ -133,22 +133,13 @@ def json_add_readers(json, filenames):
     return json
 
 
-def json_print(json):
-    """ Pretty print JSON """
-    log.ODM_DEBUG(jsonlib.dumps(json, indent=4, separators=(',', ': ')))
-
-
 """ Run PDAL commands """
 
-def run_pipeline(json, verbose=False):
+def run_pipeline(json):
     """ Run PDAL Pipeline with provided JSON """
-    if verbose:
-        json_print(json)
 
     # write to temp file
     f, jsonfile = tempfile.mkstemp(suffix='.json')
-    if verbose:
-        log.ODM_INFO('Pipeline file: %s' % jsonfile)
     os.write(f, jsonlib.dumps(json).encode('utf8'))
     os.close(f)
 
@@ -157,14 +148,11 @@ def run_pipeline(json, verbose=False):
         'pipeline',
         '-i %s' % double_quote(jsonfile)
     ]
-    if verbose or sys.platform == 'win32':
-        system.run(' '.join(cmd))
-    else:
-        system.run(' '.join(cmd) + ' > /dev/null 2>&1')
+    system.run(' '.join(cmd))
     os.remove(jsonfile)
 
 
-def run_pdaltranslate_smrf(fin, fout, scalar, slope, threshold, window, verbose=False):
+def run_pdaltranslate_smrf(fin, fout, scalar, slope, threshold, window):
     """ Run PDAL translate  """
     cmd = [
         'pdal',
@@ -178,12 +166,9 @@ def run_pdaltranslate_smrf(fin, fout, scalar, slope, threshold, window, verbose=
         '--filters.smrf.window=%s' % window,
     ]
 
-    if verbose:
-        log.ODM_INFO(' '.join(cmd))
-
     system.run(' '.join(cmd))
 
-def merge_point_clouds(input_files, output_file, verbose=False):
+def merge_point_clouds(input_files, output_file):
     if len(input_files) == 0:
         log.ODM_WARNING("Cannot merge point clouds, no point clouds to merge.")
         return
@@ -194,8 +179,5 @@ def merge_point_clouds(input_files, output_file, verbose=False):
         ' '.join(map(double_quote, input_files + [output_file])),
     ]
 
-    if verbose:
-        log.ODM_INFO(' '.join(cmd))
-    
     system.run(' '.join(cmd))
 

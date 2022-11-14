@@ -654,14 +654,6 @@ def config(argv=None, parser=None):
                         default=False,
                         help='Create Cloud-Optimized GeoTIFFs instead of normal GeoTIFFs. Default: %(default)s')
 
-
-    parser.add_argument('--verbose', '-v',
-                        action=StoreTrue,
-                        nargs=0,
-                        default=False,
-                        help='Print additional messages to the console. '
-                             'Default: %(default)s')
-    
     parser.add_argument('--copy-to',
                         metavar='<path>',
                         action=StoreValue,

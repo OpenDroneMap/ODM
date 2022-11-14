@@ -27,9 +27,7 @@ class ODMeshingStage(types.ODM_Stage):
                 samples=self.params.get('samples'),
                 maxVertexCount=self.params.get('max_vertex'),
                 pointWeight=self.params.get('point_weight'),
-                threads=max(1, self.params.get('max_concurrency') - 1), # poissonrecon can get stuck on some machines if --threads == all cores
-                verbose=self.params.get('verbose'))
-
+                threads=max(1, self.params.get('max_concurrency') - 1)), # poissonrecon can get stuck on some machines if --threads == all cores
           else:
               log.ODM_WARNING('Found a valid ODM Mesh file in: %s' %
                               tree.odm_mesh)
@@ -68,7 +66,6 @@ class ODMeshingStage(types.ODM_Stage):
                     depth=self.params.get('oct_tree'),
                     maxVertexCount=self.params.get('max_vertex'),
                     samples=self.params.get('samples'),
-                    verbose=self.params.get('verbose'),
                     available_cores=args.max_concurrency,
                     method='poisson' if args.fast_orthophoto else 'gridded',
                     smooth_dsm=True)
