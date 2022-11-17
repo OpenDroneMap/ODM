@@ -18,7 +18,7 @@ from osgeo import gdal
 
 def get_orthophoto_vars(args):
     return {
-        'TILED': 'YES',
+        'TILED': 'NO' if args.orthophoto_no_tiled else 'YES',
         'COMPRESS': args.orthophoto_compression,
         'PREDICTOR': '2' if args.orthophoto_compression in ['LZW', 'DEFLATE'] else '1',
         'BIGTIFF': 'IF_SAFER',

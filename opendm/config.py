@@ -538,6 +538,13 @@ def config(argv=None, parser=None):
                         help=('Orthophoto resolution in cm / pixel. Note that this value is capped by a ground sampling distance (GSD) estimate. To remove the cap, check --ignore-gsd also. '
                               'Default: %(default)s'))
 
+    parser.add_argument('--orthophoto-no-tiled',
+                        action=StoreTrue,
+                        nargs=0,
+                        default=False,
+                        help='Set this parameter if you want a striped GeoTIFF. '
+                             'Default: %(default)s')
+
     parser.add_argument('--orthophoto-png',
                         action=StoreTrue,
                         nargs=0,
