@@ -88,7 +88,7 @@ run C:\Users\youruser\datasets\project  [--additional --parameters --here]
 ODM is now available as a Snap Package from the Snap Store. To install you may use the Snap Store (available itself as a Snap Package) or the command line:
 
 ```bash
-sudo snap install opendronemap
+sudo snap install --edge opendronemap
 ```
 
 To run, you will need a terminal window into which you can type:
