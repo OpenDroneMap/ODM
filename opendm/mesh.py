@@ -21,7 +21,7 @@ def create_25dmesh(inPointCloud, outMesh, dsm_radius=0.07, dsm_resolution=0.05, 
 
     radius_steps = [dsm_radius]
     for _ in range(2):
-        radius_steps.append(radius_steps[-1] * 2) # 2 is arbitrary
+        radius_steps.append(radius_steps[-1] * math.sqrt(2)) # sqrt(2) is arbitrary
 
     log.ODM_INFO('Creating DSM for 2.5D mesh')
 

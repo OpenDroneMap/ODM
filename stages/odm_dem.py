@@ -1,4 +1,4 @@
-import os, json
+import os, json, math
 from shutil import copyfile
 
 from opendm import io
@@ -90,7 +90,7 @@ class ODMDEMStage(types.ODM_Stage):
 
                 radius_steps = [(resolution / 100.0) / 2.0]
                 for _ in range(args.dem_gapfill_steps - 1):
-                    radius_steps.append(radius_steps[-1] * 2) # 2 is arbitrary, maybe there's a better value?
+                    radius_steps.append(radius_steps[-1] * math.sqrt(2)) # sqrt(2) is arbitrary, maybe there's a better value?
 
                 for product in products:
                     commands.create_dem(
