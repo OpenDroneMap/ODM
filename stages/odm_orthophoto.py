@@ -18,7 +18,6 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
     def process(self, args, outputs):
         tree = outputs['tree']
         reconstruction = outputs['reconstruction']
-        verbose = '-verbose' if args.verbose else ''
 
         # define paths and create working directories
         system.mkdir_p(tree.odm_orthophoto)
@@ -42,8 +41,7 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                 'corners': tree.odm_orthophoto_corners,
                 'res': resolution,
                 'bands': '',
-                'depth_idx': '',
-                'verbose': verbose
+                'depth_idx': ''
             }
 
             models = []
@@ -85,7 +83,7 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
 
             # run odm_orthophoto
             system.run('"{odm_ortho_bin}" -inputFiles {models} '
-                       '-logFile "{log}" -outputFile "{ortho}" -resolution {res} {verbose} '
+                       '-logFile "{log}" -outputFile "{ortho}" -resolution {res} -verbose '
                        '-outputCornerFile "{corners}" {bands} {depth_idx}'.format(**kwargs))
 
             # Create georeferenced GeoTiff

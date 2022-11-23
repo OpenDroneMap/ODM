@@ -166,10 +166,6 @@ class ODM_Photo:
         # parse values from metadata
         self.parse_exif_values(path_file)
 
-        # print log message
-        log.ODM_DEBUG('Loaded {}'.format(self))
-
-
     def __str__(self):
         return '{} | camera: {} {} | dimensions: {} x {} | lat: {} | lon: {} | alt: {} | band: {} ({})'.format(
                             self.filename, self.camera_make, self.camera_model, self.width, self.height, 

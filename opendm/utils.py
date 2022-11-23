@@ -5,37 +5,33 @@ from osgeo import gdal
 from opendm.loghelpers import double_quote
 
 def get_depthmap_resolution(args, photos):
-    if 'depthmap_resolution_is_set' in args:
-        # Override pc-quality
-        return int(args.depthmap_resolution)
+    max_dims = find_largest_photo_dims(photos)
+    min_dim = 320 # Never go lower than this
+
+    if max_dims is not None:
+        w, h = max_dims
+        max_dim = max(w, h)
+
+        megapixels = (w * h) / 1e6
+        multiplier = 1
+        
+        if megapixels < 6:
+            multiplier = 2
+        elif megapixels > 42:
+            multiplier = 0.5
+        
+        pc_quality_scale = {
+            'ultra': 0.5,
+            'high': 0.25,
+            'medium': 0.125,
+            'low': 0.0675,
+            'lowest': 0.03375
+        }
+
+        return max(min_dim, int(max_dim * pc_quality_scale[args.pc_quality] * multiplier))
     else:
-        max_dims = find_largest_photo_dims(photos)
-        min_dim = 320 # Never go lower than this
-
-        if max_dims is not None:
-            w, h = max_dims
-            max_dim = max(w, h)
-
-            megapixels = (w * h) / 1e6
-            multiplier = 1
-            
-            if megapixels < 6:
-                multiplier = 2
-            elif megapixels > 42:
-                multiplier = 0.5
-            
-            pc_quality_scale = {
-                'ultra': 0.5,
-                'high': 0.25,
-                'medium': 0.125,
-                'low': 0.0675,
-                'lowest': 0.03375
-            }
-
-            return max(min_dim, int(max_dim * pc_quality_scale[args.pc_quality] * multiplier))
-        else:
-            log.ODM_WARNING("Cannot compute max image dimensions, going with default depthmap_resolution of 640")
-            return 640 # Sensible default
+        log.ODM_WARNING("Cannot compute max image dimensions, going with default depthmap_resolution of 640")
+        return 640 # Sensible default
 
 def get_raster_stats(geotiff):
     stats = []

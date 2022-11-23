@@ -49,12 +49,15 @@ class ODMLoadDatasetStage(types.ODM_Stage):
         tree = types.ODM_Tree(args.project_path, args.gcp, args.geo)
         outputs['tree'] = tree
 
-        if args.time and io.file_exists(tree.benchmarking):
+        if io.file_exists(tree.benchmarking):
             # Delete the previously made file
-            os.remove(tree.benchmarking)
-            with open(tree.benchmarking, 'a') as b:
-                b.write('ODM Benchmarking file created %s\nNumber of Cores: %s\n\n' % (system.now(), context.num_cores))
-    
+            try:
+                os.remove(tree.benchmarking)
+                with open(tree.benchmarking, 'a') as b:
+                    b.write('ODM Benchmarking file created %s\nNumber of Cores: %s\n\n' % (system.now(), context.num_cores))
+            except Exception as e:
+                log.ODM_WARNING("Cannot write benchmark file: %s" % str(e))
+
         # check if the image filename is supported
         def valid_image_filename(filename):
             (pathfn, ext) = os.path.splitext(filename)
@@ -62,7 +65,6 @@ class ODMLoadDatasetStage(types.ODM_Stage):
 
         # Get supported images from dir
         def get_images(in_dir):
-            log.ODM_DEBUG(in_dir)
             entries = os.listdir(in_dir)
             valid, rejects = [], []
             for f in entries:

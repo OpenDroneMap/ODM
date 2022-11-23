@@ -8,7 +8,7 @@ from opendm import concurrency
 from scipy import signal
 import numpy as np
 
-def create_25dmesh(inPointCloud, outMesh, dsm_radius=0.07, dsm_resolution=0.05, depth=8, samples=1, maxVertexCount=100000, verbose=False, available_cores=None, method='gridded', smooth_dsm=True):
+def create_25dmesh(inPointCloud, outMesh, dsm_radius=0.07, dsm_resolution=0.05, depth=8, samples=1, maxVertexCount=100000, available_cores=None, method='gridded', smooth_dsm=True):
     # Create DSM from point cloud
 
     # Create temporary directory
@@ -21,7 +21,7 @@ def create_25dmesh(inPointCloud, outMesh, dsm_radius=0.07, dsm_resolution=0.05, 
 
     radius_steps = [dsm_radius]
     for _ in range(2):
-        radius_steps.append(radius_steps[-1] * 2) # 2 is arbitrary
+        radius_steps.append(radius_steps[-1] * math.sqrt(2)) # sqrt(2) is arbitrary
 
     log.ODM_INFO('Creating DSM for 2.5D mesh')
 
@@ -33,20 +33,18 @@ def create_25dmesh(inPointCloud, outMesh, dsm_radius=0.07, dsm_resolution=0.05, 
             gapfill=True,
             outdir=tmp_directory,
             resolution=dsm_resolution,
-            verbose=verbose,
             max_workers=available_cores,
             apply_smoothing=smooth_dsm
         )
 
     if method == 'gridded':
-        mesh = dem_to_mesh_gridded(os.path.join(tmp_directory, 'mesh_dsm.tif'), outMesh, maxVertexCount, verbose, maxConcurrency=max(1, available_cores))
+        mesh = dem_to_mesh_gridded(os.path.join(tmp_directory, 'mesh_dsm.tif'), outMesh, maxVertexCount, maxConcurrency=max(1, available_cores))
     elif method == 'poisson':
-        dsm_points = dem_to_points(os.path.join(tmp_directory, 'mesh_dsm.tif'), os.path.join(tmp_directory, 'dsm_points.ply'), verbose)
+        dsm_points = dem_to_points(os.path.join(tmp_directory, 'mesh_dsm.tif'), os.path.join(tmp_directory, 'dsm_points.ply'))
         mesh = screened_poisson_reconstruction(dsm_points, outMesh, depth=depth, 
                                     samples=samples, 
                                     maxVertexCount=maxVertexCount, 
-                                    threads=max(1, available_cores - 1), # poissonrecon can get stuck on some machines if --threads == all cores
-                                    verbose=verbose)
+                                    threads=max(1, available_cores - 1)), # poissonrecon can get stuck on some machines if --threads == all cores
     else:
         raise 'Not a valid method: ' + method
 
@@ -57,14 +55,13 @@ def create_25dmesh(inPointCloud, outMesh, dsm_radius=0.07, dsm_resolution=0.05, 
     return mesh
 
 
-def dem_to_points(inGeotiff, outPointCloud, verbose=False):
+def dem_to_points(inGeotiff, outPointCloud):
     log.ODM_INFO('Sampling points from DSM: %s' % inGeotiff)
 
     kwargs = {
         'bin': context.dem2points_path,
         'outfile': outPointCloud,
-        'infile': inGeotiff,
-        'verbose': '-verbose' if verbose else ''
+        'infile': inGeotiff
     }
 
     system.run('"{bin}" -inputFile "{infile}" '
@@ -72,12 +69,12 @@ def dem_to_points(inGeotiff, outPointCloud, verbose=False):
          '-skirtHeightThreshold 1.5 '
          '-skirtIncrements 0.2 '
          '-skirtHeightCap 100 '
-         ' {verbose} '.format(**kwargs))
+         '-verbose '.format(**kwargs))
 
     return outPointCloud
 
 
-def dem_to_mesh_gridded(inGeotiff, outMesh, maxVertexCount, verbose=False, maxConcurrency=1):
+def dem_to_mesh_gridded(inGeotiff, outMesh, maxVertexCount, maxConcurrency=1):
     log.ODM_INFO('Creating mesh from DSM: %s' % inGeotiff)
 
     mesh_path, mesh_filename = os.path.split(outMesh)
@@ -99,8 +96,7 @@ def dem_to_mesh_gridded(inGeotiff, outMesh, maxVertexCount, verbose=False, maxCo
                 'outfile': outMeshDirty,
                 'infile': inGeotiff,
                 'maxVertexCount': maxVertexCount,
-                'maxConcurrency': maxConcurrency,
-                'verbose': '-verbose' if verbose else ''
+                'maxConcurrency': maxConcurrency
             }
             system.run('"{bin}" -inputFile "{infile}" '
                 '-outputFile "{outfile}" '
@@ -108,7 +104,7 @@ def dem_to_mesh_gridded(inGeotiff, outMesh, maxVertexCount, verbose=False, maxCo
                 '-maxVertexCount {maxVertexCount} '
                 '-maxConcurrency {maxConcurrency} '
                 '-edgeSwapThreshold 0.15 '
-                ' {verbose} '.format(**kwargs))
+                '-verbose '.format(**kwargs))
             break
         except Exception as e:
             maxConcurrency = math.floor(maxConcurrency / 2)
@@ -138,7 +134,7 @@ def dem_to_mesh_gridded(inGeotiff, outMesh, maxVertexCount, verbose=False, maxCo
     return outMesh
 
 
-def screened_poisson_reconstruction(inPointCloud, outMesh, depth = 8, samples = 1, maxVertexCount=100000, pointWeight=4, threads=context.num_cores, verbose=False):
+def screened_poisson_reconstruction(inPointCloud, outMesh, depth = 8, samples = 1, maxVertexCount=100000, pointWeight=4, threads=context.num_cores):
 
     mesh_path, mesh_filename = os.path.split(outMesh)
     # mesh_path = path/to
@@ -165,8 +161,7 @@ def screened_poisson_reconstruction(inPointCloud, outMesh, depth = 8, samples = 
             'depth': depth,
             'samples': samples,
             'pointWeight': pointWeight,
-            'threads': int(threads),
-            'verbose': '--verbose' if verbose else ''
+            'threads': int(threads)
         }
 
         # Run PoissonRecon
@@ -178,8 +173,7 @@ def screened_poisson_reconstruction(inPointCloud, outMesh, depth = 8, samples = 
                     '--samplesPerNode {samples} '
                     '--threads {threads} '
                     '--bType 2 '
-                    '--linearFit '
-                    '{verbose}'.format(**poissonReconArgs))
+                    '--linearFit '.format(**poissonReconArgs))
         except Exception as e:
             log.ODM_WARNING(str(e))
             
