@@ -741,7 +741,15 @@ def config(argv=None, parser=None):
                           'If the images have been postprocessed and are already aligned, use this option. '
                           'Default: %(default)s'))
 
-    args = parser.parse_args(argv)
+    args, unknown = parser.parse_known_args(argv)
+    DEPRECATED = ["--verbose", "--debug", "--time", "--resize-to", "--depthmap-resolution", "--pc-geometric", "--texturing-data-term", "--texturing-outlier-removal-type", "--texturing-tone-mapping"]
+    unknown_e = [p for p in unknown if p not in DEPRECATED]
+    if len(unknown_e) > 0:
+        raise parser.error("unrecognized arguments: %s" % " ".join(unknown_e))
+
+    for p in unknown:
+        if p in DEPRECATED:
+            log.ODM_WARNING("%s is no longer a valid argument and will be ignored!" % p)
 
     # check that the project path setting has been set properly
     if not args.project_path:
