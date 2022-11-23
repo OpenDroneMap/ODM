@@ -167,19 +167,24 @@ class ODMOpenMVSStage(types.ODM_Stage):
                             '-v 0',
                         ]
 
-                        # Do not filter
-                        os.rename(scene_ply_unfiltered, scene_ply)
+                        try:
+                            system.run('"%s" "%s" %s' % (context.omvs_densify_path, sf, ' '.join(config + gpu_config + extra_config)))
+                        except:
+                            log.ODM_WARNING("Sub-scene %s could not be reconstructed, skipping..." % sf)
 
-                        if not io.file_exists(scene_ply):
+                        if not io.file_exists(scene_ply_unfiltered):
                             scene_ply_files.pop()
                             log.ODM_WARNING("Could not compute PLY for subscene %s" % sf)
+                        else:
+                            # Do not filter
+                            os.rename(scene_ply_unfiltered, scene_ply)
                     else:
                         log.ODM_WARNING("Found existing dense scene file %s" % scene_ply)
 
                 # Merge
                 log.ODM_INFO("Merging %s scene files" % len(scene_ply_files))
                 if len(scene_ply_files) == 0:
-                    log.ODM_ERROR("Could not compute dense point cloud (no PLY files available).")
+                    raise system.ExitException("Could not compute dense point cloud (no PLY files available).")
                 if len(scene_ply_files) == 1:
                     # Simply rename
                     os.replace(scene_ply_files[0], tree.openmvs_model)
@@ -189,6 +194,10 @@ class ODMOpenMVSStage(types.ODM_Stage):
                     fast_merge_ply(scene_ply_files, tree.openmvs_model)
             else:
                 scene_dense_ply = os.path.join(tree.openmvs, 'scene_dense.ply')
+
+                if not os.path.exists(scene_dense_ply):
+                    raise system.ExitException("Dense reconstruction failed. This could be due to poor georeferencing or insufficient image overlap.")
+
                 os.rename(scene_dense_ply, tree.openmvs_model)
 
             self.update_progress(95)
