@@ -22,6 +22,10 @@ jobs:
       id: cuda-toolkit
       with:
         cuda: '11.4.0'
+    - name: Setup cmake
+      uses: jwlawson/actions-setup-cmake@v1.13
+      with:
+        cmake-version: '3.24.x'
     - name: Extract code signing cert
       id: code_sign
       uses: timheuer/base64-to-file@v1
