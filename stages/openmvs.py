@@ -65,7 +65,6 @@ class ODMOpenMVSStage(types.ODM_Stage):
             config = [
                 " --resolution-level %s" % int(resolution_level),
                 '--dense-config-file "%s"' % densify_ini_file,
-                "--min-resolution %s" % depthmap_resolution,
                 "--max-resolution %s" % int(outputs['undist_image_max_size']),
                 "--max-threads %s" % args.max_concurrency,
                 "--number-views-fuse %s" % number_views_fuse,
@@ -158,7 +157,6 @@ class ODMOpenMVSStage(types.ODM_Stage):
                         # Fuse
                         config = [
                             '--resolution-level %s' % int(resolution_level),
-                            '--min-resolution %s' % depthmap_resolution,
                             '--max-resolution %s' % int(outputs['undist_image_max_size']),
                             '--dense-config-file "%s"' % subscene_densify_ini_file,
                             '--number-views-fuse %s' % number_views_fuse,
