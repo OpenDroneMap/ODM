@@ -65,7 +65,6 @@ class ODMOpenMVSStage(types.ODM_Stage):
             config = [
                 " --resolution-level %s" % int(resolution_level),
                 '--dense-config-file "%s"' % densify_ini_file,
-                "--min-resolution %s" % depthmap_resolution,
                 "--max-resolution %s" % int(outputs['undist_image_max_size']),
                 "--max-threads %s" % args.max_concurrency,
                 "--number-views-fuse %s" % number_views_fuse,
@@ -77,8 +76,8 @@ class ODMOpenMVSStage(types.ODM_Stage):
             gpu_config = []
             use_gpu = has_gpu(args)
             if use_gpu:
-                #gpu_config.append("--cuda-device -3")
-                gpu_config.append("--cuda-device -1")
+                gpu_config.append("--cuda-device -3")
+                # gpu_config.append("--cuda-device -1")
             else:
                 gpu_config.append("--cuda-device -2")
 
@@ -158,7 +157,6 @@ class ODMOpenMVSStage(types.ODM_Stage):
                         # Fuse
                         config = [
                             '--resolution-level %s' % int(resolution_level),
-                            '--min-resolution %s' % depthmap_resolution,
                             '--max-resolution %s' % int(outputs['undist_image_max_size']),
                             '--dense-config-file "%s"' % subscene_densify_ini_file,
                             '--number-views-fuse %s' % number_views_fuse,
