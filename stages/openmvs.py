@@ -61,6 +61,7 @@ class ODMOpenMVSStage(types.ODM_Stage):
             number_views_fuse = 2
             densify_ini_file = os.path.join(tree.openmvs, 'Densify.ini')
             subres_levels = 2 # The number of lower resolutions to process before estimating output resolution depthmap.
+            filter_point_th = -20
 
             config = [
                 " --resolution-level %s" % int(resolution_level),
@@ -127,7 +128,8 @@ class ODMOpenMVSStage(types.ODM_Stage):
                     f.write("Optimize = 0\n")
 
                 config = [
-                    "--sub-scene-area 660000",
+                    "--sub-scene-area 6000",
+                    # "--sub-scene-area 660000",
                     "--max-threads %s" % args.max_concurrency,
                     '-w "%s"' % depthmaps_dir, 
                     "-v 0",
@@ -174,8 +176,13 @@ class ODMOpenMVSStage(types.ODM_Stage):
                             scene_ply_files.pop()
                             log.ODM_WARNING("Could not compute PLY for subscene %s" % sf)
                         else:
-                            # Do not filter
-                            os.rename(scene_ply_unfiltered, scene_ply)
+                            # Filter
+                            if args.pc_filter > 0:
+                                system.run('"%s" "%s" --filter-point-cloud %s -v 0 %s' % (context.omvs_densify_path, scene_dense_mvs, filter_point_th, ' '.join(gpu_config)))
+                            else:
+                                # Just rename
+                                log.ODM_INFO("Skipped filtering, %s --> %s" % (scene_ply_unfiltered, scene_ply))
+                                os.rename(scene_ply_unfiltered, scene_ply)
                     else:
                         log.ODM_WARNING("Found existing dense scene file %s" % scene_ply)
 
@@ -191,12 +198,35 @@ class ODMOpenMVSStage(types.ODM_Stage):
                     # Merge
                     fast_merge_ply(scene_ply_files, tree.openmvs_model)
             else:
-                scene_dense_ply = os.path.join(tree.openmvs, 'scene_dense.ply')
+                def skip_filtering():
+                    # Just rename
+                    scene_dense_ply = os.path.join(tree.openmvs, 'scene_dense.ply')
+                    if not os.path.exists(scene_dense_ply):
+                        raise system.ExitException("Dense reconstruction failed. This could be due to poor georeferencing or insufficient image overlap.")
 
-                if not os.path.exists(scene_dense_ply):
-                    raise system.ExitException("Dense reconstruction failed. This could be due to poor georeferencing or insufficient image overlap.")
+                    log.ODM_INFO("Skipped filtering, %s --> %s" % (scene_dense_ply, tree.openmvs_model))
+                    os.rename(scene_dense_ply, tree.openmvs_model)
 
-                os.rename(scene_dense_ply, tree.openmvs_model)
+                # Filter all at once
+                if args.pc_filter > 0:
+                    if os.path.exists(scene_dense):
+                        config = [
+                            "--filter-point-cloud %s" % filter_point_th,
+                            '-i "%s"' % scene_dense,
+                            "-v 0"
+                        ]
+                        try:
+                            system.run('"%s" %s' % (context.omvs_densify_path, ' '.join(config + gpu_config + extra_config)))
+                        except system.SubprocessException as e:
+                            if e.errorCode == 137 or e.errorCode == 3221226505:
+                                log.ODM_WARNING("OpenMVS filtering ran out of memory, visibility checks will be skipped.")
+                                skip_filtering()
+                            else:
+                                raise e
+                    else:
+                        raise system.ExitException("Cannot find scene_dense.mvs, dense reconstruction probably failed. Exiting...")
+                else:
+                    skip_filtering()
 
             self.update_progress(95)
 
