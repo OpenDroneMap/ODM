@@ -128,8 +128,7 @@ class ODMOpenMVSStage(types.ODM_Stage):
                     f.write("Optimize = 0\n")
 
                 config = [
-                    "--sub-scene-area 6000",
-                    # "--sub-scene-area 660000",
+                    "--sub-scene-area 660000",
                     "--max-threads %s" % args.max_concurrency,
                     '-w "%s"' % depthmaps_dir, 
                     "-v 0",
