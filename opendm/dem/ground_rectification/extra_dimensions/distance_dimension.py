@@ -35,7 +35,7 @@ class DistanceDimension(Dimension):
         return 'distance_to_ground'
 
     def get_las_type(self):
-        return 10
+        return 'float64'
 
     def __calculate_angle(self, model):
         "Calculate the angle between the estimated plane and the XY plane"
