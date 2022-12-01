@@ -159,6 +159,7 @@ SETUP_EXTERNAL_PROJECT(Hexer 1.4 ON)
 set(custom_libs OpenSfM
 				LASzip
 				PDAL
+				PDALPython
 				Untwine
 				Entwine
 				MvsTexturing

@@ -14,7 +14,7 @@ python_packages_paths = [os.path.join(superbuild_path, p) for p in [
     'install/lib/python3.9/dist-packages',
     'install/lib/python3.8/dist-packages',
     'install/lib/python3/dist-packages',
-    'install/bin/opensfm'
+    'install/bin/opensfm',
 ]]
 for p in python_packages_paths:
     sys.path.append(p)
