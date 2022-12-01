@@ -58,6 +58,10 @@ jobs:
       with:
         python-version: '3.8.1'
         architecture: 'x64'
+    - name: Setup cmake
+      uses: jwlawson/actions-setup-cmake@v1.13
+      with:
+        cmake-version: '3.24.x'
     - name: Setup Visual C++
       uses: ilammy/msvc-dev-cmd@v1
       with:
