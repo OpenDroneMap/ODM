@@ -50,12 +50,35 @@ def rectify(lasFile, debug=False, reclassify_threshold=5, min_area=750, min_poin
     start = datetime.now()
 
     try:
+        # Currently, no Python 2 lib that supports reading and writing LAZ, so we will do it manually until ODM is migrated to Python 3
+        # When migration is done, we can move to pylas and avoid using PDAL for conversion
+        tempLasFile = os.path.join(os.path.dirname(lasFile), 'tmp.las')
+
+        # Convert LAZ to LAS
+        cmd = [
+            'pdal',
+            'translate',
+            '-i %s' % lasFile,
+            '-o %s' % tempLasFile
+        ]
+        system.run(' '.join(cmd))
+
         log.ODM_INFO("Rectifying {} using with [reclassify threshold: {}, min area: {}, min points: {}]".format(lasFile, reclassify_threshold, min_area, min_points))
         run_rectification(
-            input=lasFile, output=lasFile, debug=debug, \
+            input=tempLasFile, output=tempLasFile, debug=debug, \
             reclassify_plan='median', reclassify_threshold=reclassify_threshold, \
             extend_plan='surrounding', extend_grid_distance=5, \
             min_area=min_area, min_points=min_points)
+
+        # Convert LAS to LAZ
+        cmd = [
+            'pdal',
+            'translate',
+            '-i %s' % tempLasFile,
+            '-o %s' % lasFile
+        ]
+        system.run(' '.join(cmd))
+        os.remove(tempLasFile)
 
     except Exception as e:
         raise Exception("Error rectifying ground in file %s: %s" % (lasFile, str(e)))

@@ -20,4 +20,4 @@ class ExtendedDimension(Dimension):
         return 'extended'
 
     def get_las_type(self):
-        return 'uint16'
+        return 3
