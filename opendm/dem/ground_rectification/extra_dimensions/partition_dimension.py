@@ -22,4 +22,4 @@ class PartitionDimension(Dimension):
         return self.name
 
     def get_las_type(self):
-        return 5
+        return 'uint32'
