@@ -470,6 +470,14 @@ def config(argv=None, parser=None):
                               'EPSG:<code> or <+proj definition>\n'
                               'image_name geo_x geo_y geo_z [omega (degrees)] [phi (degrees)] [kappa (degrees)] [horz accuracy (meters)] [vert accuracy (meters)]\n'
                               'Default: %(default)s'))
+    
+    parser.add_argument('--align-to',
+                    metavar='<path string>',
+                    action=StoreValue,
+                    default=None,
+                    help=('Path to a GeoTIFF DEM or a LAS/LAZ point cloud '
+                            'that the reconstruction outputs should be automatically aligned to. '
+                            'Default: %(default)s'))
 
     parser.add_argument('--use-exif',
                         action=StoreTrue,
