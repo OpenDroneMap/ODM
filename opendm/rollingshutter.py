@@ -28,6 +28,8 @@ RS_DATABASE = {
 
     'teracube teracube one': 32, # TeraCube TeraCube_One TR1907Q Mobile Phone
     
+    'fujifilm x-a5': 186, # FUJIFILM X-A5 Mirrorless Interchangeable Lens Camera
+
     'fujifilm x-t2': 35, # FUJIFILM X-T2 Mirrorless Interchangeable Lens Camera
 
 
