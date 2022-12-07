@@ -26,8 +26,10 @@ RS_DATABASE = {
     'gopro hero4 black': 30, # GoPro Hero 4 Black
     'gopro hero8 black': 17, # GoPro Hero 8 Black
 
-    'teracube teracube one': 32 # TeraCube TeraCube_One TR1907Q Mobile Phone
+    'teracube teracube one': 32, # TeraCube TeraCube_One TR1907Q Mobile Phone
     
+    'fujifilm x-t2': 35, # FUJIFILM X-T2 Mirrorless Interchangeable Lens Camera
+
 
     # Help us add more! 
     # See: https://github.com/OpenDroneMap/RSCalibration for instructions
@@ -72,3 +74,4 @@ def get_rolling_shutter_readout(photo, override_value=0):
             log.ODM_WARNING("Rolling shutter readout time for \"%s %s\" is not in our database, using default of %sms which might be incorrect. Use --rolling-shutter-readout to set an actual value (see https://github.com/OpenDroneMap/RSCalibration for instructions on how to calculate this value)" % (make, model, DEFAULT_RS_READOUT))
             warn_db_missing[key] = True
         return float(DEFAULT_RS_READOUT)
+
