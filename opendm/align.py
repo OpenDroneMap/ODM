@@ -48,14 +48,16 @@ def transform_point_cloud(input_laz, a_matrix, output_laz):
     p = pdal.Pipeline(json.dumps(pipe))
     p.execute()
 
-def transform_obj(input_obj, a_matrix, output_obj):
+def transform_obj(input_obj, a_matrix, geo_offset, output_obj):
+    g_off = np.array([geo_offset[0], geo_offset[1], 0, 0])
+
     with open(input_obj, 'r') as fin:
         with open(output_obj, 'w') as fout:
             lines = fin.readlines()
             for line in lines:
                 if line.startswith("v "):
                     v = np.fromstring(line.strip()[2:] + " 1",  sep=' ', dtype=float)
-                    vt = v.dot(a_matrix)[:3]
+                    vt = (a_matrix.dot((v + g_off)) - g_off)[:3]
                     fout.write("v " + " ".join(map(str, list(vt))) + '\n')
                 else:
                     fout.write(line)
