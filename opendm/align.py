@@ -5,9 +5,12 @@ import codem
 import dataclasses
 import pdal
 import numpy as np
+import rasterio
 from rasterio.crs import CRS
+from opendm.utils import double_quote
 from opendm import log
 from opendm import io
+from opendm import system
 
 def get_point_cloud_crs(file):
     pipeline = pdal.Pipeline(json.dumps([ file ]))
@@ -17,14 +20,30 @@ def get_point_cloud_crs(file):
     crs = CRS.from_string(reader_metadata[0]["srs"]["horizontal"])
     return str(crs)
 
+def get_raster_crs(file):
+    with rasterio.open(file, 'r') as f:
+        return str(f.crs)
+
 def reproject_point_cloud(file, out_srs):
-    log.ODM_INFO("Reprojecting %s to %s" % (file, out_srs))
-    out_file = io.related_file_path(file, postfix="_reprojected")
+    out_file = io.related_file_path(file, postfix="_reprojected_tmp")
     pipeline = pdal.Pipeline(json.dumps([ file, {
         "type": "filters.reprojection",
         "out_srs": out_srs
     }, out_file]))
     pipeline.execute()
+    return out_file
+
+def reproject_raster(file, out_srs):
+    out_file = io.related_file_path(file, postfix="_reprojected")
+    kwargs = {
+        'input': double_quote(file),
+        'output': double_quote(out_file),
+        'out_srs': out_srs,
+    }
+    system.run('gdalwarp '
+                '-t_srs {out_srs} '
+                '{input} '
+                '{output} '.format(**kwargs))
     return out_file
 
 def compute_alignment_matrix(input_laz, align_file, stats_dir):
@@ -37,14 +56,25 @@ def compute_alignment_matrix(input_laz, align_file, stats_dir):
     log.ODM_INFO("Input CRS: %s" % input_crs)
 
     _, ext = os.path.splitext(align_file)
+    repr_func = None
+
     if ext.lower() in [".tif"]:
-        pass #TODO
+        align_crs = get_raster_crs(align_file)
+        repr_func = reproject_raster
     elif ext.lower() in [".las", ".laz"]:
         align_crs = get_point_cloud_crs(align_file)
-        log.ODM_INFO("Align CRS: %s" % align_crs)
-        if input_crs != get_point_cloud_crs(align_file):
-            # Reprojection needed
-            align_file = reproject_point_cloud(align_file, input_crs)
+        repr_func = reproject_point_cloud
+    else:
+        log.ODM_WARNING("Unsupported alignment file: %s" % align_file)
+        return
+    
+    to_delete = []
+    log.ODM_INFO("Align CRS: %s" % align_crs)
+    if input_crs != align_crs:
+        # Reprojection needed
+        log.ODM_INFO("Reprojecting %s to %s" % (align_file, input_crs))
+        align_file = repr_func(align_file, input_crs)
+        to_delete.append(align_file)
 
     conf = dataclasses.asdict(codem.CodemRunConfig(align_file, input_laz, OUTPUT_DIR=stats_dir))
     fnd_obj, aoi_obj = codem.preprocess(conf)
@@ -67,9 +97,23 @@ def compute_alignment_matrix(input_laz, align_file, stats_dir):
     )
 
     reg = app_reg.get_registration_transformation()
-    # print(dsm_reg.registration_parameters)
-    # print(icp_reg.registration_parameters)
+    
+    # Write JSON to stats folder
+    with open(os.path.join(stats_dir, "registration.json"), 'w') as f:
+        del dsm_reg.registration_parameters['matrix']
+        del icp_reg.registration_parameters['matrix']
+
+        f.write(json.dumps({
+            'coarse':  dsm_reg.registration_parameters,
+            'fine': icp_reg.registration_parameters,
+        }, indent=4))
+
     matrix = np.fromstring(reg['matrix'], dtype=float, sep=' ').reshape((4, 4))
+
+    for f in to_delete:
+        if os.path.isfile(f):
+            os.unlink(f)
+
     return matrix
 
 def transform_point_cloud(input_laz, a_matrix, output_laz):
