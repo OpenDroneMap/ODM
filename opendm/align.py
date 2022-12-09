@@ -5,12 +5,46 @@ import codem
 import dataclasses
 import pdal
 import numpy as np
+from rasterio.crs import CRS
 from opendm import log
+from opendm import io
+
+def get_point_cloud_crs(file):
+    pipeline = pdal.Pipeline(json.dumps([ file ]))
+    metadata = pipeline.quickinfo
+
+    reader_metadata = [val for key, val in metadata.items() if "readers" in key]
+    crs = CRS.from_string(reader_metadata[0]["srs"]["horizontal"])
+    return str(crs)
+
+def reproject_point_cloud(file, out_srs):
+    log.ODM_INFO("Reprojecting %s to %s" % (file, out_srs))
+    out_file = io.related_file_path(file, postfix="_reprojected")
+    pipeline = pdal.Pipeline(json.dumps([ file, {
+        "type": "filters.reprojection",
+        "out_srs": out_srs
+    }, out_file]))
+    pipeline.execute()
+    return out_file
 
 def compute_alignment_matrix(input_laz, align_file, stats_dir):
     if os.path.exists(stats_dir):
         shutil.rmtree(stats_dir)
     os.mkdir(stats_dir)
+
+    # Check if we need to reproject align file
+    input_crs = get_point_cloud_crs(input_laz)
+    log.ODM_INFO("Input CRS: %s" % input_crs)
+
+    _, ext = os.path.splitext(align_file)
+    if ext.lower() in [".tif"]:
+        pass #TODO
+    elif ext.lower() in [".las", ".laz"]:
+        align_crs = get_point_cloud_crs(align_file)
+        log.ODM_INFO("Align CRS: %s" % align_crs)
+        if input_crs != get_point_cloud_crs(align_file):
+            # Reprojection needed
+            align_file = reproject_point_cloud(align_file, input_crs)
 
     conf = dataclasses.asdict(codem.CodemRunConfig(align_file, input_laz, OUTPUT_DIR=stats_dir))
     fnd_obj, aoi_obj = codem.preprocess(conf)
