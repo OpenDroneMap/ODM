@@ -33,6 +33,8 @@ def compute_alignment_matrix(input_laz, align_file, stats_dir):
     )
 
     reg = app_reg.get_registration_transformation()
+    # print(dsm_reg.registration_parameters)
+    # print(icp_reg.registration_parameters)
     matrix = np.fromstring(reg['matrix'], dtype=float, sep=' ').reshape((4, 4))
     return matrix
 

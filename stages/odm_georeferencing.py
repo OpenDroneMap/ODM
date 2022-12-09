@@ -30,6 +30,9 @@ class ODMGeoreferencingStage(types.ODM_Stage):
         gcp_export_file = tree.path("odm_georeferencing", "ground_control_points.gpkg")
         gcp_gml_export_file = tree.path("odm_georeferencing", "ground_control_points.gml")
         gcp_geojson_export_file = tree.path("odm_georeferencing", "ground_control_points.geojson")
+        unaligned_model = io.related_file_path(tree.odm_georeferencing_model_laz, postfix="_unaligned")
+        if os.path.isfile(unaligned_model) and self.rerun():
+            os.unlink(unaligned_model)
 
         if reconstruction.has_gcp() and (not io.file_exists(gcp_export_file) or self.rerun()):
             octx = OSFMContext(tree.opensfm)
@@ -179,7 +182,8 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                         log.ODM_INFO("Alignment matrix: %s" % a_matrix)
 
                         # Align point cloud
-                        unaligned_model = io.related_file_path(tree.odm_georeferencing_model_laz, postfix="_unaligned")
+                        if os.path.isfile(unaligned_model):
+                            os.rename(unaligned_model, tree.odm_georeferencing_model_laz)
                         os.rename(tree.odm_georeferencing_model_laz, unaligned_model)
 
                         try:
@@ -188,12 +192,14 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                         except Exception as e:
                             log.ODM_WARNING("Cannot transform point cloud: %s" % str(e))
                             os.rename(unaligned_model, tree.odm_georeferencing_model_laz)
-                    
+
                         # Align textured models
                         for texturing in [tree.odm_texturing, tree.odm_25dtexturing]:
                             obj = os.path.join(texturing, "odm_textured_model_geo.obj")
                             if os.path.isfile(obj):
                                 unaligned_obj = io.related_file_path(obj, postfix="_unaligned")
+                                if os.path.isfile(unaligned_obj):
+                                    os.rename(unaligned_obj, obj)
                                 os.rename(obj, unaligned_obj)
                                 try:
                                     transform_obj(unaligned_obj, a_matrix, [reconstruction.georef.utm_east_offset, reconstruction.georef.utm_north_offset], obj)
