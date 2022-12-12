@@ -1,4 +1,5 @@
 import os
+import shutil
 import struct
 import pipes
 import fiona
@@ -19,6 +20,7 @@ from opendm.multispectral import get_primary_band_name
 from opendm.osfm import OSFMContext
 from opendm.boundary import as_polygon, export_to_bounds_files
 from opendm.align import compute_alignment_matrix, transform_point_cloud, transform_obj
+from opendm.utils import np_to_json
 
 class ODMGeoreferencingStage(types.ODM_Stage):
     def process(self, args, outputs):
@@ -172,11 +174,17 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                 system.run(cmd + ' ' + ' '.join(stages) + ' ' + ' '.join(params))
 
 
-            if tree.odm_align_file is not None:
-                alignment_file = os.path.join(tree.odm_georeferencing, 'alignment_done.txt')
+            stats_dir = tree.path("opensfm", "stats", "codem")
+            if os.path.exists(stats_dir) and self.rerun():
+                shutil.rmtree(stats_dir)
 
-                if not io.file_exists(alignment_file) or self.rerun():
-                    stats_dir = tree.path("opensfm", "stats", "codem")
+            if tree.odm_align_file is not None:
+                alignment_file_exists = io.file_exists(tree.odm_georeferencing_alignment_matrix)
+
+                if not alignment_file_exists or self.rerun():
+                    if alignment_file_exists:
+                        os.unlink(tree.odm_georeferencing_alignment_matrix)
+
                     a_matrix = compute_alignment_matrix(tree.odm_georeferencing_model_laz, tree.odm_align_file, stats_dir)
                     if a_matrix is not None:
                         log.ODM_INFO("Alignment matrix: %s" % a_matrix)
@@ -207,12 +215,15 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                                 except Exception as e:
                                     log.ODM_WARNING("Cannot transform textured model: %s" % str(e))
                                     os.rename(unaligned_obj, obj)
+                        
+                        with open(tree.odm_georeferencing_alignment_matrix, "w") as f:
+                            f.write(np_to_json(a_matrix))
                     else:
                         log.ODM_WARNING("Alignment to %s will be skipped." % tree.odm_align_file)
-                    
-                    io.touch(alignment_file)
                 else:
                     log.ODM_WARNING("Already computed alignment")
+            elif io.file_exists(tree.odm_georeferencing_alignment_matrix):
+                os.unlink(tree.odm_georeferencing_alignment_matrix)
 
             point_cloud.post_point_cloud_steps(args, tree, self.rerun())
         else:

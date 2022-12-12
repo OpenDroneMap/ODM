@@ -23,7 +23,7 @@ def get_origin(shot):
     """The origin of the pose in world coordinates."""
     return -get_rotation_matrix(np.array(shot['rotation'])).T.dot(np.array(shot['translation']))
 
-def get_geojson_shots_from_opensfm(reconstruction_file, utm_srs=None, utm_offset=None, pseudo_geotiff=None):
+def get_geojson_shots_from_opensfm(reconstruction_file, utm_srs=None, utm_offset=None, pseudo_geotiff=None, a_matrix=None):
     """
     Extract shots from OpenSfM's reconstruction.json
     """
@@ -92,6 +92,11 @@ def get_geojson_shots_from_opensfm(reconstruction_file, utm_srs=None, utm_offset
                         utm_coords = [origin[0] + utm_offset[0],
                                        origin[1] + utm_offset[1],
                                        origin[2]]
+
+                        if a_matrix is not None:
+                            rotation = list(np.array(rotation).dot(a_matrix[:3,:3]))
+                            utm_coords = list(a_matrix.dot(np.hstack((np.array(utm_coords), 1)))[:-1])
+                        
                         translation = utm_coords
                         trans_coords = crstrans.TransformPoint(utm_coords[0], utm_coords[1], utm_coords[2])
 

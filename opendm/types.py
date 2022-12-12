@@ -307,6 +307,9 @@ class ODM_Tree(object):
             self.odm_georeferencing, 'odm_georeferenced_model.laz')
         self.odm_georeferencing_model_las = os.path.join(
             self.odm_georeferencing, 'odm_georeferenced_model.las')
+        self.odm_georeferencing_alignment_matrix = os.path.join(
+            self.odm_georeferencing, 'alignment_matrix.json'
+        )
 
         # odm_orthophoto
         self.odm_orthophoto_render = os.path.join(self.odm_orthophoto, 'odm_orthophoto_render.tif')

@@ -471,12 +471,12 @@ def config(argv=None, parser=None):
                               'image_name geo_x geo_y geo_z [omega (degrees)] [phi (degrees)] [kappa (degrees)] [horz accuracy (meters)] [vert accuracy (meters)]\n'
                               'Default: %(default)s'))
     
-    parser.add_argument('--align-to',
+    parser.add_argument('--align',
                     metavar='<path string>',
                     action=StoreValue,
                     default=None,
                     help=('Path to a GeoTIFF DEM or a LAS/LAZ point cloud '
-                            'that the reconstruction outputs should be automatically aligned to. '
+                            'that the reconstruction outputs should be automatically aligned to. Experimental. '
                             'Default: %(default)s'))
 
     parser.add_argument('--use-exif',
