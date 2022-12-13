@@ -185,7 +185,12 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                     if alignment_file_exists:
                         os.unlink(tree.odm_georeferencing_alignment_matrix)
 
-                    a_matrix = compute_alignment_matrix(tree.odm_georeferencing_model_laz, tree.odm_align_file, stats_dir)
+                    a_matrix = None
+                    try:
+                        a_matrix = compute_alignment_matrix(tree.odm_georeferencing_model_laz, tree.odm_align_file, stats_dir)
+                    except Exception as e:
+                        log.ODM_WARNING("Cannot compute alignment matrix: %s" % str(e))
+
                     if a_matrix is not None:
                         log.ODM_INFO("Alignment matrix: %s" % a_matrix)
 

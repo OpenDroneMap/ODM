@@ -11,6 +11,7 @@ from opendm.utils import double_quote
 from opendm import log
 from opendm import io
 from opendm import system
+from opendm.concurrency import get_max_memory
 
 def get_point_cloud_crs(file):
     pipeline = pdal.Pipeline(json.dumps([ file ]))
@@ -34,16 +35,18 @@ def reproject_point_cloud(file, out_srs):
     return out_file
 
 def reproject_raster(file, out_srs):
-    out_file = io.related_file_path(file, postfix="_reprojected")
+    out_file = io.related_file_path(file, postfix="_reprojected_tmp")
     kwargs = {
         'input': double_quote(file),
         'output': double_quote(out_file),
         'out_srs': out_srs,
+        'max_memory': get_max_memory()
     }
     system.run('gdalwarp '
                 '-t_srs {out_srs} '
                 '{input} '
-                '{output} '.format(**kwargs))
+                '{output} '
+                '--config GDAL_CACHEMAX {max_memory}% '.format(**kwargs))
     return out_file
 
 def compute_alignment_matrix(input_laz, align_file, stats_dir):
@@ -69,52 +72,53 @@ def compute_alignment_matrix(input_laz, align_file, stats_dir):
         return
     
     to_delete = []
-    log.ODM_INFO("Align CRS: %s" % align_crs)
-    if input_crs != align_crs:
-        # Reprojection needed
-        log.ODM_INFO("Reprojecting %s to %s" % (align_file, input_crs))
-        align_file = repr_func(align_file, input_crs)
-        to_delete.append(align_file)
 
-    conf = dataclasses.asdict(codem.CodemRunConfig(align_file, input_laz, OUTPUT_DIR=stats_dir))
-    fnd_obj, aoi_obj = codem.preprocess(conf)
-    fnd_obj.prep()
-    aoi_obj.prep()
-    log.ODM_INFO("Aligning reconstruction to %s" % align_file)
-    log.ODM_INFO("Coarse registration...")
-    dsm_reg = codem.coarse_registration(fnd_obj, aoi_obj, conf)
-    log.ODM_INFO("Fine registration...")
-    icp_reg = codem.fine_registration(fnd_obj, aoi_obj, dsm_reg, conf)
+    try:
+        log.ODM_INFO("Align CRS: %s" % align_crs)
+        if input_crs != align_crs:
+            # Reprojection needed
+            log.ODM_INFO("Reprojecting %s to %s" % (align_file, input_crs))
+            align_file = repr_func(align_file, input_crs)
+            to_delete.append(align_file)
 
-    app_reg = codem.registration.ApplyRegistration(
-        fnd_obj,
-        aoi_obj,
-        icp_reg.registration_parameters,
-        icp_reg.residual_vectors,
-        icp_reg.residual_origins,
-        conf,
-        None,
-    )
+        conf = dataclasses.asdict(codem.CodemRunConfig(align_file, input_laz, OUTPUT_DIR=stats_dir))
+        fnd_obj, aoi_obj = codem.preprocess(conf)
+        fnd_obj.prep()
+        aoi_obj.prep()
+        log.ODM_INFO("Aligning reconstruction to %s" % align_file)
+        log.ODM_INFO("Coarse registration...")
+        dsm_reg = codem.coarse_registration(fnd_obj, aoi_obj, conf)
+        log.ODM_INFO("Fine registration...")
+        icp_reg = codem.fine_registration(fnd_obj, aoi_obj, dsm_reg, conf)
 
-    reg = app_reg.get_registration_transformation()
-    
-    # Write JSON to stats folder
-    with open(os.path.join(stats_dir, "registration.json"), 'w') as f:
-        del dsm_reg.registration_parameters['matrix']
-        del icp_reg.registration_parameters['matrix']
+        app_reg = codem.registration.ApplyRegistration(
+            fnd_obj,
+            aoi_obj,
+            icp_reg.registration_parameters,
+            icp_reg.residual_vectors,
+            icp_reg.residual_origins,
+            conf,
+            None,
+        )
 
-        f.write(json.dumps({
-            'coarse':  dsm_reg.registration_parameters,
-            'fine': icp_reg.registration_parameters,
-        }, indent=4))
+        reg = app_reg.get_registration_transformation()
+        
+        # Write JSON to stats folder
+        with open(os.path.join(stats_dir, "registration.json"), 'w') as f:
+            del dsm_reg.registration_parameters['matrix']
+            del icp_reg.registration_parameters['matrix']
 
-    matrix = np.fromstring(reg['matrix'], dtype=float, sep=' ').reshape((4, 4))
+            f.write(json.dumps({
+                'coarse':  dsm_reg.registration_parameters,
+                'fine': icp_reg.registration_parameters,
+            }, indent=4))
 
-    for f in to_delete:
-        if os.path.isfile(f):
-            os.unlink(f)
-
-    return matrix
+        matrix = np.fromstring(reg['matrix'], dtype=float, sep=' ').reshape((4, 4))
+        return matrix
+    finally:
+        for f in to_delete:
+            if os.path.isfile(f):
+                os.unlink(f)
 
 def transform_point_cloud(input_laz, a_matrix, output_laz):
     pipe = [
