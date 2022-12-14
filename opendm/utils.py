@@ -1,8 +1,17 @@
 import os, shutil
+import numpy as np
+import json
 from opendm import log
 from opendm.photo import find_largest_photo_dims
 from osgeo import gdal
 from opendm.loghelpers import double_quote
+
+class NumpyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return json.JSONEncoder.default(self, obj)
+
 
 def get_depthmap_resolution(args, photos):
     max_dims = find_largest_photo_dims(photos)
@@ -99,3 +108,9 @@ def rm_r(path):
             os.remove(path)
     except:
         log.ODM_WARNING("Cannot remove %s" % path)
+
+def np_to_json(arr):
+    return json.dumps(arr, cls=NumpyEncoder)
+
+def np_from_json(json_dump):
+    return np.asarray(json.loads(json_dump))

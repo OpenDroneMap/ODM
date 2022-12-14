@@ -31,3 +31,6 @@ xmltodict==0.12.0
 fpdf2==2.4.6
 Shapely==1.7.1
 onnxruntime==1.12.1
+codem==0.24.0
+trimesh==3.17.1
+pandas==1.5.2

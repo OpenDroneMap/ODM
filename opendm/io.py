@@ -85,3 +85,7 @@ def path_or_json_string_to_dict(string):
             raise ValueError("{0} is not a valid JSON file.".format(string))
     else:
         raise ValueError("{0} is not a valid JSON file or string.".format(string))
+    
+def touch(file):
+    with open(file, 'w') as fout:
+        fout.write("Done!\n")

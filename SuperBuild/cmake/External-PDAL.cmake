@@ -16,7 +16,7 @@ ExternalProject_Add(${_proj_name}
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
-  URL               https://github.com/PDAL/PDAL/archive/refs/tags/2.3RC1.zip
+  URL               https://github.com/PDAL/PDAL/archive/refs/tags/2.4.3.zip
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   #--Configure step-------------
@@ -60,3 +60,4 @@ ExternalProject_Add(${_proj_name}
   LOG_CONFIGURE     OFF
   LOG_BUILD         OFF
 )
+

@@ -14,7 +14,7 @@ from opendm.point_cloud import export_info_json
 from opendm.cropper import Cropper
 from opendm.orthophoto import get_orthophoto_vars, get_max_memory, generate_png
 from opendm.tiles.tiler import generate_colored_hillshade
-from opendm.utils import get_raster_stats
+from opendm.utils import get_raster_stats, np_from_json
 
 def hms(seconds):
     h = seconds // 3600
@@ -49,7 +49,14 @@ class ODMReport(types.ODM_Stage):
         if not io.file_exists(shots_geojson) or self.rerun():
             # Extract geographical camera shots
             if reconstruction.is_georeferenced():
-                shots = get_geojson_shots_from_opensfm(tree.opensfm_reconstruction, utm_srs=reconstruction.get_proj_srs(), utm_offset=reconstruction.georef.utm_offset())    
+                # Check if alignment has been performed (we need to transform our shots if so)
+                a_matrix = None
+                if io.file_exists(tree.odm_georeferencing_alignment_matrix):
+                    with open(tree.odm_georeferencing_alignment_matrix, 'r') as f:
+                        a_matrix = np_from_json(f.read())
+                        log.ODM_INFO("Aligning shots to %s" % a_matrix)
+
+                shots = get_geojson_shots_from_opensfm(tree.opensfm_reconstruction, utm_srs=reconstruction.get_proj_srs(), utm_offset=reconstruction.georef.utm_offset(), a_matrix=a_matrix)
             else:
                 # Pseudo geo
                 shots = get_geojson_shots_from_opensfm(tree.opensfm_reconstruction, pseudo_geotiff=tree.odm_orthophoto_tif)
@@ -73,6 +80,7 @@ class ODMReport(types.ODM_Stage):
         odm_stats_json = os.path.join(tree.odm_report, "stats.json")
         octx = OSFMContext(tree.opensfm)
         osfm_stats_json = octx.path("stats", "stats.json")
+        codem_stats_json = octx.path("stats", "codem", "registration.json")
         odm_stats = None
         point_cloud_file = None
         views_dimension = None
@@ -110,6 +118,11 @@ class ODMReport(types.ODM_Stage):
                     'total_time_human': hms(total_time),
                     'average_gsd': gsd.opensfm_reconstruction_average_gsd(octx.recon_file(), use_all_shots=reconstruction.has_gcp()),
                 }
+
+                # Add CODEM stats
+                if os.path.exists(codem_stats_json):
+                    with open(codem_stats_json, 'r') as f:
+                        odm_stats['align'] = json.loads(f.read())
 
                 with open(odm_stats_json, 'w') as f:
                     f.write(json.dumps(odm_stats))
