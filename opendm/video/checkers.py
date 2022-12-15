@@ -15,8 +15,7 @@ class PercentageBlurChecker:
         # Open video file
         cap = cv2.VideoCapture(video_path)
         if (cap.isOpened() == False):
-            print("Error opening video stream or file")
-            return
+            raise Exception("Error opening video stream or file")
 
         if start_frame is not None:
             cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
