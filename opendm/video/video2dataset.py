@@ -3,7 +3,7 @@ import time
 import cv2
 import os
 
-from checkers import PercentageBlurChecker, SimilarityChecker, ThresholdBlurChecker
+from .checkers import PercentageBlurChecker, SimilarityChecker, ThresholdBlurChecker
 
 # Input parameters:
 #  input = path to input video file
