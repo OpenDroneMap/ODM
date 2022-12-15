@@ -5,6 +5,7 @@ class PercentageBlurChecker:
     def __init__(self, percentage):
         self.percentage = percentage
         self.cache = None
+        self.threshold = None
 
     def NeedPreProcess(self):
         return True
