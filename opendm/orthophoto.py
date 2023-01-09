@@ -216,8 +216,8 @@ def merge(input_ortho_and_ortho_cuts, output_orthophoto, orthophoto_vars={}):
         left, bottom, right, top = src.bounds
         xs.extend([left, right])
         ys.extend([bottom, top])
-        if src.profile["count"] < 4:
-            raise ValueError("Inputs must be at least 4-band rasters")
+        if src.profile["count"] < 2:
+            raise ValueError("Inputs must be at least 2-band rasters")
     dst_w, dst_s, dst_e, dst_n = min(xs), min(ys), max(xs), max(ys)
     log.ODM_INFO("Output bounds: %r %r %r %r" % (dst_w, dst_s, dst_e, dst_n))
 

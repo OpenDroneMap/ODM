@@ -20,6 +20,7 @@ from opendm import point_cloud
 from opendm.utils import double_quote
 from opendm.tiles.tiler import generate_dem_tiles
 from opendm.cogeo import convert_to_cogeo
+from opendm import multispectral
 
 class ODMSplitStage(types.ODM_Stage):
     def process(self, args, outputs):
@@ -54,11 +55,13 @@ class ODMSplitStage(types.ODM_Stage):
                     log.ODM_INFO("Setting max-concurrency to %s to better handle remote splits" % args.max_concurrency)
 
                 log.ODM_INFO("Large dataset detected (%s photos) and split set at %s. Preparing split merge." % (len(photos), args.split))
+                multiplier = (1.0 / len(reconstruction.multi_camera)) if reconstruction.multi_camera else 1.0
+
                 config = [
                     "submodels_relpath: " + os.path.join("..", "submodels", "opensfm"),
                     "submodel_relpath_template: " + os.path.join("..", "submodels", "submodel_%04d", "opensfm"),
                     "submodel_images_relpath_template: " + os.path.join("..", "submodels", "submodel_%04d", "images"),
-                    "submodel_size: %s" % args.split,
+                    "submodel_size: %s" % max(2, int(float(args.split) * multiplier)),
                     "submodel_overlap: %s" % args.split_overlap,
                 ]
 
@@ -88,12 +91,12 @@ class ODMSplitStage(types.ODM_Stage):
 
                 for sp in submodel_paths:
                     sp_octx = OSFMContext(sp)
+                    submodel_images_dir = os.path.abspath(sp_octx.path("..", "images"))
 
                     # Copy filtered GCP file if needed
                     # One in OpenSfM's directory, one in the submodel project directory
                     if reconstruction.gcp and reconstruction.gcp.exists():
                         submodel_gcp_file = os.path.abspath(sp_octx.path("..", "gcp_list.txt"))
-                        submodel_images_dir = os.path.abspath(sp_octx.path("..", "images"))
 
                         if reconstruction.gcp.make_filtered_copy(submodel_gcp_file, submodel_images_dir):
                             log.ODM_INFO("Copied filtered GCP file to %s" % submodel_gcp_file)
@@ -106,6 +109,19 @@ class ODMSplitStage(types.ODM_Stage):
                         geo_dst_path = os.path.abspath(sp_octx.path("..", "geo.txt"))
                         io.copy(tree.odm_geo_file, geo_dst_path)
                         log.ODM_INFO("Copied GEO file to %s" % geo_dst_path)
+
+                    # If this is a multispectral dataset,
+                    # we need to link the multispectral images
+                    if reconstruction.multi_camera:
+                        submodel_images = os.listdir(submodel_images_dir)
+                        
+                        primary_band_name = multispectral.get_primary_band_name(reconstruction.multi_camera, args.primary_band)
+                        _, p2s = multispectral.compute_band_maps(reconstruction.multi_camera, primary_band_name)
+                        for filename in p2s:
+                            if filename in submodel_images:
+                                secondary_band_photos = p2s[filename]
+                                for p in secondary_band_photos:
+                                    system.link_file(os.path.join(tree.dataset_raw, p.filename), submodel_images_dir)
 
                 # Reconstruct each submodel
                 log.ODM_INFO("Dataset has been split into %s submodels. Reconstructing each submodel..." % len(submodel_paths))

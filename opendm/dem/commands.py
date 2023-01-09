@@ -56,11 +56,10 @@ def rectify(lasFile, debug=False, reclassify_threshold=5, min_area=750, min_poin
             reclassify_plan='median', reclassify_threshold=reclassify_threshold, \
             extend_plan='surrounding', extend_grid_distance=5, \
             min_area=min_area, min_points=min_points)
-
+        log.ODM_INFO('Created %s in %s' % (lasFile, datetime.now() - start))
     except Exception as e:
-        raise Exception("Error rectifying ground in file %s: %s" % (lasFile, str(e)))
+        log.ODM_WARNING("Error rectifying ground in file %s: %s" % (lasFile, str(e)))
 
-    log.ODM_INFO('Created %s in %s' % (lasFile, datetime.now() - start))
     return lasFile
 
 error = None
