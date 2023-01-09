@@ -55,11 +55,13 @@ class ODMSplitStage(types.ODM_Stage):
                     log.ODM_INFO("Setting max-concurrency to %s to better handle remote splits" % args.max_concurrency)
 
                 log.ODM_INFO("Large dataset detected (%s photos) and split set at %s. Preparing split merge." % (len(photos), args.split))
+                multiplier = (1.0 / len(reconstruction.multi_camera)) if reconstruction.multi_camera else 1.0
+
                 config = [
                     "submodels_relpath: " + os.path.join("..", "submodels", "opensfm"),
                     "submodel_relpath_template: " + os.path.join("..", "submodels", "submodel_%04d", "opensfm"),
                     "submodel_images_relpath_template: " + os.path.join("..", "submodels", "submodel_%04d", "images"),
-                    "submodel_size: %s" % args.split,
+                    "submodel_size: %s" % max(2, int(float(args.split) * multiplier)),
                     "submodel_overlap: %s" % args.split_overlap,
                 ]
 
