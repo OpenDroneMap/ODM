@@ -144,3 +144,13 @@ def which(program):
         p=os.path.join(p,program)
         if os.path.exists(p) and os.access(p,os.X_OK):
             return p
+
+def link_file(src, dst):
+    if os.path.isdir(dst):
+        dst = os.path.join(dst, os.path.basename(src))
+
+    if not os.path.isfile(dst):
+        if sys.platform == 'win32':
+            os.link(src, dst)
+        else:
+            os.symlink(os.path.relpath(os.path.abspath(src), os.path.dirname(os.path.abspath(dst))), dst)
