@@ -100,7 +100,7 @@ class ODMOpenMVSStage(types.ODM_Stage):
                 f.write("Optimize = %s\n" % (3 if sharp else 7))
 
             def run_densify():
-                .run('"%s" "%s" %s' % (context.omvs_densify_path, 
+                system.run('"%s" "%s" %s' % (context.omvs_densify_path, 
                                         openmvs_scene_file,
                                         ' '.join(config + gpu_config + extra_config)))
             try:
