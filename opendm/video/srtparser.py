@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import re
 class SrtFileParser:
     def __init__(self, filename, utc_offset):
@@ -10,11 +10,15 @@ class SrtFileParser:
         if not self.data:
             self.parse()
 
+        # check min and max
+        if timestamp < self.min or timestamp > self.max:
+            return None
+
         for entry in self.data:
             if entry["timestamp"] <= timestamp:
                 return entry
 
-        return None
+        return self.data[len(self.data) - 1]
 
     def parse(self):
 
@@ -25,6 +29,9 @@ class SrtFileParser:
         # <font size="36">SrtCnt : 1, DiffTime : 16ms
         # 2023-01-06 18:56:48,380,821
         # [iso : 3200] [shutter : 1/60.0] [fnum : 280] [ev : 0] [ct : 3925] [color_md : default] [focal_len : 240] [latitude: 0.000000] [longitude: 0.000000] [altitude: 0.000000] </font>
+
+        self.min = datetime.max
+        self.max = datetime.min
 
         with open(self.filename, 'r') as f:
 
@@ -48,6 +55,10 @@ class SrtFileParser:
                             "longitude": longitude,
                             "altitude": altitude
                         })
+                        self.min = min(self.min, timestamp)
+                        # account for the difftime milliseconds to get the actual max
+                        self.max = max(self.max, timestamp + timedelta(milliseconds=difftime))
+
                     srtcnt = None
                     difftime = None
                     timestamp = None
@@ -112,13 +123,20 @@ class SrtFileParser:
                 match = re.search("latitude: (\d+.\d+)", line)
                 if match:
                     latitude = float(match.group(1))
+                    latitude = latitude if latitude != 0 else None
 
                 match = re.search("longitude: (\d+.\d+)", line)
                 if match:
                     longitude = float(match.group(1))
+                    longitude = longitude if longitude != 0 else None
 
                 match = re.search("altitude: (\d+.\d+)", line)
                 if match:
                     altitude = float(match.group(1))
+                    altitude = altitude if altitude != 0 else None
 
+        self.data.reverse()
+
+        self.max = self.max.replace(microsecond=0)
+        self.min = self.min.replace(microsecond=0)
 
