@@ -1,18 +1,21 @@
+from opendm.video.parameters import Parameters
 import datetime
+from fractions import Fraction
+import io
 from math import floor
 import time
 import cv2
 import os
-from opendm.video.parameters import Parameters
 import pymediainfo
 import collections
-from exif import Image, Orientation
+from PIL import Image
 from checkers import BlackFrameChecker, PercentageBlurChecker, SimilarityChecker, ThresholdBlurChecker
 from srtparser import SrtFileParser
+import piexif
 
 class Video2Dataset:
 
-    def __init__(self, parameters: Parameters):
+    def __init__(self, parameters : Parameters):
         self.parameters = parameters
 
         # We prioritize blur threshold over blur percentage.
@@ -46,31 +49,31 @@ class Video2Dataset:
 
             # get file name
             file_name = os.path.basename(input_file)
-
             print("Processing video: {}".format(input_file))
+
+            # get video info
+            video_info = self.GetVideoInfo(input_file)
+            print(video_info)
+
+            utc_offset = self.parameters.utc_offset if self.parameters.utc_offset is not None else video_info.utc_offset
 
             if self.parameters.use_srt:
                 srt_file = os.path.splitext(input_file)[0] + ".srt"
                 if os.path.exists(srt_file):
                     print("Loading SRT file: {}".format(srt_file))
-                    srt_parser = SrtFileParser(srt_file, self.parameters.utc_offset)
+                    srt_parser = SrtFileParser(srt_file, utc_offset)
                     srt_parser.parse()
                 else:
                     srt_file = os.path.splitext(input_file)[0] + ".SRT"
                     if os.path.exists(srt_file):
                         print("Loading SRT file: {}".format(srt_file))
-                        srt_parser = SrtFileParser(srt_file, self.parameters.utc_offset)
+                        srt_parser = SrtFileParser(srt_file, utc_offset)
                         srt_parser.parse()
                     else:
                         print("SRT file not found: {}".format(srt_file))
                         srt_parser = None
             else:
                 srt_parser = None
-
-            # get video info
-            video_info = self.GetVideoInfo(input_file)
-
-            print(video_info)
 
             if (self.blur_checker is not None and self.blur_checker.NeedPreProcess()):
                 print("Preprocessing for blur checker...")
@@ -189,40 +192,65 @@ class Video2Dataset:
 
         _, buf = cv2.imencode('.' + self.parameters.frame_format, frame)
 
-        img = Image(buf.tobytes())
+        start_time_utc = video_info.start_time_utc if video_info.start_time_utc is not None \
+                         else srt_parser.data[0].timestamp if srt_parser is not None \
+                         else datetime.datetime.now()
 
-        start_time = (video_info.start_time if video_info.start_time is not None \
-                        else srt_parser.data[0].timestamp if srt_parser is not None \
-                        else datetime.datetime.now()) + self.parameters.utc_offset
+        elapsed_time_utc = start_time_utc + datetime.timedelta(seconds=(self.frame_index / video_info.frame_rate))
+        elapsed_time = elapsed_time_utc + srt_parser.utc_offset
 
-        elapsed_time = start_time + datetime.timedelta(seconds=(self.frame_index / video_info.frame_rate))
+        img = Image.open(io.BytesIO(buf))
 
-        # Set datetime_original
-        img.datetime_original = elapsed_time.strftime('%Y:%m:%d %H:%M:%S')
-        img.datetime_digitized = elapsed_time.strftime('%Y:%m:%d %H:%M:%S')
-        img.datetime = elapsed_time.strftime('%Y:%m:%d %H:%M:%S')
-        img.pixel_x_dimension = frame.shape[1]
-        img.pixel_y_dimension = frame.shape[0]
-        img.orientation = video_info.orientation if video_info.orientation is not None else Orientation.TOP_LEFT
-        img.software = "Video2Dataset"
+        # Exif dict contains the following keys: '0th', 'Exif', 'GPS', '1st', 'thumbnail'
+
+        # Set the EXIF metadata
+        exif_dict = {
+            "0th": {
+                piexif.ImageIFD.Software: "ODM",
+                piexif.ImageIFD.DateTime: elapsed_time.strftime('%Y:%m:%d %H:%M:%S'),
+                piexif.ImageIFD.XResolution: (frame.shape[1], 1),
+                piexif.ImageIFD.YResolution: (frame.shape[0], 1),
+            },
+            "Exif": {
+                piexif.ExifIFD.DateTimeOriginal: elapsed_time.strftime('%Y:%m:%d %H:%M:%S'),
+                piexif.ExifIFD.DateTimeDigitized: elapsed_time.strftime('%Y:%m:%d %H:%M:%S'),
+                piexif.ExifIFD.PixelXDimension: (frame.shape[1], 1),
+                piexif.ExifIFD.PixelYDimension: (frame.shape[0], 1),
+            }}
+
+        if video_info.orientation is not None:
+            exif_dict["0th"][piexif.ImageIFD.Orientation] = video_info.orientation
 
         if video_info.model is not None:
-            img.model = video_info.model
+            exif_dict["Exif"][piexif.ImageIFD.Model] = video_info.model
 
-        entry = srt_parser.get_entry(elapsed_time) if srt_parser is not None else None
+        entry = srt_parser.get_entry(elapsed_time_utc) if srt_parser is not None else None
 
-        if (entry is not None):
+        if entry is not None:
+            segs = entry["shutter"].split("/")
+            exif_dict["Exif"][piexif.ExifIFD.ExposureTime] = (int(float(segs[0])), int(float(segs[1])))
+            exif_dict["Exif"][piexif.ExifIFD.FocalLength] = (entry["focal_len"], 1)
+            exif_dict["Exif"][piexif.ExifIFD.FNumber] = (entry["fnum"], 1)
+            exif_dict["Exif"][piexif.ExifIFD.ISOSpeedRatings] = (entry["iso"], 1)
 
-            img.exposure_time = 1 / float(entry["shutter"].split("/")[1])
-            img.focal_length = entry["focal_len"]
-            img.f_number = entry["fnum"]
-            img.latitude = entry["latitude"]
-            img.longitude = entry["longitude"]
-            img.altitude = entry["altitude"]
-            img.photographic_sensitivity = entry["iso"]
+            exif_dict["GPS"] = {
+                piexif.GPSIFD.GPSMapDatum: "WGS-84",
+                piexif.GPSIFD.GPSDateStamp: elapsed_time.strftime('%Y:%m:%d %H:%M:%S')
+            }
 
-        with open(path, "wb") as f:
-            f.write(img.get_file())
+            if (entry["latitude"] is not None):
+                exif_dict["GPS"][piexif.GPSIFD.GPSLatitude] = FloatToRational(entry["latitude"])
+
+            if (entry["longitude"] is not None):
+                exif_dict["GPS"][piexif.GPSIFD.GPSLongitude] = FloatToRational(entry["longitude"])
+
+            if (entry["altitude"] is not None):
+                exif_dict["GPS"][piexif.GPSIFD.GPSAltitude] = FloatToRational(entry["altitude"])
+
+
+        exif_bytes = piexif.dump(exif_dict)
+        img.save(path, exif=exif_bytes)
+
 
     def WriteStats(self, input_file, stats):
         self.f.write("{};{};{};{};{};{};{};{};{};{}\n".format(
@@ -237,17 +265,19 @@ class Video2Dataset:
             stats["is_similar"] if "is_similar" in stats else "",
             stats["written"] if "written" in stats else "").replace(".", ","))
 
+
     def GetVideoInfo(self, input_file):
 
         video = cv2.VideoCapture(input_file)
 
         total_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
         frame_rate = video.get(cv2.CAP_PROP_FPS)
-        start_time, orientation, model = self.GetVideoMetadata(input_file)
+        start_time_utc, utc_offset, orientation, model = self.GetVideoMetadata(input_file)
 
         video.release()
 
-        return collections.namedtuple("VideoInfo", ["total_frames", "frame_rate", "start_time", "orientation", "model"])(total_frames, frame_rate, start_time, orientation, model)
+        return collections.namedtuple("VideoInfo", ["total_frames", "frame_rate", "start_time_utc", "utc_offset", "orientation", "model"])(total_frames, frame_rate, start_time_utc, utc_offset, orientation, model)
+
 
     def GetVideoMetadata(self, input_file):
 
@@ -255,19 +285,28 @@ class Video2Dataset:
 
             metadata = pymediainfo.MediaInfo.parse(input_file).to_data()
 
-            start_time = None
-            orientation = Orientation.TOP_LEFT
+            start_time_utc = None
+            orientation = 1
             performer = None
+            utc_offset = None
 
             if metadata is not None and 'tracks' in metadata:
                 # Check if it is safe to access the first element of the tracks list
                 if len(metadata['tracks']) > 0:
 
-                    start_time = metadata['tracks'][0].get('encoded_date') or \
-                                metadata['tracks'][0].get('tagged_date') or \
-                                metadata['tracks'][0].get('file_creation_date')
+                    start_time_utc = metadata['tracks'][0].get('encoded_date') or \
+                                metadata['tracks'][0].get('tagged_date')
 
-                    start_time = datetime.datetime.strptime(start_time, '%Z %Y-%m-%d %H:%M:%S')
+                    start_time_utc = datetime.datetime.strptime(start_time_utc, '%Z %Y-%m-%d %H:%M:%S') if start_time_utc is not None else None
+
+                    file_creation_date_utc = metadata['tracks'][0].get('file_creation_date')
+                    file_creation_date_utc = datetime.datetime.strptime(file_creation_date_utc, '%Z %Y-%m-%d %H:%M:%S.%f') if file_creation_date_utc is not None else None
+
+                    file_creation_date = metadata['tracks'][0].get('file_creation_date__local')
+                    file_creation_date = datetime.datetime.strptime(file_creation_date, '%Y-%m-%d %H:%M:%S.%f') if file_creation_date is not None else None
+
+                    if file_creation_date_utc is not None and file_creation_date is not None:
+                        utc_offset = file_creation_date - file_creation_date_utc
 
                     performer = metadata['tracks'][0].get('performer')
 
@@ -279,17 +318,32 @@ class Video2Dataset:
                     if orientation is not None:
                         orientation = int(float(orientation))
 
-                        if orientation == 0:
-                            orientation = Orientation.TOP_LEFT
-                        elif orientation == 90:
-                            orientation = Orientation.LEFT_BOTTOM
-                        elif orientation == 180:
-                            orientation = Orientation.BOTTOM_RIGHT
-                        elif orientation == 270:
-                            orientation = Orientation.RIGHT_TOP
+                        # The 8 EXIF orientation values are numbered 1 to 8.
+                        # 1 = 0°: the correct orientation, no adjustment is required.
+                        # 2 = 0°, mirrored: image has been flipped back-to-front.
+                        # 3 = 180°: image is upside down.
+                        # 4 = 180°, mirrored: image has been flipped back-to-front and is upside down.
+                        # 5 = 90°: image has been flipped back-to-front and is on its side.
+                        # 6 = 90°, mirrored: image is on its side.
+                        # 7 = 270°: image has been flipped back-to-front and is on its far side.
+                        # 8 = 270°, mirrored: image is on its far side.
 
-            return start_time, orientation, performer
+                        if orientation == 0:
+                            orientation = 1
+                        elif orientation == 90:
+                            orientation = 8
+                        elif orientation == 180:
+                            orientation = 3
+                        elif orientation == 270:
+                            orientation = 6
+
+            return start_time_utc, utc_offset, orientation, performer
 
         except Exception as e:
 
-            return start_time, orientation, performer
+            return start_time_utc, utc_offset, orientation, performer
+
+
+def FloatToRational(f):
+    f = Fraction(f).limit_denominator()
+    return (f.numerator, f.denominator)
