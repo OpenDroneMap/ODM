@@ -86,12 +86,16 @@ class ODMOpenMVSStage(types.ODM_Stage):
                 config.append("--fusion-mode 1")
 
             extra_config = []
-            
+
+            if args.pc_skip_geometric:
+                extra_config.append("--geometric-iters 0")
+
             masks_dir = os.path.join(tree.opensfm, "undistorted", "masks")
             masks = os.path.exists(masks_dir) and len(os.listdir(masks_dir)) > 0
             if masks:
                 extra_config.append("--ignore-mask-label 0")
 
+            sharp = args.pc_geometric
             with open(densify_ini_file, 'w+') as f:
                 f.write("Optimize = 7\n")
 

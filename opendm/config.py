@@ -389,6 +389,13 @@ def config(argv=None, parser=None):
                         help='Filters the point cloud by keeping only a single point around a radius N (in meters). This can be useful to limit the output resolution of the point cloud and remove duplicate points. Set to 0 to disable sampling. '
                              'Default: %(default)s')
 
+    parser.add_argument('--pc-skip-geometric
+                        action=StoreTrue,
+                        nargs=0,
+                        default=False,
+                        help='Geometric estimates improve the accuracy of the point cloud by computing geometrically consistent depthmaps but may not be usable in larger datasets. This flag disables geometric estimates. '
+                             'Default: %(default)s')
+
     parser.add_argument('--pc-tile',
                         action=StoreTrue,
                         nargs=0,
