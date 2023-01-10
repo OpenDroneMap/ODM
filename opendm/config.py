@@ -389,7 +389,7 @@ def config(argv=None, parser=None):
                         help='Filters the point cloud by keeping only a single point around a radius N (in meters). This can be useful to limit the output resolution of the point cloud and remove duplicate points. Set to 0 to disable sampling. '
                              'Default: %(default)s')
 
-    parser.add_argument('--pc-skip-geometric
+    parser.add_argument('--pc-skip-geometric',
                         action=StoreTrue,
                         nargs=0,
                         default=False,
