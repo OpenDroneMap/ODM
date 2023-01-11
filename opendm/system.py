@@ -164,10 +164,11 @@ def move_files(src, dst):
         if os.path.isfile(os.path.join(src, f)):
             shutil.move(os.path.join(src, f), dst)
 
-def delete_files(folder):
+def delete_files(folder, exclude=()):
     if not os.path.isdir(folder):
         return
 
     for f in os.listdir(folder):
         if os.path.isfile(os.path.join(folder, f)):
-            os.unlink(os.path.join(folder, f))
+            if not exclude or not f.endswith(exclude):
+                os.unlink(os.path.join(folder, f))

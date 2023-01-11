@@ -143,7 +143,7 @@ class ODMMvsTexStage(types.ODM_Stage):
                         obj_pack(os.path.join(r['out_dir'], tree.odm_textured_model_obj), packed_dir, _info=log.ODM_INFO)
                         
                         # Move packed/* into texturing folder
-                        system.delete_files(r['out_dir'])
+                        system.delete_files(r['out_dir'], (".vec", ))
                         system.move_files(packed_dir, r['out_dir'])
                         if os.path.isdir(packed_dir):
                             os.rmdir(packed_dir)
