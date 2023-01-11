@@ -131,7 +131,7 @@ class ODMMvsTexStage(types.ODM_Stage):
                         '{maxTextureSize} '.format(**kwargs))
                 
                 # Single material?
-                if r['primary'] and args.texturing_single_material:
+                if args.texturing_single_material and r['primary'] and (not r['nadir'] or args.skip_3dmodel):
                     log.ODM_INFO("Packing to single material")
 
                     packed_dir = os.path.join(r['out_dir'], 'packed')
