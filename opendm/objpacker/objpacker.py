@@ -2,8 +2,12 @@ import os
 import rasterio
 import warnings
 import numpy as np
-from .imagepacker.utils import AABB
-from .imagepacker import pack
+try:
+    from .imagepacker.utils import AABB
+    from .imagepacker import pack
+except ImportError:
+    from imagepacker.utils import AABB
+    from imagepacker import pack
 
 warnings.filterwarnings("ignore", category=rasterio.errors.NotGeoreferencedWarning)
 
@@ -139,9 +143,12 @@ def write_obj_changes(obj_file, mtl_file, uv_changes, single_mat, output_dir, _i
         f.writelines(out_lines)
 
 def write_output_tex(img, profile, path, _info=print):
-    _, h, w = img.shape
+    _, w, h = img.shape
     profile['width'] = w
     profile['height'] = h
+
+    if 'tiled' in profile:
+        profile['tiled'] = False
 
     _info("Writing %s (%sx%s pixels)" % (path, w, h))
     with rasterio.open(path, 'w', **profile) as dst:
