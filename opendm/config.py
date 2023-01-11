@@ -454,6 +454,13 @@ def config(argv=None, parser=None):
                         help=('Keep faces in the mesh that are not seen in any camera. '
                               'Default:  %(default)s'))
 
+    parser.add_argument('--texturing-single-material',
+                        action=StoreTrue,
+                        nargs=0,
+                        default=False,
+                        help=('Generate OBJs that have a single material and a single texture file instead of multiple ones. '
+                              'Default:  %(default)s'))
+
     parser.add_argument('--gcp',
                         metavar='<path string>',
                         action=StoreValue,
