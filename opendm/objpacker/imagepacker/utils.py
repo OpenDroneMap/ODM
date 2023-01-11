@@ -29,8 +29,6 @@ class AABB():
         self.max_x = max_x
         self.max_y = max_y
 
-        self.to_tile = False # TODO: remove?
-
     def add(self, x,y):
         self.min_x = min(self.min_x, x) if self.min_x is not None else x
         self.min_y = min(self.min_y, y) if self.min_y is not None else y

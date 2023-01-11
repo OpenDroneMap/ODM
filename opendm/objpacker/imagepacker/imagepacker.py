@@ -24,7 +24,6 @@
 
 import rasterio
 import numpy as np
-#from PIL import Image, ImageDraw
 import math
 
 # Based off of the great writeup, demo and code at:
@@ -204,7 +203,7 @@ def pack(obj, background=(0,0,0,0), format="PNG", extents=None):
 
         # using filename so we can pass back UV info without storing it in image
         blocks.append(Block(w, h, data=(filename, mat, changes)))
-
+use_3dmesh
     # sort by width, descending (widest first)
     blocks.sort(key=lambda block: -block.w)
 
