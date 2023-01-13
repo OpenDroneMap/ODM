@@ -1,24 +1,23 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 import re
 class SrtFileParser:
-    def __init__(self, filename, utc_offset):
+    def __init__(self, filename):
         self.filename = filename
         self.data = []
-        self.utc_offset = utc_offset
 
-    def get_entry(self, timestamp):
+    def get_entry(self, timestamp: datetime):
         if not self.data:
             self.parse()
 
         # check min and max
-        if timestamp < self.min or timestamp > self.max:
+        if timestamp < self.data[0]["start"] or timestamp > self.data[len(self.data) - 1]["end"]:
             return None
 
         for entry in self.data:
-            if entry["timestamp"] <= timestamp:
+            if entry["start"] <= timestamp and entry["end"] >= timestamp:
                 return entry
 
-        return self.data[len(self.data) - 1]
+        return None
 
     def parse(self):
 
@@ -30,10 +29,23 @@ class SrtFileParser:
         # 2023-01-06 18:56:48,380,821
         # [iso : 3200] [shutter : 1/60.0] [fnum : 280] [ev : 0] [ct : 3925] [color_md : default] [focal_len : 240] [latitude: 0.000000] [longitude: 0.000000] [altitude: 0.000000] </font>
 
-        self.min = datetime.max
-        self.max = datetime.min
-
         with open(self.filename, 'r') as f:
+
+            srtcnt = None
+            difftime = None
+            timestamp = None
+            iso = None
+            shutter = None
+            fnum = None
+            ev = None
+            ct = None
+            color_md = None
+            focal_len = None
+            latitude = None
+            longitude = None
+            altitude = None
+            start = None
+            end = None
 
             for line in f:
 
@@ -41,6 +53,8 @@ class SrtFileParser:
                 if not line.strip():
                     if srtcnt is not None:
                         self.data.append({
+                            "start": start,
+                            "end": end,
                             "srtcnt": srtcnt,
                             "difftime": difftime,
                             "timestamp": timestamp,
@@ -55,9 +69,6 @@ class SrtFileParser:
                             "longitude": longitude,
                             "altitude": altitude
                         })
-                        self.min = min(self.min, timestamp)
-                        # account for the difftime milliseconds to get the actual max
-                        self.max = max(self.max, timestamp + timedelta(milliseconds=difftime))
 
                     srtcnt = None
                     difftime = None
@@ -72,10 +83,20 @@ class SrtFileParser:
                     latitude = None
                     longitude = None
                     altitude = None
+                    start = None
+                    end = None
+
                     continue
 
                 # Remove the html font tag
                 line = re.sub('<[^<]+?>', '', line)
+
+                # Search this "00:00:00,000 --> 00:00:00,016"
+                match = re.search("(\d{2}:\d{2}:\d{2},\d{3}) --> (\d{2}:\d{2}:\d{2},\d{3})", line)
+                if match:
+                    start = datetime.strptime(match.group(1), "%H:%M:%S,%f")
+                    end = datetime.strptime(match.group(2), "%H:%M:%S,%f")
+
 
                 match = re.search("SrtCnt : (\d+)", line)
                 if match:
@@ -89,8 +110,6 @@ class SrtFileParser:
                 if match:
                     timestamp = match.group(1)
                     timestamp = datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S,%f")
-                    # The timestamp is in local time, so we need to subtract the UTC offset
-                    timestamp = timestamp - self.utc_offset
 
                 match = re.search("iso : (\d+)", line)
                 if match:
@@ -134,9 +153,3 @@ class SrtFileParser:
                 if match:
                     altitude = float(match.group(1))
                     altitude = altitude if altitude != 0 else None
-
-        self.data.reverse()
-
-        self.max = self.max.replace(microsecond=0)
-        self.min = self.min.replace(microsecond=0)
-

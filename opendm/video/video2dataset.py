@@ -2,31 +2,21 @@ from opendm.video.parameters import Parameters
 import datetime
 from fractions import Fraction
 import io
-from math import floor
+from math import ceil, floor
 import time
 import cv2
 import os
-import pymediainfo
 import collections
 from PIL import Image
 from checkers import BlackFrameChecker, PercentageBlurChecker, SimilarityChecker, ThresholdBlurChecker
 from srtparser import SrtFileParser
 import piexif
-
 class Video2Dataset:
 
     def __init__(self, parameters : Parameters):
         self.parameters = parameters
 
-        # We prioritize blur threshold over blur percentage.
-        if parameters.blur_threshold is not None:
-            self.blur_checker = ThresholdBlurChecker(parameters.blur_threshold)
-        else:
-            if parameters.blur_percentage is not None:
-                self.blur_checker = PercentageBlurChecker(parameters.blur_percentage)
-            else:
-                self.blur_checker = None
-
+        self.blur_checker = ThresholdBlurChecker(parameters.blur_threshold) if parameters.blur_threshold is not None else None
         self.similarity_checker = SimilarityChecker(parameters.distance_threshold) if parameters.distance_threshold is not None else None
         self.black_checker = BlackFrameChecker(parameters.black_ratio_threshold, parameters.pixel_black_threshold) if parameters.black_ratio_threshold is not None or parameters.pixel_black_threshold is not None else None
 
@@ -52,26 +42,26 @@ class Video2Dataset:
             print("Processing video: {}".format(input_file))
 
             # get video info
-            video_info = self.GetVideoInfo(input_file)
+            video_info = get_video_info(input_file)
             print(video_info)
 
-            utc_offset = self.parameters.utc_offset if self.parameters.utc_offset is not None else video_info.utc_offset
-
             if self.parameters.use_srt:
-                srt_file = os.path.splitext(input_file)[0] + ".srt"
-                if os.path.exists(srt_file):
-                    print("Loading SRT file: {}".format(srt_file))
-                    srt_parser = SrtFileParser(srt_file, utc_offset)
-                    srt_parser.parse()
-                else:
-                    srt_file = os.path.splitext(input_file)[0] + ".SRT"
+
+                name = os.path.splitext(input_file)[0]
+
+                srt_files = [name + ".srt", name + ".SRT"]
+                srt_parser = None
+
+                for srt_file in srt_files:
                     if os.path.exists(srt_file):
                         print("Loading SRT file: {}".format(srt_file))
-                        srt_parser = SrtFileParser(srt_file, utc_offset)
-                        srt_parser.parse()
-                    else:
-                        print("SRT file not found: {}".format(srt_file))
-                        srt_parser = None
+                        try:
+                            srt_parser = SrtFileParser(srt_file)
+                            srt_parser.parse()
+                            break
+                        except Exception as e:
+                            print("Error parsing SRT file: {}".format(e))
+                            srt_parser = None
             else:
                 srt_parser = None
 
@@ -98,8 +88,6 @@ class Video2Dataset:
                 print("Error opening video stream or file")
                 return
 
-            frames_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-
             if (self.parameters.start is not None):
                 cap.set(cv2.CAP_PROP_POS_FRAMES, self.parameters.start)
                 self.frame_index = self.parameters.start
@@ -107,7 +95,9 @@ class Video2Dataset:
             else:
                 start_frame = 0
 
-            frames_to_process = self.parameters.end - start_frame + 1 if (self.parameters.end is not None) else frames_count - start_frame
+            frames_to_process = self.parameters.end - start_frame + 1 if (self.parameters.end is not None) else video_info.total_frames - start_frame
+
+            output_file_paths = []
 
             while (cap.isOpened()):
                 ret, frame = cap.read()
@@ -127,10 +117,18 @@ class Video2Dataset:
                 if stats is not None and self.parameters.stats_file is not None:
                     self.WriteStats(input_file, stats)
 
+                # Add element to array
+                if stats is not None and "written" in stats.keys():
+                    output_file_paths.append(stats["path"])
+
             cap.release()
 
         if self.f is not None:
             self.f.close()
+
+        if self.parameters.limit is not None and self.global_idx >= self.parameters.limit:
+            print("Limit of {} frames reached, trimming dataset to {} frames".format(self.parameters.limit, self.global_idx))
+            limit_files(output_file_paths, self.parameters.limit)
 
         end = time.time()
         print("Total processing time: {:.2f}s".format(end - start))
@@ -173,8 +171,9 @@ class Video2Dataset:
                 self.frame_index += 1
                 return res
 
-        self.SaveFrame(frame, video_info, srt_parser)
+        path = self.SaveFrame(frame, video_info, srt_parser)
         res["written"] = True
+        res["path"] = path
         self.frame_index += 1
         self.global_idx += 1
 
@@ -192,39 +191,37 @@ class Video2Dataset:
 
         _, buf = cv2.imencode('.' + self.parameters.frame_format, frame)
 
-        start_time_utc = video_info.start_time_utc if video_info.start_time_utc is not None \
-                         else srt_parser.data[0].timestamp if srt_parser is not None \
-                         else datetime.datetime.now()
+        #start_time_utc = video_info.start_time_utc if video_info.start_time_utc is not None \
+        #                 else srt_parser.data[0].timestamp if srt_parser is not None \
+        #                 else datetime.datetime.now()
 
-        elapsed_time_utc = start_time_utc + datetime.timedelta(seconds=(self.frame_index / video_info.frame_rate))
-        elapsed_time = elapsed_time_utc + srt_parser.utc_offset
+        #elapsed_time_utc = start_time_utc + datetime.timedelta(seconds=(self.frame_index / video_info.frame_rate))
+        #elapsed_time = elapsed_time_utc + srt_parser.utc_offset if srt_parser is not None else elapsed_time_utc
+
+        delta = datetime.timedelta(seconds=(self.frame_index / video_info.frame_rate))
+        # convert to datetime
+        elapsed_time = datetime.datetime(1900, 1, 1) + delta
 
         img = Image.open(io.BytesIO(buf))
 
-        # Exif dict contains the following keys: '0th', 'Exif', 'GPS', '1st', 'thumbnail'
+        entry = srt_parser.get_entry(elapsed_time) if srt_parser is not None else None
+        elapsed_time_str = (elapsed_time + (datetime.datetime.now() - datetime.datetime(1900, 1, 1))).strftime("%Y:%m:%d %H:%M:%S.%f")
 
+        # Exif dict contains the following keys: '0th', 'Exif', 'GPS', '1st', 'thumbnail'
         # Set the EXIF metadata
         exif_dict = {
             "0th": {
                 piexif.ImageIFD.Software: "ODM",
-                piexif.ImageIFD.DateTime: elapsed_time.strftime('%Y:%m:%d %H:%M:%S'),
+                piexif.ImageIFD.DateTime: elapsed_time_str,
                 piexif.ImageIFD.XResolution: (frame.shape[1], 1),
                 piexif.ImageIFD.YResolution: (frame.shape[0], 1),
             },
             "Exif": {
-                piexif.ExifIFD.DateTimeOriginal: elapsed_time.strftime('%Y:%m:%d %H:%M:%S'),
-                piexif.ExifIFD.DateTimeDigitized: elapsed_time.strftime('%Y:%m:%d %H:%M:%S'),
+                piexif.ExifIFD.DateTimeOriginal: elapsed_time_str,
+                piexif.ExifIFD.DateTimeDigitized: elapsed_time_str,
                 piexif.ExifIFD.PixelXDimension: (frame.shape[1], 1),
                 piexif.ExifIFD.PixelYDimension: (frame.shape[0], 1),
             }}
-
-        if video_info.orientation is not None:
-            exif_dict["0th"][piexif.ImageIFD.Orientation] = video_info.orientation
-
-        if video_info.model is not None:
-            exif_dict["Exif"][piexif.ImageIFD.Model] = video_info.model
-
-        entry = srt_parser.get_entry(elapsed_time_utc) if srt_parser is not None else None
 
         if entry is not None:
             segs = entry["shutter"].split("/")
@@ -233,23 +230,13 @@ class Video2Dataset:
             exif_dict["Exif"][piexif.ExifIFD.FNumber] = (entry["fnum"], 1)
             exif_dict["Exif"][piexif.ExifIFD.ISOSpeedRatings] = (entry["iso"], 1)
 
-            exif_dict["GPS"] = {
-                piexif.GPSIFD.GPSMapDatum: "WGS-84",
-                piexif.GPSIFD.GPSDateStamp: elapsed_time.strftime('%Y:%m:%d %H:%M:%S')
-            }
-
-            if (entry["latitude"] is not None):
-                exif_dict["GPS"][piexif.GPSIFD.GPSLatitude] = FloatToRational(entry["latitude"])
-
-            if (entry["longitude"] is not None):
-                exif_dict["GPS"][piexif.GPSIFD.GPSLongitude] = FloatToRational(entry["longitude"])
-
-            if (entry["altitude"] is not None):
-                exif_dict["GPS"][piexif.GPSIFD.GPSAltitude] = FloatToRational(entry["altitude"])
+            exif_dict["GPS"] = get_gps_location(elapsed_time, entry["latitude"], entry["longitude"], entry["altitude"])
 
 
         exif_bytes = piexif.dump(exif_dict)
         img.save(path, exif=exif_bytes)
+
+        return path
 
 
     def WriteStats(self, input_file, stats):
@@ -266,84 +253,82 @@ class Video2Dataset:
             stats["written"] if "written" in stats else "").replace(".", ","))
 
 
-    def GetVideoInfo(self, input_file):
+def get_video_info(input_file):
 
-        video = cv2.VideoCapture(input_file)
+    video = cv2.VideoCapture(input_file)
 
-        total_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
-        frame_rate = video.get(cv2.CAP_PROP_FPS)
-        start_time_utc, utc_offset, orientation, model = self.GetVideoMetadata(input_file)
+    total_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
+    frame_rate = video.get(cv2.CAP_PROP_FPS)
 
-        video.release()
+    video.release()
 
-        return collections.namedtuple("VideoInfo", ["total_frames", "frame_rate", "start_time_utc", "utc_offset", "orientation", "model"])(total_frames, frame_rate, start_time_utc, utc_offset, orientation, model)
+    return collections.namedtuple("VideoInfo", ["total_frames", "frame_rate"])(total_frames, frame_rate)
 
-
-    def GetVideoMetadata(self, input_file):
-
-        try:
-
-            metadata = pymediainfo.MediaInfo.parse(input_file).to_data()
-
-            start_time_utc = None
-            orientation = 1
-            performer = None
-            utc_offset = None
-
-            if metadata is not None and 'tracks' in metadata:
-                # Check if it is safe to access the first element of the tracks list
-                if len(metadata['tracks']) > 0:
-
-                    start_time_utc = metadata['tracks'][0].get('encoded_date') or \
-                                metadata['tracks'][0].get('tagged_date')
-
-                    start_time_utc = datetime.datetime.strptime(start_time_utc, '%Z %Y-%m-%d %H:%M:%S') if start_time_utc is not None else None
-
-                    file_creation_date_utc = metadata['tracks'][0].get('file_creation_date')
-                    file_creation_date_utc = datetime.datetime.strptime(file_creation_date_utc, '%Z %Y-%m-%d %H:%M:%S.%f') if file_creation_date_utc is not None else None
-
-                    file_creation_date = metadata['tracks'][0].get('file_creation_date__local')
-                    file_creation_date = datetime.datetime.strptime(file_creation_date, '%Y-%m-%d %H:%M:%S.%f') if file_creation_date is not None else None
-
-                    if file_creation_date_utc is not None and file_creation_date is not None:
-                        utc_offset = file_creation_date - file_creation_date_utc
-
-                    performer = metadata['tracks'][0].get('performer')
-
-                # Check if it is safe to access the second element of the tracks list
-                if len(metadata['tracks']) > 1:
-
-                    orientation = metadata['tracks'][1].get('rotation')
-
-                    if orientation is not None:
-                        orientation = int(float(orientation))
-
-                        # The 8 EXIF orientation values are numbered 1 to 8.
-                        # 1 = 0°: the correct orientation, no adjustment is required.
-                        # 2 = 0°, mirrored: image has been flipped back-to-front.
-                        # 3 = 180°: image is upside down.
-                        # 4 = 180°, mirrored: image has been flipped back-to-front and is upside down.
-                        # 5 = 90°: image has been flipped back-to-front and is on its side.
-                        # 6 = 90°, mirrored: image is on its side.
-                        # 7 = 270°: image has been flipped back-to-front and is on its far side.
-                        # 8 = 270°, mirrored: image is on its far side.
-
-                        if orientation == 0:
-                            orientation = 1
-                        elif orientation == 90:
-                            orientation = 8
-                        elif orientation == 180:
-                            orientation = 3
-                        elif orientation == 270:
-                            orientation = 6
-
-            return start_time_utc, utc_offset, orientation, performer
-
-        except Exception as e:
-
-            return start_time_utc, utc_offset, orientation, performer
-
-
-def FloatToRational(f):
+def float_to_rational(f):
     f = Fraction(f).limit_denominator()
     return (f.numerator, f.denominator)
+
+def limit_files(paths, limit):
+
+    cnt = len(paths)
+    num_to_delete = cnt - limit
+
+    if num_to_delete <= 0:
+        return
+
+    skip = floor(num_to_delete / limit) if num_to_delete > cnt else ceil(cnt / num_to_delete)
+
+    to_keep = []
+
+    for i in range(len(paths)):
+        if i % skip == 0:
+            os.remove(paths[i])
+        else:
+            to_keep.append(paths[i])
+
+    limit_files(to_keep, limit)
+
+def to_deg(value, loc):
+    """convert decimal coordinates into degrees, munutes and seconds tuple
+    Keyword arguments: value is float gps-value, loc is direction list ["S", "N"] or ["W", "E"]
+    return: tuple like (25, 13, 48.343 ,'N')
+    """
+    if value < 0:
+        loc_value = loc[0]
+    elif value > 0:
+        loc_value = loc[1]
+    else:
+        loc_value = ""
+    abs_value = abs(value)
+    deg =  int(abs_value)
+    t1 = (abs_value-deg)*60
+    min = int(t1)
+    sec = round((t1 - min)* 60, 5)
+    return (deg, min, sec, loc_value)
+
+def get_gps_location(elapsed_time, lat, lng, altitude):
+
+    lat_deg = to_deg(lat, ["S", "N"])
+    lng_deg = to_deg(lng, ["W", "E"])
+
+    exiv_lat = (float_to_rational(lat_deg[0]), float_to_rational(lat_deg[1]), float_to_rational(lat_deg[2]))
+    exiv_lng = (float_to_rational(lng_deg[0]), float_to_rational(lng_deg[1]), float_to_rational(lng_deg[2]))
+
+    gps_ifd = {
+        piexif.GPSIFD.GPSVersionID: (2, 0, 0, 0),
+        piexif.GPSIFD.GPSDateStamp: elapsed_time.strftime('%Y:%m:%d %H:%M:%S.%f')
+    }
+
+    if altitude is not None:
+        gps_ifd[piexif.GPSIFD.GPSAltitudeRef] = 0
+        gps_ifd[piexif.GPSIFD.GPSAltitude] = float_to_rational(round(altitude))
+
+    if lat is not None:
+        gps_ifd[piexif.GPSIFD.GPSLatitudeRef] = lat_deg[3]
+        gps_ifd[piexif.GPSIFD.GPSLatitude] = exiv_lat
+
+    if lng is not None:
+        gps_ifd[piexif.GPSIFD.GPSLongitudeRef] = lng_deg[3]
+        gps_ifd[piexif.GPSIFD.GPSLongitude] = exiv_lng
+
+    return gps_ifd

@@ -36,5 +36,4 @@ trimesh==3.17.1
 pandas==1.5.2
 
 # for video support
-pymediainfo==6.0.1
 piexif==1.1.3

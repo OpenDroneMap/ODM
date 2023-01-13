@@ -19,6 +19,7 @@ class Parameters:
     timezone = None
     frame_format = None
     stats_file = None
+    limit = None
 
     def __init__(self, args):
 
@@ -27,13 +28,12 @@ class Parameters:
         # "start" -> start frame index")
         # "end" -> end frame index")
         # "output-resolution" -> Override output resolution (ex. 640x480)")
-        # "blur-percentage" -> discard the lowest X percent of frames based on blur score (allowed values from 0.0 to 1.0)")
-        # "blur-threshold" -> blur measures that fall below this value will be considered 'blurry' (to be used in exclusion with --blur-percentage)")
+        # "blur-threshold" -> blur measures that fall below this value will be considered 'blurry'. Good value is 300
         # "distance-threshold" -> distance measures that fall below this value will be considered 'similar'")
         # "black-ratio-threshold" -> Set the threshold for considering a frame 'black'. Express the minimum value for the ratio: nb_black_pixels / nb_pixels. Default value is 0.98")
         # "pixel-black-threshold" -> Set the threshold for considering a pixel 'black'. The threshold expresses the maximum pixel luminance value for which a pixel is considered 'black'. Good value is 0.30 (30%)")
         # "use-srt" -> Use SRT files for extracting metadata (same name as video file with .srt extension)")
-        # "timezone" -> UTC timezone offset (ex. -5 for EST). Default to local timezone")
+        # "limit" -> Maximum number of output frames
         # "frame-format" -> frame format (jpg, png, tiff, etc.)")
         # "stats-file" -> Save statistics to csv file")
 
@@ -50,7 +50,8 @@ class Parameters:
         self.start = args["start"] if args["start"] else 0
         self.end = args["end"] if args["end"] else None
 
-        self.blur_percentage = args["blur_percentage"] if args["blur_percentage"] else None
+        self.limit = args["limit"] if args["limit"] else None
+
         self.blur_threshold = args["blur_threshold"] if args["blur_threshold"] else None
 
         self.distance_threshold = args["distance_threshold"] if args["distance_threshold"] else None
@@ -59,8 +60,6 @@ class Parameters:
         self.pixel_black_threshold = args["pixel_black_threshold"] if args["pixel_black_threshold"] else None
 
         self.use_srt = args["use_srt"]
-
-        self.utc_offset = datetime.timedelta(hours=int(args["timezone"])) if args["timezone"] != "local" else datetime.datetime.now() - datetime.datetime.utcnow()
 
         self.frame_format = args["frame_format"]
         self.output_resolution = tuple(map(int, args["output_resolution"].split("x"))) if args["output_resolution"] else None
@@ -88,28 +87,18 @@ class Parameters:
             print("Start frame index must be greater than 0")
             return False
 
+        if args["limit"] and args["limit"] < 0:
+            print("Limit must be greater than 0")
+            return False
+
         if args["end"]:
             if args["end"] < 0:
                 print("End frame index must be greater than 0")
                 return False
 
-            if args["end"] < args["start"]:
+            if args["start"] is not None and args["end"] < args["start"]:
                 print("End frame index must be greater than start frame index")
                 return False
-
-        if args["timezone"] and args["timezone"] != "local":
-            try:
-                val = int(args["timezone"])
-                if val < -12 or val > 14:
-                    print("Timezone must be in the range -12 to 14")
-                    return False
-            except ValueError:
-                print("Timezone must be a valid integer")
-                return False
-
-        if args["blur_percentage"] and (args["blur_percentage"] < 0 or args["blur_percentage"] > 1):
-            print("Blur percentage must be in the range 0.0 to 1.0")
-            return False
 
         if args["blur_threshold"] and args["blur_threshold"] < 0:
             print("Blur threshold must be greater than 0")
