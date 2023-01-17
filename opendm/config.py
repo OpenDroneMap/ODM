@@ -529,7 +529,7 @@ def config(argv=None, parser=None):
                         metavar='<float>',
                         action=StoreValue,
                         type=float,
-                        default=5,
+                        default=4,
                         help='DSM/DTM resolution in cm / pixel. Note that this value is capped to 2x the ground sampling distance (GSD) estimate. To remove the cap, check --ignore-gsd also.'
                              ' Default: %(default)s')
 
@@ -555,7 +555,7 @@ def config(argv=None, parser=None):
     parser.add_argument('--orthophoto-resolution',
                         metavar='<float > 0.0>',
                         action=StoreValue,
-                        default=5,
+                        default=1,
                         type=float,
                         help=('Orthophoto resolution in cm / pixel. Note that this value is capped by a ground sampling distance (GSD) estimate. To remove the cap, check --ignore-gsd also. '
                               'Default: %(default)s'))
