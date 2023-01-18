@@ -331,14 +331,13 @@ def get_gps_location(elapsed_time, lat, lng, altitude):
         piexif.GPSIFD.GPSDateStamp: elapsed_time.strftime('%Y:%m:%d %H:%M:%S')
     }
 
-    if altitude is not None:
-        gps_ifd[piexif.GPSIFD.GPSAltitudeRef] = 0
-        gps_ifd[piexif.GPSIFD.GPSAltitude] = float_to_rational(round(altitude))
-
     if lat is not None and lng is not None:
         gps_ifd[piexif.GPSIFD.GPSLatitudeRef] = lat_deg[3]
         gps_ifd[piexif.GPSIFD.GPSLatitude] = exiv_lat
         gps_ifd[piexif.GPSIFD.GPSLongitudeRef] = lng_deg[3]
         gps_ifd[piexif.GPSIFD.GPSLongitude] = exiv_lng
+        if altitude is not None:
+            gps_ifd[piexif.GPSIFD.GPSAltitudeRef] = 0
+            gps_ifd[piexif.GPSIFD.GPSAltitude] = float_to_rational(round(altitude))
 
     return gps_ifd
