@@ -1,5 +1,26 @@
 from datetime import datetime
 import re
+
+
+def match_single(regexes, line, dtype=int):
+    if isinstance(regexes, str):
+        regexes = [(regexes, dtype)]
+    
+    for i in range(len(regexes)):
+        if isinstance(regexes[i], str):
+            regexes[i] = (regexes[i], dtype)
+    
+    try:
+        for r, transform in regexes:
+            match = re.search(r, line)
+            if match:
+                res = match.group(1)
+                return transform(res)
+    except Exception as e:
+        log.ODM_WARNING("Cannot parse SRT line \"%s\": %s", (line, str(e)))
+
+    return None
+
 class SrtFileParser:
     def __init__(self, filename):
         self.filename = filename
@@ -37,15 +58,9 @@ class SrtFileParser:
 
         with open(self.filename, 'r') as f:
 
-            srtcnt = None
-            difftime = None
-            timestamp = None
             iso = None
             shutter = None
             fnum = None
-            ev = None
-            ct = None
-            color_md = None
             focal_len = None
             latitude = None
             longitude = None
@@ -57,34 +72,23 @@ class SrtFileParser:
 
                 # Check if line is empty
                 if not line.strip():
-                    if srtcnt is not None:
+                    if start is not None:
                         self.data.append({
                             "start": start,
                             "end": end,
-                            "srtcnt": srtcnt,
-                            "difftime": difftime,
-                            "timestamp": timestamp,
                             "iso": iso,
                             "shutter": shutter,
                             "fnum": fnum,
-                            "ev": ev,
-                            "ct": ct,
-                            "color_md": color_md,
                             "focal_len": focal_len,
                             "latitude": latitude,
                             "longitude": longitude,
                             "altitude": altitude
                         })
 
-                    srtcnt = None
-                    difftime = None
-                    timestamp = None
                     iso = None
                     shutter = None
                     fnum = None
-                    ev = None
                     ct = None
-                    color_md = None
                     focal_len = None
                     latitude = None
                     longitude = None
@@ -94,7 +98,7 @@ class SrtFileParser:
 
                     continue
 
-                # Remove the html font tag
+                # Remove html tags
                 line = re.sub('<[^<]+?>', '', line)
 
                 # Search this "00:00:00,000 --> 00:00:00,016"
@@ -103,59 +107,34 @@ class SrtFileParser:
                     start = datetime.strptime(match.group(1), "%H:%M:%S,%f")
                     end = datetime.strptime(match.group(2), "%H:%M:%S,%f")
 
+                iso = match_single([
+                    "iso : (\d+)",
+                    "ISO (\d+)"
+                ], line)
 
-                match = re.search("SrtCnt : (\d+)", line)
-                if match:
-                    srtcnt = int(match.group(1))
+                shutter = match_single([
+                    "shutter : \d+/(\d+\.?\d*)"
+                    "SS (\d+\.?\d*)"
+                ], line)
 
-                match = re.search("DiffTime : (\d+)ms", line)
-                if match:
-                    difftime = int(match.group(1))
+                fnum = match_single([
+                    ("fnum : (\d+)", lambda v: float(v)/100.0),
+                    ("F/([\d\.]+)", float),
+                ], line)
 
-                match = re.search("(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3})", line)
-                if match:
-                    timestamp = match.group(1)
-                    timestamp = datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S,%f")
+                focal_len = match_single("focal_len : (\d+)", line)
 
-                match = re.search("iso : (\d+)", line)
-                if match:
-                    iso = int(match.group(1))
+                latitude = match_single([
+                    ("latitude: ([\d\.\-]+)", lambda v: float(v) if v != 0 else None),
+                    ("GPS \(([\d\.\-]+),? [\d\.\-]+,? [\d\.\-]+\)", lambda v: float(v) if v != 0 else None),
+                ], line)
 
-                match = re.search("shutter : (\d+/\d+.\d+)", line)
-                if match:
-                    shutter = match.group(1)
+                longitude = match_single([
+                    ("longitude: ([\d\.\-]+)", lambda v: float(v) if v != 0 else None),
+                    ("GPS \(([\d\.\-]+),? [\d\.\-]+,? [\d\.\-]+\)", lambda v: float(v) if v != 0 else None),
+                ], line)
 
-                match = re.search("fnum : (\d+)", line)
-                if match:
-                    fnum = int(match.group(1))
-
-                match = re.search("ev : (\d+)", line)
-                if match:
-                    ev = int(match.group(1))
-
-                match = re.search("ct : (\d+)", line)
-                if match:
-                    ct = int(match.group(1))
-
-                match = re.search("color_md : (\w+)", line)
-                if match:
-                    color_md = match.group(1)
-
-                match = re.search("focal_len : (\d+)", line)
-                if match:
-                    focal_len = int(match.group(1))
-
-                match = re.search("latitude: (\d+.\d+)", line)
-                if match:
-                    latitude = float(match.group(1))
-                    latitude = latitude if latitude != 0 else None
-
-                match = re.search("longitude: (\d+.\d+)", line)
-                if match:
-                    longitude = float(match.group(1))
-                    longitude = longitude if longitude != 0 else None
-
-                match = re.search("altitude: (\d+.\d+)", line)
-                if match:
-                    altitude = float(match.group(1))
-                    altitude = altitude if altitude != 0 else None
+                altitude = match_single([
+                    ("altitude: ([\d\.\-]+)", lambda v: float(v) if v != 0 else None),
+                    ("GPS \([\d\.\-]+,? [\d\.\-]+,? ([\d\.\-]+)\)", lambda v: float(v) if v != 0 else None),
+                ], line)

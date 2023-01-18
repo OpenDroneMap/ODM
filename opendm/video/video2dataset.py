@@ -68,16 +68,9 @@ class Video2Dataset:
             else:
                 srt_parser = None
 
-            if (self.blur_checker is not None and self.blur_checker.NeedPreProcess()):
-                log.ODM_INFO("Preprocessing for blur checker...")
-                self.blur_checker.PreProcess(input_file, self.parameters.start, self.parameters.end, self.parameters.internal_width, self.parameters.internal_height)
-                end = time.time()
-                log.ODM_INFO("Preprocessing time: {:.2f}s".format(end - start))
-                log.ODM_INFO("Calculated threshold is {}".format(self.blur_checker.threshold))
-
             if (self.black_checker is not None and self.black_checker.NeedPreProcess()):
                 start2 = time.time()
-                log.ODM_INFO("Preprocessing for black checker...")
+                log.ODM_INFO("Preprocessing for black frame checker... this might take a bit")
                 self.black_checker.PreProcess(input_file, self.parameters.start, self.parameters.end, self.parameters.internal_width, self.parameters.internal_height)
                 end = time.time()
                 log.ODM_INFO("Preprocessing time: {:.2f}s".format(end - start2))
@@ -199,15 +192,7 @@ class Video2Dataset:
 
         _, buf = cv2.imencode('.' + self.parameters.frame_format, frame)
 
-        #start_time_utc = video_info.start_time_utc if video_info.start_time_utc is not None \
-        #                 else srt_parser.data[0].timestamp if srt_parser is not None \
-        #                 else datetime.datetime.now()
-
-        #elapsed_time_utc = start_time_utc + datetime.timedelta(seconds=(self.frame_index / video_info.frame_rate))
-        #elapsed_time = elapsed_time_utc + srt_parser.utc_offset if srt_parser is not None else elapsed_time_utc
-
         delta = datetime.timedelta(seconds=(self.frame_index / video_info.frame_rate))
-        # convert to datetime
         elapsed_time = datetime.datetime(1900, 1, 1) + delta
 
         img = Image.open(io.BytesIO(buf))
@@ -236,14 +221,16 @@ class Video2Dataset:
             }}
 
         if entry is not None:
-            segs = entry["shutter"].split("/")
-            exif_dict["Exif"][piexif.ExifIFD.ExposureTime] = (int(float(segs[0])), int(float(segs[1])))
-            exif_dict["Exif"][piexif.ExifIFD.FocalLength] = (entry["focal_len"], 1)
-            exif_dict["Exif"][piexif.ExifIFD.FNumber] = (entry["fnum"], 1)
-            exif_dict["Exif"][piexif.ExifIFD.ISOSpeedRatings] = (entry["iso"], 1)
-
-            exif_dict["GPS"] = get_gps_location(elapsed_time, entry["latitude"], entry["longitude"], entry["altitude"])
-
+            if entry["shutter"] is not None:
+                exif_dict["Exif"][piexif.ExifIFD.ExposureTime] = (1, int(entry["shutter"]))
+            if entry["focal_len"] is not None:
+                exif_dict["Exif"][piexif.ExifIFD.FocalLength] = (entry["focal_len"], 1)
+            if entry["fnum"] is not None:
+                exif_dict["Exif"][piexif.ExifIFD.FNumber] = float_to_rational(entry["fnum"])
+            if entry["iso"] is not None:
+                exif_dict["Exif"][piexif.ExifIFD.ISOSpeedRatings] = (entry["iso"], 1)
+            if entry["latitude"] is not None and entry["longitude"] is not None:
+                exif_dict["GPS"] = get_gps_location(elapsed_time, entry["latitude"], entry["longitude"], entry.get("altitude"))
 
         exif_bytes = piexif.dump(exif_dict)
         img.save(path, exif=exif_bytes)
@@ -328,7 +315,7 @@ def get_gps_location(elapsed_time, lat, lng, altitude):
 
     gps_ifd = {
         piexif.GPSIFD.GPSVersionID: (2, 0, 0, 0),
-        piexif.GPSIFD.GPSDateStamp: elapsed_time.strftime('%Y:%m:%d %H:%M:%S')
+        piexif.GPSIFD.GPSDateStamp: elapsed_time.strftime('%Y:%m:%d')
     }
 
     if lat is not None and lng is not None:
