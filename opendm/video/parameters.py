@@ -24,7 +24,10 @@ class Parameters:
         if not os.path.exists(args["output"]):
             os.makedirs(args["output"])
 
-        self.input = args["input"].split(",")
+        self.input = args["input"]
+        if isinstance(self.input, str):
+            self.input = [self.input]
+
         self.output = args["output"]
         self.start = args.get("start", 0)
         self.end = args.get("end", None)
@@ -35,10 +38,7 @@ class Parameters:
         self.pixel_black_threshold = args.get("pixel_black_threshold", None)
         self.use_srt = "use_srt" in args
         self.frame_format = args.get("frame_format", "jpg")
-        
-        # TODO: use max dimension
-        self.output_resolution = None
-        #self.output_resolution = tuple(map(int, args["output_resolution"].split("x"))) if args["output_resolution"] else None
+        self.max_dimension = args.get("max_dimension", None)
 
         self.stats_file = args.get("stats_file", None)
 

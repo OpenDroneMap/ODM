@@ -128,7 +128,7 @@ class Video2Dataset:
             self.f.close()
 
         if self.parameters.limit is not None and self.global_idx >= self.parameters.limit:
-            print("Limit of {} frames reached, trimming dataset to {} frames".format(self.parameters.limit, self.global_idx))
+            print("Limit of {} frames reached, trimming dataset".format(self.parameters.limit))
             limit_files(output_file_paths, self.parameters.limit)
 
         end = time.time()
@@ -183,9 +183,13 @@ class Video2Dataset:
         return res
 
     def SaveFrame(self, frame, video_info, srt_parser: SrtFileParser):
-
-        if (self.parameters.output_resolution is not None):
-            frame = cv2.resize(frame, self.parameters.output_resolution)
+        max_dim = self.parameters.max_dimension
+        if max_dim is not None:
+            h, w, _ = frame.shape
+            if max_dim < w or max_dim < h:
+                m = max(w, h)
+                factor = max_dim / m
+                frame = cv2.resize(frame, (int(ceil(w * factor)), int(ceil(h * factor))))
 
         path = os.path.join(self.parameters.output,
             "frame_{}_{}.{}".format(self.global_idx, self.frame_index, self.parameters.frame_format))
