@@ -1,4 +1,3 @@
-from opendm.video.parameters import Parameters
 import datetime
 from fractions import Fraction
 import io
@@ -8,9 +7,11 @@ import cv2
 import os
 import collections
 from PIL import Image
-from checkers import BlackFrameChecker, PercentageBlurChecker, SimilarityChecker, ThresholdBlurChecker
-from srtparser import SrtFileParser
 import piexif
+from opendm.video.srtparser import SrtFileParser
+from opendm.video.parameters import Parameters
+from opendm.video.checkers import BlackFrameChecker, PercentageBlurChecker, SimilarityChecker, ThresholdBlurChecker
+
 class Video2Dataset:
 
     def __init__(self, parameters : Parameters):
