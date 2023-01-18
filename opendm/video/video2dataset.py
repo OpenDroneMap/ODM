@@ -27,9 +27,8 @@ class Video2Dataset:
 
 
     def ProcessVideo(self):
-
+        self.date_now = None
         start = time.time()
-        self.date_now = datetime.datetime.now()
 
         if (self.parameters.stats_file is not None):
             self.f = open(self.parameters.stats_file, "w")
@@ -39,7 +38,6 @@ class Video2Dataset:
 
         # foreach input file
         for input_file in self.parameters.input:
-
             # get file name
             file_name = os.path.basename(input_file)
             log.ODM_INFO("Processing video: {}".format(input_file))
@@ -47,6 +45,17 @@ class Video2Dataset:
             # get video info
             video_info = get_video_info(input_file)
             log.ODM_INFO(video_info)
+
+            # Set pseudo start time
+            if self.date_now is None:
+                try:
+                    self.date_now = datetime.datetime.fromtimestamp(os.path.getmtime(input_file))
+                except:
+                    self.date_now = datetime.datetime.now()
+            else:
+                self.date_now += datetime.timedelta(seconds=video_info.total_frames * video_info.frame_rate)
+            
+            log.ODM_INFO("Use pseudo start time: %s" % self.date_now)
 
             if self.parameters.use_srt:
 
@@ -216,19 +225,19 @@ class Video2Dataset:
                 piexif.ExifIFD.DateTimeOriginal: elapsed_time_str,
                 piexif.ExifIFD.DateTimeDigitized: elapsed_time_str,
                 piexif.ExifIFD.SubSecTime: subsec_time_str,
-                piexif.ExifIFD.PixelXDimension: (frame.shape[1], 1),
-                piexif.ExifIFD.PixelYDimension: (frame.shape[0], 1),
+                piexif.ExifIFD.PixelXDimension: frame.shape[1],
+                piexif.ExifIFD.PixelYDimension: frame.shape[0],
             }}
 
         if entry is not None:
             if entry["shutter"] is not None:
                 exif_dict["Exif"][piexif.ExifIFD.ExposureTime] = (1, int(entry["shutter"]))
             if entry["focal_len"] is not None:
-                exif_dict["Exif"][piexif.ExifIFD.FocalLength] = (entry["focal_len"], 1)
+                exif_dict["Exif"][piexif.ExifIFD.FocalLength] = entry["focal_len"]
             if entry["fnum"] is not None:
                 exif_dict["Exif"][piexif.ExifIFD.FNumber] = float_to_rational(entry["fnum"])
             if entry["iso"] is not None:
-                exif_dict["Exif"][piexif.ExifIFD.ISOSpeedRatings] = (entry["iso"], 1)
+                exif_dict["Exif"][piexif.ExifIFD.ISOSpeedRatings] = entry["iso"]
             if entry["latitude"] is not None and entry["longitude"] is not None:
                 exif_dict["GPS"] = get_gps_location(elapsed_time, entry["latitude"], entry["longitude"], entry.get("altitude"))
 
