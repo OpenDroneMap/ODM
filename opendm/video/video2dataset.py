@@ -213,7 +213,10 @@ class Video2Dataset:
         img = Image.open(io.BytesIO(buf))
 
         entry = srt_parser.get_entry(elapsed_time) if srt_parser is not None else None
-        elapsed_time_str = (elapsed_time + (self.date_now - datetime.datetime(1900, 1, 1))).strftime("%Y:%m:%d %H:%M:%S")
+        
+        exif_time = (elapsed_time + (self.date_now - datetime.datetime(1900, 1, 1)))
+        elapsed_time_str = exif_time.strftime("%Y:%m:%d %H:%M:%S")
+        subsec_time_str = exif_time.strftime("%f")
 
         # Exif dict contains the following keys: '0th', 'Exif', 'GPS', '1st', 'thumbnail'
         # Set the EXIF metadata
@@ -227,6 +230,7 @@ class Video2Dataset:
             "Exif": {
                 piexif.ExifIFD.DateTimeOriginal: elapsed_time_str,
                 piexif.ExifIFD.DateTimeDigitized: elapsed_time_str,
+                piexif.ExifIFD.SubSecTime: subsec_time_str,
                 piexif.ExifIFD.PixelXDimension: (frame.shape[1], 1),
                 piexif.ExifIFD.PixelYDimension: (frame.shape[0], 1),
             }}
@@ -324,18 +328,16 @@ def get_gps_location(elapsed_time, lat, lng, altitude):
 
     gps_ifd = {
         piexif.GPSIFD.GPSVersionID: (2, 0, 0, 0),
-        piexif.GPSIFD.GPSDateStamp: elapsed_time.strftime('%Y:%m:%d %H:%M:%S.%f')
+        piexif.GPSIFD.GPSDateStamp: elapsed_time.strftime('%Y:%m:%d %H:%M:%S')
     }
 
     if altitude is not None:
         gps_ifd[piexif.GPSIFD.GPSAltitudeRef] = 0
         gps_ifd[piexif.GPSIFD.GPSAltitude] = float_to_rational(round(altitude))
 
-    if lat is not None:
+    if lat is not None and lng is not None:
         gps_ifd[piexif.GPSIFD.GPSLatitudeRef] = lat_deg[3]
         gps_ifd[piexif.GPSIFD.GPSLatitude] = exiv_lat
-
-    if lng is not None:
         gps_ifd[piexif.GPSIFD.GPSLongitudeRef] = lng_deg[3]
         gps_ifd[piexif.GPSIFD.GPSLongitude] = exiv_lng
 
