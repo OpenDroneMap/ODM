@@ -8,6 +8,7 @@ import os
 import collections
 from PIL import Image
 import piexif
+from opendm import log
 from opendm.video.srtparser import SrtFileParser
 from opendm.video.parameters import Parameters
 from opendm.video.checkers import BlackFrameChecker, PercentageBlurChecker, SimilarityChecker, ThresholdBlurChecker
@@ -40,11 +41,11 @@ class Video2Dataset:
 
             # get file name
             file_name = os.path.basename(input_file)
-            print("Processing video: {}".format(input_file))
+            log.ODM_INFO("Processing video: {}".format(input_file))
 
             # get video info
             video_info = get_video_info(input_file)
-            print(video_info)
+            log.ODM_INFO(video_info)
 
             if self.parameters.use_srt:
 
@@ -55,38 +56,38 @@ class Video2Dataset:
 
                 for srt_file in srt_files:
                     if os.path.exists(srt_file):
-                        print("Loading SRT file: {}".format(srt_file))
+                        log.ODM_INFO("Loading SRT file: {}".format(srt_file))
                         try:
                             srt_parser = SrtFileParser(srt_file)
                             srt_parser.parse()
                             break
                         except Exception as e:
-                            print("Error parsing SRT file: {}".format(e))
+                            log.ODM_INFO("Error parsing SRT file: {}".format(e))
                             srt_parser = None
             else:
                 srt_parser = None
 
             if (self.blur_checker is not None and self.blur_checker.NeedPreProcess()):
-                print("Preprocessing for blur checker...")
+                log.ODM_INFO("Preprocessing for blur checker...")
                 self.blur_checker.PreProcess(input_file, self.parameters.start, self.parameters.end, self.parameters.internal_width, self.parameters.internal_height)
                 end = time.time()
-                print("Preprocessing time: {:.2f}s".format(end - start))
-                print("Calculated threshold is {}".format(self.blur_checker.threshold))
+                log.ODM_INFO("Preprocessing time: {:.2f}s".format(end - start))
+                log.ODM_INFO("Calculated threshold is {}".format(self.blur_checker.threshold))
 
             if (self.black_checker is not None and self.black_checker.NeedPreProcess()):
                 start2 = time.time()
-                print("Preprocessing for black checker...")
+                log.ODM_INFO("Preprocessing for black checker...")
                 self.black_checker.PreProcess(input_file, self.parameters.start, self.parameters.end, self.parameters.internal_width, self.parameters.internal_height)
                 end = time.time()
-                print("Preprocessing time: {:.2f}s".format(end - start2))
-                print("Calculated luminance_range_size is {}".format(self.black_checker.luminance_range_size))
-                print("Calculated luminance_minimum_value is {}".format(self.black_checker.luminance_minimum_value))
-                print("Calculated absolute_threshold is {}".format(self.black_checker.absolute_threshold))
+                log.ODM_INFO("Preprocessing time: {:.2f}s".format(end - start2))
+                log.ODM_INFO("Calculated luminance_range_size is {}".format(self.black_checker.luminance_range_size))
+                log.ODM_INFO("Calculated luminance_minimum_value is {}".format(self.black_checker.luminance_minimum_value))
+                log.ODM_INFO("Calculated absolute_threshold is {}".format(self.black_checker.absolute_threshold))
 
             # open video file
             cap = cv2.VideoCapture(input_file)
             if (not cap.isOpened()):
-                print("Error opening video stream or file")
+                log.ODM_INFO("Error opening video stream or file")
                 return
 
             if (self.parameters.start is not None):
@@ -99,7 +100,7 @@ class Video2Dataset:
             frames_to_process = self.parameters.end - start_frame + 1 if (self.parameters.end is not None) else video_info.total_frames - start_frame
 
             output_file_paths = []
-
+            progress = 0
             while (cap.isOpened()):
                 ret, frame = cap.read()
 
@@ -110,8 +111,10 @@ class Video2Dataset:
                     break
 
                 # Calculate progress percentage
+                prev_progress = progress
                 progress = floor((self.frame_index - start_frame + 1) / frames_to_process * 100)
-                print("[{}][{:3d}%] Processing frame {}/{}: ".format(file_name, progress, self.frame_index - start_frame + 1, frames_to_process), end="")
+                if progress != prev_progress:
+                    print("[{}][{:3d}%] Processing frame {}/{}: ".format(file_name, progress, self.frame_index - start_frame + 1, frames_to_process), end="\r")
 
                 stats = self.ProcessFrame(frame, video_info, srt_parser)
 
@@ -128,11 +131,12 @@ class Video2Dataset:
             self.f.close()
 
         if self.parameters.limit is not None and self.global_idx >= self.parameters.limit:
-            print("Limit of {} frames reached, trimming dataset".format(self.parameters.limit))
-            limit_files(output_file_paths, self.parameters.limit)
+            log.ODM_INFO("Limit of {} frames reached, trimming dataset".format(self.parameters.limit))
+            output_file_paths = limit_files(output_file_paths, self.parameters.limit)
 
         end = time.time()
-        print("Total processing time: {:.2f}s".format(end - start))
+        log.ODM_INFO("Total processing time: {:.2f}s".format(end - start))
+        return output_file_paths
 
 
     def ProcessFrame(self, frame, video_info, srt_parser):
@@ -148,7 +152,7 @@ class Video2Dataset:
             res["is_blurry"] = is_blurry
 
             if is_blurry:
-                print ("blurry, skipping")
+                # print ("blurry, skipping")
                 self.frame_index += 1
                 return res
 
@@ -157,7 +161,7 @@ class Video2Dataset:
             res["is_black"] = is_black
 
             if is_black:
-                print ("black, skipping")
+                # print ("black, skipping")
                 self.frame_index += 1
                 return res
 
@@ -168,7 +172,7 @@ class Video2Dataset:
             res["last_frame_index"] = last_frame_index
 
             if is_similar:
-                print ("similar to {}, skipping".format(self.similarity_checker.last_image_id))
+                # print ("similar to {}, skipping".format(self.similarity_checker.last_image_id))
                 self.frame_index += 1
                 return res
 
@@ -177,8 +181,6 @@ class Video2Dataset:
         res["path"] = path
         self.frame_index += 1
         self.global_idx += 1
-
-        print ("saved")
 
         return res
 
@@ -279,7 +281,7 @@ def limit_files(paths, limit):
     num_to_delete = cnt - limit
 
     if num_to_delete <= 0:
-        return
+        return paths
 
     skip = floor(num_to_delete / limit) if num_to_delete > cnt else ceil(cnt / num_to_delete)
 
@@ -291,7 +293,7 @@ def limit_files(paths, limit):
         else:
             to_keep.append(paths[i])
 
-    limit_files(to_keep, limit)
+    return limit_files(to_keep, limit)
 
 def to_deg(value, loc):
     """convert decimal coordinates into degrees, munutes and seconds tuple
