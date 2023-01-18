@@ -188,7 +188,7 @@ class Video2Dataset:
                 frame = cv2.resize(frame, (int(ceil(w * factor)), int(ceil(h * factor))))
 
         path = os.path.join(self.parameters.output,
-            "frame_{}_{}.{}".format(self.global_idx, self.frame_index, self.parameters.frame_format))
+            "{}_{}_{}.{}".format(video_info.basename, self.global_idx, self.frame_index, self.parameters.frame_format))
 
         _, buf = cv2.imencode('.' + self.parameters.frame_format, frame)
 
@@ -255,13 +255,14 @@ class Video2Dataset:
 def get_video_info(input_file):
 
     video = cv2.VideoCapture(input_file)
+    basename = os.path.splitext(os.path.basename(input_file))[0]
 
     total_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
     frame_rate = video.get(cv2.CAP_PROP_FPS)
 
     video.release()
 
-    return collections.namedtuple("VideoInfo", ["total_frames", "frame_rate"])(total_frames, frame_rate)
+    return collections.namedtuple("VideoInfo", ["total_frames", "frame_rate", "basename"])(total_frames, frame_rate, basename)
 
 def float_to_rational(f):
     f = Fraction(f).limit_denominator()

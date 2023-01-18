@@ -126,7 +126,7 @@ class SrtFileParser:
 
                 latitude = match_single([
                     ("latitude: ([\d\.\-]+)", lambda v: float(v) if v != 0 else None),
-                    ("GPS \(([\d\.\-]+),? [\d\.\-]+,? [\d\.\-]+\)", lambda v: float(v) if v != 0 else None),
+                    ("GPS \([\d\.\-]+,? ([\d\.\-]+),? [\d\.\-]+\)", lambda v: float(v) if v != 0 else None),
                 ], line)
 
                 longitude = match_single([
