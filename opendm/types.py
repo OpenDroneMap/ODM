@@ -113,7 +113,7 @@ class ODM_Reconstruction(object):
                 # Convert GCP file to a UTM projection since the rest of the pipeline
                 # does not handle other SRS well.
                 rejected_entries = []
-                utm_gcp = GCPFile(gcp.create_utm_copy(output_gcp_file, filenames=[p.filename for p in self.photos], rejected_entries=rejected_entries, include_extras=False))
+                utm_gcp = GCPFile(gcp.create_utm_copy(output_gcp_file, filenames=[p.filename for p in self.photos], rejected_entries=rejected_entries, include_extras=True))
                 
                 if not utm_gcp.exists():
                     raise RuntimeError("Could not project GCP file to UTM. Please double check your GCP file for mistakes.")

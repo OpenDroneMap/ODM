@@ -53,7 +53,7 @@ jobs:
       if: startsWith(github.ref, 'refs/tags/')
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: dist\*.exe
+        file: dist/*.exe
         file_glob: true
         tag: ${{ github.ref }}
         overwrite: true
