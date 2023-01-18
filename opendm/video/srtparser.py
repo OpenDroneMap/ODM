@@ -21,13 +21,18 @@ class SrtFileParser:
 
     def parse(self):
 
-        # The SRT file is formatted this way:
+        # SRT metadata is not standarized, we support the following formats:
 
         # 1
         # 00:00:00,000 --> 00:00:00,016
         # <font size="36">SrtCnt : 1, DiffTime : 16ms
         # 2023-01-06 18:56:48,380,821
         # [iso : 3200] [shutter : 1/60.0] [fnum : 280] [ev : 0] [ct : 3925] [color_md : default] [focal_len : 240] [latitude: 0.000000] [longitude: 0.000000] [altitude: 0.000000] </font>
+
+        # DJI Mavic Mini
+        # 1
+        # 00:00:00,000 --> 00:00:01,000
+        # F/2.8, SS 206.14, ISO 150, EV 0, GPS (-82.6669, 27.7716, 10), D 2.80m, H 0.00m, H.S 0.00m/s, V.S 0.00m/s 
 
         with open(self.filename, 'r') as f:
 
