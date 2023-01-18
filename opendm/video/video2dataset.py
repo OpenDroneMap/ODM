@@ -213,7 +213,7 @@ class Video2Dataset:
         img = Image.open(io.BytesIO(buf))
 
         entry = srt_parser.get_entry(elapsed_time) if srt_parser is not None else None
-        elapsed_time_str = (elapsed_time + (self.date_now - datetime.datetime(1900, 1, 1))).strftime("%Y:%m:%d %H:%M:%S.%f")
+        elapsed_time_str = (elapsed_time + (self.date_now - datetime.datetime(1900, 1, 1))).strftime("%Y:%m:%d %H:%M:%S")
 
         # Exif dict contains the following keys: '0th', 'Exif', 'GPS', '1st', 'thumbnail'
         # Set the EXIF metadata

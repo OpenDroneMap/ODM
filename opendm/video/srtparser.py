@@ -23,6 +23,7 @@ class SrtFileParser:
 
         # SRT metadata is not standarized, we support the following formats:
 
+        # DJI mavic air 2
         # 1
         # 00:00:00,000 --> 00:00:00,016
         # <font size="36">SrtCnt : 1, DiffTime : 16ms
