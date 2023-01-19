@@ -36,6 +36,8 @@ class Video2Dataset:
 
         self.global_idx = 0
 
+        output_file_paths = []
+        
         # foreach input file
         for input_file in self.parameters.input:
             # get file name
@@ -53,7 +55,7 @@ class Video2Dataset:
                 except:
                     self.date_now = datetime.datetime.now()
             else:
-                self.date_now += datetime.timedelta(seconds=video_info.total_frames * video_info.frame_rate)
+                self.date_now += datetime.timedelta(seconds=video_info.total_frames / video_info.frame_rate)
             
             log.ODM_INFO("Use pseudo start time: %s" % self.date_now)
 
@@ -102,7 +104,6 @@ class Video2Dataset:
 
             frames_to_process = self.parameters.end - start_frame + 1 if (self.parameters.end is not None) else video_info.total_frames - start_frame
 
-            output_file_paths = []
             progress = 0
             while (cap.isOpened()):
                 ret, frame = cap.read()
