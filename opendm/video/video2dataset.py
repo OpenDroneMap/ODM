@@ -7,6 +7,7 @@ import cv2
 import os
 import collections
 from PIL import Image
+import numpy as np
 import piexif
 from opendm import log
 from opendm.video.srtparser import SrtFileParser
@@ -154,8 +155,8 @@ class Video2Dataset:
         if resolution < w or resolution < h:
             m = max(w, h)
             factor = resolution / m
-            frame_bw = cv2.resize(frame_bw, (int(ceil(w * factor)), int(ceil(h * factor))))
-        
+            frame_bw = cv2.resize(frame_bw, (int(ceil(w * factor)), int(ceil(h * factor))), interpolation=cv2.INTER_NEAREST)
+
         if (self.blur_checker is not None):
             blur_score, is_blurry = self.blur_checker.IsBlur(frame_bw, self.frame_index)
             res["blur_score"] = blur_score
@@ -201,7 +202,7 @@ class Video2Dataset:
             if max_dim < w or max_dim < h:
                 m = max(w, h)
                 factor = max_dim / m
-                frame = cv2.resize(frame, (int(ceil(w * factor)), int(ceil(h * factor))))
+                frame = cv2.resize(frame, (int(ceil(w * factor)), int(ceil(h * factor))), interpolation=cv2.INTER_AREA)
 
         path = os.path.join(self.parameters.output,
             "{}_{}_{}.{}".format(video_info.basename, self.global_idx, self.frame_index, self.parameters.frame_format))
@@ -289,24 +290,21 @@ def float_to_rational(f):
     return (f.numerator, f.denominator)
 
 def limit_files(paths, limit):
-
-    cnt = len(paths)
-    num_to_delete = cnt - limit
-
-    if num_to_delete <= 0:
+    if len(paths) <= limit:
         return paths
-
-    skip = floor(num_to_delete / limit) if num_to_delete > cnt else ceil(cnt / num_to_delete)
-
+    
     to_keep = []
+    all_idxes = np.arange(0, len(paths))
+    keep_idxes = np.linspace(0, len(paths) - 1, limit, dtype=int)
+    remove_idxes = set(all_idxes) - set(keep_idxes)
 
-    for i in range(len(paths)):
-        if i % skip == 0:
-            os.remove(paths[i])
-        else:
-            to_keep.append(paths[i])
+    p = np.array(paths)
+    to_keep = list(p[keep_idxes])
 
-    return limit_files(to_keep, limit)
+    for idx in remove_idxes:
+        os.remove(paths[idx])
+
+    return to_keep
 
 def to_deg(value, loc):
     """convert decimal coordinates into degrees, munutes and seconds tuple
