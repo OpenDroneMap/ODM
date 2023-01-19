@@ -1,6 +1,5 @@
 from datetime import datetime
 from opendm import location, log
-from pyproj import Transformer, CRS
 import re
 
 
