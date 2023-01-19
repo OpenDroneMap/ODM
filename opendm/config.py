@@ -653,6 +653,20 @@ def config(argv=None, parser=None):
                         version='ODM {0}'.format(__version__),
                         help='Displays version number and exits. ')
 
+    parser.add_argument('--video-limit',
+                        type=int,
+                        action=StoreValue,
+                        default=500,
+                        metavar='<positive integer>',
+                        help='Maximum number of frames to extract from video files for processing. Default: %(default)s')
+
+    parser.add_argument('--video-resolution',
+                        type=int,
+                        action=StoreValue,
+                        default=4000,
+                        metavar='<positive integer>',
+                        help='The maximum output resolution of extracted video frames in pixels. Default: %(default)s')
+    
     parser.add_argument('--split',
                         type=int,
                         action=StoreValue,

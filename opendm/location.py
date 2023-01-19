@@ -119,7 +119,6 @@ def parse_srs_header(header):
     :param header (str) line
     :return Proj object
     """
-    log.ODM_INFO('Parsing SRS header: %s' % header)
     header = header.strip()
     ref = header.split(' ')
 
@@ -156,3 +155,14 @@ def parse_srs_header(header):
         raise RuntimeError(e)
     
     return srs
+
+def utm_srs_from_ll(lon, lat):
+    utm_zone, hemisphere = get_utm_zone_and_hemisphere_from(lon, lat)
+    return parse_srs_header("WGS84 UTM %s%s" % (utm_zone, hemisphere))
+
+def utm_transformers_from_ll(lon, lat):
+    source_srs = CRS.from_epsg(4326)
+    target_srs = utm_srs_from_ll(lon, lat)
+    ll_to_utm = transformer(source_srs, target_srs)
+    utm_to_ll = transformer(target_srs, source_srs)
+    return ll_to_utm, utm_to_ll

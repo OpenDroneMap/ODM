@@ -11,7 +11,7 @@ import piexif
 from opendm import log
 from opendm.video.srtparser import SrtFileParser
 from opendm.video.parameters import Parameters
-from opendm.video.checkers import BlackFrameChecker, PercentageBlurChecker, SimilarityChecker, ThresholdBlurChecker
+from opendm.video.checkers import BlackFrameChecker, SimilarityChecker, ThresholdBlurChecker
 
 class Video2Dataset:
 
@@ -82,7 +82,7 @@ class Video2Dataset:
             if (self.black_checker is not None and self.black_checker.NeedPreProcess()):
                 start2 = time.time()
                 log.ODM_INFO("Preprocessing for black frame checker... this might take a bit")
-                self.black_checker.PreProcess(input_file, self.parameters.start, self.parameters.end, self.parameters.internal_width, self.parameters.internal_height)
+                self.black_checker.PreProcess(input_file, self.parameters.start, self.parameters.end)
                 end = time.time()
                 log.ODM_INFO("Preprocessing time: {:.2f}s".format(end - start2))
                 log.ODM_INFO("Calculated luminance_range_size is {}".format(self.black_checker.luminance_range_size))
@@ -148,8 +148,14 @@ class Video2Dataset:
         res = {"frame_index": self.frame_index, "global_idx": self.global_idx}
 
         frame_bw = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        frame_bw = cv2.resize(frame_bw, (self.parameters.internal_width, self.parameters.internal_height))
 
+        h, w = frame_bw.shape
+        resolution = self.parameters.internal_resolution
+        if resolution < w or resolution < h:
+            m = max(w, h)
+            factor = resolution / m
+            frame_bw = cv2.resize(frame_bw, (int(ceil(w * factor)), int(ceil(h * factor))))
+        
         if (self.blur_checker is not None):
             blur_score, is_blurry = self.blur_checker.IsBlur(frame_bw, self.frame_index)
             res["blur_score"] = blur_score
@@ -206,9 +212,12 @@ class Video2Dataset:
         elapsed_time = datetime.datetime(1900, 1, 1) + delta
 
         img = Image.open(io.BytesIO(buf))
-
-        entry = srt_parser.get_entry(elapsed_time) if srt_parser is not None else None
         
+        entry = gps_coords = None
+        if srt_parser is not None:
+            entry = srt_parser.get_entry(elapsed_time)
+            gps_coords = srt_parser.get_gps(elapsed_time)
+
         exif_time = (elapsed_time + (self.date_now - datetime.datetime(1900, 1, 1)))
         elapsed_time_str = exif_time.strftime("%Y:%m:%d %H:%M:%S")
         subsec_time_str = exif_time.strftime("%f")
@@ -239,8 +248,9 @@ class Video2Dataset:
                 exif_dict["Exif"][piexif.ExifIFD.FNumber] = float_to_rational(entry["fnum"])
             if entry["iso"] is not None:
                 exif_dict["Exif"][piexif.ExifIFD.ISOSpeedRatings] = entry["iso"]
-            if entry["latitude"] is not None and entry["longitude"] is not None:
-                exif_dict["GPS"] = get_gps_location(elapsed_time, entry["latitude"], entry["longitude"], entry.get("altitude"))
+        
+        if gps_coords is not None:
+            exif_dict["GPS"] = get_gps_location(elapsed_time, gps_coords[1], gps_coords[0], gps_coords[2])
 
         exif_bytes = piexif.dump(exif_dict)
         img.save(path, exif=exif_bytes)

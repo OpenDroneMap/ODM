@@ -1,4 +1,6 @@
 from datetime import datetime
+from opendm import location, log
+from pyproj import Transformer, CRS
 import re
 
 
@@ -25,6 +27,9 @@ class SrtFileParser:
     def __init__(self, filename):
         self.filename = filename
         self.data = []
+        self.gps_data = []
+        self.ll_to_utm = None
+        self.utm_to_ll = None
 
     def get_entry(self, timestamp: datetime):
         if not self.data:
@@ -39,6 +44,68 @@ class SrtFileParser:
                 return entry
 
         return None
+
+    def get_gps(self, timestamp):
+        if not self.data:
+            self.parse()
+        
+        # Initialize on first call
+        prev_coords = None
+
+        if not self.gps_data:
+            for d in self.data:
+                lat, lon, alt = d.get('latitude'), d.get('longitude'), d.get('altitude')
+                tm = d.get('start')
+
+                if lat is not None and lon is not None:
+                    if self.ll_to_utm is None:
+                        self.ll_to_utm, self.utm_to_ll = location.utm_transformers_from_ll(lon, lat)
+
+                    coords = self.ll_to_utm.TransformPoint(lon, lat, alt)
+
+                    # First or new (in X/Y only)
+                    add = (not len(self.gps_data)) or (coords[0], coords[1]) != (self.gps_data[-1][1][0], self.gps_data[-1][1][1])
+                    if add:
+                        self.gps_data.append((tm, coords))
+        
+        # No data available
+        if not len(self.gps_data) or self.gps_data[0][0] > timestamp:
+            return None
+
+        # Interpolate
+        start = None
+        for i in range(len(self.gps_data)):
+            tm, coords = self.gps_data[i]
+
+            # Perfect match
+            if timestamp == tm:
+                return self.utm_to_ll.TransformPoint(*coords)
+
+            elif tm > timestamp:
+                end = i
+                start = i - 1
+                if start < 0:
+                    return None
+
+                gd_s = self.gps_data[start]
+                gd_e = self.gps_data[end]
+                sx, sy, sz = gd_s[1]
+                ex, ey, ez = gd_e[1]
+                
+                dt = (gd_e[0] - gd_s[0]).total_seconds()
+                if dt >= 10:
+                    return None
+
+                dx = (ex - sx) / dt
+                dy = (ey - sy) / dt
+                dz = (ez - sz) / dt
+                t = (timestamp - gd_s[0]).total_seconds()
+
+                return self.utm_to_ll.TransformPoint(
+                    sx + dx * t,
+                    sy + dy * t,
+                    sz + dz * t
+                )
 
     def parse(self):
 
@@ -102,7 +169,7 @@ class SrtFileParser:
                 line = re.sub('<[^<]+?>', '', line)
 
                 # Search this "00:00:00,000 --> 00:00:00,016"
-                match = re.search("(\d{2}:\d{2}:\d{2},\d{3}) --> (\d{2}:\d{2}:\d{2},\d{3})", line)
+                match = re.search("(\d{2}:\d{2}:\d{2},\d+) --> (\d{2}:\d{2}:\d{2},\d+)", line)
                 if match:
                     start = datetime.strptime(match.group(1), "%H:%M:%S,%f")
                     end = datetime.strptime(match.group(2), "%H:%M:%S,%f")

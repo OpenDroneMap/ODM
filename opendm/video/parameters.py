@@ -11,7 +11,7 @@ class Parameters:
         # "output" -> path to output directory")
         # "start" -> start frame index")
         # "end" -> end frame index")
-        # "output-resolution" -> Override output resolution (ex. 640x480)")
+        # "output-resolution" -> Override output resolution (ex. 1024)")
         # "blur-threshold" -> blur measures that fall below this value will be considered 'blurry'. Good value is 300
         # "distance-threshold" -> distance measures that fall below this value will be considered 'similar'")
         # "black-ratio-threshold" -> Set the threshold for considering a frame 'black'. Express the minimum value for the ratio: nb_black_pixels / nb_pixels. Default value is 0.98")
@@ -43,7 +43,4 @@ class Parameters:
         self.stats_file = args.get("stats_file", None)
 
         # We will resize the image to this size before processing
-        self.internal_width = 800
-        self.internal_height = 600
-
-
+        self.internal_resolution = 800

@@ -1,64 +1,6 @@
 import cv2
 import numpy as np
 
-class PercentageBlurChecker:
-    def __init__(self, percentage):
-        self.percentage = percentage
-        self.cache = None
-
-    def NeedPreProcess(self):
-        return True
-
-    def PreProcess(self, video_path, start_frame, end_frame, width=800, height=600):
-
-        # Open video file
-        cap = cv2.VideoCapture(video_path)
-        if (cap.isOpened() == False):
-            print("Error opening video stream or file")
-            return
-
-        if start_frame is not None:
-            cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
-
-        tmp = []
-
-        frame_index = start_frame if start_frame is not None else 0
-        while (cap.isOpened() and (end_frame is None or frame_index <= end_frame)):
-
-            ret, frame = cap.read()
-
-            if not ret:
-                break
-
-            frame_bw = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            frame_bw = cv2.resize(frame_bw, (width, height))
-            var = cv2.Laplacian(frame_bw, cv2.CV_64F).var()
-
-            tmp.append(var)
-
-            frame_index += 1
-
-        cap.release()
-
-        # Calculate threshold
-        self.threshold = np.percentile(tmp, self.percentage * 100)
-        start_frame = start_frame if start_frame is not None else 0
-
-        # Fill cache with frame blur scores and indices
-        self.cache = {i + start_frame: v for i, v in enumerate(tmp)}
-
-        return
-
-    def IsBlur(self, image_bw, id):
-
-        if self.cache is None:
-            return 0, True
-
-        if id not in self.cache:
-            return 0, True
-
-        return self.cache[id], self.cache[id] < self.threshold
-
 class ThresholdBlurChecker:
     def __init__(self, threshold):
         self.threshold = threshold
@@ -66,7 +8,7 @@ class ThresholdBlurChecker:
     def NeedPreProcess(self):
         return False
 
-    def PreProcess(self, video_path, start_frame, end_frame, width=800, height=600):
+    def PreProcess(self, video_path, start_frame, end_frame):
         return
 
     def IsBlur(self, image_bw, id):
@@ -134,7 +76,7 @@ class BlackFrameChecker:
     def NeedPreProcess(self):
         return True
 
-    def PreProcess(self, video_path, start_frame, end_frame, width=800, height=600):
+    def PreProcess(self, video_path, start_frame, end_frame):
         # Open video file
         cap = cv2.VideoCapture(video_path)
 
@@ -156,9 +98,6 @@ class BlackFrameChecker:
             ret, frame = cap.read()
             if not ret:
                 break
-
-            # Resize frame to specified width and height
-            frame = cv2.resize(frame, (width, height))
 
             # Convert frame to grayscale
             gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
