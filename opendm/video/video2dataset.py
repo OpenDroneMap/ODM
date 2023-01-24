@@ -244,7 +244,7 @@ class Video2Dataset:
             if entry["shutter"] is not None:
                 exif_dict["Exif"][piexif.ExifIFD.ExposureTime] = (1, int(entry["shutter"]))
             if entry["focal_len"] is not None:
-                exif_dict["Exif"][piexif.ExifIFD.FocalLength] = entry["focal_len"]
+                exif_dict["Exif"][piexif.ExifIFD.FocalLength] = (entry["focal_len"], 100)
             if entry["fnum"] is not None:
                 exif_dict["Exif"][piexif.ExifIFD.FNumber] = float_to_rational(entry["fnum"])
             if entry["iso"] is not None:
