@@ -658,7 +658,7 @@ def config(argv=None, parser=None):
                         action=StoreValue,
                         default=500,
                         metavar='<positive integer>',
-                        help='Maximum number of frames to extract from video files for processing. Default: %(default)s')
+                        help='Maximum number of frames to extract from video files for processing. Set to 0 for no limit. Default: %(default)s')
 
     parser.add_argument('--video-resolution',
                         type=int,

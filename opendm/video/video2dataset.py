@@ -135,7 +135,7 @@ class Video2Dataset:
         if self.f is not None:
             self.f.close()
 
-        if self.parameters.limit is not None and self.global_idx >= self.parameters.limit:
+        if self.parameters.limit is not None and self.parameters.limit > 0 and self.global_idx >= self.parameters.limit:
             log.ODM_INFO("Limit of {} frames reached, trimming dataset".format(self.parameters.limit))
             output_file_paths = limit_files(output_file_paths, self.parameters.limit)
 
