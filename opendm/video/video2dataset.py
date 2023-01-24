@@ -231,6 +231,8 @@ class Video2Dataset:
                 piexif.ImageIFD.DateTime: elapsed_time_str,
                 piexif.ImageIFD.XResolution: (frame.shape[1], 1),
                 piexif.ImageIFD.YResolution: (frame.shape[0], 1),
+                piexif.ImageIFD.Make: "DJI" if video_info.basename.lower().startswith("dji") else "Unknown",
+                piexif.ImageIFD.Model: "Unknown"
             },
             "Exif": {
                 piexif.ExifIFD.DateTimeOriginal: elapsed_time_str,
@@ -254,7 +256,7 @@ class Video2Dataset:
             exif_dict["GPS"] = get_gps_location(elapsed_time, gps_coords[1], gps_coords[0], gps_coords[2])
 
         exif_bytes = piexif.dump(exif_dict)
-        img.save(path, exif=exif_bytes)
+        img.save(path, exif=exif_bytes, quality=95)
 
         return path
 

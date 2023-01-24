@@ -135,7 +135,7 @@ class ODMLoadDatasetStage(types.ODM_Stage):
                             "input": video_files,
                             "output": images_dir,
                             
-                            "blur_threshold": 0.2,
+                            "blur_threshold": 300,
                             "distance_threshold": 10, 
                             "black_ratio_threshold": 0.98,
                             "pixel_black_threshold": 0.30,
