@@ -1,4 +1,5 @@
 import os
+import shutil
 import struct
 import pipes
 import fiona
@@ -18,6 +19,8 @@ from opendm import point_cloud
 from opendm.multispectral import get_primary_band_name
 from opendm.osfm import OSFMContext
 from opendm.boundary import as_polygon, export_to_bounds_files
+from opendm.align import compute_alignment_matrix, transform_point_cloud, transform_obj
+from opendm.utils import np_to_json
 
 class ODMGeoreferencingStage(types.ODM_Stage):
     def process(self, args, outputs):
@@ -29,6 +32,9 @@ class ODMGeoreferencingStage(types.ODM_Stage):
         gcp_export_file = tree.path("odm_georeferencing", "ground_control_points.gpkg")
         gcp_gml_export_file = tree.path("odm_georeferencing", "ground_control_points.gml")
         gcp_geojson_export_file = tree.path("odm_georeferencing", "ground_control_points.geojson")
+        unaligned_model = io.related_file_path(tree.odm_georeferencing_model_laz, postfix="_unaligned")
+        if os.path.isfile(unaligned_model) and self.rerun():
+            os.unlink(unaligned_model)
 
         if reconstruction.has_gcp() and (not io.file_exists(gcp_export_file) or self.rerun()):
             octx = OSFMContext(tree.opensfm)
@@ -166,7 +172,64 @@ class ODMGeoreferencingStage(types.ODM_Stage):
             else:
                 log.ODM_INFO("Converting point cloud (non-georeferenced)")
                 system.run(cmd + ' ' + ' '.join(stages) + ' ' + ' '.join(params))
-        
+
+
+            stats_dir = tree.path("opensfm", "stats", "codem")
+            if os.path.exists(stats_dir) and self.rerun():
+                shutil.rmtree(stats_dir)
+
+            if tree.odm_align_file is not None:
+                alignment_file_exists = io.file_exists(tree.odm_georeferencing_alignment_matrix)
+
+                if not alignment_file_exists or self.rerun():
+                    if alignment_file_exists:
+                        os.unlink(tree.odm_georeferencing_alignment_matrix)
+
+                    a_matrix = None
+                    try:
+                        a_matrix = compute_alignment_matrix(tree.odm_georeferencing_model_laz, tree.odm_align_file, stats_dir)
+                    except Exception as e:
+                        log.ODM_WARNING("Cannot compute alignment matrix: %s" % str(e))
+
+                    if a_matrix is not None:
+                        log.ODM_INFO("Alignment matrix: %s" % a_matrix)
+
+                        # Align point cloud
+                        if os.path.isfile(unaligned_model):
+                            os.rename(unaligned_model, tree.odm_georeferencing_model_laz)
+                        os.rename(tree.odm_georeferencing_model_laz, unaligned_model)
+
+                        try:
+                            transform_point_cloud(unaligned_model, a_matrix, tree.odm_georeferencing_model_laz)
+                            log.ODM_INFO("Transformed %s" % tree.odm_georeferencing_model_laz)
+                        except Exception as e:
+                            log.ODM_WARNING("Cannot transform point cloud: %s" % str(e))
+                            os.rename(unaligned_model, tree.odm_georeferencing_model_laz)
+
+                        # Align textured models
+                        for texturing in [tree.odm_texturing, tree.odm_25dtexturing]:
+                            obj = os.path.join(texturing, "odm_textured_model_geo.obj")
+                            if os.path.isfile(obj):
+                                unaligned_obj = io.related_file_path(obj, postfix="_unaligned")
+                                if os.path.isfile(unaligned_obj):
+                                    os.rename(unaligned_obj, obj)
+                                os.rename(obj, unaligned_obj)
+                                try:
+                                    transform_obj(unaligned_obj, a_matrix, [reconstruction.georef.utm_east_offset, reconstruction.georef.utm_north_offset], obj)
+                                    log.ODM_INFO("Transformed %s" % obj)
+                                except Exception as e:
+                                    log.ODM_WARNING("Cannot transform textured model: %s" % str(e))
+                                    os.rename(unaligned_obj, obj)
+                        
+                        with open(tree.odm_georeferencing_alignment_matrix, "w") as f:
+                            f.write(np_to_json(a_matrix))
+                    else:
+                        log.ODM_WARNING("Alignment to %s will be skipped." % tree.odm_align_file)
+                else:
+                    log.ODM_WARNING("Already computed alignment")
+            elif io.file_exists(tree.odm_georeferencing_alignment_matrix):
+                os.unlink(tree.odm_georeferencing_alignment_matrix)
+
             point_cloud.post_point_cloud_steps(args, tree, self.rerun())
         else:
             log.ODM_WARNING('Found a valid georeferenced model in: %s'

@@ -26,11 +26,6 @@ jobs:
       uses: diddlesnaps/snapcraft-multiarch-action@v1
       with:
         architecture: ${{ matrix.architecture }}
-    - name: Review
-      uses: diddlesnaps/snapcraft-review-tools-action@v1
-      with:
-        snap: ${{ steps.build.outputs.snap }}
-        isClassic: 'false'
     - name: Publish unstable builds to Edge
       if: github.ref == 'refs/heads/master'
       uses: snapcore/action-publish@v1

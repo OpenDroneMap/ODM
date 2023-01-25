@@ -26,17 +26,13 @@ class ODMApp:
         """
         Initializes the application and defines the ODM application pipeline stages
         """
-        if args.debug:
-            log.logger.show_debug = True
-        
         json_log_paths = [os.path.join(args.project_path, "log.json")]
         if args.copy_to:
             json_log_paths.append(args.copy_to)
 
         log.logger.init_json_output(json_log_paths, args)
         
-        dataset = ODMLoadDatasetStage('dataset', args, progress=5.0,
-                                          verbose=args.verbose)
+        dataset = ODMLoadDatasetStage('dataset', args, progress=5.0)
         split = ODMSplitStage('split', args, progress=75.0)
         merge = ODMMergeStage('merge', args, progress=100.0)
         opensfm = ODMOpenSfMStage('opensfm', args, progress=25.0)
@@ -47,15 +43,12 @@ class ODMApp:
                                     oct_tree=max(1, min(14, args.mesh_octree_depth)),
                                     samples=1.0,
                                     point_weight=4.0,
-                                    max_concurrency=args.max_concurrency,
-                                    verbose=args.verbose)
+                                    max_concurrency=args.max_concurrency)
         texturing = ODMMvsTexStage('mvs_texturing', args, progress=70.0)
         georeferencing = ODMGeoreferencingStage('odm_georeferencing', args, progress=80.0,
-                                                    gcp_file=args.gcp,
-                                                    verbose=args.verbose)
+                                                    gcp_file=args.gcp)
         dem = ODMDEMStage('odm_dem', args, progress=90.0,
-                            max_concurrency=args.max_concurrency,
-                            verbose=args.verbose)
+                            max_concurrency=args.max_concurrency)
         orthophoto = ODMOrthoPhotoStage('odm_orthophoto', args, progress=98.0)
         report = ODMReport('odm_report', args, progress=99.0)
         postprocess = ODMPostProcess('odm_postprocess', args, progress=100.0)

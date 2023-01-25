@@ -88,7 +88,7 @@ run C:\Users\youruser\datasets\project  [--additional --parameters --here]
 ODM is now available as a Snap Package from the Snap Store. To install you may use the Snap Store (available itself as a Snap Package) or the command line:
 
 ```bash
-sudo snap install opendronemap
+sudo snap install --edge opendronemap
 ```
 
 To run, you will need a terminal window into which you can type:
@@ -258,6 +258,10 @@ Experimental flags need to be enabled in Docker to use the ```--squash``` flag. 
 ```
 
 After this, you must restart docker.
+
+## Video Support
+
+Starting from version 3.0.4, ODM can automatically extract images from video files (.mp4 or .mov). Just place one or more video files into the `images` folder and run the program as usual. Subtitles files (.srt) with GPS information are also supported. Place .srt files in the `images` folder, making sure that the filenames match. For example, `my_video.mp4` ==> `my_video.srt` (case-sensitive).
 
 ## Developers
 

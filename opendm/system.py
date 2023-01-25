@@ -7,6 +7,7 @@ import subprocess
 import string
 import signal
 import io
+import shutil
 from collections import deque
 
 from opendm import context
@@ -144,3 +145,30 @@ def which(program):
         p=os.path.join(p,program)
         if os.path.exists(p) and os.access(p,os.X_OK):
             return p
+
+def link_file(src, dst):
+    if os.path.isdir(dst):
+        dst = os.path.join(dst, os.path.basename(src))
+
+    if not os.path.isfile(dst):
+        if sys.platform == 'win32':
+            os.link(src, dst)
+        else:
+            os.symlink(os.path.relpath(os.path.abspath(src), os.path.dirname(os.path.abspath(dst))), dst)
+
+def move_files(src, dst):
+    if not os.path.isdir(dst):
+        raise IOError("Not a directory: %s" % dst)
+
+    for f in os.listdir(src):
+        if os.path.isfile(os.path.join(src, f)):
+            shutil.move(os.path.join(src, f), dst)
+
+def delete_files(folder, exclude=()):
+    if not os.path.isdir(folder):
+        return
+
+    for f in os.listdir(folder):
+        if os.path.isfile(os.path.join(folder, f)):
+            if not exclude or not f.endswith(exclude):
+                os.unlink(os.path.join(folder, f))

@@ -35,11 +35,11 @@ except ModuleNotFoundError:
     except:
         pass
 
-def classify(lasFile, scalar, slope, threshold, window, verbose=False):
+def classify(lasFile, scalar, slope, threshold, window):
     start = datetime.now()
 
     try:
-        pdal.run_pdaltranslate_smrf(lasFile, lasFile, scalar, slope, threshold, window, verbose)
+        pdal.run_pdaltranslate_smrf(lasFile, lasFile, scalar, slope, threshold, window)
     except:
         log.ODM_WARNING("Error creating classified file %s" % lasFile)
 
@@ -50,47 +50,23 @@ def rectify(lasFile, debug=False, reclassify_threshold=5, min_area=750, min_poin
     start = datetime.now()
 
     try:
-        # Currently, no Python 2 lib that supports reading and writing LAZ, so we will do it manually until ODM is migrated to Python 3
-        # When migration is done, we can move to pylas and avoid using PDAL for conversion
-        tempLasFile = os.path.join(os.path.dirname(lasFile), 'tmp.las')
-
-        # Convert LAZ to LAS
-        cmd = [
-            'pdal',
-            'translate',
-            '-i %s' % lasFile,
-            '-o %s' % tempLasFile
-        ]
-        system.run(' '.join(cmd))
-
         log.ODM_INFO("Rectifying {} using with [reclassify threshold: {}, min area: {}, min points: {}]".format(lasFile, reclassify_threshold, min_area, min_points))
         run_rectification(
-            input=tempLasFile, output=tempLasFile, debug=debug, \
+            input=lasFile, output=lasFile, debug=debug, \
             reclassify_plan='median', reclassify_threshold=reclassify_threshold, \
             extend_plan='surrounding', extend_grid_distance=5, \
             min_area=min_area, min_points=min_points)
-
-        # Convert LAS to LAZ
-        cmd = [
-            'pdal',
-            'translate',
-            '-i %s' % tempLasFile,
-            '-o %s' % lasFile
-        ]
-        system.run(' '.join(cmd))
-        os.remove(tempLasFile)
-
+        log.ODM_INFO('Created %s in %s' % (lasFile, datetime.now() - start))
     except Exception as e:
-        raise Exception("Error rectifying ground in file %s: %s" % (lasFile, str(e)))
+        log.ODM_WARNING("Error rectifying ground in file %s: %s" % (lasFile, str(e)))
 
-    log.ODM_INFO('Created %s in %s' % (lasFile, datetime.now() - start))
     return lasFile
 
 error = None
 
 def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56'], gapfill=True,
                 outdir='', resolution=0.1, max_workers=1, max_tile_size=4096,
-                verbose=False, decimation=None, keep_unfilled_copy=False,
+                decimation=None, keep_unfilled_copy=False,
                 apply_smoothing=True):
     """ Create DEM from multiple radii, and optionally gapfill """
     
@@ -187,7 +163,7 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
             d = pdal.json_add_decimation_filter(d, decimation)
 
         pdal.json_add_readers(d, [input_point_cloud])
-        pdal.run_pipeline(d, verbose=verbose)
+        pdal.run_pipeline(d)
 
     parallel_map(process_tile, tiles, max_workers)
 
@@ -380,5 +356,4 @@ def window_filter_2d(arr, nodata, window, kernel_size, filter):
     win_arr = filter(win_arr)
     win_arr[nodata_locs] = nodata
     win_arr = win_arr[window[0] - expanded_window[0] : window[2] - expanded_window[0], window[1] - expanded_window[1] : window[3] - expanded_window[1]]
-    log.ODM_DEBUG("Filtered window: %s" % str(window))
     return win_arr

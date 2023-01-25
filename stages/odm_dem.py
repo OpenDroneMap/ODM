@@ -1,4 +1,4 @@
-import os, json
+import os, json, math
 from shutil import copyfile
 
 from opendm import io
@@ -58,8 +58,7 @@ class ODMDEMStage(types.ODM_Stage):
                                   args.smrf_scalar, 
                                   args.smrf_slope, 
                                   args.smrf_threshold, 
-                                  args.smrf_window,
-                                  verbose=args.verbose
+                                  args.smrf_window
                                 )
 
                 with open(pc_classify_marker, 'w') as f:
@@ -73,7 +72,7 @@ class ODMDEMStage(types.ODM_Stage):
         self.update_progress(progress)
 
         if args.pc_rectify:
-            commands.rectify(dem_input, args.debug)
+            commands.rectify(dem_input, False)
 
         # Do we need to process anything here?
         if (args.dsm or args.dtm) and pc_model_found:
@@ -91,7 +90,7 @@ class ODMDEMStage(types.ODM_Stage):
 
                 radius_steps = [(resolution / 100.0) / 2.0]
                 for _ in range(args.dem_gapfill_steps - 1):
-                    radius_steps.append(radius_steps[-1] * 2) # 2 is arbitrary, maybe there's a better value?
+                    radius_steps.append(radius_steps[-1] * math.sqrt(2)) # sqrt(2) is arbitrary, maybe there's a better value?
 
                 for product in products:
                     commands.create_dem(
@@ -103,7 +102,6 @@ class ODMDEMStage(types.ODM_Stage):
                             outdir=odm_dem_root,
                             resolution=resolution / 100.0,
                             decimation=args.dem_decimation,
-                            verbose=args.verbose,
                             max_workers=args.max_concurrency,
                             keep_unfilled_copy=args.dem_euclidean_map
                         )

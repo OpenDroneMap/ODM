@@ -7,7 +7,7 @@ ODMExifRead==3.0.4
 Fiona==1.8.17 ; sys_platform == 'linux' or sys_platform == 'darwin'
 https://github.com/OpenDroneMap/windows-deps/raw/main/Fiona-1.8.19-cp38-cp38-win_amd64.whl ; sys_platform == 'win32'
 joblib==1.1.0
-laspy==1.7.0
+laspy[lazrs]==2.3.0
 lxml==4.6.1
 matplotlib==3.3.3
 networkx==2.5
@@ -32,3 +32,7 @@ fpdf2==2.4.6
 Shapely==1.7.1
 onnxruntime==1.12.1
 pygltflib==1.15.3
+codem==0.24.0
+trimesh==3.17.1
+pandas==1.5.2
+piexif==1.1.3

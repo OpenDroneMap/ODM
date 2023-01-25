@@ -51,15 +51,19 @@ def image_scale_factor(target_resolution, reconstruction_json, gsd_error_estimat
     :param reconstruction_json path to OpenSfM's reconstruction.json
     :param gsd_error_estimate percentage of estimated error in the GSD calculation to set an upper bound on resolution.
     :return A down-scale (<= 1) value to apply to images to achieve the target resolution by comparing the current GSD of the reconstruction.
-        If a GSD cannot be computed, it just returns 1. Returned scale values are never higher than 1.
+        If a GSD cannot be computed, it just returns 1. Returned scale values are never higher than 1 and are always obtained by dividing by 2 (e.g. 0.5, 0.25, etc.)
     """
     gsd = opensfm_reconstruction_average_gsd(reconstruction_json, use_all_shots=has_gcp)
 
     if gsd is not None and target_resolution > 0:
         gsd = gsd * (1 + gsd_error_estimate)
-        return min(1, gsd / target_resolution)
+        isf = min(1.0, abs(gsd) / target_resolution)
+        ret = 0.5
+        while ret >= isf:
+            ret /= 2.0
+        return ret * 2.0
     else:
-        return 1
+        return 1.0
 
 
 def cap_resolution(resolution, reconstruction_json, gsd_error_estimate = 0.1, gsd_scaling = 1.0, ignore_gsd=False,

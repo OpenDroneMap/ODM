@@ -14,6 +14,7 @@ set GDAL_DATA=%GDALBASE%\data\gdal
 set GDAL_DRIVER_PATH=%GDALBASE%\gdalplugins
 set OSFMBASE=%ODMBASE%SuperBuild\install\bin\opensfm\bin
 set SBBIN=%ODMBASE%SuperBuild\install\bin
+set PDAL_DRIVER_PATH=%ODMBASE%SuperBuild\install\bin
 
 set PATH=%GDALBASE%;%SBBIN%;%OSFMBASE%
 set PROJ_LIB=%GDALBASE%\data\proj

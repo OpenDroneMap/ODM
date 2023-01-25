@@ -12,9 +12,11 @@ RS_DATABASE = {
     'dji fc6310': 33, # Phantom 4 Professional
 
     'dji fc7203': 20, # Mavic Mini v1
+    'dji fc2103': 32, # DJI Mavic Air 1
     'dji fc3170': 27, # DJI Mavic Air 2
     'dji fc3411': 32, # DJI Mavic Air 2S
     
+    'dji fc220': 64, # DJI Mavic Pro (Platinum)
     'hasselblad l1d-20c': lambda p: 47 if p.get_capture_megapixels() < 17 else 56, # DJI Mavic 2 Pro (at 16:10 => 16.8MP 47ms, at 3:2 => 19.9MP 56ms. 4:3 has 17.7MP with same image height as 3:2 which can be concluded as same sensor readout)
 
     'dji fc3582': lambda p: 26 if p.get_capture_megapixels() < 48 else 60, # DJI Mini 3 pro (at 48MP readout is 60ms, at 12MP it's 26ms) 
@@ -26,8 +28,12 @@ RS_DATABASE = {
     'gopro hero4 black': 30, # GoPro Hero 4 Black
     'gopro hero8 black': 17, # GoPro Hero 8 Black
 
-    'teracube teracube one': 32 # TeraCube TeraCube_One TR1907Q Mobile Phone
+    'teracube teracube one': 32, # TeraCube TeraCube_One TR1907Q Mobile Phone
     
+    'fujifilm x-a5': 186, # FUJIFILM X-A5 Mirrorless Interchangeable Lens Camera
+
+    'fujifilm x-t2': 35, # FUJIFILM X-T2 Mirrorless Interchangeable Lens Camera
+
 
     # Help us add more! 
     # See: https://github.com/OpenDroneMap/RSCalibration for instructions
@@ -72,3 +78,4 @@ def get_rolling_shutter_readout(photo, override_value=0):
             log.ODM_WARNING("Rolling shutter readout time for \"%s %s\" is not in our database, using default of %sms which might be incorrect. Use --rolling-shutter-readout to set an actual value (see https://github.com/OpenDroneMap/RSCalibration for instructions on how to calculate this value)" % (make, model, DEFAULT_RS_READOUT))
             warn_db_missing[key] = True
         return float(DEFAULT_RS_READOUT)
+

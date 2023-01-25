@@ -7,6 +7,7 @@ from opendm import context
 from opendm import types
 from opendm.multispectral import get_primary_band_name
 from opendm.photo import find_largest_photo_dim
+from opendm.objpacker import obj_pack
 
 class ODMMvsTexStage(types.ODM_Stage):
     def process(self, args, outputs):
@@ -68,10 +69,14 @@ class ODMMvsTexStage(types.ODM_Stage):
                 system.mkdir_p(r['out_dir'])
 
             odm_textured_model_obj = os.path.join(r['out_dir'], tree.odm_textured_model_obj)
+            unaligned_obj = io.related_file_path(odm_textured_model_obj, postfix="_unaligned")
 
             if not io.file_exists(odm_textured_model_obj) or self.rerun():
                 log.ODM_INFO('Writing MVS Textured file in: %s'
                               % odm_textured_model_obj)
+
+                if os.path.isfile(unaligned_obj):
+                    os.unlink(unaligned_obj)
 
                 # Format arguments to fit Mvs-Texturing app
                 skipGlobalSeamLeveling = ""
@@ -93,12 +98,12 @@ class ODMMvsTexStage(types.ODM_Stage):
                     'bin': context.mvstex_path,
                     'out_dir': os.path.join(r['out_dir'], "odm_textured_model_geo"),
                     'model': r['model'],
-                    'dataTerm': args.texturing_data_term,
-                    'outlierRemovalType': args.texturing_outlier_removal_type,
+                    'dataTerm': 'gmi',
+                    'outlierRemovalType': 'gauss_clamping',
                     'skipGlobalSeamLeveling': skipGlobalSeamLeveling,
                     'skipLocalSeamLeveling': skipLocalSeamLeveling,
                     'keepUnseenFaces': keepUnseenFaces,
-                    'toneMapping': args.texturing_tone_mapping,
+                    'toneMapping': 'none',
                     'nadirMode': nadir,
                     'maxTextureSize': '--max_texture_size=%s' % max_texture_size,
                     'nvm_file': r['nvm_file'],
@@ -125,6 +130,26 @@ class ODMMvsTexStage(types.ODM_Stage):
                         '{labelingFile} '
                         '{maxTextureSize} '.format(**kwargs))
                 
+                # Single material?
+                if args.texturing_single_material and r['primary'] and (not r['nadir'] or args.skip_3dmodel):
+                    log.ODM_INFO("Packing to single material")
+
+                    packed_dir = os.path.join(r['out_dir'], 'packed')
+                    if io.dir_exists(packed_dir):
+                        log.ODM_INFO("Removing old packed directory {}".format(packed_dir))
+                        shutil.rmtree(packed_dir)
+                    
+                    try:
+                        obj_pack(os.path.join(r['out_dir'], tree.odm_textured_model_obj), packed_dir, _info=log.ODM_INFO)
+                        
+                        # Move packed/* into texturing folder
+                        system.delete_files(r['out_dir'], (".vec", ))
+                        system.move_files(packed_dir, r['out_dir'])
+                        if os.path.isdir(packed_dir):
+                            os.rmdir(packed_dir)
+                    except Exception as e:
+                        log.ODM_WARNING(str(e))
+
                 # Backward compatibility: copy odm_textured_model_geo.mtl to odm_textured_model.mtl
                 # for certain older WebODM clients which expect a odm_textured_model.mtl
                 # to be present for visualization
@@ -133,7 +158,7 @@ class ODMMvsTexStage(types.ODM_Stage):
                 if io.file_exists(geo_mtl):
                     nongeo_mtl = os.path.join(r['out_dir'], 'odm_textured_model.mtl')
                     shutil.copy(geo_mtl, nongeo_mtl)
-                
+
                 progress += progress_per_run
                 self.update_progress(progress)
             else:

@@ -107,11 +107,13 @@ class ODM_Reconstruction(object):
             if gcp.exists():
                 if gcp.entries_count() == 0:
                     raise RuntimeError("This GCP file does not have any entries. Are the entries entered in the proper format?")
+                
+                gcp.check_entries()
 
                 # Convert GCP file to a UTM projection since the rest of the pipeline
                 # does not handle other SRS well.
                 rejected_entries = []
-                utm_gcp = GCPFile(gcp.create_utm_copy(output_gcp_file, filenames=[p.filename for p in self.photos], rejected_entries=rejected_entries, include_extras=False))
+                utm_gcp = GCPFile(gcp.create_utm_copy(output_gcp_file, filenames=[p.filename for p in self.photos], rejected_entries=rejected_entries, include_extras=True))
                 
                 if not utm_gcp.exists():
                     raise RuntimeError("Could not project GCP file to UTM. Please double check your GCP file for mistakes.")
@@ -239,7 +241,7 @@ class ODM_GeoRef(object):
         return (self.utm_east_offset, self.utm_north_offset)
     
 class ODM_Tree(object):
-    def __init__(self, root_path, gcp_file = None, geo_file = None):
+    def __init__(self, root_path, gcp_file = None, geo_file = None, align_file = None):
         # root path to the project
         self.root_path = io.absolute_path_file(root_path)
         self.input_images = os.path.join(self.root_path, 'images')
@@ -294,6 +296,7 @@ class ODM_Tree(object):
         self.odm_georeferencing_gcp = gcp_file or io.find('gcp_list.txt', self.root_path)
         self.odm_georeferencing_gcp_utm = os.path.join(self.odm_georeferencing, 'gcp_list_utm.txt')
         self.odm_geo_file = geo_file or io.find('geo.txt', self.root_path)
+        self.odm_align_file = align_file or io.find('align.laz', self.root_path) or io.find('align.las', self.root_path) or io.find('align.tif', self.root_path)
         
         self.odm_georeferencing_proj = 'proj.txt'
         self.odm_georeferencing_model_txt_geo = os.path.join(
@@ -304,6 +307,9 @@ class ODM_Tree(object):
             self.odm_georeferencing, 'odm_georeferenced_model.laz')
         self.odm_georeferencing_model_las = os.path.join(
             self.odm_georeferencing, 'odm_georeferenced_model.las')
+        self.odm_georeferencing_alignment_matrix = os.path.join(
+            self.odm_georeferencing, 'alignment_matrix.json'
+        )
 
         # odm_orthophoto
         self.odm_orthophoto_render = os.path.join(self.odm_orthophoto, 'odm_orthophoto_render.tif')
@@ -362,8 +368,10 @@ class ODM_Stage:
         if outputs.get('tree') is None:
             raise Exception("Assert violation: tree variable is missing from outputs dictionary.")
 
-        if self.args.time:
+        try:
             system.benchmark(start_time, outputs['tree'].benchmarking, self.name)
+        except Exception as e:
+            log.ODM_WARNING("Cannot write benchmark file: %s" % str(e))
 
         log.ODM_INFO('Finished %s stage' % self.name)
         self.update_progress_end()

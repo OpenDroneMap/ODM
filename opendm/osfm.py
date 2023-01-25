@@ -202,27 +202,22 @@ class OSFMContext:
             # Compute feature_process_size
             feature_process_size = 2048 # default
 
-            if ('resize_to_is_set' in args) and args.resize_to > 0:
-                # Legacy
-                log.ODM_WARNING("Legacy option --resize-to (this might be removed in a future version). Use --feature-quality instead.")
-                feature_process_size = int(args.resize_to)
+            feature_quality_scale = {
+                'ultra': 1,
+                'high': 0.5,
+                'medium': 0.25,
+                'low': 0.125,
+                'lowest': 0.0675,
+            }
+
+            max_dim = find_largest_photo_dim(photos)
+
+            if max_dim > 0:
+                log.ODM_INFO("Maximum photo dimensions: %spx" % str(max_dim))
+                feature_process_size = int(max_dim * feature_quality_scale[args.feature_quality])
+                log.ODM_INFO("Photo dimensions for feature extraction: %ipx" % feature_process_size)
             else:
-                feature_quality_scale = {
-                    'ultra': 1,
-                    'high': 0.5,
-                    'medium': 0.25,
-                    'low': 0.125,
-                    'lowest': 0.0675,
-                }
-
-                max_dim = find_largest_photo_dim(photos)
-
-                if max_dim > 0:
-                    log.ODM_INFO("Maximum photo dimensions: %spx" % str(max_dim))
-                    feature_process_size = int(max_dim * feature_quality_scale[args.feature_quality])
-                    log.ODM_INFO("Photo dimensions for feature extraction: %ipx" % feature_process_size)
-                else:
-                    log.ODM_WARNING("Cannot compute max image dimensions, going with defaults")
+                log.ODM_WARNING("Cannot compute max image dimensions, going with defaults")
 
             # create config file for OpenSfM
             if args.matcher_neighbors > 0:
