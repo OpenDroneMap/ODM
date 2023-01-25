@@ -289,6 +289,7 @@ class ODM_Tree(object):
 
         # texturing
         self.odm_textured_model_obj = 'odm_textured_model_geo.obj'
+        self.odm_textured_model_glb = 'odm_textured_model_geo.glb'
 
         # odm_georeferencing
         self.odm_georeferencing_coords = os.path.join(

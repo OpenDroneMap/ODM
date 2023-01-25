@@ -461,6 +461,13 @@ def config(argv=None, parser=None):
                         help=('Generate OBJs that have a single material and a single texture file instead of multiple ones. '
                               'Default:  %(default)s'))
 
+    parser.add_argument('--gltf',
+                        action=StoreTrue,
+                        nargs=0,
+                        default=False,
+                        help=('Generate single file Binary glTF (GLB) textured models. '
+                              'Default:  %(default)s'))
+
     parser.add_argument('--gcp',
                         metavar='<path string>',
                         action=StoreValue,

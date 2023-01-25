@@ -4,6 +4,8 @@ from rasterio.io import MemoryFile
 import warnings
 import numpy as np
 import pygltflib
+from opendm import system
+from opendm import io
 
 warnings.filterwarnings("ignore", category=rasterio.errors.NotGeoreferencedWarning)
 
@@ -108,7 +110,7 @@ def paddedBuffer(buf, boundary):
     pad = boundary - r
     return buf + b'\x00' * pad
 
-def obj2glb(input_obj, output_glb, _info=print):
+def obj2glb(input_obj, output_glb, rtc=(None, None), draco_compression=True, _info=print):
     _info("Converting %s --> %s" % (input_obj, output_glb))
     obj = load_obj(input_obj, _info=_info)
 
@@ -226,9 +228,29 @@ def obj2glb(input_obj, output_glb, _info=print):
         buffers=[pygltflib.Buffer(byteLength=len(binary))],
     )
 
+    if rtc != (None, None) and len(rtc) >= 2:
+        gltf.extensionsUsed = ['CESIUM_RTC']
+        gltf.extensions = {
+            'CESIUM_RTC': {
+                'center': [float(rtc[0]), float(rtc[1]), 0.0]
+            }
+        }
+
     gltf.set_binary_blob(binary)
 
     _info("Writing...")
     gltf.save(output_glb)
     _info("Wrote %s" % output_glb)
+
+    if draco_compression:
+        _info("Compressing with draco")
+        try:
+            compressed_glb = io.related_file_path(output_glb, postfix="_compressed")
+            system.run('draco_transcoder -i "{}" -o "{}" -qt 16 -qp 16'.format(output_glb, compressed_glb))
+            if os.path.isfile(compressed_glb) and os.path.isfile(output_glb):
+                os.remove(output_glb)
+                os.rename(compressed_glb, output_glb)
+        except Exception as e:
+            log.ODM_WARNING("Cannot compress GLB with draco: %s" % str(e))
+            
 
