@@ -69,7 +69,59 @@ def load_obj(obj_path, _info=print):
     obj['normals'] = np.array(normals, dtype=np.float32)
     obj['faces'] = faces
 
+    obj['materials'] = convert_materials_to_jpeg(obj['materials'])
+
     return obj
+
+def convert_materials_to_jpeg(materials):
+
+    min_value = 0
+    value_range = 0
+    skip_conversion = False
+
+    for mat in materials:
+        image = materials[mat]
+
+        # Stop here, assuming all other materials are also uint8
+        if image.dtype == np.uint8:
+            skip_conversion = True
+            break
+
+        # Find common min/range values
+        try:
+            data_range = np.iinfo(image.dtype)
+            min_value = min(min_value, 0)
+            value_range = max(value_range, float(data_range.max) - float(data_range.min))
+        except ValueError:
+            # For floats use the actual range of the image values
+            min_value = min(min_value, float(image.min()))
+            value_range = max(value_range, float(image.max()) - min_value)
+    
+    if value_range == 0:
+        value_range = 255 # Should never happen
+
+    for mat in materials:
+        image = materials[mat]
+
+        if not skip_conversion:
+            image = image.astype(np.float32)
+            image -= min_value
+            image *= 255.0 / value_range
+            np.around(image, out=image)
+            image[image > 255] = 255
+            image[image < 0] = 0
+            image = image.astype(np.uint8)
+
+        with MemoryFile() as memfile:
+            bands, h, w = image.shape
+            bands = min(3, bands)
+            with memfile.open(driver='JPEG', jpeg_quality=90, count=bands, width=w, height=h, dtype=rasterio.dtypes.uint8) as dst:
+                for b in range(1, min(3, bands) + 1):
+                    dst.write(image[b - 1], b)
+            memfile.seek(0)
+            materials[mat] = memfile.read()
+
+    return materials
 
 def load_mtl(mtl_file, obj_base_path, _info=print):
     mtl_file = os.path.join(obj_base_path, mtl_file)
@@ -91,16 +143,8 @@ def load_mtl(mtl_file, obj_base_path, _info=print):
                     raise IOError("Cannot open %s" % map_kd)
                 
                 _info("Loading %s" % map_kd_filename)
-
-                with MemoryFile() as memfile:
-                    with rasterio.open(map_kd, 'r') as src:
-                        data = src.read()
-                        with memfile.open(driver='JPEG', jpeg_quality=90, count=3, width=src.width, height=src.height, dtype=rasterio.dtypes.uint8) as dst:
-                            for b in range(1, min(3, src.count) + 1):
-                                # TODO: convert if uint16 or float
-                                dst.write(data[b - 1], b)
-                    memfile.seek(0)
-                    mats[current_mtl] = memfile.read()
+                with rasterio.open(map_kd, 'r') as src:
+                    mats[current_mtl] = src.read()
     return mats
 
 def paddedBuffer(buf, boundary):
