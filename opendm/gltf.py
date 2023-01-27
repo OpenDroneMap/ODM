@@ -256,7 +256,7 @@ def obj2glb(input_obj, output_glb, rtc=(None, None), draco_compression=True, _in
         textures += [pygltflib.Texture(source=len(images) - 1, sampler=0)]
 
         mat = pygltflib.Material(pbrMetallicRoughness=pygltflib.PbrMetallicRoughness(baseColorTexture=pygltflib.TextureInfo(index=len(textures) - 1), metallicFactor=0, roughnessFactor=1), 
-                alphaMode=pygltflib.MASK)
+                alphaMode=pygltflib.OPAQUE)
         mat.extensions = {
             'KHR_materials_unlit': {}
         }
