@@ -9,6 +9,7 @@ from opendm import io
 
 warnings.filterwarnings("ignore", category=rasterio.errors.NotGeoreferencedWarning)
 
+
 def load_obj(obj_path, _info=print):
     if not os.path.isfile(obj_path):
         raise IOError("Cannot open %s" % obj_path)
@@ -253,8 +254,13 @@ def obj2glb(input_obj, output_glb, rtc=(None, None), draco_compression=True, _in
 
         images += [pygltflib.Image(bufferView=textureBufferView, mimeType="image/jpeg")]
         textures += [pygltflib.Texture(source=len(images) - 1, sampler=0)]
-        materials += [pygltflib.Material(pbrMetallicRoughness=pygltflib.PbrMetallicRoughness(baseColorTexture=pygltflib.TextureInfo(index=len(textures) - 1), metallicFactor=0, roughnessFactor=1), 
-                        alphaMode=pygltflib.MASK)]
+
+        mat = pygltflib.Material(pbrMetallicRoughness=pygltflib.PbrMetallicRoughness(baseColorTexture=pygltflib.TextureInfo(index=len(textures) - 1), metallicFactor=0, roughnessFactor=1), 
+                alphaMode=pygltflib.MASK)
+        mat.extensions = {
+            'KHR_materials_unlit': {}
+        }
+        materials += [mat]
 
     gltf = pygltflib.GLTF2(
         scene=0,
@@ -272,8 +278,10 @@ def obj2glb(input_obj, output_glb, rtc=(None, None), draco_compression=True, _in
         buffers=[pygltflib.Buffer(byteLength=len(binary))],
     )
 
+    gltf.extensionsRequired = ['KHR_materials_unlit']
+
     if rtc != (None, None) and len(rtc) >= 2:
-        gltf.extensionsUsed = ['CESIUM_RTC']
+        gltf.extensionsUsed = ['CESIUM_RTC', 'KHR_materials_unlit']
         gltf.extensions = {
             'CESIUM_RTC': {
                 'center': [float(rtc[0]), float(rtc[1]), 0.0]
