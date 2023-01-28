@@ -41,7 +41,7 @@ settings_path = os.path.join(root_path, 'settings.yaml')
 
 # Define supported image extensions
 supported_extensions = {'.jpg','.jpeg','.png', '.tif', '.tiff', '.bmp'}
-supported_video_extensions = {'.mp4', '.mov'}
+supported_video_extensions = {'.mp4', '.mov', '.lrv', '.ts'}
 
 # Define the number of cores
 num_cores = multiprocessing.cpu_count()

@@ -245,3 +245,14 @@ externalproject_add(lastools
     SOURCE_DIR        ${SB_SOURCE_DIR}/lastools
     CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
 )
+
+externalproject_add(draco
+    GIT_REPOSITORY    https://github.com/OpenDroneMap/draco
+    GIT_SHALLOW       ON
+    GIT_TAG           304
+    PREFIX            ${SB_BINARY_DIR}/draco
+    SOURCE_DIR        ${SB_SOURCE_DIR}/draco
+    CMAKE_ARGS        -DDRACO_TRANSCODER_SUPPORTED=ON 
+                      -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR} 
+                      ${WIN32_CMAKE_ARGS}
+)
