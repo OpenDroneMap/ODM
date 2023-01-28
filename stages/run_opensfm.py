@@ -104,9 +104,9 @@ class ODMOpenSfMStage(types.ODM_Stage):
                 image = func(shot_id, image)
             return image
 
-        def resize_thermal_images(shot_id, image):
+        def resize_secondary_images(shot_id, image):
             photo = reconstruction.get_photo(shot_id)
-            if photo.is_thermal():
+            if photo.band_name != primary_band_name:
                 return thermal.resize_to_match(image, largest_photo)
             else:
                 return image
@@ -138,8 +138,8 @@ class ODMOpenSfMStage(types.ODM_Stage):
                 return image
 
         if reconstruction.multi_camera:
-            largest_photo = find_largest_photo(photos)
-            undistort_pipeline.append(resize_thermal_images)
+            largest_photo = find_largest_photo([p for p in photos if p.band_name == primary_band_name])
+            undistort_pipeline.append(resize_secondary_images)
 
         if args.radiometric_calibration != "none":
             undistort_pipeline.append(radiometric_calibrate)

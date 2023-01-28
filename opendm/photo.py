@@ -459,6 +459,21 @@ class ODM_Photo:
                 # self.set_attr_from_xmp_tag('bandwidth', xtags, [
                 #     'Camera:WavelengthFWHM'
                 # ], float)
+        
+        # Special case band handling for AeroVironment Quantix images
+        # for some reason, they don't store band information in EXIFs
+        if self.camera_make.lower() == 'aerovironment' and \
+            self.camera_model.lower() == 'quantix':
+            matches = re.match("IMG_(\d+)_(\w+)\.\w+", self.filename, re.IGNORECASE)
+            if matches:
+                band_aliases = {
+                    'GRN': 'Green',
+                    'NIR': 'Nir',
+                    'RED': 'Red',
+                    'RGB': 'RedGreenBlue',
+                }
+                self.capture_uuid = matches.group(1)
+                self.band_name = band_aliases.get(matches.group(2), matches.group(2))
 
         # Sanitize band name since we use it in folder paths
         self.band_name = re.sub('[^A-Za-z0-9]+', '', self.band_name)
