@@ -107,6 +107,7 @@ def get_geojson_shots_from_opensfm(reconstruction_file, utm_srs=None, utm_offset
                             'focal': cam.get('focal', cam.get('focal_x')), # Focal ratio = focal length (mm) / max(sensor_width, sensor_height) (mm)
                             'width': cam.get('width', 0),
                             'height': cam.get('height', 0),
+                            'capture_time': shot.get('capture_time', 0),
                             'translation': list(translation),
                             'rotation': list(rotation)
                         },
