@@ -563,6 +563,8 @@ def local_normalize(im):
 
 
 def align_image(image, warp_matrix, dimension):
+    image = resize_match(image, dimension)
+
     if warp_matrix.shape == (3, 3):
         return cv2.warpPerspective(image, warp_matrix, dimension)
     else:
@@ -594,3 +596,16 @@ def to_8bit(image, force_normalize=False):
     return image
 
 
+def resize_match(image, dimension):
+    h, w = image.shape[0], image.shape[1]
+    mw, mh = dimension
+
+    if w != mw or h != mh:
+        fx = mw/w
+        fy = mh/h
+        image = cv2.resize(image, None, 
+                fx=fx, 
+                fy=fx,
+                interpolation=(cv2.INTER_AREA if (fx < 1.0 and fy < 1.0) else cv2.INTER_LANCZOS4))
+
+    return image

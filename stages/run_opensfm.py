@@ -104,9 +104,9 @@ class ODMOpenSfMStage(types.ODM_Stage):
                 image = func(shot_id, image)
             return image
 
-        def resize_secondary_images(shot_id, image):
+        def resize_thermal_images(shot_id, image):
             photo = reconstruction.get_photo(shot_id)
-            if photo.band_name != primary_band_name:
+            if photo.is_thermal():
                 return thermal.resize_to_match(image, largest_photo)
             else:
                 return image
@@ -138,8 +138,8 @@ class ODMOpenSfMStage(types.ODM_Stage):
                 return image
 
         if reconstruction.multi_camera:
-            largest_photo = find_largest_photo([p for p in photos if p.band_name == primary_band_name])
-            undistort_pipeline.append(resize_secondary_images)
+            largest_photo = find_largest_photo([p for p in photos])
+            undistort_pipeline.append(resize_thermal_images)
 
         if args.radiometric_calibration != "none":
             undistort_pipeline.append(radiometric_calibrate)
@@ -149,7 +149,8 @@ class ODMOpenSfMStage(types.ODM_Stage):
         if reconstruction.multi_camera:
             
             # Undistort only secondary bands
-            image_list_override = [os.path.join(tree.dataset_raw, p.filename) for p in photos] # if p.band_name.lower() != primary_band_name.lower()
+            primary_band_name = multispectral.get_primary_band_name(reconstruction.multi_camera, args.primary_band)
+            image_list_override = [os.path.join(tree.dataset_raw, p.filename) for p in photos if p.band_name.lower() != primary_band_name.lower()]
 
             # We backup the original reconstruction.json, tracks.csv
             # then we augment them by duplicating the primary band
@@ -161,7 +162,6 @@ class ODMOpenSfMStage(types.ODM_Stage):
             s2p, p2s = None, None
 
             if not io.file_exists(added_shots_file) or self.rerun():
-                primary_band_name = multispectral.get_primary_band_name(reconstruction.multi_camera, args.primary_band)
                 s2p, p2s = multispectral.compute_band_maps(reconstruction.multi_camera, primary_band_name)
                 
                 if not args.skip_band_alignment:
