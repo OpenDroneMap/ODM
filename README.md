@@ -261,7 +261,7 @@ After this, you must restart docker.
 
 ## Video Support
 
-Starting from version 3.0.4, ODM can automatically extract images from video files (.mp4 or .mov). Just place one or more video files into the `images` folder and run the program as usual. Subtitles files (.srt) with GPS information are also supported. Place .srt files in the `images` folder, making sure that the filenames match. For example, `my_video.mp4` ==> `my_video.srt` (case-sensitive).
+Starting from version 3.0.4, ODM can automatically extract images from video files (.mp4, .mov, .lrv, .ts). Just place one or more video files into the `images` folder and run the program as usual. Subtitles files (.srt) with GPS information are also supported. Place .srt files in the `images` folder, making sure that the filenames match. For example, `my_video.mp4` ==> `my_video.srt` (case-sensitive).
 
 ## Developers
 
