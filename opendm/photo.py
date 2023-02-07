@@ -350,6 +350,7 @@ class ODM_Photo:
                         '@drone-dji:CaptureUUID', # DJI
                         'MicaSense:CaptureId', # MicaSense Altum
                         '@Camera:ImageUniqueID', # sentera 6x
+                        '@Camera:CaptureUUID', # Parrot Sequoia
                     ])
 
                     self.set_attr_from_xmp_tag('gain', xtags, [
