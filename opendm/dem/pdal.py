@@ -168,6 +168,7 @@ def run_pdaltranslate_smrf(fin, fout, scalar, slope, threshold, window):
 
     system.run(' '.join(cmd))
 
+
 def merge_point_clouds(input_files, output_file):
     if len(input_files) == 0:
         log.ODM_WARNING("Cannot merge point clouds, no point clouds to merge.")
@@ -181,3 +182,13 @@ def merge_point_clouds(input_files, output_file):
 
     system.run(' '.join(cmd))
 
+
+def translate(input, output):
+    cmd = [
+        'pdal',
+        'translate',
+        '-i "%s"' % input,
+        '-o "%s"' % output,
+    ]
+
+    system.run(' '.join(cmd))
