@@ -20,7 +20,7 @@ Please use the format below to report bugs and faults.
 
 [Type answer here]
 
-### How can we reproduce this? What steps did you do to trigger the problem? If this is an issue with processing a dataset, YOU MUST include a copy of your dataset uploaded on Google Drive or Dropbox (otherwise we cannot reproduce this).
+### How can we reproduce this? What steps did you do to trigger the problem? If this is an issue with processing a dataset, YOU MUST include a copy of your dataset AND task output log, uploaded on Google Drive or Dropbox (otherwise we cannot reproduce this).
 
 [Type answer here]
 
