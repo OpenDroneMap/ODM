@@ -64,7 +64,7 @@ def build_textured_model(input_obj, output_path, reference_lla = None, model_bou
             'lon': lon,
             'alt': alt,
         }
-        system.run('Obj2Tiles "{input}" "{output}" --divisions {divisions} '.format(**kwargs))
+        system.run('Obj2Tiles "{input}" "{output}" --divisions {divisions} --lat {lat} --lon {lon} --alt {alt} '.format(**kwargs))
 
     except Exception as e:
         log.ODM_WARNING("Cannot build 3D tiles textured model: %s" % str(e))
