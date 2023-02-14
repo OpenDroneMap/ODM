@@ -51,9 +51,9 @@ install() {
     cmake .. && make -j$processes
 
     cd /tmp
-    pip download GDAL==3.5.1
-    tar -xpzf GDAL-3.5.1.tar.gz
-    cd GDAL-3.5.1
+    pip download GDAL==3.6.2
+    tar -xpzf GDAL-3.6.2.tar.gz
+    cd GDAL-3.6.2
     if [ -e /opt/homebrew/bin/gdal-config ]; then
         python setup.py build_ext --gdal-config /opt/homebrew/bin/gdal-config
     else
@@ -61,7 +61,7 @@ install() {
     fi
     python setup.py build
     python setup.py install
-    rm -fr /tmp/GDAL-3.5.1 /tmp/GDAL-3.5.1.tar.gz
+    rm -fr /tmp/GDAL-3.6.2 /tmp/GDAL-3.6.2.tar.gz
 
     cd ${RUNPATH}
 

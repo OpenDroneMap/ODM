@@ -26,11 +26,21 @@ if (APPLE)
     # Use homebrew's clang compiler since Apple
     # does not allow us to link to libomp
     set(CXX_PATH ${HOMEBREW_INSTALL_PREFIX}/bin/c++-12)
+    set(APPLE_CMAKE_ARGS "")
+    
     message("Checking for ${CXX_PATH}...")
     if(EXISTS "${CXX_PATH}")
-        message("Found Homebrew's compiler: ${CXX_PATH}")
+        message("Found Homebrew's C++ compiler: ${CXX_PATH}")
         set(CMAKE_CXX_COMPILER ${CXX_PATH})
-        set(APPLE_CMAKE_ARGS "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}")
+        list(APPEND APPLE_CMAKE_ARGS "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}")
+    endif()
+
+    set(C_PATH ${HOMEBREW_INSTALL_PREFIX}/bin/gcc-12)
+    message("Checking for ${C_PATH}...")
+    if(EXISTS "${C_PATH}")
+        message("Found Homebrew's C compiler: ${C_PATH}")
+        set(CMAKE_C_COMPILER ${C_PATH})
+        list(APPEND APPLE_CMAKE_ARGS "-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}")
     endif()
 
     if (NOT APPLE_CMAKE_ARGS)
