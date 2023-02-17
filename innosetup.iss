@@ -31,6 +31,7 @@ SolidCompression=yes
 ArchitecturesAllowed=x64
 SignTool=signtool
 PrivilegesRequired=lowest
+PrivilegesRequiredOverridesAllowed=commandline
 UsePreviousAppDir=no
 ;SetupIconFile=setup.ico
 
