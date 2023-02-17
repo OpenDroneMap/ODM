@@ -29,8 +29,10 @@ OutputBaseFilename=ODM_Setup_{#MyAppVersion}
 Compression=lzma
 SolidCompression=yes
 ArchitecturesAllowed=x64
+ArchitecturesInstallIn64BitMode=x64
 SignTool=signtool
 PrivilegesRequired=lowest
+PrivilegesRequiredOverridesAllowed=commandline
 UsePreviousAppDir=no
 ;SetupIconFile=setup.ico
 
