@@ -536,7 +536,7 @@ def config(argv=None, parser=None):
                         metavar='<float>',
                         action=StoreValue,
                         type=float,
-                        default=10,
+                        default=5,
                         help='DSM/DTM resolution in cm / pixel. Note that this value is capped to 2x the ground sampling distance (GSD) estimate. To remove the cap, check --ignore-gsd also.'
                              ' Default: %(default)s')
 
