@@ -31,7 +31,7 @@ class ODMDEMStage(types.ODM_Stage):
 
         # It is probably not reasonable to have accurate DEMs a the same resolution as the source photos, so reduce it
         # by a factor!
-        gsd_scaling = 2.0
+        gsd_scaling = 1.0
 
         resolution = gsd.cap_resolution(args.dem_resolution, tree.opensfm_reconstruction, 
                                         gsd_scaling=gsd_scaling,
