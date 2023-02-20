@@ -109,7 +109,7 @@ def filter(input_point_cloud, output_point_cloud, output_stats, standard_deviati
         log.ODM_WARNING("{} not found, filtering has failed.".format(output_point_cloud))
 
 
-def get_density(stats_file, resolution_fallback=5.0):
+def get_spacing(stats_file, resolution_fallback=5.0):
     def fallback():
         log.ODM_WARNING("Cannot read %s, falling back to resolution estimate" % stats_file)
         return (resolution_fallback / 100.0) / 2.0
@@ -119,8 +119,8 @@ def get_density(stats_file, resolution_fallback=5.0):
     
     with open(stats_file, 'r') as f:
         j = json.loads(f.read())
-        if "density" in j:
-            d = j["density"]
+        if "spacing" in j:
+            d = j["spacing"]
             if d > 0:
                 return round(d, 3)
             else:
