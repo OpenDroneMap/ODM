@@ -376,6 +376,6 @@ def window_filter_2d(arr, nodata, window, kernel_size, filter):
 def get_dem_radius_steps(stats_file, steps, resolution, multiplier = 1.0):
     radius_steps = [point_cloud.get_spacing(stats_file, resolution) * multiplier]
     for _ in range(steps - 1):
-        radius_steps.append(radius_steps[-1] * math.sqrt(2)) # sqrt(2) is arbitrary, maybe there's a better value?
+        radius_steps.append(radius_steps[-1] * math.sqrt(2))
     
     return radius_steps
