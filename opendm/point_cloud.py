@@ -120,7 +120,11 @@ def get_density(stats_file, resolution_fallback=5.0):
     with open(stats_file, 'r') as f:
         j = json.loads(f.read())
         if "density" in j:
-            return round(j["density"], 3)
+            d = j["density"]
+            if d > 0:
+                return round(d, 3)
+            else:
+                return fallback()
         else:
             return fallback()
 
