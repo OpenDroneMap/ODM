@@ -52,16 +52,13 @@ class ODMeshingStage(types.ODM_Stage):
               # Flights at higher altitude benefit from smoother surfaces (lower resolution)
               dsm_resolution = ortho_resolution * dsm_multiplier
               
-              dsm_radius = dsm_resolution * math.sqrt(2)
-
               if args.fast_orthophoto:
-                  dsm_radius *= 2
                   dsm_resolution *= 8
 
               log.ODM_INFO('ODM 2.5D DSM resolution: %s' % dsm_resolution)
               
               mesh.create_25dmesh(tree.filtered_point_cloud, tree.odm_25dmesh,
-                    dsm_radius=dsm_radius,
+                    tree.filtered_point_cloud_stats,
                     dsm_resolution=dsm_resolution, 
                     depth=self.params.get('oct_tree'),
                     maxVertexCount=self.params.get('max_vertex'),

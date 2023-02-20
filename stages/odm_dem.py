@@ -29,12 +29,8 @@ class ODMDEMStage(types.ODM_Stage):
             ignore_resolution = True
             pseudo_georeference = True
 
-        # It is probably not reasonable to have accurate DEMs a the same resolution as the source photos, so reduce it
-        # by a factor!
-        gsd_scaling = 2.0
-
         resolution = gsd.cap_resolution(args.dem_resolution, tree.opensfm_reconstruction, 
-                                        gsd_scaling=gsd_scaling,
+                                        gsd_scaling=1.0,
                                         ignore_gsd=args.ignore_gsd,
                                         ignore_resolution=ignore_resolution and args.ignore_gsd,
                                         has_gcp=reconstruction.has_gcp())
@@ -88,9 +84,7 @@ class ODMDEMStage(types.ODM_Stage):
                 if args.dsm or (args.dtm and args.dem_euclidean_map): products.append('dsm')
                 if args.dtm: products.append('dtm')
 
-                radius_steps = [(resolution / 100.0) / 2.0]
-                for _ in range(args.dem_gapfill_steps - 1):
-                    radius_steps.append(radius_steps[-1] * math.sqrt(2)) # sqrt(2) is arbitrary, maybe there's a better value?
+                radius_steps = commands.get_dem_radius_steps(tree.filtered_point_cloud_stats, args.dem_gapfill_steps, resolution)
 
                 for product in products:
                     commands.create_dem(
