@@ -1,22 +1,58 @@
 # TODO: Move to pylas when project migrates to python3
 
+import time
 import laspy
+import pdal
 import numpy as np
+from opendm import log
 from ..point_cloud import PointCloud
+import pdb
 
 def read_cloud(point_cloud_path):
-    # Open point cloud and read its properties
-    las_file = laspy.read(point_cloud_path)
-    header = las_file.header
 
-    x = las_file.x.scaled_array()
-    y = las_file.y.scaled_array()
-    z = las_file.z.scaled_array()
+    # Open point cloud and read its properties using pdal
+    pipeline = pdal.Pipeline('[{"type":"readers.las","filename":"%s"}]' % point_cloud_path)
+    cnt = pipeline.execute()
 
-    cloud = PointCloud.with_dimensions(x, y, z, las_file.classification.array, las_file.red, las_file.green, las_file.blue)
+    log.ODM_INFO("pdal arrays: %s" % pipeline.arrays)
+
+    dimensions = pipeline.schema['schema']['dimensions']
+    #log.ODM_INFO("Type: %s" % type(pipeline.schema))
+    log.ODM_INFO("Dimensions: %s" % dimensions)
+
+    # The x column index is the index of the object with the name 'X'
+    x_index = next((index for (index, d) in enumerate(dimensions) if d['name'] == 'X'), None)
+    y_index = next((index for (index, d) in enumerate(dimensions) if d['name'] == 'Y'), None)
+    z_index = next((index for (index, d) in enumerate(dimensions) if d['name'] == 'Z'), None)
+    classification_index = next((index for (index, d) in enumerate(dimensions) if d['name'] == 'Classification'), None)
+    red_index = next((index for (index, d) in enumerate(dimensions) if d['name'] == 'Red'), None)
+    green_index = next((index for (index, d) in enumerate(dimensions) if d['name'] == 'Green'), None)
+    blue_index = next((index for (index, d) in enumerate(dimensions) if d['name'] == 'Blue'), None)
+
+    # Log indices
+    log.ODM_INFO("x_index: %s" % x_index)
+    log.ODM_INFO("y_index: %s" % y_index)
+    log.ODM_INFO("z_index: %s" % z_index)
+    log.ODM_INFO("classification_index: %s" % classification_index)
+    log.ODM_INFO("red_index: %s" % red_index)
+    log.ODM_INFO("green_index: %s" % green_index)
+    log.ODM_INFO("blue_index: %s" % blue_index)
+
+    pts = pipeline.arrays[0]
+    log.ODM_INFO("pts: %s" % pts)
+
+    x = (pt[x_index] for pt in pts)
+    y = (pt[y_index] for pt in pts)
+    z = (pt[z_index] for pt in pts)
+    classification = (pt[classification_index] for pt in pts)
+    red = (pt[red_index] for pt in pts)
+    green = (pt[green_index] for pt in pts)
+    blue = (pt[blue_index] for pt in pts)
+
+    cloud = PointCloud.with_dimensions(x, y, z, classification, red, green, blue)
 
     # Return the result
-    return header, cloud
+    return pipeline.metadata, cloud
 
 def write_cloud(header, point_cloud, output_point_cloud_path, write_extra_dimensions=False):
     # Open output file
