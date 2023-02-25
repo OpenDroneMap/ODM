@@ -485,11 +485,11 @@ def config(argv=None, parser=None):
                         action=StoreValue,
                         default=None,
                         help=('Path to the image geolocation file containing the camera center coordinates used for georeferencing. '
-                              'If you don''t have values for omega/phi/kappa you can set them to 0. '
+                              'If you don\'t have values for yaw/pitch/roll you can set them to 0. '
                               'The file needs to '
                               'use the following format: \n'
                               'EPSG:<code> or <+proj definition>\n'
-                              'image_name geo_x geo_y geo_z [omega (degrees)] [phi (degrees)] [kappa (degrees)] [horz accuracy (meters)] [vert accuracy (meters)]\n'
+                              'image_name geo_x geo_y geo_z [yaw (degrees)] [pitch (degrees)] [roll (degrees)] [horz accuracy (meters)] [vert accuracy (meters)]\n'
                               'Default: %(default)s'))
     
     parser.add_argument('--align',
