@@ -35,7 +35,7 @@ class ODMOpenSfMStage(types.ODM_Stage):
         octx.feature_matching(self.rerun())
         self.update_progress(30)
         octx.create_tracks(self.rerun())
-        octx.reconstruct(args.rolling_shutter, self.rerun())
+        octx.reconstruct(args.rolling_shutter, reconstruction.is_georeferenced(), self.rerun())
         octx.extract_cameras(tree.path("cameras.json"), self.rerun())
         self.update_progress(70)
 
