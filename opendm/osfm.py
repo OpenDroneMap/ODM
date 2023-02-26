@@ -49,11 +49,12 @@ class OSFMContext:
         else:
             log.ODM_WARNING('Found a valid OpenSfM tracks file in: %s' % tracks_file)
 
-    def reconstruct(self, rolling_shutter_correct=False, rerun=False):
+    def reconstruct(self, rolling_shutter_correct=False, merge_partial=False, rerun=False):
         reconstruction_file = os.path.join(self.opensfm_project_path, 'reconstruction.json')
         if not io.file_exists(reconstruction_file) or rerun:
             self.run('reconstruct')
-            self.check_merge_partial_reconstructions()
+            if merge_partial:
+                self.check_merge_partial_reconstructions()
         else:
             log.ODM_WARNING('Found a valid OpenSfM reconstruction file in: %s' % reconstruction_file)
 
@@ -76,7 +77,7 @@ class OSFMContext:
 
                 self.match_features(True)
                 self.create_tracks(True)
-                self.reconstruct(rolling_shutter_correct=False, rerun=True)
+                self.reconstruct(rolling_shutter_correct=False, merge_partial=merge_partial, rerun=True)
 
                 self.touch(rs_file)
             else:

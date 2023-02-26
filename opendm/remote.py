@@ -448,7 +448,7 @@ class ReconstructionTask(Task):
         log.ODM_INFO("==================================")
         octx.feature_matching(self.params['rerun'])
         octx.create_tracks(self.params['rerun'])
-        octx.reconstruct(self.params['rolling_shutter'], self.params['rerun'])
+        octx.reconstruct(self.params['rolling_shutter'], True, self.params['rerun'])
     
     def process_remote(self, done):
         octx = OSFMContext(self.path("opensfm"))
