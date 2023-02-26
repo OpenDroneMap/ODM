@@ -7,6 +7,7 @@ from opendm import context
 from opendm import mesh
 from opendm import gsd
 from opendm import types
+from opendm.dem import commands
 
 class ODMeshingStage(types.ODM_Stage):
     def process(self, args, outputs):
@@ -40,28 +41,18 @@ class ODMeshingStage(types.ODM_Stage):
           if not io.file_exists(tree.odm_25dmesh) or self.rerun():
 
               log.ODM_INFO('Writing ODM 2.5D Mesh file in: %s' % tree.odm_25dmesh)
-              ortho_resolution = gsd.cap_resolution(args.orthophoto_resolution, tree.opensfm_reconstruction, 
-                                                    ignore_gsd=args.ignore_gsd,
-                                                    ignore_resolution=(not reconstruction.is_georeferenced()) and args.ignore_gsd,
-                                                    has_gcp=reconstruction.has_gcp()) / 100.0 
-              
-              dsm_multiplier = max(1.0, gsd.rounded_gsd(tree.opensfm_reconstruction, default_value=4, ndigits=3, ignore_gsd=args.ignore_gsd))
-              
-              # A good DSM size depends on the flight altitude.
-              # Flights at low altitude need more details (higher resolution) 
-              # Flights at higher altitude benefit from smoother surfaces (lower resolution)
-              dsm_resolution = ortho_resolution * dsm_multiplier
-              
-              dsm_radius = dsm_resolution * math.sqrt(2)
 
-              if args.fast_orthophoto:
-                  dsm_radius *= 2
-                  dsm_resolution *= 8
+              multiplier = math.pi / 2.0
+              radius_steps = commands.get_dem_radius_steps(tree.filtered_point_cloud_stats, 3, args.orthophoto_resolution, multiplier=multiplier)
+              dsm_resolution = radius_steps[0] / multiplier
 
               log.ODM_INFO('ODM 2.5D DSM resolution: %s' % dsm_resolution)
               
+              if args.fast_orthophoto:
+                  dsm_resolution *= 8.0
+
               mesh.create_25dmesh(tree.filtered_point_cloud, tree.odm_25dmesh,
-                    dsm_radius=dsm_radius,
+                    radius_steps,
                     dsm_resolution=dsm_resolution, 
                     depth=self.params.get('oct_tree'),
                     maxVertexCount=self.params.get('max_vertex'),

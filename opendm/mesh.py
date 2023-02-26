@@ -5,10 +5,11 @@ from opendm import system
 from opendm import log
 from opendm import context
 from opendm import concurrency
+from opendm import point_cloud
 from scipy import signal
 import numpy as np
 
-def create_25dmesh(inPointCloud, outMesh, dsm_radius=0.07, dsm_resolution=0.05, depth=8, samples=1, maxVertexCount=100000, available_cores=None, method='gridded', smooth_dsm=True):
+def create_25dmesh(inPointCloud, outMesh, radius_steps=["0.05"], dsm_resolution=0.05, depth=8, samples=1, maxVertexCount=100000, available_cores=None, method='gridded', smooth_dsm=True):
     # Create DSM from point cloud
 
     # Create temporary directory
@@ -19,17 +20,13 @@ def create_25dmesh(inPointCloud, outMesh, dsm_radius=0.07, dsm_resolution=0.05, 
     os.mkdir(tmp_directory)
     log.ODM_INFO('Created temporary directory: %s' % tmp_directory)
 
-    radius_steps = [dsm_radius]
-    for _ in range(2):
-        radius_steps.append(radius_steps[-1] * math.sqrt(2)) # sqrt(2) is arbitrary
-
     log.ODM_INFO('Creating DSM for 2.5D mesh')
 
     commands.create_dem(
             inPointCloud,
             'mesh_dsm',
             output_type='max',
-            radiuses=list(map(str, radius_steps)),
+            radiuses=radius_steps,
             gapfill=True,
             outdir=tmp_directory,
             resolution=dsm_resolution,

@@ -290,6 +290,7 @@ class ODM_Tree(object):
 
         # filter points
         self.filtered_point_cloud = os.path.join(self.odm_filterpoints, "point_cloud.ply")
+        self.filtered_point_cloud_stats = os.path.join(self.odm_filterpoints, "point_cloud_stats.json")
 
         # odm_meshing
         self.odm_mesh = os.path.join(self.odm_meshing, 'odm_mesh.ply')

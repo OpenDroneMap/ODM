@@ -49,7 +49,7 @@ class ODMFilterPoints(types.ODM_Stage):
                 else:
                     log.ODM_WARNING("Not a georeferenced reconstruction, will ignore --auto-boundary")
                     
-            point_cloud.filter(inputPointCloud, tree.filtered_point_cloud, 
+            point_cloud.filter(inputPointCloud, tree.filtered_point_cloud, tree.filtered_point_cloud_stats,
                                 standard_deviation=args.pc_filter, 
                                 sample_radius=args.pc_sample,
                                 boundary=boundary_offset(outputs.get('boundary'), reconstruction.get_proj_offset()),

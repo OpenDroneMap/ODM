@@ -71,7 +71,7 @@ def split(input_point_cloud, outdir, filename_template, capacity, dims=None):
     return [os.path.join(outdir, f) for f in os.listdir(outdir)]
 
 
-def filter(input_point_cloud, output_point_cloud, standard_deviation=2.5, meank=16, sample_radius=0, boundary=None, max_concurrency=1):
+def filter(input_point_cloud, output_point_cloud, output_stats, standard_deviation=2.5, sample_radius=0, boundary=None, max_concurrency=1):
     """
     Filters a point cloud
     """
@@ -89,10 +89,11 @@ def filter(input_point_cloud, output_point_cloud, standard_deviation=2.5, meank=
         log.ODM_INFO("Sampling points around a %sm radius" % sample_radius)
         args.append('--radius %s' % sample_radius)
 
-    if standard_deviation > 0 and meank > 0:
-        log.ODM_INFO("Filtering {} (statistical, meanK {}, standard deviation {})".format(input_point_cloud, meank, standard_deviation))
-        args.append('--meank %s' % meank)
-        args.append('--std %s' % standard_deviation)
+    meank = 16
+    log.ODM_INFO("Filtering {} (statistical, meanK {}, standard deviation {})".format(input_point_cloud, meank, standard_deviation))
+    args.append('--meank %s' % meank)
+    args.append('--std %s' % standard_deviation)
+    args.append('--stats "%s"' % output_stats)
     
     if boundary is not None:
         log.ODM_INFO("Boundary {}".format(boundary))
@@ -106,6 +107,26 @@ def filter(input_point_cloud, output_point_cloud, standard_deviation=2.5, meank=
 
     if not os.path.exists(output_point_cloud):
         log.ODM_WARNING("{} not found, filtering has failed.".format(output_point_cloud))
+
+
+def get_spacing(stats_file, resolution_fallback=5.0):
+    def fallback():
+        log.ODM_WARNING("Cannot read %s, falling back to resolution estimate" % stats_file)
+        return (resolution_fallback / 100.0) / 2.0
+
+    if not os.path.isfile(stats_file):
+        return fallback()
+    
+    with open(stats_file, 'r') as f:
+        j = json.loads(f.read())
+        if "spacing" in j:
+            d = j["spacing"]
+            if d > 0:
+                return round(d, 3)
+            else:
+                return fallback()
+        else:
+            return fallback()
 
 def export_info_json(pointcloud_path, info_file_path):
     system.run('pdal info --dimensions "X,Y,Z" "{0}" > "{1}"'.format(pointcloud_path, info_file_path))

@@ -371,3 +371,11 @@ def window_filter_2d(arr, nodata, window, kernel_size, filter):
     win_arr[nodata_locs] = nodata
     win_arr = win_arr[window[0] - expanded_window[0] : window[2] - expanded_window[0], window[1] - expanded_window[1] : window[3] - expanded_window[1]]
     return win_arr
+
+
+def get_dem_radius_steps(stats_file, steps, resolution, multiplier = 1.0):
+    radius_steps = [point_cloud.get_spacing(stats_file, resolution) * multiplier]
+    for _ in range(steps - 1):
+        radius_steps.append(radius_steps[-1] * math.sqrt(2))
+    
+    return radius_steps
