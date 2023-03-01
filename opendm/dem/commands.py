@@ -52,12 +52,6 @@ def rectify(lasFile, debug=False, reclassify_threshold=5, min_area=750, min_poin
     pcFile = lasFile
 
     try:
-        # Workaround for MacOS: laspy does not have support for LAZ on macOS
-        # so we first convert to normal LAS via PDAL
-        # TODO: remove LASPY and use PDAL instead
-        if sys.platform == 'darwin' and lasFile[-3:] == "laz":
-            pcFile = lasFile + ".tmp.las"
-            pdal.translate(lasFile, pcFile)
 
         log.ODM_INFO("Rectifying {} using with [reclassify threshold: {}, min area: {}, min points: {}]".format(lasFile, reclassify_threshold, min_area, min_points))
         run_rectification(
@@ -66,10 +60,6 @@ def rectify(lasFile, debug=False, reclassify_threshold=5, min_area=750, min_poin
             extend_plan='surrounding', extend_grid_distance=5, \
             min_area=min_area, min_points=min_points)
 
-        if sys.platform == 'darwin' and pcFile != lasFile and os.path.isfile(pcFile):
-            pdal.translate(pcFile, lasFile)
-            os.remove(pcFile)
-        
         log.ODM_INFO('Created %s in %s' % (lasFile, datetime.now() - start))
     except Exception as e:
         log.ODM_WARNING("Error rectifying ground in file %s: %s" % (lasFile, str(e)))
@@ -83,7 +73,7 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
                 decimation=None, keep_unfilled_copy=False,
                 apply_smoothing=True):
     """ Create DEM from multiple radii, and optionally gapfill """
-    
+
     global error
     error = None
 
@@ -107,18 +97,18 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
     RES_FLOOR = 64
     if w < RES_FLOOR and h < RES_FLOOR:
         prev_w, prev_h = w, h
-        
+
         if w >= h:
             w, h = (RES_FLOOR, int(math.ceil(ext_height / ext_width * RES_FLOOR)))
         else:
             w, h = (int(math.ceil(ext_width / ext_height * RES_FLOOR)), RES_FLOOR)
-        
+
         floor_ratio = prev_w / float(w)
         resolution *= floor_ratio
         radiuses = [str(float(r) * floor_ratio) for r in radiuses]
 
         log.ODM_WARNING("Really low resolution DEM requested %s will set floor at %s pixels. Resolution changed to %s. The scale of this reconstruction might be off." % ((prev_w, prev_h), RES_FLOOR, resolution))
-        
+
     final_dem_pixels = w * h
 
     num_splits = int(max(1, math.ceil(math.log(math.ceil(final_dem_pixels / float(max_tile_size * max_tile_size)))/math.log(2))))
@@ -154,7 +144,7 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
                         'minx': minx,
                         'maxx': maxx,
                         'miny': miny,
-                        'maxy': maxy 
+                        'maxy': maxy
                     },
                     'filename': filename
                 })
@@ -167,7 +157,7 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
 
     def process_tile(q):
         log.ODM_INFO("Generating %s (%s, radius: %s, resolution: %s)" % (q['filename'], output_type, q['radius'], resolution))
-        
+
         d = pdal.json_gdal_base(q['filename'], output_type, q['radius'], resolution, q['bounds'])
 
         if dem_type == 'dtm':
@@ -185,7 +175,7 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
     output_path = os.path.abspath(os.path.join(outdir, output_file))
 
     # Verify tile results
-    for t in tiles: 
+    for t in tiles:
         if not os.path.exists(t['filename']):
             raise Exception("Error creating %s, %s failed to be created" % (output_file, t['filename']))
 
@@ -235,14 +225,14 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
             '"{geotiff_tmp}" "{geotiff_small}"'.format(**kwargs))
 
         # Fill scaled
-        gdal_fillnodata(['.', 
-                        '-co', 'NUM_THREADS=%s' % kwargs['threads'], 
+        gdal_fillnodata(['.',
+                        '-co', 'NUM_THREADS=%s' % kwargs['threads'],
                         '-co', 'BIGTIFF=IF_SAFER',
                         '--config', 'GDAL_CACHE_MAX', str(kwargs['max_memory']) + '%',
                         '-b', '1',
                         '-of', 'GTiff',
                         kwargs['geotiff_small'], kwargs['geotiff_small_filled']])
-        
+
         # Merge filled scaled DEM with unfilled DEM using bilinear interpolation
         run('gdalbuildvrt -resolution highest -r bilinear "%s" "%s" "%s"' % (merged_vrt_path, geotiff_small_filled_path, geotiff_tmp_path))
         run('gdal_translate '
@@ -268,11 +258,11 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
         os.replace(geotiff_path, output_path)
 
     if os.path.exists(geotiff_tmp_path):
-        if not keep_unfilled_copy: 
+        if not keep_unfilled_copy:
             os.remove(geotiff_tmp_path)
         else:
             os.replace(geotiff_tmp_path, io.related_file_path(output_path, postfix=".unfilled"))
-    
+
     for cleanup_file in [tiles_vrt_path, tiles_file_list, merged_vrt_path, geotiff_small_path, geotiff_small_filled_path]:
         if os.path.exists(cleanup_file): os.remove(cleanup_file)
     for t in tiles:
@@ -305,7 +295,7 @@ def compute_euclidean_map(geotiff_path, output_path, overwrite=False):
                 log.ODM_WARNING("Cannot compute euclidean distance file: %s" % output_path)
         else:
             log.ODM_WARNING("Cannot compute euclidean map, gdal_proximity is missing")
-            
+
     else:
         log.ODM_INFO("Found a euclidean distance map: %s" % output_path)
         return output_path
