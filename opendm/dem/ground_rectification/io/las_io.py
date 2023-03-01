@@ -43,8 +43,7 @@ def safe_add_metadata(pipeline, metadata, key, sourcekey=None):
         pipeline["pipeline"][0][key] = metadata[k]
 
 
-def write_cloud(metadata, point_cloud, output_point_cloud_path, write_extra_dimensions=False):
-
+def write_cloud(metadata, point_cloud, output_point_cloud_path):
 
     # Adapt points to scale and offset
     x, y = np.hsplit(point_cloud.xy, 2)
@@ -83,7 +82,8 @@ def write_cloud(metadata, point_cloud, output_point_cloud_path, write_extra_dime
             {
                 "type": "writers.las",
                 "filename": output_point_cloud_path,
-                "compression": "laszip"
+                "compression": "laszip",
+                "extra_dims": "all"
             }
         ]
     }
@@ -106,9 +106,6 @@ def write_cloud(metadata, point_cloud, output_point_cloud_path, write_extra_dime
     safe_add_metadata(writer_pipeline, metadata, "global_encoding")
 
     #pdb.set_trace()
-
-    if write_extra_dimensions:
-        writer_pipeline["pipeline"][0]["extra_dims"] = "all"
 
     # The metadata object contains the VLRs as fields called "vlr_N" where N is the index of the VLR
     # We have to copy them over to the writer pipeline as a list of dictionaries in the "vlrs" field
