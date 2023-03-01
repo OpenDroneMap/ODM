@@ -16,12 +16,6 @@ def read_cloud(point_cloud_path):
 
     arrays = pipeline.arrays[0]
 
-    # print arrays shape
-    log.ODM_INFO(str(arrays.shape))
-    log.ODM_INFO(str(arrays.dtype))
-    log.ODM_INFO(str(arrays))
-    log.ODM_INFO(str(arrays[0]))
-
     # Extract point coordinates, classification, and RGB values
     x = arrays["X"]
     y = arrays["Y"]
