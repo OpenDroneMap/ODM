@@ -1,12 +1,12 @@
 # TODO: Move to pylas when project migrates to python3
 
 import time
-import laspy
 import pdal
 import numpy as np
 from opendm import log
 from ..point_cloud import PointCloud
 import pdb
+import json
 
 def read_cloud(point_cloud_path):
 
@@ -34,29 +34,28 @@ def read_cloud(point_cloud_path):
     # Create PointCloud object
     cloud = PointCloud.with_dimensions(x, y, z, classification, red, green, blue)
 
+    # Print what is inside pipeline.metadata
+    #log.ODM_INFO("pipeline.metadata: %s" % str(pipeline.metadata))
+
+    log.ODM_INFO("OK")
+
     # Return the result
-    return pipeline.metadata, cloud
+    return pipeline.metadata["metadata"]["readers.las"], cloud
+
+
+def safe_add_metadata(pipeline, metadata, key, sourcekey=None):
+    k = key if sourcekey is None else sourcekey
+    if k in metadata:
+        pipeline["pipeline"][0][key] = metadata[k]
 
 
 def write_cloud(metadata, point_cloud, output_point_cloud_path, write_extra_dimensions=False):
 
+
     # Adapt points to scale and offset
     x, y = np.hsplit(point_cloud.xy, 2)
-    z = point_cloud.z
 
-    # Set color
     red, green, blue = np.hsplit(point_cloud.rgb, 3)
-
-    # Set classification
-    classification = point_cloud.classification.astype(np.uint8)
-
-    # Print array dimensions
-    x = x.ravel()
-    y = y.ravel()
-    classification = classification.ravel()
-    red = red.astype(np.uint8).ravel()
-    green = green.astype(np.uint8).ravel()
-    blue = blue.astype(np.uint8).ravel()
 
     arrays = np.zeros(len(x),
                       dtype=[('X', '<f8'),
@@ -75,31 +74,70 @@ def write_cloud(metadata, point_cloud, output_point_cloud_path, write_extra_dime
                              ('Red', '<u2'),
                              ('Green', '<u2'),
                              ('Blue', '<u2')])
-    arrays['X'] = x
-    arrays['Y'] = y
-    arrays['Z'] = z
-    arrays['Classification'] = classification
-    arrays['Red'] = red
-    arrays['Green'] = green
-    arrays['Blue'] = blue
+    arrays['X'] = x.ravel()
+    arrays['Y'] = y.ravel()
+    arrays['Z'] = point_cloud.z
+    arrays['Classification'] = point_cloud.classification.astype(np.uint8).ravel()
+    arrays['Red'] = red.astype(np.uint8).ravel()
+    arrays['Green'] = green.astype(np.uint8).ravel()
+    arrays['Blue'] = blue.astype(np.uint8).ravel()
 
-    #test_data = np.array(
-    #        [(x, y, z) for x, y, z in zip(x_vals, y_vals, z_vals)],
-    #        dtype=[("X", float), ("Y", float), ("Z", float)],
-    #    )
+    #log.ODM_INFO("Write extra dimensions: %s" % write_extra_dimensions)
 
-    log.ODM_INFO("arrays: %s" % str(arrays.shape))
-    log.ODM_INFO("arrays: %s" % arrays)
-    log.ODM_INFO("arrays: %s" % arrays[0])
-    log.ODM_INFO("Write extra dimensions: %s" % write_extra_dimensions)
+    writer_pipeline = {
+        "pipeline": [
+            {
+                "type": "writers.las",
+                "filename": output_point_cloud_path,
+                "compression": "laszip"
+            }
+        ]
+    }
 
-    # Create PDAL pipeline to write point cloud
-    #pipeline = pdal.Pipeline('[{"type": "writers.las","filename": "%s","compression": "laszip", "extra_dims": %s}]' %
-    #                         (output_point_cloud_path, str(write_extra_dimensions).lower()), arrays=[arrays])
+    safe_add_metadata(writer_pipeline, metadata, "scale_x")
+    safe_add_metadata(writer_pipeline, metadata, "scale_y")
+    safe_add_metadata(writer_pipeline, metadata, "scale_z")
+    safe_add_metadata(writer_pipeline, metadata, "offset_x")
+    safe_add_metadata(writer_pipeline, metadata, "offset_y")
+    safe_add_metadata(writer_pipeline, metadata, "offset_z")
+    safe_add_metadata(writer_pipeline, metadata, "a_srs", "spatialreference")
+    safe_add_metadata(writer_pipeline, metadata, "dataformat_id")
+    safe_add_metadata(writer_pipeline, metadata, "system_id")
+    safe_add_metadata(writer_pipeline, metadata, "software_id")
+    safe_add_metadata(writer_pipeline, metadata, "creation_doy")
+    safe_add_metadata(writer_pipeline, metadata, "creation_year")
+    safe_add_metadata(writer_pipeline, metadata, "minor_version")
+    safe_add_metadata(writer_pipeline, metadata, "major_version")
+    safe_add_metadata(writer_pipeline, metadata, "file_source_id")
+    safe_add_metadata(writer_pipeline, metadata, "global_encoding")
 
-    pipeline = pdal.Pipeline('[{"type": "writers.las","filename": "%s","compression": "laszip"}]' % output_point_cloud_path, arrays=[arrays])
+    #pdb.set_trace()
 
-    log.ODM_INFO("Dest path: %s" % output_point_cloud_path)
+    if write_extra_dimensions:
+        writer_pipeline["pipeline"][0]["extra_dims"] = "all"
+
+    # The metadata object contains the VLRs as fields called "vlr_N" where N is the index of the VLR
+    # We have to copy them over to the writer pipeline as a list of dictionaries in the "vlrs" field
+    writer_pipeline["pipeline"][0]["vlrs"] = []
+
+    i = 0
+    while True:
+        vlr_field = "vlr_%d" % i
+        if vlr_field in metadata:
+            vlr = metadata[vlr_field]
+            writer_pipeline["pipeline"][0]["vlrs"].append({
+                "record_id": vlr["record_id"],
+                "user_id": vlr["user_id"],
+                "description": vlr["description"],
+                "data": vlr["data"]
+            })
+            i += 1
+        else:
+            break
+
+    #log.ODM_INFO("writer_pipeline: %s" % str(writer_pipeline))
+
+    pipeline = pdal.Pipeline(json.dumps(writer_pipeline), arrays=[arrays])
 
     # Write point cloud with PDAL
     pipeline.execute()
