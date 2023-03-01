@@ -73,7 +73,7 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
                 decimation=None, keep_unfilled_copy=False,
                 apply_smoothing=True):
     """ Create DEM from multiple radii, and optionally gapfill """
-
+    
     global error
     error = None
 
@@ -97,7 +97,7 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
     RES_FLOOR = 64
     if w < RES_FLOOR and h < RES_FLOOR:
         prev_w, prev_h = w, h
-
+        
         if w >= h:
             w, h = (RES_FLOOR, int(math.ceil(ext_height / ext_width * RES_FLOOR)))
         else:
