@@ -1,5 +1,3 @@
-# TODO: Move to pylas when project migrates to python3
-
 import time
 import pdal
 import numpy as np
@@ -9,8 +7,6 @@ import pdb
 import json
 
 def read_cloud(point_cloud_path):
-
-    # Open point cloud and read its properties using pdal
     pipeline = pdal.Pipeline('[{"type":"readers.las","filename":"%s"}]' % point_cloud_path)
     pipeline.execute()
 
@@ -25,15 +21,8 @@ def read_cloud(point_cloud_path):
     green = arrays["Green"]
     blue = arrays["Blue"]
 
-    # Create PointCloud object
     cloud = PointCloud.with_dimensions(x, y, z, classification, red, green, blue)
 
-    # Print what is inside pipeline.metadata
-    #log.ODM_INFO("pipeline.metadata: %s" % str(pipeline.metadata))
-
-    log.ODM_INFO("OK")
-
-    # Return the result
     return pipeline.metadata["metadata"]["readers.las"], cloud
 
 
@@ -75,8 +64,6 @@ def write_cloud(metadata, point_cloud, output_point_cloud_path):
     arrays['Green'] = green.astype(np.uint8).ravel()
     arrays['Blue'] = blue.astype(np.uint8).ravel()
 
-    #log.ODM_INFO("Write extra dimensions: %s" % write_extra_dimensions)
-
     writer_pipeline = {
         "pipeline": [
             {
@@ -105,8 +92,6 @@ def write_cloud(metadata, point_cloud, output_point_cloud_path):
     safe_add_metadata(writer_pipeline, metadata, "file_source_id")
     safe_add_metadata(writer_pipeline, metadata, "global_encoding")
 
-    #pdb.set_trace()
-
     # The metadata object contains the VLRs as fields called "vlr_N" where N is the index of the VLR
     # We have to copy them over to the writer pipeline as a list of dictionaries in the "vlrs" field
     writer_pipeline["pipeline"][0]["vlrs"] = []
@@ -126,9 +111,5 @@ def write_cloud(metadata, point_cloud, output_point_cloud_path):
         else:
             break
 
-    #log.ODM_INFO("writer_pipeline: %s" % str(writer_pipeline))
-
     pipeline = pdal.Pipeline(json.dumps(writer_pipeline), arrays=[arrays])
-
-    # Write point cloud with PDAL
     pipeline.execute()

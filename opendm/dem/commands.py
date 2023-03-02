@@ -49,13 +49,11 @@ def classify(lasFile, scalar, slope, threshold, window):
 def rectify(lasFile, reclassify_threshold=5, min_area=750, min_points=500):
     start = datetime.now()
 
-    pcFile = lasFile
-
     try:
 
         log.ODM_INFO("Rectifying {} using with [reclassify threshold: {}, min area: {}, min points: {}]".format(lasFile, reclassify_threshold, min_area, min_points))
         run_rectification(
-            input=pcFile, output=pcFile, \
+            input=lasFile, output=lasFile, \
             reclassify_plan='median', reclassify_threshold=reclassify_threshold, \
             extend_plan='surrounding', extend_grid_distance=5, \
             min_area=min_area, min_points=min_points)
