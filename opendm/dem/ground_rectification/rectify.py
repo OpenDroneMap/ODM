@@ -23,7 +23,7 @@ def run_rectification(**kwargs):
     if 'extend_plan' in kwargs and kwargs['extend_plan'] is not None:
         point_cloud = extend_cloud(point_cloud, kwargs['extend_plan'], kwargs['extend_grid_distance'], kwargs['min_points'], kwargs['min_area'])
 
-    write_cloud(header, point_cloud, kwargs['output'], kwargs['debug'])
+    write_cloud(header, point_cloud, kwargs['output'])
 
 def reclassify_cloud(point_cloud, plan, threshold, min_points, min_area):
     # Get only ground

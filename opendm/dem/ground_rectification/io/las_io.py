@@ -1,47 +1,115 @@
-# TODO: Move to pylas when project migrates to python3
-
-import laspy
+import time
+import pdal
 import numpy as np
+from opendm import log
 from ..point_cloud import PointCloud
+import pdb
+import json
 
 def read_cloud(point_cloud_path):
-    # Open point cloud and read its properties
-    las_file = laspy.read(point_cloud_path)
-    header = las_file.header
+    pipeline = pdal.Pipeline('[{"type":"readers.las","filename":"%s"}]' % point_cloud_path)
+    pipeline.execute()
 
-    x = las_file.x.scaled_array()
-    y = las_file.y.scaled_array()
-    z = las_file.z.scaled_array()
+    arrays = pipeline.arrays[0]
 
-    cloud = PointCloud.with_dimensions(x, y, z, las_file.classification.array, las_file.red, las_file.green, las_file.blue)
+    # Extract point coordinates, classification, and RGB values
+    x = arrays["X"]
+    y = arrays["Y"]
+    z = arrays["Z"]
+    classification = arrays["Classification"].astype(np.uint8)
+    red = arrays["Red"]
+    green = arrays["Green"]
+    blue = arrays["Blue"]
 
-    # Return the result
-    return header, cloud
+    cloud = PointCloud.with_dimensions(x, y, z, classification, red, green, blue)
 
-def write_cloud(header, point_cloud, output_point_cloud_path, write_extra_dimensions=False):
-    # Open output file
-    output_las_file = laspy.LasData(header)
+    return pipeline.metadata["metadata"]["readers.las"], cloud
 
-    if write_extra_dimensions:
-        extra_dims = [laspy.ExtraBytesParams(name=name, type=dimension.get_las_type(), description="Dimension added by Ground Extend") for name, dimension in point_cloud.extra_dimensions_metadata.items()]
-        output_las_file.add_extra_dims(extra_dims)
-        # Assign dimension values
-        for dimension_name, values in point_cloud.extra_dimensions.items():
-            setattr(output_las_file, dimension_name, values)
+
+def safe_add_metadata(pipeline, metadata, key, sourcekey=None):
+    k = key if sourcekey is None else sourcekey
+    if k in metadata:
+        pipeline["pipeline"][0][key] = metadata[k]
+
+
+def write_cloud(metadata, point_cloud, output_point_cloud_path):
 
     # Adapt points to scale and offset
-    [x, y] = np.hsplit(point_cloud.xy, 2)
-    output_las_file.x = x.ravel()
-    output_las_file.y = y.ravel()
-    output_las_file.z = point_cloud.z
+    x, y = np.hsplit(point_cloud.xy, 2)
 
-    # Set color
-    [red, green, blue] = np.hsplit(point_cloud.rgb, 3)
-    output_las_file.red = red.ravel()
-    output_las_file.green = green.ravel()
-    output_las_file.blue = blue.ravel()
+    red, green, blue = np.hsplit(point_cloud.rgb, 3)
 
-    # Set classification
-    output_las_file.classification = point_cloud.classification.astype(np.uint8)
+    arrays = np.zeros(len(x),
+                      dtype=[('X', '<f8'),
+                             ('Y', '<f8'),
+                             ('Z', '<f8'),
+                             ('Intensity', '<u2'),
+                             ('ReturnNumber', 'u1'),
+                             ('NumberOfReturns', 'u1'),
+                             ('ScanDirectionFlag', 'u1'),
+                             ('EdgeOfFlightLine', 'u1'),
+                             ('Classification', 'u1'),
+                             ('ScanAngleRank', '<f4'),
+                             ('UserData', 'u1'),
+                             ('PointSourceId', '<u2'),
+                             ('GpsTime', '<f8'),
+                             ('Red', '<u2'),
+                             ('Green', '<u2'),
+                             ('Blue', '<u2')])
+    arrays['X'] = x.ravel()
+    arrays['Y'] = y.ravel()
+    arrays['Z'] = point_cloud.z
+    arrays['Classification'] = point_cloud.classification.astype(np.uint8).ravel()
+    arrays['Red'] = red.astype(np.uint8).ravel()
+    arrays['Green'] = green.astype(np.uint8).ravel()
+    arrays['Blue'] = blue.astype(np.uint8).ravel()
 
-    output_las_file.write(output_point_cloud_path)
+    writer_pipeline = {
+        "pipeline": [
+            {
+                "type": "writers.las",
+                "filename": output_point_cloud_path,
+                "compression": "laszip",
+                "extra_dims": "all"
+            }
+        ]
+    }
+
+    safe_add_metadata(writer_pipeline, metadata, "scale_x")
+    safe_add_metadata(writer_pipeline, metadata, "scale_y")
+    safe_add_metadata(writer_pipeline, metadata, "scale_z")
+    safe_add_metadata(writer_pipeline, metadata, "offset_x")
+    safe_add_metadata(writer_pipeline, metadata, "offset_y")
+    safe_add_metadata(writer_pipeline, metadata, "offset_z")
+    safe_add_metadata(writer_pipeline, metadata, "a_srs", "spatialreference")
+    safe_add_metadata(writer_pipeline, metadata, "dataformat_id")
+    safe_add_metadata(writer_pipeline, metadata, "system_id")
+    safe_add_metadata(writer_pipeline, metadata, "software_id")
+    safe_add_metadata(writer_pipeline, metadata, "creation_doy")
+    safe_add_metadata(writer_pipeline, metadata, "creation_year")
+    safe_add_metadata(writer_pipeline, metadata, "minor_version")
+    safe_add_metadata(writer_pipeline, metadata, "major_version")
+    safe_add_metadata(writer_pipeline, metadata, "file_source_id")
+    safe_add_metadata(writer_pipeline, metadata, "global_encoding")
+
+    # The metadata object contains the VLRs as fields called "vlr_N" where N is the index of the VLR
+    # We have to copy them over to the writer pipeline as a list of dictionaries in the "vlrs" field
+    writer_pipeline["pipeline"][0]["vlrs"] = []
+
+    i = 0
+    while True:
+        vlr_field = "vlr_%d" % i
+        if vlr_field in metadata:
+            vlr = metadata[vlr_field]
+            writer_pipeline["pipeline"][0]["vlrs"].append({
+                "record_id": vlr["record_id"],
+                "user_id": vlr["user_id"],
+                "description": vlr["description"],
+                "data": vlr["data"]
+            })
+            i += 1
+        else:
+            break
+
+    pipeline = pdal.Pipeline(json.dumps(writer_pipeline), arrays=[arrays])
+    pipeline.execute()

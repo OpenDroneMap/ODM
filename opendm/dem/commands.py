@@ -46,30 +46,18 @@ def classify(lasFile, scalar, slope, threshold, window):
     log.ODM_INFO('Created %s in %s' % (lasFile, datetime.now() - start))
     return lasFile
 
-def rectify(lasFile, debug=False, reclassify_threshold=5, min_area=750, min_points=500):
+def rectify(lasFile, reclassify_threshold=5, min_area=750, min_points=500):
     start = datetime.now()
 
-    pcFile = lasFile
-
     try:
-        # Workaround for MacOS: laspy does not have support for LAZ on macOS
-        # so we first convert to normal LAS via PDAL
-        # TODO: remove LASPY and use PDAL instead
-        if sys.platform == 'darwin' and lasFile[-3:] == "laz":
-            pcFile = lasFile + ".tmp.las"
-            pdal.translate(lasFile, pcFile)
 
         log.ODM_INFO("Rectifying {} using with [reclassify threshold: {}, min area: {}, min points: {}]".format(lasFile, reclassify_threshold, min_area, min_points))
         run_rectification(
-            input=pcFile, output=pcFile, debug=debug, \
+            input=lasFile, output=lasFile, \
             reclassify_plan='median', reclassify_threshold=reclassify_threshold, \
             extend_plan='surrounding', extend_grid_distance=5, \
             min_area=min_area, min_points=min_points)
 
-        if sys.platform == 'darwin' and pcFile != lasFile and os.path.isfile(pcFile):
-            pdal.translate(pcFile, lasFile)
-            os.remove(pcFile)
-        
         log.ODM_INFO('Created %s in %s' % (lasFile, datetime.now() - start))
     except Exception as e:
         log.ODM_WARNING("Error rectifying ground in file %s: %s" % (lasFile, str(e)))

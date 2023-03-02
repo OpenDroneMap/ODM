@@ -68,7 +68,7 @@ class ODMDEMStage(types.ODM_Stage):
         self.update_progress(progress)
 
         if args.pc_rectify:
-            commands.rectify(dem_input, False)
+            commands.rectify(dem_input)
 
         # Do we need to process anything here?
         if (args.dsm or args.dtm) and pc_model_found:
