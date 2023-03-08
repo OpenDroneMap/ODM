@@ -56,6 +56,7 @@ RUN bash configure.sh installruntimedepsonly \
 RUN adduser --disabled-password --gecos "" --uid 1000 appuser
 RUN chown -R appuser /code
 RUN chown -R appuser /usr/local
+RUN chown -R appuser /tmp
 USER appuser
 
 # Entry point
