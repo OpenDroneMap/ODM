@@ -51,5 +51,12 @@ RUN bash configure.sh installruntimedepsonly \
   && bash run.sh --help \
   && bash -c "eval $(python3 /code/opendm/context.py) && python3 -c 'from opensfm import io, pymap'"
 
+# Switch to appuser
+RUN adduser --disabled-password --gecos "" --uid 1000 appuser
+RUN chown -R appuser /code
+RUN chown -R appuser /usr/local
+RUN chown -R appuser /tmp
+USER appuser
+
 # Entry point
 ENTRYPOINT ["python3", "/code/run.py"]
