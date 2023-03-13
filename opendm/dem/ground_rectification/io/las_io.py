@@ -1,4 +1,5 @@
 import time
+from opendm.dem.ground_rectification.extra_dimensions.userdata_dimension import UserDataDimension
 import pdal
 import numpy as np
 from opendm import log
@@ -22,6 +23,7 @@ def read_cloud(point_cloud_path):
     blue = arrays["Blue"]
 
     cloud = PointCloud.with_dimensions(x, y, z, classification, red, green, blue)
+    cloud.add_dimension(UserDataDimension(), arrays["UserData"])
 
     return pipeline.metadata["metadata"]["readers.las"], cloud
 
@@ -63,6 +65,7 @@ def write_cloud(metadata, point_cloud, output_point_cloud_path):
     arrays['Red'] = red.astype(np.uint8).ravel()
     arrays['Green'] = green.astype(np.uint8).ravel()
     arrays['Blue'] = blue.astype(np.uint8).ravel()
+    arrays['UserData'] = point_cloud.extra_dimensions["UserData"].ravel()
 
     writer_pipeline = {
         "pipeline": [
