@@ -34,6 +34,7 @@ RS_DATABASE = {
 
     'fujifilm x-t2': 35, # FUJIFILM X-T2 Mirrorless Interchangeable Lens Camera
 
+    'autel robotics xl724': 29, # Autel Nano+
 
     # Help us add more! 
     # See: https://github.com/OpenDroneMap/RSCalibration for instructions
