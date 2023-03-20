@@ -344,7 +344,7 @@ def config(argv=None, parser=None):
             action=StoreTrue,
             nargs=0,
             default=False,
-            help='Classify the point cloud outputs using a Simple Morphological Filter. '
+            help='Classify the point cloud outputs. '
             'You can control the behavior of this option by tweaking the --dem-* parameters. '
             'Default: '
             '%(default)s')
