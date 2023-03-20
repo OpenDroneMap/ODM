@@ -177,6 +177,7 @@ set(custom_libs OpenSfM
 				FPCFilter
 				PyPopsift
 				Obj2Tiles
+				OpenPointClass
 )
 
 externalproject_add(mve
