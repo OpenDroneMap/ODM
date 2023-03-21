@@ -135,7 +135,7 @@ def clean():
     safe_remove(os.path.join("SuperBuild", "install"))
 
 def dist():
-    if not os.path.exists("SuperBuild\\download"):
+    if not os.path.exists("SuperBuild\\install"):
         print("You need to run configure.py build before you can run dist")
         exit(1)
 
