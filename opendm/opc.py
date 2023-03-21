@@ -17,13 +17,15 @@ def classify(point_cloud):
 
         if model is not None:
             run('pcclassify "%s" "%s" "%s" -u -s 2,64' % (point_cloud, tmp_output, model))
+            
+            if os.path.isfile(tmp_output):
+                os.remove(point_cloud)
+                os.rename(tmp_output, point_cloud)
+            else:
+                log.ODM_WARNING("Cannot classify using OpenPointClass (no output generated)")
         else:
             log.ODM_WARNING("Cannot download/access model from %s" % (model_url))
+
     except Exception as e:
         log.ODM_WARNING("Cannot classify using OpenPointClass: %s" % str(e))
 
-    if os.path.isfile(tmp_output):
-        os.remove(point_cloud)
-        os.rename(tmp_output, point_cloud)
-    else:
-        log.ODM_WARNING("Cannot classify using OpenPointClass (no output generated)")
