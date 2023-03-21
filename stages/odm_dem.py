@@ -12,7 +12,7 @@ from opendm.cropper import Cropper
 from opendm import pseudogeo
 from opendm.tiles.tiler import generate_dem_tiles
 from opendm.cogeo import convert_to_cogeo
-
+from opendm.opc import classify
 
 class ODMDEMStage(types.ODM_Stage):
     def process(self, args, outputs):
@@ -49,13 +49,16 @@ class ODMDEMStage(types.ODM_Stage):
             pc_classify_marker = os.path.join(odm_dem_root, 'pc_classify_done.txt')
 
             if not io.file_exists(pc_classify_marker) or self.rerun():
-                log.ODM_INFO("Classifying {} using Simple Morphological Filter".format(dem_input))
+                log.ODM_INFO("Classifying {} using Simple Morphological Filter (1/2)".format(dem_input))
                 commands.classify(dem_input,
                                   args.smrf_scalar, 
                                   args.smrf_slope, 
                                   args.smrf_threshold, 
                                   args.smrf_window
                                 )
+
+                log.ODM_INFO("Classifying {} using OpenPointClass (2/2)".format(dem_input))
+                classify(dem_input)
 
                 with open(pc_classify_marker, 'w') as f:
                     f.write('Classify: smrf\n')

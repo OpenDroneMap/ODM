@@ -330,3 +330,8 @@ class ODMLoadDatasetStage(types.ODM_Stage):
                     log.ODM_WARNING("No omega/phi/kappa angles found in input photos (%s), switching sfm-algorithm to incremental" % p.filename)
                     args.sfm_algorithm = 'incremental'
                     break
+        
+        # Rolling shutter cannot be done in non-georeferenced datasets
+        if args.rolling_shutter and not reconstruction.is_georeferenced():
+            log.ODM_WARNING("Reconstruction is not georeferenced, disabling rolling shutter correction")
+            args.rolling_shutter = False
