@@ -38,6 +38,11 @@ jobs:
     - name: Build sources
       run: |
         python configure.py build
+    - name: Free up space
+      run: |
+        rmdir SuperBuild\download /s /q
+        rmdir SuperBuild\build /s /q
+      shell: cmd
     - name: Create setup
       env: 
         CODE_SIGN_CERT_PATH: ${{ steps.code_sign.outputs.filePath }}
