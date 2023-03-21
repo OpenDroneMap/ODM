@@ -58,7 +58,7 @@ class ODMDEMStage(types.ODM_Stage):
                                 )
 
                 log.ODM_INFO("Classifying {} using OpenPointClass (2/2)".format(dem_input))
-                classify(dem_input)
+                classify(dem_input, args.max_concurrency)
 
                 with open(pc_classify_marker, 'w') as f:
                     f.write('Classify: smrf\n')

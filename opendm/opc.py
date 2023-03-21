@@ -4,7 +4,7 @@ from opendm import log
 from opendm.system import run
 from opendm import io
 
-def classify(point_cloud):
+def classify(point_cloud, max_threads=8):
     tmp_output = io.related_file_path(point_cloud, postfix=".classified")
     if os.path.isfile(tmp_output):
         os.remove(tmp_output)
@@ -16,7 +16,7 @@ def classify(point_cloud):
             name="model.bin")
 
         if model is not None:
-            run('pcclassify "%s" "%s" "%s" -u -s 2,64' % (point_cloud, tmp_output, model))
+            run('pcclassify "%s" "%s" "%s" -u -s 2,64' % (point_cloud, tmp_output, model), env_vars={'OMP_NUM_THREADS': max_threads})
             
             if os.path.isfile(tmp_output):
                 os.remove(point_cloud)
