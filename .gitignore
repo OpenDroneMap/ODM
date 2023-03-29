@@ -28,3 +28,10 @@ settings.yaml
 __pycache__
 *.snap
 storage/
+
+
+vcpkg/
+venv/
+python38/
+dist/
+innosetup/
