@@ -24,7 +24,7 @@ set PYTHONPATH=%VIRTUAL_ENV%
 set PYENVCFG=%VIRTUAL_ENV%\pyvenv.cfg
 
 rem Hot-patching pyvenv.cfg
-echo home = %ODMBASE%\python38> "%PYENVCFG%"
+echo home = %ODMBASE%venv\Scripts> "%PYENVCFG%"
 echo include-system-site-packages = false>> "%PYENVCFG%"
 
 rem Hot-patching cv2 extension configs
