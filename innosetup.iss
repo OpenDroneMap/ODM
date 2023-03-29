@@ -47,7 +47,7 @@ Source: "stages\*"; DestDir: "{app}\stages"; Excludes: "__pycache__"; Flags: ign
 Source: "SuperBuild\install\bin\*"; DestDir: "{app}\SuperBuild\install\bin"; Excludes: "__pycache__"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "SuperBuild\install\lib\python3.8\*"; DestDir: "{app}\SuperBuild\install\lib\python3.8"; Excludes: "__pycache__"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "venv\*"; DestDir: "{app}\venv"; Excludes: "__pycache__,pyvenv.cfg"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "python38\*"; DestDir: "{app}\python38"; Excludes: "__pycache__"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "python38\*"; DestDir: "{app}\venv\Scripts"; Excludes: "__pycache__"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "console.bat"; DestDir: "{app}"; Flags: ignoreversion
 Source: "VERSION"; DestDir: "{app}"; Flags: ignoreversion
 Source: "LICENSE"; DestDir: "{app}"; Flags: ignoreversion
@@ -70,70 +70,6 @@ Filename: "{tmp}\vc_redist.x64.exe"; StatusMsg: "Installing Visual C++ Redistrib
 Filename: "{app}\console.bat"; Description: {cm:LaunchProgram,ODM Console}; Flags: nowait postinstall skipifsilent
 
 [Code]
-
-function GetShortPath(const LongPath: string): string;
-var
-  ResultCode: Integer;
-  TmpFileName: string;
-  ExecStdout: AnsiString;
-  Parameters: string;
-begin
-
-  // Create LongPath folder
-  if not ForceDirectories(LongPath) then begin
-    Result := LongPath;
-    Exit;
-  end;
-
-  TmpFileName := ExpandConstant('{tmp}') + '\short_result.txt';
-  Parameters := '-Command "(New-Object -ComObject Scripting.FileSystemObject).GetFolder(''' + LongPath + ''').ShortPath | Out-File -FilePath ''' + TmpFileName + ''' -Encoding ASCII"';
-
-  // Execute the PowerShell command and save the output to the TmpFileName
-  if Exec('powershell.exe', Parameters, '', 0, ewWaitUntilTerminated, ResultCode) then
-  begin
-    // Read the output from the TmpFileName
-    if LoadStringFromFile(TmpFileName, ExecStdout) then begin
-      Result := Trim(ExecStdout);
-      end
-    else begin
-      Result := LongPath;
-    end;
-
-    DeleteFile(TmpFileName);
-    // Delete the folder
-    if not RemoveDir(LongPath) then begin
-      Result := LongPath;
-      Exit;
-    end;
-
-  end
-  else
-  begin
-    Result := LongPath;
-  end;
-end;
-
-
-function NextButtonClick(CurPageID: Integer): Boolean;
-var
-  Dir: string;
-begin
-  if CurPageID = wpSelectDir then
-  begin
-    // Get the selected directory
-    Dir := WizardForm.DirEdit.Text;
-
-    // Check if the path contains spaces
-    if Pos(' ', Dir) > 0 then
-    begin
-      // Get the short path name
-      Dir := GetShortPath(Dir);
-      // Set the selected directory to the short path name
-      WizardForm.DirEdit.Text := Dir;
-    end;
-  end;
-  Result := True;
-end;
 
 function VC2019RedistNeedsInstall: Boolean;
 var
