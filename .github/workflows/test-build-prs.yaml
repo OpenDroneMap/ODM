@@ -66,12 +66,6 @@ jobs:
       uses: jwlawson/actions-setup-cmake@v1.13
       with:
         cmake-version: '3.24.x'
-    - name: Extract code signing cert
-      id: code_sign
-      uses: timheuer/base64-to-file@v1
-      with:
-        fileName: 'comodo.pfx'
-        encodedString: ${{ secrets.CODE_SIGNING_CERT }}
     - name: Install venv
       run: |
         python -m pip install virtualenv
@@ -84,10 +78,8 @@ jobs:
         rmdir SuperBuild\build /s /q
       shell: cmd
     - name: Create setup
-      env: 
-        CODE_SIGN_CERT_PATH: ${{ steps.code_sign.outputs.filePath }}
       run: |
-        python configure.py dist --code-sign-cert-path $env:CODE_SIGN_CERT_PATH
+        python configure.py dist
     - name: Upload Setup File
       uses: actions/upload-artifact@v2
       with:
