@@ -193,7 +193,7 @@ def dist():
             z.extractall("innosetup")
 
     # Run
-    cs_flags = ""
+    cs_flags = '/DSKIP_SIGN=1'
     if args.code_sign_cert_path:
         cs_flags = '"/Ssigntool=%s sign /f %s /fd SHA1 /t http://timestamp.sectigo.com $f"' % (signtool_path, args.code_sign_cert_path)
     run("innosetup\\iscc /Qp " + cs_flags  + " \"innosetup.iss\"")

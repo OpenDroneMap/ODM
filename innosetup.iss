@@ -30,7 +30,9 @@ Compression=lzma
 SolidCompression=yes
 ArchitecturesAllowed=x64
 ArchitecturesInstallIn64BitMode=x64
+#ifndef SKIP_SIGN
 SignTool=signtool
+#endif
 PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=commandline
 UsePreviousAppDir=no
@@ -47,7 +49,7 @@ Source: "stages\*"; DestDir: "{app}\stages"; Excludes: "__pycache__"; Flags: ign
 Source: "SuperBuild\install\bin\*"; DestDir: "{app}\SuperBuild\install\bin"; Excludes: "__pycache__"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "SuperBuild\install\lib\python3.8\*"; DestDir: "{app}\SuperBuild\install\lib\python3.8"; Excludes: "__pycache__"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "venv\*"; DestDir: "{app}\venv"; Excludes: "__pycache__,pyvenv.cfg"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "python38\*"; DestDir: "{app}\python38"; Excludes: "__pycache__"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "python38\*"; DestDir: "{app}\venv\Scripts"; Excludes: "__pycache__"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "console.bat"; DestDir: "{app}"; Flags: ignoreversion
 Source: "VERSION"; DestDir: "{app}"; Flags: ignoreversion
 Source: "LICENSE"; DestDir: "{app}"; Flags: ignoreversion
@@ -70,18 +72,19 @@ Filename: "{tmp}\vc_redist.x64.exe"; StatusMsg: "Installing Visual C++ Redistrib
 Filename: "{app}\console.bat"; Description: {cm:LaunchProgram,ODM Console}; Flags: nowait postinstall skipifsilent
 
 [Code]
+
 function VC2019RedistNeedsInstall: Boolean;
-var 
+var
   Version: String;
 begin
   if RegQueryStringValue(HKEY_LOCAL_MACHINE,
        'SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64', 'Version', Version) then
   begin
-    // Is the installed version at least 14.14 ? 
+    // Is the installed version at least 14.14 ?
     Log('VC Redist Version check : found ' + Version);
     Result := (CompareStr(Version, 'v14.14.26429.03')<0);
   end
-  else 
+  else
   begin
     // Not even an old version installed
     Result := True;
