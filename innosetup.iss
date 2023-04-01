@@ -30,7 +30,9 @@ Compression=lzma
 SolidCompression=yes
 ArchitecturesAllowed=x64
 ArchitecturesInstallIn64BitMode=x64
+#ifndef SKIP_SIGN
 SignTool=signtool
+#endif
 PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=commandline
 UsePreviousAppDir=no
