@@ -1,6 +1,7 @@
 set ODMBASE=%~dp0
 set VIRTUAL_ENV=%ODMBASE%venv
 set PYENVCFG=%VIRTUAL_ENV%\pyvenv.cfg
+set SBBIN=%ODMBASE%SuperBuild\install\bin
 
 rem Hot-patching pyvenv.cfg
 echo home = %ODMBASE%venv\Scripts> "%PYENVCFG%"
