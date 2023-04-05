@@ -3,7 +3,7 @@ from opendm.net import download
 from opendm import log
 import zipfile
 import time
-import sys, platform
+import sys
 
 def get_model(namespace, url, version, name = "model.onnx"):
     version = version.replace(".", "_")
