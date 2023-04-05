@@ -60,6 +60,9 @@ Source: "win32env.bat"; DestDir: "{app}"; Flags: ignoreversion
 Source: "winrun.bat"; DestDir: "{app}"; Flags: ignoreversion
 Source: "SuperBuild\download\vc_redist.x64.exe"; DestDir: {tmp}; Flags: dontcopy
 
+[Dirs]
+Name: "{commonappdata}\ODM"; Permissions: users-modify
+
 [Icons]
 Name: {group}\ODM Console; Filename: "{app}\console.bat"; WorkingDir: "{app}"
 Name: "{userdesktop}\ODM Console"; Filename: "{app}\console.bat"; WorkingDir: "{app}"; Tasks: desktopicon
