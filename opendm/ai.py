@@ -3,11 +3,16 @@ from opendm.net import download
 from opendm import log
 import zipfile
 import time
+import sys
 
 def get_model(namespace, url, version, name = "model.onnx"):
     version = version.replace(".", "_")
 
-    base_dir = os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")), "storage", "models")
+    base_dir = os.path.join(os.path.dirname(__file__), "..")
+    if sys.platform == 'win32':
+        base_dir = os.path.join(os.getenv('PROGRAMDATA'),"ODM")
+    base_dir = os.path.join(os.path.abspath(base_dir), "storage", "models")
+    
     namespace_dir = os.path.join(base_dir, namespace)
     versioned_dir = os.path.join(namespace_dir, version)
 

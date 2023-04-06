@@ -59,6 +59,10 @@ Source: "settings.yaml"; DestDir: "{app}"; Flags: ignoreversion
 Source: "win32env.bat"; DestDir: "{app}"; Flags: ignoreversion
 Source: "winrun.bat"; DestDir: "{app}"; Flags: ignoreversion
 Source: "SuperBuild\download\vc_redist.x64.exe"; DestDir: {tmp}; Flags: dontcopy
+Source: "winpostinstall.bat"; DestDir: "{app}"; Flags: ignoreversion
+
+[Dirs]
+Name: "{commonappdata}\ODM"; Permissions: users-modify
 
 [Icons]
 Name: {group}\ODM Console; Filename: "{app}\console.bat"; WorkingDir: "{app}"
@@ -69,6 +73,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Run]
 Filename: "{tmp}\vc_redist.x64.exe"; StatusMsg: "Installing Visual C++ Redistributable Packages for Visual Studio 2019"; Parameters: "/quiet"; Check: VC2019RedistNeedsInstall ; Flags: waituntilterminated
+Filename: "{app}\winpostinstall.bat"; StatusMsg: "Post Install"; Flags: waituntilterminated runhidden
 Filename: "{app}\console.bat"; Description: {cm:LaunchProgram,ODM Console}; Flags: nowait postinstall skipifsilent
 
 [Code]
