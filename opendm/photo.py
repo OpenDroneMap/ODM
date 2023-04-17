@@ -19,7 +19,7 @@ from xml.parsers.expat import ExpatError
 from opensfm.sensors import sensor_data
 from opensfm.geo import ecef_from_lla
 
-projections = ['perspective', 'fisheye', 'brown', 'dual', 'equirectangular', 'spherical']
+projections = ['perspective', 'fisheye', 'fisheye_opencv', 'brown', 'dual', 'equirectangular', 'spherical']
 
 def find_largest_photo_dims(photos):
     max_mp = 0
@@ -428,6 +428,11 @@ class ODM_Photo:
                     camera_projection = self.get_xmp_tag(xtags, ['@Camera:ModelType', 'Camera:ModelType'])
                     if camera_projection is not None:
                         camera_projection = camera_projection.lower()
+
+                        # Parrot Sequoia's "fisheye" model maps to "fisheye_opencv"
+                        if camera_projection == "fisheye" and self.camera_make.lower() == "parrot" and self.camera_model.lower() == "sequoia":
+                            camera_projection = "fisheye_opencv"
+
                         if camera_projection in projections:
                             self.camera_projection = camera_projection
 
