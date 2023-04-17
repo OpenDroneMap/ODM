@@ -175,7 +175,7 @@ def config(argv=None, parser=None):
             metavar='<string>',
             action=StoreValue,
             default='auto',
-            choices=['auto', 'perspective', 'brown', 'fisheye', 'spherical', 'equirectangular', 'dual'],
+            choices=['auto', 'perspective', 'brown', 'fisheye', 'fisheye_opencv', 'spherical', 'equirectangular', 'dual'],
             help=('Set a camera projection type. Manually setting a value '
                 'can help improve geometric undistortion. By default the application '
                 'tries to determine a lens type from the images metadata. Can be one of: %(choices)s. Default: '
