@@ -207,8 +207,7 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                             os.rename(unaligned_model, tree.odm_georeferencing_model_laz)
 
                         # Align textured models
-                        for texturing in [tree.odm_texturing, tree.odm_25dtexturing]:
-                            obj = os.path.join(texturing, "odm_textured_model_geo.obj")
+                        def transform_textured_model(obj):
                             if os.path.isfile(obj):
                                 unaligned_obj = io.related_file_path(obj, postfix="_unaligned")
                                 if os.path.isfile(unaligned_obj):
@@ -220,6 +219,17 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                                 except Exception as e:
                                     log.ODM_WARNING("Cannot transform textured model: %s" % str(e))
                                     os.rename(unaligned_obj, obj)
+
+                        for texturing in [tree.odm_texturing, tree.odm_25dtexturing]:
+                            if reconstruction.multi_camera:
+                                primary = get_primary_band_name(reconstruction.multi_camera, args.primary_band)
+                                for band in reconstruction.multi_camera:
+                                    subdir = "" if band['name'] == primary else band['name'].lower()
+                                    obj = os.path.join(texturing, subdir, "odm_textured_model_geo.obj")
+                                    transform_textured_model(obj)
+                            else:
+                                obj = os.path.join(texturing, "odm_textured_model_geo.obj")
+                                transform_textured_model(obj)
                         
                         with open(tree.odm_georeferencing_alignment_matrix, "w") as f:
                             f.write(np_to_json(a_matrix))
