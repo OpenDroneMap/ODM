@@ -396,13 +396,6 @@ def config(argv=None, parser=None):
                         help='Geometric estimates improve the accuracy of the point cloud by computing geometrically consistent depthmaps but may not be usable in larger datasets. This flag disables geometric estimates. '
                              'Default: %(default)s')
 
-    parser.add_argument('--pc-tile',
-                        action=StoreTrue,
-                        nargs=0,
-                        default=False,
-                        help='Reduce the memory usage needed for depthmap fusion by splitting large scenes into tiles. Turn this on if your machine doesn\'t have much RAM and/or you\'ve set --pc-quality to high or ultra. Experimental. '
-                             'Default: %(default)s')
-
     parser.add_argument('--smrf-scalar',
                         metavar='<positive float>',
                         action=StoreValue,
