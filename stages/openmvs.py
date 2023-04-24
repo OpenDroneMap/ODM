@@ -19,6 +19,7 @@ class ODMOpenMVSStage(types.ODM_Stage):
         reconstruction = outputs['reconstruction']
         photos = reconstruction.photos
         octx = OSFMContext(tree.opensfm)
+        pc_tile = False
 
         if not photos:
             raise system.ExitException('Not enough photos in photos array to start OpenMVS')
@@ -82,9 +83,6 @@ class ODMOpenMVSStage(types.ODM_Stage):
             else:
                 gpu_config.append("--cuda-device -2")
 
-            if args.pc_tile:
-                config.append("--fusion-mode 1")
-
             extra_config = []
 
             if args.pc_skip_geometric:
@@ -111,9 +109,9 @@ class ODMOpenMVSStage(types.ODM_Stage):
                     log.ODM_WARNING("OpenMVS failed with GPU, is your graphics card driver up to date? Falling back to CPU.")
                     gpu_config = ["--cuda-device -2"]
                     run_densify()
-                elif (e.errorCode == 137 or e.errorCode == 3221226505) and not args.pc_tile:
+                elif (e.errorCode == 137 or e.errorCode == 3221226505) and not pc_tile:
                     log.ODM_WARNING("OpenMVS ran out of memory, we're going to turn on tiling to see if we can process this.")
-                    args.pc_tile = True
+                    pc_tile = True
                     config.append("--fusion-mode 1")
                     run_densify()
                 else:
@@ -123,7 +121,7 @@ class ODMOpenMVSStage(types.ODM_Stage):
             files_to_remove = []
             scene_dense = os.path.join(tree.openmvs, 'scene_dense.mvs')
 
-            if args.pc_tile:
+            if pc_tile:
                 log.ODM_INFO("Computing sub-scenes")
 
                 subscene_densify_ini_file = os.path.join(tree.openmvs, 'subscene-config.ini')
