@@ -41,7 +41,8 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                 'corners': tree.odm_orthophoto_corners,
                 'res': resolution,
                 'bands': '',
-                'depth_idx': ''
+                'depth_idx': '',
+                'inpaint': ''
             }
 
             models = []
@@ -79,12 +80,15 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
             else:
                 models.append(os.path.join(base_dir, model_file))
 
+                # Perform edge inpainting on RGB datasets
+                kwargs['inpaint'] = "-inpaintThreshold 1.0"
+
             kwargs['models'] = ','.join(map(double_quote, models))
 
             # run odm_orthophoto
             system.run('"{odm_ortho_bin}" -inputFiles {models} '
                        '-logFile "{log}" -outputFile "{ortho}" -resolution {res} -verbose '
-                       '-outputCornerFile "{corners}" {bands} {depth_idx}'.format(**kwargs))
+                       '-outputCornerFile "{corners}" {bands} {depth_idx} {inpaint}'.format(**kwargs), env_vars={'OMP_NUM_THREADS': args.max_concurrency})
 
             # Create georeferenced GeoTiff
             geotiffcreated = False
