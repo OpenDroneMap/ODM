@@ -80,8 +80,9 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
             else:
                 models.append(os.path.join(base_dir, model_file))
 
-                # Perform edge inpainting on RGB datasets
-                kwargs['inpaint'] = "-inpaintThreshold 1.0"
+                # Perform edge inpainting on georeferenced RGB datasets
+                if reconstruction.is_georeferenced():
+                    kwargs['inpaint'] = "-inpaintThreshold 1.0"
 
             kwargs['models'] = ','.join(map(double_quote, models))
 
