@@ -132,7 +132,7 @@ class ODMSplitStage(types.ODM_Stage):
                         log.ODM_INFO("Reconstructing %s" % sp)
                         local_sp_octx = OSFMContext(sp)
                         local_sp_octx.create_tracks(self.rerun())
-                        local_sp_octx.reconstruct(args.rolling_shutter, True, self.rerun())
+                        local_sp_octx.reconstruct(args.rolling_shutter, not args.sfm_no_partial, self.rerun())
                 else:
                     lre = LocalRemoteExecutor(args.sm_cluster, args.rolling_shutter, self.rerun())
                     lre.set_projects([os.path.abspath(os.path.join(p, "..")) for p in submodel_paths])

@@ -219,6 +219,12 @@ def config(argv=None, parser=None):
                         'Can be one of: %(choices)s. Default: '
                         '%(default)s'))
 
+    parser.add_argument('--sfm-no-partial',
+                action=StoreTrue,
+                nargs=0,
+                default=False,
+                help='Do not attempt to merge partial reconstructions. This can happen when images do not have sufficient overlap or are isolated. Default: %(default)s')
+
     parser.add_argument('--sky-removal',
                 action=StoreTrue,
                 nargs=0,
