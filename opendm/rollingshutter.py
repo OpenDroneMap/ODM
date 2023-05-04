@@ -11,7 +11,7 @@ RS_DATABASE = {
     'dji fc330': 33, # Phantom 4
     'dji fc6310': 33, # Phantom 4 Professional
 
-    'dji fc7203': 20, # Mavic Mini v1
+    'dji fc7203': lambda p: 19 if p.get_capture_megapixels() < 10 else 25, # DJI Mavic Mini v1 (at 16:9 => 9MP 19ms, at 4:3 => 12MP 25ms)
     'dji fc2103': 32, # DJI Mavic Air 1
     'dji fc3170': 27, # DJI Mavic Air 2
     'dji fc3411': 32, # DJI Mavic Air 2S
