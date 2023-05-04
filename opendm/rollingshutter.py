@@ -23,6 +23,9 @@ RS_DATABASE = {
 
     'dji fc350': 30, # Inspire 1
     
+    'dji mavic2-enterprise-advanced': 31, # DJI Mavic 2 Enterprise Advanced
+    'dji zenmuse z30': 8, # DJI Zenmuse Z30
+    
     'yuneec e90': 44, # Yuneec E90
 
     'gopro hero4 black': 30, # GoPro Hero 4 Black
