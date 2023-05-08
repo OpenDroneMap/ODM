@@ -7,7 +7,7 @@ from opendm import context
 from opendm import types
 from opendm import gsd
 from opendm import orthophoto
-from opendm.concurrency import get_max_memory
+from opendm.concurrency import get_max_memory_mb
 from opendm.cutline import compute_cutline
 from opendm.utils import double_quote
 from opendm import pseudogeo
@@ -42,7 +42,11 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                 'res': resolution,
                 'bands': '',
                 'depth_idx': '',
-                'inpaint': ''
+                'inpaint': '',
+                'utm_offsets': '',
+                'a_srs': '',
+                'vars': '',
+                'gdal_configs': '--config GDAL_CACHEMAX %s' % (get_max_memory_mb() * 1024 * 1024)
             }
 
             models = []
@@ -86,53 +90,22 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
 
             kwargs['models'] = ','.join(map(double_quote, models))
 
+            if reconstruction.is_georeferenced():
+                orthophoto_vars = orthophoto.get_orthophoto_vars(args)
+                kwargs['utm_offsets'] = "-utm_north_offset %s -utm_east_offset %s" % (reconstruction.georef.utm_north_offset, reconstruction.georef.utm_east_offset)
+                kwargs['a_srs'] = "-a_srs \"%s\"" % reconstruction.georef.proj4()
+                kwargs['vars'] = ' '.join(['-co %s=%s' % (k, orthophoto_vars[k]) for k in orthophoto_vars])
+                kwargs['ortho'] = tree.odm_orthophoto_tif # Render directly to final file
+
             # run odm_orthophoto
+            log.ODM_INFO('Creating GeoTIFF')
             system.run('"{odm_ortho_bin}" -inputFiles {models} '
                        '-logFile "{log}" -outputFile "{ortho}" -resolution {res} -verbose '
-                       '-outputCornerFile "{corners}" {bands} {depth_idx} {inpaint}'.format(**kwargs), env_vars={'OMP_NUM_THREADS': args.max_concurrency})
+                       '-outputCornerFile "{corners}" {bands} {depth_idx} {inpaint} '
+                       '{utm_offsets} {a_srs} {vars} {gdal_configs} '.format(**kwargs), env_vars={'OMP_NUM_THREADS': args.max_concurrency})
 
             # Create georeferenced GeoTiff
-            geotiffcreated = False
-
             if reconstruction.is_georeferenced():
-                ulx = uly = lrx = lry = 0.0
-                with open(tree.odm_orthophoto_corners) as f:
-                    for lineNumber, line in enumerate(f):
-                        if lineNumber == 0:
-                            tokens = line.split(' ')
-                            if len(tokens) == 4:
-                                ulx = float(tokens[0]) + \
-                                    float(reconstruction.georef.utm_east_offset)
-                                lry = float(tokens[1]) + \
-                                    float(reconstruction.georef.utm_north_offset)
-                                lrx = float(tokens[2]) + \
-                                    float(reconstruction.georef.utm_east_offset)
-                                uly = float(tokens[3]) + \
-                                    float(reconstruction.georef.utm_north_offset)
-                log.ODM_INFO('Creating GeoTIFF')
-
-                orthophoto_vars = orthophoto.get_orthophoto_vars(args)
-
-                kwargs = {
-                    'ulx': ulx,
-                    'uly': uly,
-                    'lrx': lrx,
-                    'lry': lry,
-                    'vars': ' '.join(['-co %s=%s' % (k, orthophoto_vars[k]) for k in orthophoto_vars]),
-                    'proj': reconstruction.georef.proj4(),
-                    'input': tree.odm_orthophoto_render,
-                    'output': tree.odm_orthophoto_tif,
-                    'log': tree.odm_orthophoto_tif_log,
-                    'max_memory': get_max_memory(),
-                }
-
-                system.run('gdal_translate -a_ullr {ulx} {uly} {lrx} {lry} '
-                           '{vars} '
-                           '-a_srs \"{proj}\" '
-                           '--config GDAL_CACHEMAX {max_memory}% '
-                           '--config GDAL_TIFF_INTERNAL_MASK YES '
-                           '"{input}" "{output}" > "{log}"'.format(**kwargs))
-
                 bounds_file_path = os.path.join(tree.odm_georeferencing, 'odm_georeferenced_model.bounds.gpkg')
                     
                 # Cutline computation, before cropping
@@ -159,8 +132,7 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                             blend_distance=20
                         )
 
-                geotiffcreated = True
-            if not geotiffcreated:
+            else:
                 if io.file_exists(tree.odm_orthophoto_render):
                     pseudogeo.add_pseudo_georeferencing(tree.odm_orthophoto_render)
                     log.ODM_INFO("Renaming %s --> %s" % (tree.odm_orthophoto_render, tree.odm_orthophoto_tif))
