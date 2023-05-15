@@ -151,6 +151,8 @@ def parse_srs_header(header):
                             ' - EPSG:*****\n'
                             ' - WGS84 UTM **(N|S)\n'
                             ' - Any valid proj4 string (for example, +proj=utm +zone=32 +north +ellps=WGS84 +datum=WGS84 +units=m +no_defs)\n\n'
+                            ' Some valid EPSG codes are not yet available and need substited with valid proj4 strings\n'
+                            ' Try searching for equivalent proj4 strings at spatialreference.org or epsg.io.\n'
                             'Modify your input and try again.' % header)
         raise RuntimeError(e)
     
