@@ -246,6 +246,9 @@ class OSFMContext:
                 "triangulation_type: ROBUST",
                 "retriangulation_ratio: 2",
             ]
+            
+            if args.matcher_order_neighbors > 0:
+                config.append(f"matching_order_neighbors: {args.matcher_order_neighbors}")
 
             if args.camera_lens != 'auto':
                 config.append("camera_projection_type: %s" % args.camera_lens.upper())
