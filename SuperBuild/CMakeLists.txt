@@ -178,6 +178,7 @@ set(custom_libs OpenSfM
 				PyPopsift
 				Obj2Tiles
 				OpenPointClass
+				ExifTool
 )
 
 externalproject_add(mve

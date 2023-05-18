@@ -1,7 +1,9 @@
-from opendm import log
-from opendm.thermal_tools import dji_unpack
 import cv2
 import os
+from opendm import log
+from opendm.thermal_tools import dji_unpack
+from opendm.exiftool import extract_raw_thermal_image_data
+from opendm.thermal_tools.thermal_utils import sensor_vals_to_temp
 
 def resize_to_match(image, match_photo = None):
     """
@@ -19,16 +21,14 @@ def resize_to_match(image, match_photo = None):
                     interpolation=cv2.INTER_LANCZOS4)
     return image
 
-def dn_to_temperature(photo, image, dataset_tree):
+def dn_to_temperature(photo, image, images_path):
     """
     Convert Digital Number values to temperature (C) values
     :param photo ODM_Photo
     :param image numpy array containing image data
-    :param dataset_tree path to original source image to read data using PIL for DJI thermal photos
+    :param images_path path to original source image to read data using PIL for DJI thermal photos
     :return numpy array with temperature (C) image values
     """
-
-   
 
     # Handle thermal bands
     if photo.is_thermal():
@@ -51,11 +51,18 @@ def dn_to_temperature(photo, image, dataset_tree):
             else:
                 return image
         elif photo.camera_make == "DJI" and photo.camera_model == "MAVIC2-ENTERPRISE-ADVANCED":
-            image = dji_unpack.extract_temperatures_dji(photo, image, dataset_tree)
+            image = dji_unpack.extract_temperatures_dji(photo, image, images_path)
             image = image.astype("float32")
             return image
         else:
-            log.ODM_WARNING("Unsupported camera [%s %s], thermal band will have digital numbers." % (photo.camera_make, photo.camera_model))
+            try:
+                params, image = extract_raw_thermal_image_data(os.path.join(images_path, photo.filename))
+                image = sensor_vals_to_temp(image, **params)
+            except Exception as e:
+                log.ODM_WARNING("Cannot radiometrically calibrate %s: %s" % (photo.filename, str(e)))
+
+            image = image.astype("float32")
+            return image
     else:
         image = image.astype("float32")
         log.ODM_WARNING("Tried to radiometrically calibrate a non-thermal image with temperature values (%s)" % photo.filename)
