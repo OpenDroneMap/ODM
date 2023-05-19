@@ -88,6 +88,10 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                 if reconstruction.is_georeferenced():
                     kwargs['inpaint'] = "-inpaintThreshold 1.0"
 
+                # Thermal dataset with single band
+                if reconstruction.photos[0].band_name.upper() == "LWIR":
+                    kwargs['bands'] = '-bands lwir'
+
             kwargs['models'] = ','.join(map(double_quote, models))
 
             if reconstruction.is_georeferenced():

@@ -305,7 +305,7 @@ class ODM_Photo:
 
             for xtags in xmp:
                 try:
-                    band_name = self.get_xmp_tag(xtags, ['Camera:BandName', '@Camera:BandName'])
+                    band_name = self.get_xmp_tag(xtags, ['Camera:BandName', '@Camera:BandName', 'FLIR:BandName'])
                     if band_name is not None:
                         self.band_name = band_name.replace(" ", "")
 

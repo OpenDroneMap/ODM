@@ -66,11 +66,12 @@ def sighandler(signum, frame):
 signal.signal(signal.SIGINT, sighandler)
 signal.signal(signal.SIGTERM, sighandler)
 
-def run(cmd, env_paths=[context.superbuild_bin_path], env_vars={}, packages_paths=context.python_packages_paths):
+def run(cmd, env_paths=[context.superbuild_bin_path], env_vars={}, packages_paths=context.python_packages_paths, quiet=False):
     """Run a system command"""
     global running_subprocesses
 
-    log.ODM_INFO('running %s' % cmd)
+    if not quiet:
+        log.ODM_INFO('running %s' % cmd)
     env = os.environ.copy()
 
     sep = ":"
@@ -101,7 +102,8 @@ def run(cmd, env_paths=[context.superbuild_bin_path], env_vars={}, packages_path
 
     retcode = p.wait()
 
-    log.logger.log_json_process(cmd, retcode, list(lines))
+    if not quiet:
+        log.logger.log_json_process(cmd, retcode, list(lines))
 
     running_subprocesses.remove(p)
     if retcode < 0:
