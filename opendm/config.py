@@ -153,6 +153,13 @@ def config(argv=None, parser=None):
                         default=0,
                         type=int,
                         help='Perform image matching with the nearest images based on GPS exif data. Set to 0 to match by triangulation. Default: %(default)s')
+    
+    parser.add_argument('--matcher-order',
+                        metavar='<positive integer>',
+                        action=StoreValue,
+                        default=0,
+                        type=int,
+                        help='Perform image matching with the nearest N images based on image filename order. Can speed up processing of sequential images, such as those extracted from video. Set to 0 to disable. Default: %(default)s')
 
     parser.add_argument('--use-fixed-camera-params',
                         action=StoreTrue,
