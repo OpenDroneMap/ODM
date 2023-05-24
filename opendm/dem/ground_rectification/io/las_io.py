@@ -76,7 +76,7 @@ def write_cloud(metadata, point_cloud, output_point_cloud_path):
             {
                 "type": "writers.las",
                 "filename": output_point_cloud_path,
-                "compression": "laszip",
+                "compression": "lazperf",
                 "extra_dims": "all"
             }
         ]
