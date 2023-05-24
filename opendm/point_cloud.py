@@ -311,4 +311,6 @@ def post_point_cloud_steps(args, tree, rerun=False):
         log.ODM_INFO("Creating Cloud Optimized Point Cloud (COPC)")
 
         copc_output = io.related_file_path(tree.odm_georeferencing_model_laz, postfix=".copc")
-        entwine.build_copc([tree.odm_georeferencing_model_laz], copc_output, convert_rgb_8_to_16=True)
+        gcp_geojson_export_file = tree.path("odm_georeferencing", "ground_control_points.geojson")
+        
+        entwine.build_copc([tree.odm_georeferencing_model_laz], copc_output, convert_rgb_8_to_16=True, embed_gcp=gcp_geojson_export_file)
