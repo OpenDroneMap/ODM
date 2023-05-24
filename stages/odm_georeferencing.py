@@ -134,7 +134,7 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                 if reconstruction.has_gcp() and io.file_exists(gcp_gml_export_file):
                     log.ODM_INFO("Embedding GCP info in point cloud")
                     params += [
-                        '--writers.las.vlrs="{\\\"filename\\\": \\\"%s\\\", \\\"user_id\\\": \\\"ODM\\\", \\\"record_id\\\": 1, \\\"description\\\": \\\"Ground Control Points (GML)\\\"}"' % gcp_geojson_export_file.replace(os.sep, "/")
+                        '--writers.las.vlrs="{\\\"filename\\\": \\\"%s\\\", \\\"user_id\\\": \\\"ODM\\\", \\\"record_id\\\": 1, \\\"description\\\": \\\"Ground Control Points (GML)\\\"}"' % gcp_gml_export_file.replace(os.sep, "/")
                     ]
 
                 system.run(cmd + ' ' + ' '.join(stages) + ' ' + ' '.join(params))
