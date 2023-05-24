@@ -62,7 +62,7 @@ def build_untwine(input_point_cloud_files, tmpdir, output_path, max_concurrency=
     # Run untwine
     system.run('untwine --temp_dir "{tmpdir}" {files} --output_dir "{outputdir}"'.format(**kwargs))
 
-def build_copc(input_point_cloud_files, output_file, convert_rgb_8_to_16=False, embed_gcp=None):
+def build_copc(input_point_cloud_files, output_file, convert_rgb_8_to_16=False):
     if len(input_point_cloud_files) == 0:
         logger.ODM_WARNING("Cannot build COPC, no input files")
         return
@@ -75,15 +75,13 @@ def build_copc(input_point_cloud_files, output_file, convert_rgb_8_to_16=False, 
         shutil.rmtree(tmpdir)
     cleanup = [tmpdir]
 
-    do_embed_gcp = embed_gcp is not None and os.path.isfile(embed_gcp)
-
-    if convert_rgb_8_to_16 or do_embed_gcp:
-        tmpdir_2 = io.related_file_path(base_path, postfix="-tmp2")
-        if os.path.exists(tmpdir_2):
-            log.ODM_WARNING("Removing previous directory %s" % tmpdir_2)
-            shutil.rmtree(tmpdir_2)
-        os.makedirs(tmpdir_2, exist_ok=True)
-        cleanup.append(tmpdir_2)
+    if convert_rgb_8_to_16:
+        tmpdir16 = io.related_file_path(base_path, postfix="-tmp16")
+        if os.path.exists(tmpdir16):
+            log.ODM_WARNING("Removing previous directory %s" % tmpdir16)
+            shutil.rmtree(tmpdir16)
+        os.makedirs(tmpdir16, exist_ok=True)
+        cleanup.append(tmpdir16)
 
         converted = []
         ok = True
@@ -91,26 +89,16 @@ def build_copc(input_point_cloud_files, output_file, convert_rgb_8_to_16=False, 
             # Convert 8bit RGB to 16bit RGB (per COPC spec)
             base = os.path.basename(f)
             filename, ext = os.path.splitext(base)
-            out_intermediate = os.path.join(tmpdir_2, "%s_inter%s" % (filename, ext))
+            out_16 = os.path.join(tmpdir16, "%s_16%s" % (filename, ext))
             try:
-                stages = []
-                params = []
-
-                if convert_rgb_8_to_16:
-                    stages.append("assign")
-                    params.append('--filters.assign.value="Red = Red / 255 * 65535"')
-                    params.append('--filters.assign.value="Green = Green / 255 * 65535"')
-                    params.append('--filters.assign.value="Blue = Blue / 255 * 65535"')
+                system.run('pdal translate -i "{input}" -o "{output}" assign '
+                '--filters.assign.value="Red = Red / 255 * 65535" '
+                '--filters.assign.value="Green = Green / 255 * 65535" '
+                '--filters.assign.value="Blue = Blue / 255 * 65535" '.format(input=f, output=out_16))
                 
-                # if do_embed_gcp:
-                #     params.append('--writers.las.vlrs="{\\\"filename\\\": \\\"%s\\\", \\\"user_id\\\": \\\"ODM\\\", \\\"record_id\\\": \\\"1\\\", \\\"description\\\": \\\"Ground Control Points (GML)\\\"}"' % gcp_geojson_export_file.replace(os.sep, "/")
-                #     ]")
-
-                system.run('pdal translate -i "{input}" -o "{output}" {stages} {params}'.format(input=f, output=out_intermediate, stages=" ".join(stages), params=" ".join(params)))
-                
-                converted.append(out_intermediate)
+                converted.append(out_16)
             except Exception as e:
-                log.ODM_WARNING("Cannot execute pdal translate: %s" % str(e))
+                log.ODM_WARNING("Cannot convert point cloud to 16bit RGB, COPC is not going to follow the official spec: %s" % str(e))
                 ok = False
                 break
         if ok:
