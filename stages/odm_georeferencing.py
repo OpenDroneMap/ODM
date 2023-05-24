@@ -121,9 +121,9 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                 stages.append("transformation")
                 utmoffset = reconstruction.georef.utm_offset()
                 params += [
-                    f'--filters.transformation.matrix="1 0 0 {utmoffset:.2f} 0 1 0 {utmoffset:.2f} 0 0 1 0 0 0 0 1"',
-                    f'--writers.las.offset_x={reconstruction.georef.utm_east_offset:.2f}' ,
-                    f'--writers.las.offset_y={reconstruction.georef.utm_north_offset:.2f}',
+                    f'--filters.transformation.matrix="1 0 0 {utmoffset[0]} 0 1 0 {utmoffset[1]} 0 0 1 0 0 0 0 1"',
+                    f'--writers.las.offset_x={reconstruction.georef.utm_east_offset}' ,
+                    f'--writers.las.offset_y={reconstruction.georef.utm_north_offset}',
                     '--writers.las.scale_x=0.001',
                     '--writers.las.scale_y=0.001',
                     '--writers.las.scale_z=0.001',
@@ -134,7 +134,7 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                 if reconstruction.has_gcp() and io.file_exists(gcp_gml_export_file):
                     log.ODM_INFO("Embedding GCP info in point cloud")
                     params += [
-                        '--writers.las.vlrs="{\\\"filename\\\": \\\"%s\\\", \\\"user_id\\\": \\\"OpenDroneMap\\\", \\\"record_id\\\": \\\"1\\\", \\\"description\\\": \\\"Ground Control Points (GML)\\\"}"' % gcp_gml_export_file.replace(os.sep, "/")
+                        '--writers.las.vlrs="{\\\"filename\\\": \\\"%s\\\", \\\"user_id\\\": \\\"ODM\\\", \\\"record_id\\\": \\\"1\\\", \\\"description\\\": \\\"Ground Control Points (GML)\\\"}"' % gcp_gml_export_file.replace(os.sep, "/")
                     ]
 
                 system.run(cmd + ' ' + ' '.join(stages) + ' ' + ' '.join(params))
