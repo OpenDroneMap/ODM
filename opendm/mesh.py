@@ -9,7 +9,7 @@ from opendm import point_cloud
 from scipy import signal
 import numpy as np
 
-def create_25dmesh(inPointCloud, outMesh, radius_steps=["0.05"], dsm_resolution=0.05, depth=8, samples=1, maxVertexCount=100000, available_cores=None, method='gridded', smooth_dsm=True):
+def create_25dmesh(inPointCloud, outMesh, radius_steps=["0.05"], dsm_resolution=0.05, depth=8, samples=1, maxVertexCount=100000, available_cores=None, method='gridded', smooth_dsm=True, max_tiles=None):
     # Create DSM from point cloud
 
     # Create temporary directory
@@ -31,7 +31,8 @@ def create_25dmesh(inPointCloud, outMesh, radius_steps=["0.05"], dsm_resolution=
             outdir=tmp_directory,
             resolution=dsm_resolution,
             max_workers=available_cores,
-            apply_smoothing=smooth_dsm
+            apply_smoothing=smooth_dsm,
+            max_tiles=max_tiles
         )
 
     if method == 'gridded':
