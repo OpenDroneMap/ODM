@@ -54,7 +54,7 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                 }
 
                 # Write GeoPackage
-                with fiona.open(gcp_export_file, 'w', driver="GPKG", 
+                with fiona.open(gcp_export_file, 'w', driver="GPKG",
                                 crs=fiona.crs.from_string(reconstruction.georef.proj4()),
                                 schema=gcp_schema) as f:
                     for gcp in gcps:
@@ -72,13 +72,13 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                                 ('error_z', gcp['error'][2]),
                             ])
                         })
-                
+
                 # Write GML
                 try:
                     system.run('ogr2ogr -of GML "{}" "{}"'.format(gcp_gml_export_file, gcp_export_file))
                 except Exception as e:
                     log.ODM_WARNING("Cannot generate ground control points GML file: %s" % str(e))
-            
+
                 # Write GeoJSON
                 geojson = {
                     'type': 'FeatureCollection',
@@ -101,7 +101,7 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                         },
                         'properties': properties
                     })
-                
+
                 with open(gcp_geojson_export_file, 'w') as f:
                     f.write(json.dumps(geojson, indent=4))
 
@@ -109,34 +109,34 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                 log.ODM_WARNING("GCPs could not be loaded for writing to %s" % gcp_export_file)
 
         if not io.file_exists(tree.odm_georeferencing_model_laz) or self.rerun():
-            cmd = ('pdal translate -i "%s" -o \"%s\"' % (tree.filtered_point_cloud, tree.odm_georeferencing_model_laz))
+            cmd = f'pdal translate -i "{tree.filtered_point_cloud}" -o \"{tree.odm_georeferencing_model_laz}\"'
             stages = ["ferry"]
             params = [
-                '--filters.ferry.dimensions="views => UserData"',
-                '--writers.las.compression="lazip"',
+                '--filters.ferry.dimensions="views => UserData"'
             ]
 
             if reconstruction.is_georeferenced():
                 log.ODM_INFO("Georeferencing point cloud")
 
                 stages.append("transformation")
+                utmoffset = reconstruction.georef.utm_offset()
                 params += [
-                    '--filters.transformation.matrix="1 0 0 %s 0 1 0 %s 0 0 1 0 0 0 0 1"' % reconstruction.georef.utm_offset(),
-                    '--writers.las.offset_x=%s' % reconstruction.georef.utm_east_offset,
-                    '--writers.las.offset_y=%s' % reconstruction.georef.utm_north_offset,
+                    f'--filters.transformation.matrix="1 0 0 {utmoffset:.2f} 0 1 0 {utmoffset:.2f} 0 0 1 0 0 0 0 1"',
+                    f'--writers.las.offset_x={reconstruction.georef.utm_east_offset:.2f}' ,
+                    f'--writers.las.offset_y={reconstruction.georef.utm_north_offset:.2f}',
                     '--writers.las.scale_x=0.001',
                     '--writers.las.scale_y=0.001',
                     '--writers.las.scale_z=0.001',
                     '--writers.las.offset_z=0',
-                    '--writers.las.a_srs="%s"' % reconstruction.georef.proj4()
+                    f'--writers.las.a_srs="{reconstruction.georef.proj4()}"' # HOBU this should maybe be WKT
                 ]
 
                 if reconstruction.has_gcp() and io.file_exists(gcp_gml_export_file):
                     log.ODM_INFO("Embedding GCP info in point cloud")
                     params += [
-                        '--writers.las.vlrs="{\\\"filename\\\": \\\"%s\\\", \\\"user_id\\\": \\\"ODM_GCP\\\", \\\"description\\\": \\\"Ground Control Points (GML)\\\"}"' % gcp_gml_export_file.replace(os.sep, "/")
+                        '--writers.las.vlrs="{\\\"filename\\\": \\\"%s\\\", \\\"user_id\\\": \\\"OpenDroneMap\\\", \\\"record_id\\\": \\\"1\\\", \\\"description\\\": \\\"Ground Control Points (GML)\\\"}"' % gcp_gml_export_file.replace(os.sep, "/")
                     ]
-                
+
                 system.run(cmd + ' ' + ' '.join(stages) + ' ' + ' '.join(params))
 
                 self.update_progress(50)
@@ -144,27 +144,27 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                 if args.crop > 0:
                     log.ODM_INFO("Calculating cropping area and generating bounds shapefile from point cloud")
                     cropper = Cropper(tree.odm_georeferencing, 'odm_georeferenced_model')
-                    
+
                     if args.fast_orthophoto:
                         decimation_step = 4
                     else:
                         decimation_step = 40
-                    
+
                     # More aggressive decimation for large datasets
                     if not args.fast_orthophoto:
                         decimation_step *= int(len(reconstruction.photos) / 1000) + 1
                         decimation_step = min(decimation_step, 95)
-                        
+
                     try:
-                        cropper.create_bounds_gpkg(tree.odm_georeferencing_model_laz, args.crop, 
+                        cropper.create_bounds_gpkg(tree.odm_georeferencing_model_laz, args.crop,
                                                     decimation_step=decimation_step)
                     except:
                         log.ODM_WARNING("Cannot calculate crop bounds! We will skip cropping")
                         args.crop = 0
-                
+
                 if 'boundary' in outputs and args.crop == 0:
                     log.ODM_INFO("Using boundary JSON as cropping area")
-                    
+
                     bounds_base, _ = os.path.splitext(tree.odm_georeferencing_model_laz)
                     bounds_json = bounds_base + ".bounds.geojson"
                     bounds_gpkg = bounds_base + ".bounds.gpkg"
@@ -230,7 +230,7 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                             else:
                                 obj = os.path.join(texturing, "odm_textured_model_geo.obj")
                                 transform_textured_model(obj)
-                        
+
                         with open(tree.odm_georeferencing_alignment_matrix, "w") as f:
                             f.write(np_to_json(a_matrix))
                     else:
@@ -244,8 +244,8 @@ class ODMGeoreferencingStage(types.ODM_Stage):
         else:
             log.ODM_WARNING('Found a valid georeferenced model in: %s'
                             % tree.odm_georeferencing_model_laz)
-        
+
         if args.optimize_disk_space and io.file_exists(tree.odm_georeferencing_model_laz) and io.file_exists(tree.filtered_point_cloud):
             os.remove(tree.filtered_point_cloud)
-        
+
 
