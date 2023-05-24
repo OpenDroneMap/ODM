@@ -11,7 +11,7 @@ from opendm.system import run
 from opendm import point_cloud
 from opendm import io
 from opendm import system
-from opendm.concurrency import get_max_memory, parallel_map
+from opendm.concurrency import get_max_memory, parallel_map, get_total_memory
 from scipy import ndimage
 from datetime import datetime
 from opendm.vendor.gdal_fillnodata import main as gdal_fillnodata
@@ -69,7 +69,7 @@ error = None
 def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56'], gapfill=True,
                 outdir='', resolution=0.1, max_workers=1, max_tile_size=4096,
                 decimation=None, keep_unfilled_copy=False,
-                apply_smoothing=True):
+                apply_smoothing=True, max_tiles=None):
     """ Create DEM from multiple radii, and optionally gapfill """
     
     global error
@@ -149,6 +149,11 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
 
                 miny = maxy
             minx = maxx
+    
+    # Safety check
+    if max_tiles is not None:
+        if len(tiles) > max_tiles and final_dem_pixels > get_total_memory() * 10:
+            raise system.ExitException("Max tiles limit exceeded (%s). This is a strong indicator that the reconstruction failed and we would probably run out of memory trying to process this" % max_tiles)
 
     # Sort tiles by increasing radius
     tiles.sort(key=lambda t: float(t['radius']), reverse=True)
