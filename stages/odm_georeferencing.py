@@ -131,7 +131,7 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                     f'--writers.las.a_srs="{reconstruction.georef.proj4()}"' # HOBU this should maybe be WKT
                 ]
 
-                if reconstruction.has_gcp() and io.file_exists(gcp_gml_export_file):
+                if reconstruction.has_gcp() and io.file_exists(gcp_geojson_export_file):
                     log.ODM_INFO("Embedding GCP info in point cloud")
                     params += [
                         '--writers.las.vlrs="{\\\"filename\\\": \\\"%s\\\", \\\"user_id\\\": \\\"ODM\\\", \\\"record_id\\\": 1, \\\"description\\\": \\\"Ground Control Points (GeoJSON)\\\"}"' % gcp_geojson_export_file.replace(os.sep, "/")
