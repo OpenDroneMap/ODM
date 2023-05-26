@@ -617,9 +617,11 @@ class ODM_Photo:
                 else:
                     result.append(None)
             return result
-        else:
+        elif hasattr(tag.values, 'den'):
             return [float(tag.values.num) / float(tag.values.den) if tag.values.den != 0 else None]
-    
+        else:
+            return [None]
+
     def float_value(self, tag):
         v = self.float_values(tag)
         if len(v) > 0:
