@@ -152,7 +152,7 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
     
     # Safety check
     if max_tiles is not None:
-        if len(tiles) > max_tiles and final_dem_pixels > get_total_memory():
+        if len(tiles) > max_tiles and (final_dem_pixels * 4) > get_total_memory():
             raise system.ExitException("Max tiles limit exceeded (%s). This is a strong indicator that the reconstruction failed and we would probably run out of memory trying to process this" % max_tiles)
 
     # Sort tiles by increasing radius
