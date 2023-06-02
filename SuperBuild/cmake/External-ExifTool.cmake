@@ -32,7 +32,7 @@ externalproject_add(${_proj_name}
     UPDATE_COMMAND    ""
     CONFIGURE_COMMAND ""
     BUILD_IN_SOURCE 1
-    BUILD_COMMAND    perl Makefile.PL PREFIX=${SB_INSTALL_DIR}
+    BUILD_COMMAND    perl Makefile.PL PREFIX=${SB_INSTALL_DIR} LIB=${SB_INSTALL_DIR}/bin/lib
     INSTALL_COMMAND  make install && rm -fr ${SB_INSTALL_DIR}/man
 )
 endif()
