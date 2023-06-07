@@ -141,7 +141,7 @@ class ODMOpenSfMStage(types.ODM_Stage):
             largest_photo = find_largest_photo([p for p in photos])
             undistort_pipeline.append(resize_thermal_images)
 
-        if args.radiometric_calibration != "none":
+        if args.radiometric-calibration != "none":
             undistort_pipeline.append(radiometric_calibrate)
         
         image_list_override = None
