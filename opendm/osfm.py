@@ -248,7 +248,10 @@ class OSFMContext:
             ]
             
             if args.matcher_order > 0:
-                config.append("matching_order_neighbors: %s" % args.matcher_order)
+                if not reconstruction.is_georeferenced():
+                    config.append("matching_order_neighbors: %s" % args.matcher_order)
+                else:
+                    log.ODM_WARNING("Georeferenced reconstruction, ignoring --matcher-order")
 
             if args.camera_lens != 'auto':
                 config.append("camera_projection_type: %s" % args.camera_lens.upper())
