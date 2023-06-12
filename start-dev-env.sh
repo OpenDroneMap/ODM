@@ -75,7 +75,7 @@ case $uname in
 esac
 
 if [[ $platform != "Linux" && $platform != "MacOS" ]]; then
-	echo "This script only works on Linux."
+	echo "This script only works on Linux and MacOS."
     exit 1
 fi
 
