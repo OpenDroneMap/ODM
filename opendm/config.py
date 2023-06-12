@@ -159,7 +159,7 @@ def config(argv=None, parser=None):
                         action=StoreValue,
                         default=0,
                         type=int,
-                        help='Perform image matching with the nearest N images based on image filename order. Can speed up processing of sequential images, such as those extracted from video. Set to 0 to disable. Default: %(default)s')
+                        help='Perform image matching with the nearest N images based on image filename order. Can speed up processing of sequential images, such as those extracted from video. It is applied only on non-georeferenced datasets. Set to 0 to disable. Default: %(default)s')
 
     parser.add_argument('--use-fixed-camera-params',
                         action=StoreTrue,

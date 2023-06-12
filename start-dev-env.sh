@@ -67,14 +67,14 @@ platform="Linux" # Assumed
 uname=$(uname)
 case $uname in
 	"Darwin")
-	platform="MacOS / OSX"
+	platform="MacOS"
 	;;
 	MINGW*)
 	platform="Windows"
 	;;
 esac
 
-if [[ $platform != "Linux" ]]; then
+if [[ $platform != "Linux" && $platform != "MacOS" ]]; then
 	echo "This script only works on Linux."
     exit 1
 fi
