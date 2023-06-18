@@ -122,6 +122,11 @@ class SrtFileParser:
         # 00:00:00,000 --> 00:00:01,000
         # F/2.8, SS 206.14, ISO 150, EV 0, GPS (-82.6669, 27.7716, 10), D 2.80m, H 0.00m, H.S 0.00m/s, V.S 0.00m/s 
 
+        # DJI Phantom4 RTK
+        # 36
+        # 00:00:35,000 --> 00:00:36,000
+        # F/6.3, SS 60, ISO 100, EV 0, RTK (120.083799, 30.213635, 28), HOME (120.084146, 30.214243, 103.55m), D 75.36m, H 76.19m, H.S 0.30m/s, V.S 0.00m/s, F.PRY (-5.3°, 2.1°, 28.3°), G.PRY (-40.0°, 0.0°, 28.2°)
+
         with open(self.filename, 'r') as f:
 
             iso = None
@@ -193,14 +198,17 @@ class SrtFileParser:
                 latitude = match_single([
                     ("latitude: ([\d\.\-]+)", lambda v: float(v) if v != 0 else None),
                     ("GPS \([\d\.\-]+,? ([\d\.\-]+),? [\d\.\-]+\)", lambda v: float(v) if v != 0 else None),
+                    ("\([-+]?\d+\.\d+, (-?\d+\.\d+), -?\d+\)", lambda v: float(v) if v != 0 else None),
                 ], line)
 
                 longitude = match_single([
                     ("longitude: ([\d\.\-]+)", lambda v: float(v) if v != 0 else None),
                     ("GPS \(([\d\.\-]+),? [\d\.\-]+,? [\d\.\-]+\)", lambda v: float(v) if v != 0 else None),
+                    ("\((-?\d+\.\d+), [-+]?\d+\.\d+, -?\d+\)", lambda v: float(v) if v != 0 else None),
                 ], line)
 
                 altitude = match_single([
                     ("altitude: ([\d\.\-]+)", lambda v: float(v) if v != 0 else None),
                     ("GPS \([\d\.\-]+,? [\d\.\-]+,? ([\d\.\-]+)\)", lambda v: float(v) if v != 0 else None),
+                    ("\([-+]?\d+\.\d+, [-+]?\d+\.\d+, (\d+)\)", lambda v: float(v) if v != 0 else None),
                 ], line)
