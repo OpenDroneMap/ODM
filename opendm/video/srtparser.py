@@ -198,17 +198,17 @@ class SrtFileParser:
                 latitude = match_single([
                     ("latitude: ([\d\.\-]+)", lambda v: float(v) if v != 0 else None),
                     ("GPS \([\d\.\-]+,? ([\d\.\-]+),? [\d\.\-]+\)", lambda v: float(v) if v != 0 else None),
-                    ("\([-+]?\d+\.\d+, (-?\d+\.\d+), -?\d+\)", lambda v: float(v) if v != 0 else None),
+                    ("RTK \([-+]?\d+\.\d+, (-?\d+\.\d+), -?\d+\)", lambda v: float(v) if v != 0 else None),
                 ], line)
 
                 longitude = match_single([
                     ("longitude: ([\d\.\-]+)", lambda v: float(v) if v != 0 else None),
                     ("GPS \(([\d\.\-]+),? [\d\.\-]+,? [\d\.\-]+\)", lambda v: float(v) if v != 0 else None),
-                    ("\((-?\d+\.\d+), [-+]?\d+\.\d+, -?\d+\)", lambda v: float(v) if v != 0 else None),
+                    ("RTK \((-?\d+\.\d+), [-+]?\d+\.\d+, -?\d+\)", lambda v: float(v) if v != 0 else None),
                 ], line)
 
                 altitude = match_single([
                     ("altitude: ([\d\.\-]+)", lambda v: float(v) if v != 0 else None),
                     ("GPS \([\d\.\-]+,? [\d\.\-]+,? ([\d\.\-]+)\)", lambda v: float(v) if v != 0 else None),
-                    ("\([-+]?\d+\.\d+, [-+]?\d+\.\d+, (\d+)\)", lambda v: float(v) if v != 0 else None),
+                    ("RTK \([-+]?\d+\.\d+, [-+]?\d+\.\d+, (-?\d+)\)", lambda v: float(v) if v != 0 else None),
                 ], line)
