@@ -10,8 +10,8 @@ import multiprocessing
 from opendm.loghelpers import double_quote, args_to_dict
 from vmem import virtual_memory
 
-if sys.platform == 'win32':
-    # No colors on Windows, sorry!
+if sys.platform == 'win32' or os.getenv('no_ansiesc'):
+    # No colors on Windows (sorry !) or existing no_ansiesc env variable 
     HEADER = ''
     OKBLUE = ''
     OKGREEN = ''
