@@ -481,6 +481,12 @@ class ODM_Photo:
                 self.capture_uuid = matches.group(1)
                 self.band_name = band_aliases.get(matches.group(2), matches.group(2))
 
+        # Some DJI models do not have a band name but have an image source field
+        if self.camera_make.lower() == 'dji':
+            image_source = self.get_xmp_tag(xtags, '@drone-dji:ImageSource')
+            if self.band_name == 'RGB' and isinstance(image_source, str) and image_source.lower() == "infraredcamera":
+                self.band_name = 'LWIR'
+                
         # Sanitize band name since we use it in folder paths
         self.band_name = re.sub('[^A-Za-z0-9]+', '', self.band_name)
 

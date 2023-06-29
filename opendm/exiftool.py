@@ -2,6 +2,7 @@ import json
 import os
 import tempfile
 import base64
+import numpy as np
 from rasterio.io import MemoryFile
 from opendm.system import run
 from opendm import log
@@ -36,7 +37,12 @@ def extract_raw_thermal_image_data(image_path):
                                 img = img[0][:,:,None]
 
                         del j["RawThermalImage"]
-                    
+                    elif "ThermalData" in j:
+                        thermal_data = base64.b64decode(j["ThermalData"][len("base64:"):])
+                        thermal_buf = np.frombuffer(thermal_data, dtype=np.int16)
+                        # TODO: how to interpret these?
+                        # https://exiftool.org/forum/index.php?topic=11401.45
+
                     return extract_temperature_params_from(j), img
                 else:
                     raise Exception("Invalid JSON (not a list)")
@@ -68,6 +74,7 @@ def unit(unit):
 
 def extract_temperature_params_from(tags):
     # Defaults
+
     meta = {
         "Emissivity": float,
         "ObjectDistance": unit("m"),
