@@ -7,4 +7,5 @@ def get_dem_vars(args):
         'BLOCKYSIZE': 512,
         'BIGTIFF': 'IF_SAFER',
         'NUM_THREADS': args.max_concurrency,
+        'multi':'',
     }
