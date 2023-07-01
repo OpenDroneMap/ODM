@@ -2,6 +2,7 @@ from opendm import log
 
 # Make Model (lowercase) --> readout time (ms)
 RS_DATABASE = {
+    'autel robotics xt701': 25, # Autel Evo II 8k 
     'dji phantom vision fc200': 74, # Phantom 2
     
     'dji fc300s': 33, # Phantom 3 Advanced
