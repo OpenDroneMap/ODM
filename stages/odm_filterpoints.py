@@ -36,7 +36,7 @@ class ODMFilterPoints(types.ODM_Stage):
                         else:
                             avg_gsd = gsd.opensfm_reconstruction_average_gsd(tree.opensfm_reconstruction)
                             if avg_gsd is not None:
-                                boundary_distance = avg_gsd * 20 # 20 is arbitrary
+                                boundary_distance = avg_gsd * 100 # 100 is arbitrary
                             
                         if boundary_distance is not None:
                             outputs['boundary'] = compute_boundary_from_shots(tree.opensfm_reconstruction, boundary_distance, reconstruction.get_proj_offset())
