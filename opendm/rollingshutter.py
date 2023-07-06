@@ -40,6 +40,8 @@ RS_DATABASE = {
 
     'autel robotics xl724': 29, # Autel Nano+
 
+    'parrot anafi': 39, # Parrot Anafi
+
     # Help us add more! 
     # See: https://github.com/OpenDroneMap/RSCalibration for instructions
 }
