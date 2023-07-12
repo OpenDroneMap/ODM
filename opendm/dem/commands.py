@@ -313,11 +313,11 @@ def median_smoothing(geotiff_path, output_path, smoothing_iterations=1, window_s
 
     log.ODM_INFO('Starting smoothing...')
 
-    with rasterio.open(geotiff_path) as img:
+    # imgout needs to be 'w+' (write/read) to work in place for all the iterations but the first
+    with rasterio.open(geotiff_path) as img, rasterio.open(output_path, 'w+', BIGTIFF="IF_SAFER", **img.profile) as imgout:
         nodata = img.nodatavals[0]
         dtype = img.dtypes[0]
         shape = img.shape
-        arr = img.read()[0]
         for i in range(smoothing_iterations):
             log.ODM_INFO("Smoothing iteration %s" % str(i + 1))
             rows, cols = numpy.meshgrid(numpy.arange(0, shape[0], window_size), numpy.arange(0, shape[1], window_size))
@@ -330,40 +330,51 @@ def median_smoothing(geotiff_path, output_path, smoothing_iterations=1, window_s
             filter = functools.partial(ndimage.median_filter, size=9, output=dtype, mode='nearest')
 
             # threading backend and GIL released filter are important for memory efficiency and multi-core performance
-            window_arrays = Parallel(n_jobs=num_workers, backend='threading')(delayed(window_filter_2d)(arr, nodata , window, 9, filter) for window in windows)
+            Parallel(n_jobs=num_workers, backend='threading')(delayed(window_filter_2d)(img, imgout, nodata , window, 9, filter) for window in windows)
 
-            for window, win_arr in zip(windows, window_arrays):
-                arr[window[0]:window[2], window[1]:window[3]] = win_arr
-        log.ODM_INFO("Smoothing completed in %s" % str(datetime.now() - start))
-        # write output
-        with rasterio.open(output_path, 'w', BIGTIFF="IF_SAFER", **img.profile) as imgout:
-            imgout.write(arr, 1)
+            # After the first iteration, modifications are done in place
+            if i == 0:
+                img = imgout
+
 
     log.ODM_INFO('Completed smoothing to create %s in %s' % (output_path, datetime.now() - start))
+    exit(42)
     return output_path
 
 
-def window_filter_2d(arr, nodata, window, kernel_size, filter):
+def window_filter_2d(img, imgout, nodata, window, kernel_size, filter):
     """
     Apply a filter to dem within a window, expects to work with kernal based filters
 
-    :param geotiff_path: path to the geotiff to filter
+    :param img: path to the geotiff to filter
+    :param imgout: path to write the giltered geotiff to. It can be the same as img to do the modification in place.
     :param window: the window to apply the filter, should be a list contains row start, col_start, row_end, col_end
     :param kernel_size: the size of the kernel for the filter, works with odd numbers, need to test if it works with even numbers
     :param filter: the filter function which takes a 2d array as input and filter results as output.
     """
-    shape = arr.shape[:2]
+    shape = img.shape[:2]
     if window[0] < 0 or window[1] < 0 or window[2] > shape[0] or window[3] > shape[1]:
         raise Exception('Window is out of bounds')
     expanded_window = [ max(0, window[0] - kernel_size // 2), max(0, window[1] - kernel_size // 2), min(shape[0], window[2] + kernel_size // 2), min(shape[1], window[3] + kernel_size // 2) ]
-    win_arr = arr[expanded_window[0]:expanded_window[2], expanded_window[1]:expanded_window[3]]
+
+    # Read input window
+    width = expanded_window[3] - expanded_window[1]
+    height = expanded_window[2] - expanded_window[0]
+    rasterio_window = rasterio.windows.Window(col_off=expanded_window[1], row_off=expanded_window[0], width=width, height=height)
+    win_arr = img.read(indexes=1, window=rasterio_window)
+
     # Should have a better way to handle nodata, similar to the way the filter algorithms handle the border (reflection, nearest, interpolation, etc).
     # For now will follow the old approach to guarantee identical outputs
     nodata_locs = win_arr == nodata
     win_arr = filter(win_arr)
     win_arr[nodata_locs] = nodata
     win_arr = win_arr[window[0] - expanded_window[0] : window[2] - expanded_window[0], window[1] - expanded_window[1] : window[3] - expanded_window[1]]
-    return win_arr
+
+    # Write output window
+    width = window[3] - window[1]
+    height = window[2] - window[0]
+    rasterio_window = rasterio.windows.Window(col_off=window[1], row_off=window[0], width=width, height=height)
+    imgout.write(win_arr, indexes=1, window=rasterio_window)
 
 
 def get_dem_radius_steps(stats_file, steps, resolution, multiplier = 1.0):
