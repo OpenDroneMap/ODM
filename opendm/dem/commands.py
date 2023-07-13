@@ -338,7 +338,6 @@ def median_smoothing(geotiff_path, output_path, smoothing_iterations=1, window_s
 
 
     log.ODM_INFO('Completed smoothing to create %s in %s' % (output_path, datetime.now() - start))
-    exit(42)
     return output_path
 
 
