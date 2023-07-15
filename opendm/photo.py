@@ -630,6 +630,8 @@ class ODM_Photo:
     def int_values(self, tag):
         if isinstance(tag.values, list):
             return [int(v) for v in tag.values]
+        elif isinstance(tag.values, str) and tag.values == '':
+            return [0]
         else:
             return [int(tag.values)]
 
