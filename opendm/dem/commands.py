@@ -319,11 +319,9 @@ def median_smoothing(geotiff_path, output_path, smoothing_iterations=1, window_s
     output_dirty_in = os.path.join(folder_path, "{}.dirty_1{}".format(basename, ext))
     output_dirty_out = os.path.join(folder_path, "{}.dirty_2{}".format(basename, ext))
 
-    shutil.copyfile(geotiff_path, output_dirty_in)
-
     log.ODM_INFO('Starting smoothing...')
 
-    with rasterio.open(output_dirty_in, "r+", num_threads=num_workers,) as img, rasterio.open(output_dirty_out, "w+", BIGTIFF="IF_SAFER", num_threads=num_workers, **img_in.profile) as imgout:
+    with rasterio.open(geotiff_path, num_threads=num_workers) as img, rasterio.open(output_dirty_in, "w+", BIGTIFF="IF_SAFER", num_threads=num_workers, **img.profile) as imgout, rasterio.open(output_dirty_out, "w+", BIGTIFF="IF_SAFER", num_threads=num_workers, **img.profile) as imgout2:
         nodata = img.nodatavals[0]
         dtype = img.dtypes[0]
         shape = img.shape
@@ -347,10 +345,15 @@ def median_smoothing(geotiff_path, output_path, smoothing_iterations=1, window_s
             Parallel(n_jobs=num_workers, backend='threading')(delayed(window_filter_2d)(img, imgout, nodata , window, 9, filter, read_lock, write_lock) for window in windows)
 
             # Between each iteration we swap the input and output temporary files
-            img_in, img_out = img_out, img_in
+            #img_in, img_out = img_out, img_in
+            if (i == 0):
+                img = imgout
+                imgout = imgout2
+            else:
+                img, imgout = imgout, img
     
     # If the number of iterations was even, we need to swap temporary files
-    if (smoothing_iterations % 2 == 0):
+    if (smoothing_iterations % 2 != 0):
         output_dirty_in, output_dirty_out = output_dirty_out, output_dirty_in
 
     # Cleaning temporary files
