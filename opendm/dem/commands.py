@@ -312,10 +312,18 @@ def median_smoothing(geotiff_path, output_path, smoothing_iterations=1, window_s
     if not os.path.exists(geotiff_path):
         raise Exception('File %s does not exist!' % geotiff_path)
 
+    # Prepare temporary files
+    folder_path, output_filename = os.path.split(output_path)
+    basename, ext = os.path.splitext(output_filename)
+
+    output_dirty_in = os.path.join(folder_path, "{}.dirty_1{}".format(basename, ext))
+    output_dirty_out = os.path.join(folder_path, "{}.dirty_2{}".format(basename, ext))
+
+    shutil.copyfile(geotiff_path, output_dirty_in)
+
     log.ODM_INFO('Starting smoothing...')
 
-    # imgout needs to be 'w+' (write/read) to work in place for all the iterations but the first
-    with rasterio.open(geotiff_path, num_threads=num_workers,) as img, rasterio.open(output_path, "w+", BIGTIFF="IF_SAFER", num_threds=num_workers, **img.profile) as imgout:
+    with rasterio.open(output_dirty_in, "r+", num_threads=num_workers,) as img, rasterio.open(output_dirty_out, "w+", BIGTIFF="IF_SAFER", num_threads=num_workers, **img_in.profile) as imgout:
         nodata = img.nodatavals[0]
         dtype = img.dtypes[0]
         shape = img.shape
@@ -338,12 +346,18 @@ def median_smoothing(geotiff_path, output_path, smoothing_iterations=1, window_s
             # threading backend and GIL released filter are important for memory efficiency and multi-core performance
             Parallel(n_jobs=num_workers, backend='threading')(delayed(window_filter_2d)(img, imgout, nodata , window, 9, filter, read_lock, write_lock) for window in windows)
 
-            # After the first iteration, modifications are done in place
-            if i == 0:
-                img = imgout
-                # We now read and write to the same file
-                read_lock = write_lock
+            # Between each iteration we swap the input and output temporary files
+            img_in, img_out = img_out, img_in
+    
+    # If the number of iterations was even, we need to swap temporary files
+    if (smoothing_iterations % 2 == 0):
+        output_dirty_in, output_dirty_out = output_dirty_out, output_dirty_in
 
+    # Cleaning temporary files
+    if os.path.exists(output_dirty_out):
+        os.replace(output_dirty_out, output_path)
+    if os.path.exists(output_dirty_in):
+        os.remove(output_dirty_in)
 
     log.ODM_INFO('Completed smoothing to create %s in %s' % (output_path, datetime.now() - start))
     return output_path
