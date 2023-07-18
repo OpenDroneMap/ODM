@@ -267,6 +267,8 @@ Starting from version 3.0.4, ODM can automatically extract images from video fil
 
 Help improve our software! We welcome contributions from everyone, whether to add new features, improve speed, fix existing bugs or add support for more cameras. Check our [code of conduct](https://github.com/OpenDroneMap/documents/blob/master/CONDUCT.md), the [contributing guidelines](https://github.com/OpenDroneMap/documents/blob/master/CONTRIBUTING.md) and [how decisions are made](https://github.com/OpenDroneMap/documents/blob/master/GOVERNANCE.md#how-decisions-are-made).
 
+
+### Installation
 For Linux users, the easiest way to modify the software is to make sure docker is installed, clone the repository and then run from a shell:
 
 ```bash
@@ -280,6 +282,10 @@ Run configure to set up the required third party libraries:
 (odmdev) [user:/code] master+* ± bash configure.sh reinstall
 ```
 
+
+### run with modifications
+
+### attach docker
 You can now make changes to the ODM source. When you are ready to test the changes you can simply invoke:
 
 ```bash
