@@ -282,15 +282,17 @@ Run configure to set up the required third party libraries:
 (odmdev) [user:/code] master+* ± bash configure.sh reinstall
 ```
 
-
-### run with modifications
-
-### attach docker
 You can now make changes to the ODM source. When you are ready to test the changes you can simply invoke:
 
 ```bash
 (odmdev) [user:/code] master+* ± ./run.sh --project-path /datasets mydataset
 ```
+
+### To come back to dev environement
+```
+$ docker start -a  odmdev
+```
+
 
 If you have questions, join the developer's chat at https://community.opendronemap.org/c/developers-chat/21
 
