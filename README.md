@@ -287,10 +287,13 @@ You can now make changes to the ODM source. When you are ready to test the chang
 ```bash
 (odmdev) [user:/code] master+* ± ./run.sh --project-path /datasets mydataset
 ```
-
-### To come back to dev environement
+### Stop dev container
+```bash
+ docker  stop odmdev
 ```
-$ docker start -a  odmdev
+### To come back to dev environement
+```bash
+docker start -a  odmdev
 ```
 
 
