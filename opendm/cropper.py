@@ -56,7 +56,7 @@ class Cropper:
                 '{warpOptions} '
                 '{geotiffInput} '
                 '{geotiffOutput} '
-                '--config GDAL_CACHEMAX {max_memory}%'.format(**kwargs))
+                '-multi --config GDAL_CACHEMAX {max_memory}%'.format(**kwargs))
 
             if not keep_original:
                 os.remove(original_geotiff)
