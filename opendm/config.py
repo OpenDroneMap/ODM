@@ -543,7 +543,7 @@ def config(argv=None, parser=None):
                         action=StoreValue,
                         type=float,
                         default=5,
-                        help='DSM/DTM resolution in cm / pixel.'
+                        help='DSM/DTM resolution in cm / pixel. Note that this value is capped by a ground sampling distance (GSD) estimate.'
                              ' Default: %(default)s')
 
     parser.add_argument('--dem-decimation',
