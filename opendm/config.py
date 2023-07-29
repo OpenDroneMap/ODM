@@ -272,10 +272,11 @@ def config(argv=None, parser=None):
                         action=StoreTrue,
                         nargs=0,
                         default=False,
-                        help='Ignore Ground Sampling Distance (GSD). GSD '
-                        'caps the maximum resolution of image outputs and '
-                        'resizes images when necessary, resulting in faster processing and '
-                        'lower memory usage. Since GSD is an estimate, sometimes ignoring it can result in slightly better image output quality. Never use it, unless you are positive you need it, and even then: don't use it. Default: %(default)s')
+                        help='Ignore Ground Sampling Distance (GSD).'
+                        'A memory and processor hungry change to the default behavior when set to true.'
+                        'Ordinarily, GSD estimates are used to cap the maximum resolution of image outputs and resizes images when necessary, resulting in faster processing and lower memory usage. '
+                        'Since GSD is an estimate, sometimes ignoring it can result in slightly better image output quality. '
+                        'Never set --ignore-gsd to true unless you are positive you need it, and even then: don't use it. Default: %(default)s')
     
     parser.add_argument('--no-gpu',
                     action=StoreTrue,
