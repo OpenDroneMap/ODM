@@ -227,6 +227,11 @@ class OSFMContext:
             else:
                 matcher_graph_rounds = 50
                 matcher_neighbors = 0
+            
+            # Always use matcher-neighbors if less than 2 pictures
+            if len(photos) <= 2:
+                matcher_graph_rounds = 0
+                matcher_neighbors = 2
 
             config = [
                 "use_exif_size: no",
