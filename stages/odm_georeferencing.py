@@ -5,6 +5,7 @@ import pipes
 import fiona
 import fiona.crs
 import json
+import zipfile
 from collections import OrderedDict
 from pyproj import CRS
 
@@ -32,6 +33,7 @@ class ODMGeoreferencingStage(types.ODM_Stage):
         gcp_export_file = tree.path("odm_georeferencing", "ground_control_points.gpkg")
         gcp_gml_export_file = tree.path("odm_georeferencing", "ground_control_points.gml")
         gcp_geojson_export_file = tree.path("odm_georeferencing", "ground_control_points.geojson")
+        gcp_geojson_zip_export_file = tree.path("odm_georeferencing", "ground_control_points.zip")
         unaligned_model = io.related_file_path(tree.odm_georeferencing_model_laz, postfix="_unaligned")
         if os.path.isfile(unaligned_model) and self.rerun():
             os.unlink(unaligned_model)
@@ -104,6 +106,9 @@ class ODMGeoreferencingStage(types.ODM_Stage):
 
                 with open(gcp_geojson_export_file, 'w') as f:
                     f.write(json.dumps(geojson, indent=4))
+                
+                with zipfile.ZipFile(gcp_geojson_zip_export_file, 'w', compression=zipfile.ZIP_LZMA) as f:
+                    f.write(gcp_geojson_export_file, arcname=os.path.basename(gcp_geojson_export_file))
 
             else:
                 log.ODM_WARNING("GCPs could not be loaded for writing to %s" % gcp_export_file)
@@ -134,7 +139,7 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                 if reconstruction.has_gcp() and io.file_exists(gcp_geojson_export_file):
                     log.ODM_INFO("Embedding GCP info in point cloud")
                     params += [
-                        '--writers.las.vlrs="{\\\"filename\\\": \\\"%s\\\", \\\"user_id\\\": \\\"ODM\\\", \\\"record_id\\\": 1, \\\"description\\\": \\\"Ground Control Points (GeoJSON)\\\"}"' % gcp_geojson_export_file.replace(os.sep, "/")
+                        '--writers.las.vlrs="{\\\"filename\\\": \\\"%s\\\", \\\"user_id\\\": \\\"ODM\\\", \\\"record_id\\\": 2, \\\"description\\\": \\\"Ground Control Points (zip)\\\"}"' % gcp_geojson_zip_export_file.replace(os.sep, "/")
                     ]
 
                 system.run(cmd + ' ' + ' '.join(stages) + ' ' + ' '.join(params))
