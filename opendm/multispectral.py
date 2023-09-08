@@ -508,7 +508,7 @@ def find_features_homography(image_gray, align_image_gray, feature_retention=0.7
     h,w = image_gray.shape
     max_dim = max(h, w)
 
-    max_size = 1280
+    max_size = 2048
     if max_dim > max_size:
         if max_dim == w:
             f = max_size / w
