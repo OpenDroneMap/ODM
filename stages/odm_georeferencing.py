@@ -136,11 +136,14 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                     f'--writers.las.a_srs="{reconstruction.georef.proj4()}"' # HOBU this should maybe be WKT
                 ]
 
-                if reconstruction.has_gcp() and io.file_exists(gcp_geojson_export_file):
-                    log.ODM_INFO("Embedding GCP info in point cloud")
-                    params += [
-                        '--writers.las.vlrs="{\\\"filename\\\": \\\"%s\\\", \\\"user_id\\\": \\\"ODM\\\", \\\"record_id\\\": 2, \\\"description\\\": \\\"Ground Control Points (zip)\\\"}"' % gcp_geojson_zip_export_file.replace(os.sep, "/")
-                    ]
+                if reconstruction.has_gcp() and io.file_exists(gcp_geojson_zip_export_file):
+                    if os.path.getsize(gcp_geojson_zip_export_file) <= 65535:
+                        log.ODM_INFO("Embedding GCP info in point cloud")
+                        params += [
+                            '--writers.las.vlrs="{\\\"filename\\\": \\\"%s\\\", \\\"user_id\\\": \\\"ODM\\\", \\\"record_id\\\": 2, \\\"description\\\": \\\"Ground Control Points (zip)\\\"}"' % gcp_geojson_zip_export_file.replace(os.sep, "/")
+                        ]
+                    else:
+                        log.ODM_WARNING("Cannot embed GCP info in point cloud, %s is too large" % gcp_geojson_zip_export_file)
 
                 system.run(cmd + ' ' + ' '.join(stages) + ' ' + ' '.join(params))
 
