@@ -181,11 +181,13 @@ def get_primary_band_name(multi_camera, user_band_name):
     if len(multi_camera) < 1:
         raise Exception("Invalid multi_camera list")
     
-    # Pick RGB, or Blue if available, otherwise first band
+    # Pick RGB, or Green, or Blue, in this order, if available, otherwise first band
     if user_band_name == "auto":
-        for band in multi_camera:
-            if band['name'].lower() in ['rgb', 'redgreenblue', 'blue', 'b']:
-                return band['name']
+        for aliases in [['rgb', 'redgreenblue'], ['green', 'g'], ['blue', 'b']]:
+            for band in multi_camera:
+                if band['name'].lower() in aliases:
+                    return band['name']
+                
         return multi_camera[0]['name']
 
     for band in multi_camera:

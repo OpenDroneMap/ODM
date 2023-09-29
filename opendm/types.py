@@ -27,7 +27,7 @@ class ODM_Reconstruction(object):
         self.gcp = None
         self.multi_camera = self.detect_multi_camera()
         self.filter_photos()
-
+        
     def detect_multi_camera(self):
         """
         Looks at the reconstruction photos and determines if this
@@ -90,10 +90,8 @@ class ODM_Reconstruction(object):
             # Sort
             mc.sort(key=lambda x: normalized_band_order.get(x['name'].upper(), '9' + band_indexes[x['name']]))
 
-            c = 1
-            for d in mc:
-                log.ODM_INFO(f"Band {c}: {d['name']}")
-                c += 1
+            for c, d in enumerate(mc):
+                log.ODM_INFO(f"Band {c + 1}: {d['name']}")
 
             return mc
 
@@ -116,6 +114,12 @@ class ODM_Reconstruction(object):
             if 'rgb' in bands or 'redgreenblue' in bands:
                 if 'red' in bands and 'green' in bands and 'blue' in bands:
                     bands_to_remove.append(bands['rgb'] if 'rgb' in bands else bands['redgreenblue'])
+                
+                # Mavic 3M's RGB camera lens are too different than the multispectral ones
+                # so we drop the RGB channel instead
+                elif self.photos[0].is_make_model("DJI", "M3M") and 'red' in bands and 'green' in bands:
+                    bands_to_remove.append(bands['rgb'] if 'rgb' in bands else bands['redgreenblue'])
+                
                 else:
                     for b in ['red', 'green', 'blue']:
                         if b in bands:
