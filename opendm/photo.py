@@ -925,3 +925,6 @@ class ODM_Photo:
             return self.width * self.height / 1e6
         else:
             return 0.0
+    
+    def is_make_model(self, make, model):
+        return self.camera_make.lower() == make.lower() and self.camera_model.lower() == model.lower()

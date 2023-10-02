@@ -27,7 +27,7 @@ class ODM_Reconstruction(object):
         self.gcp = None
         self.multi_camera = self.detect_multi_camera()
         self.filter_photos()
-
+        
     def detect_multi_camera(self):
         """
         Looks at the reconstruction photos and determines if this
@@ -58,8 +58,40 @@ class ODM_Reconstruction(object):
             for band_name in band_indexes:
                 mc.append({'name': band_name, 'photos': band_photos[band_name]})
             
-            # Sort by band index
-            mc.sort(key=lambda x: band_indexes[x['name']])
+            # We enforce a normalized band order for all bands that we can identify
+            # and rely on the manufacturer's band_indexes as a fallback for all others
+            normalized_band_order = {
+                'RGB': '0',
+                'REDGREENBLUE': '0',
+
+                'RED': '1',
+                'R': '1',
+
+                'GREEN': '2',
+                'G': '2',
+
+                'BLUE': '3',
+                'B': '3',
+
+                'NIR': '4',
+                'N': '4',
+
+                'REDEDGE': '5',
+                'RE': '5',
+
+                'LWIR': '6',
+                'L': '6',
+            }
+
+            for band_name in band_indexes:
+                if band_name.upper() not in normalized_band_order:
+                    log.ODM_WARNING(f"Cannot identify order for {band_name} band, using manufacturer suggested index instead")
+
+            # Sort
+            mc.sort(key=lambda x: normalized_band_order.get(x['name'].upper(), '9' + band_indexes[x['name']]))
+
+            for c, d in enumerate(mc):
+                log.ODM_INFO(f"Band {c + 1}: {d['name']}")
 
             return mc
 
@@ -82,6 +114,12 @@ class ODM_Reconstruction(object):
             if 'rgb' in bands or 'redgreenblue' in bands:
                 if 'red' in bands and 'green' in bands and 'blue' in bands:
                     bands_to_remove.append(bands['rgb'] if 'rgb' in bands else bands['redgreenblue'])
+                
+                # Mavic 3M's RGB camera lens are too different than the multispectral ones
+                # so we drop the RGB channel instead
+                elif self.photos[0].is_make_model("DJI", "M3M") and 'red' in bands and 'green' in bands:
+                    bands_to_remove.append(bands['rgb'] if 'rgb' in bands else bands['redgreenblue'])
+                
                 else:
                     for b in ['red', 'green', 'blue']:
                         if b in bands:
