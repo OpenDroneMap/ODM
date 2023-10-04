@@ -79,8 +79,10 @@ class ODM_Reconstruction(object):
                 'REDEDGE': '5',
                 'RE': '5',
 
-                'LWIR': '6',
-                'L': '6',
+                'PANCHRO': '6',
+
+                'LWIR': '7',
+                'L': '7',
             }
 
             for band_name in band_indexes:
