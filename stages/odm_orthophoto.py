@@ -28,10 +28,10 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
 
         if not io.file_exists(tree.odm_orthophoto_tif) or self.rerun():
 
-            resolution = 1.0 / (gsd.cap_resolution(args.orthophoto_resolution, tree.opensfm_reconstruction,
-                                                   ignore_gsd=args.ignore_gsd,
-                                                   ignore_resolution=(not reconstruction.is_georeferenced()) and args.ignore_gsd,
-                                                   has_gcp=reconstruction.has_gcp()) / 100.0)
+            resolution = gsd.cap_resolution(args.orthophoto_resolution, tree.opensfm_reconstruction,
+                                            ignore_gsd=args.ignore_gsd,
+                                            ignore_resolution=(not reconstruction.is_georeferenced()) and args.ignore_gsd,
+                                            has_gcp=reconstruction.has_gcp())
 
             # odm_orthophoto definitions
             kwargs = {
@@ -39,7 +39,7 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                 'log': tree.odm_orthophoto_log,
                 'ortho': tree.odm_orthophoto_render,
                 'corners': tree.odm_orthophoto_corners,
-                'res': resolution,
+                'res': 1.0 / (resolution/100.0),
                 'bands': '',
                 'depth_idx': '',
                 'inpaint': '',
@@ -127,7 +127,7 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                                            os.path.join(tree.odm_orthophoto, "odm_orthophoto_cut.tif"),
                                            blend_distance=20, only_max_coords_feature=True)
 
-                orthophoto.post_orthophoto_steps(args, bounds_file_path, tree.odm_orthophoto_tif, tree.orthophoto_tiles)
+                orthophoto.post_orthophoto_steps(args, bounds_file_path, tree.odm_orthophoto_tif, tree.orthophoto_tiles, resolution)
 
                 # Generate feathered orthophoto also
                 if args.orthophoto_cutline:

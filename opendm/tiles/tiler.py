@@ -1,16 +1,25 @@
 import os
 import sys
+import math
 from opendm import log
 from opendm import system
 from opendm import io
 
-def generate_tiles(geotiff, output_dir, max_concurrency):
-    gdal2tiles = os.path.join(os.path.dirname(__file__), "gdal2tiles.py")
-    system.run('%s "%s" --processes %s -z 5-21 -n -w none "%s" "%s"' % (sys.executable, gdal2tiles, max_concurrency, geotiff, output_dir))
+def generate_tiles(geotiff, output_dir, max_concurrency, resolution):
+    circumference_earth_cm = 2*math.pi*637_813_700
+    px_per_tile = 256
+    resolution_equator_cm = circumference_earth_cm/px_per_tile
+    zoom = math.ceil(math.log(resolution_equator_cm/resolution, 2))
 
-def generate_orthophoto_tiles(geotiff, output_dir, max_concurrency):
+    min_zoom = 5  # 4.89 km/px
+    max_zoom = min(zoom, 30)  # No deeper zoom than 30 (0.0146 cm/px)
+
+    gdal2tiles = os.path.join(os.path.dirname(__file__), "gdal2tiles.py")
+    system.run('%s "%s" --processes %s -z %s-%s -n -w none "%s" "%s"' % (sys.executable, gdal2tiles, max_concurrency, min_zoom, max_zoom, geotiff, output_dir))
+
+def generate_orthophoto_tiles(geotiff, output_dir, max_concurrency, resolution):
     try:
-        generate_tiles(geotiff, output_dir, max_concurrency)
+        generate_tiles(geotiff, output_dir, max_concurrency, resolution)
     except Exception as e:
         log.ODM_WARNING("Cannot generate orthophoto tiles: %s" % str(e))
 
@@ -37,10 +46,10 @@ def generate_colored_hillshade(geotiff):
         log.ODM_WARNING("Cannot generate colored hillshade: %s" % str(e))
         return (None, None, None)
 
-def generate_dem_tiles(geotiff, output_dir, max_concurrency):
+def generate_dem_tiles(geotiff, output_dir, max_concurrency, resolution):
     try:
         colored_dem, hillshade_dem, colored_hillshade_dem = generate_colored_hillshade(geotiff)
-        generate_tiles(colored_hillshade_dem, output_dir, max_concurrency)
+        generate_tiles(colored_hillshade_dem, output_dir, max_concurrency, resolution)
 
         # Cleanup
         for f in [colored_dem, hillshade_dem, colored_hillshade_dem]:

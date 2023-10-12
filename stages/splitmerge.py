@@ -266,7 +266,7 @@ class ODMMergeStage(types.ODM_Stage):
 
                         orthophoto_vars = orthophoto.get_orthophoto_vars(args)
                         orthophoto.merge(all_orthos_and_ortho_cuts, tree.odm_orthophoto_tif, orthophoto_vars)
-                        orthophoto.post_orthophoto_steps(args, merged_bounds_file, tree.odm_orthophoto_tif, tree.orthophoto_tiles)
+                        orthophoto.post_orthophoto_steps(args, merged_bounds_file, tree.odm_orthophoto_tif, tree.orthophoto_tiles, args.orthophoto_resolution)
                     elif len(all_orthos_and_ortho_cuts) == 1:
                         # Simply copy
                         log.ODM_WARNING("A single orthophoto/cutline pair was found between all submodels.")
@@ -306,7 +306,7 @@ class ODMMergeStage(types.ODM_Stage):
                         log.ODM_INFO("Created %s" % dem_file)
                         
                         if args.tiles:
-                            generate_dem_tiles(dem_file, tree.path("%s_tiles" % human_name.lower()), args.max_concurrency)
+                            generate_dem_tiles(dem_file, tree.path("%s_tiles" % human_name.lower()), args.max_concurrency, args.orthophoto_resolution)
                         
                         if args.cog:
                             convert_to_cogeo(dem_file, max_workers=args.max_concurrency)
