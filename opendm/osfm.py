@@ -559,6 +559,8 @@ class OSFMContext:
             pdf_report.save_report("report.pdf")
             
             if os.path.exists(osfm_report_path):
+                if os.path.exists(report_path):
+                    os.unlink(report_path)
                 shutil.move(osfm_report_path, report_path)
             else:
                 log.ODM_WARNING("Report could not be generated")
