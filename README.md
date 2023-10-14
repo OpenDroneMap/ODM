@@ -83,30 +83,6 @@ ODM can be installed natively on Windows. Just download the latest setup from th
 run C:\Users\youruser\datasets\project  [--additional --parameters --here]
 ```
 
-## Snap Package
-
-ODM is now available as a Snap Package from the Snap Store. To install you may use the Snap Store (available itself as a Snap Package) or the command line:
-
-```bash
-sudo snap install --edge opendronemap
-```
-
-To run, you will need a terminal window into which you can type:
-
-```bash
-opendronemap
-
-# or
-
-snap run opendronemap
-
-# or
-
-/snap/bin/opendronemap
-```
-
-Snap packages will be kept up-to-date automatically, so you don't need to update ODM manually.
-
 ## GPU Acceleration
 
 ODM has support for doing SIFT feature extraction on a GPU, which is about 2x faster than the CPU on a typical consumer laptop. To use this feature, you need to use the `opendronemap/odm:gpu` docker image instead of `opendronemap/odm` and you need to pass the `--gpus all` flag:
