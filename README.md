@@ -123,52 +123,6 @@ You're in good shape!
 
 See https://github.com/NVIDIA/nvidia-docker and https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker for information on docker/NVIDIA setup.
 
-## WSL or WSL2 Install
-
-Note: This requires that you have installed WSL already by following [the instructions on Microsoft's Website](https://docs.microsoft.com/en-us/windows/wsl/install-win10).
-
-You can run ODM via WSL or WSL2 by downloading the `rootfs.tar.gz` file from [the releases page on GitHub](https://github.com/OpenDroneMap/ODM/releases). Once you have the file saved to your `Downloads` folder in Windows, open a PowerShell or CMD window by right-clicking the Flag Menu (bottom left by default) and selecting "Windows PowerShell", or alternatively by using the [Windows Terminal from the Windows Store](https://www.microsoft.com/store/productId/9N0DX20HK701).
-
-Inside a PowerShell window, or Windows Terminal running PowerShell, type the following:
-
-```powershell
-# PowerShell
-wsl.exe --import ODM $env:APPDATA\ODM C:\path\to\your\Downloads\rootfs.tar.gz
-```
-
-Alternatively if you're using `CMD.exe` or the `CMD` support in Windows Terminal type:
-
-```cmd
-# CMD
-wsl.exe --import ODM %APPDATA%\ODM C:\path\to\your\Downloads\rootfs.tar.gz
-```
-
-In either case, make sure you replace `C:\path\to\your\Downloads\rootfs.tar.gz` with the actual path to your `rootfs.tar.gz` file.
-
-This will save a new Hard Disk image to your Windows `AppData` folder at `C:\Users\username\AppData\roaming\ODM` (where `username` is your Username in Windows), and will set-up a new WSL "distro" called `ODM`.
-
-You may start the ODM distro by using the relevant option in the Windows Terminal (from the Windows Store) or by executing `wsl.exe -d ODM` in a PowerShell or CMD window.
-
-ODM is installed to the distro's `/code` directory. You may execute it with:
-
-```bash
-/code/run.sh
-```
-
-### Updating ODM in WSL
-
-The easiest way to update the installation of ODM is to download the new `rootfs.tar.gz` file and import it as another distro. You may then unregister the original instance the same way you delete ODM from WSL (see next heading).
-
-### Deleting an ODM in WSL instance
-
-```cmd
-wsl.exe --unregister ODM
-```
-
-Finally you'll want to delete the files by using your Windows File Manager (Explorer) to navigate to `%APPDATA%`, find the `ODM` directory, and delete it by dragging it to the recycle bin. To permanently delete it empty the recycle bin.
-
-If you have installed to a different directory by changing the `--import` command you ran to install you must use that directory name to delete the correct files. This is likely the case if you have multiple ODM installations or are updating an already-installed installation.
-
 ## Native Install (Ubuntu 21.04)
 
 You can run ODM natively on Ubuntu 21.04 (although we don't recommend it):  

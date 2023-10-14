@@ -46,47 +46,6 @@ jobs:
         tags: |
           ${{ steps.docker_meta.outputs.tags }}
           opendronemap/odm:latest
-    - name: Export WSL image
-      id: wsl_export
-      run: |
-        docker pull opendronemap/odm
-        docker export $(docker create opendronemap/odm) --output odm-wsl-rootfs-amd64.tar.gz
-        gzip odm-wsl-rootfs-amd64.tar.gz
-        echo ::set-output name=amd64-rootfs::"odm-wsl-rootfs-amd64.tar.gz"
-    # Convert tag into a GitHub Release if we're building a tag
-    - name: Create Release
-      if: github.event_name == 'tag'
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref }}
-        draft: false
-        prerelease: false
-    # Upload the WSL image to the new Release if we're building a tag
-    - name: Upload amd64 Release Asset
-      if: github.event_name == 'tag'
-      id: upload-amd64-wsl-rootfs
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
-        asset_path: ./${{ steps.wsl_export.outputs.amd64-rootfs }}
-        asset_name: ${{ steps.wsl_export.outputs.amd64-rootfs }}
-        asset_content_type: application/gzip
-    # Always archive the WSL rootfs
-    - name: Upload amd64 Artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: wsl-rootfs
-        path: ${{ steps.wsl_export.outputs.amd64-rootfs }}
-    - name: Docker image digest and WSL rootfs download URL
-      run: |
-        echo "Docker image digest: ${{ steps.docker_build.outputs.digest }}"
-        echo "WSL AMD64 rootfs URL: ${{ steps.upload-amd64-wsl-rootfs.browser_download_url }}"
     # Trigger NodeODM build
     - name: Dispatch NodeODM Build Event
       id: nodeodm_dispatch
