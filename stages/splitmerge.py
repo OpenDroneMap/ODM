@@ -306,7 +306,7 @@ class ODMMergeStage(types.ODM_Stage):
                         log.ODM_INFO("Created %s" % dem_file)
                         
                         if args.tiles:
-                            generate_dem_tiles(dem_file, tree.path("%s_tiles" % human_name.lower()), args.max_concurrency, args.orthophoto_resolution)
+                            generate_dem_tiles(dem_file, tree.path("%s_tiles" % human_name.lower()), args.max_concurrency, args.dem_resolution)
                         
                         if args.cog:
                             convert_to_cogeo(dem_file, max_workers=args.max_concurrency)
