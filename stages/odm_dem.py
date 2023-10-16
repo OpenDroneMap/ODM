@@ -126,7 +126,7 @@ class ODMDEMStage(types.ODM_Stage):
                         pseudogeo.add_pseudo_georeferencing(dem_geotiff_path)
 
                     if args.tiles:
-                        generate_dem_tiles(dem_geotiff_path, tree.path("%s_tiles" % product), args.max_concurrency)
+                        generate_dem_tiles(dem_geotiff_path, tree.path("%s_tiles" % product), args.max_concurrency, resolution)
                     
                     if args.cog:
                         convert_to_cogeo(dem_geotiff_path, max_workers=args.max_concurrency)
