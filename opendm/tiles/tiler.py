@@ -12,7 +12,7 @@ def generate_tiles(geotiff, output_dir, max_concurrency, resolution):
     zoom = math.ceil(math.log(resolution_equator_cm/resolution, 2))
 
     min_zoom = 5  # 4.89 km/px
-    max_zoom = min(zoom, 30)  # No deeper zoom than 30 (0.0146 cm/px)
+    max_zoom = min(zoom, 23)  # No deeper zoom than 23 (1.86 cm/px at equator)
 
     gdal2tiles = os.path.join(os.path.dirname(__file__), "gdal2tiles.py")
     system.run('%s "%s" --processes %s -z %s-%s -n -w none "%s" "%s"' % (sys.executable, gdal2tiles, max_concurrency, min_zoom, max_zoom, geotiff, output_dir))
