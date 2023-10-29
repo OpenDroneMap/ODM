@@ -124,7 +124,7 @@ def config(argv=None, parser=None):
                         metavar='<string>',
                         action=StoreValue,
                         default='sift',
-                        choices=['akaze', 'hahog', 'orb', 'sift'],
+                        choices=['akaze', 'dspsift', 'hahog', 'orb', 'sift'],
                         help=('Choose the algorithm for extracting keypoints and computing descriptors. '
                             'Can be one of: %(choices)s. Default: '
                             '%(default)s'))
