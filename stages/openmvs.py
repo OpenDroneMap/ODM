@@ -65,7 +65,7 @@ class ODMOpenMVSStage(types.ODM_Stage):
             filter_point_th = -20
 
             config = [
-                " --resolution-level %s" % int(resolution_level),
+                "--resolution-level %s" % int(resolution_level),
                 '--dense-config-file "%s"' % densify_ini_file,
                 "--max-resolution %s" % int(outputs['undist_image_max_size']),
                 "--max-threads %s" % args.max_concurrency,
@@ -79,7 +79,6 @@ class ODMOpenMVSStage(types.ODM_Stage):
             gpu_config = []
             use_gpu = has_gpu(args)
             if use_gpu:
-                #gpu_config.append("--cuda-device -3")
                 gpu_config.append("--cuda-device -1")
             else:
                 gpu_config.append("--cuda-device -2")
@@ -101,6 +100,7 @@ class ODMOpenMVSStage(types.ODM_Stage):
                 system.run('"%s" "%s" %s' % (context.omvs_densify_path, 
                                         openmvs_scene_file,
                                         ' '.join(config + gpu_config + extra_config)))
+            
             try:
                 run_densify()
             except system.SubprocessException as e:
@@ -127,10 +127,10 @@ class ODMOpenMVSStage(types.ODM_Stage):
 
                 subscene_densify_ini_file = os.path.join(tree.openmvs, 'subscene-config.ini')
                 with open(subscene_densify_ini_file, 'w+') as f:
-                    f.write("Optimize = 0\n")
+                    f.write("Optimize = 0\nEstimation Geometric Iters = 0\n")
 
                 config = [
-                    "--sub-scene-area 660000",
+                    "--sub-scene-area 660000", # 8000
                     "--max-threads %s" % args.max_concurrency,
                     '-w "%s"' % depthmaps_dir, 
                     "-v 0",
@@ -161,9 +161,13 @@ class ODMOpenMVSStage(types.ODM_Stage):
                         config = [
                             '--resolution-level %s' % int(resolution_level),
                             '--max-resolution %s' % int(outputs['undist_image_max_size']),
+                            "--sub-resolution-levels %s" % subres_levels,
                             '--dense-config-file "%s"' % subscene_densify_ini_file,
                             '--number-views-fuse %s' % number_views_fuse,
                             '--max-threads %s' % args.max_concurrency,
+                            '--archive-type 3',
+                            '--postprocess-dmaps 0',
+                            '--geometric-iters 0',
                             '-w "%s"' % depthmaps_dir,
                             '-v 0',
                         ]
@@ -179,7 +183,7 @@ class ODMOpenMVSStage(types.ODM_Stage):
                         else:
                             # Filter
                             if args.pc_filter > 0:
-                                system.run('"%s" "%s" --filter-point-cloud %s -v 0 %s' % (context.omvs_densify_path, scene_dense_mvs, filter_point_th, ' '.join(gpu_config)))
+                                system.run('"%s" "%s" --filter-point-cloud %s -v 0 --archive-type 3 %s' % (context.omvs_densify_path, scene_dense_mvs, filter_point_th, ' '.join(gpu_config)))
                             else:
                                 # Just rename
                                 log.ODM_INFO("Skipped filtering, %s --> %s" % (scene_ply_unfiltered, scene_ply))
