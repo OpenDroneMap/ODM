@@ -248,7 +248,7 @@ def config(argv=None, parser=None):
                     action=StoreTrue,
                     nargs=0,
                     default=False,
-                    help='Use a full 3D mesh to compute the orthophoto instead of a 2.5D mesh. This option is a bit faster and provides similar results in planar areas. Default: %(default)s')
+                    help='Use a full 3D mesh to compute the orthophoto instead of a 2.5D mesh. This option is a bit faster and provides similar results in planar areas. (If rerunning, restart "From Orthophoto") Default: %(default)s')
 
     parser.add_argument('--skip-3dmodel',
                     action=StoreTrue,
@@ -289,7 +289,7 @@ def config(argv=None, parser=None):
                         action=StoreValue,
                         default=200000,
                         type=int,
-                        help=('The maximum vertex count of the output mesh. '
+                        help=('The maximum vertex count of the output mesh. (If rerunning, restart "From Meshing")'
                               'Default: %(default)s'))
 
     parser.add_argument('--mesh-octree-depth',
@@ -299,7 +299,7 @@ def config(argv=None, parser=None):
                         type=int,
                         help=('Octree depth used in the mesh reconstruction, '
                               'increase to get more vertices, recommended '
-                              'values are 8-12. Default: %(default)s'))
+                              'values are 8-12. (If rerunning, restart "From Orthophoto") Default: %(default)s'))
 
     parser.add_argument('--fast-orthophoto',
                 action=StoreTrue,
@@ -350,7 +350,7 @@ def config(argv=None, parser=None):
                     action=StoreValue,
                     default='medium',
                     choices=['ultra', 'high', 'medium', 'low', 'lowest'],
-                    help=('Set point cloud quality. Higher quality generates better, denser point clouds, but requires more memory and takes longer. Each step up in quality increases processing time roughly by a factor of 4x.'
+                    help=('Set point cloud quality. Higher quality generates better, denser point clouds, but requires more memory and takes longer. Each step up in quality increases processing time roughly by a factor of 4x. (If rerunning, restart "From Multi View Stereo")'
                         'Can be one of: %(choices)s. Default: '
                         '%(default)s'))
 
@@ -359,7 +359,7 @@ def config(argv=None, parser=None):
             nargs=0,
             default=False,
             help='Classify the point cloud outputs. '
-            'You can control the behavior of this option by tweaking the --dem-* parameters. '
+            'You can control the behavior of this option by tweaking the --dem-* parameters. (If rerunning, restart "From DEM")'
             'Default: '
             '%(default)s')
 
@@ -367,32 +367,32 @@ def config(argv=None, parser=None):
                         action=StoreTrue,
                         nargs=0,
                         default=False,
-                        help='Export the georeferenced point cloud in CSV format. Default: %(default)s')
+                        help='Export the georeferenced point cloud in CSV format. (If rerunning, restart "From DEM") Default: %(default)s')
     
     parser.add_argument('--pc-las',
                 action=StoreTrue,
                 nargs=0,
                 default=False,
-                help='Export the georeferenced point cloud in LAS format. Default: %(default)s')
+                help='Export the georeferenced point cloud in LAS format. (If rerunning, restart "From DEM") Default: %(default)s')
 
     parser.add_argument('--pc-ept',
                 action=StoreTrue,
                 nargs=0,
                 default=False,
-                help='Export the georeferenced point cloud in Entwine Point Tile (EPT) format. Default: %(default)s')
+                help='Export the georeferenced point cloud in Entwine Point Tile (EPT) format. (If rerunning, restart "From DEM") Default: %(default)s')
 
     parser.add_argument('--pc-copc',
                 action=StoreTrue,
                 nargs=0,
                 default=False,
-                help='Save the georeferenced point cloud in Cloud Optimized Point Cloud (COPC) format. Default: %(default)s')
+                help='Save the georeferenced point cloud in Cloud Optimized Point Cloud (COPC) format. (If rerunning, restart "From DEM"). Default: %(default)s')
 
     parser.add_argument('--pc-filter',
                         metavar='<positive float>',
                         action=StoreValue,
                         type=float,
                         default=2.5,
-                        help='Filters the point cloud by removing points that deviate more than N standard deviations from the local mean. Set to 0 to disable filtering. '
+                        help='Filters the point cloud by removing points that deviate more than N standard deviations from the local mean. Set to 0 to disable filtering. (If rerunning, restart "From Point Filtering")'
                              'Default: %(default)s')
     
     parser.add_argument('--pc-sample',
@@ -400,14 +400,14 @@ def config(argv=None, parser=None):
                         action=StoreValue,
                         type=float,
                         default=0,
-                        help='Filters the point cloud by keeping only a single point around a radius N (in meters). This can be useful to limit the output resolution of the point cloud and remove duplicate points. Set to 0 to disable sampling. '
+                        help='Filters the point cloud by keeping only a single point around a radius N (in meters). This can be useful to limit the output resolution of the point cloud and remove duplicate points. Set to 0 to disable sampling. (If rerunning, restart "From Point Filtering")'
                              'Default: %(default)s')
 
     parser.add_argument('--pc-skip-geometric',
                         action=StoreTrue,
                         nargs=0,
                         default=False,
-                        help='Geometric estimates improve the accuracy of the point cloud by computing geometrically consistent depthmaps but may not be usable in larger datasets. This flag disables geometric estimates. '
+                        help='Geometric estimates improve the accuracy of the point cloud by computing geometrically consistent depthmaps but may not be usable in larger datasets. This flag disables geometric estimates. (If rerunning, restart "From Point Filtering")'
                              'Default: %(default)s')
 
     parser.add_argument('--smrf-scalar',
@@ -415,7 +415,7 @@ def config(argv=None, parser=None):
                         action=StoreValue,
                         type=float,
                         default=1.25,
-                        help='Simple Morphological Filter elevation scalar parameter. '
+                        help='Simple Morphological Filter elevation scalar parameter. (If rerunning, restart "From DEM")'
                              'Default: %(default)s')
 
     parser.add_argument('--smrf-slope',
@@ -423,7 +423,7 @@ def config(argv=None, parser=None):
         action=StoreValue,
         type=float,
         default=0.15,
-        help='Simple Morphological Filter slope parameter (rise over run). '
+        help='Simple Morphological Filter slope parameter (rise over run). (If rerunning, restart "From DEM")'
                 'Default: %(default)s')
     
     parser.add_argument('--smrf-threshold',
@@ -431,7 +431,7 @@ def config(argv=None, parser=None):
         action=StoreValue,
         type=float,
         default=0.5,
-        help='Simple Morphological Filter elevation threshold parameter (meters). '
+        help='Simple Morphological Filter elevation threshold parameter (meters). (If rerunning, restart "From DEM") '
                 'Default: %(default)s')
     
     parser.add_argument('--smrf-window',
@@ -439,40 +439,40 @@ def config(argv=None, parser=None):
         action=StoreValue,
         type=float,
         default=18.0,
-        help='Simple Morphological Filter window radius parameter (meters). '
+        help='Simple Morphological Filter window radius parameter (meters). (If rerunning, restart "From DEM") '
                 'Default: %(default)s')
 
     parser.add_argument('--texturing-skip-global-seam-leveling',
                         action=StoreTrue,
                         nargs=0,
                         default=False,
-                        help=('Skip normalization of colors across all images. Useful when processing radiometric data. Default: %(default)s'))
+                        help=('Skip normalization of colors across all images. Useful when processing radiometric data. (If rerunning, restart "From Texturing"). Default: %(default)s'))
 
     parser.add_argument('--texturing-skip-local-seam-leveling',
                         action=StoreTrue,
                         nargs=0,
                         default=False,
-                        help='Skip the blending of colors near seams. Default: %(default)s')
+                        help='Skip the blending of colors near seams. (If rerunning, restart "From Texturing"). Default: %(default)s')
 
     parser.add_argument('--texturing-keep-unseen-faces',
                         action=StoreTrue,
                         nargs=0,
                         default=False,
-                        help=('Keep faces in the mesh that are not seen in any camera. '
+                        help=('Keep faces in the mesh that are not seen in any camera. (If rerunning, restart "From Texturing"). '
                               'Default:  %(default)s'))
 
     parser.add_argument('--texturing-single-material',
                         action=StoreTrue,
                         nargs=0,
                         default=False,
-                        help=('Generate OBJs that have a single material and a single texture file instead of multiple ones. '
+                        help=('Generate OBJs that have a single material and a single texture file instead of multiple ones. (If rerunning, restart "From Texturing"). '
                               'Default:  %(default)s'))
 
     parser.add_argument('--gltf',
                         action=StoreTrue,
                         nargs=0,
                         default=False,
-                        help=('Generate single file Binary glTF (GLB) textured models. '
+                        help=('Generate single file Binary glTF (GLB) textured models. (If rerunning, restart "From Texturing"). '
                               'Default:  %(default)s'))
 
     parser.add_argument('--gcp',
@@ -519,14 +519,14 @@ def config(argv=None, parser=None):
                         nargs=0,
                         default=False,
                         help='Use this tag to build a DTM (Digital Terrain Model, ground only) using a simple '
-                             'morphological filter. Check the --dem* and --smrf* parameters for finer tuning. Default: %(default)s')
+                             'morphological filter. (If rerunning, restart "From DEM"). Check the --dem* and --smrf* parameters for finer tuning. Default: %(default)s')
 
     parser.add_argument('--dsm',
                         action=StoreTrue,
                         nargs=0,
                         default=False,
                         help='Use this tag to build a DSM (Digital Surface Model, ground + objects) using a progressive '
-                             'morphological filter. Check the --dem* parameters for finer tuning. Default: %(default)s')
+                             'morphological filter. Check the --dem* parameters for finer tuning. (If rerunning, restart "From DEM"). Default: %(default)s')
 
     parser.add_argument('--dem-gapfill-steps',
                         metavar='<positive integer>',
@@ -536,7 +536,7 @@ def config(argv=None, parser=None):
                         help='Number of steps used to fill areas with gaps. Set to 0 to disable gap filling. '
                              'Starting with a radius equal to the output resolution, N different DEMs are generated with '
                              'progressively bigger radius using the inverse distance weighted (IDW) algorithm '
-                             'and merged together. Remaining gaps are then merged using nearest neighbor interpolation. '
+                             'and merged together. Remaining gaps are then merged using nearest neighbor interpolation. (If rerunning, restart "From DEM"). '
                              'Default: %(default)s')
 
     parser.add_argument('--dem-resolution',
@@ -544,7 +544,7 @@ def config(argv=None, parser=None):
                         action=StoreValue,
                         type=float,
                         default=5,
-                        help='DSM/DTM resolution in cm / pixel. Note that this value is capped by a ground sampling distance (GSD) estimate.'
+                        help='DSM/DTM resolution in cm / pixel. Note that this value is capped by a ground sampling distance (GSD) estimate. (If rerunning, restart "From DEM"). '
                              ' Default: %(default)s')
 
     parser.add_argument('--dem-decimation',
@@ -553,7 +553,7 @@ def config(argv=None, parser=None):
                         default=1,
                         type=int,
                         help='Decimate the points before generating the DEM. 1 is no decimation (full quality). '
-                             '100 decimates ~99%% of the points. Useful for speeding up generation of DEM results in very large datasets. Default: %(default)s')
+                             '100 decimates ~99%% of the points. Useful for speeding up generation of DEM results in very large datasets. (If rerunning, restart "From DEM"). Default: %(default)s')
     
     parser.add_argument('--dem-euclidean-map',
             action=StoreTrue,
@@ -562,7 +562,7 @@ def config(argv=None, parser=None):
             help='Computes an euclidean raster map for each DEM. '
             'The map reports the distance from each cell to the nearest '
             'NODATA value (before any hole filling takes place). '
-            'This can be useful to isolate the areas that have been filled. '
+            'This can be useful to isolate the areas that have been filled. (If rerunning, restart "From DEM"). '
             'Default: '
             '%(default)s')
 
@@ -571,28 +571,28 @@ def config(argv=None, parser=None):
                         action=StoreValue,
                         default=5,
                         type=float,
-                        help=('Orthophoto resolution in cm / pixel. Note that this value is capped by a ground sampling distance (GSD) estimate.'
+                        help=('Orthophoto resolution in cm / pixel. Note that this value is capped by a ground sampling distance (GSD) estimate. (If rerunning, restart "From Orthophoto"). '
                               'Default: %(default)s'))
 
     parser.add_argument('--orthophoto-no-tiled',
                         action=StoreTrue,
                         nargs=0,
                         default=False,
-                        help='Set this parameter if you want a striped GeoTIFF. '
+                        help='Set this parameter if you want a striped GeoTIFF. (If rerunning, restart "From Orthophoto"). '
                              'Default: %(default)s')
 
     parser.add_argument('--orthophoto-png',
                         action=StoreTrue,
                         nargs=0,
                         default=False,
-                        help='Set this parameter if you want to generate a PNG rendering of the orthophoto. '
+                        help='Set this parameter if you want to generate a PNG rendering of the orthophoto. (If rerunning, restart "From Orthophoto"). '
                              'Default: %(default)s')
     
     parser.add_argument('--orthophoto-kmz',
                         action=StoreTrue,
                         nargs=0,
                         default=False,
-                        help='Set this parameter if you want to generate a Google Earth (KMZ) rendering of the orthophoto. '
+                        help='Set this parameter if you want to generate a Google Earth (KMZ) rendering of the orthophoto. (If rerunning, restart "From Orthophoto"). '
                              'Default: %(default)s')    
 
     parser.add_argument('--orthophoto-compression',
@@ -601,7 +601,7 @@ def config(argv=None, parser=None):
                         type=str,
                         choices=['JPEG', 'LZW', 'PACKBITS', 'DEFLATE', 'LZMA', 'NONE'],
                         default='DEFLATE',
-                        help='Set the compression to use for orthophotos. Can be one of: %(choices)s. Default: %(default)s')
+                        help='Set the compression to use for orthophotos. Can be one of: %(choices)s. (If rerunning, restart "From Orthophoto"). Default: %(default)s')
     
     parser.add_argument('--orthophoto-cutline',
             action=StoreTrue,
@@ -609,7 +609,7 @@ def config(argv=None, parser=None):
             default=False,
             help='Generates a polygon around the cropping area '
             'that cuts the orthophoto around the edges of features. This polygon '
-            'can be useful for stitching seamless mosaics with multiple overlapping orthophotos. '
+            'can be useful for stitching seamless mosaics with multiple overlapping orthophotos. (If rerunning, restart "From Orthophoto"). '
             'Default: '
             '%(default)s')
 
@@ -618,14 +618,14 @@ def config(argv=None, parser=None):
                     nargs=0,
                     default=False,
                     help='Generate static tiles for orthophotos and DEMs that are '
-                         'suitable for viewers like Leaflet or OpenLayers. '
+                         'suitable for viewers like Leaflet or OpenLayers. (If rerunning, restart "From DEM"). '
                          'Default: %(default)s')
 
     parser.add_argument('--3d-tiles',
                         action=StoreTrue,
                         nargs=0,
                         default=False,
-                        help='Generate OGC 3D Tiles outputs. Default: %(default)s')
+                        help='Generate OGC 3D Tiles outputs. (If rerunning, restart "From Georeferencing"). Default: %(default)s')
 
     parser.add_argument('--rolling-shutter',
                     action=StoreTrue,
@@ -649,13 +649,13 @@ def config(argv=None, parser=None):
                         action=StoreTrue,
                         nargs=0,
                         default=False,
-                        help='Build orthophoto overviews for faster display in programs such as QGIS. Default: %(default)s')
+                        help='Build orthophoto overviews for faster display in programs such as QGIS. (If rerunning, restart "From Orthophoto"). Default: %(default)s')
 
     parser.add_argument('--cog',
                         action=StoreTrue,
                         nargs=0,
                         default=False,
-                        help='Create Cloud-Optimized GeoTIFFs instead of normal GeoTIFFs. Default: %(default)s')
+                        help='Create Cloud-Optimized GeoTIFFs instead of normal GeoTIFFs. (If rerunning, restart "From Orthophoto"). Default: %(default)s')
 
     parser.add_argument('--copy-to',
                         metavar='<path>',
@@ -771,7 +771,7 @@ def config(argv=None, parser=None):
                     nargs=0,
                     default=False,
                     help=('Perform ground rectification on the point cloud. This means that wrongly classified ground '
-                          'points will be re-classified and gaps will be filled. Useful for generating DTMs. '
+                          'points will be re-classified and gaps will be filled. Useful for generating DTMs. (If rerunning, restart "From DEM"). '
                           'Default: %(default)s'))
 
     parser.add_argument('--primary-band',
