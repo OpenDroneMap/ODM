@@ -4,7 +4,7 @@ import json
 from opendm import log
 from opendm.photo import find_largest_photo_dims
 from osgeo import gdal
-from opendm.loghelpers import double_quote
+from opendm.arghelpers import double_quote
 
 class NumpyEncoder(json.JSONEncoder):
     def default(self, obj):
