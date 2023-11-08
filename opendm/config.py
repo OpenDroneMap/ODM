@@ -289,7 +289,7 @@ def config(argv=None, parser=None):
                         action=StoreValue,
                         default=200000,
                         type=int,
-                        help=('The maximum vertex count of the output mesh. (If rerunning, restart "From Meshing")'
+                        help=('The maximum vertex count of the output mesh. (If rerunning, restart "From Meshing"). '
                               'Default: %(default)s'))
 
     parser.add_argument('--mesh-octree-depth',
@@ -299,7 +299,7 @@ def config(argv=None, parser=None):
                         type=int,
                         help=('Octree depth used in the mesh reconstruction, '
                               'increase to get more vertices, recommended '
-                              'values are 8-12. (If rerunning, restart "From Orthophoto") Default: %(default)s'))
+                              'values are 8-12. (If rerunning, restart "From Orthophoto"). Default: %(default)s'))
 
     parser.add_argument('--fast-orthophoto',
                 action=StoreTrue,
@@ -350,7 +350,7 @@ def config(argv=None, parser=None):
                     action=StoreValue,
                     default='medium',
                     choices=['ultra', 'high', 'medium', 'low', 'lowest'],
-                    help=('Set point cloud quality. Higher quality generates better, denser point clouds, but requires more memory and takes longer. Each step up in quality increases processing time roughly by a factor of 4x. (If rerunning, restart "From Multi View Stereo")'
+                    help=('Set point cloud quality. Higher quality generates better, denser point clouds, but requires more memory and takes longer. Each step up in quality increases processing time roughly by a factor of 4x. (If rerunning, restart "From Multi View Stereo"). '
                         'Can be one of: %(choices)s. Default: '
                         '%(default)s'))
 
@@ -359,7 +359,7 @@ def config(argv=None, parser=None):
             nargs=0,
             default=False,
             help='Classify the point cloud outputs. '
-            'You can control the behavior of this option by tweaking the --dem-* parameters. (If rerunning, restart "From DEM")'
+            'You can control the behavior of this option by tweaking the --dem-* parameters. (If rerunning, restart "From DEM"). '
             'Default: '
             '%(default)s')
 
@@ -367,19 +367,19 @@ def config(argv=None, parser=None):
                         action=StoreTrue,
                         nargs=0,
                         default=False,
-                        help='Export the georeferenced point cloud in CSV format. (If rerunning, restart "From DEM") Default: %(default)s')
+                        help='Export the georeferenced point cloud in CSV format. (If rerunning, restart "From DEM"). Default: %(default)s')
     
     parser.add_argument('--pc-las',
                 action=StoreTrue,
                 nargs=0,
                 default=False,
-                help='Export the georeferenced point cloud in LAS format. (If rerunning, restart "From DEM") Default: %(default)s')
+                help='Export the georeferenced point cloud in LAS format. (If rerunning, restart "From DEM"). Default: %(default)s')
 
     parser.add_argument('--pc-ept',
                 action=StoreTrue,
                 nargs=0,
                 default=False,
-                help='Export the georeferenced point cloud in Entwine Point Tile (EPT) format. (If rerunning, restart "From DEM") Default: %(default)s')
+                help='Export the georeferenced point cloud in Entwine Point Tile (EPT) format. (If rerunning, restart "From DEM"). Default: %(default)s')
 
     parser.add_argument('--pc-copc',
                 action=StoreTrue,
@@ -392,7 +392,7 @@ def config(argv=None, parser=None):
                         action=StoreValue,
                         type=float,
                         default=2.5,
-                        help='Filters the point cloud by removing points that deviate more than N standard deviations from the local mean. Set to 0 to disable filtering. (If rerunning, restart "From Point Filtering")'
+                        help='Filters the point cloud by removing points that deviate more than N standard deviations from the local mean. Set to 0 to disable filtering. (If rerunning, restart "From Point Filtering"). '
                              'Default: %(default)s')
     
     parser.add_argument('--pc-sample',
@@ -400,14 +400,14 @@ def config(argv=None, parser=None):
                         action=StoreValue,
                         type=float,
                         default=0,
-                        help='Filters the point cloud by keeping only a single point around a radius N (in meters). This can be useful to limit the output resolution of the point cloud and remove duplicate points. Set to 0 to disable sampling. (If rerunning, restart "From Point Filtering")'
+                        help='Filters the point cloud by keeping only a single point around a radius N (in meters). This can be useful to limit the output resolution of the point cloud and remove duplicate points. Set to 0 to disable sampling. (If rerunning, restart "From Point Filtering"). '
                              'Default: %(default)s')
 
     parser.add_argument('--pc-skip-geometric',
                         action=StoreTrue,
                         nargs=0,
                         default=False,
-                        help='Geometric estimates improve the accuracy of the point cloud by computing geometrically consistent depthmaps but may not be usable in larger datasets. This flag disables geometric estimates. (If rerunning, restart "From Point Filtering")'
+                        help='Geometric estimates improve the accuracy of the point cloud by computing geometrically consistent depthmaps but may not be usable in larger datasets. This flag disables geometric estimates. (If rerunning, restart "From Point Filtering"). '
                              'Default: %(default)s')
 
     parser.add_argument('--smrf-scalar',
@@ -415,7 +415,7 @@ def config(argv=None, parser=None):
                         action=StoreValue,
                         type=float,
                         default=1.25,
-                        help='Simple Morphological Filter elevation scalar parameter. (If rerunning, restart "From DEM")'
+                        help='Simple Morphological Filter elevation scalar parameter. (If rerunning, restart "From DEM"). '
                              'Default: %(default)s')
 
     parser.add_argument('--smrf-slope',
@@ -423,7 +423,7 @@ def config(argv=None, parser=None):
         action=StoreValue,
         type=float,
         default=0.15,
-        help='Simple Morphological Filter slope parameter (rise over run). (If rerunning, restart "From DEM")'
+        help='Simple Morphological Filter slope parameter (rise over run). (If rerunning, restart "From DEM"). '
                 'Default: %(default)s')
     
     parser.add_argument('--smrf-threshold',
@@ -431,7 +431,7 @@ def config(argv=None, parser=None):
         action=StoreValue,
         type=float,
         default=0.5,
-        help='Simple Morphological Filter elevation threshold parameter (meters). (If rerunning, restart "From DEM") '
+        help='Simple Morphological Filter elevation threshold parameter (meters). (If rerunning, restart "From DEM"). '
                 'Default: %(default)s')
     
     parser.add_argument('--smrf-window',
@@ -439,7 +439,7 @@ def config(argv=None, parser=None):
         action=StoreValue,
         type=float,
         default=18.0,
-        help='Simple Morphological Filter window radius parameter (meters). (If rerunning, restart "From DEM") '
+        help='Simple Morphological Filter window radius parameter (meters). (If rerunning, restart "From DEM"). '
                 'Default: %(default)s')
 
     parser.add_argument('--texturing-skip-global-seam-leveling',
