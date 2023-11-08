@@ -70,5 +70,4 @@ def find_rerun_stage(opts_json, args, rerun_stages, processopts):
                 return processopts[min(stage_idxs):], args_diff
             except ValueError as e:
                 print(str(e))
-                return None, {}
     return None, {}
