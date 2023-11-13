@@ -27,6 +27,7 @@ class ODMApp:
         Initializes the application and defines the ODM application pipeline stages
         """
         json_log_paths = [os.path.join(args.project_path, "log.json")]
+
         if args.copy_to:
             json_log_paths.append(args.copy_to)
 
