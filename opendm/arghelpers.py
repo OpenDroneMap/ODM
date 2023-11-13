@@ -65,6 +65,9 @@ def find_rerun_stage(opts_json, args, rerun_stages, processopts):
     if not ('rerun_is_set' in args or 'rerun_from_is_set' in args or 'rerun_all_is_set' in args):
         args_diff = compare_args(opts_json, args, rerun_stages)
         if args_diff:
+            if 'split_is_set' in args:
+                return processopts[processopts.index('dataset'):], args_diff
+
             try:
                 stage_idxs = [processopts.index(rerun_stages[opt]) for opt in args_diff.keys() if rerun_stages[opt] is not None]
                 return processopts[min(stage_idxs):], args_diff

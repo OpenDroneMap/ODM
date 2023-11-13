@@ -38,8 +38,8 @@ if __name__ == '__main__':
 
     opts_json = os.path.join(args.project_path, "options.json")
     auto_rerun_stage, opts_diff = find_rerun_stage(opts_json, args, config.rerun_stages, config.processopts)
-    if auto_rerun_stage is not None:
-        log.ODM_INFO("Rerunning from: %s" % auto_rerun_stage)
+    if auto_rerun_stage is not None and len(auto_rerun_stage) > 0:
+        log.ODM_INFO("Rerunning from: %s" % auto_rerun_stage[0])
         args.rerun_from = auto_rerun_stage
 
     # Print args
