@@ -73,7 +73,6 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
     
     start = datetime.now()
     kwargs = {
-        'bin': 'renderdem',
         'input': input_point_cloud,
         'outdir': outdir,
         'outputType': output_type,
@@ -83,7 +82,7 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
         'decimation': 1 if decimation is None else decimation,
         'classification': 2 if dem_type == 'dtm' else -1
     }
-    system.run('"{bin}" "{input}" '
+    system.run('renderdem "{input}" '
                 '--outdir "{outdir}" '
                 '--output-type {outputType} '
                 '--radiuses {radiuses} '
