@@ -7,6 +7,8 @@ import time
 import shutil
 import functools
 import threading
+import glob
+import re
 from joblib import delayed, Parallel
 from opendm.system import run
 from opendm import point_cloud
@@ -17,10 +19,6 @@ from scipy import ndimage
 from datetime import datetime
 from opendm.vendor.gdal_fillnodata import main as gdal_fillnodata
 from opendm import log
-try:
-    import Queue as queue
-except:
-    import queue
 import threading
 
 from .ground_rectification.rectify import run_rectification
@@ -73,115 +71,46 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
                 apply_smoothing=True, max_tiles=None):
     """ Create DEM from multiple radii, and optionally gapfill """
     
-    global error
-    error = None
-
     start = datetime.now()
-
-    if not os.path.exists(outdir):
-        log.ODM_INFO("Creating %s" % outdir)
-        os.mkdir(outdir)
-
-    extent = point_cloud.get_extent(input_point_cloud)
-    log.ODM_INFO("Point cloud bounds are [minx: %s, maxx: %s] [miny: %s, maxy: %s]" % (extent['minx'], extent['maxx'], extent['miny'], extent['maxy']))
-    ext_width = extent['maxx'] - extent['minx']
-    ext_height = extent['maxy'] - extent['miny']
-
-    w, h = (int(math.ceil(ext_width / float(resolution))),
-            int(math.ceil(ext_height / float(resolution))))
-
-    # Set a floor, no matter the resolution parameter
-    # (sometimes a wrongly estimated scale of the model can cause the resolution
-    # to be set unrealistically low, causing errors)
-    RES_FLOOR = 64
-    if w < RES_FLOOR and h < RES_FLOOR:
-        prev_w, prev_h = w, h
-        
-        if w >= h:
-            w, h = (RES_FLOOR, int(math.ceil(ext_height / ext_width * RES_FLOOR)))
-        else:
-            w, h = (int(math.ceil(ext_width / ext_height * RES_FLOOR)), RES_FLOOR)
-        
-        floor_ratio = prev_w / float(w)
-        resolution *= floor_ratio
-        radiuses = [str(float(r) * floor_ratio) for r in radiuses]
-
-        log.ODM_WARNING("Really low resolution DEM requested %s will set floor at %s pixels. Resolution changed to %s. The scale of this reconstruction might be off." % ((prev_w, prev_h), RES_FLOOR, resolution))
-        
-    final_dem_pixels = w * h
-
-    num_splits = int(max(1, math.ceil(math.log(math.ceil(final_dem_pixels / float(max_tile_size * max_tile_size)))/math.log(2))))
-    num_tiles = num_splits * num_splits
-    log.ODM_INFO("DEM resolution is %s, max tile size is %s, will split DEM generation into %s tiles" % ((h, w), max_tile_size, num_tiles))
-
-    tile_bounds_width = ext_width / float(num_splits)
-    tile_bounds_height = ext_height / float(num_splits)
-
-    tiles = []
-
-    for r in radiuses:
-        minx = extent['minx']
-
-        for x in range(num_splits):
-            miny = extent['miny']
-            if x == num_splits - 1:
-                maxx = extent['maxx']
-            else:
-                maxx = minx + tile_bounds_width
-
-            for y in range(num_splits):
-                if y == num_splits - 1:
-                    maxy = extent['maxy']
-                else:
-                    maxy = miny + tile_bounds_height
-
-                filename = os.path.join(os.path.abspath(outdir), '%s_r%s_x%s_y%s.tif' % (dem_type, r, x, y))
-
-                tiles.append({
-                    'radius': r,
-                    'bounds': {
-                        'minx': minx,
-                        'maxx': maxx,
-                        'miny': miny,
-                        'maxy': maxy 
-                    },
-                    'filename': filename
-                })
-
-                miny = maxy
-            minx = maxx
-    
-    # Safety check
-    if max_tiles is not None:
-        if len(tiles) > max_tiles and (final_dem_pixels * 4) > get_total_memory():
-            raise system.ExitException("Max tiles limit exceeded (%s). This is a strong indicator that the reconstruction failed and we would probably run out of memory trying to process this" % max_tiles)
-
-    # Sort tiles by increasing radius
-    tiles.sort(key=lambda t: float(t['radius']), reverse=True)
-
-    def process_tile(q):
-        log.ODM_INFO("Generating %s (%s, radius: %s, resolution: %s)" % (q['filename'], output_type, q['radius'], resolution))
-        
-        d = pdal.json_gdal_base(q['filename'], output_type, q['radius'], resolution, q['bounds'])
-
-        if dem_type == 'dtm':
-            d = pdal.json_add_classification_filter(d, 2)
-
-        if decimation is not None:
-            d = pdal.json_add_decimation_filter(d, decimation)
-
-        pdal.json_add_readers(d, [input_point_cloud])
-        pdal.run_pipeline(d)
-
-    parallel_map(process_tile, tiles, max_workers)
+    kwargs = {
+        'bin': 'renderdem',
+        'input': input_point_cloud,
+        'outdir': outdir,
+        'outputType': output_type,
+        'radiuses': ",".join(map(str, radiuses)),
+        'resolution': resolution,
+        'maxTiles': 0 if max_tiles is None else max_tiles,
+        'decimation': 1 if decimation is None else decimation,
+        'classification': 2 if dem_type == 'dtm' else -1
+    }
+    system.run('"{bin}" "{input}" '
+                '--outdir "{outdir}" '
+                '--output-type {outputType} '
+                '--radiuses {radiuses} '
+                '--resolution {resolution} '
+                '--max-tiles {maxTiles} '
+                '--decimation {decimation} '
+                '--classification {classification} '
+                '--force '.format(**kwargs), env_vars={'OMP_NUM_THREADS': max_workers})
 
     output_file = "%s.tif" % dem_type
     output_path = os.path.abspath(os.path.join(outdir, output_file))
 
-    # Verify tile results
-    for t in tiles: 
-        if not os.path.exists(t['filename']):
-            raise Exception("Error creating %s, %s failed to be created" % (output_file, t['filename']))
+    # Fetch tiles
+    tiles = []
+    for p in glob.glob(os.path.join(os.path.abspath(outdir), "*.tif")):
+        filename = os.path.basename(p)
+        m = re.match("^r([\d\.]+)_x\d+_y\d+\.tif", filename)
+        if m is not None:
+            tiles.append({'filename': p, 'radius': float(m.group(1))})
+
+    if len(tiles) == 0:
+        raise system.ExitException("No DEM tiles were generated, something went wrong")
+
+    log.ODM_INFO("Generated %s tiles" % len(tiles))
+
+    # Sort tiles by decreasing radius
+    tiles.sort(key=lambda t: float(t['radius']), reverse=True)
 
     # Create virtual raster
     tiles_vrt_path = os.path.abspath(os.path.join(outdir, "tiles.vrt"))
@@ -334,7 +263,7 @@ def median_smoothing(geotiff_path, output_path, smoothing_iterations=1, window_s
             cols_end= numpy.minimum(cols + window_size, shape[1])
             windows = numpy.dstack((rows, cols, rows_end, cols_end)).reshape(-1, 4)
 
-            filter = functools.partial(ndimage.median_filter, size=9, output=dtype, mode='nearest')
+            filt = functools.partial(ndimage.median_filter, size=9, output=dtype, mode='nearest')
 
             # We cannot read/write to the same file from multiple threads without causing race conditions. 
             # To safely read/write from multiple threads, we use a lock to protect the DatasetReader/Writer.
@@ -342,7 +271,7 @@ def median_smoothing(geotiff_path, output_path, smoothing_iterations=1, window_s
             write_lock = threading.Lock()
 
             # threading backend and GIL released filter are important for memory efficiency and multi-core performance
-            Parallel(n_jobs=num_workers, backend='threading')(delayed(window_filter_2d)(img, imgout, nodata , window, 9, filter, read_lock, write_lock) for window in windows)
+            Parallel(n_jobs=num_workers, backend='threading')(delayed(window_filter_2d)(img, imgout, nodata , window, 9, filt, read_lock, write_lock) for window in windows)
 
             # Between each iteration we swap the input and output temporary files
             #img_in, img_out = img_out, img_in
