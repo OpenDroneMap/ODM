@@ -179,6 +179,7 @@ set(custom_libs OpenSfM
 				Obj2Tiles
 				OpenPointClass
 				ExifTool
+				RenderDEM
 )
 
 externalproject_add(mve

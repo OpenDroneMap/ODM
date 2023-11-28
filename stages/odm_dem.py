@@ -101,7 +101,7 @@ class ODMDEMStage(types.ODM_Stage):
                             decimation=args.dem_decimation,
                             max_workers=args.max_concurrency,
                             keep_unfilled_copy=args.dem_euclidean_map,
-                            max_tiles=math.ceil(len(reconstruction.photos) / 2)
+                            max_tiles=None if reconstruction.has_geotagged_photos() else math.ceil(len(reconstruction.photos) / 2)
                         )
 
                     dem_geotiff_path = os.path.join(odm_dem_root, "{}.tif".format(product))
