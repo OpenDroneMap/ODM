@@ -26,7 +26,7 @@ jobs:
             - 'Q and (not B) and (not P) and (not E) and (not SC) and not (title_lowercase ~= ".*bug: .+")': [comment: "Could we move this conversation over to the forum at https://community.opendronemap.org? :pray: The forum is the right place to ask questions (we try to keep the GitHub issue tracker for feature requests and bugs only). Thank you! :+1:", close: true, stop: true]
             - "B and (not P) and (not E) and (not SC)": [label: "software fault", stop: true]
             - "P and D": [label: "possible software fault", stop: true]
-            - "P and (not D) and (not SC) and (not E)": [comment: "Thanks for the report, but it looks like you didn't include a copy of your dataset for us to reproduce this issue? Please make sure to follow our [issue guidelines](https://github.com/OpenDroneMap/WebODM/blob/master/ISSUE_TEMPLATE.md) :pray: ", close: true, stop: true]
+            - "P and (not D) and (not SC) and (not E)": [comment: "Thanks for the report, but it looks like you didn't include a copy of your dataset for us to reproduce this issue? Please make sure to follow our [issue guidelines](https://github.com/OpenDroneMap/ODM/blob/master/docs/issue_template.md) :pray: ", close: true, stop: true]
             - "E": [label: enhancement, stop: true]
             - "SC": [label: "possible software fault"]
 
