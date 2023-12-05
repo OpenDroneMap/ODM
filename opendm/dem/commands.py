@@ -90,6 +90,7 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
                 '--max-tiles {maxTiles} '
                 '--decimation {decimation} '
                 '--classification {classification} '
+                '--tile-size 4096 '
                 '--force '.format(**kwargs), env_vars={'OMP_NUM_THREADS': max_workers})
 
     output_file = "%s.tif" % dem_type
