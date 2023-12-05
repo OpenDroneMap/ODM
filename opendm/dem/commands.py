@@ -67,7 +67,7 @@ error = None
 
 def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56'], gapfill=True,
                 outdir='', resolution=0.1, max_workers=1, max_tile_size=4096,
-                decimation=None, keep_unfilled_copy=False,
+                decimation=None, with_euclidean_map=False,
                 apply_smoothing=True, max_tiles=None):
     """ Create DEM from multiple radii, and optionally gapfill """
     
@@ -123,7 +123,6 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
     run('gdalbuildvrt -input_file_list "%s" "%s" ' % (tiles_file_list, tiles_vrt_path))
 
     merged_vrt_path = os.path.abspath(os.path.join(outdir, "merged.vrt"))
-    geotiff_tmp_path = os.path.abspath(os.path.join(outdir, 'tiles.tmp.tif'))
     geotiff_small_path = os.path.abspath(os.path.join(outdir, 'tiles.small.tif'))
     geotiff_small_filled_path = os.path.abspath(os.path.join(outdir, 'tiles.small_filled.tif'))
     geotiff_path = os.path.abspath(os.path.join(outdir, 'tiles.tif'))
@@ -135,7 +134,6 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
         'tiles_vrt': tiles_vrt_path,
         'merged_vrt': merged_vrt_path,
         'geotiff': geotiff_path,
-        'geotiff_tmp': geotiff_tmp_path,
         'geotiff_small': geotiff_small_path,
         'geotiff_small_filled': geotiff_small_filled_path
     }
@@ -144,31 +142,27 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
         # Sometimes, for some reason gdal_fillnodata.py
         # behaves strangely when reading data directly from a .VRT
         # so we need to convert to GeoTIFF first.
+        # Scale to 10% size
         run('gdal_translate '
                 '-co NUM_THREADS={threads} '
                 '-co BIGTIFF=IF_SAFER '
+                '-co COMPRESS=DEFLATE '
                 '--config GDAL_CACHEMAX {max_memory}% '
-                '"{tiles_vrt}" "{geotiff_tmp}"'.format(**kwargs))
-
-        # Scale to 10% size
-        run('gdal_translate '
-            '-co NUM_THREADS={threads} '
-            '-co BIGTIFF=IF_SAFER '
-            '--config GDAL_CACHEMAX {max_memory}% '
-            '-outsize 10% 0 '
-            '"{geotiff_tmp}" "{geotiff_small}"'.format(**kwargs))
+                '-outsize 10% 0 '
+                '"{tiles_vrt}" "{geotiff_small}"'.format(**kwargs))
 
         # Fill scaled
         gdal_fillnodata(['.', 
                         '-co', 'NUM_THREADS=%s' % kwargs['threads'], 
                         '-co', 'BIGTIFF=IF_SAFER',
+                        '-co', 'COMPRESS=DEFLATE',
                         '--config', 'GDAL_CACHE_MAX', str(kwargs['max_memory']) + '%',
                         '-b', '1',
                         '-of', 'GTiff',
                         kwargs['geotiff_small'], kwargs['geotiff_small_filled']])
         
         # Merge filled scaled DEM with unfilled DEM using bilinear interpolation
-        run('gdalbuildvrt -resolution highest -r bilinear "%s" "%s" "%s"' % (merged_vrt_path, geotiff_small_filled_path, geotiff_tmp_path))
+        run('gdalbuildvrt -resolution highest -r bilinear "%s" "%s" "%s"' % (merged_vrt_path, geotiff_small_filled_path, tiles_vrt_path))
         run('gdal_translate '
             '-co NUM_THREADS={threads} '
             '-co TILED=YES '
@@ -191,14 +185,14 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
     else:
         os.replace(geotiff_path, output_path)
 
-    if os.path.exists(geotiff_tmp_path):
-        if not keep_unfilled_copy: 
-            os.remove(geotiff_tmp_path)
-        else:
-            os.replace(geotiff_tmp_path, io.related_file_path(output_path, postfix=".unfilled"))
+    if os.path.exists(tiles_vrt_path):
+        if with_euclidean_map:
+            emap_path = io.related_file_path(output_path, postfix=".euclideand")
+            compute_euclidean_map(tiles_vrt_path, emap_path, overwrite=True)
     
     for cleanup_file in [tiles_vrt_path, tiles_file_list, merged_vrt_path, geotiff_small_path, geotiff_small_filled_path]:
         if os.path.exists(cleanup_file): os.remove(cleanup_file)
+
     for t in tiles:
         if os.path.exists(t['filename']): os.remove(t['filename'])
 
@@ -214,12 +208,20 @@ def compute_euclidean_map(geotiff_path, output_path, overwrite=False):
     with rasterio.open(geotiff_path) as f:
         nodata = f.nodatavals[0]
 
-    if not os.path.exists(output_path) or overwrite:
+    if not os.path.isfile(output_path) or overwrite:
+        if os.path.isfile(output_path):
+            os.remove(output_path)
+
         log.ODM_INFO("Computing euclidean distance: %s" % output_path)
 
         if gdal_proximity is not None:
             try:
-                gdal_proximity(['gdal_proximity.py', geotiff_path, output_path, '-values', str(nodata)])
+                gdal_proximity(['gdal_proximity.py', 
+                                geotiff_path, output_path, '-values', str(nodata),
+                                '-co', 'TILED=YES',
+                                '-co', 'BIGTIFF=IF_SAFER',
+                                '-co', 'COMPRESS=DEFLATE',
+                            ])
             except Exception as e:
                 log.ODM_WARNING("Cannot compute euclidean distance: %s" % str(e))
 
