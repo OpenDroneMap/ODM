@@ -123,7 +123,6 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
     run('gdalbuildvrt -input_file_list "%s" "%s" ' % (tiles_file_list, tiles_vrt_path))
 
     merged_vrt_path = os.path.abspath(os.path.join(outdir, "merged.vrt"))
-    # geotiff_tmp_path = os.path.abspath(os.path.join(outdir, 'tiles.tmp.tif'))
     geotiff_small_path = os.path.abspath(os.path.join(outdir, 'tiles.small.tif'))
     geotiff_small_filled_path = os.path.abspath(os.path.join(outdir, 'tiles.small_filled.tif'))
     geotiff_path = os.path.abspath(os.path.join(outdir, 'tiles.tif'))
@@ -147,6 +146,7 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
         run('gdal_translate '
                 '-co NUM_THREADS={threads} '
                 '-co BIGTIFF=IF_SAFER '
+                '-co COMPRESS=DEFLATE '
                 '--config GDAL_CACHEMAX {max_memory}% '
                 '-outsize 10% 0 '
                 '"{tiles_vrt}" "{geotiff_small}"'.format(**kwargs))
@@ -155,6 +155,7 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
         gdal_fillnodata(['.', 
                         '-co', 'NUM_THREADS=%s' % kwargs['threads'], 
                         '-co', 'BIGTIFF=IF_SAFER',
+                        '-co', 'COMPRESS=DEFLATE',
                         '--config', 'GDAL_CACHE_MAX', str(kwargs['max_memory']) + '%',
                         '-b', '1',
                         '-of', 'GTiff',
@@ -207,12 +208,20 @@ def compute_euclidean_map(geotiff_path, output_path, overwrite=False):
     with rasterio.open(geotiff_path) as f:
         nodata = f.nodatavals[0]
 
-    if not os.path.exists(output_path) or overwrite:
+    if not os.path.isfile(output_path) or overwrite:
+        if os.path.isfile(output_path):
+            os.remove(output_path)
+
         log.ODM_INFO("Computing euclidean distance: %s" % output_path)
 
         if gdal_proximity is not None:
             try:
-                gdal_proximity(['gdal_proximity.py', geotiff_path, output_path, '-values', str(nodata)])
+                gdal_proximity(['gdal_proximity.py', 
+                                geotiff_path, output_path, '-values', str(nodata),
+                                '-co', 'TILED=YES',
+                                '-co', 'BIGTIFF=IF_SAFER',
+                                '-co', 'COMPRESS=DEFLATE',
+                            ])
             except Exception as e:
                 log.ODM_WARNING("Cannot compute euclidean distance: %s" % str(e))
 

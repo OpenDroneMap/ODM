@@ -111,13 +111,6 @@ class ODMDEMStage(types.ODM_Stage):
                         # Crop DEM
                         Cropper.crop(bounds_file_path, dem_geotiff_path, utils.get_dem_vars(args), keep_original=not args.optimize_disk_space)
 
-                        if args.dem_euclidean_map:
-                            emap_path = io.related_file_path(dem_geotiff_path, postfix=".euclideand")
-
-                            # Crop euclidean map
-                            Cropper.crop(bounds_file_path, emap_path, utils.get_dem_vars(args), keep_original=not args.optimize_disk_space)
-
-                    
                     if pseudo_georeference:
                         pseudogeo.add_pseudo_georeferencing(dem_geotiff_path)
 
