@@ -80,7 +80,8 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
         'resolution': resolution,
         'maxTiles': 0 if max_tiles is None else max_tiles,
         'decimation': 1 if decimation is None else decimation,
-        'classification': 2 if dem_type == 'dtm' else -1
+        'classification': 2 if dem_type == 'dtm' else -1,
+        'tileSize': max_tile_size
     }
     system.run('renderdem "{input}" '
                 '--outdir "{outdir}" '
@@ -90,7 +91,7 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
                 '--max-tiles {maxTiles} '
                 '--decimation {decimation} '
                 '--classification {classification} '
-                '--tile-size 4096 '
+                '--tile-size {tileSize} '
                 '--force '.format(**kwargs), env_vars={'OMP_NUM_THREADS': max_workers})
 
     output_file = "%s.tif" % dem_type
