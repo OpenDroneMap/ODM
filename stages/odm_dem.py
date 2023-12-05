@@ -100,7 +100,7 @@ class ODMDEMStage(types.ODM_Stage):
                             resolution=resolution / 100.0,
                             decimation=args.dem_decimation,
                             max_workers=args.max_concurrency,
-                            keep_unfilled_copy=args.dem_euclidean_map,
+                            with_euclidean_map=args.dem_euclidean_map,
                             max_tiles=None if reconstruction.has_geotagged_photos() else math.ceil(len(reconstruction.photos) / 2)
                         )
 
@@ -111,16 +111,12 @@ class ODMDEMStage(types.ODM_Stage):
                         # Crop DEM
                         Cropper.crop(bounds_file_path, dem_geotiff_path, utils.get_dem_vars(args), keep_original=not args.optimize_disk_space)
 
-                    if args.dem_euclidean_map:
-                        unfilled_dem_path = io.related_file_path(dem_geotiff_path, postfix=".unfilled")
-                        
-                        if args.crop > 0 or args.boundary:
-                            # Crop unfilled DEM
-                            Cropper.crop(bounds_file_path, unfilled_dem_path, utils.get_dem_vars(args), keep_original=not args.optimize_disk_space)
+                        if args.dem_euclidean_map:
+                            emap_path = io.related_file_path(dem_geotiff_path, postfix=".euclideand")
 
-                        commands.compute_euclidean_map(unfilled_dem_path, 
-                                            io.related_file_path(dem_geotiff_path, postfix=".euclideand"), 
-                                            overwrite=True)
+                            # Crop euclidean map
+                            Cropper.crop(bounds_file_path, emap_path, utils.get_dem_vars(args), keep_original=not args.optimize_disk_space)
+
                     
                     if pseudo_georeference:
                         pseudogeo.add_pseudo_georeferencing(dem_geotiff_path)
