@@ -233,7 +233,7 @@ def compute_euclidean_map(geotiff_path, output_path, overwrite=False):
         return output_path
 
 
-def median_smoothing(geotiff_path, output_path, window_size=512, num_workers=1):
+def median_smoothing(geotiff_path, output_path, window_size=512, num_workers=1, radius=4):
     """ Apply median smoothing """
     start = datetime.now()
 
@@ -244,11 +244,12 @@ def median_smoothing(geotiff_path, output_path, window_size=512, num_workers=1):
         'input': geotiff_path,
         'output': output_path,
         'window': window_size,
+        'radius': radius,
     }
     system.run('fastrasterfilter "{input}" '
                 '--output "{output}" '
                 '--window-size {window} '
-                '--radius 5 '
+                '--radius {radius} '
                 '--co TILED=YES '
                 '--co BIGTIFF=IF_SAFER '
                 '--co COMPRESS=DEFLATE '.format(**kwargs), env_vars={'OMP_NUM_THREADS': num_workers})
