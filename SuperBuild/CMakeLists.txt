@@ -251,6 +251,17 @@ externalproject_add(odm_orthophoto
                       ${WIN32_CMAKE_ARGS} ${WIN32_GDAL_ARGS}
 )
 
+externalproject_add(fastrasterfilter
+    DEPENDS           eigen34
+    GIT_REPOSITORY    https://github.com/OpenDroneMap/FastRasterFilter.git
+    GIT_TAG           main
+    PREFIX            ${SB_BINARY_DIR}/fastrasterfilter
+    SOURCE_DIR        ${SB_SOURCE_DIR}/fastrasterfilter
+    CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
+                      -DEIGEN3_INCLUDE_DIR=${SB_SOURCE_DIR}/eigen34/
+                      ${WIN32_CMAKE_ARGS} ${WIN32_GDAL_ARGS}
+)
+
 externalproject_add(lastools
     GIT_REPOSITORY    https://github.com/OpenDroneMap/LAStools.git
     GIT_TAG           250
