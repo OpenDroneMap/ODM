@@ -97,7 +97,6 @@ rerun_stages = {
     'texturing_keep_unseen_faces': 'mvs_texturing',
     'texturing_single_material': 'mvs_texturing',
     'texturing_skip_global_seam_leveling': 'mvs_texturing',
-    'texturing_skip_local_seam_leveling': 'mvs_texturing',
     'tiles': 'odm_dem',
     'use_3dmesh': 'mvs_texturing',
     'use_exif': 'dataset',
@@ -543,12 +542,6 @@ def config(argv=None, parser=None):
                         default=False,
                         help=('Skip normalization of colors across all images. Useful when processing radiometric data. Default: %(default)s'))
 
-    parser.add_argument('--texturing-skip-local-seam-leveling',
-                        action=StoreTrue,
-                        nargs=0,
-                        default=False,
-                        help='Skip the blending of colors near seams. Default: %(default)s')
-
     parser.add_argument('--texturing-keep-unseen-faces',
                         action=StoreTrue,
                         nargs=0,
@@ -887,7 +880,7 @@ def config(argv=None, parser=None):
                           'Default: %(default)s'))
 
     args, unknown = parser.parse_known_args(argv)
-    DEPRECATED = ["--verbose", "--debug", "--time", "--resize-to", "--depthmap-resolution", "--pc-geometric", "--texturing-data-term", "--texturing-outlier-removal-type", "--texturing-tone-mapping"]
+    DEPRECATED = ["--verbose", "--debug", "--time", "--resize-to", "--depthmap-resolution", "--pc-geometric", "--texturing-data-term", "--texturing-outlier-removal-type", "--texturing-tone-mapping", "--texturing-skip-local-seam-leveling"]
     unknown_e = [p for p in unknown if p not in DEPRECATED]
     if len(unknown_e) > 0:
         raise parser.error("unrecognized arguments: %s" % " ".join(unknown_e))
