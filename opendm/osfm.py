@@ -64,7 +64,6 @@ class OSFMContext:
                             "Check that the images have enough overlap, "
                             "that there are enough recognizable features "
                             "and that the images are in focus. "
-                            "You could also try to increase the --min-num-features parameter."
                             "The program will now exit.")
 
         if rolling_shutter_correct:
