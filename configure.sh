@@ -127,6 +127,9 @@ installreqs() {
     installdepsfromsnapcraft build openmvs
     
     set -e
+
+    # edt requires numpy to build
+    pip install --ignore-installed numpy==1.23.1
     pip install --ignore-installed -r requirements.txt
     #if [ ! -z "$GPU_INSTALL" ]; then
     #fi
