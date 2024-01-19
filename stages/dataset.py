@@ -61,7 +61,7 @@ class ODMLoadDatasetStage(types.ODM_Stage):
 
         def valid_filename(filename, supported_extensions):
             (pathfn, ext) = os.path.splitext(filename)
-            return ext.lower() in supported_extensions and pathfn[-5:] != "_mask"
+            return ext.lower() in supported_extensions and pathfn[-5:] != "_mask" and pathfn[-9:] != "_dewarped"
 
         # Get supported images from dir
         def get_images(in_dir):
@@ -162,6 +162,10 @@ class ODMLoadDatasetStage(types.ODM_Stage):
                     (p, ext) = os.path.splitext(r)
                     if p[-5:] == "_mask" and ext.lower() in context.supported_extensions:
                         masks[p] = r
+                    
+                    # Remove dewarped images on re-run
+                    if p[-9:] == "_dewarped" and self.rerun():
+                        os.unlink(os.path.join(images_dir, p + ext))
 
                 photos = []
                 with open(tree.dataset_list, 'w') as dataset_list:
@@ -298,7 +302,7 @@ class ODMLoadDatasetStage(types.ODM_Stage):
         log.logger.log_json_images(len(photos))
 
         # Create reconstruction object
-        reconstruction = types.ODM_Reconstruction(photos)
+        reconstruction = types.ODM_Reconstruction(photos, tree.dataset_raw)
         
         if tree.odm_georeferencing_gcp and not args.use_exif:
             reconstruction.georeference_with_gcp(tree.odm_georeferencing_gcp,
