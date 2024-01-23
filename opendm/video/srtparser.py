@@ -54,8 +54,10 @@ class SrtFileParser:
         if not self.gps_data:
             for d in self.data:
                 lat, lon, alt = d.get('latitude'), d.get('longitude'), d.get('altitude')
+                if alt is None:
+                    alt = 0
                 tm = d.get('start')
-
+                
                 if lat is not None and lon is not None:
                     if self.ll_to_utm is None:
                         self.ll_to_utm, self.utm_to_ll = location.utm_transformers_from_ll(lon, lat)
@@ -126,6 +128,13 @@ class SrtFileParser:
         # 36
         # 00:00:35,000 --> 00:00:36,000
         # F/6.3, SS 60, ISO 100, EV 0, RTK (120.083799, 30.213635, 28), HOME (120.084146, 30.214243, 103.55m), D 75.36m, H 76.19m, H.S 0.30m/s, V.S 0.00m/s, F.PRY (-5.3°, 2.1°, 28.3°), G.PRY (-40.0°, 0.0°, 28.2°)
+
+        # DJI Unknown Model #1
+        # 1
+        # 00:00:00,000 --> 00:00:00,033
+        # <font size="28">SrtCnt : 1, DiffTime : 33ms
+        # 2024-01-18 10:23:26.397
+        # [iso : 150] [shutter : 1/5000.0] [fnum : 170] [ev : 0] [ct : 5023] [color_md : default] [focal_len : 240] [dzoom_ratio: 10000, delta:0],[latitude: -22.724555] [longitude: -47.602414] [rel_alt: 0.300 abs_alt: 549.679] </font>
 
         with open(self.filename, 'r') as f:
 
@@ -211,4 +220,5 @@ class SrtFileParser:
                     ("altitude: ([\d\.\-]+)", lambda v: float(v) if v != 0 else None),
                     ("GPS \([\d\.\-]+,? [\d\.\-]+,? ([\d\.\-]+)\)", lambda v: float(v) if v != 0 else None),
                     ("RTK \([-+]?\d+\.\d+, [-+]?\d+\.\d+, (-?\d+)\)", lambda v: float(v) if v != 0 else None),
+                    ("abs_alt: ([\d\.\-]+)", lambda v: float(v) if v != 0 else None),
                 ], line)
