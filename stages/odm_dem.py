@@ -12,7 +12,6 @@ from opendm.cropper import Cropper
 from opendm import pseudogeo
 from opendm.tiles.tiler import generate_dem_tiles
 from opendm.cogeo import convert_to_cogeo
-from opendm.opc import classify
 
 class ODMDEMStage(types.ODM_Stage):
     def process(self, args, outputs):
@@ -35,7 +34,6 @@ class ODMDEMStage(types.ODM_Stage):
                                         ignore_resolution=ignore_resolution and args.ignore_gsd,
                                         has_gcp=reconstruction.has_gcp())
 
-        log.ODM_INFO('Classify: ' + str(args.pc_classify))
         log.ODM_INFO('Create DSM: ' + str(args.dsm))
         log.ODM_INFO('Create DTM: ' + str(args.dtm))
         log.ODM_INFO('DEM input file {0} found: {1}'.format(dem_input, str(pc_model_found)))
@@ -45,33 +43,8 @@ class ODMDEMStage(types.ODM_Stage):
         if not io.dir_exists(odm_dem_root):
             system.mkdir_p(odm_dem_root)
 
-        if args.pc_classify and pc_model_found:
-            pc_classify_marker = os.path.join(odm_dem_root, 'pc_classify_done.txt')
-
-            if not io.file_exists(pc_classify_marker) or self.rerun():
-                log.ODM_INFO("Classifying {} using Simple Morphological Filter (1/2)".format(dem_input))
-                commands.classify(dem_input,
-                                  args.smrf_scalar, 
-                                  args.smrf_slope, 
-                                  args.smrf_threshold, 
-                                  args.smrf_window
-                                )
-
-                log.ODM_INFO("Classifying {} using OpenPointClass (2/2)".format(dem_input))
-                classify(dem_input, args.max_concurrency)
-
-                with open(pc_classify_marker, 'w') as f:
-                    f.write('Classify: smrf\n')
-                    f.write('Scalar: {}\n'.format(args.smrf_scalar))
-                    f.write('Slope: {}\n'.format(args.smrf_slope))
-                    f.write('Threshold: {}\n'.format(args.smrf_threshold))
-                    f.write('Window: {}\n'.format(args.smrf_window))
-            
         progress = 20
         self.update_progress(progress)
-
-        if args.pc_rectify:
-            commands.rectify(dem_input)
 
         # Do we need to process anything here?
         if (args.dsm or args.dtm) and pc_model_found:
@@ -120,7 +93,7 @@ class ODMDEMStage(types.ODM_Stage):
                     if args.cog:
                         convert_to_cogeo(dem_geotiff_path, max_workers=args.max_concurrency)
 
-                    progress += 30
+                    progress += 40
                     self.update_progress(progress)
             else:
                 log.ODM_WARNING('Found existing outputs in: %s' % odm_dem_root)
