@@ -110,7 +110,7 @@ class ODMMvsTexStage(types.ODM_Stage):
 
                 mvs_tmp_dir = os.path.join(r['out_dir'], 'tmp')
 
-                # Make sure tmp directory is empty
+                # mvstex creates a tmp directory, so make sure it is empty
                 if io.dir_exists(mvs_tmp_dir):
                     log.ODM_INFO("Removing old tmp directory {}".format(mvs_tmp_dir))
                     shutil.rmtree(mvs_tmp_dir)
