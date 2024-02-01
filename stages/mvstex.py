@@ -108,6 +108,13 @@ class ODMMvsTexStage(types.ODM_Stage):
                     'labelingFile': '-L "%s"' % r['labeling_file'] if r['labeling_file'] else ''
                 }
 
+                mvs_tmp_dir = os.path.join(r['out_dir'], 'tmp')
+
+                # mvstex creates a tmp directory, so make sure it is empty
+                if io.dir_exists(mvs_tmp_dir):
+                    log.ODM_INFO("Removing old tmp directory {}".format(mvs_tmp_dir))
+                    shutil.rmtree(mvs_tmp_dir)
+
                 # run texturing binary
                 system.run('"{bin}" "{nvm_file}" "{model}" "{out_dir}" '
                         '-d {dataTerm} -o {outlierRemovalType} '
