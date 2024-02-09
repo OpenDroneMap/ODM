@@ -279,9 +279,10 @@ def obj2glb(input_obj, output_glb, rtc=(None, None), draco_compression=True, _in
     )
 
     gltf.extensionsRequired = ['KHR_materials_unlit']
+    gltf.extensionsUsed = ['KHR_materials_unlit']
 
     if rtc != (None, None) and len(rtc) >= 2:
-        gltf.extensionsUsed = ['CESIUM_RTC', 'KHR_materials_unlit']
+        gltf.extensionsUsed.append('CESIUM_RTC')
         gltf.extensions = {
             'CESIUM_RTC': {
                 'center': [float(rtc[0]), float(rtc[1]), 0.0]
