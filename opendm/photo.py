@@ -430,7 +430,8 @@ class ODM_Photo:
                         camera_projection = camera_projection.lower()
 
                         # Parrot Sequoia's "fisheye" model maps to "fisheye_opencv"
-                        if camera_projection == "fisheye" and self.camera_make.lower() == "parrot" and self.camera_model.lower() == "sequoia":
+                        # or better yet, replace all fisheye with fisheye_opencv, but wait to change API signature
+                        if camera_projection == "fisheye":
                             camera_projection = "fisheye_opencv"
 
                         if camera_projection in projections:
