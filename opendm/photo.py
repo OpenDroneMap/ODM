@@ -159,6 +159,9 @@ class ODM_Photo:
         self.gps_xy_stddev = None # Dilution of Precision X/Y
         self.gps_z_stddev = None # Dilution of Precision Z
 
+        # DJI
+        self.dewarp_data = None
+
         # Misc SFM
         self.camera_projection = 'brown'
         self.focal_ratio = 0.85
@@ -413,6 +416,12 @@ class ODM_Photo:
                         self.set_attr_from_xmp_tag('speed_z', xtags, [
                             '@drone-dji:FlightZSpeed',
                         ], float)
+                    
+                    # DJI dewarp data
+                    if '@drone-dji:DewarpData' in xtags:
+                        self.set_attr_from_xmp_tag('dewarp_data', xtags, [
+                            '@drone-dji:DewarpData'
+                        ])
 
                     # Account for over-estimation
                     if self.gps_xy_stddev is not None:
