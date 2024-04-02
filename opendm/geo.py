@@ -12,6 +12,9 @@ class GeoFile:
 
         with open(self.geo_path, 'r') as f:
             contents = f.read().strip()
+        
+        # Strip eventual BOM characters
+        contents = contents.replace('\ufeff', '')
 
         lines = list(map(str.strip, contents.split('\n')))
         if lines:
