@@ -485,7 +485,7 @@ def config(argv=None, parser=None):
                         metavar='<positive float>',
                         action=StoreValue,
                         type=float,
-                        default=20,
+                        default=5,
                         help='Filters the point cloud by removing points that deviate more than N standard deviations from the local mean. Set to 0 to disable filtering. '
                              'Default: %(default)s')
     
