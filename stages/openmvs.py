@@ -110,7 +110,7 @@ class ODMOpenMVSStage(types.ODM_Stage):
                     log.ODM_WARNING("OpenMVS failed with GPU, is your graphics card driver up to date? Falling back to CPU.")
                     gpu_config = ["--cuda-device -2"]
                     run_densify()
-                elif (e.errorCode == 137 or e.errorCode == 3221226505) and not pc_tile:
+                elif (e.errorCode == 137 or e.errorCode == 143 or e.errorCode == 3221226505) and not pc_tile:
                     log.ODM_WARNING("OpenMVS ran out of memory, we're going to turn on tiling to see if we can process this.")
                     pc_tile = True
                     config.append("--fusion-mode 1")
@@ -127,7 +127,7 @@ class ODMOpenMVSStage(types.ODM_Stage):
 
                 subscene_densify_ini_file = os.path.join(tree.openmvs, 'subscene-config.ini')
                 with open(subscene_densify_ini_file, 'w+') as f:
-                    f.write("Optimize = 0\nEstimation Geometric Iters = 0\n")
+                    f.write("Optimize = 0\nEstimation Geometric Iters = 0\nMin Views Filter = 1\n")
 
                 config = [
                     "--sub-scene-area 660000", # 8000
@@ -223,7 +223,7 @@ class ODMOpenMVSStage(types.ODM_Stage):
                         try:
                             system.run('"%s" %s' % (context.omvs_densify_path, ' '.join(config + gpu_config + extra_config)))
                         except system.SubprocessException as e:
-                            if e.errorCode == 137 or e.errorCode == 3221226505:
+                            if e.errorCode == 137 or e.errorCode == 143 or e.errorCode == 3221226505:
                                 log.ODM_WARNING("OpenMVS filtering ran out of memory, visibility checks will be skipped.")
                                 skip_filtering()
                             else:
