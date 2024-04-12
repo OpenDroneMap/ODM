@@ -217,7 +217,7 @@ def config(argv=None, parser=None):
     parser.add_argument('--feature-type',
                         metavar='<string>',
                         action=StoreValue,
-                        default='sift',
+                        default='dspsift',
                         choices=['akaze', 'dspsift', 'hahog', 'orb', 'sift'],
                         help=('Choose the algorithm for extracting keypoints and computing descriptors. '
                             'Can be one of: %(choices)s. Default: '
@@ -485,7 +485,7 @@ def config(argv=None, parser=None):
                         metavar='<positive float>',
                         action=StoreValue,
                         type=float,
-                        default=2.5,
+                        default=5,
                         help='Filters the point cloud by removing points that deviate more than N standard deviations from the local mean. Set to 0 to disable filtering. '
                              'Default: %(default)s')
     
