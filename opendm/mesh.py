@@ -187,7 +187,7 @@ def screened_poisson_reconstruction(inPointCloud, outMesh, depth = 8, samples = 
             if threads < 1:
                 break
             else:
-                log.ODM_WARNING("PoissonRecon failed with %s threads, let's retry with %s..." % (threads, threads // 2))
+                log.ODM_WARNING("PoissonRecon failed with %s threads, let's retry with %s..." % (threads * 2, threads))
 
 
     # Cleanup and reduce vertex count if necessary
