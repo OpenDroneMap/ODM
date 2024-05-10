@@ -136,6 +136,13 @@ class SrtFileParser:
         # 2024-01-18 10:23:26.397
         # [iso : 150] [shutter : 1/5000.0] [fnum : 170] [ev : 0] [ct : 5023] [color_md : default] [focal_len : 240] [dzoom_ratio: 10000, delta:0],[latitude: -22.724555] [longitude: -47.602414] [rel_alt: 0.300 abs_alt: 549.679] </font>
 
+        # DJI Mavic 2 Zoom
+        # 1
+        # 00:00:00,000 --> 00:00:00,041
+        # <font size="36">FrameCnt : 1, DiffTime : 41ms
+        # 2023-07-15 11:55:16,320,933
+        # [iso : 100] [shutter : 1/400.0] [fnum : 280] [ev : 0] [ct : 5818] [color_md : default] [focal_len : 240] [latitude : 0.000000] [longtitude : 0.000000] [altitude: 0.000000] </font>
+
         with open(self.filename, 'r') as f:
 
             iso = None
@@ -206,12 +213,14 @@ class SrtFileParser:
 
                 latitude = match_single([
                     ("latitude: ([\d\.\-]+)", lambda v: float(v) if v != 0 else None),
+                    ("latitude : ([\d\.\-]+)", lambda v: float(v) if v != 0 else None),
                     ("GPS \([\d\.\-]+,? ([\d\.\-]+),? [\d\.\-]+\)", lambda v: float(v) if v != 0 else None),
                     ("RTK \([-+]?\d+\.\d+, (-?\d+\.\d+), -?\d+\)", lambda v: float(v) if v != 0 else None),
                 ], line)
 
                 longitude = match_single([
                     ("longitude: ([\d\.\-]+)", lambda v: float(v) if v != 0 else None),
+                    ("longtitude : ([\d\.\-]+)", lambda v: float(v) if v != 0 else None),
                     ("GPS \(([\d\.\-]+),? [\d\.\-]+,? [\d\.\-]+\)", lambda v: float(v) if v != 0 else None),
                     ("RTK \((-?\d+\.\d+), [-+]?\d+\.\d+, -?\d+\)", lambda v: float(v) if v != 0 else None),
                 ], line)
