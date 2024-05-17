@@ -796,6 +796,9 @@ def get_all_submodel_paths(submodels_path, *all_paths):
 
 def is_submodel(opensfm_root):
     # A bit hackish, but works without introducing additional markers / flags
-    return os.path.islink(os.path.join(opensfm_root, "exif")) or \
+    # Look at the path of the opensfm directory and see if "submodel_" is part of it
+    parts = os.path.abspath(opensfm_root).split(os.path.sep)
+
+    return (len(parts) >= 2 and parts[-2][:9] == "submodel_") or \
            os.path.isfile(os.path.join(opensfm_root, "split_merge_stop_at_reconstruction.txt")) or \
            os.path.isfile(os.path.join(opensfm_root, "features", "empty"))
