@@ -7,6 +7,7 @@ from opendm import context
 from opendm import types
 from opendm import gsd
 from opendm import orthophoto
+from opendm.osfm import is_submodel
 from opendm.concurrency import get_max_memory_mb
 from opendm.cutline import compute_cutline
 from opendm.utils import double_quote
@@ -28,10 +29,10 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
 
         if not io.file_exists(tree.odm_orthophoto_tif) or self.rerun():
 
-            resolution = 1.0 / (gsd.cap_resolution(args.orthophoto_resolution, tree.opensfm_reconstruction,
-                                                   ignore_gsd=args.ignore_gsd,
-                                                   ignore_resolution=(not reconstruction.is_georeferenced()) and args.ignore_gsd,
-                                                   has_gcp=reconstruction.has_gcp()) / 100.0)
+            resolution = gsd.cap_resolution(args.orthophoto_resolution, tree.opensfm_reconstruction,
+                                            ignore_gsd=args.ignore_gsd,
+                                            ignore_resolution=(not reconstruction.is_georeferenced()) and args.ignore_gsd,
+                                            has_gcp=reconstruction.has_gcp())
 
             # odm_orthophoto definitions
             kwargs = {
@@ -39,7 +40,7 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                 'log': tree.odm_orthophoto_log,
                 'ortho': tree.odm_orthophoto_render,
                 'corners': tree.odm_orthophoto_corners,
-                'res': resolution,
+                'res': 1.0 / (resolution/100.0),
                 'bands': '',
                 'depth_idx': '',
                 'inpaint': '',
@@ -114,6 +115,7 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                     
                 # Cutline computation, before cropping
                 # We want to use the full orthophoto, not the cropped one.
+                submodel_run = is_submodel(tree.opensfm)
                 if args.orthophoto_cutline:
                     cutline_file = os.path.join(tree.odm_orthophoto, "cutline.gpkg")
 
@@ -122,15 +124,18 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                                     cutline_file,
                                     args.max_concurrency,
                                     scale=0.25)
+                    
+                    if submodel_run:
+                        orthophoto.compute_mask_raster(tree.odm_orthophoto_tif, cutline_file, 
+                                            os.path.join(tree.odm_orthophoto, "odm_orthophoto_cut.tif"),
+                                            blend_distance=20, only_max_coords_feature=True)
+                    else:
+                        log.ODM_INFO("Not a submodel run, skipping mask raster generation")
 
-                    orthophoto.compute_mask_raster(tree.odm_orthophoto_tif, cutline_file, 
-                                           os.path.join(tree.odm_orthophoto, "odm_orthophoto_cut.tif"),
-                                           blend_distance=20, only_max_coords_feature=True)
-
-                orthophoto.post_orthophoto_steps(args, bounds_file_path, tree.odm_orthophoto_tif, tree.orthophoto_tiles)
+                orthophoto.post_orthophoto_steps(args, bounds_file_path, tree.odm_orthophoto_tif, tree.orthophoto_tiles, resolution)
 
                 # Generate feathered orthophoto also
-                if args.orthophoto_cutline:
+                if args.orthophoto_cutline and submodel_run:
                     orthophoto.feather_raster(tree.odm_orthophoto_tif, 
                             os.path.join(tree.odm_orthophoto, "odm_orthophoto_feathered.tif"),
                             blend_distance=20

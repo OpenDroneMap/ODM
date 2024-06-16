@@ -7,7 +7,7 @@ import dateutil.parser
 import shutil
 import multiprocessing
 
-from opendm.loghelpers import double_quote, args_to_dict
+from opendm.arghelpers import double_quote, args_to_dict
 from vmem import virtual_memory
 
 if sys.platform == 'win32' or os.getenv('no_ansiesc'):

@@ -9,6 +9,8 @@ from opendm.concurrency import parallel_map
 from opendm.utils import double_quote
 from opendm.boundary import as_polygon, as_geojson
 from opendm.dem.pdal import run_pipeline
+from opendm.opc import classify
+from opendm.dem import commands
 
 def ply_info(input_ply):
     if not os.path.exists(input_ply):
@@ -274,6 +276,32 @@ def merge_ply(input_point_cloud_files, output_file, dims=None):
     system.run(' '.join(cmd))
 
 def post_point_cloud_steps(args, tree, rerun=False):
+    # Classify and rectify before generating derivate files
+    if args.pc_classify:
+        pc_classify_marker = os.path.join(tree.odm_georeferencing, 'pc_classify_done.txt')
+
+        if not io.file_exists(pc_classify_marker) or rerun:
+            log.ODM_INFO("Classifying {} using Simple Morphological Filter (1/2)".format(tree.odm_georeferencing_model_laz))
+            commands.classify(tree.odm_georeferencing_model_laz,
+                                args.smrf_scalar, 
+                                args.smrf_slope, 
+                                args.smrf_threshold, 
+                                args.smrf_window
+                            )
+
+            log.ODM_INFO("Classifying {} using OpenPointClass (2/2)".format(tree.odm_georeferencing_model_laz))
+            classify(tree.odm_georeferencing_model_laz, args.max_concurrency)
+
+            with open(pc_classify_marker, 'w') as f:
+                f.write('Classify: smrf\n')
+                f.write('Scalar: {}\n'.format(args.smrf_scalar))
+                f.write('Slope: {}\n'.format(args.smrf_slope))
+                f.write('Threshold: {}\n'.format(args.smrf_threshold))
+                f.write('Window: {}\n'.format(args.smrf_window))
+    
+    if args.pc_rectify:
+        commands.rectify(tree.odm_georeferencing_model_laz)
+
     # XYZ point cloud output
     if args.pc_csv:
         log.ODM_INFO("Creating CSV file (XYZ format)")

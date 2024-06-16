@@ -430,7 +430,8 @@ class ODM_Photo:
                         camera_projection = camera_projection.lower()
 
                         # Parrot Sequoia's "fisheye" model maps to "fisheye_opencv"
-                        if camera_projection == "fisheye" and self.camera_make.lower() == "parrot" and self.camera_model.lower() == "sequoia":
+                        # or better yet, replace all fisheye with fisheye_opencv, but wait to change API signature
+                        if camera_projection == "fisheye":
                             camera_projection = "fisheye_opencv"
 
                         if camera_projection in projections:
@@ -636,6 +637,8 @@ class ODM_Photo:
     def int_values(self, tag):
         if isinstance(tag.values, list):
             return [int(v) for v in tag.values]
+        elif isinstance(tag.values, str) and tag.values == '':
+            return []
         else:
             return [int(tag.values)]
 
@@ -929,3 +932,6 @@ class ODM_Photo:
             return self.width * self.height / 1e6
         else:
             return 0.0
+    
+    def is_make_model(self, make, model):
+        return self.camera_make.lower() == make.lower() and self.camera_model.lower() == model.lower()

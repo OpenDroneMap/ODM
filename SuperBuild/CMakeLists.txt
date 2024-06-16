@@ -142,7 +142,7 @@ SETUP_EXTERNAL_PROJECT(OpenCV ${ODM_OpenCV_Version} ${ODM_BUILD_OpenCV})
 # ---------------------------------------------------------------------------------------------
 # Google Flags library (GFlags)
 #
-set(ODM_GFlags_Version 2.1.2)
+set(ODM_GFlags_Version 2.2.2)
 option(ODM_BUILD_GFlags "Force to build GFlags library" OFF)
 
 SETUP_EXTERNAL_PROJECT(GFlags ${ODM_GFlags_Version} ${ODM_BUILD_GFlags})
@@ -179,6 +179,7 @@ set(custom_libs OpenSfM
 				Obj2Tiles
 				OpenPointClass
 				ExifTool
+				RenderDEM
 )
 
 externalproject_add(mve
@@ -222,7 +223,7 @@ externalproject_add(poissonrecon
 
 externalproject_add(dem2mesh
     GIT_REPOSITORY    https://github.com/OpenDroneMap/dem2mesh.git
-    GIT_TAG           313
+    GIT_TAG           334
     PREFIX            ${SB_BINARY_DIR}/dem2mesh
     SOURCE_DIR        ${SB_SOURCE_DIR}/dem2mesh
     CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
@@ -246,6 +247,15 @@ externalproject_add(odm_orthophoto
     GIT_TAG           317
     PREFIX            ${SB_BINARY_DIR}/odm_orthophoto
     SOURCE_DIR        ${SB_SOURCE_DIR}/odm_orthophoto
+    CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
+                      ${WIN32_CMAKE_ARGS} ${WIN32_GDAL_ARGS}
+)
+
+externalproject_add(fastrasterfilter
+    GIT_REPOSITORY    https://github.com/OpenDroneMap/FastRasterFilter.git
+    GIT_TAG           main
+    PREFIX            ${SB_BINARY_DIR}/fastrasterfilter
+    SOURCE_DIR        ${SB_SOURCE_DIR}/fastrasterfilter
     CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
                       ${WIN32_CMAKE_ARGS} ${WIN32_GDAL_ARGS}
 )

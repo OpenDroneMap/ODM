@@ -181,8 +181,13 @@ def get_primary_band_name(multi_camera, user_band_name):
     if len(multi_camera) < 1:
         raise Exception("Invalid multi_camera list")
     
-    # multi_camera is already sorted by band_index
+    # Pick RGB, or Green, or Blue, in this order, if available, otherwise first band
     if user_band_name == "auto":
+        for aliases in [['rgb', 'redgreenblue'], ['green', 'g'], ['blue', 'b']]:
+            for band in multi_camera:
+                if band['name'].lower() in aliases:
+                    return band['name']
+                
         return multi_camera[0]['name']
 
     for band in multi_camera:
@@ -504,6 +509,28 @@ def find_features_homography(image_gray, align_image_gray, feature_retention=0.7
 
     # Detect SIFT features and compute descriptors.
     detector = cv2.SIFT_create(edgeThreshold=10, contrastThreshold=0.1)
+
+    h,w = image_gray.shape
+    max_dim = max(h, w)
+
+    max_size = 2048
+    if max_dim > max_size:
+        if max_dim == w:
+            f = max_size / w
+        else:
+            f = max_size / h
+        image_gray = cv2.resize(image_gray, None, fx=f, fy=f, interpolation=cv2.INTER_AREA)
+        h,w = image_gray.shape
+
+    if align_image_gray.shape[0] != image_gray.shape[0]:
+        fx = image_gray.shape[1]/align_image_gray.shape[1]
+        fy = image_gray.shape[0]/align_image_gray.shape[0]
+
+        align_image_gray = cv2.resize(align_image_gray, None, 
+                        fx=fx, 
+                        fy=fy,
+                        interpolation=(cv2.INTER_AREA if (fx < 1.0 and fy < 1.0) else cv2.INTER_LANCZOS4))
+
     kp_image, desc_image = detector.detectAndCompute(image_gray, None)
     kp_align_image, desc_align_image = detector.detectAndCompute(align_image_gray, None)
 

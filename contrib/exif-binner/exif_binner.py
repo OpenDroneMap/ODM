@@ -1,23 +1,25 @@
 #!/usr/bin/env python3
 
+# Originally developed by Ming Chia at the Australian Plant Phenomics Facility (Australian National University node)
+
+# Usage:
+# exif_binner.py <args> <path to folder of images to rename> <output folder>
+
 # standard libraries
 import sys
 import os
-
-
-import PIL
-from PIL import Image, ExifTags
 import shutil
-from tqdm import tqdm
 import re
 import csv
-
 import math
 import argparse
-parser = argparse.ArgumentParser()
 
-# Usage:
-# python exif_binner.py <args> <path to folder of images to rename> <output folder>
+# other imports
+import PIL
+from PIL import Image, ExifTags
+from tqdm import tqdm # optional: see "swap with this for no tqdm" below
+
+parser = argparse.ArgumentParser()
 
 # required args
 parser.add_argument("file_dir", help="input folder of images")
@@ -77,9 +79,8 @@ images = []
 
 print("Indexing images ...")
 
-# Uses tqdm() for the progress bar, if not needed swap with
-# for filename in os.listdir(file_dir):
 
+# for filename in os.listdir(file_dir): # swap with this for no tqdm
 for filename in tqdm(os.listdir(file_dir)):
     old_path = os.path.join(file_dir, filename)
     file_name, file_ext = os.path.splitext(filename)
@@ -143,6 +144,7 @@ images = sorted(images, key=lambda img: (img["DateTime"], img["name"]))
 
 # now sort and identify valid entries
 if not args.no_grouping:
+    # for this_img in images: # swap with this for no tqdm
     for this_img in tqdm(images):
         if not this_img["valid"]:  # prefiltered in last loop
             continue
@@ -166,6 +168,7 @@ os.makedirs(output_invalid, exist_ok=True)
 identifier = ""
 
 # then do the actual copy
+# for this_img in images: # swap with this for no tqdm
 for this_img in tqdm(images):
     old_path = os.path.join(file_dir, this_img["name"])
     file_name, file_ext = os.path.splitext(this_img["name"])

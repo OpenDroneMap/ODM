@@ -13,6 +13,7 @@ from opendm import log
 from opendm import io
 from opendm import system
 from opendm import context
+from opendm import multispectral
 
 from opendm.progress import progressbc
 from opendm.photo import ODM_Photo
@@ -27,7 +28,7 @@ class ODM_Reconstruction(object):
         self.gcp = None
         self.multi_camera = self.detect_multi_camera()
         self.filter_photos()
-
+        
     def detect_multi_camera(self):
         """
         Looks at the reconstruction photos and determines if this
@@ -45,22 +46,88 @@ class ODM_Reconstruction(object):
             band_photos[p.band_name].append(p)
             
         bands_count = len(band_photos)
-        if bands_count >= 2 and bands_count <= 8:
+        
+        # Band name with the minimum number of photos
+        max_band_name = None
+        max_photos = -1
+        for band_name in band_photos:
+            if len(band_photos[band_name]) > max_photos:
+                max_band_name = band_name
+                max_photos = len(band_photos[band_name])
+
+        if bands_count >= 2 and bands_count <= 10:
             # Validate that all bands have the same number of images,
             # otherwise this is not a multi-camera setup
-            img_per_band = len(band_photos[p.band_name])
-            for band in band_photos:
-                if len(band_photos[band]) != img_per_band:
-                    log.ODM_ERROR("Multi-camera setup detected, but band \"%s\" (identified from \"%s\") has only %s images (instead of %s), perhaps images are missing or are corrupted. Please include all necessary files to process all bands and try again." % (band, band_photos[band][0].filename, len(band_photos[band]), img_per_band))
-                    raise RuntimeError("Invalid multi-camera images")
+            img_per_band = len(band_photos[max_band_name])
             
             mc = []
             for band_name in band_indexes:
                 mc.append({'name': band_name, 'photos': band_photos[band_name]})
             
-            # Sort by band index
-            mc.sort(key=lambda x: band_indexes[x['name']])
+            filter_missing = False
+            for band in band_photos:
+                if len(band_photos[band]) < img_per_band:
+                    log.ODM_WARNING("Multi-camera setup detected, but band \"%s\" (identified from \"%s\") has only %s images (instead of %s), perhaps images are missing or are corrupted." % (band, band_photos[band][0].filename, len(band_photos[band]), len(band_photos[max_band_name])))
+                    filter_missing = True
+            
+            if filter_missing:
+                # Calculate files to ignore
+                _, p2s = multispectral.compute_band_maps(mc, max_band_name)
 
+                max_files_per_band = 0
+
+                for filename in p2s:
+                    max_files_per_band = max(max_files_per_band, len(p2s[filename]))
+
+                for filename in p2s:
+                    if len(p2s[filename]) < max_files_per_band:
+                        photos_to_remove = p2s[filename] + [p for p in self.photos if p.filename == filename]
+                        for photo in photos_to_remove:
+                            log.ODM_WARNING("Excluding %s" % photo.filename)
+
+                            self.photos = [p for p in self.photos if p != photo]
+                            for i in range(len(mc)):
+                                mc[i]['photos'] = [p for p in mc[i]['photos'] if p != photo]
+                
+                log.ODM_INFO("New image count: %s" % len(self.photos))
+
+            # We enforce a normalized band order for all bands that we can identify
+            # and rely on the manufacturer's band_indexes as a fallback for all others
+            normalized_band_order = {
+                'RGB': '0',
+                'REDGREENBLUE': '0',
+
+                'RED': '1',
+                'R': '1',
+
+                'GREEN': '2',
+                'G': '2',
+
+                'BLUE': '3',
+                'B': '3',
+
+                'NIR': '4',
+                'N': '4',
+
+                'REDEDGE': '5',
+                'RE': '5',
+
+                'PANCHRO': '6',
+
+                'LWIR': '7',
+                'L': '7',
+            }
+
+            for band_name in band_indexes:
+                if band_name.upper() not in normalized_band_order:
+                    log.ODM_WARNING(f"Cannot identify order for {band_name} band, using manufacturer suggested index instead")
+
+            # Sort
+            mc.sort(key=lambda x: normalized_band_order.get(x['name'].upper(), '9' + band_indexes[x['name']]))
+
+            for c, d in enumerate(mc):
+                log.ODM_INFO(f"Band {c + 1}: {d['name']}")
+            
             return mc
 
         return None
@@ -82,6 +149,12 @@ class ODM_Reconstruction(object):
             if 'rgb' in bands or 'redgreenblue' in bands:
                 if 'red' in bands and 'green' in bands and 'blue' in bands:
                     bands_to_remove.append(bands['rgb'] if 'rgb' in bands else bands['redgreenblue'])
+                
+                # Mavic 3M's RGB camera lens are too different than the multispectral ones
+                # so we drop the RGB channel instead
+                elif self.photos[0].is_make_model("DJI", "M3M") and 'red' in bands and 'green' in bands:
+                    bands_to_remove.append(bands['rgb'] if 'rgb' in bands else bands['redgreenblue'])
+                
                 else:
                     for b in ['red', 'green', 'blue']:
                         if b in bands:

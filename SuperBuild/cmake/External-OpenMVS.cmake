@@ -14,7 +14,7 @@ externalproject_add(vcg
 
 externalproject_add(eigen34
     GIT_REPOSITORY  https://gitlab.com/libeigen/eigen.git
-    GIT_TAG         3.4
+    GIT_TAG         7176ae16238ded7fb5ed30a7f5215825b3abd134
     UPDATE_COMMAND  ""
     SOURCE_DIR      ${SB_SOURCE_DIR}/eigen34
     CONFIGURE_COMMAND ""
@@ -53,7 +53,7 @@ ExternalProject_Add(${_proj_name}
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
   GIT_REPOSITORY    https://github.com/OpenDroneMap/openMVS
-  GIT_TAG           317
+  GIT_TAG           320
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   #--Configure step-------------

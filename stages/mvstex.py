@@ -81,14 +81,11 @@ class ODMMvsTexStage(types.ODM_Stage):
 
                 # Format arguments to fit Mvs-Texturing app
                 skipGlobalSeamLeveling = ""
-                skipLocalSeamLeveling = ""
                 keepUnseenFaces = ""
                 nadir = ""
 
                 if args.texturing_skip_global_seam_leveling:
                     skipGlobalSeamLeveling = "--skip_global_seam_leveling"
-                if args.texturing_skip_local_seam_leveling:
-                    skipLocalSeamLeveling = "--skip_local_seam_leveling"
                 if args.texturing_keep_unseen_faces:
                     keepUnseenFaces = "--keep_unseen_faces"
                 if (r['nadir']):
@@ -102,7 +99,6 @@ class ODMMvsTexStage(types.ODM_Stage):
                     'dataTerm': 'gmi',
                     'outlierRemovalType': 'gauss_clamping',
                     'skipGlobalSeamLeveling': skipGlobalSeamLeveling,
-                    'skipLocalSeamLeveling': skipLocalSeamLeveling,
                     'keepUnseenFaces': keepUnseenFaces,
                     'toneMapping': 'none',
                     'nadirMode': nadir,
@@ -114,7 +110,7 @@ class ODMMvsTexStage(types.ODM_Stage):
 
                 mvs_tmp_dir = os.path.join(r['out_dir'], 'tmp')
 
-                # Make sure tmp directory is empty
+                # mvstex creates a tmp directory, so make sure it is empty
                 if io.dir_exists(mvs_tmp_dir):
                     log.ODM_INFO("Removing old tmp directory {}".format(mvs_tmp_dir))
                     shutil.rmtree(mvs_tmp_dir)
@@ -125,7 +121,6 @@ class ODMMvsTexStage(types.ODM_Stage):
                         '-t {toneMapping} '
                         '{intermediate} '
                         '{skipGlobalSeamLeveling} '
-                        '{skipLocalSeamLeveling} '
                         '{keepUnseenFaces} '
                         '{nadirMode} '
                         '{labelingFile} '

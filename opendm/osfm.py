@@ -13,7 +13,7 @@ from opendm import system
 from opendm import context
 from opendm import camera
 from opendm import location
-from opendm.photo import find_largest_photo_dim, find_largest_photo
+from opendm.photo import find_largest_photo_dims, find_largest_photo
 from opensfm.large import metadataset
 from opensfm.large import tools
 from opensfm.actions import undistort
@@ -64,7 +64,6 @@ class OSFMContext:
                             "Check that the images have enough overlap, "
                             "that there are enough recognizable features "
                             "and that the images are in focus. "
-                            "You could also try to increase the --min-num-features parameter."
                             "The program will now exit.")
 
         if rolling_shutter_correct:
@@ -211,11 +210,25 @@ class OSFMContext:
                 'lowest': 0.0675,
             }
 
-            max_dim = find_largest_photo_dim(photos)
+            max_dims = find_largest_photo_dims(photos)
 
-            if max_dim > 0:
+            if max_dims is not None:
+                w, h = max_dims
+                max_dim = max(w, h)
                 log.ODM_INFO("Maximum photo dimensions: %spx" % str(max_dim))
-                feature_process_size = int(max_dim * feature_quality_scale[args.feature_quality])
+
+                lower_limit = 320
+                upper_limit = 4480
+                megapixels = (w * h) / 1e6
+                multiplier = 1
+                    
+                if megapixels < 2:
+                    multiplier = 2
+                elif megapixels > 42:
+                    multiplier = 0.5
+                
+                factor = min(1, feature_quality_scale[args.feature_quality] * multiplier)
+                feature_process_size = min(upper_limit, max(lower_limit, int(max_dim * factor)))
                 log.ODM_INFO("Photo dimensions for feature extraction: %ipx" % feature_process_size)
             else:
                 log.ODM_WARNING("Cannot compute max image dimensions, going with defaults")
@@ -227,6 +240,11 @@ class OSFMContext:
             else:
                 matcher_graph_rounds = 50
                 matcher_neighbors = 0
+            
+            # Always use matcher-neighbors if less than 4 pictures
+            if len(photos) <= 3:
+                matcher_graph_rounds = 0
+                matcher_neighbors = 3
 
             config = [
                 "use_exif_size: no",
@@ -278,9 +296,8 @@ class OSFMContext:
             config.append("matcher_type: %s" % osfm_matchers[matcher_type])
 
             # GPU acceleration?
-            if has_gpu(args):
-                max_photo = find_largest_photo(photos)
-                w, h = max_photo.width, max_photo.height
+            if has_gpu(args) and max_dims is not None:
+                w, h = max_dims
                 if w > h:
                     h = int((h / w) * feature_process_size)
                     w = int(feature_process_size)
@@ -554,6 +571,8 @@ class OSFMContext:
             pdf_report.save_report("report.pdf")
             
             if os.path.exists(osfm_report_path):
+                if os.path.exists(report_path):
+                    os.unlink(report_path)
                 shutil.move(osfm_report_path, report_path)
             else:
                 log.ODM_WARNING("Report could not be generated")
@@ -774,3 +793,12 @@ def get_all_submodel_paths(submodels_path, *all_paths):
                 result.append([os.path.join(submodels_path, f, ap) for ap in all_paths])
 
     return result
+
+def is_submodel(opensfm_root):
+    # A bit hackish, but works without introducing additional markers / flags
+    # Look at the path of the opensfm directory and see if "submodel_" is part of it
+    parts = os.path.abspath(opensfm_root).split(os.path.sep)
+
+    return (len(parts) >= 2 and parts[-2][:9] == "submodel_") or \
+           os.path.isfile(os.path.join(opensfm_root, "split_merge_stop_at_reconstruction.txt")) or \
+           os.path.isfile(os.path.join(opensfm_root, "features", "empty"))
