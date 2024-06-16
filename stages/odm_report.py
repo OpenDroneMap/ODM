@@ -70,6 +70,18 @@ class ODMReport(types.ODM_Stage):
                 log.ODM_WARNING("Cannot extract shots")
         else:
             log.ODM_WARNING('Found a valid shots file in: %s' % shots_geojson)
+
+        camera_mappings = os.path.join(tree.odm_report, "camera_mappings.npz")
+        if not io.file_exists(camera_mappings) or self.rerun():
+            src_cm = os.path.join(tree.opensfm, "camera_mappings.npz")
+            if io.file_exists(src_cm):
+                shutil.copy(src_cm, camera_mappings)
+                log.ODM_INFO("Copied %s --> %s" % (src_cm, camera_mappings))
+            else:
+                log.ODM_WARNING("Cannot copy camera mappings")
+        else:
+            log.ODM_WARNING("Found a valid camera mappings file in: %s" % camera_mappings)
+        
         
         if args.skip_report:
             # Stop right here
