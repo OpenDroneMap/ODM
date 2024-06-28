@@ -22,13 +22,13 @@ from opendm.photo import ODM_Photo
 warnings.filterwarnings("ignore")
 
 class ODM_Reconstruction(object):
-    def __init__(self, photos, images_path):
+    def __init__(self, photos, images_path, max_concurrency=1):
         self.photos = photos
         self.georef = None
         self.gcp = None
         self.multi_camera = self.detect_multi_camera()
         self.filter_photos()
-        self.dewarp_photos(images_path)
+        self.dewarp_photos(images_path, max_concurrency)
         
     def detect_multi_camera(self):
         """
@@ -280,7 +280,7 @@ class ODM_Reconstruction(object):
             if p.filename == filename:
                 return p
     
-    def dewarp_photos(self, images_path):
+    def dewarp_photos(self, images_path, max_concurrency):
         if not self.multi_camera:
             return # Nothing to do
         else:
@@ -296,7 +296,8 @@ class ODM_Reconstruction(object):
                 upscale = max(1.0, bands['nir'][0].focal_ratio / bands[rgb][0].focal_ratio)
                 if upscale != 1.0:
                     log.ODM_INFO("Adjusting focal distance of RGB images by %s" % upscale)
-                multispectral.dewarp_photos(bands['rgb'] if 'rgb' in bands else bands['redgreenblue'], images_path, upscale)
+                size = (bands['nir'][0].width, bands['nir'][0].height)
+                multispectral.dewarp_photos(bands['rgb'] if 'rgb' in bands else bands['redgreenblue'], images_path, upscale, size, max_concurrency)
 
 class ODM_GeoRef(object):
     @staticmethod

@@ -302,7 +302,7 @@ class ODMLoadDatasetStage(types.ODM_Stage):
         log.logger.log_json_images(len(photos))
 
         # Create reconstruction object
-        reconstruction = types.ODM_Reconstruction(photos, tree.dataset_raw)
+        reconstruction = types.ODM_Reconstruction(photos, tree.dataset_raw, args.max_concurrency)
         
         if tree.odm_georeferencing_gcp and not args.use_exif:
             reconstruction.georeference_with_gcp(tree.odm_georeferencing_gcp,
