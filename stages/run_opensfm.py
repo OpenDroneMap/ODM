@@ -29,14 +29,14 @@ class ODMOpenSfMStage(types.ODM_Stage):
             raise system.ExitException('Not enough photos in photos array to start OpenSfM')
 
         octx = OSFMContext(tree.opensfm)
-        # octx.setup(args, tree.dataset_raw, reconstruction=reconstruction, rerun=self.rerun())
-        # octx.photos_to_metadata(photos, args.rolling_shutter, args.rolling_shutter_readout, self.rerun())
-        # self.update_progress(20)
-        # octx.feature_matching(self.rerun())
-        # self.update_progress(30)
-        # octx.create_tracks(self.rerun())
-        # octx.reconstruct(args.rolling_shutter, reconstruction.is_georeferenced() and (not args.sfm_no_partial), self.rerun())
-        # octx.extract_cameras(tree.path("cameras.json"), self.rerun())
+        octx.setup(args, tree.dataset_raw, reconstruction=reconstruction, rerun=self.rerun())
+        octx.photos_to_metadata(photos, args.rolling_shutter, args.rolling_shutter_readout, self.rerun())
+        self.update_progress(20)
+        octx.feature_matching(self.rerun())
+        self.update_progress(30)
+        octx.create_tracks(self.rerun())
+        octx.reconstruct(args.rolling_shutter, reconstruction.is_georeferenced() and (not args.sfm_no_partial), self.rerun())
+        octx.extract_cameras(tree.path("cameras.json"), self.rerun())
         self.update_progress(70)
 
         def cleanup_disk_space():
