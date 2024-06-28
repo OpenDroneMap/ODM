@@ -427,14 +427,14 @@ def find_ecc_homography(image_gray, align_image_gray, number_of_iterations=1000,
     pyramid_levels = 0
     h,w = image_gray.shape
     max_dim = max(h, w)
+    downscale = 0
 
-    max_size = 1280
+    max_size = 2048
+    while max_dim / (2**downscale) > max_size:
+        downscale += 1
 
-    if max_dim > max_size:
-        if max_dim == w:
-            f = max_size / w
-        else:
-            f = max_size / h
+    if downscale > 0:
+        f = 1 / (2**downscale)
         image_gray = cv2.resize(image_gray, None, fx=f, fy=f, interpolation=cv2.INTER_AREA)
         h,w = image_gray.shape
 
@@ -445,6 +445,7 @@ def find_ecc_homography(image_gray, align_image_gray, number_of_iterations=1000,
         pyramid_levels += 1
     
     log.ODM_INFO("Pyramid levels: %s" % pyramid_levels)
+    log.ODM_INFO("Downscale: %s" % downscale)
     
     # Quick check on size
     if align_image_gray.shape[0] != image_gray.shape[0]:
@@ -473,7 +474,6 @@ def find_ecc_homography(image_gray, align_image_gray, number_of_iterations=1000,
 
     # Define the motion model, scale the initial warp matrix to smallest level
     warp_matrix = np.eye(3, 3, dtype=np.float32)
-    warp_matrix = warp_matrix * np.array([[1,1,2],[1,1,2],[0.5,0.5,1]], dtype=np.float32)**(1-(pyramid_levels+1))
 
     for level in range(pyramid_levels+1):
         ig = gradient(gaussian(image_gray_pyr[level]))
@@ -495,14 +495,16 @@ def find_ecc_homography(image_gray, align_image_gray, number_of_iterations=1000,
             if level != pyramid_levels:
                 log.ODM_INFO("Could not compute ECC warp_matrix at pyramid level %s, resetting matrix" % level)
                 warp_matrix = np.eye(3, 3, dtype=np.float32)
-                warp_matrix = warp_matrix * np.array([[1,1,2],[1,1,2],[0.5,0.5,1]], dtype=np.float32)**(1-(pyramid_levels+1))
             else:
                 raise e
 
         if level != pyramid_levels: 
             warp_matrix = warp_matrix * np.array([[1,1,2],[1,1,2],[0.5,0.5,1]], dtype=np.float32)
 
-    return warp_matrix
+    if downscale > 0:
+        return warp_matrix * (np.array([[1,1,2],[1,1,2],[0.5,0.5,1]], dtype=np.float32) ** downscale)
+    else:
+        return warp_matrix
 
 
 def find_features_homography(image_gray, align_image_gray, feature_retention=0.7, min_match_count=10):
@@ -512,13 +514,15 @@ def find_features_homography(image_gray, align_image_gray, feature_retention=0.7
 
     h,w = image_gray.shape
     max_dim = max(h, w)
+    downscale = 0
 
-    max_size = 2048
-    if max_dim > max_size:
-        if max_dim == w:
-            f = max_size / w
-        else:
-            f = max_size / h
+    max_size = 4096
+    while max_dim / (2**downscale) > max_size:
+        downscale += 1
+    log.ODM_INFO("Downscale: %s" % downscale)
+    
+    if downscale > 0:
+        f = 1 / (2**downscale)
         image_gray = cv2.resize(image_gray, None, fx=f, fy=f, interpolation=cv2.INTER_AREA)
         h,w = image_gray.shape
 
@@ -570,7 +574,11 @@ def find_features_homography(image_gray, align_image_gray, feature_retention=0.7
 
     # Find homography
     h, _ = cv2.findHomography(points_image, points_align_image, cv2.RANSAC)
-    return h
+
+    if downscale > 0:
+        return h * (np.array([[1,1,2],[1,1,2],[0.5,0.5,1]], dtype=np.float32) ** downscale)
+    else:
+        return h
 
 def gradient(im, ksize=5):
     im = local_normalize(im)
