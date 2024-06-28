@@ -22,13 +22,12 @@ from opendm.photo import ODM_Photo
 warnings.filterwarnings("ignore")
 
 class ODM_Reconstruction(object):
-    def __init__(self, photos, images_path, max_concurrency=1):
+    def __init__(self, photos):
         self.photos = photos
         self.georef = None
         self.gcp = None
         self.multi_camera = self.detect_multi_camera()
         self.filter_photos()
-        self.dewarp_photos(images_path, max_concurrency)
         
     def detect_multi_camera(self):
         """
@@ -149,7 +148,13 @@ class ODM_Reconstruction(object):
 
             if 'rgb' in bands or 'redgreenblue' in bands:
                 if 'red' in bands and 'green' in bands and 'blue' in bands:
-                    bands_to_remove.append(bands['rgb'] if 'rgb' in bands else bands['redgreenblue'])                
+                    bands_to_remove.append(bands['rgb'] if 'rgb' in bands else bands['redgreenblue'])
+                
+                # Mavic 3M's RGB camera lens are too different than the multispectral ones
+                # so we drop the RGB channel instead
+                elif self.photos[0].is_make_model("DJI", "M3M") and 'red' in bands and 'green' in bands:
+                    bands_to_remove.append(bands['rgb'] if 'rgb' in bands else bands['redgreenblue'])
+                
                 else:
                     for b in ['red', 'green', 'blue']:
                         if b in bands:
@@ -280,25 +285,6 @@ class ODM_Reconstruction(object):
             if p.filename == filename:
                 return p
     
-    def dewarp_photos(self, images_path, max_concurrency):
-        if not self.multi_camera:
-            return # Nothing to do
-        else:
-            bands = {}
-            for b in self.multi_camera:
-                bands[b['name'].lower()] = b['photos']
-
-            # Mavic 3M's RGB camera lens are too different than the multispectral ones
-            # so we unwarp them before reconstruction when needed
-            if self.photos[0].is_make_model("DJI", "M3M") and 'nir' in bands and ('rgb' in bands or 'redgreenblue' in bands):
-                log.ODM_INFO("Dewarping RGB photos before processing")
-                rgb = 'rgb' if 'rgb' in bands else 'redgreenblue'
-                upscale = max(1.0, bands['nir'][0].focal_ratio / bands[rgb][0].focal_ratio)
-                if upscale != 1.0:
-                    log.ODM_INFO("Adjusting focal distance of RGB images by %s" % upscale)
-                size = (bands['nir'][0].width, bands['nir'][0].height)
-                multispectral.dewarp_photos(bands['rgb'] if 'rgb' in bands else bands['redgreenblue'], images_path, upscale, size, max_concurrency)
-
 class ODM_GeoRef(object):
     @staticmethod
     def FromCoordsFile(coords_file):
