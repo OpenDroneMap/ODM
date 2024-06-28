@@ -6,7 +6,8 @@ from opendm import dls
 import numpy as np
 from opendm import log
 from opendm.concurrency import parallel_map
-from opensfm.io import imread
+from opendm.io import related_file_path
+from opensfm.io import imread, imwrite
 
 from skimage import exposure
 from skimage.morphology import disk
@@ -644,3 +645,59 @@ def resize_match(image, dimension):
                 interpolation=(cv2.INTER_AREA if (fx < 1.0 and fy < 1.0) else cv2.INTER_LANCZOS4))
 
     return image
+
+def dewarp_photos(photos, images_path, scale_factor=1.0):
+    # Caution! This will make changes to the photo objects' filename
+
+    for p in photos:
+        # This should never happen
+        if os.path.splitext(p.filename)[0].endswith("_dewarped"):
+            log.ODM_WARNING("Cannot dewarp %s, already dewarped?" % (p.filename))
+            continue
+
+        if p.dewarp_data is None:
+            log.ODM_WARNING("Cannot dewarp %s, dewarp data is missing" % p.filename)
+            continue
+
+        if p.dewarp_data.count(";") != 1:
+            log.ODM_WARNING("Cannot dewarp %s, cannot parse dewarp data" % p.filename)
+            continue
+
+        datestamp, params = p.dewarp_data.split(";")
+        try:
+            params = [float(p) for p in params.split(",")]
+        except ValueError as e:
+            log.ODM_WARNING("Cannot dewarp %s, failed to parse dewarp data" % p.filename)
+            continue
+
+        if len(params) != 9:
+            log.ODM_WARNING("Cannot dewarp %s, invalid dewarp data parameters (expected 9, got: %s)" % (p.filename, len(params)))
+            continue
+
+        dewarped_filename = related_file_path(p.filename, postfix="_dewarped")
+        dewarped_path = os.path.join(images_path, dewarped_filename)
+        if os.path.isfile(dewarped_path):
+            # Already dewarped
+            p.filename = dewarped_filename
+        else:
+            image = imread(os.path.join(images_path, p.filename), unchanged=True, anydepth=True)
+            w, h = image.shape[1], image.shape[0]
+            fx, fy, cx, cy, k1, k2, p1, p2, k3 = params
+            cam_m = np.array([[fx, 0, w / 2 - cx], [0, fy, h / 2 + cy], [0, 0, 1]])
+            dist_c = np.array([k1, k2, p1, p2, k3])
+            map1, map2 = cv2.initUndistortRectifyMap(cam_m, dist_c, None, cam_m, (w, h), cv2.CV_32FC1)
+            dewarped_image = cv2.remap(image, map1, map2, cv2.INTER_LINEAR)
+
+            if scale_factor > 1.0:
+                new_w = int(w * (1.0 / scale_factor))
+                new_h = int(h * (1.0 / scale_factor))
+                center_x, center_y = w // 2, h // 2
+                crop_x1 = max(0, center_x - new_w // 2)
+                crop_y1 = max(0, center_y - new_h // 2)
+                crop_x2 = min(w, center_x + new_w // 2)
+                crop_y2 = min(h, center_y + new_h // 2)
+                cropped = dewarped_image[crop_y1:crop_y2, crop_x1:crop_x2]
+                dewarped_image = cv2.resize(cropped, (w, h), interpolation=cv2.INTER_LANCZOS4)
+            imwrite(dewarped_path, dewarped_image)
+            log.ODM_INFO("Dewarped %s --> %s" % (p.filename, dewarped_filename))
+            p.filename = dewarped_filename
