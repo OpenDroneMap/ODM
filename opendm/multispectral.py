@@ -706,5 +706,10 @@ def dewarp_photos(photos, images_path, scale_factor=1.0, size=None, max_concurre
             imwrite(dewarped_path, dewarped_image)
             log.ODM_INFO("Dewarped %s --> %s" % (p.filename, dewarped_filename))
             p.filename = dewarped_filename
+        
+        # Disable vignetting correction
+        p.vignetting_polynomial = None
+        p.vignetting_center = None
+
     
     parallel_map(dewarp_photo, photos, max_concurrency)
