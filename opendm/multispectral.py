@@ -6,6 +6,7 @@ from opendm import dls
 import numpy as np
 from opendm import log
 from opendm.concurrency import parallel_map
+from opensfm.io import imread
 
 from skimage import exposure
 from skimage.morphology import disk
@@ -444,7 +445,6 @@ def find_ecc_homography(image_gray, align_image_gray, number_of_iterations=1000,
         pyramid_levels += 1
     
     log.ODM_INFO("Pyramid levels: %s" % pyramid_levels)
-    log.ODM_INFO("Downscale: %s" % downscale)
     
     # Quick check on size
     if align_image_gray.shape[0] != image_gray.shape[0]:
@@ -518,7 +518,6 @@ def find_features_homography(image_gray, align_image_gray, feature_retention=0.7
     max_size = 4096
     while max_dim / (2**downscale) > max_size:
         downscale += 1
-    log.ODM_INFO("Downscale: %s" % downscale)
     
     if downscale > 0:
         f = 1 / (2**downscale)
