@@ -413,7 +413,7 @@ class ODM_Photo:
                         self.set_attr_from_xmp_tag('speed_z', xtags, [
                             '@drone-dji:FlightZSpeed',
                         ], float)
-
+                    
                     # Account for over-estimation
                     if self.gps_xy_stddev is not None:
                         self.gps_xy_stddev *= 2.0

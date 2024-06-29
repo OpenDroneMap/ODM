@@ -285,7 +285,6 @@ class ODM_Reconstruction(object):
             if p.filename == filename:
                 return p
     
-
 class ODM_GeoRef(object):
     @staticmethod
     def FromCoordsFile(coords_file):

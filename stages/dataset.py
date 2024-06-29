@@ -162,7 +162,7 @@ class ODMLoadDatasetStage(types.ODM_Stage):
                     (p, ext) = os.path.splitext(r)
                     if p[-5:] == "_mask" and ext.lower() in context.supported_extensions:
                         masks[p] = r
-
+                    
                 photos = []
                 with open(tree.dataset_list, 'w') as dataset_list:
                     log.ODM_INFO("Loading %s images" % len(path_files))
