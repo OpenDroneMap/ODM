@@ -413,6 +413,17 @@ class ODM_Photo:
                         self.set_attr_from_xmp_tag('speed_z', xtags, [
                             '@drone-dji:FlightZSpeed',
                         ], float)
+
+                    # DJI MS
+                    if self.black_level is None and 'Camera:BlackCurrent' in xtags:
+                        self.set_attr_from_xmp_tag('black_level', xtags, [
+                            'Camera:BlackCurrent'
+                        ], str)
+                    if '@drone-dji:ExposureTime' in xtags:
+                        self.set_attr_from_xmp_tag('exposure_time', xtags, [
+                            '@drone-dji:ExposureTime'
+                        ], float)
+                        self.exposure_time /= 1e6 # is in microseconds
                     
                     # Account for over-estimation
                     if self.gps_xy_stddev is not None:
