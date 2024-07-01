@@ -37,14 +37,6 @@ def dn_to_radiance(photo, image):
     exposure_time = photo.exposure_time
     gain = photo.get_gain()
     gain_adjustment = photo.gain_adjustment
-    photometric_exp = photo.get_photometric_exposure()
-
-    if a1 is None and photometric_exp is None:
-        log.ODM_WARNING("Cannot perform radiometric calibration, no FNumber/Exposure Time or Radiometric Calibration EXIF tags found in %s. Using Digital Number." % photo.filename)
-        return image
-    
-    if a1 is None and photometric_exp is not None:
-        a1 = photometric_exp
 
     V, x, y = vignette_map(photo)
     if x is None:
@@ -81,7 +73,9 @@ def dn_to_radiance(photo, image):
     if gain is not None and exposure_time is not None:
         image /= (gain * exposure_time)
     
-    image *= a1
+    if a1 is not None:
+        # multiply with the radiometric calibration coefficient
+        image *= a1
 
     if gain_adjustment is not None:
         image *= gain_adjustment
@@ -123,7 +117,10 @@ def vignette_map(photo):
 def dn_to_reflectance(photo, image, use_sun_sensor=True):
     radiance = dn_to_radiance(photo, image)
     irradiance = compute_irradiance(photo, use_sun_sensor=use_sun_sensor)
-    return radiance * math.pi / irradiance
+    reflectance = radiance * math.pi / irradiance
+    reflectance[reflectance < 0.0] = 0.0
+    reflectance[reflectance > 1.0] = 1.0
+    return reflectance
 
 def compute_irradiance(photo, use_sun_sensor=True):
     # Thermal (this should never happen, but just in case..)
