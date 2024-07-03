@@ -21,8 +21,8 @@ RUN bash configure.sh clean
 
 ### Use a second image for the final asset to reduce the number and
 # size of the layers.
-FROM nvidia/cuda:11.2.2-runtime-ubuntu20.04
-#FROM nvidia/cuda:11.2.0-devel-ubuntu20.04
+#FROM nvidia/cuda:11.2.2-runtime-ubuntu20.04
+FROM nvidia/cuda:11.2.0-devel-ubuntu20.04
 
 # Env variables
 ENV DEBIAN_FRONTEND=noninteractive \
