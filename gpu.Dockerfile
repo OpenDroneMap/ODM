@@ -39,7 +39,7 @@ COPY --from=builder /code /code
 COPY --from=builder /usr/local /usr/local
 #COPY --from=builder /usr/lib/x86_64-linux-gnu/libavcodec.so.58 /usr/lib/x86_64-linux-gnu/libavcodec.so.58
 RUN apt-get update -y \
- && apt-get install -y ffmpeg
+ && apt-get install -y ffmpeg libtbb2
 # Install shared libraries that we depend on via APT, but *not*
 # the -dev packages to save space!
 # Also run a smoke test on ODM and OpenSfM
