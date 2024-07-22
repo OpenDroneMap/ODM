@@ -40,6 +40,10 @@ class ODMSplitStage(types.ODM_Stage):
                 outputs['large'] = True
             else:
                 log.ODM_WARNING('Could not perform split-merge as GPS information in photos or image_groups.txt is missing.')
+        else:
+            image_groups_file = os.path.abspath(args.split_image_groups)
+            if io.file_exists(image_groups_file):
+                outputs['large'] = True
 
         if outputs['large']:
             # If we have a cluster address, we'll use a distributed workflow
