@@ -28,7 +28,7 @@ externalproject_add(${_proj_name}
     SOURCE_DIR        ${SB_SOURCE_DIR}/${_proj_name}
     #--Download step--------------
     DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
-    URL               https://github.com/exiftool/exiftool/archive/refs/tags/12.62.zip
+    URL               https://github.com/exiftool/exiftool/archive/refs/tags/12.70.zip
     UPDATE_COMMAND    ""
     CONFIGURE_COMMAND ""
     BUILD_IN_SOURCE 1
