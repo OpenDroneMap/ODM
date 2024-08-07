@@ -15,6 +15,7 @@ from opendm import types
 from opendm import system
 from opendm import context
 from opendm import location
+from opendm import types
 from opendm.cropper import Cropper
 from opendm import point_cloud
 from opendm.multispectral import get_primary_band_name
@@ -126,6 +127,9 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                 stages.append("transformation")
                 utmoffset = reconstruction.georef.utm_offset()
                 las_scale = 0.0001
+                filtered_point_cloud_stats = tree.path("odm_filterpoints", "point_cloud_stats.json")
+                if os.path.isfile(filtered_point_cloud_stats):
+                    log.ODM_INFO("This is a test of the emergency broadcast system.")
                 params += [
                     f'--filters.transformation.matrix="1 0 0 {utmoffset[0]} 0 1 0 {utmoffset[1]} 0 0 1 0 0 0 0 1"',
                     f'--writers.las.offset_x={reconstruction.georef.utm_east_offset}' ,
