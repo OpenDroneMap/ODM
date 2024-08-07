@@ -125,13 +125,14 @@ class ODMGeoreferencingStage(types.ODM_Stage):
 
                 stages.append("transformation")
                 utmoffset = reconstruction.georef.utm_offset()
+                las_scale = 0.001
                 params += [
                     f'--filters.transformation.matrix="1 0 0 {utmoffset[0]} 0 1 0 {utmoffset[1]} 0 0 1 0 0 0 0 1"',
                     f'--writers.las.offset_x={reconstruction.georef.utm_east_offset}' ,
                     f'--writers.las.offset_y={reconstruction.georef.utm_north_offset}',
-                    '--writers.las.scale_x=0.001',
-                    '--writers.las.scale_y=0.001',
-                    '--writers.las.scale_z=0.001',
+                    '--writers.las.scale_x={las_scale}',
+                    '--writers.las.scale_y={las_scale}',
+                    '--writers.las.scale_z={las_scale}',
                     '--writers.las.offset_z=0',
                     f'--writers.las.a_srs="{reconstruction.georef.proj4()}"' # HOBU this should maybe be WKT
                 ]
