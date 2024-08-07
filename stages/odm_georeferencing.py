@@ -15,7 +15,6 @@ from opendm import types
 from opendm import system
 from opendm import context
 from opendm import location
-from opendm import types
 from opendm.cropper import Cropper
 from opendm import point_cloud
 from opendm.multispectral import get_primary_band_name
