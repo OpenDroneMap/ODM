@@ -125,7 +125,7 @@ class ODMGeoreferencingStage(types.ODM_Stage):
 
                 stages.append("transformation")
                 utmoffset = reconstruction.georef.utm_offset()
-                las_scale = 0.001
+                las_scale = 0.0001
                 params += [
                     f'--filters.transformation.matrix="1 0 0 {utmoffset[0]} 0 1 0 {utmoffset[1]} 0 0 1 0 0 0 0 1"',
                     f'--writers.las.offset_x={reconstruction.georef.utm_east_offset}' ,
