@@ -125,10 +125,17 @@ class ODMGeoreferencingStage(types.ODM_Stage):
 
                 stages.append("transformation")
                 utmoffset = reconstruction.georef.utm_offset()
-                las_scale = 0.0001
+                las_scale = 0.001
                 filtered_point_cloud_stats = tree.path("odm_filterpoints", "point_cloud_stats.json")
                 if os.path.isfile(filtered_point_cloud_stats):
                     log.ODM_INFO("This is a test of the emergency broadcast system.")
+                    with open(filtered_point_cloud_stats, 'r') as stats:
+                        las_stats = json.load(stats)
+                        spacing = las_stats['spacing'] / 10
+                        log.ODM_INFO("Using 1/10 estimated spacing for las scale: %s" % spacing)
+                        log_scale = spacing
+                else
+                    log.ODM_INFO("Using default las scale of 0.001")
                 params += [
                     f'--filters.transformation.matrix="1 0 0 {utmoffset[0]} 0 1 0 {utmoffset[1]} 0 0 1 0 0 0 0 1"',
                     f'--writers.las.offset_x={reconstruction.georef.utm_east_offset}' ,
