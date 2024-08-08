@@ -6,6 +6,7 @@ import fiona
 import fiona.crs
 import json
 import zipfile
+import math
 from collections import OrderedDict
 from pyproj import CRS
 
@@ -129,11 +130,17 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                 # Establish appropriate las scale for export
                 las_scale = 0.001
                 filtered_point_cloud_stats = tree.path("odm_filterpoints", "point_cloud_stats.json")
+                # Function that rounds to the nearest 10
+                # and then chooses the one below so our
+                # las scale is sensible
+                def powerr(r):
+                    return pow(10,round(math.log10(r))) / 10
+
                 if os.path.isfile(filtered_point_cloud_stats):
                     try:
                         with open(filtered_point_cloud_stats, 'r') as stats:
                              las_stats = json.load(stats)
-                             spacing = las_stats['spacing'] / 10
+                             spacing = powerr(las_stats['spacing'])
                              log.ODM_INFO("las scale calculated as the minimum of 1/10 estimated spacing or %s, which ever is less." % las_scale)
                              las_scale = min(spacing, 0.001)
                     except Exception as e:
