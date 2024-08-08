@@ -11,7 +11,6 @@ from pyproj import CRS
 
 from opendm import io
 from opendm import log
-from opendm import types
 from opendm import system
 from opendm import context
 from opendm import location
