@@ -133,7 +133,7 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                     with open(filtered_point_cloud_stats, 'r') as stats:
                         las_stats = json.load(stats)
                         spacing = las_stats['spacing'] / 10
-                        log.ODM_INFO("Using 1/10 estimated spacing or 0.001 for las scale, which every is less: %s" % spacing)
+                        log.ODM_INFO("Using 1/10 estimated spacing or 0.001 for las scale, which ever is less: %s" % spacing)
                         log_scale = min(spacing, las_scale)
                 else:
                     log.ODM_INFO("Using default las scale of 0.001")
