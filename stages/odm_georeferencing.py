@@ -130,13 +130,16 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                 las_scale = 0.001
                 filtered_point_cloud_stats = tree.path("odm_filterpoints", "point_cloud_stats.json")
                 if os.path.isfile(filtered_point_cloud_stats):
-                    with open(filtered_point_cloud_stats, 'r') as stats:
-                        las_stats = json.load(stats)
-                        spacing = las_stats['spacing'] / 10
-                        log.ODM_INFO("las scale calculated as the minimum of 1/10 estimated spacing or 0.001, which ever is less.")
-                        las_scale = min(spacing, 0.001)
+                    try:
+                        with open(filtered_point_cloud_stats, 'r') as stats:
+                             las_stats = json.load(stats)
+                             spacing = las_stats['spacing'] / 10
+                             log.ODM_INFO("las scale calculated as the minimum of 1/10 estimated spacing or %s, which ever is less." % las_scale)
+                             las_scale = min(spacing, 0.001)
+                    except Exception as e:
+                        log.ODM_WARNING("Cannot find file point_cloud_stats.json. Using default las scale: %s" % las_scale)
                 else:
-                    log.ODM_INFO("Using default las scale of 0.001")
+                    log.ODM_INFO("No point_cloud_stats.json found. Using default las scale: %s" % las_scale)
 
                 params += [
                     f'--filters.transformation.matrix="1 0 0 {utmoffset[0]} 0 1 0 {utmoffset[1]} 0 0 1 0 0 0 0 1"',
