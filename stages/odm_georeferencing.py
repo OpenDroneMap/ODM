@@ -6,6 +6,7 @@ import fiona
 import fiona.crs
 import json
 import zipfile
+import math
 from collections import OrderedDict
 from pyproj import CRS
 
@@ -125,13 +126,35 @@ class ODMGeoreferencingStage(types.ODM_Stage):
 
                 stages.append("transformation")
                 utmoffset = reconstruction.georef.utm_offset()
+
+                # Establish appropriate las scale for export
+                las_scale = 0.001
+                filtered_point_cloud_stats = tree.path("odm_filterpoints", "point_cloud_stats.json")
+                # Function that rounds to the nearest 10
+                # and then chooses the one below so our
+                # las scale is sensible
+                def powerr(r):
+                    return pow(10,round(math.log10(r))) / 10
+
+                if os.path.isfile(filtered_point_cloud_stats):
+                    try:
+                        with open(filtered_point_cloud_stats, 'r') as stats:
+                             las_stats = json.load(stats)
+                             spacing = powerr(las_stats['spacing'])
+                             log.ODM_INFO("las scale calculated as the minimum of 1/10 estimated spacing or %s, which ever is less." % las_scale)
+                             las_scale = min(spacing, 0.001)
+                    except Exception as e:
+                        log.ODM_WARNING("Cannot find file point_cloud_stats.json. Using default las scale: %s" % las_scale)
+                else:
+                    log.ODM_INFO("No point_cloud_stats.json found. Using default las scale: %s" % las_scale)
+
                 params += [
                     f'--filters.transformation.matrix="1 0 0 {utmoffset[0]} 0 1 0 {utmoffset[1]} 0 0 1 0 0 0 0 1"',
                     f'--writers.las.offset_x={reconstruction.georef.utm_east_offset}' ,
                     f'--writers.las.offset_y={reconstruction.georef.utm_north_offset}',
-                    '--writers.las.scale_x=0.001',
-                    '--writers.las.scale_y=0.001',
-                    '--writers.las.scale_z=0.001',
+                    f'--writers.las.scale_x={las_scale}',
+                    f'--writers.las.scale_y={las_scale}',
+                    f'--writers.las.scale_z={las_scale}',
                     '--writers.las.offset_z=0',
                     f'--writers.las.a_srs="{reconstruction.georef.proj4()}"' # HOBU this should maybe be WKT
                 ]
@@ -255,5 +278,6 @@ class ODMGeoreferencingStage(types.ODM_Stage):
 
         if args.optimize_disk_space and io.file_exists(tree.odm_georeferencing_model_laz) and io.file_exists(tree.filtered_point_cloud):
             os.remove(tree.filtered_point_cloud)
+
 
 
