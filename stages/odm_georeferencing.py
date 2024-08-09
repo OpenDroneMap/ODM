@@ -142,12 +142,7 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                              las_stats = json.load(stats)
                              spacing = powerr(las_stats['spacing'])
                              log.ODM_INFO("las scale calculated as the minimum of 1/10 estimated spacing or %s, which ever is less." % las_scale)
-                             if las_scale <= spacing:
-                                 log.ODM_INFO("Defaul las scale of %s is smaller than or equal to calculated" % las_scale)
-                                 # Leave las scale alone
-                             else:
-                                 las_scale = spacing
-                                 log.ODM_INFO("Calculated las scale is smaller than default. Using %s" % las_scale)
+                             las_scale = min(spacing, 0.001)
                     except Exception as e:
                         log.ODM_WARNING("Cannot find file point_cloud_stats.json. Using default las scale: %s" % las_scale)
                 else:
@@ -283,5 +278,6 @@ class ODMGeoreferencingStage(types.ODM_Stage):
 
         if args.optimize_disk_space and io.file_exists(tree.odm_georeferencing_model_laz) and io.file_exists(tree.filtered_point_cloud):
             os.remove(tree.filtered_point_cloud)
+
 
 
