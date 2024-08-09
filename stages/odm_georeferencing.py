@@ -143,9 +143,11 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                              spacing = powerr(las_stats['spacing'])
                              log.ODM_INFO("las scale calculated as the minimum of 1/10 estimated spacing or %s, which ever is less." % las_scale)
                              if las_scale <= spacing:
+                                 log.ODM_INFO("Defaul las scale of %s is smaller than or equal to calculated" % las_scale)
                                  # Leave las scale alone
                              else:
                                  las_scale = spacing
+                                 log.ODM_INFO("Calculated las scale is smaller than default. Using %s" % las_scale)
                     except Exception as e:
                         log.ODM_WARNING("Cannot find file point_cloud_stats.json. Using default las scale: %s" % las_scale)
                 else:
