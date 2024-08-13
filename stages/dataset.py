@@ -187,6 +187,9 @@ class ODMLoadDatasetStage(types.ODM_Stage):
                             p.compute_opk()
                             updated += 1
                     log.ODM_INFO("Updated %s image positions" % updated)
+                # Warn if a file path is specified but it does not exist
+                elif tree.odm_geo_file is not None and not os.path.isfile(tree.odm_geo_file):
+                    log.ODM_WARNING("Image geolocation file %s does not exist" % tree.odm_geo_file) 
 
                 # GPSDOP override if we have GPS accuracy information (such as RTK)
                 if 'gps_accuracy_is_set' in args:
