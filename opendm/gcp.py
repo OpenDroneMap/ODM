@@ -72,7 +72,6 @@ class GCPFile:
             parts = entry.split()
             x, y, z, px, py, filename = parts[:6]
             extras = " ".join(parts[6:])
-            
             return GCPEntry(float(x), float(y), float(z), float(px), float(py), filename, extras)
 
     def get_entry(self, n):
