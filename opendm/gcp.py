@@ -1,6 +1,5 @@
 import glob
 import os
-import numpy as np
 from opendm import log
 from opendm import location
 from pyproj import CRS
@@ -20,8 +19,8 @@ class GCPFile:
 
             # Strip eventual BOM characters
             contents = contents.replace('\ufeff', '')
+            # Replace NaN with 0
             contents = contents.replace('NaN', '0')
-            
             lines = list(map(str.strip, contents.split('\n')))
             if lines:
                 self.raw_srs = lines[0] # SRS
