@@ -1,5 +1,6 @@
 import glob
 import os
+import numpy as np
 from opendm import log
 from opendm import location
 from pyproj import CRS
@@ -19,6 +20,7 @@ class GCPFile:
 
             # Strip eventual BOM characters
             contents = contents.replace('\ufeff', '')
+            contents = contents.replace('NaN', '0')
             
             lines = list(map(str.strip, contents.split('\n')))
             if lines:
@@ -71,6 +73,7 @@ class GCPFile:
             parts = entry.split()
             x, y, z, px, py, filename = parts[:6]
             extras = " ".join(parts[6:])
+            
             return GCPEntry(float(x), float(y), float(z), float(px), float(py), filename, extras)
 
     def get_entry(self, n):
