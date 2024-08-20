@@ -27,6 +27,13 @@ def get_orthophoto_vars(args):
         'NUM_THREADS': args.max_concurrency
     }
 
+def update_tags(orthophoto_file):
+
+    # - Update the geotiff tags in place using rasterio
+    with rasterio.open(orthophoto_file, 'r+') as rst:
+        rst.update_tags(TIFFTAG_DATETIME='2024:01:01 00:00+00:00')
+        rst.update_tags(TIFFTAG_SOFTWARE='OpenDroneMap')
+
 def build_overviews(orthophoto_file):
     log.ODM_INFO("Building Overviews")
     kwargs = {'orthophoto': orthophoto_file}
