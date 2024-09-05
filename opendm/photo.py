@@ -21,6 +21,17 @@ from opensfm.geo import ecef_from_lla
 
 projections = ['perspective', 'fisheye', 'fisheye_opencv', 'brown', 'dual', 'equirectangular', 'spherical']
 
+def find_mean_utc_time(photos):
+    utc_times = []
+    for p in photos: 
+        if p.utc_time is not None:
+            utc_times.append(p.utc_time / 1000.0)
+    if len(utc_times) == 0:
+        return None
+    
+    return np.mean(utc_times)
+
+
 def find_largest_photo_dims(photos):
     max_mp = 0
     max_dims = None
