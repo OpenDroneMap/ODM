@@ -1,7 +1,5 @@
 import os
 import rasterio
-import json
-import numpy as np
 
 from datetime import datetime
 from osgeo import gdal
