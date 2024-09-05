@@ -109,9 +109,6 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                        '-outputCornerFile "{corners}" {bands} {depth_idx} {inpaint} '
                        '{utm_offsets} {a_srs} {vars} {gdal_configs} '.format(**kwargs), env_vars={'OMP_NUM_THREADS': args.max_concurrency})
 
-            # update output orthophoto tags
-            orthophoto.update_tags(tree.odm_orthophoto_tif)
-
             # Create georeferenced GeoTiff
             if reconstruction.is_georeferenced():
                 bounds_file_path = os.path.join(tree.odm_georeferencing, 'odm_georeferenced_model.bounds.gpkg')
