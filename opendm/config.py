@@ -592,7 +592,11 @@ def config(argv=None, parser=None):
                     action=StoreValue,
                     default=None,
                     help=('Path to a GeoTIFF DEM or a LAS/LAZ point cloud '
-                            'that the reconstruction outputs should be automatically aligned to. Experimental. '
+                            'that the reconstruction outputs should be automatically aligned to. '
+                            'Uses CODEM (https://github.com/NCALM-UH/CODEM, '
+                            'credits to Craig Glennie and the group at CRREL).'
+                            'The details of the method are available at https://github.com/NCALM-UH/CODEM/blob/main/docs/details.md .'
+                            'Experimental. '
                             'Default: %(default)s'))
 
     parser.add_argument('--use-exif',
