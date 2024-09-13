@@ -148,3 +148,16 @@ def merge_geojson_shots(geojson_shots_files, output_geojson_file):
     
     with open(output_geojson_file, "w") as f:
         f.write(json.dumps(result))
+
+def merge_cameras(cameras_json_files, output_cameras_file):
+    result = {}
+    for cameras_file in cameras_json_files:
+        with open(cameras_file, "r") as f:
+            cameras = json.loads(f.read())
+        
+        for cam_id in cameras:
+            if not cam_id in result:
+                result[cam_id] = cameras[cam_id]
+    
+    with open(output_cameras_file, "w") as f:
+        f.write(json.dumps(result))
