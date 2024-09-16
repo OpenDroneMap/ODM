@@ -327,7 +327,7 @@ def post_point_cloud_steps(args, tree, rerun=False):
                     tree.odm_georeferencing_model_laz,
                     tree.odm_georeferencing_model_las))
         else:
-            log.ODM_WARNING("Found existing LAS file %s" % tree.odm_georeferencing_xyz_file)
+            log.ODM_WARNING("Found existing LAS file %s" % tree.odm_georeferencing_model_las)
 
     # EPT point cloud output
     if args.pc_ept:
