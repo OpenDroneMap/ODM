@@ -3,6 +3,7 @@
 # License: AGPLv3
 
 import os
+import glob
 import sys
 sys.path.insert(0, os.path.join("..", "..", os.path.dirname(__file__)))
 
@@ -22,9 +23,11 @@ if not os.path.exists(args.input_dems):
     exit(1)
 
 outdir = os.path.dirname(args.input_dems)
-output_dem = os.path.join(outdir, 'merged_blended_dem.tif'
+output_dem = os.path.join(outdir, 'merged_blended_dem.tif')
+input_dem_path = os.path.join(args.input_dems, '*.tif')
+input_dems = glob.glob(input_dem_path)
 
-merge.euclidean_merge_dems(args.input_dems
+merge.euclidean_merge_dems(input_dems
                     ,output_dem=output_dem
-                    #,max_workers=multiprocessing.cpu_count()
+                    ,max_workers=multiprocessing.cpu_count()
                 )
