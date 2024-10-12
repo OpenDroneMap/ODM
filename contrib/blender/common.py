@@ -1,5 +1,4 @@
 import bpy
-import materials_utils
 
 def loadMesh(file):
 
