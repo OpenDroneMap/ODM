@@ -12,7 +12,6 @@ import numpy as np
 import numpy.ma as ma
 import multiprocessing
 import argparse
-import functools
 from skimage.draw import line
 from opensfm import dataset
 

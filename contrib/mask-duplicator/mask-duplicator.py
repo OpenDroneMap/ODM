@@ -4,7 +4,7 @@ import os
 
 import PIL
 
-from PIL import Image, ExifTags
+from PIL import Image
 
 import shutil
 
