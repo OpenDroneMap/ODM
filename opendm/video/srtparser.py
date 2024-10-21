@@ -120,6 +120,7 @@ class SrtFileParser:
         # <font size="36">SrtCnt : 1, DiffTime : 16ms
         # 2023-01-06 18:56:48,380,821
         # [iso : 3200] [shutter : 1/60.0] [fnum : 280] [ev : 0] [ct : 3925] [color_md : default] [focal_len : 240] [latitude: 0.000000] [longitude: 0.000000] [altitude: 0.000000] </font>
+        # </font> 
 
         # DJI Mavic Mini
         # 1
@@ -164,9 +165,10 @@ class SrtFileParser:
             end = None
 
             for line in f:
+                # Remove html tags, spaces
+                line = re.sub('<[^<]+?>', '', line).strip()
 
-                # Check if line is empty
-                if not line.strip():
+                if not line:
                     if start is not None:
                         self.data.append({
                             "start": start,
@@ -192,9 +194,6 @@ class SrtFileParser:
                     end = None
 
                     continue
-
-                # Remove html tags
-                line = re.sub('<[^<]+?>', '', line)
 
                 # Search this "00:00:00,000 --> 00:00:00,016"
                 match = re.search("(\d{2}:\d{2}:\d{2},\d+) --> (\d{2}:\d{2}:\d{2},\d+)", line)
@@ -225,14 +224,14 @@ class SrtFileParser:
                     ("GPS \([\d\.\-]+,? ([\d\.\-]+),? [\d\.\-]+\)", lambda v: float(v) if v != 0 else None),
                     ("RTK \([-+]?\d+\.\d+, (-?\d+\.\d+), -?\d+\)", lambda v: float(v) if v != 0 else None),
                 ], line)
-
+                
                 longitude = match_single([
                     ("longitude: ([\d\.\-]+)", lambda v: float(v) if v != 0 else None),
                     ("longtitude : ([\d\.\-]+)", lambda v: float(v) if v != 0 else None),
                     ("GPS \(([\d\.\-]+),? [\d\.\-]+,? [\d\.\-]+\)", lambda v: float(v) if v != 0 else None),
                     ("RTK \((-?\d+\.\d+), [-+]?\d+\.\d+, -?\d+\)", lambda v: float(v) if v != 0 else None),
                 ], line)
-
+                
                 altitude = match_single([
                     ("altitude: ([\d\.\-]+)", lambda v: float(v) if v != 0 else None),
                     ("GPS \([\d\.\-]+,? [\d\.\-]+,? ([\d\.\-]+)\)", lambda v: float(v) if v != 0 else None),
