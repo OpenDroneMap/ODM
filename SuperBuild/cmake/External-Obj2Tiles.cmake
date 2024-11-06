@@ -1,7 +1,7 @@
 set(_proj_name obj2tiles)
 set(_SB_BINARY_DIR "${SB_BINARY_DIR}/${_proj_name}")
 
-set(OBJ2TILES_VERSION v1.0.12)
+set(OBJ2TILES_VERSION v1.0.13)
 set(OBJ2TILES_EXT "")
 
 set(OBJ2TILES_ARCH "Linux64")
