@@ -93,9 +93,34 @@ def generate_extent_polygon(orthophoto_file, output_file=None):
         orthophoto_file (str): the path to orthophoto file
         output_file (str, optional): the path to the gpkg file. Defaults to None.
     """
-    if output_file is None:
-        base, ext = os.path.splitext(orthophoto_file)
-        output_file = base + '_extent.gpkg'
+    def _create_vector(ortho_file, poly, format, output=None):
+        if output is None:
+            base, ext = os.path.splitext(ortho_file)
+            output_file = base + '_extent.' + format.lower()
+        # set up the shapefile driver
+        driver = ogr.GetDriverByName(format)
+
+        # create the data source
+        ds = driver.CreateDataSource(output_file)
+
+        # create one layer
+        layer = ds.CreateLayer("extent", srs, ogr.wkbPolygon)
+        if format != "DXF":
+            layer.CreateField(ogr.FieldDefn("id", ogr.OFTInteger))
+
+        # create the feature and set values
+        featureDefn = layer.GetLayerDefn()
+        feature = ogr.Feature(featureDefn)
+        feature.SetGeometry(ogr.CreateGeometryFromWkt(poly))
+        if format != "DXF":
+            feature.SetField("id", 1)
+        # add feature to layer
+        layer.CreateFeature(feature)
+        # save and close everything
+        feature = None
+        ds = None
+        return True
+
     # read geotiff file
     gtif = gdal.Open(orthophoto_file)
     srs =  gtif.GetSpatialRef()
@@ -107,26 +132,9 @@ def generate_extent_polygon(orthophoto_file, output_file=None):
     miny = maxy + geoTransform[5] * gtif.RasterYSize
     # create polygon in wkt format
     poly_wkt = "POLYGON ((%s %s, %s %s, %s %s, %s %s, %s %s))" % (minx, miny, minx, maxy, maxx, maxy, maxx, miny, minx, miny)
-    # set up the shapefile driver
-    driver = ogr.GetDriverByName("GPKG")
-
-    # create the data source
-    ds = driver.CreateDataSource(output_file)
-
-    # create one layer
-    layer = ds.CreateLayer("extent", srs, ogr.wkbPolygon)
-    layer.CreateField(ogr.FieldDefn("id", ogr.OFTInteger))
-
-    # create the feature and set values
-    featureDefn = layer.GetLayerDefn()
-    feature = ogr.Feature(featureDefn)
-    feature.SetGeometry(ogr.CreateGeometryFromWkt(poly_wkt))
-    feature.SetField("id", 1)
-    # add feature to layer
-    layer.CreateFeature(feature)
-    # save and close everything
-    feature = None
-    ds = None
+    # create vector file
+    _create_vector(orthophoto_file, poly_wkt, "GPKG", output_file)
+    _create_vector(orthophoto_file, poly_wkt, "DXF", output_file)
     return True
 
 def post_orthophoto_steps(args, bounds_file_path, orthophoto_file, orthophoto_tiles_dir, resolution):
