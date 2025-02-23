@@ -69,6 +69,12 @@ def find_largest_photo(photos):
 
     return max_p
 
+def has_raw_format_photo(photos):
+    for p in photos: 
+        if p.is_raw_format():
+            return True
+    return False
+
 def get_mm_per_unit(resolution_unit):
     """Length of a resolution unit in millimeters.
 
@@ -509,6 +515,9 @@ class ODM_Photo:
 
         self.compute_focal(tags, xtags)
         self.compute_opk()
+
+    def is_raw_format(self):
+        return self.filename[-4:].lower() in [".dng", ".raw", ".nef"]
 
     def compute_focal(self, tags, xtags):
         try:
