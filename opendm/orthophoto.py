@@ -62,14 +62,20 @@ def generate_png(orthophoto_file, output_file=None, outsize=None):
             bandparam = "-b %s -b %s -b %s -a_nodata 0" % (red, green, blue)
         except:
             bandparam = "-b 1 -b 2 -b 3 -a_nodata 0"
+    
+    scaleparam = ""
+    dtype = gtif.GetRasterBand(1)
+    if dtype != gdal.GDT_Byte:
+        scaleparam = "-ot Byte -scale"
+
     gtif = None
 
     osparam = ""
     if outsize is not None:
         osparam = "-outsize %s 0" % outsize
 
-    system.run('gdal_translate -of png "%s" "%s" %s %s '
-               '--config GDAL_CACHEMAX %s%% ' % (orthophoto_file, output_file, osparam, bandparam, get_max_memory()))
+    system.run('gdal_translate -of png "%s" "%s" %s %s %s '
+               '--config GDAL_CACHEMAX %s%% ' % (orthophoto_file, output_file, osparam, bandparam, scaleparam, get_max_memory()))
 
 def generate_kmz(orthophoto_file, output_file=None, outsize=None):
     if output_file is None:
