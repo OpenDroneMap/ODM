@@ -216,7 +216,7 @@ class ODMLoadDatasetStage(types.ODM_Stage):
                     # Generate list of sky images
                     sky_images = []
                     for p in photos:
-                        if p.mask is None and (args.camera_lens in ['fisheye', 'spherical'] or p.pitch is None or (abs(p.pitch) > 20)) and (not " " in p.filename):
+                        if p.mask is None and (args.camera_lens in ['fisheye', 'spherical'] or p.pitch is None or (abs(p.pitch) > 20)) and (not " " in p.filename) and not p.is_raw_format():
                             sky_images.append({'file': os.path.join(images_dir, p.filename), 'p': p})
 
                     if len(sky_images) > 0:
@@ -257,7 +257,7 @@ class ODMLoadDatasetStage(types.ODM_Stage):
                     # Generate list of sky images
                     bg_images = []
                     for p in photos:
-                        if p.mask is None and (not " " in p.filename):
+                        if p.mask is None and (not " " in p.filename) and not p.is_raw_format():
                             bg_images.append({'file': os.path.join(images_dir, p.filename), 'p': p})
 
                     if len(bg_images) > 0:

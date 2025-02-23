@@ -14,7 +14,6 @@ def get_image_size(file_path, fallback_on_error=True):
         if file_path[-4:].lower() in [".dng", ".raw", ".nef"]:
             with rawpy.imread(file_path) as img:
                 s = img.sizes
-
                 width, height = s.raw_width, s.raw_height
         else:
             with Image.open(file_path) as img:
