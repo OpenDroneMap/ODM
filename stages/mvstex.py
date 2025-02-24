@@ -6,7 +6,7 @@ from opendm import system
 from opendm import context
 from opendm import types
 from opendm.multispectral import get_primary_band_name
-from opendm.photo import find_largest_photo_dim, has_raw_format_photo
+from opendm.photo import find_largest_photo_dim
 from opendm.objpacker import obj_pack
 from opendm.gltf import obj2glb
 
@@ -18,14 +18,7 @@ class ODMMvsTexStage(types.ODM_Stage):
         max_dim = find_largest_photo_dim(reconstruction.photos)
         max_texture_size = 8 * 1024 # default
 
-        if has_raw_format_photo(reconstruction.photos):
-            # Assuming the output are usually 16bit RGB TIFFs
-            # if we don't decrease the size, opencv imread calls in odm_orthophoto
-            # fail to open the resulting texture images due to excessive size.
-            log.ODM_INFO("RAW format images, decreasing maximum texture size.")
-            max_texture_size //= 2
-        
-        elif max_dim > 8000:
+        if max_dim > 8000:
             log.ODM_INFO("Large input images (%s pixels), increasing maximum texture size." % max_dim)
             max_texture_size *= 3
 
