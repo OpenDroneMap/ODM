@@ -10,7 +10,7 @@ def read_image(img_path):
     if img_path[-4:].lower() in [".dng", ".raw", ".nef"]:
         try:
             with rawpy.imread(img_path) as r:
-                img = r.postprocess(output_bps=8, use_auto_wb=True)
+                img = r.postprocess(output_bps=8, use_camera_wb=True, use_auto_wb=False)
         except:
             return None
     else:
