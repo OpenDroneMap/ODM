@@ -273,7 +273,10 @@ def compute_band_maps(multi_camera, primary_band):
                 # Quick check
                 if filename_without_band == p.filename:
                     raise Exception("Cannot match bands by filename on %s, make sure to name your files [filename]_band[.ext] uniformly." % p.filename)
-
+                
+                if not filename_without_band in filename_map:
+                    raise Exception("Cannot match bands by filename on %s, make sure to name your files [filename]_band[.ext] uniformly, check that your images have the appropriate CaptureUUID XMP tag and that no images are missing." % p.filename)
+                    
                 s2p[p.filename] = filename_map[filename_without_band]
 
                 if band['name'] != band_name:

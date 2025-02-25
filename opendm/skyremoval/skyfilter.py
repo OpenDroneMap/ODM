@@ -6,6 +6,7 @@ import os
 import onnxruntime as ort
 from .guidedfilter import guided_filter
 from opendm import log
+from opendm.ai import read_image
 from threading import Lock
 
 mutex = Lock()
@@ -72,11 +73,7 @@ class SkyFilter():
 
     def run_img(self, img_path, dest):
 
-        img = cv2.imread(img_path, cv2.IMREAD_COLOR)
-        if img is None:
-            return None
-
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        img = read_image(img_path)
         img = np.array(img / 255., dtype=np.float32)
 
         mask  = self.get_mask(img)

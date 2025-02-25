@@ -4,6 +4,24 @@ from opendm import log
 import zipfile
 import time
 import sys
+import rawpy
+
+def read_image(img_path):
+    if img_path[-4:].lower() in [".dng", ".raw", ".nef"]:
+        try:
+            with rawpy.imread(img_path) as r:
+                img = r.postprocess(output_bps=8, use_camera_wb=True, use_auto_wb=False)
+        except:
+            return None
+    else:
+        img = cv2.imread(img_path, cv2.IMREAD_COLOR)
+        if img is None:
+            return None
+
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    
+    return img
+
 
 def get_model(namespace, url, version, name = "model.onnx"):
     version = version.replace(".", "_")
