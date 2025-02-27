@@ -133,7 +133,9 @@ def generate_extent_polygon(orthophoto_file, output_file=None):
     # create polygon in wkt format
     poly_wkt = "POLYGON ((%s %s, %s %s, %s %s, %s %s, %s %s))" % (minx, miny, minx, maxy, maxx, maxy, maxx, miny, minx, miny)
     # create vector file
-    _create_vector(orthophoto_file, poly_wkt, "GPKG", output_file)
+    # just the DXF to support AutoCAD users
+    # to load the geotiff raster correctly.
+    # _create_vector(orthophoto_file, poly_wkt, "GPKG", output_file)
     _create_vector(orthophoto_file, poly_wkt, "DXF", output_file)
     return True
 
