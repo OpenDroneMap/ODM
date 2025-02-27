@@ -91,7 +91,7 @@ def generate_extent_polygon(orthophoto_file, output_file=None):
 
     Args:
         orthophoto_file (str): the path to orthophoto file
-        output_file (str, optional): the path to the gpkg file. Defaults to None.
+        output_file (str, optional): the path to the output file. Defaults to None.
     """
     def _create_vector(ortho_file, poly, format, output=None):
         if output is None:
@@ -119,25 +119,27 @@ def generate_extent_polygon(orthophoto_file, output_file=None):
         # save and close everything
         feature = None
         ds = None
-        return True
 
-    # read geotiff file
-    gtif = gdal.Open(orthophoto_file)
-    srs =  gtif.GetSpatialRef()
-    geoTransform = gtif.GetGeoTransform()
-    # calculate the coordinates
-    minx = geoTransform[0]
-    maxy = geoTransform[3]
-    maxx = minx + geoTransform[1] * gtif.RasterXSize
-    miny = maxy + geoTransform[5] * gtif.RasterYSize
-    # create polygon in wkt format
-    poly_wkt = "POLYGON ((%s %s, %s %s, %s %s, %s %s, %s %s))" % (minx, miny, minx, maxy, maxx, maxy, maxx, miny, minx, miny)
-    # create vector file
-    # just the DXF to support AutoCAD users
-    # to load the geotiff raster correctly.
-    # _create_vector(orthophoto_file, poly_wkt, "GPKG", output_file)
-    _create_vector(orthophoto_file, poly_wkt, "DXF", output_file)
-    return True
+    try:
+        gtif = gdal.Open(orthophoto_file)
+        srs =  gtif.GetSpatialRef()
+        geoTransform = gtif.GetGeoTransform()
+        # calculate the coordinates
+        minx = geoTransform[0]
+        maxy = geoTransform[3]
+        maxx = minx + geoTransform[1] * gtif.RasterXSize
+        miny = maxy + geoTransform[5] * gtif.RasterYSize
+        # create polygon in wkt format
+        poly_wkt = "POLYGON ((%s %s, %s %s, %s %s, %s %s, %s %s))" % (minx, miny, minx, maxy, maxx, maxy, maxx, miny, minx, miny)
+        # create vector file
+        # just the DXF to support AutoCAD users
+        # to load the geotiff raster correctly.
+        # _create_vector(orthophoto_file, poly_wkt, "GPKG", output_file)
+        _create_vector(orthophoto_file, poly_wkt, "DXF", output_file)
+        gtif = None
+    except Exception as e:
+        log.ODM_WARNING("Cannot create extent layer for %s: %s" % (ortho_file, str(e)))
+
 
 def post_orthophoto_steps(args, bounds_file_path, orthophoto_file, orthophoto_tiles_dir, resolution):
     if args.crop > 0 or args.boundary:
