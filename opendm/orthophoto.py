@@ -14,6 +14,7 @@ from opendm import io
 from opendm.tiles.tiler import generate_orthophoto_tiles
 from opendm.cogeo import convert_to_cogeo
 from osgeo import gdal
+from osgeo import ogr
 
 
 def get_orthophoto_vars(args):
@@ -100,7 +101,62 @@ def generate_kmz(orthophoto_file, output_file=None, outsize=None):
 
     system.run('gdal_translate -of KMLSUPEROVERLAY -co FORMAT=PNG "%s" "%s" %s '
                '--config GDAL_CACHEMAX %s%% ' % (orthophoto_file, output_file, bandparam, get_max_memory()))    
-    
+
+def generate_extent_polygon(orthophoto_file, output_file=None):
+    """Function to return the orthophoto extent as a polygon into a gpkg file
+
+    Args:
+        orthophoto_file (str): the path to orthophoto file
+        output_file (str, optional): the path to the output file. Defaults to None.
+    """
+    def _create_vector(ortho_file, poly, format, output=None):
+        if output is None:
+            base, ext = os.path.splitext(ortho_file)
+            output_file = base + '_extent.' + format.lower()
+        # set up the shapefile driver
+        driver = ogr.GetDriverByName(format)
+
+        # create the data source
+        ds = driver.CreateDataSource(output_file)
+
+        # create one layer
+        layer = ds.CreateLayer("extent", srs, ogr.wkbPolygon)
+        if format != "DXF":
+            layer.CreateField(ogr.FieldDefn("id", ogr.OFTInteger))
+
+        # create the feature and set values
+        featureDefn = layer.GetLayerDefn()
+        feature = ogr.Feature(featureDefn)
+        feature.SetGeometry(ogr.CreateGeometryFromWkt(poly))
+        if format != "DXF":
+            feature.SetField("id", 1)
+        # add feature to layer
+        layer.CreateFeature(feature)
+        # save and close everything
+        feature = None
+        ds = None
+
+    try:
+        gtif = gdal.Open(orthophoto_file)
+        srs =  gtif.GetSpatialRef()
+        geoTransform = gtif.GetGeoTransform()
+        # calculate the coordinates
+        minx = geoTransform[0]
+        maxy = geoTransform[3]
+        maxx = minx + geoTransform[1] * gtif.RasterXSize
+        miny = maxy + geoTransform[5] * gtif.RasterYSize
+        # create polygon in wkt format
+        poly_wkt = "POLYGON ((%s %s, %s %s, %s %s, %s %s, %s %s))" % (minx, miny, minx, maxy, maxx, maxy, maxx, miny, minx, miny)
+        # create vector file
+        # just the DXF to support AutoCAD users
+        # to load the geotiff raster correctly.
+        # _create_vector(orthophoto_file, poly_wkt, "GPKG", output_file)
+        _create_vector(orthophoto_file, poly_wkt, "DXF", output_file)
+        gtif = None
+    except Exception as e:
+        log.ODM_WARNING("Cannot create extent layer for %s: %s" % (ortho_file, str(e)))
+
+
 def post_orthophoto_steps(args, bounds_file_path, orthophoto_file, orthophoto_tiles_dir, resolution):
     if args.crop > 0 or args.boundary:
         Cropper.crop(bounds_file_path, orthophoto_file, get_orthophoto_vars(args), keep_original=not args.optimize_disk_space, warp_options=['-dstalpha'])
@@ -119,6 +175,8 @@ def post_orthophoto_steps(args, bounds_file_path, orthophoto_file, orthophoto_ti
 
     if args.cog:
         convert_to_cogeo(orthophoto_file, max_workers=args.max_concurrency, compression=args.orthophoto_compression)
+
+    generate_extent_polygon(orthophoto_file)
 
 def compute_mask_raster(input_raster, vector_mask, output_raster, blend_distance=20, only_max_coords_feature=False):
     if not os.path.exists(input_raster):
