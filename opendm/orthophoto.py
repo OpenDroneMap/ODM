@@ -58,9 +58,9 @@ def generate_png(orthophoto_file, output_file=None, outsize=None):
             green = bands.get(gdal.GCI_GreenBand)
             blue = bands.get(gdal.GCI_BlueBand)
             if red is None or green is None or blue is None:
-                params.append("-b %s -b %s -b %s" % (red, green, blue))
-            else:
                 params.append("-b 1 -b 2 -b 3")
+            else:
+                params.append("-b %s -b %s -b %s" % (red, green, blue))                
         elif gtif.RasterCount <= 2:
             params.append("-b 1")
         
