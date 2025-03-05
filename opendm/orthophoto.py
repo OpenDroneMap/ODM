@@ -86,6 +86,7 @@ def generate_png(orthophoto_file, output_file=None, outsize=None):
         params.append("-outsize %s 0" % outsize)
 
     system.run('gdal_translate -of png "%s" "%s" %s '
+               '-co WORLDFILE=YES '
                '--config GDAL_CACHEMAX %s%% ' % (orthophoto_file, output_file, " ".join(params), get_max_memory()))
 
 def generate_kmz(orthophoto_file, output_file=None, outsize=None):
@@ -157,6 +158,29 @@ def generate_extent_polygon(orthophoto_file, output_file=None):
         log.ODM_WARNING("Cannot create extent layer for %s: %s" % (ortho_file, str(e)))
 
 
+def generate_tfw(orthophoto_file):
+    base, ext = os.path.splitext(orthophoto_file)
+    tfw_file = base + '.tfw'
+    with rasterio.open(orthophoto_file) as ds:
+        transform = ds.transform
+        with open(tfw_file, 'w') as f:
+            # rasterio affine values taken by
+            # https://mharty3.github.io/til/GIS/raster-affine-transforms/
+            # pixel x size
+            f.write("%s\n" % transform.a)
+            # rotation y
+            f.write("%s\n" % transform.d)
+            # rotation x
+            f.write("%s\n" % transform.b)
+            # pixel y size (negative)
+            f.write("%s\n" % transform.e)
+            # x coordinate
+            f.write("%s\n" % transform.c)
+            # y coordinate
+            f.write("%s\n" % transform.f)
+    return True
+
+
 def post_orthophoto_steps(args, bounds_file_path, orthophoto_file, orthophoto_tiles_dir, resolution):
     if args.crop > 0 or args.boundary:
         Cropper.crop(bounds_file_path, orthophoto_file, get_orthophoto_vars(args), keep_original=not args.optimize_disk_space, warp_options=['-dstalpha'])
@@ -177,6 +201,8 @@ def post_orthophoto_steps(args, bounds_file_path, orthophoto_file, orthophoto_ti
         convert_to_cogeo(orthophoto_file, max_workers=args.max_concurrency, compression=args.orthophoto_compression)
 
     generate_extent_polygon(orthophoto_file)
+
+    generate_tfw(orthophoto_file)
 
 def compute_mask_raster(input_raster, vector_mask, output_raster, blend_distance=20, only_max_coords_feature=False):
     if not os.path.exists(input_raster):
