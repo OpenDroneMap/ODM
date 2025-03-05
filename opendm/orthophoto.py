@@ -161,24 +161,16 @@ def generate_extent_polygon(orthophoto_file, output_file=None):
 def generate_tfw(orthophoto_file):
     base, ext = os.path.splitext(orthophoto_file)
     tfw_file = base + '.tfw'
-    with rasterio.open(orthophoto_file) as ds:
-        transform = ds.transform
-        with open(tfw_file, 'w') as f:
-            # rasterio affine values taken by
-            # https://mharty3.github.io/til/GIS/raster-affine-transforms/
-            # pixel x size
-            f.write("%s\n" % transform.a)
-            # rotation y
-            f.write("%s\n" % transform.d)
-            # rotation x
-            f.write("%s\n" % transform.b)
-            # pixel y size (negative)
-            f.write("%s\n" % transform.e)
-            # x coordinate
-            f.write("%s\n" % transform.c)
-            # y coordinate
-            f.write("%s\n" % transform.f)
-    return True
+
+    try:
+        with rasterio.open(orthophoto_file) as ds:
+            t = ds.transform
+            with open(tfw_file, 'w') as f:
+                # rasterio affine values taken by
+                # https://mharty3.github.io/til/GIS/raster-affine-transforms/
+                f.write("\n".join([str(v) for v in [t.a, t.d, t.b, t.e, t.c, t.f]]) + "\n")
+    except Exception as e:
+        log.ODM_WARNING("Cannot create .tfw for %s: %s" % (orthophoto_file, str(e)))
 
 
 def post_orthophoto_steps(args, bounds_file_path, orthophoto_file, orthophoto_tiles_dir, resolution):
