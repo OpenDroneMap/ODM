@@ -86,6 +86,7 @@ def generate_png(orthophoto_file, output_file=None, outsize=None):
         params.append("-outsize %s 0" % outsize)
 
     system.run('gdal_translate -of png "%s" "%s" %s '
+               '-co WORLDFILE=YES '
                '--config GDAL_CACHEMAX %s%% ' % (orthophoto_file, output_file, " ".join(params), get_max_memory()))
 
 def generate_kmz(orthophoto_file, output_file=None, outsize=None):
@@ -102,59 +103,67 @@ def generate_kmz(orthophoto_file, output_file=None, outsize=None):
     system.run('gdal_translate -of KMLSUPEROVERLAY -co FORMAT=PNG "%s" "%s" %s '
                '--config GDAL_CACHEMAX %s%% ' % (orthophoto_file, output_file, bandparam, get_max_memory()))    
 
-def generate_extent_polygon(orthophoto_file, output_file=None):
+def generate_extent_polygon(orthophoto_file):
     """Function to return the orthophoto extent as a polygon into a gpkg file
 
     Args:
         orthophoto_file (str): the path to orthophoto file
-        output_file (str, optional): the path to the output file. Defaults to None.
     """
-    def _create_vector(ortho_file, poly, format, output=None):
-        if output is None:
-            base, ext = os.path.splitext(ortho_file)
-            output_file = base + '_extent.' + format.lower()
-        # set up the shapefile driver
-        driver = ogr.GetDriverByName(format)
-
-        # create the data source
-        ds = driver.CreateDataSource(output_file)
-
-        # create one layer
-        layer = ds.CreateLayer("extent", srs, ogr.wkbPolygon)
-        if format != "DXF":
-            layer.CreateField(ogr.FieldDefn("id", ogr.OFTInteger))
-
-        # create the feature and set values
-        featureDefn = layer.GetLayerDefn()
-        feature = ogr.Feature(featureDefn)
-        feature.SetGeometry(ogr.CreateGeometryFromWkt(poly))
-        if format != "DXF":
-            feature.SetField("id", 1)
-        # add feature to layer
-        layer.CreateFeature(feature)
-        # save and close everything
-        feature = None
-        ds = None
+    base, ext = os.path.splitext(orthophoto_file)
+    output_file = base + '_extent.dxf'
 
     try:
         gtif = gdal.Open(orthophoto_file)
         srs =  gtif.GetSpatialRef()
         geoTransform = gtif.GetGeoTransform()
+
         # calculate the coordinates
         minx = geoTransform[0]
         maxy = geoTransform[3]
         maxx = minx + geoTransform[1] * gtif.RasterXSize
         miny = maxy + geoTransform[5] * gtif.RasterYSize
+        
         # create polygon in wkt format
         poly_wkt = "POLYGON ((%s %s, %s %s, %s %s, %s %s, %s %s))" % (minx, miny, minx, maxy, maxx, maxy, maxx, miny, minx, miny)
+        
         # create vector file
         # just the DXF to support AutoCAD users
         # to load the geotiff raster correctly.
-        # _create_vector(orthophoto_file, poly_wkt, "GPKG", output_file)
-        _create_vector(orthophoto_file, poly_wkt, "DXF", output_file)
+        driver = ogr.GetDriverByName("DXF")
+        ds = driver.CreateDataSource(output_file)
+        layer = ds.CreateLayer("extent", srs, ogr.wkbPolygon)
+
+        # create the feature and set values
+        featureDefn = layer.GetLayerDefn()
+        feature = ogr.Feature(featureDefn)
+        feature.SetGeometry(ogr.CreateGeometryFromWkt(poly_wkt))
+
+        # add feature to layer
+        layer.CreateFeature(feature)
+
+        # save and close everything
+        feature = None
+        ds = None
         gtif = None
+        log.ODM_INFO("Wrote %s" % output_file)
     except Exception as e:
-        log.ODM_WARNING("Cannot create extent layer for %s: %s" % (ortho_file, str(e)))
+        log.ODM_WARNING("Cannot create extent layer for %s: %s" % (orthophoto_file, str(e)))
+
+
+def generate_tfw(orthophoto_file):
+    base, ext = os.path.splitext(orthophoto_file)
+    tfw_file = base + '.tfw'
+
+    try:
+        with rasterio.open(orthophoto_file) as ds:
+            t = ds.transform
+            with open(tfw_file, 'w') as f:
+                # rasterio affine values taken by
+                # https://mharty3.github.io/til/GIS/raster-affine-transforms/
+                f.write("\n".join([str(v) for v in [t.a, t.d, t.b, t.e, t.c, t.f]]) + "\n")
+            log.ODM_INFO("Wrote %s" % tfw_file)
+    except Exception as e:
+        log.ODM_WARNING("Cannot create .tfw for %s: %s" % (orthophoto_file, str(e)))
 
 
 def post_orthophoto_steps(args, bounds_file_path, orthophoto_file, orthophoto_tiles_dir, resolution):
@@ -177,6 +186,7 @@ def post_orthophoto_steps(args, bounds_file_path, orthophoto_file, orthophoto_ti
         convert_to_cogeo(orthophoto_file, max_workers=args.max_concurrency, compression=args.orthophoto_compression)
 
     generate_extent_polygon(orthophoto_file)
+    generate_tfw(orthophoto_file)
 
 def compute_mask_raster(input_raster, vector_mask, output_raster, blend_distance=20, only_max_coords_feature=False):
     if not os.path.exists(input_raster):
