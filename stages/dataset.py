@@ -234,9 +234,9 @@ class ODMLoadDatasetStage(types.ODM_Stage):
                                         item['p'].set_mask(os.path.basename(mask_file))
                                         log.ODM_INFO("Wrote %s" % os.path.basename(mask_file))
                                     else:
-                                        log.ODM_WARNING("Cannot generate mask for %s" % img)
+                                        log.ODM_WARNING("Cannot generate mask for %s" % item['file'])
                                 except Exception as e:
-                                    log.ODM_WARNING("Cannot generate mask for %s: %s" % (img, str(e)))
+                                    log.ODM_WARNING("Cannot generate mask for %s: %s" % (item['file'], str(e)))
 
                             parallel_map(parallel_sky_filter, sky_images, max_workers=args.max_concurrency)
 
