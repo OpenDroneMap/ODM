@@ -5,7 +5,7 @@ ProcessorCount(nproc)
 
 set(EXTRA_INCLUDE_DIRS "")
 if(WIN32)
-  set(OpenCV_DIR "${SB_INSTALL_DIR}/x64/vc16/lib")
+  set(OpenCV_DIR "${SB_INSTALL_DIR}/x64/vc17/lib")
   set(BUILD_CMD ${CMAKE_COMMAND} --build "${SB_BUILD_DIR}/opensfm" --config "${CMAKE_BUILD_TYPE}")
 else()
   set(BUILD_CMD make "-j${nproc}")
