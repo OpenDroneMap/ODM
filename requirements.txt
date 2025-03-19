@@ -39,4 +39,3 @@ codem==0.24.0
 trimesh==3.17.1
 pandas==1.5.2
 piexif==1.1.3
-
