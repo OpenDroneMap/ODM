@@ -5,6 +5,7 @@ import zipfile
 import time
 import sys
 import rawpy
+import cv2
 
 def read_image(img_path):
     if img_path[-4:].lower() in [".dng", ".raw", ".nef"]:
