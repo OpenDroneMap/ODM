@@ -37,10 +37,11 @@ class Video2Dataset:
 
         self.global_idx = 0
 
-        output_file_paths = []
-        
+        output_file_paths_all_videos = []
+
         # foreach input file
         for input_file in self.parameters.input:
+            output_file_paths =[]
             # get file name
             file_name = os.path.basename(input_file)
             log.ODM_INFO("Processing video: {}".format(input_file))
@@ -57,7 +58,7 @@ class Video2Dataset:
                     self.date_now = datetime.datetime.now()
             else:
                 self.date_now += datetime.timedelta(seconds=video_info.total_frames / video_info.frame_rate)
-            
+
             log.ODM_INFO("Use pseudo start time: %s" % self.date_now)
 
             if self.parameters.use_srt:
@@ -131,17 +132,21 @@ class Video2Dataset:
                     output_file_paths.append(stats["path"])
 
             cap.release()
+            if self.parameters.limit is not None and self.parameters.limit > 0 and self.global_idx >= self.parameters.limit:
+                log.ODM_INFO(
+                    f"Limit of {self.parameters.limit} frames reached, trimming dataset"
+                )
+                output_file_paths = limit_files(output_file_paths, self.parameters.limit)
+                output_file_paths_all_videos.append(output_file_paths)
+
 
         if self.f is not None:
             self.f.close()
 
-        if self.parameters.limit is not None and self.parameters.limit > 0 and self.global_idx >= self.parameters.limit:
-            log.ODM_INFO("Limit of {} frames reached, trimming dataset".format(self.parameters.limit))
-            output_file_paths = limit_files(output_file_paths, self.parameters.limit)
 
         end = time.time()
         log.ODM_INFO("Total processing time: {:.2f}s".format(end - start))
-        return output_file_paths
+        return output_file_paths_all_videos
 
 
     def ProcessFrame(self, frame, video_info, srt_parser):
@@ -213,7 +218,7 @@ class Video2Dataset:
         elapsed_time = datetime.datetime(1900, 1, 1) + delta
 
         img = Image.open(io.BytesIO(buf))
-        
+
         entry = gps_coords = None
         if srt_parser is not None:
             entry = srt_parser.get_entry(elapsed_time)
@@ -251,7 +256,7 @@ class Video2Dataset:
                 exif_dict["Exif"][piexif.ExifIFD.FNumber] = float_to_rational(entry["fnum"])
             if entry["iso"] is not None:
                 exif_dict["Exif"][piexif.ExifIFD.ISOSpeedRatings] = entry["iso"]
-        
+
         if gps_coords is not None:
             exif_dict["GPS"] = get_gps_location(elapsed_time, gps_coords[1], gps_coords[0], gps_coords[2])
 
@@ -294,7 +299,7 @@ def float_to_rational(f):
 def limit_files(paths, limit):
     if len(paths) <= limit:
         return paths
-    
+
     to_keep = []
     all_idxes = np.arange(0, len(paths))
     keep_idxes = np.linspace(0, len(paths) - 1, limit, dtype=int)
