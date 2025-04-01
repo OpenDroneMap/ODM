@@ -2,6 +2,7 @@ import os
 import shutil, errno
 import json
 
+
 def absolute_path_file(path_file):
     return os.path.abspath(path_file)
 
@@ -30,7 +31,9 @@ def copy(src, dst):
     except OSError as e:
         if e.errno == errno.ENOTDIR:
             shutil.copy(src, dst)
-        else: raise
+        else:
+            raise
+
 
 def rename_file(src, dst):
     try:
@@ -46,7 +49,7 @@ def rename_file(src, dst):
 # find a file in the root directory
 def find(filename, folder):
     for root, dirs, files in os.walk(folder):
-        return '/'.join((root, filename)) if filename in files else None
+        return "/".join((root, filename)) if filename in files else None
 
 
 def related_file_path(input_file_path, prefix="", postfix="", replace_base=None):
@@ -68,6 +71,7 @@ def related_file_path(input_file_path, prefix="", postfix="", replace_base=None)
 
     return os.path.join(path, "{}{}{}{}".format(prefix, basename, postfix, ext))
 
+
 def path_or_json_string_to_dict(string):
     if string == "":
         return {}
@@ -79,13 +83,14 @@ def path_or_json_string_to_dict(string):
             raise ValueError("{0} is not a valid JSON string.".format(string))
     elif file_exists(string):
         try:
-            with open(string, 'r') as f:
+            with open(string, "r") as f:
                 return json.loads(f.read())
         except:
             raise ValueError("{0} is not a valid JSON file.".format(string))
     else:
         raise ValueError("{0} is not a valid JSON file or string.".format(string))
-    
+
+
 def touch(file):
-    with open(file, 'w') as fout:
+    with open(file, "w") as fout:
         fout.write("Done!\n")

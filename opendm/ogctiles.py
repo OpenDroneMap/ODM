@@ -11,7 +11,10 @@ from opendm.entwine import build_entwine
 import fiona
 from shapely.geometry import shape
 
-def build_textured_model(input_obj, output_path, reference_lla = None, model_bounds_file=None, rerun=False):
+
+def build_textured_model(
+    input_obj, output_path, reference_lla=None, model_bounds_file=None, rerun=False
+):
     if not os.path.isfile(input_obj):
         log.ODM_WARNING("No input OBJ file to process")
         return
@@ -22,27 +25,27 @@ def build_textured_model(input_obj, output_path, reference_lla = None, model_bou
 
     log.ODM_INFO("Generating OGC 3D Tiles textured model")
     lat = lon = alt = 0
-    
+
     # Read reference_lla.json (if provided)
     if reference_lla is not None and os.path.isfile(reference_lla):
         try:
             with open(reference_lla) as f:
                 reference_lla = json.loads(f.read())
-                lat = reference_lla['latitude']
-                lon = reference_lla['longitude']
-                alt = reference_lla['altitude']
+                lat = reference_lla["latitude"]
+                lon = reference_lla["longitude"]
+                alt = reference_lla["altitude"]
         except Exception as e:
             log.ODM_WARNING("Cannot read %s: %s" % (reference_lla, str(e)))
 
     # Read model bounds (if provided)
-    divisions = 1 # default
-    DIV_THRESHOLD = 10000 # m^2 (this is somewhat arbitrary)
+    divisions = 1  # default
+    DIV_THRESHOLD = 10000  # m^2 (this is somewhat arbitrary)
 
     if model_bounds_file is not None and os.path.isfile(model_bounds_file):
         try:
-            with fiona.open(model_bounds_file, 'r') as f:
+            with fiona.open(model_bounds_file, "r") as f:
                 if len(f) == 1:
-                    poly = shape(f[1]['geometry'])
+                    poly = shape(f[1]["geometry"])
                     area = poly.area
                     log.ODM_INFO("Approximate area: %s m^2" % round(area, 2))
 
@@ -57,17 +60,22 @@ def build_textured_model(input_obj, output_path, reference_lla = None, model_bou
 
     try:
         kwargs = {
-            'input': input_obj,
-            'output': output_path,
-            'divisions': divisions,
-            'lat': lat,
-            'lon': lon,
-            'alt': alt,
+            "input": input_obj,
+            "output": output_path,
+            "divisions": divisions,
+            "lat": lat,
+            "lon": lon,
+            "alt": alt,
         }
-        system.run('Obj2Tiles "{input}" "{output}" --divisions {divisions} --lat {lat} --lon {lon} --alt {alt} '.format(**kwargs))
+        system.run(
+            'Obj2Tiles "{input}" "{output}" --divisions {divisions} --lat {lat} --lon {lon} --alt {alt} '.format(
+                **kwargs
+            )
+        )
 
     except Exception as e:
         log.ODM_WARNING("Cannot build 3D tiles textured model: %s" % str(e))
+
 
 def build_pointcloud(input_pointcloud, output_path, max_concurrency, rerun=False):
     if not os.path.isfile(input_pointcloud):
@@ -79,19 +87,21 @@ def build_pointcloud(input_pointcloud, output_path, max_concurrency, rerun=False
         shutil.rmtree(output_path)
 
     log.ODM_INFO("Generating OGC 3D Tiles point cloud")
-    
+
     try:
         if not os.path.isdir(output_path):
             os.mkdir(output_path)
 
         tmpdir = os.path.join(output_path, "tmp")
         entwine_output = os.path.join(output_path, "entwine")
-        
-        build_entwine([input_pointcloud], tmpdir, entwine_output, max_concurrency, "EPSG:4978")
-        
+
+        build_entwine(
+            [input_pointcloud], tmpdir, entwine_output, max_concurrency, "EPSG:4978"
+        )
+
         kwargs = {
-            'input': entwine_output,
-            'output': output_path,
+            "input": entwine_output,
+            "output": output_path,
         }
         system.run('entwine convert -i "{input}" -o "{output}"'.format(**kwargs))
 
@@ -109,27 +119,36 @@ def build_3dtiles(args, tree, reconstruction, rerun=False):
 
     if rerun and os.path.exists(tiles_output_path):
         shutil.rmtree(tiles_output_path)
-    
+
     if not os.path.isdir(tiles_output_path):
         os.mkdir(tiles_output_path)
 
-    # Model 
+    # Model
 
     if not os.path.isdir(model_output_path) or rerun:
         reference_lla = os.path.join(tree.opensfm, "reference_lla.json")
-        model_bounds_file = os.path.join(tree.odm_georeferencing, 'odm_georeferenced_model.bounds.gpkg')
+        model_bounds_file = os.path.join(
+            tree.odm_georeferencing, "odm_georeferenced_model.bounds.gpkg"
+        )
 
         input_obj = os.path.join(tree.odm_texturing, tree.odm_textured_model_obj)
         if not os.path.isfile(input_obj):
             input_obj = os.path.join(tree.odm_25dtexturing, tree.odm_textured_model_obj)
 
-        build_textured_model(input_obj, model_output_path, reference_lla, model_bounds_file, rerun)
+        build_textured_model(
+            input_obj, model_output_path, reference_lla, model_bounds_file, rerun
+        )
     else:
         log.ODM_WARNING("OGC 3D Tiles model %s already generated" % model_output_path)
 
     # Point cloud
-    
+
     if not os.path.isdir(pointcloud_output_path) or rerun:
-        build_pointcloud(tree.odm_georeferencing_model_laz, pointcloud_output_path, args.max_concurrency, rerun)
+        build_pointcloud(
+            tree.odm_georeferencing_model_laz,
+            pointcloud_output_path,
+            args.max_concurrency,
+            rerun,
+        )
     else:
         log.ODM_WARNING("OGC 3D Tiles model %s already generated" % model_output_path)

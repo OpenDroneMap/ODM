@@ -19,39 +19,43 @@ from osgeo import ogr
 
 def get_orthophoto_vars(args):
     return {
-        'TILED': 'NO' if args.orthophoto_no_tiled else 'YES',
-        'COMPRESS': args.orthophoto_compression,
-        'PREDICTOR': '2' if args.orthophoto_compression in ['LZW', 'DEFLATE'] else '1',
-        'BIGTIFF': 'IF_SAFER',
-        'BLOCKXSIZE': 512,
-        'BLOCKYSIZE': 512,
-        'NUM_THREADS': args.max_concurrency
+        "TILED": "NO" if args.orthophoto_no_tiled else "YES",
+        "COMPRESS": args.orthophoto_compression,
+        "PREDICTOR": "2" if args.orthophoto_compression in ["LZW", "DEFLATE"] else "1",
+        "BIGTIFF": "IF_SAFER",
+        "BLOCKXSIZE": 512,
+        "BLOCKYSIZE": 512,
+        "NUM_THREADS": args.max_concurrency,
     }
+
 
 def build_overviews(orthophoto_file):
     log.ODM_INFO("Building Overviews")
-    kwargs = {'orthophoto': orthophoto_file}
-    
+    kwargs = {"orthophoto": orthophoto_file}
+
     # Run gdaladdo
-    system.run('gdaladdo -r average '
-                '--config BIGTIFF_OVERVIEW IF_SAFER '
-                '--config COMPRESS_OVERVIEW JPEG '
-                '{orthophoto} 2 4 8 16'.format(**kwargs))
+    system.run(
+        "gdaladdo -r average "
+        "--config BIGTIFF_OVERVIEW IF_SAFER "
+        "--config COMPRESS_OVERVIEW JPEG "
+        "{orthophoto} 2 4 8 16".format(**kwargs)
+    )
+
 
 def generate_png(orthophoto_file, output_file=None, outsize=None):
     if output_file is None:
         base, ext = os.path.splitext(orthophoto_file)
-        output_file = base + '.png'
-    
+        output_file = base + ".png"
+
     # See if we need to select top three bands
     params = []
 
     try:
         gtif = gdal.Open(orthophoto_file)
         bands = []
-        for idx in range(1, gtif.RasterCount+1):
+        for idx in range(1, gtif.RasterCount + 1):
             bands.append(gtif.GetRasterBand(idx).GetColorInterpretation())
-        bands = dict(zip(bands, range(1, len(bands)+1)))
+        bands = dict(zip(bands, range(1, len(bands) + 1)))
 
         if gtif.RasterCount >= 3:
             red = bands.get(gdal.GCI_RedBand)
@@ -60,10 +64,10 @@ def generate_png(orthophoto_file, output_file=None, outsize=None):
             if red is None or green is None or blue is None:
                 params.append("-b 1 -b 2 -b 3")
             else:
-                params.append("-b %s -b %s -b %s" % (red, green, blue))                
+                params.append("-b %s -b %s -b %s" % (red, green, blue))
         elif gtif.RasterCount <= 2:
             params.append("-b 1")
-        
+
         alpha = bands.get(gdal.GCI_AlphaBand)
         if alpha is not None:
             params.append("-b %s" % alpha)
@@ -77,31 +81,41 @@ def generate_png(orthophoto_file, output_file=None, outsize=None):
                 params.append("-scale_1 -scale_2 -scale_3")
             elif gtif.RasterCount <= 2:
                 params.append("-scale_1")
-        
+
         gtif = None
     except Exception as e:
-        log.ODM_WARNING("Cannot read orthophoto information for PNG generation: %s" % str(e))
+        log.ODM_WARNING(
+            "Cannot read orthophoto information for PNG generation: %s" % str(e)
+        )
 
     if outsize is not None:
         params.append("-outsize %s 0" % outsize)
 
-    system.run('gdal_translate -of png "%s" "%s" %s '
-               '-co WORLDFILE=YES '
-               '--config GDAL_CACHEMAX %s%% ' % (orthophoto_file, output_file, " ".join(params), get_max_memory()))
+    system.run(
+        'gdal_translate -of png "%s" "%s" %s '
+        "-co WORLDFILE=YES "
+        "--config GDAL_CACHEMAX %s%% "
+        % (orthophoto_file, output_file, " ".join(params), get_max_memory())
+    )
+
 
 def generate_kmz(orthophoto_file, output_file=None, outsize=None):
     if output_file is None:
         base, ext = os.path.splitext(orthophoto_file)
-        output_file = base + '.kmz'
-    
+        output_file = base + ".kmz"
+
     # See if we need to select top three bands
     bandparam = ""
     gtif = gdal.Open(orthophoto_file)
     if gtif.RasterCount > 4:
         bandparam = "-b 1 -b 2 -b 3 -a_nodata 0"
 
-    system.run('gdal_translate -of KMLSUPEROVERLAY -co FORMAT=PNG "%s" "%s" %s '
-               '--config GDAL_CACHEMAX %s%% ' % (orthophoto_file, output_file, bandparam, get_max_memory()))    
+    system.run(
+        'gdal_translate -of KMLSUPEROVERLAY -co FORMAT=PNG "%s" "%s" %s '
+        "--config GDAL_CACHEMAX %s%% "
+        % (orthophoto_file, output_file, bandparam, get_max_memory())
+    )
+
 
 def generate_extent_polygon(orthophoto_file):
     """Function to return the orthophoto extent as a polygon into a gpkg file
@@ -110,11 +124,11 @@ def generate_extent_polygon(orthophoto_file):
         orthophoto_file (str): the path to orthophoto file
     """
     base, ext = os.path.splitext(orthophoto_file)
-    output_file = base + '_extent.dxf'
+    output_file = base + "_extent.dxf"
 
     try:
         gtif = gdal.Open(orthophoto_file)
-        srs =  gtif.GetSpatialRef()
+        srs = gtif.GetSpatialRef()
         geoTransform = gtif.GetGeoTransform()
 
         # calculate the coordinates
@@ -122,10 +136,21 @@ def generate_extent_polygon(orthophoto_file):
         maxy = geoTransform[3]
         maxx = minx + geoTransform[1] * gtif.RasterXSize
         miny = maxy + geoTransform[5] * gtif.RasterYSize
-        
+
         # create polygon in wkt format
-        poly_wkt = "POLYGON ((%s %s, %s %s, %s %s, %s %s, %s %s))" % (minx, miny, minx, maxy, maxx, maxy, maxx, miny, minx, miny)
-        
+        poly_wkt = "POLYGON ((%s %s, %s %s, %s %s, %s %s, %s %s))" % (
+            minx,
+            miny,
+            minx,
+            maxy,
+            maxx,
+            maxy,
+            maxx,
+            miny,
+            minx,
+            miny,
+        )
+
         # create vector file
         # just the DXF to support AutoCAD users
         # to load the geotiff raster correctly.
@@ -147,59 +172,84 @@ def generate_extent_polygon(orthophoto_file):
         gtif = None
         log.ODM_INFO("Wrote %s" % output_file)
     except Exception as e:
-        log.ODM_WARNING("Cannot create extent layer for %s: %s" % (orthophoto_file, str(e)))
+        log.ODM_WARNING(
+            "Cannot create extent layer for %s: %s" % (orthophoto_file, str(e))
+        )
 
 
 def generate_tfw(orthophoto_file):
     base, ext = os.path.splitext(orthophoto_file)
-    tfw_file = base + '.tfw'
+    tfw_file = base + ".tfw"
 
     try:
         with rasterio.open(orthophoto_file) as ds:
             t = ds.transform
-            with open(tfw_file, 'w') as f:
+            with open(tfw_file, "w") as f:
                 # rasterio affine values taken by
                 # https://mharty3.github.io/til/GIS/raster-affine-transforms/
-                f.write("\n".join([str(v) for v in [t.a, t.d, t.b, t.e, t.c, t.f]]) + "\n")
+                f.write(
+                    "\n".join([str(v) for v in [t.a, t.d, t.b, t.e, t.c, t.f]]) + "\n"
+                )
             log.ODM_INFO("Wrote %s" % tfw_file)
     except Exception as e:
         log.ODM_WARNING("Cannot create .tfw for %s: %s" % (orthophoto_file, str(e)))
 
 
-def post_orthophoto_steps(args, bounds_file_path, orthophoto_file, orthophoto_tiles_dir, resolution):
+def post_orthophoto_steps(
+    args, bounds_file_path, orthophoto_file, orthophoto_tiles_dir, resolution
+):
     if args.crop > 0 or args.boundary:
-        Cropper.crop(bounds_file_path, orthophoto_file, get_orthophoto_vars(args), keep_original=not args.optimize_disk_space, warp_options=['-dstalpha'])
+        Cropper.crop(
+            bounds_file_path,
+            orthophoto_file,
+            get_orthophoto_vars(args),
+            keep_original=not args.optimize_disk_space,
+            warp_options=["-dstalpha"],
+        )
 
     if args.build_overviews and not args.cog:
         build_overviews(orthophoto_file)
 
     if args.orthophoto_png:
         generate_png(orthophoto_file)
-        
+
     if args.orthophoto_kmz:
         generate_kmz(orthophoto_file)
 
     if args.tiles:
-        generate_orthophoto_tiles(orthophoto_file, orthophoto_tiles_dir, args.max_concurrency, resolution)
+        generate_orthophoto_tiles(
+            orthophoto_file, orthophoto_tiles_dir, args.max_concurrency, resolution
+        )
 
     if args.cog:
-        convert_to_cogeo(orthophoto_file, max_workers=args.max_concurrency, compression=args.orthophoto_compression)
+        convert_to_cogeo(
+            orthophoto_file,
+            max_workers=args.max_concurrency,
+            compression=args.orthophoto_compression,
+        )
 
     generate_extent_polygon(orthophoto_file)
     generate_tfw(orthophoto_file)
 
-def compute_mask_raster(input_raster, vector_mask, output_raster, blend_distance=20, only_max_coords_feature=False):
+
+def compute_mask_raster(
+    input_raster,
+    vector_mask,
+    output_raster,
+    blend_distance=20,
+    only_max_coords_feature=False,
+):
     if not os.path.exists(input_raster):
         log.ODM_WARNING("Cannot mask raster, %s does not exist" % input_raster)
         return
-    
+
     if not os.path.exists(vector_mask):
         log.ODM_WARNING("Cannot mask raster, %s does not exist" % vector_mask)
         return
 
     log.ODM_INFO("Computing mask raster: %s" % output_raster)
 
-    with rasterio.open(input_raster, 'r') as rast:
+    with rasterio.open(input_raster, "r") as rast:
         with fiona.open(vector_mask) as src:
             burn_features = src
 
@@ -209,12 +259,17 @@ def compute_mask_raster(input_raster, vector_mask, output_raster, blend_distance
                 for feature in src:
                     if feature is not None:
                         # No complex shapes
-                        if len(feature['geometry']['coordinates'][0]) > max_coords_count:
-                            max_coords_count = len(feature['geometry']['coordinates'][0])
+                        if (
+                            len(feature["geometry"]["coordinates"][0])
+                            > max_coords_count
+                        ):
+                            max_coords_count = len(
+                                feature["geometry"]["coordinates"][0]
+                            )
                             max_coords_feature = feature
                 if max_coords_feature is not None:
                     burn_features = [max_coords_feature]
-            
+
             shapes = [feature["geometry"] for feature in burn_features]
             out_image, out_transform = mask(rast, shapes, nodata=0)
 
@@ -227,13 +282,19 @@ def compute_mask_raster(input_raster, vector_mask, output_raster, blend_distance
                     dist_t[dist_t > blend_distance] = 1
                     np.multiply(alpha_band, dist_t, out=alpha_band, casting="unsafe")
                 else:
-                    log.ODM_WARNING("%s does not have an alpha band, cannot blend cutline!" % input_raster)
+                    log.ODM_WARNING(
+                        "%s does not have an alpha band, cannot blend cutline!"
+                        % input_raster
+                    )
 
-            with rasterio.open(output_raster, 'w', BIGTIFF="IF_SAFER", **rast.profile) as dst:
+            with rasterio.open(
+                output_raster, "w", BIGTIFF="IF_SAFER", **rast.profile
+            ) as dst:
                 dst.colorinterp = rast.colorinterp
                 dst.write(out_image)
 
             return output_raster
+
 
 def feather_raster(input_raster, output_raster, blend_distance=20):
     if not os.path.exists(input_raster):
@@ -241,8 +302,8 @@ def feather_raster(input_raster, output_raster, blend_distance=20):
         return
 
     log.ODM_INFO("Computing feather raster: %s" % output_raster)
-    
-    with rasterio.open(input_raster, 'r') as rast:
+
+    with rasterio.open(input_raster, "r") as rast:
         out_image = rast.read()
         if blend_distance > 0:
             if out_image.shape[0] >= 4:
@@ -252,13 +313,19 @@ def feather_raster(input_raster, output_raster, blend_distance=20):
                 dist_t[dist_t > blend_distance] = 1
                 np.multiply(alpha_band, dist_t, out=alpha_band, casting="unsafe")
             else:
-                log.ODM_WARNING("%s does not have an alpha band, cannot feather raster!" % input_raster)
+                log.ODM_WARNING(
+                    "%s does not have an alpha band, cannot feather raster!"
+                    % input_raster
+                )
 
-        with rasterio.open(output_raster, 'w', BIGTIFF="IF_SAFER", **rast.profile) as dst:
+        with rasterio.open(
+            output_raster, "w", BIGTIFF="IF_SAFER", **rast.profile
+        ) as dst:
             dst.colorinterp = rast.colorinterp
             dst.write(out_image)
 
         return output_raster
+
 
 def merge(input_ortho_and_ortho_cuts, output_orthophoto, orthophoto_vars={}):
     """
@@ -266,8 +333,8 @@ def merge(input_ortho_and_ortho_cuts, output_orthophoto, orthophoto_vars={}):
     Merge orthophotos around cutlines using a blend buffer.
     """
     inputs = []
-    bounds=None
-    precision=7
+    bounds = None
+    precision = 7
 
     for o, c in input_ortho_and_ortho_cuts:
         if not io.file_exists(o):
@@ -286,11 +353,11 @@ def merge(input_ortho_and_ortho_cuts, output_orthophoto, orthophoto_vars={}):
         res = first.res
         dtype = first.dtypes[0]
         profile = first.profile
-        num_bands = first.meta['count'] - 1 # minus alpha
+        num_bands = first.meta["count"] - 1  # minus alpha
         colorinterp = first.colorinterp
 
     log.ODM_INFO("%s valid orthophoto rasters to merge" % len(inputs))
-    sources = [(rasterio.open(o), rasterio.open(c)) for o,c in inputs]
+    sources = [(rasterio.open(o), rasterio.open(c)) for o, c in inputs]
 
     # scan input files.
     # while we're at it, validate assumptions about inputs
@@ -321,12 +388,12 @@ def merge(input_ortho_and_ortho_cuts, output_orthophoto, orthophoto_vars={}):
     profile["transform"] = output_transform
     profile["height"] = output_height
     profile["width"] = output_width
-    profile["tiled"] = orthophoto_vars.get('TILED', 'YES') == 'YES'
-    profile["blockxsize"] = orthophoto_vars.get('BLOCKXSIZE', 512)
-    profile["blockysize"] = orthophoto_vars.get('BLOCKYSIZE', 512)
-    profile["compress"] = orthophoto_vars.get('COMPRESS', 'LZW')
-    profile["predictor"] = orthophoto_vars.get('PREDICTOR', '2')
-    profile["bigtiff"] = orthophoto_vars.get('BIGTIFF', 'IF_SAFER')
+    profile["tiled"] = orthophoto_vars.get("TILED", "YES") == "YES"
+    profile["blockxsize"] = orthophoto_vars.get("BLOCKXSIZE", 512)
+    profile["blockysize"] = orthophoto_vars.get("BLOCKYSIZE", 512)
+    profile["compress"] = orthophoto_vars.get("COMPRESS", "LZW")
+    profile["predictor"] = orthophoto_vars.get("PREDICTOR", "2")
+    profile["bigtiff"] = orthophoto_vars.get("BIGTIFF", "IF_SAFER")
     profile.update()
 
     # create destination file
@@ -346,11 +413,14 @@ def merge(input_ortho_and_ortho_cuts, output_orthophoto, orthophoto_vars={}):
 
             # First pass, write all rasters naively without blending
             for src, _ in sources:
-                src_window = tuple(zip(rowcol(
-                        src.transform, left, top, op=round, precision=precision
-                    ), rowcol(
-                        src.transform, right, bottom, op=round, precision=precision
-                    )))
+                src_window = tuple(
+                    zip(
+                        rowcol(src.transform, left, top, op=round, precision=precision),
+                        rowcol(
+                            src.transform, right, bottom, op=round, precision=precision
+                        ),
+                    )
+                )
 
                 temp = np.zeros(dst_shape, dtype=dtype)
                 temp = src.read(
@@ -370,11 +440,14 @@ def merge(input_ortho_and_ortho_cuts, output_orthophoto, orthophoto_vars={}):
             # Second pass, write all feathered rasters
             # blending the edges
             for src, _ in sources:
-                src_window = tuple(zip(rowcol(
-                        src.transform, left, top, op=round, precision=precision
-                    ), rowcol(
-                        src.transform, right, bottom, op=round, precision=precision
-                    )))
+                src_window = tuple(
+                    zip(
+                        rowcol(src.transform, left, top, op=round, precision=precision),
+                        rowcol(
+                            src.transform, right, bottom, op=round, precision=precision
+                        ),
+                    )
+                )
 
                 temp = np.zeros(dst_shape, dtype=dtype)
                 temp = src.read(
@@ -383,10 +456,12 @@ def merge(input_ortho_and_ortho_cuts, output_orthophoto, orthophoto_vars={}):
 
                 where = temp[-1] != 0
                 for b in range(0, num_bands):
-                    blended = temp[-1] / 255.0 * temp[b] + (1 - temp[-1] / 255.0) * dstarr[b]
-                    np.copyto(dstarr[b], blended, casting='unsafe', where=where)
+                    blended = (
+                        temp[-1] / 255.0 * temp[b] + (1 - temp[-1] / 255.0) * dstarr[b]
+                    )
+                    np.copyto(dstarr[b], blended, casting="unsafe", where=where)
                 dstarr[-1][where] = 255.0
-                
+
                 # check if dest has any nodata pixels available
                 if np.count_nonzero(dstarr[-1]) == blocksize:
                     break
@@ -394,11 +469,14 @@ def merge(input_ortho_and_ortho_cuts, output_orthophoto, orthophoto_vars={}):
             # Third pass, write cut rasters
             # blending the cutlines
             for _, cut in sources:
-                src_window = tuple(zip(rowcol(
-                        cut.transform, left, top, op=round, precision=precision
-                    ), rowcol(
-                        cut.transform, right, bottom, op=round, precision=precision
-                    )))
+                src_window = tuple(
+                    zip(
+                        rowcol(cut.transform, left, top, op=round, precision=precision),
+                        rowcol(
+                            cut.transform, right, bottom, op=round, precision=precision
+                        ),
+                    )
+                )
 
                 temp = np.zeros(dst_shape, dtype=dtype)
                 temp = cut.read(
@@ -408,8 +486,10 @@ def merge(input_ortho_and_ortho_cuts, output_orthophoto, orthophoto_vars={}):
                 # For each band, average alpha values between
                 # destination raster and cut raster
                 for b in range(0, num_bands):
-                    blended = temp[-1] / 255.0 * temp[b] + (1 - temp[-1] / 255.0) * dstarr[b]
-                    np.copyto(dstarr[b], blended, casting='unsafe', where=temp[-1]!=0)
+                    blended = (
+                        temp[-1] / 255.0 * temp[b] + (1 - temp[-1] / 255.0) * dstarr[b]
+                    )
+                    np.copyto(dstarr[b], blended, casting="unsafe", where=temp[-1] != 0)
 
             dstrast.write(dstarr, window=dst_window)
 

@@ -17,7 +17,7 @@ import argparse
 # other imports
 import PIL
 from PIL import Image, ExifTags
-from tqdm import tqdm # optional: see "swap with this for no tqdm" below
+from tqdm import tqdm  # optional: see "swap with this for no tqdm" below
 
 parser = argparse.ArgumentParser()
 
@@ -26,16 +26,50 @@ parser.add_argument("file_dir", help="input folder of images")
 parser.add_argument("output_dir", help="output folder to copy images to")
 
 # args with defaults
-parser.add_argument("-b", "--bands", help="number of expected bands per capture", type=int, default=5)
-parser.add_argument("-s", "--sequential", help="use sequential capture group in filenames rather than original capture ID", type=bool, default=True)
-parser.add_argument("-z", "--zero_pad", help="if using sequential capture groups, zero-pad the group number to this many digits. 0 for no padding, -1 for auto padding", type=int, default=5)
-parser.add_argument("-w", "--whitespace_replace", help="replace whitespace characters with this character", type=str, default="-")
+parser.add_argument(
+    "-b", "--bands", help="number of expected bands per capture", type=int, default=5
+)
+parser.add_argument(
+    "-s",
+    "--sequential",
+    help="use sequential capture group in filenames rather than original capture ID",
+    type=bool,
+    default=True,
+)
+parser.add_argument(
+    "-z",
+    "--zero_pad",
+    help="if using sequential capture groups, zero-pad the group number to this many digits. 0 for no padding, -1 for auto padding",
+    type=int,
+    default=5,
+)
+parser.add_argument(
+    "-w",
+    "--whitespace_replace",
+    help="replace whitespace characters with this character",
+    type=str,
+    default="-",
+)
 
 # optional args no defaults
-parser.add_argument("-l", "--logfile", help="write image metadata used to this CSV file", type=str)
-parser.add_argument("-r", "--replace_filename", help="use this instead of using the original filename in new filenames", type=str)
-parser.add_argument("-f", "--force", help="don't ask for confirmation", action="store_true")
-parser.add_argument("-g", "--no_grouping", help="do not apply grouping, only validate and add band name", action="store_true")
+parser.add_argument(
+    "-l", "--logfile", help="write image metadata used to this CSV file", type=str
+)
+parser.add_argument(
+    "-r",
+    "--replace_filename",
+    help="use this instead of using the original filename in new filenames",
+    type=str,
+)
+parser.add_argument(
+    "-f", "--force", help="don't ask for confirmation", action="store_true"
+)
+parser.add_argument(
+    "-g",
+    "--no_grouping",
+    help="do not apply grouping, only validate and add band name",
+    action="store_true",
+)
 args = parser.parse_args()
 
 file_dir = args.file_dir
@@ -53,9 +87,19 @@ auto_zero_pad = len(str(math.ceil(float(file_count) / float(expected_bands))))
 
 if args.zero_pad >= 1:
     if int("9" * args.zero_pad) < math.ceil(float(file_count) / float(expected_bands)):
-        raise ValueError("Zero pad must have more digits than maximum capture groups! Attempted to pad " + str(args.zero_pad) + " digits with "
-                         + str(file_count) + " files and " + str(expected_bands) + " bands (up to " + str(math.ceil(float(file_count) / float(expected_bands)))
-                         + " capture groups possible, try at least " + str(auto_zero_pad) + " digits to zero pad)")
+        raise ValueError(
+            "Zero pad must have more digits than maximum capture groups! Attempted to pad "
+            + str(args.zero_pad)
+            + " digits with "
+            + str(file_count)
+            + " files and "
+            + str(expected_bands)
+            + " bands (up to "
+            + str(math.ceil(float(file_count) / float(expected_bands)))
+            + " capture groups possible, try at least "
+            + str(auto_zero_pad)
+            + " digits to zero pad)"
+        )
 
 if args.force is False:
     print("Input dir: " + str(file_dir) + " (" + str(file_count) + " files)")
@@ -84,7 +128,15 @@ print("Indexing images ...")
 for filename in tqdm(os.listdir(file_dir)):
     old_path = os.path.join(file_dir, filename)
     file_name, file_ext = os.path.splitext(filename)
-    image_entry = {"name": filename, "valid": True, "band": "-", "ID": "-", "group": 0, "DateTime": "-", "error": "-"}  # dashes to ensure CSV exports properly, can be blank
+    image_entry = {
+        "name": filename,
+        "valid": True,
+        "band": "-",
+        "ID": "-",
+        "group": 0,
+        "DateTime": "-",
+        "error": "-",
+    }  # dashes to ensure CSV exports properly, can be blank
     try:
         img = Image.open(old_path)
     except PIL.UnidentifiedImageError as img_err:
@@ -102,9 +154,9 @@ for filename in tqdm(os.listdir(file_dir)):
             # print(ExifTags.TAGS[key] + ":" + str(val)) # debugging
             if ExifTags.TAGS[key] == "XMLPacket":
                 # find bandname
-                bandname_start = val.find(b'<Camera:BandName>')
-                bandname_end = val.find(b'</Camera:BandName>')
-                bandname_coded = val[(bandname_start + 17):bandname_end]
+                bandname_start = val.find(b"<Camera:BandName>")
+                bandname_end = val.find(b"</Camera:BandName>")
+                bandname_coded = val[(bandname_start + 17) : bandname_end]
                 bandname = bandname_coded.decode("UTF-8")
                 image_entry["band"] = str(bandname)
                 # find capture ID
@@ -112,7 +164,9 @@ for filename in tqdm(os.listdir(file_dir)):
             if ExifTags.TAGS[key] == "DateTime":
                 image_entry["DateTime"] = str(val)
     image_entry["band"].replace(" ", "-")
-    if len(image_entry["band"]) >= 99:  # if it's too long, wrong value (RGB pic has none)
+    if (
+        len(image_entry["band"]) >= 99
+    ):  # if it's too long, wrong value (RGB pic has none)
         # no exif present
         no_exif_n += 1
         image_entry["valid"] = False
@@ -121,7 +175,9 @@ for filename in tqdm(os.listdir(file_dir)):
         no_exif_n += 1
         image_entry["valid"] = False
         image_entry["error"] = "No Capture ID found"
-    if (file_ext.lower() in [".jpg", ".jpeg"]) and (image_entry["band"] == "-"):  # hack for DJI RGB jpgs
+    if (file_ext.lower() in [".jpg", ".jpeg"]) and (
+        image_entry["band"] == "-"
+    ):  # hack for DJI RGB jpgs
         # handle = open(old_path, 'rb').read()
         # xmp_start = handle.find(b'<x:xmpmeta')
         # xmp_end = handle.find(b'</x:xmpmeta')
@@ -149,7 +205,9 @@ if not args.no_grouping:
         if not this_img["valid"]:  # prefiltered in last loop
             continue
         same_id_images = [image for image in images if image["ID"] == this_img["ID"]]
-        if len(same_id_images) != expected_bands:  # defaults to True, so only need to filter out not in
+        if (
+            len(same_id_images) != expected_bands
+        ):  # defaults to True, so only need to filter out not in
             no_matching_bands_n += 1
             this_img["valid"] = False
             this_img["error"] = "Capture ID has too few/too many bands"
@@ -158,7 +216,9 @@ if not args.no_grouping:
                 this_img["group"] = capture_ids[this_img["ID"]]
             else:
                 capture_ids[this_img["ID"]] = new_capture_id
-                this_img["group"] = capture_ids[this_img["ID"]]  # a little less efficient but we know it works this way
+                this_img["group"] = capture_ids[
+                    this_img["ID"]
+                ]  # a little less efficient but we know it works this way
                 new_capture_id += 1
     print(str(no_matching_bands_n) + " images had unexpected bands in same capture")
 
@@ -193,7 +253,9 @@ for this_img in tqdm(images):
                     identifier = str(this_img["group"]).zfill(args.zero_pad)
             else:
                 identifier = this_img["ID"]
-            file_name_full = identifier + "-" + file_name + "-" + this_img["band"] + file_ext
+            file_name_full = (
+                identifier + "-" + file_name + "-" + this_img["band"] + file_ext
+            )
     else:
         prefix = output_invalid
         file_name_full = file_name + file_ext
@@ -202,7 +264,7 @@ for this_img in tqdm(images):
 
 if logfile:
     header = images[0].keys()
-    with open(logfile, 'w', newline='') as logfile_handle:
+    with open(logfile, "w", newline="") as logfile_handle:
         dict_writer = csv.DictWriter(logfile_handle, header)
         dict_writer.writeheader()
         dict_writer.writerows(images)

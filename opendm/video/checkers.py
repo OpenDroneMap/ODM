@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 
+
 class ThresholdBlurChecker:
     def __init__(self, threshold):
         self.threshold = threshold
@@ -15,6 +16,7 @@ class ThresholdBlurChecker:
         var = cv2.Laplacian(image_bw, cv2.CV_64F).var()
         return var, var < self.threshold
 
+
 class SimilarityChecker:
     def __init__(self, threshold, max_features=500):
         self.threshold = threshold
@@ -28,11 +30,15 @@ class SimilarityChecker:
         if self.last_image is None:
             self.last_image = image_bw
             self.last_image_id = id
-            self.last_image_features = cv2.goodFeaturesToTrack(image_bw, self.max_features, 0.01, 10)
+            self.last_image_features = cv2.goodFeaturesToTrack(
+                image_bw, self.max_features, 0.01, 10
+            )
             return 0, False, None
 
         # Detect features
-        features, status, _ = cv2.calcOpticalFlowPyrLK(self.last_image, image_bw, self.last_image_features, None)
+        features, status, _ = cv2.calcOpticalFlowPyrLK(
+            self.last_image, image_bw, self.last_image_features, None
+        )
 
         # Filter out the "bad" features (i.e. those that are not tracked successfully)
         good_features = features[status == 1]
@@ -43,10 +49,12 @@ class SimilarityChecker:
 
         res = distance < self.threshold
 
-        if (not res):
+        if not res:
             self.last_image = image_bw
             self.last_image_id = id
-            self.last_image_features = cv2.goodFeaturesToTrack(image_bw, self.max_features, 0.01, 10)
+            self.last_image_features = cv2.goodFeaturesToTrack(
+                image_bw, self.max_features, 0.01, 10
+            )
 
         return distance, res, self.last_image_id
 
@@ -67,7 +75,9 @@ class NaiveBlackFrameChecker:
 
 class BlackFrameChecker:
     def __init__(self, picture_black_ratio_th=0.98, pixel_black_th=0.30):
-        self.picture_black_ratio_th = picture_black_ratio_th if picture_black_ratio_th is not None else 0.98
+        self.picture_black_ratio_th = (
+            picture_black_ratio_th if picture_black_ratio_th is not None else 0.98
+        )
         self.pixel_black_th = pixel_black_th if pixel_black_th is not None else 0.30
         self.luminance_minimum_value = None
         self.luminance_range_size = None
@@ -93,7 +103,7 @@ class BlackFrameChecker:
         frame_index = start_frame if start_frame is not None else 0
 
         # Read and process frames from video file
-        while (cap.isOpened() and (end_frame is None or frame_index <= end_frame)):
+        while cap.isOpened() and (end_frame is None or frame_index <= end_frame):
 
             ret, frame = cap.read()
             if not ret:
@@ -105,13 +115,20 @@ class BlackFrameChecker:
             gray_frame_max = gray_frame.max()
 
             # Update luminance range size and minimum value
-            self.luminance_range_size = max(self.luminance_range_size, gray_frame_max - gray_frame_min)
-            self.luminance_minimum_value = min(self.luminance_minimum_value, gray_frame_min)
+            self.luminance_range_size = max(
+                self.luminance_range_size, gray_frame_max - gray_frame_min
+            )
+            self.luminance_minimum_value = min(
+                self.luminance_minimum_value, gray_frame_min
+            )
 
             frame_index += 1
 
         # Calculate absolute threshold for considering a pixel "black"
-        self.absolute_threshold = self.luminance_minimum_value + self.pixel_black_th * self.luminance_range_size
+        self.absolute_threshold = (
+            self.luminance_minimum_value
+            + self.pixel_black_th * self.luminance_range_size
+        )
 
         # Close video file
         cap.release()

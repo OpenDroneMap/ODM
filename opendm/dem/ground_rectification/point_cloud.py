@@ -1,9 +1,20 @@
 import numpy as np
 from numpy.lib.recfunctions import append_fields
 
+
 class PointCloud:
     """Representation of a 3D point cloud"""
-    def __init__(self, xy, z, classification, rgb, indices, extra_dimensions, extra_dimensions_metadata):
+
+    def __init__(
+        self,
+        xy,
+        z,
+        classification,
+        rgb,
+        indices,
+        extra_dimensions,
+        extra_dimensions_metadata,
+    ):
         self.xy = xy
         self.z = z
         self.classification = classification
@@ -17,17 +28,35 @@ class PointCloud:
         xy = np.column_stack((x, y))
         rgb = np.column_stack((red, green, blue))
         indices = indices if indices is not None else np.arange(0, len(x))
-        return PointCloud(xy, z, classification, rgb, indices, { }, { })
+        return PointCloud(xy, z, classification, rgb, indices, {}, {})
 
     @staticmethod
     def with_xy(xy):
         [x, y] = np.hsplit(xy, 2)
         empty = np.empty(xy.shape[0])
-        return PointCloud.with_dimensions(x.ravel(), y.ravel(), empty, np.empty(xy.shape[0], dtype=np.uint8), empty, empty, empty)
+        return PointCloud.with_dimensions(
+            x.ravel(),
+            y.ravel(),
+            empty,
+            np.empty(xy.shape[0], dtype=np.uint8),
+            empty,
+            empty,
+            empty,
+        )
 
     def __getitem__(self, mask):
-        masked_dimensions = { name: values[mask] for name, values in self.extra_dimensions.items() }
-        return PointCloud(self.xy[mask], self.z[mask], self.classification[mask], self.rgb[mask], self.indices[mask], masked_dimensions, self.extra_dimensions_metadata)
+        masked_dimensions = {
+            name: values[mask] for name, values in self.extra_dimensions.items()
+        }
+        return PointCloud(
+            self.xy[mask],
+            self.z[mask],
+            self.classification[mask],
+            self.rgb[mask],
+            self.indices[mask],
+            masked_dimensions,
+            self.extra_dimensions_metadata,
+        )
 
     def concatenate(self, other_cloud):
         for name, dimension in self.extra_dimensions_metadata.items():
@@ -36,13 +65,20 @@ class PointCloud:
         for name, dimension in other_cloud.extra_dimensions_metadata.items():
             if name not in self.extra_dimensions:
                 dimension.assign_default(self)
-        new_indices = np.arange(len(self.indices), len(self.indices) + len(other_cloud.indices))
+        new_indices = np.arange(
+            len(self.indices), len(self.indices) + len(other_cloud.indices)
+        )
         self.xy = np.concatenate((self.xy, other_cloud.xy))
         self.z = np.concatenate((self.z, other_cloud.z))
-        self.classification = np.concatenate((self.classification, other_cloud.classification))
+        self.classification = np.concatenate(
+            (self.classification, other_cloud.classification)
+        )
         self.rgb = np.concatenate((self.rgb, other_cloud.rgb))
         self.indices = np.concatenate((self.indices, new_indices))
-        self.extra_dimensions = { name: np.concatenate((values, other_cloud.extra_dimensions[name])) for name, values in self.extra_dimensions.items() }
+        self.extra_dimensions = {
+            name: np.concatenate((values, other_cloud.extra_dimensions[name]))
+            for name, values in self.extra_dimensions.items()
+        }
 
     def update(self, other_cloud):
         for name, dimension in self.extra_dimensions_metadata.items():

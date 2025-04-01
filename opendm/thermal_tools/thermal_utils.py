@@ -1,6 +1,8 @@
 """Thermal Image manipulation utilities."""
+
 """Based on https://github.com/detecttechnologies/thermal_base"""
 import numpy as np
+
 
 def sensor_vals_to_temp(
     raw,
@@ -16,7 +18,8 @@ def sensor_vals_to_temp(
     PlanckF=1,
     PlanckO=-7340,
     PlanckR2=0.012545258,
-    **kwargs,):
+    **kwargs,
+):
     """Convert raw values from the thermographic sensor sensor to temperatures in °C. Tested for Flir and DJI cams."""
     # this calculation has been ported to python from https://github.com/gtatters/Thermimage/blob/master/R/raw2temp.R
     # a detailed explanation of what is going on here can be found there
@@ -39,46 +42,60 @@ def sensor_vals_to_temp(
         - 0.00027816 * (AtmosphericTemperature) ** 2
         + 0.00000068455 * (AtmosphericTemperature) ** 3
     )
-    tau1 = ATX * np.exp(-np.sqrt(ObjectDistance / 2) * (ATA1 + ATB1 * np.sqrt(h2o))) + (1 - ATX) * np.exp(
-        -np.sqrt(ObjectDistance / 2) * (ATA2 + ATB2 * np.sqrt(h2o))
-    )
-    tau2 = ATX * np.exp(-np.sqrt(ObjectDistance / 2) * (ATA1 + ATB1 * np.sqrt(h2o))) + (1 - ATX) * np.exp(
-        -np.sqrt(ObjectDistance / 2) * (ATA2 + ATB2 * np.sqrt(h2o))
-    )
+    tau1 = ATX * np.exp(-np.sqrt(ObjectDistance / 2) * (ATA1 + ATB1 * np.sqrt(h2o))) + (
+        1 - ATX
+    ) * np.exp(-np.sqrt(ObjectDistance / 2) * (ATA2 + ATB2 * np.sqrt(h2o)))
+    tau2 = ATX * np.exp(-np.sqrt(ObjectDistance / 2) * (ATA1 + ATB1 * np.sqrt(h2o))) + (
+        1 - ATX
+    ) * np.exp(-np.sqrt(ObjectDistance / 2) * (ATA2 + ATB2 * np.sqrt(h2o)))
     # radiance from the environment
-    raw_refl1 = PlanckR1 / (PlanckR2 * (np.exp(PlanckB / (ReflectedApparentTemperature + 273.15)) - PlanckF)) - PlanckO
-    
+    raw_refl1 = (
+        PlanckR1
+        / (
+            PlanckR2
+            * (np.exp(PlanckB / (ReflectedApparentTemperature + 273.15)) - PlanckF)
+        )
+        - PlanckO
+    )
+
     # Reflected component
-    raw_refl1_attn = (1 - Emissivity) / Emissivity * raw_refl1  
-    
+    raw_refl1_attn = (1 - Emissivity) / Emissivity * raw_refl1
+
     # Emission from atmosphere 1
     raw_atm1 = (
-        PlanckR1 / (PlanckR2 * (np.exp(PlanckB / (AtmosphericTemperature + 273.15)) - PlanckF)) - PlanckO
-    )  
-    
+        PlanckR1
+        / (PlanckR2 * (np.exp(PlanckB / (AtmosphericTemperature + 273.15)) - PlanckF))
+        - PlanckO
+    )
+
     # attenuation for atmospheric 1 emission
-    raw_atm1_attn = (1 - tau1) / Emissivity / tau1 * raw_atm1  
-    
+    raw_atm1_attn = (1 - tau1) / Emissivity / tau1 * raw_atm1
+
     # Emission from window due to its own temp
     raw_wind = (
-        PlanckR1 / (PlanckR2 * (np.exp(PlanckB / (IRWindowTemperature + 273.15)) - PlanckF)) - PlanckO
-    )  
+        PlanckR1
+        / (PlanckR2 * (np.exp(PlanckB / (IRWindowTemperature + 273.15)) - PlanckF))
+        - PlanckO
+    )
     # Componen due to window emissivity
-    raw_wind_attn = (
-        emiss_wind / Emissivity / tau1 / IRWindowTransmission * raw_wind
-    )  
+    raw_wind_attn = emiss_wind / Emissivity / tau1 / IRWindowTransmission * raw_wind
     # Reflection from window due to external objects
     raw_refl2 = (
-        PlanckR1 / (PlanckR2 * (np.exp(PlanckB / (ReflectedApparentTemperature + 273.15)) - PlanckF)) - PlanckO
-    )  
+        PlanckR1
+        / (
+            PlanckR2
+            * (np.exp(PlanckB / (ReflectedApparentTemperature + 273.15)) - PlanckF)
+        )
+        - PlanckO
+    )
     # component due to window reflectivity
-    raw_refl2_attn = (
-        refl_wind / Emissivity / tau1 / IRWindowTransmission * raw_refl2
-    )  
+    raw_refl2_attn = refl_wind / Emissivity / tau1 / IRWindowTransmission * raw_refl2
     # Emission from atmosphere 2
     raw_atm2 = (
-        PlanckR1 / (PlanckR2 * (np.exp(PlanckB / (AtmosphericTemperature + 273.15)) - PlanckF)) - PlanckO
-    )  
+        PlanckR1
+        / (PlanckR2 * (np.exp(PlanckB / (AtmosphericTemperature + 273.15)) - PlanckF))
+        - PlanckO
+    )
     # attenuation for atmospheric 2 emission
     raw_atm2_attn = (
         (1 - tau2) / Emissivity / tau1 / IRWindowTransmission / tau2 * raw_atm2
@@ -113,6 +130,7 @@ def normalize_temp_matrix(thermal_np):
     den = np.amax(thermal_np) - np.amin(thermal_np)
     thermal_np = num / den
     return thermal_np
+
 
 def clip_temp_to_roi(thermal_np, thermal_roi_values):
     """

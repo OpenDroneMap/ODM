@@ -1,5 +1,7 @@
 import time
-from opendm.dem.ground_rectification.extra_dimensions.userdata_dimension import UserDataDimension
+from opendm.dem.ground_rectification.extra_dimensions.userdata_dimension import (
+    UserDataDimension,
+)
 import pdal
 import numpy as np
 from opendm import log
@@ -7,8 +9,11 @@ from ..point_cloud import PointCloud
 import pdb
 import json
 
+
 def read_cloud(point_cloud_path):
-    pipeline = pdal.Pipeline('[{"type":"readers.las","filename":"%s"}]' % point_cloud_path)
+    pipeline = pdal.Pipeline(
+        '[{"type":"readers.las","filename":"%s"}]' % point_cloud_path
+    )
     pipeline.execute()
 
     arrays = pipeline.arrays[0]
@@ -43,33 +48,37 @@ def write_cloud(metadata, point_cloud, output_point_cloud_path):
 
     red, green, blue = np.hsplit(point_cloud.rgb, 3)
 
-    arrays = np.zeros(len(x),
-                      dtype=[('X', '<f8'),
-                             ('Y', '<f8'),
-                             ('Z', '<f8'),
-                             ('Intensity', '<u2'),
-                             ('ReturnNumber', 'u1'),
-                             ('NumberOfReturns', 'u1'),
-                             ('ScanDirectionFlag', 'u1'),
-                             ('EdgeOfFlightLine', 'u1'),
-                             ('Classification', 'u1'),
-                             ('ScanAngleRank', '<f4'),
-                             ('UserData', 'u1'),
-                             ('PointSourceId', '<u2'),
-                             ('GpsTime', '<f8'),
-                             ('Red', '<u2'),
-                             ('Green', '<u2'),
-                             ('Blue', '<u2')])
-    arrays['X'] = x.ravel()
-    arrays['Y'] = y.ravel()
-    arrays['Z'] = point_cloud.z
-    arrays['Classification'] = point_cloud.classification.astype(np.uint8).ravel()
-    arrays['Red'] = red.astype(np.uint8).ravel()
-    arrays['Green'] = green.astype(np.uint8).ravel()
-    arrays['Blue'] = blue.astype(np.uint8).ravel()
+    arrays = np.zeros(
+        len(x),
+        dtype=[
+            ("X", "<f8"),
+            ("Y", "<f8"),
+            ("Z", "<f8"),
+            ("Intensity", "<u2"),
+            ("ReturnNumber", "u1"),
+            ("NumberOfReturns", "u1"),
+            ("ScanDirectionFlag", "u1"),
+            ("EdgeOfFlightLine", "u1"),
+            ("Classification", "u1"),
+            ("ScanAngleRank", "<f4"),
+            ("UserData", "u1"),
+            ("PointSourceId", "<u2"),
+            ("GpsTime", "<f8"),
+            ("Red", "<u2"),
+            ("Green", "<u2"),
+            ("Blue", "<u2"),
+        ],
+    )
+    arrays["X"] = x.ravel()
+    arrays["Y"] = y.ravel()
+    arrays["Z"] = point_cloud.z
+    arrays["Classification"] = point_cloud.classification.astype(np.uint8).ravel()
+    arrays["Red"] = red.astype(np.uint8).ravel()
+    arrays["Green"] = green.astype(np.uint8).ravel()
+    arrays["Blue"] = blue.astype(np.uint8).ravel()
 
     if "UserData" in point_cloud.extra_dimensions:
-        arrays['UserData'] = point_cloud.extra_dimensions["UserData"].ravel()
+        arrays["UserData"] = point_cloud.extra_dimensions["UserData"].ravel()
 
     writer_pipeline = {
         "pipeline": [
@@ -77,7 +86,7 @@ def write_cloud(metadata, point_cloud, output_point_cloud_path):
                 "type": "writers.las",
                 "filename": output_point_cloud_path,
                 "compression": "lazperf",
-                "extra_dims": "all"
+                "extra_dims": "all",
             }
         ]
     }
@@ -108,12 +117,14 @@ def write_cloud(metadata, point_cloud, output_point_cloud_path):
         vlr_field = "vlr_%d" % i
         if vlr_field in metadata:
             vlr = metadata[vlr_field]
-            writer_pipeline["pipeline"][0]["vlrs"].append({
-                "record_id": vlr["record_id"],
-                "user_id": vlr["user_id"],
-                "description": vlr["description"],
-                "data": vlr["data"]
-            })
+            writer_pipeline["pipeline"][0]["vlrs"].append(
+                {
+                    "record_id": vlr["record_id"],
+                    "user_id": vlr["user_id"],
+                    "description": vlr["description"],
+                    "data": vlr["data"],
+                }
+            )
             i += 1
         else:
             break

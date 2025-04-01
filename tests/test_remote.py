@@ -6,13 +6,14 @@ from opendm.remote import LocalRemoteExecutor, Task, NodeTaskLimitReachedExcepti
 from pyodm import Node, exceptions
 from pyodm.types import TaskStatus
 
+
 class TestRemote(unittest.TestCase):
     def setUp(self):
-        self.lre = LocalRemoteExecutor('http://localhost:9001')
+        self.lre = LocalRemoteExecutor("http://localhost:9001")
 
         projects = []
         for i in range(9):
-            projects.append('/submodels/submodel_00' + str(i).rjust(2, '0'))
+            projects.append("/submodels/submodel_00" + str(i).rjust(2, "0"))
         self.lre.set_projects(projects)
 
     def test_lre_init(self):
@@ -23,6 +24,7 @@ class TestRemote(unittest.TestCase):
         self.lre.node_online = True
 
         MAX_QUEUE = 2
+
         class nonloc:
             local_task_check = False
             remote_queue = 1
@@ -33,13 +35,14 @@ class TestRemote(unittest.TestCase):
             def __init__(self, running, queue_num):
                 self.running = running
                 self.queue_num = queue_num
-                self.uuid = 'xxxxx-xxxxx-xxxxx-xxxxx-xxxx' + str(queue_num)
-            
+                self.uuid = "xxxxx-xxxxx-xxxxx-xxxxx-xxxx" + str(queue_num)
+
             def info(self, with_output=None):
                 class StatusMock:
                     status = TaskStatus.RUNNING if self.running else TaskStatus.QUEUED
                     processing_time = 1
                     output = "test output"
+
                 return StatusMock()
 
             def remove(self):
@@ -48,24 +51,29 @@ class TestRemote(unittest.TestCase):
         class TaskMock(Task):
             def process_local(self):
                 # First task should be 0000 or 0001
-                if not nonloc.local_task_check: nonloc.local_task_check = self.project_path.endswith("0000") or self.project_path.endswith("0001")
-                
+                if not nonloc.local_task_check:
+                    nonloc.local_task_check = self.project_path.endswith(
+                        "0000"
+                    ) or self.project_path.endswith("0001")
+
                 if nonloc.should_fail:
                     if self.project_path.endswith("0006"):
                         raise exceptions.TaskFailedError("FAIL #6")
-                        
+
                 time.sleep(1)
 
             def process_remote(self, done):
-                time.sleep(0.05) # file upload
+                time.sleep(0.05)  # file upload
 
-                self.remote_task = OdmTaskMock(nonloc.remote_queue <= MAX_QUEUE, nonloc.remote_queue)
-                self.params['tasks'].append(self.remote_task)
-                
+                self.remote_task = OdmTaskMock(
+                    nonloc.remote_queue <= MAX_QUEUE, nonloc.remote_queue
+                )
+                self.params["tasks"].append(self.remote_task)
+
                 if nonloc.should_fail:
                     if self.project_path.endswith("0006"):
                         raise exceptions.TaskFailedError("FAIL #6")
-                    
+
                 nonloc.remote_queue += 1
 
                 # Upload successful
@@ -78,10 +86,15 @@ class TestRemote(unittest.TestCase):
                             nonloc.remote_queue -= 1
                             raise NodeTaskLimitReachedException("Random fail!")
 
-                        if not nonloc.task_limit_reached and self.remote_task.queue_num > MAX_QUEUE:
+                        if (
+                            not nonloc.task_limit_reached
+                            and self.remote_task.queue_num > MAX_QUEUE
+                        ):
                             nonloc.remote_queue -= 1
                             nonloc.task_limit_reached = True
-                            raise NodeTaskLimitReachedException("Delayed task limit reached")
+                            raise NodeTaskLimitReachedException(
+                                "Delayed task limit reached"
+                            )
                         time.sleep(0.5)
                         nonloc.remote_queue -= 1
                         done()
@@ -89,7 +102,7 @@ class TestRemote(unittest.TestCase):
                         done(e)
 
                 t = threading.Thread(target=monitor)
-                self.params['threads'].append(t)
+                self.params["threads"].append(t)
                 t.start()
 
         self.lre.run(TaskMock)
@@ -102,5 +115,6 @@ class TestRemote(unittest.TestCase):
         with self.assertRaises(exceptions.TaskFailedError):
             self.lre.run(TaskMock)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

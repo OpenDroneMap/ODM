@@ -1,6 +1,7 @@
 from vmem import virtual_memory
 import os
 import sys
+
 try:
     import Queue as queue
 except:
@@ -9,7 +10,8 @@ import threading
 import time
 from opendm import log
 
-def get_max_memory(minimum = 5, use_at_most = 0.5):
+
+def get_max_memory(minimum=5, use_at_most=0.5):
     """
     :param minimum minimum value to return (return value will never be lower than this)
     :param use_at_most use at most this fraction of the available memory. 0.5 = use at most 50% of available memory
@@ -17,7 +19,8 @@ def get_max_memory(minimum = 5, use_at_most = 0.5):
     """
     return max(minimum, (100 - virtual_memory().percent) * use_at_most)
 
-def get_max_memory_mb(minimum = 100, use_at_most = 0.5):
+
+def get_max_memory_mb(minimum=100, use_at_most=0.5):
     """
     :param minimum minimum value to return (return value will never be lower than this)
     :param use_at_most use at most this fraction of the available memory. 0.5 = use at most 50% of available memory
@@ -25,13 +28,15 @@ def get_max_memory_mb(minimum = 100, use_at_most = 0.5):
     """
     return max(minimum, (virtual_memory().available / 1024 / 1024) * use_at_most)
 
+
 def get_total_memory():
     return virtual_memory().total
+
 
 def parallel_map(func, items, max_workers=1, single_thread_fallback=True):
     """
     Our own implementation for parallel processing
-    which handles gracefully CTRL+C and reverts to 
+    which handles gracefully CTRL+C and reverts to
     single thread processing in case of errors
     :param items list of objects
     :param func function to execute on each object
@@ -92,7 +97,9 @@ def parallel_map(func, items, max_workers=1, single_thread_fallback=True):
         if error is not None and single_thread_fallback:
             # Try to reprocess using a single thread
             # in case this was a memory error
-            log.ODM_WARNING("Failed to run process in parallel, retrying with a single thread...")
+            log.ODM_WARNING(
+                "Failed to run process in parallel, retrying with a single thread..."
+            )
             use_single_thread = True
     else:
         use_single_thread = True

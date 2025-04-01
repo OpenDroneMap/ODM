@@ -22,14 +22,15 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-class AABB():
+
+class AABB:
     def __init__(self, min_x=None, min_y=None, max_x=None, max_y=None):
         self.min_x = min_x
         self.min_y = min_y
         self.max_x = max_x
         self.max_y = max_y
 
-    def add(self, x,y):
+    def add(self, x, y):
         self.min_x = min(self.min_x, x) if self.min_x is not None else x
         self.min_y = min(self.min_y, y) if self.min_y is not None else y
         self.max_x = max(self.max_x, x) if self.max_x is not None else x
@@ -45,9 +46,4 @@ class AABB():
         return None
 
     def __repr__(self):
-        return "({},{}) ({},{})".format(
-            self.min_x,
-            self.min_y,
-            self.max_x,
-            self.max_y
-        )
+        return "({},{}) ({},{})".format(self.min_x, self.min_y, self.max_x, self.max_y)

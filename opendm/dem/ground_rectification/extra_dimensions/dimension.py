@@ -1,6 +1,7 @@
 import numpy as np
 from abc import ABCMeta, abstractmethod
 
+
 class Dimension(object):
     __metaclass__ = ABCMeta
 

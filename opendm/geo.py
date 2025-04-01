@@ -4,19 +4,20 @@ from opendm import log
 from opendm import location
 from pyproj import CRS
 
+
 class GeoFile:
     def __init__(self, geo_path):
         self.geo_path = geo_path
         self.entries = {}
         self.srs = None
 
-        with open(self.geo_path, 'r') as f:
+        with open(self.geo_path, "r") as f:
             contents = f.read().strip()
-        
-        # Strip eventual BOM characters
-        contents = contents.replace('\ufeff', '')
 
-        lines = list(map(str.strip, contents.split('\n')))
+        # Strip eventual BOM characters
+        contents = contents.replace("\ufeff", "")
+
+        lines = list(map(str.strip, contents.split("\n")))
         if lines:
             self.raw_srs = lines[0]  # SRS
             self.srs = location.parse_srs_header(self.raw_srs)
@@ -47,23 +48,45 @@ class GeoFile:
 
                         horizontal_accuracy = vertical_accuracy = None
                         if len(parts) >= 9:
-                            horizontal_accuracy,vertical_accuracy = [float(p) for p in parts[7:9]]
+                            horizontal_accuracy, vertical_accuracy = [
+                                float(p) for p in parts[7:9]
+                            ]
                             i = 9
 
                         extras = " ".join(parts[i:])
-                        self.entries[filename] = GeoEntry(filename, x, y, z,
-                                                        yaw, pitch, roll,
-                                                        horizontal_accuracy, vertical_accuracy, 
-                                                        extras)
+                        self.entries[filename] = GeoEntry(
+                            filename,
+                            x,
+                            y,
+                            z,
+                            yaw,
+                            pitch,
+                            roll,
+                            horizontal_accuracy,
+                            vertical_accuracy,
+                            extras,
+                        )
                     else:
                         log.ODM_WARNING("Malformed geo line: %s" % line)
-    
+
     def get_entry(self, filename):
         return self.entries.get(filename)
 
 
 class GeoEntry:
-    def __init__(self, filename, x, y, z, yaw=None, pitch=None, roll=None, horizontal_accuracy=None, vertical_accuracy=None, extras=None):
+    def __init__(
+        self,
+        filename,
+        x,
+        y,
+        z,
+        yaw=None,
+        pitch=None,
+        roll=None,
+        horizontal_accuracy=None,
+        vertical_accuracy=None,
+        extras=None,
+    ):
         self.filename = filename
         self.x = x
         self.y = y
@@ -76,11 +99,18 @@ class GeoEntry:
         self.extras = extras
 
     def __str__(self):
-        return "{} ({} {} {}) ({} {} {}) ({} {}) {}".format(self.filename, 
-                                             self.x, self.y, self.z,
-                                             self.yaw, self.pitch, self.roll,
-                                             self.horizontal_accuracy, self.vertical_accuracy,
-                                             self.extras).rstrip()
-    
+        return "{} ({} {} {}) ({} {} {}) ({} {}) {}".format(
+            self.filename,
+            self.x,
+            self.y,
+            self.z,
+            self.yaw,
+            self.pitch,
+            self.roll,
+            self.horizontal_accuracy,
+            self.vertical_accuracy,
+            self.extras,
+        ).rstrip()
+
     def position_string(self):
         return "{} {} {}".format(self.x, self.y, self.z)

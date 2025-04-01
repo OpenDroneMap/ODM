@@ -7,34 +7,45 @@ import piexif
 import multiprocessing
 from multiprocessing.pool import ThreadPool
 import sys
+
 sys.path.append("../../")
 from opendm.gcp import GCPFile
 
-parser = argparse.ArgumentParser(description='Exif Image Resize')
-parser.add_argument('--input', '-i',
-                    metavar='<path>',
-                    required=True,
-                    help='Path to input image/GCP or image folder')
-parser.add_argument('--output', '-o',
-                    metavar='<path>',
-                    required=True,
-                    help='Path to output image/GCP or image folder')
-parser.add_argument('--force', '-f',
-                    action='store_true',
-                    default=False,
-                    help='Overwrite results')
-parser.add_argument('amount',
-                    metavar='<pixel|percentage%>',
-                    type=str,
-                    help='Pixel of largest side or percentage to resize images by')
+parser = argparse.ArgumentParser(description="Exif Image Resize")
+parser.add_argument(
+    "--input",
+    "-i",
+    metavar="<path>",
+    required=True,
+    help="Path to input image/GCP or image folder",
+)
+parser.add_argument(
+    "--output",
+    "-o",
+    metavar="<path>",
+    required=True,
+    help="Path to output image/GCP or image folder",
+)
+parser.add_argument(
+    "--force", "-f", action="store_true", default=False, help="Overwrite results"
+)
+parser.add_argument(
+    "amount",
+    metavar="<pixel|percentage%>",
+    type=str,
+    help="Pixel of largest side or percentage to resize images by",
+)
 args = parser.parse_args()
+
 
 def die(msg):
     print(msg)
     exit(1)
 
+
 class nonloc:
     errors = 0
+
 
 def resize_image(image_path, out_path, resize_to, out_path_is_file=False):
     """
@@ -64,23 +75,35 @@ def resize_image(image_path, out_path, resize_to, out_path_is_file=False):
         im.thumbnail((resized_width, resized_height), Image.LANCZOS)
 
         driver = ext[1:].upper()
-        if driver == 'JPG':
-            driver = 'JPEG'
+        if driver == "JPG":
+            driver = "JPEG"
 
-        if 'exif' in im.info:
-            exif_dict = piexif.load(im.info['exif'])
-            exif_dict['Exif'][piexif.ExifIFD.PixelXDimension] = resized_width
-            exif_dict['Exif'][piexif.ExifIFD.PixelYDimension] = resized_height
-            im.save(resized_image_path, driver, exif=piexif.dump(exif_dict), quality=100)
+        if "exif" in im.info:
+            exif_dict = piexif.load(im.info["exif"])
+            exif_dict["Exif"][piexif.ExifIFD.PixelXDimension] = resized_width
+            exif_dict["Exif"][piexif.ExifIFD.PixelYDimension] = resized_height
+            im.save(
+                resized_image_path, driver, exif=piexif.dump(exif_dict), quality=100
+            )
         else:
             im.save(resized_image_path, driver, quality=100)
 
         im.close()
 
-        print("{} ({}x{}) --> {} ({}x{})".format(image_path, width, height, resized_image_path, resized_width, resized_height))
+        print(
+            "{} ({}x{}) --> {} ({}x{})".format(
+                image_path,
+                width,
+                height,
+                resized_image_path,
+                resized_width,
+                resized_height,
+            )
+        )
     except (IOError, ValueError) as e:
         print("Error: Cannot resize {}: {}.".format(image_path, str(e)))
         nonloc.errors += 1
+
 
 def resize_gcp(gcp_path, out_path, resize_to, out_path_is_file=False):
     """
@@ -109,6 +132,7 @@ def resize_gcp(gcp_path, out_path, resize_to, out_path_is_file=False):
     except (IOError, ValueError) as e:
         print("Error: Cannot resize {}: {}.".format(gcp_path, str(e)))
         nonloc.errors += 1
+
 
 if not args.amount.endswith("%"):
     args.amount = float(args.amount)
@@ -157,13 +181,15 @@ if create_dir:
 
 pool = ThreadPool(processes=multiprocessing.cpu_count())
 
+
 def resize(file):
     _, ext = os.path.splitext(file)
     if ext.lower() == ".txt":
         return resize_gcp(file, args.output, args.amount, not create_dir)
     else:
         return resize_image(file, args.output, args.amount, not create_dir)
+
+
 pool.map(resize, files + gcps)
 
 print("Process completed, {} errors.".format(nonloc.errors))
-

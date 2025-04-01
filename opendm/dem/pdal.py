@@ -45,128 +45,118 @@ from datetime import datetime
 
 
 def json_base():
-    """ Create initial JSON for PDAL pipeline """
-    return {'pipeline': []}
+    """Create initial JSON for PDAL pipeline"""
+    return {"pipeline": []}
 
 
 def json_gdal_base(filename, output_type, radius, resolution=1, bounds=None):
-    """ Create initial JSON for PDAL pipeline containing a Writer element """
+    """Create initial JSON for PDAL pipeline containing a Writer element"""
     json = json_base()
 
     d = {
-        'type': 'writers.gdal',
-        'resolution': resolution,
-        'radius': radius,
-        'filename': filename,
-        'output_type': output_type,
-        'data_type': 'float'
+        "type": "writers.gdal",
+        "resolution": resolution,
+        "radius": radius,
+        "filename": filename,
+        "output_type": output_type,
+        "data_type": "float",
     }
 
     if bounds is not None:
-        d['bounds'] = "([%s,%s],[%s,%s])" % (bounds['minx'], bounds['maxx'], bounds['miny'], bounds['maxy'])
+        d["bounds"] = "([%s,%s],[%s,%s])" % (
+            bounds["minx"],
+            bounds["maxx"],
+            bounds["miny"],
+            bounds["maxy"],
+        )
 
-    json['pipeline'].insert(0, d)
+    json["pipeline"].insert(0, d)
 
     return json
 
 
 def json_las_base(fout):
-    """ Create initial JSON for writing to a LAS file """
+    """Create initial JSON for writing to a LAS file"""
     json = json_base()
-    json['pipeline'].insert(0, {
-        'type': 'writers.las',
-        'filename': fout  
-    })
+    json["pipeline"].insert(0, {"type": "writers.las", "filename": fout})
     return json
 
 
 def json_add_decimation_filter(json, step):
-    """ Add decimation Filter element and return """
-    json['pipeline'].insert(0, {
-            'type': 'filters.decimation',
-            'step': step
-        })
+    """Add decimation Filter element and return"""
+    json["pipeline"].insert(0, {"type": "filters.decimation", "step": step})
     return json
 
 
 def json_add_classification_filter(json, classification, equality="equals"):
-    """ Add classification Filter element and return """
-    limits = 'Classification[{0}:{0}]'.format(classification)
-    if equality == 'max':
-        limits = 'Classification[:{0}]'.format(classification)
+    """Add classification Filter element and return"""
+    limits = "Classification[{0}:{0}]".format(classification)
+    if equality == "max":
+        limits = "Classification[:{0}]".format(classification)
 
-    json['pipeline'].insert(0, {
-            'type': 'filters.range',
-            'limits': limits
-        })
+    json["pipeline"].insert(0, {"type": "filters.range", "limits": limits})
     return json
 
 
 def is_ply_file(filename):
     _, ext = os.path.splitext(filename)
-    return ext.lower() == '.ply'
+    return ext.lower() == ".ply"
 
 
 def json_add_reader(json, filename):
-    """ Add Reader Element and return """
-    reader_type = 'readers.las' # default
+    """Add Reader Element and return"""
+    reader_type = "readers.las"  # default
     if is_ply_file(filename):
-        reader_type = 'readers.ply'
+        reader_type = "readers.ply"
 
-    json['pipeline'].insert(0, {
-            'type': reader_type,
-            'filename': os.path.abspath(filename)
-        })
+    json["pipeline"].insert(
+        0, {"type": reader_type, "filename": os.path.abspath(filename)}
+    )
     return json
 
 
 def json_add_readers(json, filenames):
-    """ Add merge Filter element and readers to a Writer element and return Filter element """
+    """Add merge Filter element and readers to a Writer element and return Filter element"""
     for f in filenames:
         json_add_reader(json, f)
 
     if len(filenames) > 1:
-        json['pipeline'].insert(0, {
-                'type': 'filters.merge'
-            })
+        json["pipeline"].insert(0, {"type": "filters.merge"})
 
     return json
 
 
 """ Run PDAL commands """
 
+
 def run_pipeline(json):
-    """ Run PDAL Pipeline with provided JSON """
+    """Run PDAL Pipeline with provided JSON"""
 
     # write to temp file
-    f, jsonfile = tempfile.mkstemp(suffix='.json')
-    os.write(f, jsonlib.dumps(json).encode('utf8'))
+    f, jsonfile = tempfile.mkstemp(suffix=".json")
+    os.write(f, jsonlib.dumps(json).encode("utf8"))
     os.close(f)
 
-    cmd = [
-        'pdal',
-        'pipeline',
-        '-i %s' % double_quote(jsonfile)
-    ]
-    system.run(' '.join(cmd))
+    cmd = ["pdal", "pipeline", "-i %s" % double_quote(jsonfile)]
+    system.run(" ".join(cmd))
     os.remove(jsonfile)
 
 
 def run_pdaltranslate_smrf(fin, fout, scalar, slope, threshold, window):
-    """ Run PDAL translate  """
+    """Run PDAL translate"""
     cmd = [
-        'pdal',
-        'translate',
-        '-i %s' % fin,
-        '-o %s' % fout,
-        'smrf',
-        '--filters.smrf.scalar=%s' % scalar,
-        '--filters.smrf.slope=%s' % slope,
-        '--filters.smrf.threshold=%s' % threshold,
-        '--filters.smrf.window=%s' % window,
+        "pdal",
+        "translate",
+        "-i %s" % fin,
+        "-o %s" % fout,
+        "smrf",
+        "--filters.smrf.scalar=%s" % scalar,
+        "--filters.smrf.slope=%s" % slope,
+        "--filters.smrf.threshold=%s" % threshold,
+        "--filters.smrf.window=%s" % window,
     ]
 
-    system.run(' '.join(cmd))
+    system.run(" ".join(cmd))
 
 
 def merge_point_clouds(input_files, output_file):
@@ -175,20 +165,20 @@ def merge_point_clouds(input_files, output_file):
         return
 
     cmd = [
-        'pdal',
-        'merge',
-        ' '.join(map(double_quote, input_files + [output_file])),
+        "pdal",
+        "merge",
+        " ".join(map(double_quote, input_files + [output_file])),
     ]
 
-    system.run(' '.join(cmd))
+    system.run(" ".join(cmd))
 
 
 def translate(input, output):
     cmd = [
-        'pdal',
-        'translate',
+        "pdal",
+        "translate",
         '-i "%s"' % input,
         '-o "%s"' % output,
     ]
 
-    system.run(' '.join(cmd))
+    system.run(" ".join(cmd))

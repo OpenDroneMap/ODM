@@ -1,6 +1,7 @@
 from .partition_plan import PartitionPlan, Partition
 from ..bounds.utils import box_from_cloud
 
+
 class OnePartition(PartitionPlan):
     """This partition plan does nothing. It returns all the cloud points in one partition."""
 

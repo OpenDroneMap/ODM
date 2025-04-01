@@ -11,6 +11,7 @@ import shutil
 from tqdm import tqdm
 
 import argparse
+
 parser = argparse.ArgumentParser()
 
 # Usage:
@@ -18,13 +19,17 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument("file_dir", help="input folder of images")
 parser.add_argument("output_dir", help="output folder to copy images to")
-parser.add_argument("mask_file", help="filename or path to Mask file to be duplicated for all images")
-parser.add_argument("-f", "--force", help="don't ask for confirmation", action="store_true")
+parser.add_argument(
+    "mask_file", help="filename or path to Mask file to be duplicated for all images"
+)
+parser.add_argument(
+    "-f", "--force", help="don't ask for confirmation", action="store_true"
+)
 
 args = parser.parse_args()
 
 file_dir = args.file_dir
-mask_file_path = args.mask_file 
+mask_file_path = args.mask_file
 output_dir = args.output_dir
 
 file_count = len(os.listdir(file_dir))
@@ -46,7 +51,7 @@ no_exif_n = 0
 # for filename in os.listdir(file_dir):
 for filename in tqdm(os.listdir(file_dir)):
     old_path = mask_file_path
-    #print(mask_file_path)
+    # print(mask_file_path)
     file_name, file_ext = os.path.splitext(filename)
 
     try:
@@ -57,6 +62,6 @@ for filename in tqdm(os.listdir(file_dir)):
         sys.stderr.write(str(img_err) + "\n")
         continue
     new_path = os.path.join(output_dir, file_name + "_mask" + file_ext)
-    #print(new_path) # debugging
+    # print(new_path) # debugging
     shutil.copy(old_path, new_path)
 print("Done!")

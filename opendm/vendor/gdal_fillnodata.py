@@ -37,16 +37,19 @@ from osgeo import gdal
 def CopyBand(srcband, dstband):
     for line in range(srcband.YSize):
         line_data = srcband.ReadRaster(0, line, srcband.XSize, 1)
-        dstband.WriteRaster(0, line, srcband.XSize, 1, line_data,
-                            buf_type=srcband.DataType)
+        dstband.WriteRaster(
+            0, line, srcband.XSize, 1, line_data, buf_type=srcband.DataType
+        )
 
 
 def Usage():
-    print("""
+    print(
+        """
 gdal_fillnodata [-q] [-md max_distance] [-si smooth_iterations]
                 [-o name=value] [-b band]
                 srcfile [-nomask] [-mask filename] [-of format] [-co name=value]* [dstfile]
-""")
+"""
+    )
     sys.exit(1)
 
 
@@ -59,10 +62,10 @@ def main(argv):
     src_band = 1
 
     dst_filename = None
-    frmt = 'GTiff'
+    frmt = "GTiff"
     creation_options = []
 
-    mask = 'default'
+    mask = "default"
 
     gdal.AllRegister()
     argv = gdal.GeneralCmdLineProcessor(argv)
@@ -74,41 +77,41 @@ def main(argv):
     while i < len(argv):
         arg = argv[i]
 
-        if arg == '-of' or arg == '-f':
+        if arg == "-of" or arg == "-f":
             i = i + 1
             frmt = argv[i]
 
-        elif arg == '-co':
+        elif arg == "-co":
             i = i + 1
             creation_options.append(argv[i])
 
-        elif arg == '-q' or arg == '-quiet':
+        elif arg == "-q" or arg == "-quiet":
             quiet_flag = 1
 
-        elif arg == '-si':
+        elif arg == "-si":
             i = i + 1
             smoothing_iterations = int(argv[i])
 
-        elif arg == '-b':
+        elif arg == "-b":
             i = i + 1
             src_band = int(argv[i])
 
-        elif arg == '-md':
+        elif arg == "-md":
             i = i + 1
             max_distance = float(argv[i])
 
-        elif arg == '-nomask':
-            mask = 'none'
+        elif arg == "-nomask":
+            mask = "none"
 
-        elif arg == '-mask':
+        elif arg == "-mask":
             i = i + 1
             mask = argv[i]
 
-        elif arg == '-mask':
+        elif arg == "-mask":
             i = i + 1
             mask = argv[i]
 
-        elif arg[:2] == '-h':
+        elif arg[:2] == "-h":
             Usage()
 
         elif src_filename is None:
@@ -131,10 +134,10 @@ def main(argv):
     try:
         gdal.FillNodata
     except AttributeError:
-        print('')
+        print("")
         print('gdal.FillNodata() not available.  You are likely using "old gen"')
-        print('bindings or an older version of the next gen bindings.')
-        print('')
+        print("bindings or an older version of the next gen bindings.")
+        print("")
         sys.exit(1)
 
     # =============================================================================
@@ -147,14 +150,14 @@ def main(argv):
         src_ds = gdal.Open(src_filename, gdal.GA_ReadOnly)
 
     if src_ds is None:
-        print('Unable to open %s' % src_filename)
+        print("Unable to open %s" % src_filename)
         sys.exit(1)
 
     srcband = src_ds.GetRasterBand(src_band)
 
-    if mask == 'default':
+    if mask == "default":
         maskband = srcband.GetMaskBand()
-    elif mask == 'none':
+    elif mask == "none":
         maskband = None
     else:
         mask_ds = gdal.Open(mask)
@@ -167,10 +170,16 @@ def main(argv):
     if dst_filename is not None:
 
         drv = gdal.GetDriverByName(frmt)
-        dst_ds = drv.Create(dst_filename, src_ds.RasterXSize, src_ds.RasterYSize, 1,
-                            srcband.DataType, creation_options)
+        dst_ds = drv.Create(
+            dst_filename,
+            src_ds.RasterXSize,
+            src_ds.RasterYSize,
+            1,
+            srcband.DataType,
+            creation_options,
+        )
         wkt = src_ds.GetProjection()
-        if wkt != '':
+        if wkt != "":
             dst_ds.SetProjection(wkt)
         gt = src_ds.GetGeoTransform(can_return_null=True)
         if gt:
@@ -200,10 +209,14 @@ def main(argv):
     else:
         prog_func = gdal.TermProgress_nocb
 
-    result = gdal.FillNodata(dstband, maskband,
-                             max_distance, smoothing_iterations, options,
-                             callback=prog_func)
-
+    result = gdal.FillNodata(
+        dstband,
+        maskband,
+        max_distance,
+        smoothing_iterations,
+        options,
+        callback=prog_func,
+    )
 
     src_ds = None
     dst_ds = None
@@ -212,5 +225,5 @@ def main(argv):
     return result
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main(sys.argv))

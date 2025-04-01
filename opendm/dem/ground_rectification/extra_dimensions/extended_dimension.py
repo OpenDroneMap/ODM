@@ -1,6 +1,7 @@
 import numpy as np
 from .dimension import Dimension
 
+
 class ExtendedDimension(Dimension):
     """Whether the point was added or was already on the original point cloud"""
 
@@ -17,7 +18,7 @@ class ExtendedDimension(Dimension):
             super(ExtendedDimension, self)._set_values(point_cloud, added)
 
     def get_name(self):
-        return 'extended'
+        return "extended"
 
     def get_las_type(self):
-        return 'uint16'
+        return "uint16"
