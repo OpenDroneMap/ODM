@@ -2,6 +2,7 @@ import requests
 import math
 import os
 import time
+
 try:
     import queue
 except ImportError:
@@ -11,7 +12,15 @@ from pyodm.utils import AtomicCounter
 from pyodm.exceptions import RangeNotAvailableError, OdmError
 from urllib3.exceptions import ReadTimeoutError
 
-def download(url, destination, progress_callback=None, parallel_downloads=16, parallel_chunks_size=10, timeout=30):
+
+def download(
+    url,
+    destination,
+    progress_callback=None,
+    parallel_downloads=16,
+    parallel_chunks_size=10,
+    timeout=30,
+):
     """Download files in parallel (download accelerator)
 
     Args:
@@ -31,19 +40,25 @@ def download(url, destination, progress_callback=None, parallel_downloads=16, pa
 
         download_stream = requests.get(url, timeout=timeout, stream=True)
         headers = download_stream.headers
-        
+
         output_path = os.path.join(destination, os.path.basename(url))
 
         # Keep track of download progress (if possible)
-        content_length = download_stream.headers.get('content-length')
+        content_length = download_stream.headers.get("content-length")
         total_length = int(content_length) if content_length is not None else None
         downloaded = 0
         chunk_size = int(parallel_chunks_size * 1024 * 1024)
         use_fallback = False
-        accept_ranges = headers.get('accept-ranges')
+        accept_ranges = headers.get("accept-ranges")
 
         # Can we do parallel downloads?
-        if accept_ranges is not None and accept_ranges.lower() == 'bytes' and total_length is not None and total_length > chunk_size and parallel_downloads > 1:
+        if (
+            accept_ranges is not None
+            and accept_ranges.lower() == "bytes"
+            and total_length is not None
+            and total_length > chunk_size
+            and parallel_downloads > 1
+        ):
             num_chunks = int(math.ceil(total_length / float(chunk_size)))
             num_workers = parallel_downloads
 
@@ -63,7 +78,7 @@ def download(url, destination, progress_callback=None, parallel_downloads=16, pa
                                 out_file.write(fd.read())
 
                             os.unlink(chunk_file)
-                            
+
                             current_chunk += 1
                         else:
                             time.sleep(0.1)
@@ -78,17 +93,29 @@ def download(url, destination, progress_callback=None, parallel_downloads=16, pa
 
                     try:
                         # Download chunk
-                        res = requests.get(url, stream=True, timeout=timeout, headers={'Range': 'bytes=%s-%s' % bytes_range})
+                        res = requests.get(
+                            url,
+                            stream=True,
+                            timeout=timeout,
+                            headers={"Range": "bytes=%s-%s" % bytes_range},
+                        )
                         if res.status_code == 206:
-                            with open("%s.part%s" % (output_path, part_num), 'wb') as fd:
+                            with open(
+                                "%s.part%s" % (output_path, part_num), "wb"
+                            ) as fd:
                                 bytes_written = 0
                                 try:
                                     for chunk in res.iter_content(4096):
                                         bytes_written += fd.write(chunk)
-                                except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+                                except (
+                                    requests.exceptions.Timeout,
+                                    requests.exceptions.ConnectionError,
+                                ) as e:
                                     raise OdmError(str(e))
-                                
-                                if bytes_written != (bytes_range[1] - bytes_range[0] + 1):
+
+                                if bytes_written != (
+                                    bytes_range[1] - bytes_range[0] + 1
+                                ):
                                     # Process again
                                     q.put((part_num, bytes_range))
                                     return
@@ -97,8 +124,12 @@ def download(url, destination, progress_callback=None, parallel_downloads=16, pa
                                 nonloc.completed_chunks.value += 1
 
                                 if progress_callback is not None:
-                                    progress_callback(100.0 * nonloc.completed_chunks.value / num_chunks)
-                        
+                                    progress_callback(
+                                        100.0
+                                        * nonloc.completed_chunks.value
+                                        / num_chunks
+                                    )
+
                             nonloc.merge_chunks[part_num] = True
                         else:
                             nonloc.error = RangeNotAvailableError()
@@ -136,7 +167,7 @@ def download(url, destination, progress_callback=None, parallel_downloads=16, pa
                 q.put((-1, None))
             for t in threads:
                 t.join()
-            
+
             merge_thread.join()
 
             if nonloc.error is not None:
@@ -149,7 +180,7 @@ def download(url, destination, progress_callback=None, parallel_downloads=16, pa
 
         if use_fallback:
             # Single connection, boring download
-            with open(output_path, 'wb') as fd:
+            with open(output_path, "wb") as fd:
                 for chunk in download_stream.iter_content(4096):
                     downloaded += len(chunk)
 
@@ -157,8 +188,12 @@ def download(url, destination, progress_callback=None, parallel_downloads=16, pa
                         progress_callback((100.0 * float(downloaded) / total_length))
 
                     fd.write(chunk)
-                
-    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError, ReadTimeoutError) as e:
+
+    except (
+        requests.exceptions.Timeout,
+        requests.exceptions.ConnectionError,
+        ReadTimeoutError,
+    ) as e:
         raise OdmError(e)
 
     return output_path

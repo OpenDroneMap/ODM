@@ -1,4 +1,3 @@
-
 import time
 import numpy as np
 import cv2
@@ -13,18 +12,22 @@ mutex = Lock()
 # Implementation based on https://github.com/danielgatis/rembg by Daniel Gatis
 
 # Use GPU if it is available, otherwise CPU
-provider = "CUDAExecutionProvider" if "CUDAExecutionProvider" in ort.get_available_providers() else "CPUExecutionProvider"
+provider = (
+    "CUDAExecutionProvider"
+    if "CUDAExecutionProvider" in ort.get_available_providers()
+    else "CPUExecutionProvider"
+)
 
-class BgFilter():
+
+class BgFilter:
     def __init__(self, model):
         self.model = model
 
-        log.ODM_INFO(' ?> Using provider %s' % provider)
+        log.ODM_INFO(" ?> Using provider %s" % provider)
         self.load_model()
 
-    
     def load_model(self):
-        log.ODM_INFO(' -> Loading the model')
+        log.ODM_INFO(" -> Loading the model")
 
         self.session = ort.InferenceSession(self.model, providers=[provider])
 
@@ -53,7 +56,10 @@ class BgFilter():
             ort_outs = self.session.run(
                 None,
                 self.normalize(
-                    img, (0.485, 0.456, 0.406), (0.229, 0.224, 0.225), (320, 320) # <-- image size
+                    img,
+                    (0.485, 0.456, 0.406),
+                    (0.229, 0.224, 0.225),
+                    (320, 320),  # <-- image size
                 ),
             )
 
@@ -75,13 +81,13 @@ class BgFilter():
 
     def run_img(self, img_path, dest):
         img = read_image(img_path)
-        mask  = self.get_mask(img)
-        
+        mask = self.get_mask(img)
+
         img_name = os.path.basename(img_path)
         fpath = os.path.join(dest, img_name)
 
         fname, _ = os.path.splitext(fpath)
-        mask_name = fname + '_mask.png'
+        mask_name = fname + "_mask.png"
         cv2.imwrite(mask_name, mask)
 
         return mask_name

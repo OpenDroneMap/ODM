@@ -2,6 +2,7 @@ import numpy as np
 from sklearn.linear_model import RANSACRegressor
 from .dimension import Dimension
 
+
 class DistanceDimension(Dimension):
     """Assign each point the distance to the estimated ground"""
 
@@ -32,14 +33,14 @@ class DistanceDimension(Dimension):
             super(DistanceDimension, self)._set_values(point_cloud, diff)
 
     def get_name(self):
-        return 'distance_to_ground'
+        return "distance_to_ground"
 
     def get_las_type(self):
-        return 'float64'
+        return "float64"
 
     def __calculate_angle(self, model):
         "Calculate the angle between the estimated plane and the XY plane"
         a = model.estimator_.coef_[0]
         b = model.estimator_.coef_[1]
-        angle = np.arccos(1 / np.sqrt(a ** 2 + b ** 2 + 1))
+        angle = np.arccos(1 / np.sqrt(a**2 + b**2 + 1))
         return np.degrees(angle)

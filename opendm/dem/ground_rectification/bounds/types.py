@@ -4,6 +4,7 @@ from ..point_cloud import PointCloud
 
 EPSILON = 0.00001
 
+
 class PolyBounds(object):
     def __init__(self, points):
         self.__points = points
@@ -35,6 +36,7 @@ class PolyBounds(object):
 
     def corners(self):
         return self._corners
+
 
 class BoxBounds(object):
     def __init__(self, x_min, x_max, y_min, y_max):
@@ -70,15 +72,15 @@ class BoxBounds(object):
 
     def area(self):
         (x_min, x_max, y_min, y_max) = self._corners
-        return (x_max - x_min) *  (y_max - y_min)
+        return (x_max - x_min) * (y_max - y_min)
 
     def divide_by_point(self, point):
         """Divide the box into four boxes, marked by the point. It is assumed that the point is inside the box"""
         [x_point, y_point] = point
         (x_min, x_max, y_min, y_max) = self._corners
         return [
-            BoxBounds(x_min, x_point,           y_min, y_point),
+            BoxBounds(x_min, x_point, y_min, y_point),
             BoxBounds(x_point + EPSILON, x_max, y_min, y_point),
-            BoxBounds(x_min, x_point,           y_point + EPSILON, y_max),
-            BoxBounds(x_point + EPSILON, x_max, y_point + EPSILON, y_max)
+            BoxBounds(x_min, x_point, y_point + EPSILON, y_max),
+            BoxBounds(x_point + EPSILON, x_max, y_point + EPSILON, y_max),
         ]

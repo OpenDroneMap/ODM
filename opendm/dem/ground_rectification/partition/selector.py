@@ -4,13 +4,13 @@ from .surrounding_partitions import SurroundingPartitions
 
 
 def select_partition_plan(name, point_cloud):
-    if name == 'one':
+    if name == "one":
         return OnePartition(point_cloud)
-    elif name == 'uniform':
+    elif name == "uniform":
         return UniformPartitions(point_cloud)
-    elif name == 'median':
+    elif name == "median":
         return MedianPartitions(point_cloud)
-    elif name == 'surrounding':
+    elif name == "surrounding":
         return SurroundingPartitions(point_cloud)
     else:
-        raise Exception('Incorrect partition name.')
+        raise Exception("Incorrect partition name.")

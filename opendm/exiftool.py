@@ -7,22 +7,29 @@ from opendm.system import run
 from opendm import log
 from opendm.utils import double_quote
 
+
 def extract_raw_thermal_image_data(image_path):
     try:
-        f, tmp_file_path = tempfile.mkstemp(suffix='.json')
+        f, tmp_file_path = tempfile.mkstemp(suffix=".json")
         os.close(f)
 
         try:
-            output = run("exiftool -b -x ThumbnailImage -x PreviewImage -j \"%s\" > \"%s\"" % (image_path, tmp_file_path), quiet=True)
+            output = run(
+                'exiftool -b -x ThumbnailImage -x PreviewImage -j "%s" > "%s"'
+                % (image_path, tmp_file_path),
+                quiet=True,
+            )
 
             with open(tmp_file_path) as f:
                 j = json.loads(f.read())
 
                 if isinstance(j, list):
-                    j = j[0] # single file
-                    
+                    j = j[0]  # single file
+
                     if "RawThermalImage" in j:
-                        imageBytes = base64.b64decode(j["RawThermalImage"][len("base64:"):])
+                        imageBytes = base64.b64decode(
+                            j["RawThermalImage"][len("base64:") :]
+                        )
 
                         with MemoryFile(imageBytes) as memfile:
                             with memfile.open() as dataset:
@@ -30,13 +37,15 @@ def extract_raw_thermal_image_data(image_path):
                                 bands, h, w = img.shape
 
                                 if bands != 1:
-                                    raise Exception("Raw thermal image has more than one band? This is not supported")
+                                    raise Exception(
+                                        "Raw thermal image has more than one band? This is not supported"
+                                    )
 
                                 # (1, 512, 640) --> (512, 640, 1)
-                                img = img[0][:,:,None]
+                                img = img[0][:, :, None]
 
                         del j["RawThermalImage"]
-                    
+
                     return extract_temperature_params_from(j), img
                 else:
                     raise Exception("Invalid JSON (not a list)")
@@ -51,6 +60,7 @@ def extract_raw_thermal_image_data(image_path):
         log.ODM_WARNING("Cannot create temporary file: %s" % str(e))
         return {}, None
 
+
 def unit(unit):
     def _convert(v):
         if isinstance(v, float):
@@ -64,7 +74,9 @@ def unit(unit):
                 return float(v)
         else:
             return float(v)
+
     return _convert
+
 
 def extract_temperature_params_from(tags):
     # Defaults
@@ -90,5 +102,5 @@ def extract_temperature_params_from(tags):
             # All or nothing
             raise Exception("Cannot find %s in tags" % m)
         params[m] = (meta[m])(tags[m])
-    
+
     return params

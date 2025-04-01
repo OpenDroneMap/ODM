@@ -29,8 +29,10 @@ import math
 # Based off of the great writeup, demo and code at:
 # http://codeincomplete.com/posts/2011/5/7/bin_packing/
 
-class Block():
+
+class Block:
     """A rectangular block, to be packed"""
+
     def __init__(self, w, h, data=None, padding=0):
         self.w = w
         self.h = h
@@ -38,15 +40,17 @@ class Block():
         self.y = None
         self.fit = None
         self.data = data
-        self.padding = padding # not implemented yet
+        self.padding = padding  # not implemented yet
 
     def __str__(self):
         return "({x},{y}) ({w}x{h}): {data}".format(
-            x=self.x,y=self.y, w=self.w,h=self.h, data=self.data)
+            x=self.x, y=self.y, w=self.w, h=self.h, data=self.data
+        )
 
 
-class _BlockNode():
+class _BlockNode:
     """A BlockPacker node"""
+
     def __init__(self, x, y, w, h, used=False, right=None, down=None):
         self.x = x
         self.y = y
@@ -57,20 +61,21 @@ class _BlockNode():
         self.down = down
 
     def __repr__(self):
-        return "({x},{y}) ({w}x{h})".format(x=self.x,y=self.y,w=self.w,h=self.h)
+        return "({x},{y}) ({w}x{h})".format(x=self.x, y=self.y, w=self.w, h=self.h)
 
 
-class BlockPacker():
+class BlockPacker:
     """Packs blocks of varying sizes into a single, larger block"""
+
     def __init__(self):
         self.root = None
 
     def fit(self, blocks):
         nblocks = len(blocks)
-        w = blocks[0].w# if nblocks > 0 else 0
-        h = blocks[0].h# if nblocks > 0 else 0
+        w = blocks[0].w  # if nblocks > 0 else 0
+        h = blocks[0].h  # if nblocks > 0 else 0
 
-        self.root = _BlockNode(0,0, w,h)
+        self.root = _BlockNode(0, 0, w, h)
 
         for block in blocks:
             node = self.find_node(self.root, block.w, block.h)
@@ -99,14 +104,8 @@ class BlockPacker():
 
     def split_node(self, node, w, h):
         node.used = True
-        node.down = _BlockNode(
-            node.x, node.y + h,
-            node.w, node.h - h
-        )
-        node.right = _BlockNode(
-            node.x + w, node.y,
-            node.w - w, h
-        )
+        node.down = _BlockNode(node.x, node.y + h, node.w, node.h - h)
+        node.right = _BlockNode(node.x + w, node.y, node.w - w, h)
         return node
 
     def grow_node(self, w, h):
@@ -131,11 +130,13 @@ class BlockPacker():
     def grow_right(self, w, h):
         old_root = self.root
         self.root = _BlockNode(
-            0, 0,
-            old_root.w + w, old_root.h,
+            0,
+            0,
+            old_root.w + w,
+            old_root.h,
             down=old_root,
             right=_BlockNode(self.root.w, 0, w, self.root.h),
-            used=True
+            used=True,
         )
 
         node = self.find_node(self.root, w, h)
@@ -147,11 +148,13 @@ class BlockPacker():
     def grow_down(self, w, h):
         old_root = self.root
         self.root = _BlockNode(
-            0, 0,
-            old_root.w, old_root.h + h,
+            0,
+            0,
+            old_root.w,
+            old_root.h + h,
             down=_BlockNode(0, self.root.h, self.root.w, h),
             right=old_root,
-            used=True
+            used=True,
         )
 
         node = self.find_node(self.root, w, h)
@@ -162,14 +165,14 @@ class BlockPacker():
 
 
 def crop_by_extents(image, extent):
-    if min(extent.min_x,extent.min_y) < 0 or max(extent.max_x,extent.max_y) > 1:
+    if min(extent.min_x, extent.min_y) < 0 or max(extent.max_x, extent.max_y) > 1:
         print("\tWARNING! UV Coordinates lying outside of [0:1] space!")
-    
+
     _, h, w = image.shape
-    minx = max(math.floor(extent.min_x*w), 0)
-    miny = max(math.floor(extent.min_y*h), 0)
-    maxx = min(math.ceil(extent.max_x*w), w)
-    maxy = min(math.ceil(extent.max_y*h), h)
+    minx = max(math.floor(extent.min_x * w), 0)
+    miny = max(math.floor(extent.min_y * h), 0)
+    maxx = min(math.ceil(extent.max_x * w), w)
+    maxy = min(math.ceil(extent.max_y * h), h)
 
     image = image[:, miny:maxy, minx:maxx]
     delta_w = maxx - minx
@@ -180,15 +183,16 @@ def crop_by_extents(image, extent):
 
     return (image, changes)
 
-def pack(obj, background=(0,0,0,0), format="PNG", extents=None):
+
+def pack(obj, background=(0, 0, 0, 0), format="PNG", extents=None):
     blocks = []
     image_name_map = {}
     profile = None
 
-    for mat in obj['materials']:
-        filename = obj['materials'][mat]
+    for mat in obj["materials"]:
+        filename = obj["materials"][mat]
 
-        with rasterio.open(filename, 'r') as f:
+        with rasterio.open(filename, "r") as f:
             profile = f.profile
             image = f.read()
 
@@ -197,7 +201,7 @@ def pack(obj, background=(0,0,0,0), format="PNG", extents=None):
         changes = None
         if extents and extents[mat]:
             image, changes = crop_by_extents(image, extents[mat])
-            
+
         image_name_map[filename] = image
         _, h, w = image.shape
 
@@ -211,7 +215,9 @@ def pack(obj, background=(0,0,0,0), format="PNG", extents=None):
     packer.fit(blocks)
 
     # output_image = Image.new("RGBA", (packer.root.w, packer.root.h))
-    output_image = np.zeros((profile['count'], packer.root.h, packer.root.w), dtype=profile['dtype'])
+    output_image = np.zeros(
+        (profile["count"], packer.root.h, packer.root.w), dtype=profile["dtype"]
+    )
 
     uv_changes = {}
     for block in blocks:
@@ -222,18 +228,17 @@ def pack(obj, background=(0,0,0,0), format="PNG", extents=None):
         uv_changes[mat] = {
             "offset": (
                 # should be in [0, 1] range
-                (block.x - (changes[0] if changes else 0))/output_image.shape[2],
+                (block.x - (changes[0] if changes else 0)) / output_image.shape[2],
                 # UV origin is bottom left, PIL assumes top left!
-                (block.y - (changes[1] if changes else 0))/output_image.shape[1]
+                (block.y - (changes[1] if changes else 0)) / output_image.shape[1],
             ),
-
             "aspect": (
-                ((1/changes[2]) if changes else 1) * (im_w/output_image.shape[2]),
-                ((1/changes[3]) if changes else 1) * (im_h/output_image.shape[1])
+                ((1 / changes[2]) if changes else 1) * (im_w / output_image.shape[2]),
+                ((1 / changes[3]) if changes else 1) * (im_h / output_image.shape[1]),
             ),
         }
 
-        output_image[:, block.y:block.y + im_h, block.x:block.x + im_w] = image
+        output_image[:, block.y : block.y + im_h, block.x : block.x + im_w] = image
     output_image = np.flip(output_image, axis=1)
 
     return output_image, uv_changes, profile

@@ -9,19 +9,22 @@ from opendm import log
 from opendm import io
 import os
 
-def euclidean_merge_dems(input_dems, output_dem, creation_options={}, euclidean_map_source=None):
+
+def euclidean_merge_dems(
+    input_dems, output_dem, creation_options={}, euclidean_map_source=None
+):
     """
     Based on https://github.com/mapbox/rio-merge-rgba
     and ideas from Anna Petrasova
     implementation by Piero Toffanin
 
-    Computes a merged DEM by computing/using a euclidean 
-    distance to NODATA cells map for all DEMs and then blending all overlapping DEM cells 
+    Computes a merged DEM by computing/using a euclidean
+    distance to NODATA cells map for all DEMs and then blending all overlapping DEM cells
     by a weighted average based on such euclidean distance.
     """
     inputs = []
-    bounds=None
-    precision=7
+    bounds = None
+    precision = 7
 
     existing_dems = []
     for dem in input_dems:
@@ -41,13 +44,19 @@ def euclidean_merge_dems(input_dems, output_dem, creation_options={}, euclidean_
         profile = first.profile
 
     for dem in existing_dems:
-        eumap = compute_euclidean_map(dem, io.related_file_path(dem, postfix=".euclideand", replace_base=euclidean_map_source), overwrite=False)
+        eumap = compute_euclidean_map(
+            dem,
+            io.related_file_path(
+                dem, postfix=".euclideand", replace_base=euclidean_map_source
+            ),
+            overwrite=False,
+        )
         if eumap and io.file_exists(eumap):
             inputs.append((dem, eumap))
 
     log.ODM_INFO("%s valid DEM rasters to merge" % len(inputs))
 
-    sources = [(rasterio.open(d), rasterio.open(e)) for d,e in inputs]
+    sources = [(rasterio.open(d), rasterio.open(e)) for d, e in inputs]
 
     # Extent from option or extent of all inputs.
     if bounds:
@@ -82,10 +91,10 @@ def euclidean_merge_dems(input_dems, output_dem, creation_options={}, euclidean_
     profile["transform"] = output_transform
     profile["height"] = output_height
     profile["width"] = output_width
-    profile["tiled"] = creation_options.get('TILED', 'YES') == 'YES'
-    profile["blockxsize"] = creation_options.get('BLOCKXSIZE', 512)
-    profile["blockysize"] = creation_options.get('BLOCKYSIZE', 512)
-    profile["compress"] = creation_options.get('COMPRESS', 'LZW')
+    profile["tiled"] = creation_options.get("TILED", "YES") == "YES"
+    profile["blockxsize"] = creation_options.get("BLOCKXSIZE", 512)
+    profile["blockysize"] = creation_options.get("BLOCKYSIZE", 512)
+    profile["compress"] = creation_options.get("COMPRESS", "LZW")
     profile["nodata"] = src_nodata
 
     # Creation opts
@@ -123,17 +132,35 @@ def euclidean_merge_dems(input_dems, output_dem, creation_options={}, euclidean_
                 nodata = src_d.nodatavals[0]
 
                 # Alternative, custom get_window using rounding
-                src_window_d = tuple(zip(rowcol(
-                        src_d.transform, left, top, op=round, precision=precision
-                    ), rowcol(
-                        src_d.transform, right, bottom, op=round, precision=precision
-                    )))
+                src_window_d = tuple(
+                    zip(
+                        rowcol(
+                            src_d.transform, left, top, op=round, precision=precision
+                        ),
+                        rowcol(
+                            src_d.transform,
+                            right,
+                            bottom,
+                            op=round,
+                            precision=precision,
+                        ),
+                    )
+                )
 
-                src_window_e = tuple(zip(rowcol(
-                        src_e.transform, left, top, op=round, precision=precision
-                    ), rowcol(
-                        src_e.transform, right, bottom, op=round, precision=precision
-                    )))
+                src_window_e = tuple(
+                    zip(
+                        rowcol(
+                            src_e.transform, left, top, op=round, precision=precision
+                        ),
+                        rowcol(
+                            src_e.transform,
+                            right,
+                            bottom,
+                            op=round,
+                            precision=precision,
+                        ),
+                    )
+                )
 
                 temp_d = np.zeros(dst_shape, dtype=dtype)
                 temp_d = src_d.read(
@@ -147,12 +174,12 @@ def euclidean_merge_dems(input_dems, output_dem, creation_options={}, euclidean_
 
                 # Set NODATA areas in the euclidean map to a very low value
                 # so that:
-                #  - Areas with overlap prioritize DEM layers' cells that 
+                #  - Areas with overlap prioritize DEM layers' cells that
                 #    are far away from NODATA areas
                 #  - Areas that have no overlap are included in the final result
                 #    even if they are very close to a NODATA cell
-                temp_e[temp_e==0] = small_distance
-                temp_e[temp_d==nodata] = 0
+                temp_e[temp_e == 0] = small_distance
+                temp_e[temp_d == nodata] = 0
 
                 np.multiply(temp_d, temp_e, out=temp_d)
                 np.add(dstarr, temp_d, out=dstarr)
@@ -163,9 +190,11 @@ def euclidean_merge_dems(input_dems, output_dem, creation_options={}, euclidean_
             # Perform nearest neighbor interpolation on areas where two or more rasters overlap
             # but where both rasters have only interpolated data. This prevents the creation
             # of artifacts that average areas of interpolation.
-            indices = ndimage.distance_transform_edt(np.logical_and(distsum < 1, distsum > small_distance), 
-                                                return_distances=False, 
-                                                return_indices=True)
+            indices = ndimage.distance_transform_edt(
+                np.logical_and(distsum < 1, distsum > small_distance),
+                return_distances=False,
+                return_indices=True,
+            )
             dstarr = dstarr[tuple(indices)]
 
             dstarr[dstarr == 0.0] = src_nodata

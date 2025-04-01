@@ -4,6 +4,7 @@ from opendm import log
 from opendm import location
 from pyproj import CRS
 
+
 class GCPFile:
     def __init__(self, gcp_path):
         self.gcp_path = gcp_path
@@ -11,18 +12,18 @@ class GCPFile:
         self.raw_srs = ""
         self.srs = None
         self.read()
-    
+
     def read(self):
         if self.exists():
-            with open(self.gcp_path, 'r') as f:
+            with open(self.gcp_path, "r") as f:
                 contents = f.read().strip()
 
             # Strip eventual BOM characters
-            contents = contents.replace('\ufeff', '')
-            
-            lines = list(map(str.strip, contents.split('\n')))
+            contents = contents.replace("\ufeff", "")
+
+            lines = list(map(str.strip, contents.split("\n")))
             if lines:
-                self.raw_srs = lines[0] # SRS
+                self.raw_srs = lines[0]  # SRS
                 self.srs = location.parse_srs_header(self.raw_srs)
 
                 for line in lines[1:]:
@@ -36,7 +37,7 @@ class GCPFile:
     def iter_entries(self):
         for entry in self.entries:
             yield self.parse_entry(entry)
-    
+
     def check_entries(self):
         coords = {}
         gcps = {}
@@ -54,24 +55,36 @@ class GCPFile:
                 description = "insufficient" if coords[k] < 2 else "not ideal"
                 for entry in gcps[k]:
                     log.ODM_WARNING(str(entry))
-                log.ODM_WARNING("The number of images where the GCP %s has been tagged are %s" % (k, description))
-                log.ODM_WARNING("You should tag at least %s more images" % (3 - coords[k]))
+                log.ODM_WARNING(
+                    "The number of images where the GCP %s has been tagged are %s"
+                    % (k, description)
+                )
+                log.ODM_WARNING(
+                    "You should tag at least %s more images" % (3 - coords[k])
+                )
                 log.ODM_WARNING("=====================================")
                 errors += 1
         if len(coords) < 3:
-            log.ODM_WARNING("Low number of GCPs detected (%s). For best results use at least 5." % (3 - len(coords)))
+            log.ODM_WARNING(
+                "Low number of GCPs detected (%s). For best results use at least 5."
+                % (3 - len(coords))
+            )
             log.ODM_WARNING("=====================================")
             errors += 1
 
         if errors > 0:
-            log.ODM_WARNING("Some issues detected with GCPs (but we're going to process this anyway)")
+            log.ODM_WARNING(
+                "Some issues detected with GCPs (but we're going to process this anyway)"
+            )
 
     def parse_entry(self, entry):
         if entry:
             parts = entry.split()
             x, y, z, px, py, filename = parts[:6]
             extras = " ".join(parts[6:])
-            return GCPEntry(float(x), float(y), float(z), float(px), float(py), filename, extras)
+            return GCPEntry(
+                float(x), float(y), float(z), float(px), float(py), filename, extras
+            )
 
     def get_entry(self, n):
         if n < self.entries_count():
@@ -79,7 +92,7 @@ class GCPFile:
 
     def entries_count(self):
         return len(self.entries)
-   
+
     def exists(self):
         return bool(self.gcp_path and os.path.exists(self.gcp_path))
 
@@ -97,8 +110,8 @@ class GCPFile:
             entry.py *= ratio
             output.append(str(entry))
 
-        with open(gcp_file_output, 'w') as f:
-            f.write('\n'.join(output) + '\n')
+        with open(gcp_file_output, "w") as f:
+            f.write("\n".join(output) + "\n")
 
         return gcp_file_output
 
@@ -114,11 +127,17 @@ class GCPFile:
             utm_zone, hemisphere = location.get_utm_zone_and_hemisphere_from(lon, lat)
             return "WGS84 UTM %s%s" % (utm_zone, hemisphere)
 
-    def create_utm_copy(self, gcp_file_output, filenames=None, rejected_entries=None, include_extras=True):
+    def create_utm_copy(
+        self,
+        gcp_file_output,
+        filenames=None,
+        rejected_entries=None,
+        include_extras=True,
+    ):
         """
         Creates a new GCP file from an existing GCP file
-        by optionally including only filenames and reprojecting each point to 
-        a UTM CRS. Rejected entries can recorded by passing a list object to 
+        by optionally including only filenames and reprojecting each point to
+        a UTM CRS. Rejected entries can recorded by passing a list object to
         rejected_entries.
         """
         if os.path.exists(gcp_file_output):
@@ -130,15 +149,17 @@ class GCPFile:
 
         for entry in self.iter_entries():
             if filenames is None or entry.filename in filenames:
-                entry.x, entry.y, entry.z = transformer.TransformPoint(entry.x, entry.y, entry.z)
+                entry.x, entry.y, entry.z = transformer.TransformPoint(
+                    entry.x, entry.y, entry.z
+                )
                 if not include_extras:
-                    entry.extras = ''
+                    entry.extras = ""
                 output.append(str(entry))
             elif isinstance(rejected_entries, list):
                 rejected_entries.append(entry)
 
-        with open(gcp_file_output, 'w') as f:
-            f.write('\n'.join(output) + '\n')
+        with open(gcp_file_output, "w") as f:
+            f.write("\n".join(output) + "\n")
 
         return gcp_file_output
 
@@ -151,7 +172,7 @@ class GCPFile:
         """
         if not self.exists() or not os.path.exists(images_dir):
             return None
-        
+
         if os.path.exists(gcp_file_output):
             os.remove(gcp_file_output)
 
@@ -159,23 +180,23 @@ class GCPFile:
 
         output = [self.raw_srs]
         files_found = 0
-        
+
         for entry in self.iter_entries():
             if entry.filename in files:
                 output.append(str(entry))
                 files_found += 1
 
         if files_found >= min_images:
-            with open(gcp_file_output, 'w') as f:
-                f.write('\n'.join(output) + '\n')
+            with open(gcp_file_output, "w") as f:
+                f.write("\n".join(output) + "\n")
 
             return gcp_file_output
 
-    def make_micmac_copy(self, output_dir, precisionxy=1, precisionz=1, utm_zone = None):
+    def make_micmac_copy(self, output_dir, precisionxy=1, precisionz=1, utm_zone=None):
         """
         Convert this GCP file in a format compatible with MicMac.
         :param output_dir directory where to save the two MicMac GCP files. The directory must exist.
-        :param utm_zone UTM zone to use for output coordinates (UTM string, PROJ4 or EPSG definition). 
+        :param utm_zone UTM zone to use for output coordinates (UTM string, PROJ4 or EPSG definition).
             If one is not specified, the nearest UTM zone will be selected.
         :param precisionxy horizontal precision of GCP measurements in meters.
         :param precisionz vertical precision of GCP measurements in meters.
@@ -187,8 +208,8 @@ class GCPFile:
         if not isinstance(precisionz, float) and not isinstance(precisionz, int):
             raise AssertionError("precisionz must be a number")
 
-        gcp_3d_file = os.path.join(output_dir, '3d_gcp.txt')
-        gcp_2d_file = os.path.join(output_dir, '2d_gcp.txt')
+        gcp_3d_file = os.path.join(output_dir, "3d_gcp.txt")
+        gcp_2d_file = os.path.join(output_dir, "2d_gcp.txt")
 
         if os.path.exists(gcp_3d_file):
             os.remove(gcp_3d_file)
@@ -209,20 +230,26 @@ class GCPFile:
                 gcps[k] = [entry]
             else:
                 gcps[k].append(entry)
-            
 
-        with open(gcp_3d_file, 'w') as f3:
-            with open(gcp_2d_file, 'w') as f2:
+        with open(gcp_3d_file, "w") as f3:
+            with open(gcp_2d_file, "w") as f2:
                 gcp_n = 1
                 for k in gcps:
-                    f3.write("GCP{} {} {} {}\n".format(gcp_n, k, precisionxy, precisionz))
+                    f3.write(
+                        "GCP{} {} {} {}\n".format(gcp_n, k, precisionxy, precisionz)
+                    )
 
                     for entry in gcps[k]:
-                        f2.write("GCP{} {} {} {}\n".format(gcp_n, entry.filename, entry.px, entry.py))
-                    
+                        f2.write(
+                            "GCP{} {} {} {}\n".format(
+                                gcp_n, entry.filename, entry.px, entry.py
+                            )
+                        )
+
                     gcp_n += 1
-            
+
         return (gcp_3d_file, gcp_2d_file)
+
 
 class GCPEntry:
     def __init__(self, x, y, z, px, py, filename, extras=""):
@@ -236,9 +263,8 @@ class GCPEntry:
 
     def coords_key(self):
         return "{} {} {}".format(self.x, self.y, self.z)
-    
+
     def __str__(self):
-        return "{} {} {} {} {} {} {}".format(self.x, self.y, self.z, 
-                                             self.px, self.py, 
-                                             self.filename, 
-                                             self.extras).rstrip()
+        return "{} {} {} {} {} {} {}".format(
+            self.x, self.y, self.z, self.px, self.py, self.filename, self.extras
+        ).rstrip()

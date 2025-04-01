@@ -1,6 +1,7 @@
 import numpy as np
 from .dimension import Dimension
 
+
 class PartitionDimension(Dimension):
     """Group points by partition"""
 
@@ -15,11 +16,13 @@ class PartitionDimension(Dimension):
 
     def assign(self, *point_clouds, **kwargs):
         for point_cloud in point_clouds:
-            super(PartitionDimension, self)._set_values(point_cloud, np.full(point_cloud.len(), self.counter))
+            super(PartitionDimension, self)._set_values(
+                point_cloud, np.full(point_cloud.len(), self.counter)
+            )
         self.counter += 1
 
     def get_name(self):
         return self.name
 
     def get_las_type(self):
-        return 'uint32'
+        return "uint32"

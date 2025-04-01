@@ -6,6 +6,7 @@ from opendm.photo import find_largest_photo_dims
 from osgeo import gdal
 from opendm.arghelpers import double_quote
 
+
 class NumpyEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, np.ndarray):
@@ -15,7 +16,7 @@ class NumpyEncoder(json.JSONEncoder):
 
 def get_depthmap_resolution(args, photos):
     max_dims = find_largest_photo_dims(photos)
-    min_dim = 320 # Never go lower than this
+    min_dim = 320  # Never go lower than this
 
     if max_dims is not None:
         w, h = max_dims
@@ -23,24 +24,29 @@ def get_depthmap_resolution(args, photos):
 
         megapixels = (w * h) / 1e6
         multiplier = 1
-        
+
         if megapixels < 6:
             multiplier = 2
         elif megapixels > 42:
             multiplier = 0.5
-        
+
         pc_quality_scale = {
-            'ultra': 0.5,
-            'high': 0.25,
-            'medium': 0.125,
-            'low': 0.0675,
-            'lowest': 0.03375
+            "ultra": 0.5,
+            "high": 0.25,
+            "medium": 0.125,
+            "low": 0.0675,
+            "lowest": 0.03375,
         }
 
-        return max(min_dim, int(max_dim * pc_quality_scale[args.pc_quality] * multiplier))
+        return max(
+            min_dim, int(max_dim * pc_quality_scale[args.pc_quality] * multiplier)
+        )
     else:
-        log.ODM_WARNING("Cannot compute max image dimensions, going with default depthmap_resolution of 640")
-        return 640 # Sensible default
+        log.ODM_WARNING(
+            "Cannot compute max image dimensions, going with default depthmap_resolution of 640"
+        )
+        return 640  # Sensible default
+
 
 def get_raster_stats(geotiff):
     stats = []
@@ -49,14 +55,10 @@ def get_raster_stats(geotiff):
         srcband = gtif.GetRasterBand(b + 1)
         s = srcband.GetStatistics(True, True)
 
-        stats.append({
-            'min': s[0],
-            'max': s[1],
-            'mean': s[2],
-            'stddev': s[3]
-        })
-            
+        stats.append({"min": s[0], "max": s[1], "mean": s[2], "stddev": s[3]})
+
     return stats
+
 
 def get_processing_results_paths():
     return [
@@ -75,6 +77,7 @@ def get_processing_results_paths():
         "log.json",
     ]
 
+
 def copy_paths(paths, destination, rerun):
     if not os.path.isdir(destination):
         os.makedirs(destination)
@@ -90,7 +93,9 @@ def copy_paths(paths, destination, rerun):
                 elif os.path.isdir(dst_path):
                     shutil.rmtree(dst_path)
             except Exception as e:
-                log.ODM_WARNING("Cannot remove file %s: %s, skipping..." % (dst_path, str(e)))
+                log.ODM_WARNING(
+                    "Cannot remove file %s: %s, skipping..." % (dst_path, str(e))
+                )
 
         if not os.path.exists(dst_path):
             if os.path.isfile(p):
@@ -99,6 +104,7 @@ def copy_paths(paths, destination, rerun):
             elif os.path.isdir(p):
                 shutil.copytree(p, dst_path)
                 log.ODM_INFO("Copying %s --> %s" % (p, dst_path))
+
 
 def rm_r(path):
     try:
@@ -109,8 +115,10 @@ def rm_r(path):
     except:
         log.ODM_WARNING("Cannot remove %s" % path)
 
+
 def np_to_json(arr):
     return json.dumps(arr, cls=NumpyEncoder)
+
 
 def np_from_json(json_dump):
     return np.asarray(json.loads(json_dump))
