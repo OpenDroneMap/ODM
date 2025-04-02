@@ -374,7 +374,7 @@ class ODM_Tree(object):
         self.odm_25dmeshing_log = os.path.join(self.odm_meshing, 'odm_25dmeshing_log.txt')
 
         # texturing
-        self.odm_textured_model_obj_topo = os.path.join(self.odm_texturing, 'odm_textured_model_topocentric.obj')
+        self.odm_textured_model_obj_topo = 'odm_textured_model_topocentric.obj'
         self.odm_textured_model_obj = 'odm_textured_model_geo.obj'
         self.odm_textured_model_glb = 'odm_textured_model_geo.glb'
 

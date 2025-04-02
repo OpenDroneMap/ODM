@@ -71,7 +71,6 @@ class ODMMvsTexStage(types.ODM_Stage):
 
             odm_textured_model_obj = os.path.join(r['out_dir'], tree.odm_textured_model_obj_topo)
             unaligned_obj = io.related_file_path(odm_textured_model_obj, postfix="_unaligned")
-
             if not io.file_exists(odm_textured_model_obj) or self.rerun():
                 log.ODM_INFO('Writing MVS Textured file in: %s'
                               % odm_textured_model_obj)
@@ -94,7 +93,7 @@ class ODMMvsTexStage(types.ODM_Stage):
                 # mvstex definitions
                 kwargs = {
                     'bin': context.mvstex_path,
-                    'out_dir': os.path.join(r['out_dir'], "odm_textured_model_geo"),
+                    'out_dir': os.path.join(r['out_dir'], tree.odm_textured_model_obj_topo.split('.obj')[0]),
                     'model': r['model'],
                     'dataTerm': 'gmi',
                     'outlierRemovalType': 'gauss_clamping',

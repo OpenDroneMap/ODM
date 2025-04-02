@@ -631,7 +631,7 @@ class OSFMContext:
     
     def reference(self):
         ds = DataSet(self.opensfm_project_path)
-        return ds.load_reference_lla()
+        return ds.load_reference()
 
     def name(self):
         return os.path.basename(os.path.abspath(self.path("..")))    
