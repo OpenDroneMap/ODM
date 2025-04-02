@@ -629,9 +629,12 @@ class OSFMContext:
 
         return result
     
+    def reference(self):
+        ds = DataSet(self.opensfm_project_path)
+        return ds.load_reference_lla()
 
     def name(self):
-        return os.path.basename(os.path.abspath(self.path("..")))
+        return os.path.basename(os.path.abspath(self.path("..")))    
 
 def get_submodel_argv(args, submodels_path = None, submodel_name = None):
     """

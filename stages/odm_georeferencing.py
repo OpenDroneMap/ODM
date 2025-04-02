@@ -8,7 +8,9 @@ import json
 import zipfile
 import math
 from collections import OrderedDict
+from numpy import rec
 from pyproj import CRS
+import pdal
 
 from opendm import io
 from opendm import log
@@ -114,18 +116,83 @@ class ODMGeoreferencingStage(types.ODM_Stage):
             else:
                 log.ODM_WARNING("GCPs could not be loaded for writing to %s" % gcp_export_file)
 
-        if not io.file_exists(tree.odm_georeferencing_model_laz) or self.rerun():
-            cmd = f'pdal translate -i "{tree.filtered_point_cloud}" -o \"{tree.odm_georeferencing_model_laz}\"'
-            stages = ["ferry"]
-            params = [
-                '--filters.ferry.dimensions="views => UserData"'
-            ]
+        if reconstruction.is_georeferenced():
+            # prepare pipeline stage for topocentric to georeferenced conversion
+            octx = OSFMContext(tree.opensfm)
+            reference = octx.reference()
+            pdalargs = {
+                'reflat': reference.lat,
+                'reflon': reference.lon,
+                'refalt': reference.alt,
+                'a_srs': reconstruction.georef.proj4(),
+                'x_offset': reconstruction.georef.utm_east_offset,
+                'y_offset': reconstruction.georef.utm_north_offset
+            }
+            topo_to_georef_def = {
+                "type": "filters.python",
+                "module": "opendm.georef",
+                "function": "topocentric_to_georef_pdal",
+                "pdalargs": json.dumps(pdalargs)
+            }
+        
+        if not io.file_exists(tree.filtered_point_cloud) or self.rerun():
+            log.ODM_INFO("Georeferecing filtered point cloud")
+            if reconstruction.is_georeferenced():
+                ply_georeferencing_pipeline = [
+                    {
+                        "type": "readers.ply",
+                        "filename": tree.filtered_point_cloud_topo
+                    },
+                    topo_to_georef_def,
+                    {
+                        "type": "writers.ply",
+                        "filename": tree.filtered_point_cloud
+                    }
+                ]
+                pipeline = pdal.Pipeline(json.dumps(ply_georeferencing_pipeline))
+                pipeline.execute()
+            else:
+                shutil.copy(tree.filtered_point_cloud_topo, tree.filtered_point_cloud)
 
+        if not io.file_exists(tree.odm_textured_model_geo_obj) or self.rerun():
+            log.ODM_INFO("Georeferecing textured model")
+            if reconstruction.is_georeferenced():
+                obj_georeferencing_pipeline = [
+                    {
+                        "type": "readers.obj",
+                        "filename": tree.odm_textured_model_obj
+                    },
+                    topo_to_georef_def,
+                    {
+                        "type": "writers.obj",
+                        "filename": tree.odm_textured_model_geo_obj
+                    }
+                ]
+                pipeline = pdal.Pipeline(json.dumps(obj_georeferencing_pipeline))
+                pipeline.execute()
+            else:
+                shutil.copy(tree.odm_textured_model_obj, tree.odm_textured_model_geo_obj)
+
+        if not io.file_exists(tree.odm_georeferencing_model_laz) or self.rerun():
+            las_georeferencing_pipeline = [
+                {
+                    "type": "readers.las",
+                    "filename": tree.filtered_point_cloud
+                },
+                {
+                    "type": "filters.ferry",
+                    "dimensions": "views => UserData"
+                }
+            ]
+            
             if reconstruction.is_georeferenced():
                 log.ODM_INFO("Georeferencing point cloud")
 
-                stages.append("transformation")
                 utmoffset = reconstruction.georef.utm_offset()
+                las_georeferencing_pipeline.append({
+                    "type": "filters.transformation",
+                    "matrix": f"1 0 0 {utmoffset[0]} 0 1 0 {utmoffset[1]} 0 0 1 0 0 0 0 1"
+                })
 
                 # Establish appropriate las scale for export
                 las_scale = 0.001
@@ -148,27 +215,40 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                 else:
                     log.ODM_INFO("No point_cloud_stats.json found. Using default las scale: %s" % las_scale)
 
-                params += [
-                    f'--filters.transformation.matrix="1 0 0 {utmoffset[0]} 0 1 0 {utmoffset[1]} 0 0 1 0 0 0 0 1"',
-                    f'--writers.las.offset_x={reconstruction.georef.utm_east_offset}' ,
-                    f'--writers.las.offset_y={reconstruction.georef.utm_north_offset}',
-                    f'--writers.las.scale_x={las_scale}',
-                    f'--writers.las.scale_y={las_scale}',
-                    f'--writers.las.scale_z={las_scale}',
-                    '--writers.las.offset_z=0',
-                    f'--writers.las.a_srs="{reconstruction.georef.proj4()}"' # HOBU this should maybe be WKT
-                ]
-
+                las_writer_def = {
+                    "type": "writers.las",
+                    "filename": tree.odm_georeferencing_model_laz,
+                    "a_srs": reconstruction.georef.proj4(),
+                    "offset_x": utmoffset[0],
+                    "offset_y": utmoffset[1],
+                    "offset_z": 0,
+                    "scale_x": las_scale,
+                    "scale_y": las_scale,
+                    "scale_z": las_scale,
+                }
+                
                 if reconstruction.has_gcp() and io.file_exists(gcp_geojson_zip_export_file):
                     if os.path.getsize(gcp_geojson_zip_export_file) <= 65535:
                         log.ODM_INFO("Embedding GCP info in point cloud")
                         params += [
                             '--writers.las.vlrs="{\\\"filename\\\": \\\"%s\\\", \\\"user_id\\\": \\\"ODM\\\", \\\"record_id\\\": 2, \\\"description\\\": \\\"Ground Control Points (zip)\\\"}"' % gcp_geojson_zip_export_file.replace(os.sep, "/")
                         ]
+                        las_writer_def["vlrs"] = json.dumps(
+                            {
+                                "filename": gcp_geojson_zip_export_file.replace(os.sep, "/"),
+                                "user_id": "ODM",
+                                "record_id": 2,
+                                "description": "Ground Control Points (zip)"
+                            }
+                        )
+
                     else:
                         log.ODM_WARNING("Cannot embed GCP info in point cloud, %s is too large" % gcp_geojson_zip_export_file)
 
-                system.run(cmd + ' ' + ' '.join(stages) + ' ' + ' '.join(params))
+                las_georeferencing_pipeline.append(las_writer_def)
+
+                pipeline = pdal.Pipeline(json.dumps(las_georeferencing_pipeline))
+                pipeline.execute()
 
                 self.update_progress(50)
 
@@ -202,7 +282,12 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                     export_to_bounds_files(outputs['boundary'], reconstruction.get_proj_srs(), bounds_json, bounds_gpkg)
             else:
                 log.ODM_INFO("Converting point cloud (non-georeferenced)")
-                system.run(cmd + ' ' + ' '.join(stages) + ' ' + ' '.join(params))
+                las_georeferencing_pipeline.append({
+                    "type": "writers.las",
+                    "filename": tree.odm_georeferencing_model_laz
+                })
+                pipeline = pdal.Pipeline(json.dumps(las_georeferencing_pipeline))
+                pipeline.execute()
 
 
             stats_dir = tree.path("opensfm", "stats", "codem")

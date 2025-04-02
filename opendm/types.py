@@ -361,16 +361,20 @@ class ODM_Tree(object):
         self.openmvs_model = os.path.join(self.openmvs, 'scene_dense_dense_filtered.ply')
 
         # filter points
+        self.filtered_point_cloud_topo = os.path.join(self.odm_filterpoints, "point_cloud_topocentric.ply")
         self.filtered_point_cloud = os.path.join(self.odm_filterpoints, "point_cloud.ply")
         self.filtered_point_cloud_stats = os.path.join(self.odm_filterpoints, "point_cloud_stats.json")
 
         # odm_meshing
+        self.odm_mesh_topo = os.path.join(self.odm_meshing, 'odm_mesh_topocentric.ply')
         self.odm_mesh = os.path.join(self.odm_meshing, 'odm_mesh.ply')
         self.odm_meshing_log = os.path.join(self.odm_meshing, 'odm_meshing_log.txt')
+        self.odm_25dmesh_topo = os.path.join(self.odm_meshing, 'odm_25dmesh_topocentric.ply')
         self.odm_25dmesh = os.path.join(self.odm_meshing, 'odm_25dmesh.ply')
         self.odm_25dmeshing_log = os.path.join(self.odm_meshing, 'odm_25dmeshing_log.txt')
 
         # texturing
+        self.odm_textured_model_obj_topo = os.path.join(self.odm_texturing, 'odm_textured_model_topocentric.obj')
         self.odm_textured_model_obj = 'odm_textured_model_geo.obj'
         self.odm_textured_model_glb = 'odm_textured_model_geo.glb'
 
