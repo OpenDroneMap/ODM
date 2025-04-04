@@ -141,19 +141,33 @@ class ODMGeoreferencingStage(types.ODM_Stage):
             else:
                 shutil.copy(tree.filtered_point_cloud_topo, tree.filtered_point_cloud)
 
-        if not io.file_exists(os.path.join(tree.odm_texturing, tree.odm_textured_model_obj)) or self.rerun():
-            log.ODM_INFO("Georeferecing textured model")
-            obj_in = os.path.join(tree.odm_texturing, tree.odm_textured_model_obj_topo)
-            obj_out = os.path.join(tree.odm_texturing, tree.odm_textured_model_obj)
-            if reconstruction.is_georeferenced():
-                converter.convert_obj(
-                    obj_in, 
-                    obj_out, 
-                    reconstruction.georef.utm_east_offset, 
-                    reconstruction.georef.utm_north_offset
-                )
+        def georefernce_textured_model(obj_in, obj_out):
+            log.ODM_INFO("Georeferecing textured model %s" % obj_in)
+            if not io.file_exists(obj_out) or self.rerun():
+                if reconstruction.is_georeferenced():
+                    converter.convert_obj(
+                        obj_in, 
+                        obj_out, 
+                        reconstruction.georef.utm_east_offset, 
+                        reconstruction.georef.utm_north_offset
+                    )
+                else:
+                    shutil.copy(obj_in, obj_out)
+        
+        #TODO: maybe parallelize this
+        #TODO: gltf export? Should problably move the exporting process after this
+        for texturing in [tree.odm_texturing, tree.odm_25dtexturing]:
+            if reconstruction.multi_camera:
+                primary = get_primary_band_name(reconstruction.multi_camera, args.primary_band)
+                for band in reconstruction.multi_camera:
+                    subdir = "" if band['name'] == primary else band['name'].lower()
+                    obj_in = os.path.join(texturing, subdir, tree.odm_textured_model_obj_topo)
+                    obj_out = os.path.join(texturing, subdir, tree.odm_textured_model_obj)
+                    georefernce_textured_model(obj_in, obj_out)
             else:
-                shutil.copy(obj_in, obj_out)
+                obj_in = os.path.join(texturing, tree.odm_textured_model_obj_topo)
+                obj_out = os.path.join(texturing, tree.odm_textured_model_obj)
+                transform_textured_model(obj_in, obj_out)
         
         if not io.file_exists(tree.odm_georeferencing_model_laz) or self.rerun():
             pipeline = pdal.Pipeline()
@@ -304,7 +318,7 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                                 except Exception as e:
                                     log.ODM_WARNING("Cannot transform textured model: %s" % str(e))
                                     os.rename(unaligned_obj, obj)
-
+                        #TODO: seems gltf file is not converted in alignment?
                         for texturing in [tree.odm_texturing, tree.odm_25dtexturing]:
                             if reconstruction.multi_camera:
                                 primary = get_primary_band_name(reconstruction.multi_camera, args.primary_band)
