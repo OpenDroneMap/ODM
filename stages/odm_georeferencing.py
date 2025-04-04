@@ -133,7 +133,10 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                     reconstruction.georef.utm_east_offset,
                     reconstruction.georef.utm_north_offset
                 )
-                pipeline = pdal.Writer.ply(tree.filtered_point_cloud).pipeline(arr)
+                pipeline = pdal.Writer.ply(
+                    filename = tree.filtered_point_cloud,
+                    storage_mode = "little endian",
+                ).pipeline(arr)
                 pipeline.execute()
             else:
                 shutil.copy(tree.filtered_point_cloud_topo, tree.filtered_point_cloud)

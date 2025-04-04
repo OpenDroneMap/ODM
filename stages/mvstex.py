@@ -90,10 +90,12 @@ class ODMMvsTexStage(types.ODM_Stage):
                 if (r['nadir']):
                     nadir = '--nadir_mode'
 
+                
                 # mvstex definitions
+                # mtl and texture files would be the same between topo and proj geomodel, so create with the final name
                 kwargs = {
                     'bin': context.mvstex_path,
-                    'out_dir': os.path.join(r['out_dir'], tree.odm_textured_model_obj_topo.split('.obj')[0]),
+                    'out_dir': os.path.join(r['out_dir'], 'odm_textured_model_geo'),
                     'model': r['model'],
                     'dataTerm': 'gmi',
                     'outlierRemovalType': 'gauss_clamping',
@@ -124,6 +126,9 @@ class ODMMvsTexStage(types.ODM_Stage):
                         '{nadirMode} '
                         '{labelingFile} '
                         '{maxTextureSize} '.format(**kwargs))
+                
+                # update the obj file name to topo for further conversion
+                shutil.move(os.path.join(r['out_dir'], tree.odm_textured_model_obj), odm_textured_model_obj)
 
                 if r['primary'] and (not r['nadir'] or args.skip_3dmodel):
                     # GlTF?

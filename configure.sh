@@ -25,9 +25,9 @@ check_version(){
 }
 
 if [[ $2 =~ ^[0-9]+$ ]] ; then
-    processes=2
+    processes=$2
 else
-    processes=2
+    processes=$(nproc)
 fi
 
 ensure_prereqs() {
