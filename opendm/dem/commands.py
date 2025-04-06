@@ -1,4 +1,5 @@
 import os
+import subprocess
 import sys
 import rasterio
 import numpy
@@ -220,6 +221,23 @@ def compute_euclidean_map(geotiff_path, output_path, overwrite=False):
                                 '-co', 'BIGTIFF=IF_SAFER',
                                 '-co', 'COMPRESS=DEFLATE',
                             ])
+            except Exception as e:
+                log.ODM_WARNING("Cannot compute euclidean distance: %s" % str(e))
+
+            if os.path.exists(output_path):
+                return output_path
+            else:
+                log.ODM_WARNING("Cannot compute euclidean distance file: %s" % output_path)
+        elif os.path.exists("/usr/bin/gdal_proximity.py"):
+            try:
+                subprocess.run([
+                    '/usr/bin/gdal_proximity.py',
+                    geotiff_path, output_path,
+                    '-values', str(nodata),
+                    '-co', 'TILED=YES',
+                    '-co', 'BIGTIFF=IF_SAFER',
+                    '-co', 'COMPRESS=DEFLATE'
+                ], check=True)
             except Exception as e:
                 log.ODM_WARNING("Cannot compute euclidean distance: %s" % str(e))
 
