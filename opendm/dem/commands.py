@@ -20,6 +20,8 @@ from opendm import log
 from .ground_rectification.rectify import run_rectification
 from . import pdal
 
+gdal_proximity = None
+
 try:
     # GDAL >= 3.3
     from osgeo_utils.gdal_proximity import main as gdal_proximity
