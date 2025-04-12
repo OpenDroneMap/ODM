@@ -127,7 +127,7 @@ def url_string(string):
         r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # ...or ip
         r'(?::\d+)?' # optional port
         r'(?:/?|[/?]\S+)$', re.IGNORECASE)
-        
+
     if re.match(regex, string) is None:
         raise argparse.ArgumentTypeError("%s is not a valid URL. The URL must be in the format: http(s)://host[:port]/[?token=]" % string)
     return string
@@ -164,7 +164,7 @@ def config(argv=None, parser=None):
         parser = SettingsParser(description='ODM is a command line toolkit to generate maps, point clouds, 3D models and DEMs from drone, balloon or kite images.',
                             usage='%s [options] <dataset name>' % usage_bin,
                             yaml_file=open(context.settings_path))
-    
+
     parser.add_argument('--project-path',
                         metavar='<path>',
                         action=StoreValue,
@@ -213,7 +213,7 @@ def config(argv=None, parser=None):
                               'More features can be useful for finding more matches between images, '
                               'potentially allowing the reconstruction of areas with little overlap or insufficient features. '
                               'More features also slow down processing. Default: %(default)s'))
-    
+
     parser.add_argument('--feature-type',
                         metavar='<string>',
                         action=StoreValue,
@@ -222,7 +222,7 @@ def config(argv=None, parser=None):
                         help=('Choose the algorithm for extracting keypoints and computing descriptors. '
                             'Can be one of: %(choices)s. Default: '
                             '%(default)s'))
-    
+
     parser.add_argument('--feature-quality',
                         metavar='<string>',
                         action=StoreValue,
@@ -231,7 +231,7 @@ def config(argv=None, parser=None):
                         help=('Set feature extraction quality. Higher quality generates better features, but requires more memory and takes longer. '
                             'Can be one of: %(choices)s. Default: '
                             '%(default)s'))
-    
+
     parser.add_argument('--matcher-type',
                         metavar='<string>',
                         action=StoreValue,
@@ -247,7 +247,7 @@ def config(argv=None, parser=None):
                         default=0,
                         type=int,
                         help='Perform image matching with the nearest images based on GPS exif data. Set to 0 to match by triangulation. Default: %(default)s')
-    
+
     parser.add_argument('--matcher-order',
                         metavar='<positive integer>',
                         action=StoreValue,
@@ -331,7 +331,7 @@ def config(argv=None, parser=None):
                 nargs=0,
                 default=False,
                 help='Automatically compute image masks using AI to remove the sky. Experimental. Default: %(default)s')
-    
+
     parser.add_argument('--bg-removal',
                 action=StoreTrue,
                 nargs=0,
@@ -349,19 +349,19 @@ def config(argv=None, parser=None):
                     nargs=0,
                     default=False,
                     help='Skip generation of a full 3D model. This can save time if you only need 2D results such as orthophotos and DEMs. Default: %(default)s')
-    
+
     parser.add_argument('--skip-report',
                     action=StoreTrue,
                     nargs=0,
                     default=False,
                     help='Skip generation of PDF report. This can save time if you don\'t need a report. Default: %(default)s')
-    
+
     parser.add_argument('--skip-orthophoto',
                     action=StoreTrue,
                     nargs=0,
                     default=False,
                     help='Skip generation of the orthophoto. This can save time if you only need 3D results or DEMs. Default: %(default)s')
-    
+
     parser.add_argument('--ignore-gsd',
                         action=StoreTrue,
                         nargs=0,
@@ -371,13 +371,13 @@ def config(argv=None, parser=None):
                         'Ordinarily, GSD estimates are used to cap the maximum resolution of image outputs and resizes images when necessary, resulting in faster processing and lower memory usage. '
                         'Since GSD is an estimate, sometimes ignoring it can result in slightly better image output quality. '
                         'Never set --ignore-gsd to true unless you are positive you need it, and even then: do not use it. Default: %(default)s')
-    
+
     parser.add_argument('--no-gpu',
                     action=StoreTrue,
                     nargs=0,
                     default=False,
                     help='Do not use GPU acceleration, even if it\'s available. Default: %(default)s')
-    
+
     parser.add_argument('--mesh-size',
                         metavar='<positive integer>',
                         action=StoreValue,
@@ -462,7 +462,7 @@ def config(argv=None, parser=None):
                         nargs=0,
                         default=False,
                         help='Export the georeferenced point cloud in CSV format. Default: %(default)s')
-    
+
     parser.add_argument('--pc-las',
                 action=StoreTrue,
                 nargs=0,
@@ -488,7 +488,7 @@ def config(argv=None, parser=None):
                         default=5,
                         help='Filters the point cloud by removing points that deviate more than N standard deviations from the local mean. Set to 0 to disable filtering. '
                              'Default: %(default)s')
-    
+
     parser.add_argument('--pc-sample',
                         metavar='<positive float>',
                         action=StoreValue,
@@ -519,7 +519,7 @@ def config(argv=None, parser=None):
         default=0.15,
         help='Simple Morphological Filter slope parameter (rise over run). '
                 'Default: %(default)s')
-    
+
     parser.add_argument('--smrf-threshold',
         metavar='<positive float>',
         action=StoreValue,
@@ -527,7 +527,7 @@ def config(argv=None, parser=None):
         default=0.5,
         help='Simple Morphological Filter elevation threshold parameter (meters). '
                 'Default: %(default)s')
-    
+
     parser.add_argument('--smrf-window',
         metavar='<positive float>',
         action=StoreValue,
@@ -586,7 +586,7 @@ def config(argv=None, parser=None):
                               'EPSG:<code> or <+proj definition>\n'
                               'image_name geo_x geo_y geo_z [yaw (degrees)] [pitch (degrees)] [roll (degrees)] [horz accuracy (meters)] [vert accuracy (meters)]\n'
                               'Default: %(default)s'))
-    
+
     parser.add_argument('--align',
                     metavar='<path string>',
                     action=StoreValue,
@@ -642,7 +642,7 @@ def config(argv=None, parser=None):
                         type=int,
                         help='Decimate the points before generating the DEM. 1 is no decimation (full quality). '
                              '100 decimates ~99%% of the points. Useful for speeding up generation of DEM results in very large datasets. Default: %(default)s')
-    
+
     parser.add_argument('--dem-euclidean-map',
             action=StoreTrue,
             nargs=0,
@@ -675,13 +675,13 @@ def config(argv=None, parser=None):
                         default=False,
                         help='Set this parameter if you want to generate a PNG rendering of the orthophoto. '
                              'Default: %(default)s')
-    
+
     parser.add_argument('--orthophoto-kmz',
                         action=StoreTrue,
                         nargs=0,
                         default=False,
                         help='Set this parameter if you want to generate a Google Earth (KMZ) rendering of the orthophoto. '
-                             'Default: %(default)s')    
+                             'Default: %(default)s')
 
     parser.add_argument('--orthophoto-compression',
                         metavar='<string>',
@@ -690,7 +690,7 @@ def config(argv=None, parser=None):
                         choices=['JPEG', 'LZW', 'PACKBITS', 'DEFLATE', 'LZMA', 'NONE'],
                         default='DEFLATE',
                         help='Set the compression to use for orthophotos. Can be one of: %(choices)s. Default: %(default)s')
-    
+
     parser.add_argument('--orthophoto-cutline',
             action=StoreTrue,
             nargs=0,
@@ -729,7 +729,7 @@ def config(argv=None, parser=None):
                         action=StoreValue,
                         metavar='<positive integer>',
                         default=0,
-                    help='Override the rolling shutter readout time for your camera sensor (in milliseconds), instead of using the rolling shutter readout database. ' 
+                    help='Override the rolling shutter readout time for your camera sensor (in milliseconds), instead of using the rolling shutter readout database. '
                     'Note that not all cameras are present in the database. Set to 0 to use the database value. '
                     'Default: %(default)s')
 
@@ -768,7 +768,7 @@ def config(argv=None, parser=None):
                         default=4000,
                         metavar='<positive integer>',
                         help='The maximum output resolution of extracted video frames in pixels. Default: %(default)s')
-    
+
     parser.add_argument('--split',
                         type=int,
                         action=StoreValue,
@@ -785,11 +785,12 @@ def config(argv=None, parser=None):
                         action=StoreValue,
                         metavar='<positive integer>',
                         default=150,
-                        help='Radius of the overlap between submodels. '
+                        help='Radius of the overlap between submodels in meters. '
                         'After grouping images into clusters, images '
                         'that are closer than this radius to a cluster '
                         'are added to the cluster. This is done to ensure '
-                        'that neighboring submodels overlap. Default: %(default)s')
+                        'that neighboring submodels overlap. All images' \
+                        'need GPS information. Default: %(default)s')
 
     parser.add_argument('--split-image-groups',
                         metavar='<path string>',
@@ -833,7 +834,7 @@ def config(argv=None, parser=None):
                     help=('Use images\' GPS exif data for reconstruction, even if there are GCPs present.'
                           'This flag is useful if you have high precision GPS measurements. '
                           'If there are no GCPs, this flag does nothing. Default: %(default)s'))
-    
+
     parser.add_argument('--gps-accuracy',
                         type=float,
                         action=StoreValue,
@@ -868,7 +869,7 @@ def config(argv=None, parser=None):
                         default="auto",
                         type=str,
                         help=('When processing multispectral datasets, you can specify the name of the primary band that will be used for reconstruction. '
-                              'It\'s recommended to choose a band which has sharp details and is in focus. ' 
+                              'It\'s recommended to choose a band which has sharp details and is in focus. '
                               'Default: %(default)s'))
 
     parser.add_argument('--skip-band-alignment',
@@ -923,5 +924,5 @@ def config(argv=None, parser=None):
         except exceptions.NodeConnectionError as e:
             log.ODM_ERROR("Cluster node seems to be offline: %s"  % str(e))
             sys.exit(1)
-    
+
     return args
