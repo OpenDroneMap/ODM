@@ -39,7 +39,7 @@ def generate_colored_hillshade(geotiff):
 
         system.run('gdaldem color-relief "%s" "%s" "%s" -alpha -co ALPHA=YES' % (geotiff, relief_file, colored_dem))
         system.run('gdaldem hillshade "%s" "%s" -z 1.0 -s 1.0 -az 315.0 -alt 45.0' % (geotiff, hillshade_dem))
-        system.run('%s "%s" "%s" "%s" "%s"' % (sys.executable, hsv_merge_script, colored_dem, hillshade_dem, colored_hillshade_dem))
+        system.run('"%s" "%s" "%s" "%s" "%s"' % (sys.executable, hsv_merge_script, colored_dem, hillshade_dem, colored_hillshade_dem))
         
         return outputs
     except Exception as e:
