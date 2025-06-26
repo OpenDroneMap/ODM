@@ -6,7 +6,7 @@ APT_GET="env DEBIAN_FRONTEND=noninteractive $(command -v apt-get)"
 check_version(){  
   UBUNTU_VERSION=$(lsb_release -r)
   case "$UBUNTU_VERSION" in
-    *"20.04"*|*"21.04"*)
+    *"20.04"*|*"21.04"*|*"22.04"*|*"24.04"*)
       echo "Ubuntu: $UBUNTU_VERSION, good!"
       ;;
     *"18.04"*|*"16.04"*)
@@ -55,7 +55,7 @@ ensure_prereqs() {
     sudo $APT_GET install -y -qq tzdata
 
     UBUNTU_VERSION=$(lsb_release -r)
-    if [[ "$UBUNTU_VERSION" == *"20.04"* ]]; then
+    if [[ "$UBUNTU_VERSION" == *"20.04"* || "$UBUNTU_VERSION" == *"22.04"* || "$UBUNTU_VERSION" == *"24.04"* || "$UBUNTU_VERSION" == *"26.04"* ]]; then
         echo "Enabling PPA for Ubuntu GIS"
         sudo $APT_GET install -y -qq --no-install-recommends software-properties-common
         sudo add-apt-repository -y ppa:ubuntugis/ubuntugis-unstable
@@ -65,8 +65,14 @@ ensure_prereqs() {
     echo "Installing Python PIP"
     sudo $APT_GET install -y -qq --no-install-recommends \
         python3-pip \
-        python3-setuptools
+        python3-setuptools \
+	python3-wheel
     sudo pip3 install -U pip
+    sudo pip3 install -U shyaml
+
+    # Upgrade pip, setuptools, wheel to latest versions compatible with Python 3.12+
+    sudo pip3 install --upgrade pip
+    sudo pip3 install --upgrade setuptools wheel
     sudo pip3 install -U shyaml
 }
 
