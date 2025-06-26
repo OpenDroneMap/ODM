@@ -65,9 +65,8 @@ ensure_prereqs() {
     echo "Installing Python PIP"
     sudo $APT_GET install -y -qq --no-install-recommends \
         python3-pip \
-        python3-setuptools \
-	python3-wheel
-    sudo pip3 install --break-system-packages -U pip setuptools wheel shyaml
+        python3-setuptools
+    sudo pip3 install --break-system-packages -U pip setuptools shyaml
 }
 
 # Save all dependencies in snapcraft.yaml to maintain a single source of truth.
