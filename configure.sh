@@ -67,13 +67,7 @@ ensure_prereqs() {
         python3-pip \
         python3-setuptools \
 	python3-wheel
-    sudo pip3 install -U pip
-    sudo pip3 install -U shyaml
-
-    # Upgrade pip, setuptools, wheel to latest versions compatible with Python 3.12+
-    sudo pip3 install --upgrade pip
-    sudo pip3 install --upgrade setuptools wheel
-    sudo pip3 install -U shyaml
+    sudo pip3 install --break-system-packages -U pip setuptools wheel shyaml
 }
 
 # Save all dependencies in snapcraft.yaml to maintain a single source of truth.
