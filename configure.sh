@@ -63,10 +63,11 @@ ensure_prereqs() {
     fi
 
     echo "Installing Python PIP"
-    sudo $APT_GET install -y -qq --no-install-recommends \
-        python3-pip \
-        python3-setuptools
-    sudo pip3 install --break-system-packages -U pip setuptools shyaml
+    sudo apt-get install -y -qq python3-pip python3-venv python3-full
+    echo "Creating Python venv at /opt/venv"
+    python3 -m venv /opt/venv
+    source /opt/venv/bin/activate
+    pip install --upgrade pip setuptools wheel shyaml
 }
 
 # Save all dependencies in snapcraft.yaml to maintain a single source of truth.
@@ -93,6 +94,7 @@ installdepsfromsnapcraft() {
 installruntimedepsonly() {
     echo "Installing runtime dependencies"
     ensure_prereqs
+    source /opt/venv/bin/activate
     check_version
 
     echo "Installing Required Requisites"
