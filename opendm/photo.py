@@ -785,6 +785,12 @@ class ODM_Photo:
 
     def override_gps_dop(self, dop):
         self.gps_xy_stddev = self.gps_z_stddev = dop
+    
+    def adjust_z_offset(self, z_offset):
+        if self.altitude is not None:
+            self.altitude += z_offset
+        else:
+            self.altitude = z_offset
 
     def override_camera_projection(self, camera_projection):
         if camera_projection in projections:
