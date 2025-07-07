@@ -1,6 +1,10 @@
-# fix_ply.py
+# Fix Ply
 
 Use to translate a modified ply into a compatible format for subsequent steps in ODM. Via Jaime Chacoff, https://community.opendronemap.org/t/edited-point-cloud-with-cloudcompare-wont-rerun-from-odm-meshing/21449/6
+
+The basic idea is to process through ODM until the point cloud is created, use a 3rd party tool, like CloudCompare to edit the point cloud, and then continue processing in OpenDroneMap.
+
+This useful bit of python will convert the PLY exported from CloudCompare back into a compatible format for continued processing in OpenDroneMap.
 
 1. Run project in WebODM and add this to your settings: `end-with: odm-filterpoints`
 1. Once complete, go to your NodeODM container and copy `/var/www/data/[Task ID]/odm-filterpoints` directory
