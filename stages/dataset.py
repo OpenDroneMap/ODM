@@ -341,7 +341,7 @@ class ODMLoadDatasetStage(types.ODM_Stage):
         
         # GPS Z offset
         if 'gps_z_offset_is_set' in args:
-            log.ODM_INFO("Adjusting GPS Z offset to %s for all images" % args.gps_z_offset)
+            log.ODM_INFO("Adjusting GPS Z offset by %s for all images" % args.gps_z_offset)
 
             for p in photos:
                 p.adjust_z_offset(args.gps_z_offset)
