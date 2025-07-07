@@ -6,6 +6,7 @@ import numpy as np
 import pygltflib
 from opendm import system
 from opendm import io
+from opendm import log
 
 warnings.filterwarnings("ignore", category=rasterio.errors.NotGeoreferencedWarning)
 

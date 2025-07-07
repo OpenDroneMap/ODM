@@ -1,4 +1,5 @@
 import os
+import subprocess
 import sys
 import rasterio
 import numpy
@@ -20,6 +21,8 @@ from opendm import log
 from .ground_rectification.rectify import run_rectification
 from . import pdal
 
+gdal_proximity = None
+
 try:
     # GDAL >= 3.3
     from osgeo_utils.gdal_proximity import main as gdal_proximity
@@ -27,8 +30,13 @@ except ModuleNotFoundError:
     # GDAL <= 3.2
     try:
         from osgeo.utils.gdal_proximity import main as gdal_proximity
-    except:
-        pass
+    except ModuleNotFoundError:
+        # GDAL <= 3.0
+        gdal_proximity_script = shutil.which("gdal_proximity.py")
+        if gdal_proximity_script is not None:
+            def gdal_proximity(args):
+                subprocess.run([gdal_proximity_script] + args[1:], check=True)
+
 
 def classify(lasFile, scalar, slope, threshold, window):
     start = datetime.now()

@@ -5,6 +5,7 @@ import cv2
 import os
 import onnxruntime as ort
 from opendm import log
+from opendm.ai import read_image
 from threading import Lock
 
 mutex = Lock()
@@ -73,11 +74,7 @@ class BgFilter():
         return output
 
     def run_img(self, img_path, dest):
-        img = cv2.imread(img_path, cv2.IMREAD_COLOR)
-        if img is None:
-            return None
-
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        img = read_image(img_path)
         mask  = self.get_mask(img)
         
         img_name = os.path.basename(img_path)

@@ -21,7 +21,7 @@ The easiest way to run ODM is via docker. To install docker, see [docs.docker.co
 docker pull opendronemap/odm
 ```
 
-Run ODM by placing some images (JPEGs or TIFFs) in a folder named “images” (for example `C:\Users\youruser\datasets\project\images` or `/home/youruser/datasets/project/images`) and simply run from a Command Prompt / Terminal:
+Run ODM by placing some images (JPEGs, TIFFs or DNGs) in a folder named “images” (for example `C:\Users\youruser\datasets\project\images` or `/home/youruser/datasets/project/images`) and simply run from a Command Prompt / Terminal:
 
 ```bash
 # Windows

@@ -234,9 +234,9 @@ class ODMLoadDatasetStage(types.ODM_Stage):
                                         item['p'].set_mask(os.path.basename(mask_file))
                                         log.ODM_INFO("Wrote %s" % os.path.basename(mask_file))
                                     else:
-                                        log.ODM_WARNING("Cannot generate mask for %s" % img)
+                                        log.ODM_WARNING("Cannot generate mask for %s" % item['file'])
                                 except Exception as e:
-                                    log.ODM_WARNING("Cannot generate mask for %s: %s" % (img, str(e)))
+                                    log.ODM_WARNING("Cannot generate mask for %s: %s" % (item['file'], str(e)))
 
                             parallel_map(parallel_sky_filter, sky_images, max_workers=args.max_concurrency)
 
@@ -338,3 +338,10 @@ class ODMLoadDatasetStage(types.ODM_Stage):
         if args.rolling_shutter and not reconstruction.is_georeferenced():
             log.ODM_WARNING("Reconstruction is not georeferenced, disabling rolling shutter correction")
             args.rolling_shutter = False
+        
+        # GPS Z offset
+        if 'gps_z_offset_is_set' in args:
+            log.ODM_INFO("Adjusting GPS Z offset by %s for all images" % args.gps_z_offset)
+
+            for p in photos:
+                p.adjust_z_offset(args.gps_z_offset)

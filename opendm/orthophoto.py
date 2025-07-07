@@ -14,6 +14,7 @@ from opendm import io
 from opendm.tiles.tiler import generate_orthophoto_tiles
 from opendm.cogeo import convert_to_cogeo
 from osgeo import gdal
+from osgeo import ogr
 
 
 def get_orthophoto_vars(args):
@@ -43,33 +44,50 @@ def generate_png(orthophoto_file, output_file=None, outsize=None):
         output_file = base + '.png'
     
     # See if we need to select top three bands
-    bandparam = ""
+    params = []
 
-    gtif = gdal.Open(orthophoto_file)
-    if gtif.RasterCount > 4:
+    try:
+        gtif = gdal.Open(orthophoto_file)
         bands = []
         for idx in range(1, gtif.RasterCount+1):
             bands.append(gtif.GetRasterBand(idx).GetColorInterpretation())
         bands = dict(zip(bands, range(1, len(bands)+1)))
 
-        try:
+        if gtif.RasterCount >= 3:
             red = bands.get(gdal.GCI_RedBand)
             green = bands.get(gdal.GCI_GreenBand)
             blue = bands.get(gdal.GCI_BlueBand)
             if red is None or green is None or blue is None:
-                raise Exception("Cannot find bands")
+                params.append("-b 1 -b 2 -b 3")
+            else:
+                params.append("-b %s -b %s -b %s" % (red, green, blue))                
+        elif gtif.RasterCount <= 2:
+            params.append("-b 1")
+        
+        alpha = bands.get(gdal.GCI_AlphaBand)
+        if alpha is not None:
+            params.append("-b %s" % alpha)
+        else:
+            params.append("-a_nodata 0")
 
-            bandparam = "-b %s -b %s -b %s -a_nodata 0" % (red, green, blue)
-        except:
-            bandparam = "-b 1 -b 2 -b 3 -a_nodata 0"
-    gtif = None
+        dtype = gtif.GetRasterBand(1).DataType
+        if dtype != gdal.GDT_Byte:
+            params.append("-ot Byte")
+            if gtif.RasterCount >= 3:
+                params.append("-scale_1 -scale_2 -scale_3")
+            elif gtif.RasterCount <= 2:
+                params.append("-scale_1")
+        
+        gtif = None
+    except Exception as e:
+        log.ODM_WARNING("Cannot read orthophoto information for PNG generation: %s" % str(e))
 
-    osparam = ""
     if outsize is not None:
-        osparam = "-outsize %s 0" % outsize
+        params.append("-outsize %s 0" % outsize)
 
-    system.run('gdal_translate -of png "%s" "%s" %s %s '
-               '--config GDAL_CACHEMAX %s%% ' % (orthophoto_file, output_file, osparam, bandparam, get_max_memory()))
+    system.run('gdal_translate -of png "%s" "%s" %s '
+               '-co WORLDFILE=YES '
+               '--config GDAL_CACHEMAX %s%% ' % (orthophoto_file, output_file, " ".join(params), get_max_memory()))
 
 def generate_kmz(orthophoto_file, output_file=None, outsize=None):
     if output_file is None:
@@ -84,7 +102,70 @@ def generate_kmz(orthophoto_file, output_file=None, outsize=None):
 
     system.run('gdal_translate -of KMLSUPEROVERLAY -co FORMAT=PNG "%s" "%s" %s '
                '--config GDAL_CACHEMAX %s%% ' % (orthophoto_file, output_file, bandparam, get_max_memory()))    
-    
+
+def generate_extent_polygon(orthophoto_file):
+    """Function to return the orthophoto extent as a polygon into a gpkg file
+
+    Args:
+        orthophoto_file (str): the path to orthophoto file
+    """
+    base, ext = os.path.splitext(orthophoto_file)
+    output_file = base + '_extent.dxf'
+
+    try:
+        gtif = gdal.Open(orthophoto_file)
+        srs =  gtif.GetSpatialRef()
+        geoTransform = gtif.GetGeoTransform()
+
+        # calculate the coordinates
+        minx = geoTransform[0]
+        maxy = geoTransform[3]
+        maxx = minx + geoTransform[1] * gtif.RasterXSize
+        miny = maxy + geoTransform[5] * gtif.RasterYSize
+        
+        # create polygon in wkt format
+        poly_wkt = "POLYGON ((%s %s, %s %s, %s %s, %s %s, %s %s))" % (minx, miny, minx, maxy, maxx, maxy, maxx, miny, minx, miny)
+        
+        # create vector file
+        # just the DXF to support AutoCAD users
+        # to load the geotiff raster correctly.
+        driver = ogr.GetDriverByName("DXF")
+        ds = driver.CreateDataSource(output_file)
+        layer = ds.CreateLayer("extent", srs, ogr.wkbPolygon)
+
+        # create the feature and set values
+        featureDefn = layer.GetLayerDefn()
+        feature = ogr.Feature(featureDefn)
+        feature.SetGeometry(ogr.CreateGeometryFromWkt(poly_wkt))
+
+        # add feature to layer
+        layer.CreateFeature(feature)
+
+        # save and close everything
+        feature = None
+        ds = None
+        gtif = None
+        log.ODM_INFO("Wrote %s" % output_file)
+    except Exception as e:
+        log.ODM_WARNING("Cannot create extent layer for %s: %s" % (orthophoto_file, str(e)))
+
+
+def generate_tfw(orthophoto_file):
+    base, ext = os.path.splitext(orthophoto_file)
+    tfw_file = base + '.tfw'
+
+    try:
+        with rasterio.open(orthophoto_file) as ds:
+            t = ds.transform
+            with open(tfw_file, 'w') as f:
+                # rasterio affine values taken by
+                # https://mharty3.github.io/til/GIS/raster-affine-transforms/
+                f.write("\n".join([str(v) for v in [t.a, t.d, t.b, t.e, t.c, t.f]]) + "\n")
+            log.ODM_INFO("Wrote %s" % tfw_file)
+    except Exception as e:
+        log.ODM_WARNING("Cannot create .tfw for %s: %s" % (orthophoto_file, str(e)))
+
+
 def post_orthophoto_steps(args, bounds_file_path, orthophoto_file, orthophoto_tiles_dir, resolution):
     if args.crop > 0 or args.boundary:
         Cropper.crop(bounds_file_path, orthophoto_file, get_orthophoto_vars(args), keep_original=not args.optimize_disk_space, warp_options=['-dstalpha'])
@@ -103,6 +184,9 @@ def post_orthophoto_steps(args, bounds_file_path, orthophoto_file, orthophoto_ti
 
     if args.cog:
         convert_to_cogeo(orthophoto_file, max_workers=args.max_concurrency, compression=args.orthophoto_compression)
+
+    generate_extent_polygon(orthophoto_file)
+    generate_tfw(orthophoto_file)
 
 def compute_mask_raster(input_raster, vector_mask, output_raster, blend_distance=20, only_max_coords_feature=False):
     if not os.path.exists(input_raster):

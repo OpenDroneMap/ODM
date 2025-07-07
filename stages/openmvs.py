@@ -63,11 +63,13 @@ class ODMOpenMVSStage(types.ODM_Stage):
             densify_ini_file = os.path.join(tree.openmvs, 'Densify.ini')
             subres_levels = 2 # The number of lower resolutions to process before estimating output resolution depthmap.
             filter_point_th = -20
+            min_resolution = 320 if args.pc_quality in ["low", "lowest"] else 640
 
             config = [
                 "--resolution-level %s" % int(resolution_level),
                 '--dense-config-file "%s"' % densify_ini_file,
                 "--max-resolution %s" % int(outputs['undist_image_max_size']),
+                "--min-resolution %s" % min_resolution,
                 "--max-threads %s" % args.max_concurrency,
                 "--number-views-fuse %s" % number_views_fuse,
                 "--sub-resolution-levels %s" % subres_levels,
