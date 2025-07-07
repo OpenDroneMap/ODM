@@ -338,3 +338,10 @@ class ODMLoadDatasetStage(types.ODM_Stage):
         if args.rolling_shutter and not reconstruction.is_georeferenced():
             log.ODM_WARNING("Reconstruction is not georeferenced, disabling rolling shutter correction")
             args.rolling_shutter = False
+        
+        # GPS Z offset
+        if 'gps_z_offset_is_set' in args:
+            log.ODM_INFO("Adjusting GPS Z offset by %s for all images" % args.gps_z_offset)
+
+            for p in photos:
+                p.adjust_z_offset(args.gps_z_offset)
