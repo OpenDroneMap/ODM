@@ -41,6 +41,7 @@ rerun_stages = {
     'geo': 'dataset',
     'gltf': 'mvs_texturing',
     'gps_accuracy': 'dataset',
+    'gps_z_offset': 'dataset',
     'help': None,
     'ignore_gsd': 'opensfm',
     'matcher_neighbors': 'opensfm',
@@ -845,7 +846,17 @@ def config(argv=None, parser=None):
                         'with high precision GPS information (RTK), this value will be automatically '
                         'set accordingly. You can use this option to manually set it in case the reconstruction '
                         'fails. Lowering this option can sometimes help control bowling-effects over large areas. Default: %(default)s')
-
+    
+    parser.add_argument('--gps-z-offset',
+                        type=float,
+                        action=StoreValue,
+                        metavar='<float>',
+                        default=0,
+                        help='Set a GPS offset in meters for the vertical axis (Z) '
+                        'by adding it to the altitude value of the GPS EXIF data. This does not change the value of any GCPs. '
+                        'This can be useful for example when adjusting from ellipsoidal to orthometric height. '
+                        'Default: %(default)s')
+    
     parser.add_argument('--optimize-disk-space',
                 action=StoreTrue,
                 nargs=0,
