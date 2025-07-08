@@ -12,6 +12,8 @@ from opendm.cropper import Cropper
 from opendm import pseudogeo
 from opendm.tiles.tiler import generate_dem_tiles
 from opendm.cogeo import convert_to_cogeo
+from opendm.utils import add_raster_meta_tags
+
 
 class ODMDEMStage(types.ODM_Stage):
     def process(self, args, outputs):
@@ -86,6 +88,8 @@ class ODMDEMStage(types.ODM_Stage):
 
                     if pseudo_georeference:
                         pseudogeo.add_pseudo_georeferencing(dem_geotiff_path)
+                    
+                    add_raster_meta_tags(dem_geotiff_path, reconstruction, tree, embed_gcp_meta=not outputs['large'])
 
                     if args.tiles:
                         generate_dem_tiles(dem_geotiff_path, tree.path("%s_tiles" % product), args.max_concurrency, resolution)

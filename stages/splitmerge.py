@@ -13,7 +13,7 @@ from opendm.cropper import Cropper
 from opendm.remote import LocalRemoteExecutor
 from opendm.shots import merge_geojson_shots, merge_cameras
 from opendm import point_cloud
-from opendm.utils import double_quote
+from opendm.utils import double_quote, add_raster_meta_tags
 from opendm.tiles.tiler import generate_dem_tiles
 from opendm.cogeo import convert_to_cogeo
 from opendm import multispectral
@@ -263,7 +263,8 @@ class ODMMergeStage(types.ODM_Stage):
 
                         orthophoto_vars = orthophoto.get_orthophoto_vars(args)
                         orthophoto.merge(all_orthos_and_ortho_cuts, tree.odm_orthophoto_tif, orthophoto_vars)
-                        orthophoto.post_orthophoto_steps(args, merged_bounds_file, tree.odm_orthophoto_tif, tree.orthophoto_tiles, args.orthophoto_resolution)
+                        orthophoto.post_orthophoto_steps(args, merged_bounds_file, tree.odm_orthophoto_tif, tree.orthophoto_tiles, args.orthophoto_resolution,
+                            reconstruction, tree, False)
                     elif len(all_orthos_and_ortho_cuts) == 1:
                         # Simply copy
                         log.ODM_WARNING("A single orthophoto/cutline pair was found between all submodels.")
@@ -305,6 +306,8 @@ class ODMMergeStage(types.ODM_Stage):
                         if args.tiles:
                             generate_dem_tiles(dem_file, tree.path("%s_tiles" % human_name.lower()), args.max_concurrency, args.dem_resolution)
                         
+                        add_raster_meta_tags(dem_file, reconstruction, tree, embed_gcp_meta=False)
+
                         if args.cog:
                             convert_to_cogeo(dem_file, max_workers=args.max_concurrency)
                     else:

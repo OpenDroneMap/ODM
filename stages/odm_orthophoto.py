@@ -132,7 +132,8 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                     else:
                         log.ODM_INFO("Not a submodel run, skipping mask raster generation")
 
-                orthophoto.post_orthophoto_steps(args, bounds_file_path, tree.odm_orthophoto_tif, tree.orthophoto_tiles, resolution)
+                orthophoto.post_orthophoto_steps(args, bounds_file_path, tree.odm_orthophoto_tif, tree.orthophoto_tiles, resolution, 
+                    reconstruction, tree, not outputs["large"])
 
                 # Generate feathered orthophoto also
                 if args.orthophoto_cutline and submodel_run:

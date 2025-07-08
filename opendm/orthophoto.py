@@ -13,6 +13,7 @@ from rasterio.mask import mask
 from opendm import io
 from opendm.tiles.tiler import generate_orthophoto_tiles
 from opendm.cogeo import convert_to_cogeo
+from opendm.utils import add_raster_meta_tags
 from osgeo import gdal
 from osgeo import ogr
 
@@ -166,7 +167,7 @@ def generate_tfw(orthophoto_file):
         log.ODM_WARNING("Cannot create .tfw for %s: %s" % (orthophoto_file, str(e)))
 
 
-def post_orthophoto_steps(args, bounds_file_path, orthophoto_file, orthophoto_tiles_dir, resolution):
+def post_orthophoto_steps(args, bounds_file_path, orthophoto_file, orthophoto_tiles_dir, resolution, reconstruction, tree, embed_gcp_meta=False):
     if args.crop > 0 or args.boundary:
         Cropper.crop(bounds_file_path, orthophoto_file, get_orthophoto_vars(args), keep_original=not args.optimize_disk_space, warp_options=['-dstalpha'])
 
@@ -178,6 +179,8 @@ def post_orthophoto_steps(args, bounds_file_path, orthophoto_file, orthophoto_ti
         
     if args.orthophoto_kmz:
         generate_kmz(orthophoto_file)
+
+    add_raster_meta_tags(orthophoto_file, reconstruction, tree, embed_gcp_meta=embed_gcp_meta)
 
     if args.tiles:
         generate_orthophoto_tiles(orthophoto_file, orthophoto_tiles_dir, args.max_concurrency, resolution)
