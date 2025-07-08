@@ -133,13 +133,12 @@ def add_raster_meta_tags(raster, reconstruction, tree, embed_gcp_meta=True):
                     rst.update_tags(TIFFTAG_DATETIME=mean_capture_dt)
                 rst.update_tags(TIFFTAG_SOFTWARE='ODM {}'.format(log.odm_version()))
 
-            # not outputs['large']
             if embed_gcp_meta:
                 # Embed GCP info in 2D results via
                 # XML metadata fields
                 gcp_gml_export_file = tree.path("odm_georeferencing", "ground_control_points.gml")
 
-                if reconstruction.has_gcp() and io.file_exists(gcp_gml_export_file):
+                if reconstruction.has_gcp() and os.path.isfile(gcp_gml_export_file):
                     gcp_xml = ""
 
                     with open(gcp_gml_export_file) as f:
