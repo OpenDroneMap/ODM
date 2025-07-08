@@ -1,8 +1,12 @@
 import os, shutil
 import numpy as np
 import json
+import rasterio
+from osgeo import gdal
+from datetime import datetime
+
 from opendm import log
-from opendm.photo import find_largest_photo_dims
+from opendm.photo import find_largest_photo_dims, find_mean_utc_time
 from osgeo import gdal
 from opendm.arghelpers import double_quote
 
@@ -114,3 +118,41 @@ def np_to_json(arr):
 
 def np_from_json(json_dump):
     return np.asarray(json.loads(json_dump))
+
+def add_raster_meta_tags(raster, reconstruction, tree, embed_gcp_meta=True):
+    try:
+        if os.path.isfile(raster):
+            mean_capture_time = find_mean_utc_time(reconstruction.photos)
+            mean_capture_dt = None
+            if mean_capture_time is not None:
+                mean_capture_dt = datetime.fromtimestamp(mean_capture_time).strftime('%Y:%m:%d %H:%M:%S') + '+00:00'
+
+            log.ODM_INFO("Adding TIFFTAGs to {}".format(raster))
+            with rasterio.open(raster, 'r+') as rst:
+                if mean_capture_dt is not None:
+                    rst.update_tags(TIFFTAG_DATETIME=mean_capture_dt)
+                rst.update_tags(TIFFTAG_SOFTWARE='ODM {}'.format(log.odm_version()))
+
+            if embed_gcp_meta:
+                # Embed GCP info in 2D results via
+                # XML metadata fields
+                gcp_gml_export_file = tree.path("odm_georeferencing", "ground_control_points.gml")
+
+                if reconstruction.has_gcp() and os.path.isfile(gcp_gml_export_file):
+                    gcp_xml = ""
+
+                    with open(gcp_gml_export_file) as f:
+                        gcp_xml = f.read()
+
+                    ds = gdal.Open(raster)
+                    if ds is not None:
+                        if ds.GetMetadata('xml:GROUND_CONTROL_POINTS') is None or self.rerun():
+                            ds.SetMetadata(gcp_xml, 'xml:GROUND_CONTROL_POINTS')
+                            ds = None
+                            log.ODM_INFO("Wrote xml:GROUND_CONTROL_POINTS metadata to %s" % raster)
+                        else:
+                            log.ODM_WARNING("Already embedded ground control point information")
+                    else:
+                        log.ODM_WARNING("Cannot open %s for writing, skipping GCP embedding" % raster)
+    except Exception as e:
+        log.ODM_WARNING("Cannot write raster meta tags to %s: %s" % (raster, str(e)))
