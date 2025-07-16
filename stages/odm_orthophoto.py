@@ -125,12 +125,9 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                                     args.max_concurrency,
                                     scale=0.25)
                     
-                    if submodel_run:
-                        orthophoto.compute_mask_raster(tree.odm_orthophoto_tif, cutline_file, 
-                                            os.path.join(tree.odm_orthophoto, "odm_orthophoto_cut.tif"),
-                                            blend_distance=20, only_max_coords_feature=True)
-                    else:
-                        log.ODM_INFO("Not a submodel run, skipping mask raster generation")
+                    orthophoto.compute_mask_raster(tree.odm_orthophoto_tif, cutline_file, 
+                                        os.path.join(tree.odm_orthophoto, "odm_orthophoto_cut.tif"),
+                                        blend_distance=20, only_max_coords_feature=True)
 
                 orthophoto.post_orthophoto_steps(args, bounds_file_path, tree.odm_orthophoto_tif, tree.orthophoto_tiles, resolution, 
                     reconstruction, tree, not outputs["large"])
