@@ -133,10 +133,11 @@ class ODMOrthoPhotoStage(types.ODM_Stage):
                     reconstruction, tree, not outputs["large"])
 
                 # Generate feathered orthophoto also
-                orthophoto.feather_raster(tree.odm_orthophoto_tif, 
-                        os.path.join(tree.odm_orthophoto, "odm_orthophoto_feathered.tif"),
-                        blend_distance=20
-                    )
+                if args.orthophoto_cutline and submodel_run:
+                    orthophoto.feather_raster(tree.odm_orthophoto_tif, 
+                            os.path.join(tree.odm_orthophoto, "odm_orthophoto_feathered.tif"),
+                            blend_distance=20
+                        )
 
             else:
                 if io.file_exists(tree.odm_orthophoto_render):
