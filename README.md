@@ -26,7 +26,8 @@ Run ODM by placing some images (JPEGs, TIFFs or DNGs) in a folder named “image
 ```bash
 # Windows
 docker run -ti --rm -v c:/Users/youruser/datasets:/datasets opendronemap/odm --project-path /datasets project
-
+```
+```bash
 # Mac/Linux
 docker run -ti --rm -v /home/youruser/datasets:/datasets opendronemap/odm --project-path /datasets project
 ```
