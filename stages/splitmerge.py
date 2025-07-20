@@ -37,8 +37,8 @@ class ODMSplitStage(types.ODM_Stage):
             # check for availability of geotagged photos
             if reconstruction.has_geotagged_photos():
                 outputs['large'] = True
-            else:
-                log.ODM_WARNING('Could not perform split-merge as GPS information in photos or image_groups.txt is missing.')
+        else:
+            log.ODM_WARNING('Could not perform split-merge as GPS information in photos or image_groups.txt is missing.')
 
         if outputs['large']:
             # If we have a cluster address, we'll use a distributed workflow
