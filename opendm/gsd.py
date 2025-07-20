@@ -5,6 +5,7 @@ import math
 from repoze.lru import lru_cache
 from opendm import log
 from opendm.shots import get_origin
+from scipy import spatial
 
 def rounded_gsd(reconstruction_json, default_value=None, ndigits=0, ignore_gsd=False):
     """
@@ -111,16 +112,12 @@ def opensfm_reconstruction_average_gsd(reconstruction_json, use_all_shots=False)
     with open(reconstruction_json) as f:
         data = json.load(f)
 
-    # Calculate median height from sparse reconstruction
     reconstruction = data[0]
-    point_heights = []
-
-    for pointId in reconstruction['points']:
-        point = reconstruction['points'][pointId]
-        point_heights.append(point['coordinates'][2])
-
-    ground_height = np.median(point_heights)
-
+    points = np.array([reconstruction['points'][pointId]['coordinates'] for pointId in reconstruction['points']])
+    tdpoints = points.copy()
+    tdpoints[:,2] = 0
+    tree = spatial.cKDTree(tdpoints)
+    
     gsds = []
     for shotImage in reconstruction['shots']:
         shot = reconstruction['shots'][shotImage]
@@ -132,10 +129,17 @@ def opensfm_reconstruction_average_gsd(reconstruction_json, use_all_shots=False)
             if not focal_ratio:
                 log.ODM_WARNING("Cannot parse focal values from %s. This is likely an unsupported camera model." % reconstruction_json)
                 return None
-                
-            gsds.append(calculate_gsd_from_focal_ratio(focal_ratio, 
-                                                        shot_height - ground_height, 
-                                                        camera['width']))
+            
+            shot_origin[2] = 0
+            distances, neighbors = tree.query(
+                shot_origin, k=9
+            )
+
+            if len(distances) > 0:
+                ground_height = np.median(points[neighbors][:,2])
+                gsds.append(calculate_gsd_from_focal_ratio(focal_ratio, 
+                                                            shot_height - ground_height, 
+                                                            camera['width']))
     
     if len(gsds) > 0:
         mean = np.mean(gsds)
@@ -144,7 +148,6 @@ def opensfm_reconstruction_average_gsd(reconstruction_json, use_all_shots=False)
         return abs(mean)
     
     return None
-
 
 def calculate_gsd(sensor_width, flight_height, focal_length, image_width):
     """
