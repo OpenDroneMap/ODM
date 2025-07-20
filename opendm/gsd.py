@@ -130,11 +130,9 @@ def opensfm_reconstruction_average_gsd(reconstruction_json, use_all_shots=False)
                 log.ODM_WARNING("Cannot parse focal values from %s. This is likely an unsupported camera model." % reconstruction_json)
                 return None
             
-            td_shot_origin = shot_origin.copy()
-            td_shot_origin[2] = 0
-
+            shot_origin[2] = 0
             distances, neighbors = tree.query(
-                td_shot_origin, k=9
+                shot_origin, k=9
             )
 
             if len(distances) > 0:
