@@ -6,6 +6,9 @@ if sys.version_info.major < 3:
     print("Ups! ODM needs to run with Python 3. It seems you launched it with Python 2. Try using: python3 run.py ... ")
     sys.exit(1)
 
+# Hack: early import cv2 because PIL init will break DLL loading.
+import cv2
+
 import os
 from opendm import log
 from opendm import config
