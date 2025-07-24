@@ -30,9 +30,6 @@ def has_popsift_and_can_handle_texsize(width, height):
         else:
             log.ODM_INFO("popsift cannot handle texture size %dx%d" % (width, height))
             return False
-    except (ModuleNotFoundError, ImportError):
-        log.ODM_WARNING(str(e))
-        return False
     except Exception as e:
         log.ODM_WARNING(str(e))
         return False
