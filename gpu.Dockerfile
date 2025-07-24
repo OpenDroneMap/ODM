@@ -1,8 +1,8 @@
-FROM nvidia/cuda:11.2.2-devel-ubuntu20.04 AS builder
+FROM nvidia/cuda:11.8.0-devel-ubuntu20.04 AS builder
 
 # Env variables
 ENV DEBIAN_FRONTEND=noninteractive \
-    PYTHONPATH="$PYTHONPATH:/code/SuperBuild/install/lib/python3.9/dist-packages:/code/SuperBuild/install/lib/python3.8/dist-packages:/code/SuperBuild/install/bin/opensfm" \
+    PYTHONPATH="/code/SuperBuild/install/lib/python3.9/dist-packages:/code/SuperBuild/install/lib/python3.8/dist-packages:/code/SuperBuild/install/bin/opensfm" \
     LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/code/SuperBuild/install/lib"
 
 # Prepare directories
@@ -21,12 +21,11 @@ RUN bash configure.sh clean
 
 ### Use a second image for the final asset to reduce the number and
 # size of the layers.
-FROM nvidia/cuda:11.2.2-runtime-ubuntu20.04
-#FROM nvidia/cuda:11.2.0-devel-ubuntu20.04
+FROM nvidia/cuda:11.8.0-runtime-ubuntu20.04
 
 # Env variables
 ENV DEBIAN_FRONTEND=noninteractive \
-    PYTHONPATH="$PYTHONPATH:/code/SuperBuild/install/lib/python3.9/dist-packages:/code/SuperBuild/install/lib/python3.8/dist-packages:/code/SuperBuild/install/bin/opensfm" \
+    PYTHONPATH="/code/SuperBuild/install/lib/python3.9/dist-packages:/code/SuperBuild/install/lib/python3.8/dist-packages:/code/SuperBuild/install/bin/opensfm" \
     LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/code/SuperBuild/install/lib" \
     PDAL_DRIVER_PATH="/code/SuperBuild/install/bin"
 
@@ -38,7 +37,7 @@ COPY --from=builder /code /code
 # Copy the Python libraries installed via pip from the builder
 COPY --from=builder /usr/local /usr/local
 #COPY --from=builder /usr/lib/x86_64-linux-gnu/libavcodec.so.58 /usr/lib/x86_64-linux-gnu/libavcodec.so.58
-RUN dpkg --remove cuda-compat-11-2
+
 RUN apt-get update -y \
  && apt-get install -y ffmpeg libtbb2
 # Install shared libraries that we depend on via APT, but *not*

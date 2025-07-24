@@ -35,3 +35,4 @@ venv/
 python38/
 dist/
 innosetup/
+.DS_Store

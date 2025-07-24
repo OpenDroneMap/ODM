@@ -296,19 +296,23 @@ class OSFMContext:
             config.append("matcher_type: %s" % osfm_matchers[matcher_type])
 
             # GPU acceleration?
-            if has_gpu(args) and max_dims is not None:
-                w, h = max_dims
-                if w > h:
-                    h = int((h / w) * feature_process_size)
-                    w = int(feature_process_size)
-                else:
-                    w = int((w / h) * feature_process_size)
-                    h = int(feature_process_size)
-
-                if has_popsift_and_can_handle_texsize(w, h) and feature_type == "SIFT":
-                    log.ODM_INFO("Using GPU for extracting SIFT features")
-                    feature_type = "SIFT_GPU"
-                    self.gpu_sift_feature_extraction = True
+            if feature_type == "SIFT":
+                log.ODM_INFO("Checking for GPU as using SIFT for extracting features")
+                if has_gpu(args) and max_dims is not None:
+                    w, h = max_dims
+                    if w > h:
+                        h = int((h / w) * feature_process_size)
+                        w = int(feature_process_size)
+                    else:
+                        w = int((w / h) * feature_process_size)
+                        h = int(feature_process_size)
+                    
+                    if has_popsift_and_can_handle_texsize(w, h):
+                        log.ODM_INFO("Using GPU for extracting SIFT features")
+                        feature_type = "SIFT_GPU"
+                        self.gpu_sift_feature_extraction = True
+                    else:
+                        log.ODM_INFO("Using CPU for extracting SIFT features as texture size is too large or GPU SIFT is not available")
             
             config.append("feature_type: %s" % feature_type)
 
