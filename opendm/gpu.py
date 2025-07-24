@@ -19,13 +19,19 @@ def has_popsift_and_can_handle_texsize(width, height):
             log.ODM_INFO("CUDA compute platform is not supported (detected: %s.%s but we need at least 3.5)" % (compute_major, compute_minor))
             return False
     except Exception as e:
-        log.ODM_INFO("Using CPU for feature extraction: %s" % str(e))
+        log.ODM_WARNING(str(e))
         return False
 
     try:
         from opensfm import pypopsift
-        return pypopsift.fits_texture(int(width * 1.02), int(height * 1.02))
+        if pypopsift.fits_texture(int(width * 1.02), int(height * 1.02)):
+            log.ODM_INFO("popsift can handle texture size %dx%d" % (width, height))
+            return True
+        else:
+            log.ODM_INFO("popsift cannot handle texture size %dx%d" % (width, height))
+            return False
     except (ModuleNotFoundError, ImportError):
+        log.ODM_WARNING(str(e))
         return False
     except Exception as e:
         log.ODM_WARNING(str(e))
@@ -81,11 +87,12 @@ def has_gpu(args):
             log.ODM_INFO("CUDA drivers detected")
             return True
         else:
-            log.ODM_INFO("No CUDA drivers detected, using CPU")
+            log.ODM_INFO("No CUDA drivers detected")
             return False
     else:
         if shutil.which('nvidia-smi') is not None:
             log.ODM_INFO("nvidia-smi detected")
             return True
         else:
+            log.ODM_INFO("No nvidia-smi detected")
             return False
