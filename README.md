@@ -95,7 +95,7 @@ run C:\Users\youruser\datasets\project  [--additional --parameters --here]
 ODM has support for doing SIFT feature extraction on a GPU, which is about 2x faster than the CPU on a typical consumer laptop. To use this feature, you need to use the `opendronemap/odm:gpu` docker image instead of `opendronemap/odm` and you need to pass the `--gpus all` flag:
 
 ```
-docker run -ti --rm -v c:/Users/youruser/datasets:/datasets --gpus all opendronemap/odm:gpu --project-path /datasets project
+docker run -ti --rm -v c:/Users/youruser/datasets:/datasets --gpus all opendronemap/odm:gpu --project-path /datasets project --feature-type sift
 ```
 
 When you run ODM, if the GPU is recognized, in the first few lines of output you should see:
