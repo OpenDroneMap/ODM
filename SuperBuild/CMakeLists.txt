@@ -133,7 +133,7 @@ include(ExternalProject-Setup)
 # ---------------------------------------------------------------------------------------------
 # Open Source Computer Vision (OpenCV)
 #
-set(ODM_OpenCV_Version 2.4.11)
+set(ODM_OpenCV_Version 4.12.0)
 option(ODM_BUILD_OpenCV "Force to build OpenCV library" OFF)
 
 SETUP_EXTERNAL_PROJECT(OpenCV ${ODM_OpenCV_Version} ${ODM_BUILD_OpenCV})
@@ -151,7 +151,7 @@ SETUP_EXTERNAL_PROJECT(GFlags ${ODM_GFlags_Version} ${ODM_BUILD_GFlags})
 # ---------------------------------------------------------------------------------------------
 # Ceres Solver
 #
-set(ODM_Ceres_Version 2.0.0)
+set(ODM_Ceres_Version 2.2.0)
 option(ODM_BUILD_Ceres "Force to build Ceres library" OFF)
 
 SETUP_EXTERNAL_PROJECT(Ceres ${ODM_Ceres_Version} ${ODM_BUILD_Ceres})
@@ -160,7 +160,7 @@ SETUP_EXTERNAL_PROJECT(Ceres ${ODM_Ceres_Version} ${ODM_BUILD_Ceres})
 # ---------------------------------------------------------------------------------------------
 # Hexer
 #
-SETUP_EXTERNAL_PROJECT(Hexer 1.4 ON)
+SETUP_EXTERNAL_PROJECT(Hexer 1.5 ON)
 
 # ---------------------------------------------------------------------------------------------
 # Open Structure from Motion (OpenSfM)
@@ -269,9 +269,9 @@ externalproject_add(lastools
 )
 
 externalproject_add(draco
-    GIT_REPOSITORY    https://github.com/OpenDroneMap/draco
+    GIT_REPOSITORY    https://github.com/google/draco
     GIT_SHALLOW       ON
-    GIT_TAG           304
+    GIT_TAG           7d2af85eb76906b0b485a0644675e4827e4571f5
     PREFIX            ${SB_BINARY_DIR}/draco
     SOURCE_DIR        ${SB_SOURCE_DIR}/draco
     CMAKE_ARGS        -DDRACO_TRANSCODER_SUPPORTED=ON 
