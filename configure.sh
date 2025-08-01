@@ -66,7 +66,7 @@ ensure_prereqs() {
     sudo $APT_GET install -y -qq --no-install-recommends \
         python3-pip \
         python3-setuptools
-    sudo pip3 install -U pip --break-system-packages
+    sudo pip3 install -U --ignore-installed pip --break-system-packages
     sudo pip3 install -U shyaml --break-system-packages
 }
 

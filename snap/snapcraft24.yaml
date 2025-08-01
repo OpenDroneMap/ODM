@@ -117,10 +117,10 @@ parts:
       - libboost-serialization-dev
       - libboost-system-dev
     stage-packages:
-      - libboost-program-options1.74.0
-      - libboost-iostreams1.74.0
-      - libboost-serialization1.74.0
-      - libboost-system1.74.0
+      - libboost-program-options1.83.0
+      - libboost-iostreams1.83.0
+      - libboost-serialization1.83.0
+      - libboost-system1.83.0
 
   opensfm:
     source: .
