@@ -37,3 +37,4 @@ codem==0.26.1
 trimesh==4.7.1
 pandas==2.3.1
 piexif==1.1.3
+rawpy=0.25.0
