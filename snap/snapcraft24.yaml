@@ -53,16 +53,15 @@ parts:
       - swig3.0
     stage-packages:
       - gdal-bin
-      - libgdal28
+      - libgdal34t64
       - libgeotiff5
-      - libjsoncpp24
-      - libspqr2
-      - libssl1.1
+      - libjsoncpp25
+      - libspqr4
+      - libssl3t64
       - libusb-1.0-0
       - proj-data
       - procps
       - python3
-      - python3-distutils
       - python3-gdal
       - python3-pkg-resources # required base package for core20
       - python3-requests # required base package for core20
@@ -92,19 +91,19 @@ parts:
       - libxext-dev
       - proj-bin
     stage-packages:
-      - libavcodec58
-      - libavformat58
+      - libavcodec60
+      - libavformat60
       - libflann1.9
       - libgtk2.0-0
       - libjpeg-turbo8
-      - libjxl
+      - libjxl0.7
       - libopenjpip7
       - liblapack3
       - libpng16-16
-      - libproj19
-      - libswscale5
-      - libtbb2
-      - libtiff5
+      - libproj25
+      - libswscale7
+      - libtbb12
+      - libtiff6
       - libwebpdemux2
       - libxext6
   
@@ -130,14 +129,14 @@ parts:
       - libgoogle-glog-dev
       - libsuitesparse-dev
     stage-packages:
-      - libamd2
-      - libcamd2
-      - libccolamd2
-      - libcholmod3
-      - libcolamd2
-      - libcxsparse3
-      - libgoogle-glog0v5
-      - libsuitesparseconfig5
+      - libamd3
+      - libcamd3
+      - libccolamd3
+      - libcholmod5
+      - libcolamd3
+      - libcxsparse4
+      - libgoogle-glog0v6t64
+      - libsuitesparseconfig7
 
   odm:
     after:
