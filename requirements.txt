@@ -1,5 +1,6 @@
 appsettings==0.8
 beautifulsoup4==4.9.3
+python-dateutil==2.8.2
 edt==2.0.2
 ODMExifRead==3.0.4
 Fiona==1.8.17 ; sys_platform == 'linux'
@@ -21,10 +22,12 @@ https://github.com/OpenDroneMap/windows-deps/raw/main/GDAL-3.2.3-cp38-cp38-win_a
 odmrawpy==0.24.1
 repoze.lru==0.7
 scikit-learn==1.1.1
+scikit-image==0.19.3
 scipy==1.8.1
 xmltodict==0.12.0
 Shapely==1.7.1
 onnxruntime==1.12.1
 pygltflib==1.16.5
 codem==0.24.0
+trimesh==3.17.1
 piexif==1.1.3
