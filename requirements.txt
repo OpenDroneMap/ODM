@@ -7,6 +7,7 @@ Fiona==1.8.17 ; sys_platform == 'linux'
 Fiona==1.9.1 ; sys_platform == 'darwin'
 https://github.com/OpenDroneMap/windows-deps/raw/main/Fiona-1.8.19-cp38-cp38-win_amd64.whl ; sys_platform == 'win32'
 joblib==1.1.0
+matplotlib==3.3.3
 numpy==1.23.1
 Pillow==8.3.2
 vmem==1.0.2
