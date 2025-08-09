@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# coding: utf-8
 """
 MicaSense Downwelling Light Sensor Utilities
 
@@ -21,36 +23,41 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
 
-
 import numpy as np
+
 # for DLS correction, we need the sun position at the time the image was taken
 # this can be computed using the pysolar package (ver 0.6)
 # https://pypi.python.org/pypi/Pysolar/0.6
 # we import multiple times with checking here because the case of Pysolar is 
 # different depending on the python version :(
-import imp
+# import imp
 
 havePysolar = False
 
 try:
     import pysolar.solar as pysolar
+
     havePysolar = True
 except ImportError:
     try:
         import Pysolar.solar as pysolar
+
         havePysolar = True
     except ImportError:
         import pysolar.solar as pysolar
-        havePysolar = True 
-finally: 
+
+        havePysolar = True
+finally:
     if not havePysolar:
         print("Unable to import pysolar")
 
+
 def fresnel(phi):
-    return __multilayer_transmission(phi, n=[1.000277,1.6,1.38])
+    return __multilayer_transmission(phi, n=[1.000277, 1.6, 1.38])
+
 
 # define functions to compute the DLS-Sun angle:
-def __fresnel_transmission(phi, n1=1.000277, n2=1.38, polarization=[.5, .5]):
+def __fresnel_transmission(phi, n1=1.000277, n2=1.38, polarization=None):
     """compute fresnel transmission between media with refractive indices n1 and n2"""
     # computes the reflection and transmittance
     # for incidence angles  phi for transition from medium
@@ -60,35 +67,45 @@ def __fresnel_transmission(phi, n1=1.000277, n2=1.38, polarization=[.5, .5]):
     # polarization=[.5,.5] - unpolarized light
     # polarization=[1.,0] - s-polarized light - perpendicular to plane of incidence
     # polarization=[0,1.] - p-polarized light - parallel to plane of incidence
+    if polarization is None:
+        polarization = [.5, .5]
     f1 = np.cos(phi)
-    f2 = np.sqrt(1-(n1/n2*np.sin(phi))**2)
-    Rs = ((n1*f1-n2*f2)/(n1*f1+n2*f2))**2
-    Rp = ((n1*f2-n2*f1)/(n1*f2+n2*f1))**2
-    T = 1.-polarization[0]*Rs-polarization[1]*Rp
-    if T > 1: T= 0.
-    if T < 0: T = 0.
-    if np.isnan(T): T = 0.
+    f2 = np.sqrt(1 - (n1 / n2 * np.sin(phi)) ** 2)
+    Rs = ((n1 * f1 - n2 * f2) / (n1 * f1 + n2 * f2)) ** 2
+    Rp = ((n1 * f2 - n2 * f1) / (n1 * f2 + n2 * f1)) ** 2
+    T = 1. - polarization[0] * Rs - polarization[1] * Rp
+    if T > 1:
+        T = 0.
+    if T < 0:
+        T = 0.
+    if np.isnan(T):
+        T = 0.
     return T
 
-def __multilayer_transmission(phi, n, polarization=[.5, .5]):
+
+def __multilayer_transmission(phi, n, polarization=None):
+    if polarization is None:
+        polarization = [.5, .5]
     T = 1.0
     phi_eff = np.copy(phi)
-    for i in range(0,len(n)-1):
+    for i in range(0, len(n) - 1):
         n1 = n[i]
-        n2 = n[i+1]
-        phi_eff = np.arcsin(np.sin(phi_eff)/n1)
+        n2 = n[i + 1]
+        phi_eff = np.arcsin(np.sin(phi_eff) / n1)
         T *= __fresnel_transmission(phi_eff, n1, n2, polarization=polarization)
     return T
 
+
 # get the position of the sun in North-East-Down (NED) coordinate system
-def ned_from_pysolar(sunAzimuth, sunAltitude):
+def ned_from_pysolar(sun_azimuth, sun_altitude):
     """Convert pysolar coordinates to NED coordinates."""
     elements = (
-        np.cos(sunAzimuth) * np.cos(sunAltitude),
-        np.sin(sunAzimuth) * np.cos(sunAltitude),
-        -np.sin(sunAltitude),
+        np.cos(sun_azimuth) * np.cos(sun_altitude),
+        np.sin(sun_azimuth) * np.cos(sun_altitude),
+        -np.sin(sun_altitude),
     )
     return np.array(elements).transpose()
+
 
 # get the sensor orientation in North-East-Down coordinates
 # pose is a yaw/pitch/roll tuple of angles measured for the DLS
@@ -109,6 +126,7 @@ def get_orientation(pose, ori):
     n = np.dot(R, ori)
     return n
 
+
 # from the current position (lat,lon,alt) tuple
 # and time (UTC), as well as the sensor orientation (yaw,pitch,roll) tuple
 # compute a sensor sun angle - this is needed as the actual sun irradiance
@@ -119,26 +137,24 @@ def get_orientation(pose, ori):
 # I_measured = I_direct * (cos (sun_sensor_angle) + 1/6)
 
 def compute_sun_angle(
-    position,
-    pose,
-    utc_datetime,
-    sensor_orientation,
+        position,
+        pose,
+        utc_datetime,
+        sensor_orientation,
 ):
     """ compute the sun angle using pysolar functions"""
-    altitude = 0
-    azimuth = 0
     import warnings
-    with warnings.catch_warnings(): # Ignore pysolar leap seconds offset warning
+    with warnings.catch_warnings():  # Ignore pysolar leap seconds offset warning
         warnings.simplefilter("ignore")
         try:
             altitude = pysolar.get_altitude(position[0], position[1], utc_datetime)
             azimuth = pysolar.get_azimuth(position[0], position[1], utc_datetime)
-        except AttributeError: # catch 0.6 version of pysolar required for python 2.7 support
+        except AttributeError:  # catch 0.6 version of pysolar required for python 2.7 support
             altitude = pysolar.GetAltitude(position[0], position[1], utc_datetime)
-            azimuth = 180-pysolar.GetAzimuth(position[0], position[1], utc_datetime)
+            azimuth = 180 - pysolar.GetAzimuth(position[0], position[1], utc_datetime)
         sunAltitude = np.radians(np.array(altitude))
         sunAzimuth = np.radians(np.array(azimuth))
-        sunAzimuth = sunAzimuth % (2 * np.pi ) #wrap range 0 to 2*pi
+        sunAzimuth = sunAzimuth % (2 * np.pi)  # wrap range 0 to 2*pi
         nSun = ned_from_pysolar(sunAzimuth, sunAltitude)
         nSensor = np.array(get_orientation(pose, sensor_orientation))
         angle = np.arccos(np.dot(nSun, nSensor))

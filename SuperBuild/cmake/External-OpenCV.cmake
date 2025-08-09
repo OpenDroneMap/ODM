@@ -36,7 +36,7 @@ ExternalProject_Add(${_proj_name}
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
-  URL               https://github.com/opencv/opencv/archive/4.5.0.zip
+  URL               https://github.com/opencv/opencv/archive/4.12.0.zip
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   #--Configure step-------------

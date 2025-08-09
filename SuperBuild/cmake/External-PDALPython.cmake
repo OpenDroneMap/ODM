@@ -13,8 +13,8 @@ ExternalProject_Add(${_proj_name}
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
-  GIT_REPOSITORY    https://github.com/OpenDroneMap/pdal-python
-  GIT_TAG           main
+  GIT_REPOSITORY    https://github.com/NathanMOlson/pdal-python
+  GIT_TAG           79ec1264533fdffb1b08a46aed3d0a0ead2a98e8
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   #--Configure step-------------
@@ -22,7 +22,7 @@ ExternalProject_Add(${_proj_name}
   CMAKE_ARGS
     -DPDAL_DIR=${SB_INSTALL_DIR}/lib/cmake/PDAL
     -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-    -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}/lib/python3.8/dist-packages
+    -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}/lib/python3.12/dist-packages
     ${WIN32_CMAKE_ARGS}
     ${PP_EXTRA_ARGS}
   #--Build step-----------------
