@@ -13,8 +13,8 @@ ExternalProject_Add(${_proj_name}
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
-  GIT_REPOSITORY    https://github.com/NathanMOlson/pdal-python
-  GIT_TAG           79ec1264533fdffb1b08a46aed3d0a0ead2a98e8
+  GIT_REPOSITORY    https://github.com/PDAL/python
+  GIT_TAG           6791a880a87e95f7318e99acfb4a10186379c5dd
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   #--Configure step-------------
@@ -29,6 +29,10 @@ ExternalProject_Add(${_proj_name}
   BINARY_DIR        ${_SB_BINARY_DIR}
   #--Install step---------------
   INSTALL_DIR       ${SB_INSTALL_DIR}
+  INSTALL_COMMAND   ${CMAKE_COMMAND} --build <BINARY_DIR> --target install
+                    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${SB_SOURCE_DIR}/${_proj_name}/src/pdal/__init__.py ${SB_INSTALL_DIR}/lib/python3.12/dist-packages/pdal
+                    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${SB_SOURCE_DIR}/${_proj_name}/src/pdal/pipeline.py ${SB_INSTALL_DIR}/lib/python3.12/dist-packages/pdal
+                    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${SB_SOURCE_DIR}/${_proj_name}/src/pdal/drivers.py ${SB_INSTALL_DIR}/lib/python3.12/dist-packages/pdal
   #--Output logging-------------
   LOG_DOWNLOAD      OFF
   LOG_CONFIGURE     OFF
