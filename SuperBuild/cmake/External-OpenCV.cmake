@@ -31,9 +31,7 @@ elseif(APPLE)
 else()
   set(OCV_CMAKE_EXTRA_ARGS -DPYTHON3_NUMPY_INCLUDE_DIRS=${PYTHON_HOME}/lib/python3.12/site-packages/numpy/_core/include
                              -DPYTHON3_PACKAGES_PATH=${PYTHON_HOME}/lib/python3.12/site-packages
-                             -DPYTHON3_EXECUTABLE=${PYTHON_EXE_PATH}
-                             -DOPENCV_LIB_INSTALL_PATH=${SB_INSTALL_DIR}/lib
-                             -DOPENCV_BIN_INSTALL_PATH=${SB_INSTALL_DIR}/bin)
+                             -DPYTHON3_EXECUTABLE=${PYTHON_EXE_PATH})
 endif()
 
 ExternalProject_Add(${_proj_name}

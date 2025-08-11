@@ -34,6 +34,7 @@ WORKDIR /code
 # Copy everything we built from the builder
 COPY --from=builder /code /code
 
+ENV PATH="/code/venv/bin:$PATH"
 
 # Install shared libraries that we depend on via APT, but *not*
 # the -dev packages to save space!

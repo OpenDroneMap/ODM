@@ -29,6 +29,7 @@ fpdf2==2.8.3
 Shapely==2.1.1
 onnxruntime==1.22.1
 pygltflib==1.16.5
+packaging==25.0
 codem==0.26.1
 trimesh==4.7.1
 piexif==1.1.3
