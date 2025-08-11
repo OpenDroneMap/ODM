@@ -13,7 +13,7 @@ ExternalProject_Add(${_proj_name}
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
   GIT_REPOSITORY    https://github.com/NathanMOlson/entwine/
-  GIT_TAG           8bd179c38e6da1688f42376b88ff30427672c4e3
+  GIT_TAG           66fe017a41df31b409758a68e6e685ec125b6973
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   #--Configure step-------------
