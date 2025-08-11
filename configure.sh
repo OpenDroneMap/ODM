@@ -65,9 +65,11 @@ ensure_prereqs() {
     echo "Installing Python PIP"
     sudo $APT_GET install -y -qq --no-install-recommends \
         python3-pip \
-        python3-setuptools
-    sudo pip3 install -U --ignore-installed pip --break-system-packages
-    sudo pip3 install -U shyaml --break-system-packages
+        python3-setuptools \
+        python3-venv
+    python3 -m venv venv --system-site-packages
+    venv/bin/pip3 install -U pip
+    venv/bin/pip3 install -U shyaml
 }
 
 # Save all dependencies in snapcraft.yaml to maintain a single source of truth.
@@ -89,7 +91,7 @@ installdepsfromsnapcraft() {
     fi
 
     cat snap/$SNAPCRAFT_FILE | \
-        shyaml get-values-0 parts.$section.$key | \
+        venv/bin/shyaml get-values-0 parts.$section.$key | \
         xargs -0 sudo $APT_GET install -y -qq --no-install-recommends
 }
 
@@ -131,8 +133,8 @@ installreqs() {
     set -e
 
     # edt requires numpy to build
-    pip install --ignore-installed numpy==2.3.2 --break-system-packages
-    pip install --ignore-installed -r requirements.txt --break-system-packages
+    venv/bin/pip install numpy==2.3.2
+    venv/bin/pip install -r requirements.txt
     #if [ ! -z "$GPU_INSTALL" ]; then
     #fi
     set +e

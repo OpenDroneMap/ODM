@@ -117,7 +117,8 @@ elseif(APPLE)
     set(PYTHON_HOME "${SB_ROOT_DIR}/../venv")
     set(PYTHON_EXE_PATH "${PYTHON_HOME}/bin/python")
 else()
-  set(PYTHON_EXE_PATH "/usr/bin/python3")
+  set(PYTHON_HOME "${SB_ROOT_DIR}/../venv")
+  set(PYTHON_EXE_PATH "${PYTHON_HOME}/bin/python3")
 endif()
 
 # Path to additional CMake modules
