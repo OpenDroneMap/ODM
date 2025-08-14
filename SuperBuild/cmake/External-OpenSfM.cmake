@@ -25,7 +25,7 @@ ExternalProject_Add(${_proj_name}
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
   GIT_REPOSITORY    https://github.com/NathanMOlson/OpenSfM/
-  GIT_TAG           02534f5f79f772daeaf9986d30a2b59c08e4539c
+  GIT_TAG           31eb1eedac181a9865ab2f038f67e2b3fc587860
   #--Update/Patch step----------
   UPDATE_COMMAND    git submodule update --init --recursive
   #--Configure step-------------
