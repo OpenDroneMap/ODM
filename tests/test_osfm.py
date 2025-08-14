@@ -12,9 +12,9 @@ class TestOSFM(unittest.TestCase):
         args = config.config(["--project-path", "/datasets"])
         
         self.assertEqual(get_submodel_argv(args)[1:], 
-            ['--orthophoto-cutline', '--dem-euclidean-map', '--skip-3dmodel'])
+            ['--orthophoto-cutline', '--dem-euclidean-map', '--skip-3dmodel', '--skip-report'])
         self.assertEqual(get_submodel_argv(args, "/submodels", "submodel_0000")[1:], 
-            ['--orthophoto-cutline', '--dem-euclidean-map', '--skip-3dmodel', '--project-path', '/submodels', 'submodel_0000'])        
+            ['--orthophoto-cutline', '--dem-euclidean-map', '--skip-3dmodel', '--skip-report', '--project-path', '/submodels', 'submodel_0000'])        
 
         # Base + project name
         args = config.config(["--project-path", "/datasets", "brighton"])
@@ -59,7 +59,7 @@ class TestOSFM(unittest.TestCase):
         args = config.config(["--project-path", "/datasets"])
         
         self.assertEqual(get_submodel_args_dict(args), 
-            {'orthophoto-cutline': True, 'skip-3dmodel': True, 'dem-euclidean-map': True})
+            {'orthophoto-cutline': True, 'skip-3dmodel': True, 'dem-euclidean-map': True, 'skip-report': True})
 
 if __name__ == '__main__':
     unittest.main()
