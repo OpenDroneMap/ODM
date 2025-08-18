@@ -21,7 +21,7 @@ jobs:
     - uses: Jimver/cuda-toolkit@v0.2.4
       id: cuda-toolkit
       with:
-        cuda: '12.9.1'
+        cuda: '11.4.0'
     - name: Setup cmake
       uses: jwlawson/actions-setup-cmake@v1.13
       with:
