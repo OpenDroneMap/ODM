@@ -49,14 +49,14 @@ jobs:
   #       isClassic: 'false'
 
   windows:
-    runs-on: windows-2019
+    runs-on: windows-2022
     steps:
     - name: Checkout
       uses: actions/checkout@v2
     - name: Setup Python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.8.1'
+        python-version: '3.12.10'
         architecture: 'x64'
     - uses: Jimver/cuda-toolkit@v0.2.4
       id: cuda-toolkit

@@ -10,12 +10,12 @@ if (WIN32)
                              -DOPENCV_BIN_INSTALL_PATH=${SB_INSTALL_DIR}/bin)
 elseif(APPLE)
   # macOS is unable to automatically detect our Python libs
-  set(OCV_CMAKE_EXTRA_ARGS -DPYTHON3_NUMPY_INCLUDE_DIRS=${PYTHON_HOME}/lib/python3.8/site-packages/numpy/core/include
-                           -DPYTHON3_PACKAGES_PATH=${PYTHON_HOME}/lib/python3.8/site-packages
+  set(OCV_CMAKE_EXTRA_ARGS -DPYTHON3_NUMPY_INCLUDE_DIRS=${PYTHON_HOME}/lib/python3.12/site-packages/numpy/core/include
+                           -DPYTHON3_PACKAGES_PATH=${PYTHON_HOME}/lib/python3.12/site-packages
                            -DPYTHON3_EXECUTABLE=${PYTHON_EXE_PATH}
-                           -DPYTHON3_LIBRARIES=${HOMEBREW_INSTALL_PREFIX}/opt/python@3.8/Frameworks/Python.framework/Versions/3.8/lib/libpython3.8.dylib
-                           -DPYTHON3_INCLUDE_DIR=${HOMEBREW_INSTALL_PREFIX}/opt/python@3.8/Frameworks/Python.framework/Versions/3.8/include/python3.8/
-                           -DPYTHON3_INCLUDE_PATH=${HOMEBREW_INSTALL_PREFIX}/opt/python@3.8/Frameworks/Python.framework/Versions/3.8/include/python3.8/
+                           -DPYTHON3_LIBRARIES=${HOMEBREW_INSTALL_PREFIX}/opt/python@3.12/Frameworks/Python.framework/Versions/3.12/lib/libpython3.12.dylib
+                           -DPYTHON3_INCLUDE_DIR=${HOMEBREW_INSTALL_PREFIX}/opt/python@3.12/Frameworks/Python.framework/Versions/3.12/include/python3.12/
+                           -DPYTHON3_INCLUDE_PATH=${HOMEBREW_INSTALL_PREFIX}/opt/python@3.12/Frameworks/Python.framework/Versions/3.12/include/python3.12/
                            -DPYTHON3INTERP_FOUND=ON
                            -DPYTHON3LIBS_FOUND=ON
                            -DPYTHON_DEFAULT_AVAILABLE=ON
@@ -23,7 +23,7 @@ elseif(APPLE)
                            -DPYTHON3_VERSION_MAJOR=3
                            -DPYTHON3_VERSION_MINOR=8
                            -DOPENCV_CONFIG_INSTALL_PATH=
-                           -DOPENCV_PYTHON_INSTALL_PATH=${SB_INSTALL_DIR}/lib/python3.8/dist-packages
+                           -DOPENCV_PYTHON_INSTALL_PATH=${SB_INSTALL_DIR}/lib/python3.12/dist-packages
                            -DHAVE_opencv_python3=ON
                            -DOPENCV_PYTHON_SKIP_DETECTION=ON
                            -DOPENCV_LIB_INSTALL_PATH=${SB_INSTALL_DIR}/lib

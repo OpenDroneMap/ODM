@@ -29,13 +29,13 @@ ensure_prereqs() {
 installreqs() {
     ensure_prereqs
     
-    brew install cmake gcc@12 python@3.8 tbb@2020 eigen gdal boost cgal libomp
+    brew install cmake gcc@12 python@3.12 tbb@2020 eigen gdal boost cgal libomp
     brew link tbb@2020
 
-    python3.8 -m pip install virtualenv
+    python3.12 -m pip install virtualenv
 
     if [ ! -e ${RUNPATH}/venv ]; then
-        python3.8 -m virtualenv venv
+        python3.12 -m virtualenv venv
     fi
 
     source venv/bin/activate

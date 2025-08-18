@@ -2,8 +2,8 @@ import sys, platform
 if sys.platform != 'win32':
     print("This script is for Windows only! Use configure.sh instead.")
     exit(1)
-if sys.version_info.major != 3 or sys.version_info.minor != 8:
-    print("You need to use Python 3.8.x (due to the requirements.txt). You are using %s instead." % platform.python_version())
+if sys.version_info.major != 3 or sys.version_info.minor != 12:
+    print("You need to use Python 3.12.x (due to the requirements.txt). You are using %s instead." % platform.python_version())
     exit(1)
 
 import argparse
@@ -155,19 +155,19 @@ def dist():
             z.extractall(os.path.join("SuperBuild", "download"))
 
     # Download portable python
-    if not os.path.isdir("python38"):
-        pythonzip_path = os.path.join("SuperBuild", "download", "python38.zip")
-        python_url = "https://github.com/OpenDroneMap/windows-deps/releases/download/2.5.0/python-3.8.1-embed-amd64-less-pth.zip"
+    if not os.path.isdir("python312"):
+        pythonzip_path = os.path.join("SuperBuild", "download", "python312.zip")
+        python_url = "https://github.com/NathanMOlson/windows-deps/releases/download/Python3.12.10/python-3.12.10-embed-amd64-less-pth.zip"
         if not os.path.exists(pythonzip_path):
             print("Downloading %s" % python_url)
             with urllib.request.urlopen(python_url) as response, open( pythonzip_path, 'wb') as out_file:
                 shutil.copyfileobj(response, out_file)
         
-        os.mkdir("python38")
+        os.mkdir("python312")
 
-        print("Extracting --> python38/")
+        print("Extracting --> python312/")
         with zipfile.ZipFile(pythonzip_path) as z:
-            z.extractall("python38")
+            z.extractall("python312")
 
     # Download signtool
     signtool_path = os.path.join("SuperBuild", "download", "signtool.exe")
