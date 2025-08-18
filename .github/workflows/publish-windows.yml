@@ -18,7 +18,7 @@ jobs:
       with:
         python-version: '3.12.10'
         architecture: 'x64'
-    - uses: Jimver/cuda-toolkit@v0.2.26
+    - uses: Jimver/cuda-toolkit@v0.2.4
       id: cuda-toolkit
       with:
         cuda: '12.9.1'
