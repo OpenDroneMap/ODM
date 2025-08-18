@@ -101,7 +101,10 @@ if (WIN32)
 
   # Also download missing headers :/
   if (NOT EXISTS "${GDAL_INCLUDE_DIR}/ogrsf_frmts.h")
-    file(DOWNLOAD "https://raw.githubusercontent.com/OSGeo/gdal/release/3.2/gdal/ogr/ogrsf_frmts/ogrsf_frmts.h" "${GDAL_INCLUDE_DIR}/ogrsf_frmts.h")
+    file(DOWNLOAD "https://raw.githubusercontent.com/OSGeo/gdal/refs/tags/v3.11.1/ogr/ogrsf_frmts/ogrsf_frmts.h" "${GDAL_INCLUDE_DIR}/ogrsf_frmts.h")
+  endif()
+  if (NOT EXISTS "${GDAL_INCLUDE_DIR}/gdal_priv.h")
+    file(DOWNLOAD "https://raw.githubusercontent.com/OSGeo/gdal/refs/tags/v3.11.3/gcore/gdal_priv.h" "${GDAL_INCLUDE_DIR}/gdal_priv.h")
   endif()
 
   message("Copying VCPKG DLLs...")

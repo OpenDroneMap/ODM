@@ -2,7 +2,7 @@ set(_proj_name opencv)
 set(_SB_BINARY_DIR "${SB_BINARY_DIR}/${_proj_name}")
 
 if (WIN32)
-  set(OCV_CMAKE_EXTRA_ARGS -DPYTHON3_NUMPY_INCLUDE_DIRS=${PYTHON_HOME}/lib/site-packages/numpy/core/include
+  set(OCV_CMAKE_EXTRA_ARGS -DPYTHON3_NUMPY_INCLUDE_DIRS=${PYTHON_HOME}/lib/site-packages/numpy/_core/include
                              -DPYTHON3_PACKAGES_PATH=${PYTHON_HOME}/lib/site-packages
                              -DPYTHON3_EXECUTABLE=${PYTHON_EXE_PATH}
                              -DWITH_MSMF=OFF
