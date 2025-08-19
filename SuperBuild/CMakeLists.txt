@@ -96,7 +96,7 @@ if (WIN32)
 
   # Use the GDAL version that comes with pip
   set(GDAL_ROOT "${PYTHON_HOME}/Lib/site-packages/osgeo")
-  set(GDAL_LIBRARY "${GDAL_ROOT}/lib/gdal.lib")
+  set(GDAL_LIBRARY "${GDAL_ROOT}/gdal.lib")
   set(GDAL_INCLUDE_DIR "${GDAL_ROOT}/include/gdal")
 
   message("Copying VCPKG DLLs...")
