@@ -5,7 +5,7 @@ edt==3.0.0
 ODMExifRead==3.0.4
 Fiona==1.10.1 ; sys_platform == 'linux'
 Fiona==1.10.1 ; sys_platform == 'darwin'
-https://github.com/NathanMOlson/windows-deps/releases/download/2025-8-18b/fiona-1.10.1-cp312-cp312-win_amd64.whl ; sys_platform == 'win32'
+https://github.com/NathanMOlson/windows-deps/releases/download/2025-8-18c/fiona-1.10.1-cp312-cp312-win_amd64.whl ; sys_platform == 'win32'
 joblib==1.5.1
 matplotlib==3.10.3
 numpy==2.3.2
@@ -18,8 +18,8 @@ pytz==2025.2
 PyYAML==6.0.2
 rasterio==1.4.3 ; sys_platform == 'linux'
 rasterio==1.4.3 ; sys_platform == 'darwin'
-https://github.com/NathanMOlson/windows-deps/releases/download/2025-8-18b/rasterio-1.4.3-cp312-cp312-win_amd64.whl ; sys_platform == 'win32'
-https://github.com/NathanMOlson/windows-deps/releases/download/2025-8-18b/gdal-3.11.1-cp312-cp312-win_amd64.whl ; sys_platform == 'win32'
+https://github.com/NathanMOlson/windows-deps/releases/download/2025-8-18c/rasterio-1.4.3-cp312-cp312-win_amd64.whl ; sys_platform == 'win32'
+https://github.com/NathanMOlson/windows-deps/releases/download/2025-8-18c/gdal-3.11.1-cp312-cp312-win_amd64.whl ; sys_platform == 'win32'
 repoze.lru==0.7
 scikit-learn==1.7.1
 scikit-image==0.25.2
