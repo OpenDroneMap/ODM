@@ -129,19 +129,19 @@ include(ExternalProject-Setup)
 # ---------------------------------------------------------------------------------------------
 # Open Source Computer Vision (OpenCV)
 #
-# set(ODM_OpenCV_Version 4.12.0)
-# option(ODM_BUILD_OpenCV "Force to build OpenCV library" OFF)
+set(ODM_OpenCV_Version 4.12.0)
+option(ODM_BUILD_OpenCV "Force to build OpenCV library" OFF)
 
-# SETUP_EXTERNAL_PROJECT(OpenCV ${ODM_OpenCV_Version} ${ODM_BUILD_OpenCV})
+SETUP_EXTERNAL_PROJECT(OpenCV ${ODM_OpenCV_Version} ${ODM_BUILD_OpenCV})
 
 
-# # ---------------------------------------------------------------------------------------------
-# # Google Flags library (GFlags)
-# #
-# set(ODM_GFlags_Version 2.2.2)
-# option(ODM_BUILD_GFlags "Force to build GFlags library" OFF)
+# ---------------------------------------------------------------------------------------------
+# Google Flags library (GFlags)
+#
+set(ODM_GFlags_Version 2.2.2)
+option(ODM_BUILD_GFlags "Force to build GFlags library" OFF)
 
-# SETUP_EXTERNAL_PROJECT(GFlags ${ODM_GFlags_Version} ${ODM_BUILD_GFlags})
+SETUP_EXTERNAL_PROJECT(GFlags ${ODM_GFlags_Version} ${ODM_BUILD_GFlags})
 
 
 # ---------------------------------------------------------------------------------------------
