@@ -12,8 +12,8 @@ ExternalProject_Add(${_proj_name}
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
-  GIT_REPOSITORY    https://github.com/NathanMOlson/entwine/
-  GIT_TAG           e1adc04564ab2324516ba9f1fa448c3e4b5040ff
+  GIT_REPOSITORY    https://github.com/OpenDroneMap/entwine/
+  GIT_TAG           0cf957432f291e841ff1385085dadad933dcba8d
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   #--Configure step-------------
@@ -23,6 +23,8 @@ ExternalProject_Add(${_proj_name}
     -DADDITIONAL_LINK_DIRECTORIES_PATHS=${SB_INSTALL_DIR}/lib
     -DWITH_TESTS=OFF
     -DWITH_ZSTD=OFF
+    -DWITH_CURL=OFF
+    -DWITH_OPENSSL=OFF
     -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
     -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
   #--Build step-----------------

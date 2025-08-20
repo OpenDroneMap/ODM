@@ -24,8 +24,8 @@ ExternalProject_Add(${_proj_name}
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
-  GIT_REPOSITORY    https://github.com/NathanMOlson/OpenSfM/
-  GIT_TAG           f5c35e6379cea899fe1033c9ecc09ab3a870f861
+  GIT_REPOSITORY    https://github.com/OpenDroneMap/OpenSfM/
+  GIT_TAG           c5328439465e6ace011f39077d1077d7b1cdd65d
   #--Update/Patch step----------
   UPDATE_COMMAND    git submodule update --init --recursive
   #--Configure step-------------
