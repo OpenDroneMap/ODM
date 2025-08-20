@@ -1,4 +1,9 @@
 #!/bin/bash
+
+echo "!!! WARNING!                                                                      !!!"
+echo "!!! This script is not currently maintained and may not work!                     !!!"
+echo "!!! See https://community.opendronemap.org/t/odm-install-on-a-mac-os-14-6-1/25007 !!!"
+
 uname=$(uname)
 if [[ "$uname" != "Darwin" ]]; then
     echo "This script is meant for MacOS only."
