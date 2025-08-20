@@ -58,11 +58,10 @@ jobs:
       with:
         python-version: '3.12.10'
         architecture: 'x64'
-    - uses: Jimver/cuda-toolkit@v0.2.27
+    - uses: Jimver/cuda-toolkit@v0.2.24
       id: cuda-toolkit
       with:
-        use-github-cache: false
-        cuda: '13.0.0'
+        cuda: '12.9.0'
     - name: Setup cmake
       uses: jwlawson/actions-setup-cmake@v1.13
       with:
