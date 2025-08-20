@@ -129,10 +129,10 @@ include(ExternalProject-Setup)
 # ---------------------------------------------------------------------------------------------
 # Open Source Computer Vision (OpenCV)
 #
-# set(ODM_OpenCV_Version 4.12.0)
-# option(ODM_BUILD_OpenCV "Force to build OpenCV library" OFF)
+set(ODM_OpenCV_Version 4.12.0)
+option(ODM_BUILD_OpenCV "Force to build OpenCV library" OFF)
 
-# SETUP_EXTERNAL_PROJECT(OpenCV ${ODM_OpenCV_Version} ${ODM_BUILD_OpenCV})
+SETUP_EXTERNAL_PROJECT(OpenCV ${ODM_OpenCV_Version} ${ODM_BUILD_OpenCV})
 
 
 # ---------------------------------------------------------------------------------------------
@@ -147,10 +147,10 @@ SETUP_EXTERNAL_PROJECT(GFlags ${ODM_GFlags_Version} ${ODM_BUILD_GFlags})
 # ---------------------------------------------------------------------------------------------
 # Ceres Solver
 #
-# set(ODM_Ceres_Version 2.2.0)
-# option(ODM_BUILD_Ceres "Force to build Ceres library" OFF)
+set(ODM_Ceres_Version 2.2.0)
+option(ODM_BUILD_Ceres "Force to build Ceres library" OFF)
 
-# SETUP_EXTERNAL_PROJECT(Ceres ${ODM_Ceres_Version} ${ODM_BUILD_Ceres})
+SETUP_EXTERNAL_PROJECT(Ceres ${ODM_Ceres_Version} ${ODM_BUILD_Ceres})
 
 
 # ---------------------------------------------------------------------------------------------
@@ -162,105 +162,105 @@ SETUP_EXTERNAL_PROJECT(Hexer 1.5 ON)
 # Open Structure from Motion (OpenSfM)
 #
 
-# set(custom_libs OpenSfM
-# 				LASzip
-# 				PDAL
-# 				PDALPython
-# 				Untwine
-# 				Entwine
-# 				MvsTexturing
-# 				OpenMVS
-# 				FPCFilter
-# 				PyPopsift
-# 				Obj2Tiles
-# 				OpenPointClass
-# 				ExifTool
-# 				RenderDEM
-# )
+set(custom_libs OpenSfM
+				LASzip
+				PDAL
+				PDALPython
+				Untwine
+				Entwine
+				MvsTexturing
+				OpenMVS
+				FPCFilter
+				PyPopsift
+				Obj2Tiles
+				OpenPointClass
+				ExifTool
+				RenderDEM
+)
 
-# foreach(lib ${custom_libs})
-# 	SETUP_EXTERNAL_PROJECT_CUSTOM(${lib})
-# endforeach()
+foreach(lib ${custom_libs})
+	SETUP_EXTERNAL_PROJECT_CUSTOM(${lib})
+endforeach()
 
-# include(ProcessorCount)
-# ProcessorCount(nproc)
+include(ProcessorCount)
+ProcessorCount(nproc)
 
-# if (WIN32)
-#     set (POISSON_BUILD_CMD ${CMAKE_MAKE_PROGRAM} ${SB_SOURCE_DIR}/PoissonRecon/PoissonRecon.vcxproj /p:configuration=${CMAKE_BUILD_TYPE} /p:Platform=x64 /p:PlatformToolset=${CMAKE_VS_PLATFORM_TOOLSET} /p:WindowsTargetPlatformVersion=${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION})
-#     set (POISSON_BIN_PATH "x64/${CMAKE_BUILD_TYPE}/PoissonRecon.exe")
-# else()
-#     set (POISSON_BUILD_CMD  make -j${nproc} poissonrecon)
-#     set (POISSON_BIN_PATH "Linux/PoissonRecon")
-#     if (APPLE)
-#         set(POISSON_BUILD_CMD COMPILER=${CMAKE_CXX_COMPILER} make -j${nproc} -f Makefile.macos poissonrecon)
-#     endif()
-# endif()
-# externalproject_add(poissonrecon
-#     GIT_REPOSITORY    https://github.com/OpenDroneMap/PoissonRecon.git
-#     GIT_TAG           290
-#     PREFIX            ${SB_BINARY_DIR}/PoissonRecon
-#     SOURCE_DIR        ${SB_SOURCE_DIR}/PoissonRecon
-#     UPDATE_COMMAND    ""
-#     CONFIGURE_COMMAND ""
-#     BUILD_IN_SOURCE 1
-#     BUILD_COMMAND    ${POISSON_BUILD_CMD}
-#     INSTALL_COMMAND  ${CMAKE_COMMAND} -E copy ${SB_SOURCE_DIR}/PoissonRecon/Bin/${POISSON_BIN_PATH} ${SB_INSTALL_DIR}/bin
-# )
+if (WIN32)
+    set (POISSON_BUILD_CMD ${CMAKE_MAKE_PROGRAM} ${SB_SOURCE_DIR}/PoissonRecon/PoissonRecon.vcxproj /p:configuration=${CMAKE_BUILD_TYPE} /p:Platform=x64 /p:PlatformToolset=${CMAKE_VS_PLATFORM_TOOLSET} /p:WindowsTargetPlatformVersion=${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION})
+    set (POISSON_BIN_PATH "x64/${CMAKE_BUILD_TYPE}/PoissonRecon.exe")
+else()
+    set (POISSON_BUILD_CMD  make -j${nproc} poissonrecon)
+    set (POISSON_BIN_PATH "Linux/PoissonRecon")
+    if (APPLE)
+        set(POISSON_BUILD_CMD COMPILER=${CMAKE_CXX_COMPILER} make -j${nproc} -f Makefile.macos poissonrecon)
+    endif()
+endif()
+externalproject_add(poissonrecon
+    GIT_REPOSITORY    https://github.com/OpenDroneMap/PoissonRecon.git
+    GIT_TAG           290
+    PREFIX            ${SB_BINARY_DIR}/PoissonRecon
+    SOURCE_DIR        ${SB_SOURCE_DIR}/PoissonRecon
+    UPDATE_COMMAND    ""
+    CONFIGURE_COMMAND ""
+    BUILD_IN_SOURCE 1
+    BUILD_COMMAND    ${POISSON_BUILD_CMD}
+    INSTALL_COMMAND  ${CMAKE_COMMAND} -E copy ${SB_SOURCE_DIR}/PoissonRecon/Bin/${POISSON_BIN_PATH} ${SB_INSTALL_DIR}/bin
+)
 
-# externalproject_add(dem2mesh
-#     GIT_REPOSITORY    https://github.com/OpenDroneMap/dem2mesh.git
-#     GIT_TAG           334
-#     PREFIX            ${SB_BINARY_DIR}/dem2mesh
-#     SOURCE_DIR        ${SB_SOURCE_DIR}/dem2mesh
-#     CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
-#                       ${WIN32_GDAL_ARGS}
-#                       ${APPLE_CMAKE_ARGS}
-# )
+externalproject_add(dem2mesh
+    GIT_REPOSITORY    https://github.com/OpenDroneMap/dem2mesh.git
+    GIT_TAG           334
+    PREFIX            ${SB_BINARY_DIR}/dem2mesh
+    SOURCE_DIR        ${SB_SOURCE_DIR}/dem2mesh
+    CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
+                      ${WIN32_GDAL_ARGS}
+                      ${APPLE_CMAKE_ARGS}
+)
 
-# externalproject_add(dem2points
-#     GIT_REPOSITORY    https://github.com/OpenDroneMap/dem2points.git
-#     GIT_TAG           master
-#     PREFIX            ${SB_BINARY_DIR}/dem2points
-#     SOURCE_DIR        ${SB_SOURCE_DIR}/dem2points
-#     CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
-#                       ${WIN32_GDAL_ARGS}
-#                       ${APPLE_CMAKE_ARGS}
-# )
+externalproject_add(dem2points
+    GIT_REPOSITORY    https://github.com/OpenDroneMap/dem2points.git
+    GIT_TAG           master
+    PREFIX            ${SB_BINARY_DIR}/dem2points
+    SOURCE_DIR        ${SB_SOURCE_DIR}/dem2points
+    CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
+                      ${WIN32_GDAL_ARGS}
+                      ${APPLE_CMAKE_ARGS}
+)
 
-# externalproject_add(odm_orthophoto
-#     DEPENDS           opencv 
-#     GIT_REPOSITORY    https://github.com/OpenDroneMap/odm_orthophoto.git
-#     GIT_TAG           355
-#     PREFIX            ${SB_BINARY_DIR}/odm_orthophoto
-#     SOURCE_DIR        ${SB_SOURCE_DIR}/odm_orthophoto
-#     CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
-#                       ${WIN32_CMAKE_ARGS} ${WIN32_GDAL_ARGS}
-# )
+externalproject_add(odm_orthophoto
+    DEPENDS           opencv 
+    GIT_REPOSITORY    https://github.com/OpenDroneMap/odm_orthophoto.git
+    GIT_TAG           355
+    PREFIX            ${SB_BINARY_DIR}/odm_orthophoto
+    SOURCE_DIR        ${SB_SOURCE_DIR}/odm_orthophoto
+    CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
+                      ${WIN32_CMAKE_ARGS} ${WIN32_GDAL_ARGS}
+)
 
-# externalproject_add(fastrasterfilter
-#     GIT_REPOSITORY    https://github.com/OpenDroneMap/FastRasterFilter.git
-#     GIT_TAG           main
-#     PREFIX            ${SB_BINARY_DIR}/fastrasterfilter
-#     SOURCE_DIR        ${SB_SOURCE_DIR}/fastrasterfilter
-#     CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
-#                       ${WIN32_CMAKE_ARGS} ${WIN32_GDAL_ARGS}
-# )
+externalproject_add(fastrasterfilter
+    GIT_REPOSITORY    https://github.com/OpenDroneMap/FastRasterFilter.git
+    GIT_TAG           main
+    PREFIX            ${SB_BINARY_DIR}/fastrasterfilter
+    SOURCE_DIR        ${SB_SOURCE_DIR}/fastrasterfilter
+    CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
+                      ${WIN32_CMAKE_ARGS} ${WIN32_GDAL_ARGS}
+)
 
-# externalproject_add(lastools
-#     GIT_REPOSITORY    https://github.com/OpenDroneMap/LAStools.git
-#     GIT_TAG           250
-#     PREFIX            ${SB_BINARY_DIR}/lastools
-#     SOURCE_DIR        ${SB_SOURCE_DIR}/lastools
-#     CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
-# )
+externalproject_add(lastools
+    GIT_REPOSITORY    https://github.com/OpenDroneMap/LAStools.git
+    GIT_TAG           250
+    PREFIX            ${SB_BINARY_DIR}/lastools
+    SOURCE_DIR        ${SB_SOURCE_DIR}/lastools
+    CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
+)
 
-# externalproject_add(draco
-#     GIT_REPOSITORY    https://github.com/OpenDroneMap/draco
-#     GIT_SHALLOW       ON
-#     GIT_TAG           915105aef5d0e0fbebc5a98238cfda10f06e61b9
-#     PREFIX            ${SB_BINARY_DIR}/draco
-#     SOURCE_DIR        ${SB_SOURCE_DIR}/draco
-#     CMAKE_ARGS        -DDRACO_TRANSCODER_SUPPORTED=ON 
-#                       -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR} 
-#                       ${WIN32_CMAKE_ARGS}
-# )
+externalproject_add(draco
+    GIT_REPOSITORY    https://github.com/OpenDroneMap/draco
+    GIT_SHALLOW       ON
+    GIT_TAG           915105aef5d0e0fbebc5a98238cfda10f06e61b9
+    PREFIX            ${SB_BINARY_DIR}/draco
+    SOURCE_DIR        ${SB_SOURCE_DIR}/draco
+    CMAKE_ARGS        -DDRACO_TRANSCODER_SUPPORTED=ON 
+                      -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR} 
+                      ${WIN32_CMAKE_ARGS}
+)
