@@ -14,6 +14,9 @@ COPY . ./
 # Run the build
 RUN PORTABLE_INSTALL=YES bash configure.sh install
 
+# Run the tests
+RUN bash test.sh
+
 # Clean Superbuild
 RUN bash configure.sh clean
 
