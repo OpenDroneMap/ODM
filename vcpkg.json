@@ -1,0 +1,28 @@
+{
+    "dependencies": [
+        "eigen3",
+        "suitesparse",
+        "lapack",
+        "tbb",
+        "glog",
+        "curl",
+        "libxml2",
+        "zlib",
+        "libpng",
+        "libjpeg-turbo",
+        "tiff",
+        "flann",
+        "boost-filesystem",
+        "boost-date-time",
+        "boost-iostreams",
+        "boost-foreach",
+        "boost-signals2",
+        "boost-interprocess",
+        "boost-graph",
+        "boost-asio",
+        "boost-program-options",
+        "libgeotiff",
+        "cgal",
+        "yasm-tool:x86-windows"
+    ]
+}
