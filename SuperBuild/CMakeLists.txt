@@ -178,6 +178,16 @@ set(custom_libs OpenSfM
 				RenderDEM
 )
 
+externalproject_add(mve
+    GIT_REPOSITORY  https://github.com/OpenDroneMap/mve.git
+    GIT_TAG         356
+    UPDATE_COMMAND  ""
+    SOURCE_DIR      ${SB_SOURCE_DIR}/mve
+    CMAKE_ARGS      ${WIN32_CMAKE_ARGS} ${APPLE_CMAKE_ARGS}
+    BUILD_IN_SOURCE 1
+    INSTALL_COMMAND ""
+)
+
 foreach(lib ${custom_libs})
 	SETUP_EXTERNAL_PROJECT_CUSTOM(${lib})
 endforeach()
