@@ -15,6 +15,7 @@ COPY . ./
 RUN PORTABLE_INSTALL=YES bash configure.sh install
 
 # Run the tests
+ENV PATH="/code/venv/bin:$PATH"
 RUN bash test.sh
 
 # Clean Superbuild
