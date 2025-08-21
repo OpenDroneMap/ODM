@@ -19,7 +19,7 @@ jobs:
       run: .\vcpkg\vcpkg.exe install --triplet x64-windows
 
     - name: Export vcpkg dependencies
-      run: .\vcpkg\vcpkg.exe export --zip --output=vcpkg-export
+      run: .\vcpkg\vcpkg.exe export --zip --output=vcpkg-export --output-dir=.
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
