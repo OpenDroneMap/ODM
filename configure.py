@@ -26,7 +26,7 @@ parser.add_argument('--build-vcpkg',
                     help='Build VCPKG environment from scratch instead of downloading prebuilt one.')
 parser.add_argument('--vcpkg-archive-url',
                     type=str,
-                    default='https://github.com/OpenDroneMap/windows-deps/releases/download/2.5.0/vcpkg-export-250.zip',
+                    default='https://github.com/OpenDroneMap/ODM/actions/runs/17116983117/artifacts/3815716315',
                     required=False,
                     help='Path to VCPKG export archive')
 parser.add_argument('--code-sign-cert-path',
@@ -71,29 +71,29 @@ def build():
     run("venv\\Scripts\\pip install --ignore-installed -r requirements.txt")
     
     # Download / build VCPKG environment
-    # if not os.path.isdir("vcpkg"):
-    #     if args.build_vcpkg:
-    #         print("TODO")
-    #         # git clone vcpkg repo
-    #         # bootstrap
-    #         # install requirements
+    if not os.path.isdir("vcpkg"):
+        if args.build_vcpkg:
+            print("TODO")
+            # git clone vcpkg repo
+            # bootstrap
+            # install requirements
 
-    #     else:
-    #         if not os.path.exists("vcpkg-env.zip"):
-    #             print("Downloading %s" % args.vcpkg_archive_url)
-    #             with urllib.request.urlopen(args.vcpkg_archive_url) as response, open( "vcpkg-env.zip", 'wb') as out_file:
-    #                 shutil.copyfileobj(response, out_file)
-    #         if not os.path.exists("vcpkg"):
-    #             print("Extracting vcpkg-env.zip --> vcpkg/")
-    #             with zipfile.ZipFile("vcpkg-env.zip") as z:
-    #                 top_dir = z.namelist()[0]
-    #                 z.extractall(".")
+        else:
+            if not os.path.exists("vcpkg-env.zip"):
+                print("Downloading %s" % args.vcpkg_archive_url)
+                with urllib.request.urlopen(args.vcpkg_archive_url) as response, open( "vcpkg-env.zip", 'wb') as out_file:
+                    shutil.copyfileobj(response, out_file)
+            if not os.path.exists("vcpkg"):
+                print("Extracting vcpkg-env.zip --> vcpkg/")
+                with zipfile.ZipFile("vcpkg-env.zip") as z:
+                    top_dir = z.namelist()[0]
+                    z.extractall(".")
 
-    #                 if os.path.exists(top_dir):
-    #                     os.rename(top_dir, "vcpkg")
-    #                 else:
-    #                     print("Warning! Something looks wrong in the VCPKG archive... check the vcpkg/ directory.")
-    #             safe_remove("vcpkg-env.zip")
+                    if os.path.exists(top_dir):
+                        os.rename(top_dir, "vcpkg")
+                    else:
+                        print("Warning! Something looks wrong in the VCPKG archive... check the vcpkg/ directory.")
+                safe_remove("vcpkg-env.zip")
 
     if not os.path.exists(os.path.join("SuperBuild", "build")) or not os.path.exists(os.path.join("SuperBuild", "install")):
         print("Compiling SuperBuild")
