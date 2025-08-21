@@ -38,10 +38,6 @@ WORKDIR /code
 # Copy everything we built from the builder
 COPY --from=builder /code /code
 
-# Copy the Python libraries installed via pip from the builder
-COPY --from=builder /usr/local /usr/local
-#COPY --from=builder /usr/lib/x86_64-linux-gnu/libavcodec.so.58 /usr/lib/x86_64-linux-gnu/libavcodec.so.58
-
 ENV PATH="/code/venv/bin:$PATH"
 
 RUN apt-get update -y \
@@ -54,5 +50,6 @@ RUN bash configure.sh installruntimedepsonly \
   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
   && bash run.sh --help \
   && bash -c "eval $(python3 /code/opendm/context.py) && python3 -c 'from opensfm import io, pymap'"
+
 # Entry point
 ENTRYPOINT ["python3", "/code/run.py"]
