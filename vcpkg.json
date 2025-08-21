@@ -23,6 +23,6 @@
         "boost-program-options",
         "libgeotiff",
         "cgal",
-        "yasm-tool:x86-windows"
+        "yasm-tool"
     ]
 }
