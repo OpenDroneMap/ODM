@@ -3,7 +3,7 @@ set(_SB_BINARY_DIR "${SB_BINARY_DIR}/${_proj_name}")
 
 if (WIN32)
   set(PP_EXTRA_ARGS -DPYTHON3_EXECUTABLE=${PYTHON_EXE_PATH}
-                    -DPython3_NumPy_INCLUDE_DIRS=${PYTHON_HOME}/lib/site-packages/numpy/core/include)
+                    -DPYTHON3_NUMPY_INCLUDE_DIRS=${PYTHON_HOME}/lib/site-packages/numpy/_core/include)
 else()
   set(PP_EXTRA_ARGS -DPython3_EXECUTABLE=${PYTHON_EXE_PATH}
                     -DPython3_NumPy_INCLUDE_DIRS=${PYTHON_HOME}/lib/python3.12/site-packages/numpy/_core/include)
