@@ -18,15 +18,11 @@ jobs:
     - name: Install vcpkg dependencies
       run: .\vcpkg\vcpkg.exe install --triplet x64-windows
 
-    - name: Package vcpkg environment
-      run: |
-        mkdir vcpkg_env
-        xcopy vcpkg.json vcpkg_env\ /Y
-        xcopy /E /I /Y vcpkg\vcpkg_installed vcpkg_env\vcpkg_installed
-        powershell Compress-Archive -Path vcpkg_env -DestinationPath vcpkg_env.zip
+    - name: Export vcpkg dependencies
+      run: .\vcpkg\vcpkg.exe export --zip --output-dir=.\exports
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: vcpkg-env-x64-windows
-        path: vcpkg_env.zip
+        path: exports.zip
