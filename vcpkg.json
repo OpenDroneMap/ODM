@@ -25,6 +25,7 @@
         "cgal",
         "yasm-tool"
     ],
+    "builtin-baseline": "6ecbbbdf31cba47aafa7cf6189b1e73e10ac61f8",
     "overrides": [
        { "name": "eigen3", "version": "3.4.0#5" },
        { "name": "suitesparse", "version": "7.8.3" },
