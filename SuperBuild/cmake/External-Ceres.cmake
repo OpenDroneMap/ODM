@@ -21,6 +21,7 @@ ExternalProject_Add(${_proj_name}
     -DMINIGLOG=ON
     -DMINIGLOG_MAX_LOG_LEVEL=-100
     -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
+    -DUSE_CUDA=static
     ${WIN32_CMAKE_ARGS}
   #--Build step-----------------
   BINARY_DIR        ${_SB_BINARY_DIR}
