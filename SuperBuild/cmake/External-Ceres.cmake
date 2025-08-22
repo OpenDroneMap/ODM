@@ -8,7 +8,8 @@ ExternalProject_Add(${_proj_name}
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
-  URL               http://ceres-solver.org/ceres-solver-2.2.0.tar.gz
+  GIT_REPOSITORY    https://github.com/ceres-solver/ceres-solver
+  GIT_TAG           93e66f0d9480ea1d6022793f073d682717d85897
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   #--Configure step-------------
@@ -21,7 +22,6 @@ ExternalProject_Add(${_proj_name}
     -DMINIGLOG=ON
     -DMINIGLOG_MAX_LOG_LEVEL=-100
     -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
-    -DUSE_CUDA=static
     ${WIN32_CMAKE_ARGS}
   #--Build step-----------------
   BINARY_DIR        ${_SB_BINARY_DIR}
