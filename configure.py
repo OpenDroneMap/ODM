@@ -26,7 +26,7 @@ parser.add_argument('--build-vcpkg',
                     help='Build VCPKG environment from scratch instead of downloading prebuilt one.')
 parser.add_argument('--vcpkg-archive-url',
                     type=str,
-                    default='https://github.com/NathanMOlson/windows-deps/releases/download/2025-8-22a/vcpkg-export.zip',
+                    default='https://github.com/NathanMOlson/windows-deps/releases/download/2025-8-21/vcpkg-export.zip',
                     required=False,
                     help='Path to VCPKG export archive')
 parser.add_argument('--code-sign-cert-path',
@@ -68,6 +68,7 @@ def build():
         ebuilder = EnvBuilder(with_pip=True)
         ebuilder.create("venv")
 
+    run("pip install setuptools")
     run("venv\\Scripts\\pip install --ignore-installed -r requirements.txt")
     
     # Download / build VCPKG environment
@@ -104,7 +105,7 @@ def build():
 
         toolchain_file = os.path.join(os.getcwd(), "vcpkg", "scripts", "buildsystems", "vcpkg.cmake")
         run("cmake .. -DCMAKE_TOOLCHAIN_FILE=\"%s\"" % toolchain_file,  cwd=build_dir)
-        run("cmake --build . --config Release -j2", cwd=build_dir)
+        run("cmake --build . --config Release -j2 --target pdal-python", cwd=build_dir)
 
 def vcpkg_export():
     if not os.path.exists("vcpkg"):
