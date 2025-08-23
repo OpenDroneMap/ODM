@@ -105,7 +105,7 @@ def build():
 
         toolchain_file = os.path.join(os.getcwd(), "vcpkg", "scripts", "buildsystems", "vcpkg.cmake")
         run("cmake .. -DCMAKE_TOOLCHAIN_FILE=\"%s\"" % toolchain_file,  cwd=build_dir)
-        run("cmake --build . --config Release -j2 --target pdal-python", cwd=build_dir)
+        run("cmake --build . --config Release -j2", cwd=build_dir)
 
 def vcpkg_export():
     if not os.path.exists("vcpkg"):
