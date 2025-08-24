@@ -35,6 +35,11 @@ jobs:
         images: opendronemap/odm
         tag-semver: |
           {{version}}
+    - name: free disk space
+      run: |
+        sudo swapoff -a
+        sudo rm -f /swapfile
+        docker rmi $(docker image ls -aq)
     - name: Build and push Docker image
       id: docker_build
       uses: docker/build-push-action@v2
