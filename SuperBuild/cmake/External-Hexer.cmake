@@ -8,7 +8,7 @@ ExternalProject_Add(${_proj_name}
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
-  URL               https://github.com/NathanMOlson/hexer/archive/ab438097ffb13edfea4980128c148be1711855fd.tar.gz
+  URL               https://github.com/NathanMOlson/hexer/archive/ff49f4140ea1df1985ebf07aa2f4d0b9fcd1c11f.tar.gz
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   #--Configure step-------------

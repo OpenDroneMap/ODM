@@ -17,8 +17,8 @@ ExternalProject_Add(${_proj_name}
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
-  GIT_REPOSITORY    https://github.com/NathanMOlson/pdal-python
-  GIT_TAG           debug
+  GIT_REPOSITORY    https://github.com/PDAL/python
+  GIT_TAG           6791a880a87e95f7318e99acfb4a10186379c5dd
   #--Update/Patch step----------
   UPDATE_COMMAND    git submodule update --init --recursive
   #--Configure step-------------
