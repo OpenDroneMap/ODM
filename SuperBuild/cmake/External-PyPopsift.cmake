@@ -5,14 +5,14 @@ find_package(CUDA 7.0)
 
 if(CUDA_FOUND)
     ExternalProject_Add(pypopsift
-        DEPENDS           opensfm
+        DEPENDS
         PREFIX            ${_SB_BINARY_DIR}
         TMP_DIR           ${_SB_BINARY_DIR}/tmp
         STAMP_DIR         ${_SB_BINARY_DIR}/stamp
         #--Download step--------------
         DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
         GIT_REPOSITORY    https://github.com/NathanMOlson/pypopsift
-        GIT_TAG           3c4491b24b6d21db856e0b785146409c1a21a4fa
+        GIT_TAG           62373ff5b634d13128ea1a993d9799003102d13e
         #--Update/Patch step----------
         UPDATE_COMMAND    ""
         #--Configure step-------------
