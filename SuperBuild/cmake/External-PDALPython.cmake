@@ -6,6 +6,12 @@ if (WIN32)
                     -DPython3_NumPy_INCLUDE_DIRS=${PYTHON_HOME}/lib/site-packages/numpy/core/include)
 endif()
 
+execute_process(COMMAND ${PYTHON_EXE_PATH} "-V" OUTPUT_VARIABLE PYTHON_VERSION)
+string(STRIP ${PYTHON_VERSION} PYTHON_VERSION)
+if(NOT (${PYTHON_VERSION} MATCHES "Python 3.8.1"))
+  message(FATAL_ERROR "Python 3.8.1 is bundled with ODM. To avoid version mismatches in built PDALPython libraries, please ensure this exact version is used during the build. Detected version: ${PYTHON_VERSION} (at ${PYTHON_EXE_PATH}).")
+endif()
+
 ExternalProject_Add(${_proj_name}
   DEPENDS           pdal
   PREFIX            ${_SB_BINARY_DIR}
