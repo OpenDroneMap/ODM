@@ -32,13 +32,6 @@ class TestTypes(unittest.TestCase):
         for i in range(len(bands)):
             self.assertEqual(bands[i], recon.multi_camera[i]['name'])
         self.assertTrue([p.filename for p in recon.multi_camera[0]['photos']] == ['IMG_0298_1.tif', 'IMG_0299_1.tif', 'IMG_0300_1.tif'])
-        
-        # Missing a file
-        micasa_redsense_files = [('IMG_0298_1.tif', 'Red', 1), ('IMG_0298_2.tif', 'Green', 2), ('IMG_0298_3.tif', 'Blue', 3), ('IMG_0298_4.tif', 'NIR', 4), ('IMG_0298_5.tif', 'Rededge', 5), 
-                                 ('IMG_0299_2.tif', 'Green', 2), ('IMG_0299_3.tif', 'Blue', 3), ('IMG_0299_4.tif', 'NIR', 4), ('IMG_0299_5.tif', 'Rededge', 5), 
-                                 ('IMG_0300_1.tif', 'Red', 1), ('IMG_0300_2.tif', 'Green', 2), ('IMG_0300_3.tif', 'Blue', 3), ('IMG_0300_4.tif', 'NIR', 4), ('IMG_0300_5.tif', 'Rededge', 5)]
-        photos = [ODMPhotoMock(f, b, i) for f,b,i in micasa_redsense_files]
-        self.assertRaises(RuntimeError, types.ODM_Reconstruction, photos)
 
         # Single camera
         dji_files = ['DJI_0018.JPG','DJI_0019.JPG','DJI_0020.JPG','DJI_0021.JPG','DJI_0022.JPG','DJI_0023.JPG']

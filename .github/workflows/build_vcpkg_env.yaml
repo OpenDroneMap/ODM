@@ -1,0 +1,28 @@
+name: Build Windows Dependencies
+
+on:
+  workflow_dispatch:
+
+jobs:
+  windows:
+    runs-on: windows-2022
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Set up vcpkg
+      run: |
+        git clone https://github.com/microsoft/vcpkg.git
+        .\vcpkg\bootstrap-vcpkg.bat
+
+    - name: Install vcpkg dependencies
+      run: .\vcpkg\vcpkg.exe install --triplet x64-windows
+
+    - name: Export vcpkg dependencies
+      run: .\vcpkg\vcpkg.exe export --zip --output=vcpkg-export --output-dir=.
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: vcpkg-env-x64-windows
+        path: vcpkg-export.zip

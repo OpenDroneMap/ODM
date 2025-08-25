@@ -2,7 +2,7 @@ set(_proj_name opencv)
 set(_SB_BINARY_DIR "${SB_BINARY_DIR}/${_proj_name}")
 
 if (WIN32)
-  set(OCV_CMAKE_EXTRA_ARGS -DPYTHON3_NUMPY_INCLUDE_DIRS=${PYTHON_HOME}/lib/site-packages/numpy/core/include
+  set(OCV_CMAKE_EXTRA_ARGS -DPYTHON3_NUMPY_INCLUDE_DIRS=${PYTHON_HOME}/lib/site-packages/numpy/_core/include
                              -DPYTHON3_PACKAGES_PATH=${PYTHON_HOME}/lib/site-packages
                              -DPYTHON3_EXECUTABLE=${PYTHON_EXE_PATH}
                              -DWITH_MSMF=OFF
@@ -10,12 +10,12 @@ if (WIN32)
                              -DOPENCV_BIN_INSTALL_PATH=${SB_INSTALL_DIR}/bin)
 elseif(APPLE)
   # macOS is unable to automatically detect our Python libs
-  set(OCV_CMAKE_EXTRA_ARGS -DPYTHON3_NUMPY_INCLUDE_DIRS=${PYTHON_HOME}/lib/python3.8/site-packages/numpy/core/include
-                           -DPYTHON3_PACKAGES_PATH=${PYTHON_HOME}/lib/python3.8/site-packages
+  set(OCV_CMAKE_EXTRA_ARGS -DPYTHON3_NUMPY_INCLUDE_DIRS=${PYTHON_HOME}/lib/python3.12/site-packages/numpy/core/include
+                           -DPYTHON3_PACKAGES_PATH=${PYTHON_HOME}/lib/python3.12/site-packages
                            -DPYTHON3_EXECUTABLE=${PYTHON_EXE_PATH}
-                           -DPYTHON3_LIBRARIES=${HOMEBREW_INSTALL_PREFIX}/opt/python@3.8/Frameworks/Python.framework/Versions/3.8/lib/libpython3.8.dylib
-                           -DPYTHON3_INCLUDE_DIR=${HOMEBREW_INSTALL_PREFIX}/opt/python@3.8/Frameworks/Python.framework/Versions/3.8/include/python3.8/
-                           -DPYTHON3_INCLUDE_PATH=${HOMEBREW_INSTALL_PREFIX}/opt/python@3.8/Frameworks/Python.framework/Versions/3.8/include/python3.8/
+                           -DPYTHON3_LIBRARIES=${HOMEBREW_INSTALL_PREFIX}/opt/python@3.12/Frameworks/Python.framework/Versions/3.12/lib/libpython3.12.dylib
+                           -DPYTHON3_INCLUDE_DIR=${HOMEBREW_INSTALL_PREFIX}/opt/python@3.12/Frameworks/Python.framework/Versions/3.12/include/python3.12/
+                           -DPYTHON3_INCLUDE_PATH=${HOMEBREW_INSTALL_PREFIX}/opt/python@3.12/Frameworks/Python.framework/Versions/3.12/include/python3.12/
                            -DPYTHON3INTERP_FOUND=ON
                            -DPYTHON3LIBS_FOUND=ON
                            -DPYTHON_DEFAULT_AVAILABLE=ON
@@ -23,11 +23,15 @@ elseif(APPLE)
                            -DPYTHON3_VERSION_MAJOR=3
                            -DPYTHON3_VERSION_MINOR=8
                            -DOPENCV_CONFIG_INSTALL_PATH=
-                           -DOPENCV_PYTHON_INSTALL_PATH=${SB_INSTALL_DIR}/lib/python3.8/dist-packages
+                           -DOPENCV_PYTHON_INSTALL_PATH=${SB_INSTALL_DIR}/lib/python3.12/dist-packages
                            -DHAVE_opencv_python3=ON
                            -DOPENCV_PYTHON_SKIP_DETECTION=ON
                            -DOPENCV_LIB_INSTALL_PATH=${SB_INSTALL_DIR}/lib
                            -DOPENCV_BIN_INSTALL_PATH=${SB_INSTALL_DIR}/bin)
+else()
+  set(OCV_CMAKE_EXTRA_ARGS -DPYTHON3_NUMPY_INCLUDE_DIRS=${PYTHON_HOME}/lib/python3.12/site-packages/numpy/_core/include
+                             -DPYTHON3_PACKAGES_PATH=${PYTHON_HOME}/lib/python3.12/site-packages
+                             -DPYTHON3_EXECUTABLE=${PYTHON_EXE_PATH})
 endif()
 
 ExternalProject_Add(${_proj_name}
@@ -36,7 +40,7 @@ ExternalProject_Add(${_proj_name}
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
-  URL               https://github.com/opencv/opencv/archive/4.5.0.zip
+  URL               https://github.com/opencv/opencv/archive/4.12.0.zip
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   #--Configure step-------------

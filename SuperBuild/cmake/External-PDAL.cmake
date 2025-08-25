@@ -16,9 +16,11 @@ ExternalProject_Add(${_proj_name}
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
-  URL               https://github.com/OpenDroneMap/PDAL/archive/refs/heads/333.zip
+  GIT_REPOSITORY    https://github.com/PDAL/PDAL/
+  GIT_TAG           831631084edc7e61bc898eae136294c375b13d14
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
+  PATCH_COMMAND    git apply ${CMAKE_MODULE_PATH}/pdal.patch
   #--Configure step-------------
   SOURCE_DIR        ${SB_SOURCE_DIR}/${_proj_name}
   CMAKE_ARGS

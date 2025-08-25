@@ -1,0 +1,42 @@
+diff --git a/cmake/FindTBB.cmake b/cmake/FindTBB.cmake
+index 5ae7b615..10e540da 100644
+--- a/cmake/FindTBB.cmake
++++ b/cmake/FindTBB.cmake
+@@ -429,10 +429,23 @@ findpkg_finish(TBB_MALLOC_PROXY tbbmalloc_proxy)
+ #=============================================================================
+ #parse all the version numbers from tbb
+ if(NOT TBB_VERSION)
++  set(TBB_VERSION_FILE_PRIOR_TO_TBB_2021_1
++    "${TBB_INCLUDE_DIR}/tbb/tbb_stddef.h")
++  set(TBB_VERSION_FILE_AFTER_TBB_2021_1
++    "${TBB_INCLUDE_DIR}/oneapi/tbb/version.h")
++
++  if (EXISTS "${TBB_VERSION_FILE_PRIOR_TO_TBB_2021_1}")
++    set(TBB_VERSION_FILE "${TBB_VERSION_FILE_PRIOR_TO_TBB_2021_1}")
++  elseif (EXISTS "${TBB_VERSION_FILE_AFTER_TBB_2021_1}")
++    set(TBB_VERSION_FILE "${TBB_VERSION_FILE_AFTER_TBB_2021_1}")
++  else()
++    message(FATAL_ERROR "Found TBB installation: ${TBB_INCLUDE_DIR} "
++      "missing version header.")
++  endif()
+ 
+  #only read the start of the file
+  file(STRINGS
+-      "${TBB_INCLUDE_DIR}/tbb/tbb_stddef.h"
++      "${TBB_VERSION_FILE}"
+       TBB_VERSION_CONTENTS
+       REGEX "VERSION")
+ 
+diff --git a/internal/ceres/covariance_impl.cc b/internal/ceres/covariance_impl.cc
+index 1f86707f..25bf9348 100644
+--- a/internal/ceres/covariance_impl.cc
++++ b/internal/ceres/covariance_impl.cc
+@@ -634,7 +634,7 @@ bool CovarianceImpl::ComputeCovarianceValuesUsingSuiteSparseQR() {
+   // separately.
+   const SuiteSparse_long rank = SuiteSparseQR<double>(SPQR_ORDERING_BESTAMD,
+                                                       SPQR_DEFAULT_TOL,
+-                                                      cholmod_jacobian.ncol,
++                                                      static_cast<int64_t>(cholmod_jacobian.ncol),
+                                                       &cholmod_jacobian,
+                                                       &R,
+                                                       &permutation,

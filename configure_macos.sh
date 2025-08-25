@@ -1,4 +1,9 @@
 #!/bin/bash
+
+echo "!!! WARNING!                                                                      !!!"
+echo "!!! This script is not currently maintained and may not work!                     !!!"
+echo "!!! See https://community.opendronemap.org/t/odm-install-on-a-mac-os-14-6-1/25007 !!!"
+
 uname=$(uname)
 if [[ "$uname" != "Darwin" ]]; then
     echo "This script is meant for MacOS only."
@@ -29,13 +34,13 @@ ensure_prereqs() {
 installreqs() {
     ensure_prereqs
     
-    brew install cmake gcc@12 python@3.8 tbb@2020 eigen gdal boost cgal libomp
+    brew install cmake gcc@12 python@3.12 tbb@2020 eigen gdal boost cgal libomp
     brew link tbb@2020
 
-    python3.8 -m pip install virtualenv
+    python3.12 -m pip install virtualenv
 
     if [ ! -e ${RUNPATH}/venv ]; then
-        python3.8 -m virtualenv venv
+        python3.12 -m virtualenv venv
     fi
 
     source venv/bin/activate
@@ -51,9 +56,9 @@ install() {
     cmake .. && make -j$processes
 
     cd /tmp
-    pip download GDAL==3.6.2
-    tar -xpzf GDAL-3.6.2.tar.gz
-    cd GDAL-3.6.2
+    pip download GDAL==3.11.1
+    tar -xpzf GDAL-3.11.1.tar.gz
+    cd GDAL-3.11.1
     if [ -e /opt/homebrew/bin/gdal-config ]; then
         python setup.py build_ext --gdal-config /opt/homebrew/bin/gdal-config
     else
@@ -61,7 +66,7 @@ install() {
     fi
     python setup.py build
     python setup.py install
-    rm -fr /tmp/GDAL-3.6.2 /tmp/GDAL-3.6.2.tar.gz
+    rm -fr /tmp/GDAL-3.11.1 /tmp/GDAL-3.11.1.tar.gz
 
     cd ${RUNPATH}
 

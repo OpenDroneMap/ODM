@@ -102,6 +102,7 @@ class ODMMvsTexStage(types.ODM_Stage):
                     'keepUnseenFaces': keepUnseenFaces,
                     'toneMapping': 'none',
                     'nadirMode': nadir,
+                    'numThreads': '--num_threads=%s' % args.max_concurrency,
                     'maxTextureSize': '--max_texture_size=%s' % max_texture_size,
                     'nvm_file': r['nvm_file'],
                     'intermediate': '--no_intermediate_results' if (r['labeling_file'] or not reconstruction.multi_camera) else '',
@@ -124,6 +125,7 @@ class ODMMvsTexStage(types.ODM_Stage):
                         '{keepUnseenFaces} '
                         '{nadirMode} '
                         '{labelingFile} '
+                        '{numThreads} '
                         '{maxTextureSize} '.format(**kwargs))
 
                 if r['primary'] and (not r['nadir'] or args.skip_3dmodel):
