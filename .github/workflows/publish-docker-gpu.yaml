@@ -23,11 +23,6 @@ jobs:
       with:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
-    - name: free disk space
-      run: |
-        sudo swapoff -a
-        sudo rm -f /swapfile
-        docker rmi $(docker image ls -aq)
     - name: Build and push Docker image
       id: docker_build
       uses: docker/build-push-action@v2
