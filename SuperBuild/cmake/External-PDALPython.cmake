@@ -2,8 +2,9 @@ set(_proj_name pdal-python)
 set(_SB_BINARY_DIR "${SB_BINARY_DIR}/${_proj_name}")
 
 if (WIN32)
-  set(PP_EXTRA_ARGS -DPYTHON3_EXECUTABLE=${PYTHON_EXE_PATH}
-                    -DPython3_NumPy_INCLUDE_DIRS=${PYTHON_HOME}/lib/site-packages/numpy/core/include)
+  set(PP_EXTRA_ARGS -DPython3_EXECUTABLE=${PYTHON_EXE_PATH}
+                    -DPython3_ROOT_DIR=${PYTHON_HOME}
+                    -DPython3_NumPy_INCLUDE_DIRS=${PYTHON_HOME}/Lib/site-packages/numpy/_core/include)
 else()
   set(PP_EXTRA_ARGS -DPython3_EXECUTABLE=${PYTHON_EXE_PATH}
                     -DPython3_NumPy_INCLUDE_DIRS=${PYTHON_HOME}/lib/python3.12/site-packages/numpy/_core/include)
@@ -19,7 +20,7 @@ ExternalProject_Add(${_proj_name}
   GIT_REPOSITORY    https://github.com/PDAL/python
   GIT_TAG           6791a880a87e95f7318e99acfb4a10186379c5dd
   #--Update/Patch step----------
-  UPDATE_COMMAND    ""
+  UPDATE_COMMAND    git submodule update --init --recursive
   #--Configure step-------------
   SOURCE_DIR        ${SB_SOURCE_DIR}/${_proj_name}
   CMAKE_ARGS

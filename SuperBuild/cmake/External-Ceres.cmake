@@ -8,9 +8,10 @@ ExternalProject_Add(${_proj_name}
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
-  URL               http://ceres-solver.org/ceres-solver-2.2.0.tar.gz
+  URL               http://ceres-solver.org/ceres-solver-2.0.0.tar.gz
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
+  PATCH_COMMAND    git apply ${CMAKE_MODULE_PATH}/ceres.patch
   #--Configure step-------------
   SOURCE_DIR        ${SB_SOURCE_DIR}/${_proj_name}
   CMAKE_ARGS

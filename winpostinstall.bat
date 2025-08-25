@@ -13,6 +13,6 @@ set SBBIN=%ODMBASE%SuperBuild\install\bin
 set CV2=%WRITABLE_VIRTUAL_ENV%\Lib\site-packages\cv2
 mkdir "%CV2%"
 echo BINARIES_PATHS = [r"%SBBIN%"] + BINARIES_PATHS> "%CV2%\config.py"
-echo PYTHON_EXTENSIONS_PATHS = [r'''%VIRTUAL_ENV%\lib\site-packages\cv2\python-3.8'''] + PYTHON_EXTENSIONS_PATHS> "%CV2%\config-3.8.py"
+echo PYTHON_EXTENSIONS_PATHS = [r'''%VIRTUAL_ENV%\lib\site-packages\cv2\python-3.12'''] + PYTHON_EXTENSIONS_PATHS> "%CV2%\config-3.12.py"
 
 cls

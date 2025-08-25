@@ -96,13 +96,8 @@ if (WIN32)
 
   # Use the GDAL version that comes with pip
   set(GDAL_ROOT "${PYTHON_HOME}/Lib/site-packages/osgeo")
-  set(GDAL_LIBRARY "${GDAL_ROOT}/lib/gdal_i.lib")
+  set(GDAL_LIBRARY "${GDAL_ROOT}/gdal.lib")
   set(GDAL_INCLUDE_DIR "${GDAL_ROOT}/include/gdal")
-
-  # Also download missing headers :/
-  if (NOT EXISTS "${GDAL_INCLUDE_DIR}/ogrsf_frmts.h")
-    file(DOWNLOAD "https://raw.githubusercontent.com/OSGeo/gdal/release/3.2/gdal/ogr/ogrsf_frmts/ogrsf_frmts.h" "${GDAL_INCLUDE_DIR}/ogrsf_frmts.h")
-  endif()
 
   message("Copying VCPKG DLLs...")
   file(GLOB COPY_DLLS "${VCPKG_ROOT}/installed/x64-windows/bin/*.dll")

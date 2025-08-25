@@ -32,7 +32,7 @@ storage/
 
 vcpkg/
 venv/
-python38/
+python312/
 dist/
 innosetup/
 .DS_Store
