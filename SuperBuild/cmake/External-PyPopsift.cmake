@@ -12,7 +12,7 @@ if(CUDA_FOUND)
         #--Download step--------------
         DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
         GIT_REPOSITORY    https://github.com/NathanMOlson/pypopsift
-        GIT_TAG           62373ff5b634d13128ea1a993d9799003102d13e
+        GIT_TAG           8eb61bafe3aea06b1cdb4fcf73d7f822c79246e6
         #--Update/Patch step----------
         UPDATE_COMMAND    ""
         #--Configure step-------------
