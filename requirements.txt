@@ -2,7 +2,7 @@ appsettings==0.8
 beautifulsoup4==4.13.4
 python-dateutil==2.9.0
 edt==3.0.0
-ODMExifRead==3.0.4
+ExifRead==3.5.1
 Fiona==1.10.1 ; sys_platform == 'linux'
 Fiona==1.10.1 ; sys_platform == 'darwin'
 https://github.com/NathanMOlson/windows-deps/releases/download/2025-8-21a/fiona-1.10.1-cp312-cp312-win_amd64.whl ; sys_platform == 'win32'
