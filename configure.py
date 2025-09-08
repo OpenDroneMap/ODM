@@ -26,7 +26,7 @@ parser.add_argument('--build-vcpkg',
                     help='Build VCPKG environment from scratch instead of downloading prebuilt one.')
 parser.add_argument('--vcpkg-archive-url',
                     type=str,
-                    default='https://github.com/NathanMOlson/windows-deps/releases/download/2025-8-22a/vcpkg-export.zip',
+                    default='https://github.com/OpenDroneMap/windows-deps/releases/download/2.6.0/vcpkg-export.zip',
                     required=False,
                     help='Path to VCPKG export archive')
 parser.add_argument('--code-sign-cert-path',
@@ -158,7 +158,7 @@ def dist():
     # Download portable python
     if not os.path.isdir("python312"):
         pythonzip_path = os.path.join("SuperBuild", "download", "python312.zip")
-        python_url = "https://github.com/NathanMOlson/windows-deps/releases/download/Python3.12.10/python-3.12.10-embed-amd64-less-pth.zip"
+        python_url = "https://github.com/OpenDroneMap/windows-deps/releases/download/2.6.0/python-3.12.10-embed-amd64-less-pth.zip"
         if not os.path.exists(pythonzip_path):
             print("Downloading %s" % python_url)
             with urllib.request.urlopen(python_url) as response, open( pythonzip_path, 'wb') as out_file:
