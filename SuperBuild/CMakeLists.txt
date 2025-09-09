@@ -266,7 +266,7 @@ externalproject_add(lastools
 
 externalproject_add(draco
     GIT_REPOSITORY    https://github.com/google/draco
-    GIT_SHALLOW       ON
+    GIT_SHALLOW       OFF
     GIT_TAG           e801aebf9665f6dcf3b6b0a604055a300ff85aa4
     PREFIX            ${SB_BINARY_DIR}/draco
     SOURCE_DIR        ${SB_SOURCE_DIR}/draco
