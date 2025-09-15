@@ -134,7 +134,7 @@ installreqs() {
 
     # edt requires numpy to build
     venv/bin/pip install numpy==2.3.2
-    venv/bin/pip install -r requirements.txt
+    venv/bin/pip install -r requirements.txt --ignore-installed
     #if [ ! -z "$GPU_INSTALL" ]; then
     #fi
     set +e
