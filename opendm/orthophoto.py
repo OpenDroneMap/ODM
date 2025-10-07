@@ -263,7 +263,7 @@ def feather_raster(input_raster, output_raster, blend_distance=20):
 
         return output_raster
 
-def merge(input_ortho_and_ortho_cuts, output_orthophoto, orthophoto_vars={}):
+def merge(input_ortho_and_ortho_cuts, output_orthophoto, orthophoto_vars={}, merge_skip_blending=False):
     """
     Based on https://github.com/mapbox/rio-merge-rgba/
     Merge orthophotos around cutlines using a blend buffer.
@@ -332,6 +332,10 @@ def merge(input_ortho_and_ortho_cuts, output_orthophoto, orthophoto_vars={}):
     profile["bigtiff"] = orthophoto_vars.get('BIGTIFF', 'IF_SAFER')
     profile.update()
 
+    # Log here to avoid logging in each block processed
+    if merge_skip_blending:
+        log.ODM_INFO("Skipping second and third pass orthophoto blending, as --merge-skip-blending passed")
+
     # create destination file
     with rasterio.open(output_orthophoto, "w", **profile) as dstrast:
         dstrast.colorinterp = colorinterp
@@ -369,6 +373,11 @@ def merge(input_ortho_and_ortho_cuts, output_orthophoto, orthophoto_vars={}):
                 # check if dest has any nodata pixels available
                 if np.count_nonzero(dstarr[-1]) == blocksize:
                     break
+
+            # Skip expensive blending operations if flag passed
+            if merge_skip_blending:
+                dstrast.write(dstarr, window=dst_window)
+                continue
 
             # Second pass, write all feathered rasters
             # blending the edges

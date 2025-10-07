@@ -828,6 +828,18 @@ def config(argv=None, parser=None):
                           'Options: %(choices)s. Default: '
                             '%(default)s'))
 
+    # TODO ideally the blending should be optimised so we don't need this param to skip it, e.g.
+    #   1. Only blend in a buffer zone around cutline edges (e.g., 100-200 pixels)
+    #   2. Skip blending for interior regions that are far from edges
+    #   3. This would require detecting which blocks intersect cutline boundaries
+    # We have block-based processing already in place in orthophoto.py, so need logic to determine
+    # if a block needs blending based on its proximity to cutlines
+    parser.add_argument('--merge-skip-blending',
+                        action=StoreTrue,
+                        nargs=0,
+                        default=False,
+                        help='During the orthophoto merging, skip expensive blending operation: %(default)s')
+
     parser.add_argument('--force-gps',
                     action=StoreTrue,
                     nargs=0,
