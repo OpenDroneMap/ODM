@@ -29,31 +29,15 @@ def get_orthophoto_vars(args):
         'NUM_THREADS': args.max_concurrency
     }
 
-def build_overviews(orthophoto_file, compact_overviews=False):
-    """
-    Build overviews for an orthophoto file using gdaladdo
-    :param orthophoto_file: path to orthophoto
-    :param compact_overviews: whether to use compact overview settings
-    """
+def build_overviews(orthophoto_file):
     log.ODM_INFO("Building Overviews")
+    kwargs = {'orthophoto': orthophoto_file}
     
-    # Build gdaladdo command
-    cmd = [
-        'gdaladdo',
-        '-r', 'average',
-        '--config', 'BIGTIFF_OVERVIEW', 'IF_SAFER',
-        '--config', 'COMPRESS_OVERVIEW', 'JPG',
-    ]
-    
-    if compact_overviews:
-        cmd.extend([
-            '--config', 'PHOTOMETRIC_OVERVIEW', 'YCBCR',
-            '--config', 'INTERLEAVE_OVERVIEW', 'PIXEL',
-        ])
-    
-    cmd.extend([orthophoto_file, '2', '4', '8', '16'])
-
-    system.run(' '.join(cmd))
+    # Run gdaladdo
+    system.run('gdaladdo -r average '
+                '--config BIGTIFF_OVERVIEW IF_SAFER '
+                '--config COMPRESS_OVERVIEW JPEG '
+                '{orthophoto} 2 4 8 16'.format(**kwargs))
 
 def generate_png(orthophoto_file, output_file=None, outsize=None):
     if output_file is None:
@@ -188,7 +172,7 @@ def post_orthophoto_steps(args, bounds_file_path, orthophoto_file, orthophoto_ti
         Cropper.crop(bounds_file_path, orthophoto_file, get_orthophoto_vars(args), keep_original=not args.optimize_disk_space, warp_options=['-dstalpha'])
 
     if args.build_overviews and not args.cog:
-        build_overviews(orthophoto_file, compact_overviews=args.compact_overviews)
+        build_overviews(orthophoto_file)
 
     if args.orthophoto_png:
         generate_png(orthophoto_file)
@@ -202,7 +186,7 @@ def post_orthophoto_steps(args, bounds_file_path, orthophoto_file, orthophoto_ti
         generate_orthophoto_tiles(orthophoto_file, orthophoto_tiles_dir, args.max_concurrency, resolution)
 
     if args.cog:
-        convert_to_cogeo(orthophoto_file, max_workers=args.max_concurrency, compression=args.orthophoto_compression, compact_overviews=args.compact_overviews)
+        convert_to_cogeo(orthophoto_file, max_workers=args.max_concurrency, compression=args.orthophoto_compression)
 
     generate_extent_polygon(orthophoto_file)
     generate_tfw(orthophoto_file)
