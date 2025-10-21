@@ -113,7 +113,7 @@ def compute_alignment_matrix(input_laz, align_file, stats_dir):
                 'fine': icp_reg.registration_parameters,
             }, indent=4))
 
-        matrix = np.fromstring(reg['matrix'], dtype=float, sep=' ').reshape((4, 4))
+        matrix = np.fromstring(reg.stages.options['matrix'], dtype=float, sep=' ').reshape((4, 4))
         return matrix
     finally:
         for f in to_delete:
