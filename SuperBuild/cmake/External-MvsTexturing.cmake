@@ -9,7 +9,7 @@ ExternalProject_Add(${_proj_name}
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}/${_proj_name}
   GIT_REPOSITORY    https://github.com/OpenDroneMap/mvs-texturing
-  GIT_TAG           290
+  GIT_TAG           c5a4d0c9a434553533c6e39d426e349fcfa5f48d
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   #--Configure step-------------

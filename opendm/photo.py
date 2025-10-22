@@ -493,7 +493,7 @@ class ODM_Photo:
         # for some reason, they don't store band information in EXIFs
         if self.camera_make.lower() == 'aerovironment' and \
             self.camera_model.lower() == 'quantix':
-            matches = re.match("IMG_(\d+)_(\w+)\.\w+", self.filename, re.IGNORECASE)
+            matches = re.match(r"IMG_(\d+)_(\w+)\.\w+", self.filename, re.IGNORECASE)
             if matches:
                 band_aliases = {
                     'GRN': 'Green',
@@ -544,7 +544,7 @@ class ODM_Photo:
             focal = self.float_value(tags["EXIF FocalLength"])
         if focal is None and "@aux:Lens" in xtags:
             lens = self.get_xmp_tag(xtags, ["@aux:Lens"])
-            matches = re.search('([\d\.]+)mm', str(lens))
+            matches = re.search(r'([\d\.]+)mm', str(lens))
             if matches:
                 focal = float(matches.group(1))
 

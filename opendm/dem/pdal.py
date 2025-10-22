@@ -164,6 +164,7 @@ def run_pdaltranslate_smrf(fin, fout, scalar, slope, threshold, window):
         '--filters.smrf.slope=%s' % slope,
         '--filters.smrf.threshold=%s' % threshold,
         '--filters.smrf.window=%s' % window,
+        '--writers.las.forward=scale,offset'
     ]
 
     system.run(' '.join(cmd))
