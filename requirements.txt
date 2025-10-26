@@ -33,3 +33,4 @@ pygltflib==1.16.5
 codem==0.24.0
 trimesh==3.17.1
 piexif==1.1.3
+python-dateutil==2.9.0
