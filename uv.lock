@@ -683,7 +683,7 @@ wheels = [
 [[package]]
 name = "odm"
 version = "3.6.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "appsettings", marker = "sys_platform == 'darwin' or sys_platform == 'linux' or sys_platform == 'win32'" },
     { name = "beautifulsoup4", marker = "sys_platform == 'darwin' or sys_platform == 'linux' or sys_platform == 'win32'" },
