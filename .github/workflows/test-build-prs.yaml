@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v5
     - name: Set Swap Space
       uses: pierotofy/set-swap-space@master
       with:
@@ -32,7 +32,7 @@ jobs:
   #       - amd64
   #   steps:
   #   - name: Checkout
-  #     uses: actions/checkout@v2
+  #     uses: actions/checkout@v5
   #   - name: Set Swap Space
   #     uses: pierotofy/set-swap-space@master
   #     with:
@@ -52,11 +52,11 @@ jobs:
     runs-on: windows-2022
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v5
     - name: Setup Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
       with:
-        python-version: '3.12.10'
+        python-version-file: "pyproject.toml"
         architecture: 'x64'
     - uses: Jimver/cuda-toolkit@v0.2.24
       id: cuda-toolkit
@@ -66,12 +66,13 @@ jobs:
       uses: jwlawson/actions-setup-cmake@v1.13
       with:
         cmake-version: '3.24.x'
-    - name: Install venv
-      run: |
-        python -m pip install virtualenv
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+      with:
+        version: "0.9.5"
     - name: Build sources
       run: |
-        python configure.py build
+        uv run configure.py build
     - name: Free up space
       run: |
         rmdir SuperBuild\download /s /q
@@ -79,7 +80,7 @@ jobs:
       shell: cmd
     - name: Create setup
       run: |
-        python configure.py dist
+        uv run configure.py dist
     - name: Upload Setup File
       uses: actions/upload-artifact@v4
       with:
