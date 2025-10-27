@@ -6,7 +6,7 @@ APT_GET="env DEBIAN_FRONTEND=noninteractive $(command -v apt-get)"
 check_version(){  
   UBUNTU_VERSION=$(lsb_release -r)
   case "$UBUNTU_VERSION" in
-    *"20.04"*|*"21.04"*)
+    *"20.04"*|*"21.04"*|*"24.04"*)
       echo "Ubuntu: $UBUNTU_VERSION, good!"
       ;;
     *"18.04"*|*"16.04"*)
@@ -51,6 +51,11 @@ ensure_prereqs() {
         sudo $APT_GET install -y -qq --no-install-recommends pkg-config
     fi
 
+    if ! command -v curl &> /dev/null; then
+        echo "Installing curl"
+        sudo $APT_GET install -y -qq --no-install-recommends curl
+    fi
+
     echo "Installing tzdata"
     sudo $APT_GET install -y -qq tzdata
 
@@ -62,12 +67,11 @@ ensure_prereqs() {
         sudo $APT_GET update
     fi
 
-    echo "Installing Python PIP"
-    sudo $APT_GET install -y -qq --no-install-recommends \
-        python3-pip \
-        python3-setuptools
-    sudo pip3 install -U pip
-    sudo pip3 install -U shyaml
+    echo "Installing Python UV"
+    curl -LsSf https://astral.sh/uv/0.9.5/install.sh | sh
+
+    echo "Syncing Python dependencies"
+    uv sync
 }
 
 # Save all dependencies in snapcraft.yaml to maintain a single source of truth.
@@ -80,15 +84,18 @@ installdepsfromsnapcraft() {
         *) key=build-packages; ;; # shouldn't be needed, but it's here just in case
     esac
 
-    UBUNTU_VERSION=$(lsb_release -r)
-    SNAPCRAFT_FILE="snapcraft.yaml"
-    if [[ "$UBUNTU_VERSION" == *"21.04"* ]]; then
-        SNAPCRAFT_FILE="snapcraft21.yaml"
-    fi
+    echo "Installing dependencies from snap/$SNAPCRAFT_FILE ($section.$key)"
 
-    cat snap/$SNAPCRAFT_FILE | \
-        shyaml get-values-0 parts.$section.$key | \
-        xargs -0 sudo $APT_GET install -y -qq --no-install-recommends
+    uv run python - "$section" "$key" "snap/$SNAPCRAFT_FILE" <<'PYCODE' | \
+        xargs sudo $APT_GET install -y -qq --no-install-recommends
+import sys, yaml
+
+section, key, snapfile = sys.argv[1:]
+with open(snapfile, 'r') as f:
+    data = yaml.safe_load(f)
+for pkg in data.get('parts', {}).get(section, {}).get(key, []):
+    print(pkg)
+PYCODE
 }
 
 installruntimedepsonly() {
@@ -129,10 +136,7 @@ installreqs() {
     set -e
 
     # edt requires numpy to build
-    pip install --ignore-installed numpy==1.23.1
-    pip install --ignore-installed -r requirements.txt
-    #if [ ! -z "$GPU_INSTALL" ]; then
-    #fi
+    uv pip install numpy==2.3.2
     set +e
 }
     

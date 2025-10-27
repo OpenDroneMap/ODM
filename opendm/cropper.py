@@ -149,7 +149,7 @@ class Cropper:
 
         boundary_file_path = self.path('boundary.json')
 
-        run('pdal info --boundary --filters.hexbin.edge_size=1 --filters.hexbin.threshold=0 "{0}" > "{1}"'.format(decimated_pointcloud_path,  boundary_file_path))
+        run('pdal info --boundary --filters.hexbin.edge_length=1 --filters.hexbin.threshold=1 "{0}" > "{1}"'.format(decimated_pointcloud_path,  boundary_file_path))
         
         pc_geojson_boundary_feature = None
 

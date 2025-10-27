@@ -7,7 +7,10 @@ import piexif
 import multiprocessing
 from multiprocessing.pool import ThreadPool
 import sys
-sys.path.append("../../")
+from pathlib import Path
+# Add project root to sys.path dynamically
+REPO_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(REPO_ROOT))
 from opendm.gcp import GCPFile
 
 parser = argparse.ArgumentParser(description='Exif Image Resize')

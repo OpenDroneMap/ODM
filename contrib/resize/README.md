@@ -7,10 +7,10 @@ Resizes images, keeps Exif data. The EXIF width and height attributes will be up
 Usage:
 
 ```
-pip install -r requirements.txt
-python3 resize.py -i images/ -o resized/ 25%
-python3 resize.py -i images/1.JPG -o resized.JPG 25%
-python3 resize.py -i gcp_list.txt -o resized_gcp_list.txt
+uv sync --group resize
+uv run resize.py -i images/ -o resized/ 25%
+uv run resize.py -i images/1.JPG -o resized.JPG 25%
+uv run resize.py -i gcp_list.txt -o resized_gcp_list.txt
 ```
 
 Originally forked from https://github.com/pierotofy/exifimageresize

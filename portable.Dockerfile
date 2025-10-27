@@ -1,8 +1,8 @@
-FROM ubuntu:21.04 AS builder
+FROM ubuntu:24.04 AS builder
 
 # Env variables
 ENV DEBIAN_FRONTEND=noninteractive \
-    PYTHONPATH="$PYTHONPATH:/code/SuperBuild/install/lib/python3.9/dist-packages:/code/SuperBuild/install/lib/python3.8/dist-packages:/code/SuperBuild/install/bin/opensfm" \
+    PYTHONPATH="$PYTHONPATH:/code/SuperBuild/install/lib/python3.12/dist-packages:/code/SuperBuild/install/bin/opensfm" \
     LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/code/SuperBuild/install/lib"
 
 # Prepare directories
@@ -11,11 +11,12 @@ WORKDIR /code
 # Copy everything
 COPY . ./
 
-# Use old-releases for 21.04
-RUN printf "deb http://old-releases.ubuntu.com/ubuntu/ hirsute main restricted\ndeb http://old-releases.ubuntu.com/ubuntu/ hirsute-updates main restricted\ndeb http://old-releases.ubuntu.com/ubuntu/ hirsute universe\ndeb http://old-releases.ubuntu.com/ubuntu/ hirsute-updates universe\ndeb http://old-releases.ubuntu.com/ubuntu/ hirsute multiverse\ndeb http://old-releases.ubuntu.com/ubuntu/ hirsute-updates multiverse\ndeb http://old-releases.ubuntu.com/ubuntu/ hirsute-backports main restricted universe multiverse" > /etc/apt/sources.list
-
 # Run the build
 RUN PORTABLE_INSTALL=YES bash configure.sh install
+
+# Run the tests
+ENV PATH="/code/venv/bin:$PATH"
+RUN bash test.sh
 
 # Clean Superbuild
 RUN bash configure.sh clean
@@ -24,11 +25,11 @@ RUN bash configure.sh clean
 
 ### Use a second image for the final asset to reduce the number and
 # size of the layers.
-FROM ubuntu:21.04
+FROM ubuntu:24.04
 
 # Env variables
 ENV DEBIAN_FRONTEND=noninteractive \
-    PYTHONPATH="$PYTHONPATH:/code/SuperBuild/install/lib/python3.9/dist-packages:/code/SuperBuild/install/lib/python3.8/dist-packages:/code/SuperBuild/install/bin/opensfm" \
+    PYTHONPATH="$PYTHONPATH:/code/SuperBuild/install/lib/python3.12/dist-packages:/code/SuperBuild/install/bin/opensfm" \
     LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/code/SuperBuild/install/lib" \
     PDAL_DRIVER_PATH="/code/SuperBuild/install/bin"
 
@@ -37,14 +38,11 @@ WORKDIR /code
 # Copy everything we built from the builder
 COPY --from=builder /code /code
 
-# Copy the Python libraries installed via pip from the builder
-COPY --from=builder /usr/local /usr/local
-
-# Use old-releases for 21.04
-RUN printf "deb http://old-releases.ubuntu.com/ubuntu/ hirsute main restricted\ndeb http://old-releases.ubuntu.com/ubuntu/ hirsute-updates main restricted\ndeb http://old-releases.ubuntu.com/ubuntu/ hirsute universe\ndeb http://old-releases.ubuntu.com/ubuntu/ hirsute-updates universe\ndeb http://old-releases.ubuntu.com/ubuntu/ hirsute multiverse\ndeb http://old-releases.ubuntu.com/ubuntu/ hirsute-updates multiverse\ndeb http://old-releases.ubuntu.com/ubuntu/ hirsute-backports main restricted universe multiverse" > /etc/apt/sources.list
+ENV PATH="/code/venv/bin:$PATH"
 
 # Install shared libraries that we depend on via APT, but *not*
 # the -dev packages to save space!
+# Also run a smoke test on ODM and OpenSfM
 RUN bash configure.sh installruntimedepsonly \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \

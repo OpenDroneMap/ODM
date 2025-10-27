@@ -2,8 +2,8 @@ import sys, platform
 if sys.platform != 'win32':
     print("This script is for Windows only! Use configure.sh instead.")
     exit(1)
-if sys.version_info.major != 3 or sys.version_info.minor != 8:
-    print("You need to use Python 3.8.x (due to the requirements.txt). You are using %s instead." % platform.python_version())
+if sys.version_info.major != 3 or sys.version_info.minor != 12:
+    print("You need to use Python 3.12.x (due to the requirements.txt). You are using %s instead." % platform.python_version())
     exit(1)
 
 import argparse
@@ -13,8 +13,6 @@ import stat
 import urllib.request
 import shutil 
 import zipfile
-
-from venv import EnvBuilder
 
 parser = argparse.ArgumentParser(description='ODM Windows Configure Script')
 parser.add_argument('action',
@@ -26,7 +24,7 @@ parser.add_argument('--build-vcpkg',
                     help='Build VCPKG environment from scratch instead of downloading prebuilt one.')
 parser.add_argument('--vcpkg-archive-url',
                     type=str,
-                    default='https://github.com/OpenDroneMap/windows-deps/releases/download/2.5.0/vcpkg-export-250.zip',
+                    default='https://github.com/OpenDroneMap/windows-deps/releases/download/2.6.0/vcpkg-export.zip',
                     required=False,
                     help='Path to VCPKG export archive')
 parser.add_argument('--code-sign-cert-path',
@@ -62,14 +60,8 @@ def vcpkg_requirements():
     return pckgs
 
 def build():
-    # Create python virtual env
-    if not os.path.isdir("venv"):
-        print("Creating virtual env --> venv/")
-        ebuilder = EnvBuilder(with_pip=True)
-        ebuilder.create("venv")
+    run("uv sync")
 
-    run("venv\\Scripts\\pip install --ignore-installed -r requirements.txt")
-    
     # Download / build VCPKG environment
     if not os.path.isdir("vcpkg"):
         if args.build_vcpkg:
@@ -104,7 +96,7 @@ def build():
 
         toolchain_file = os.path.join(os.getcwd(), "vcpkg", "scripts", "buildsystems", "vcpkg.cmake")
         run("cmake .. -DCMAKE_TOOLCHAIN_FILE=\"%s\"" % toolchain_file,  cwd=build_dir)
-        run("cmake --build . --config Release", cwd=build_dir)
+        run("cmake --build . --config Release -j2", cwd=build_dir)
 
 def vcpkg_export():
     if not os.path.exists("vcpkg"):
@@ -128,7 +120,7 @@ def safe_remove(path):
 def clean():
     safe_remove("vcpkg-download.zip")
     safe_remove("vcpkg")
-    safe_remove("venv")
+    safe_remove(".venv")
     safe_remove(os.path.join("SuperBuild", "build"))
     safe_remove(os.path.join("SuperBuild", "download"))
     safe_remove(os.path.join("SuperBuild", "src"))
@@ -155,19 +147,19 @@ def dist():
             z.extractall(os.path.join("SuperBuild", "download"))
 
     # Download portable python
-    if not os.path.isdir("python38"):
-        pythonzip_path = os.path.join("SuperBuild", "download", "python38.zip")
-        python_url = "https://github.com/OpenDroneMap/windows-deps/releases/download/2.5.0/python-3.8.1-embed-amd64-less-pth.zip"
+    if not os.path.isdir("python312"):
+        pythonzip_path = os.path.join("SuperBuild", "download", "python312.zip")
+        python_url = "https://github.com/OpenDroneMap/windows-deps/releases/download/2.6.0/python-3.12.10-embed-amd64-less-pth.zip"
         if not os.path.exists(pythonzip_path):
             print("Downloading %s" % python_url)
             with urllib.request.urlopen(python_url) as response, open( pythonzip_path, 'wb') as out_file:
                 shutil.copyfileobj(response, out_file)
         
-        os.mkdir("python38")
+        os.mkdir("python312")
 
-        print("Extracting --> python38/")
+        print("Extracting --> python312/")
         with zipfile.ZipFile(pythonzip_path) as z:
-            z.extractall("python38")
+            z.extractall("python312")
 
     # Download signtool
     signtool_path = os.path.join("SuperBuild", "download", "signtool.exe")

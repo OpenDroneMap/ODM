@@ -592,8 +592,8 @@ def local_normalize(im):
     disksize = int(width/5)
     if disksize % 2 == 0:
         disksize = disksize + 1
-    selem = disk(disksize)
-    im = rank.equalize(im, selem=selem)
+    footprint = disk(disksize)
+    im = rank.equalize(im, footprint=footprint)
     return im
 
 

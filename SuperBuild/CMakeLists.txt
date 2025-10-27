@@ -96,13 +96,8 @@ if (WIN32)
 
   # Use the GDAL version that comes with pip
   set(GDAL_ROOT "${PYTHON_HOME}/Lib/site-packages/osgeo")
-  set(GDAL_LIBRARY "${GDAL_ROOT}/lib/gdal_i.lib")
+  set(GDAL_LIBRARY "${GDAL_ROOT}/gdal.lib")
   set(GDAL_INCLUDE_DIR "${GDAL_ROOT}/include/gdal")
-
-  # Also download missing headers :/
-  if (NOT EXISTS "${GDAL_INCLUDE_DIR}/ogrsf_frmts.h")
-    file(DOWNLOAD "https://raw.githubusercontent.com/OSGeo/gdal/release/3.2/gdal/ogr/ogrsf_frmts/ogrsf_frmts.h" "${GDAL_INCLUDE_DIR}/ogrsf_frmts.h")
-  endif()
 
   message("Copying VCPKG DLLs...")
   file(GLOB COPY_DLLS "${VCPKG_ROOT}/installed/x64-windows/bin/*.dll")
@@ -117,7 +112,8 @@ elseif(APPLE)
     set(PYTHON_HOME "${SB_ROOT_DIR}/../venv")
     set(PYTHON_EXE_PATH "${PYTHON_HOME}/bin/python")
 else()
-  set(PYTHON_EXE_PATH "/usr/bin/python3")
+  set(PYTHON_HOME "${SB_ROOT_DIR}/../venv")
+  set(PYTHON_EXE_PATH "${PYTHON_HOME}/bin/python3")
 endif()
 
 # Path to additional CMake modules
@@ -133,7 +129,7 @@ include(ExternalProject-Setup)
 # ---------------------------------------------------------------------------------------------
 # Open Source Computer Vision (OpenCV)
 #
-set(ODM_OpenCV_Version 2.4.11)
+set(ODM_OpenCV_Version 4.12.0)
 option(ODM_BUILD_OpenCV "Force to build OpenCV library" OFF)
 
 SETUP_EXTERNAL_PROJECT(OpenCV ${ODM_OpenCV_Version} ${ODM_BUILD_OpenCV})
@@ -160,7 +156,7 @@ SETUP_EXTERNAL_PROJECT(Ceres ${ODM_Ceres_Version} ${ODM_BUILD_Ceres})
 # ---------------------------------------------------------------------------------------------
 # Hexer
 #
-SETUP_EXTERNAL_PROJECT(Hexer 1.4 ON)
+SETUP_EXTERNAL_PROJECT(Hexer 1.5 ON)
 
 # ---------------------------------------------------------------------------------------------
 # Open Structure from Motion (OpenSfM)
@@ -269,9 +265,9 @@ externalproject_add(lastools
 )
 
 externalproject_add(draco
-    GIT_REPOSITORY    https://github.com/OpenDroneMap/draco
-    GIT_SHALLOW       ON
-    GIT_TAG           304
+    GIT_REPOSITORY    https://github.com/google/draco
+    GIT_SHALLOW       OFF
+    GIT_TAG           e801aebf9665f6dcf3b6b0a604055a300ff85aa4
     PREFIX            ${SB_BINARY_DIR}/draco
     SOURCE_DIR        ${SB_SOURCE_DIR}/draco
     CMAKE_ARGS        -DDRACO_TRANSCODER_SUPPORTED=ON 
