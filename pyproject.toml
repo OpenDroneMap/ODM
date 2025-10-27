@@ -42,6 +42,21 @@ dependencies = [
     "rawpy==0.25.0",
 ]
 
+[dependency-groups]
+resize = [
+    "piexif>=1.1.3",
+]
+
+[project.scripts]
+odm = "run:run"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["opendm"]
+
 [tool.uv]
 environments = [
     "sys_platform == 'darwin'",
@@ -54,8 +69,3 @@ environments = [
 "rasterio" = { url = "https://github.com/OpenDroneMap/windows-deps/releases/download/2.6.0/rasterio-1.4.3-cp312-cp312-win_amd64.whl", marker = "sys_platform == 'win32'" }
 # NOTE we are using GDAL 3.11.1 for Windows, but 3.8.4 for Linux/Mac due to underlying system libs
 "gdal" = { url = "https://github.com/OpenDroneMap/windows-deps/releases/download/2.6.0/gdal-3.11.1-cp312-cp312-win_amd64.whl", marker = "sys_platform == 'win32'" }
-
-[dependency-groups]
-resize = [
-    "piexif>=1.1.3",
-]
