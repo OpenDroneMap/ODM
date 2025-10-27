@@ -51,6 +51,11 @@ ensure_prereqs() {
         sudo $APT_GET install -y -qq --no-install-recommends pkg-config
     fi
 
+    if ! command -v curl &> /dev/null; then
+        echo "Installing curl"
+        sudo $APT_GET install -y -qq --no-install-recommends curl
+    fi
+
     echo "Installing tzdata"
     sudo $APT_GET install -y -qq tzdata
 
@@ -62,14 +67,11 @@ ensure_prereqs() {
         sudo $APT_GET update
     fi
 
-    echo "Installing Python PIP"
-    sudo $APT_GET install -y -qq --no-install-recommends \
-        python3-pip \
-        python3-setuptools \
-        python3-venv
-    python3 -m venv venv --system-site-packages
-    venv/bin/pip3 install -U pip
-    venv/bin/pip3 install -U shyaml
+    echo "Installing Python UV"
+    curl -LsSf https://astral.sh/uv/0.9.5/install.sh | sh
+
+    echo "Syncing Python dependencies"
+    uv sync
 }
 
 # Save all dependencies in snapcraft.yaml to maintain a single source of truth.
@@ -82,17 +84,18 @@ installdepsfromsnapcraft() {
         *) key=build-packages; ;; # shouldn't be needed, but it's here just in case
     esac
 
-    UBUNTU_VERSION=$(lsb_release -r)
-    SNAPCRAFT_FILE="snapcraft.yaml"
-    if [[ "$UBUNTU_VERSION" == *"21.04"* ]]; then
-        SNAPCRAFT_FILE="snapcraft21.yaml"
-    elif [[ "$UBUNTU_VERSION" == *"24.04"* ]]; then
-        SNAPCRAFT_FILE="snapcraft24.yaml"
-    fi
+    echo "Installing dependencies from snap/$SNAPCRAFT_FILE ($section.$key)"
 
-    cat snap/$SNAPCRAFT_FILE | \
-        venv/bin/shyaml get-values-0 parts.$section.$key | \
-        xargs -0 sudo $APT_GET install -y -qq --no-install-recommends
+    uv run python - "$section" "$key" "snap/$SNAPCRAFT_FILE" <<'PYCODE' | \
+        xargs sudo $APT_GET install -y -qq --no-install-recommends
+import sys, yaml
+
+section, key, snapfile = sys.argv[1:]
+with open(snapfile, 'r') as f:
+    data = yaml.safe_load(f)
+for pkg in data.get('parts', {}).get(section, {}).get(key, []):
+    print(pkg)
+PYCODE
 }
 
 installruntimedepsonly() {
@@ -133,10 +136,7 @@ installreqs() {
     set -e
 
     # edt requires numpy to build
-    venv/bin/pip install numpy==2.3.2
-    venv/bin/pip install -r requirements.txt --ignore-installed
-    #if [ ! -z "$GPU_INSTALL" ]; then
-    #fi
+    uv pip install numpy==2.3.2
     set +e
 }
     

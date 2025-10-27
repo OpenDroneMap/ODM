@@ -14,8 +14,6 @@ import urllib.request
 import shutil 
 import zipfile
 
-from venv import EnvBuilder
-
 parser = argparse.ArgumentParser(description='ODM Windows Configure Script')
 parser.add_argument('action',
                 type=str,
@@ -62,15 +60,8 @@ def vcpkg_requirements():
     return pckgs
 
 def build():
-    # Create python virtual env
-    if not os.path.isdir("venv"):
-        print("Creating virtual env --> venv/")
-        ebuilder = EnvBuilder(with_pip=True)
-        ebuilder.create("venv")
+    run("uv sync")
 
-    run("pip install setuptools")
-    run("venv\\Scripts\\pip install --ignore-installed -r requirements.txt")
-    
     # Download / build VCPKG environment
     if not os.path.isdir("vcpkg"):
         if args.build_vcpkg:
@@ -129,7 +120,7 @@ def safe_remove(path):
 def clean():
     safe_remove("vcpkg-download.zip")
     safe_remove("vcpkg")
-    safe_remove("venv")
+    safe_remove(".venv")
     safe_remove(os.path.join("SuperBuild", "build"))
     safe_remove(os.path.join("SuperBuild", "download"))
     safe_remove(os.path.join("SuperBuild", "src"))
