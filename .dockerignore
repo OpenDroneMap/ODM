@@ -1,5 +1,4 @@
 Dockerfile
-tests/test_data
 SuperBuild/build
 SuperBuild/download
 SuperBuild/install
@@ -18,8 +17,6 @@ images_resize
 /hooks
 /img
 /license
-/tests
-tests.sh
 settings.yml
 code_of_conduct.md
 configure_18_04.sh

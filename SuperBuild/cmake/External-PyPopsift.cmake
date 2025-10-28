@@ -5,14 +5,14 @@ find_package(CUDA 7.0)
 
 if(CUDA_FOUND)
     ExternalProject_Add(pypopsift
-        DEPENDS           opensfm
+        DEPENDS
         PREFIX            ${_SB_BINARY_DIR}
         TMP_DIR           ${_SB_BINARY_DIR}/tmp
         STAMP_DIR         ${_SB_BINARY_DIR}/stamp
         #--Download step--------------
         DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
         GIT_REPOSITORY    https://github.com/OpenDroneMap/pypopsift
-        GIT_TAG           288
+        GIT_TAG           fe2d1ccc63877ba315e65f34d2adeadd838b3ac3
         #--Update/Patch step----------
         UPDATE_COMMAND    ""
         #--Configure step-------------

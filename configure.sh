@@ -6,7 +6,7 @@ APT_GET="env DEBIAN_FRONTEND=noninteractive $(command -v apt-get)"
 check_version(){  
   UBUNTU_VERSION=$(lsb_release -r)
   case "$UBUNTU_VERSION" in
-    *"20.04"*|*"21.04"*)
+    *"20.04"*|*"21.04"*|*"24.04"*)
       echo "Ubuntu: $UBUNTU_VERSION, good!"
       ;;
     *"18.04"*|*"16.04"*)
@@ -65,9 +65,11 @@ ensure_prereqs() {
     echo "Installing Python PIP"
     sudo $APT_GET install -y -qq --no-install-recommends \
         python3-pip \
-        python3-setuptools
-    sudo pip3 install -U pip
-    sudo pip3 install -U shyaml
+        python3-setuptools \
+        python3-venv
+    python3 -m venv venv --system-site-packages
+    venv/bin/pip3 install -U pip
+    venv/bin/pip3 install -U shyaml
 }
 
 # Save all dependencies in snapcraft.yaml to maintain a single source of truth.
@@ -84,10 +86,12 @@ installdepsfromsnapcraft() {
     SNAPCRAFT_FILE="snapcraft.yaml"
     if [[ "$UBUNTU_VERSION" == *"21.04"* ]]; then
         SNAPCRAFT_FILE="snapcraft21.yaml"
+    elif [[ "$UBUNTU_VERSION" == *"24.04"* ]]; then
+        SNAPCRAFT_FILE="snapcraft24.yaml"
     fi
 
     cat snap/$SNAPCRAFT_FILE | \
-        shyaml get-values-0 parts.$section.$key | \
+        venv/bin/shyaml get-values-0 parts.$section.$key | \
         xargs -0 sudo $APT_GET install -y -qq --no-install-recommends
 }
 
@@ -129,8 +133,8 @@ installreqs() {
     set -e
 
     # edt requires numpy to build
-    pip install --ignore-installed numpy==1.23.1
-    pip install --ignore-installed -r requirements.txt
+    venv/bin/pip install numpy==2.3.2
+    venv/bin/pip install -r requirements.txt --ignore-installed
     #if [ ! -z "$GPU_INSTALL" ]; then
     #fi
     set +e
