@@ -19,7 +19,7 @@ class ODMFilterPoints(types.ODM_Stage):
         inputPointCloud = ""
         
         # check if reconstruction was done before
-        if not io.file_exists(tree.filtered_point_cloud) or self.rerun():
+        if not io.file_exists(tree.filtered_point_cloud_topo) or self.rerun():
             if args.fast_orthophoto:
                 inputPointCloud = os.path.join(tree.opensfm, 'reconstruction.ply')
             else:
@@ -49,14 +49,14 @@ class ODMFilterPoints(types.ODM_Stage):
                 else:
                     log.ODM_WARNING("Not a georeferenced reconstruction, will ignore --auto-boundary")
                     
-            point_cloud.filter(inputPointCloud, tree.filtered_point_cloud, tree.filtered_point_cloud_stats,
+            point_cloud.filter(inputPointCloud, tree.filtered_point_cloud_topo, tree.filtered_point_cloud_stats,
                                 standard_deviation=args.pc_filter, 
                                 sample_radius=args.pc_sample,
                                 boundary=boundary_offset(outputs.get('boundary'), reconstruction.get_proj_offset()),
                                 max_concurrency=args.max_concurrency)
             
             # Quick check
-            info = point_cloud.ply_info(tree.filtered_point_cloud)
+            info = point_cloud.ply_info(tree.filtered_point_cloud_topo)
             if info["vertex_count"] == 0:
                 extra_msg = ''
                 if 'boundary' in outputs:
@@ -64,7 +64,7 @@ class ODMFilterPoints(types.ODM_Stage):
                 raise system.ExitException("Uh oh! We ended up with an empty point cloud. This means that the reconstruction did not succeed. Have you followed best practices for data acquisition? See https://docs.opendronemap.org/flying/%s" % extra_msg)
         else:
             log.ODM_WARNING('Found a valid point cloud file in: %s' %
-                            tree.filtered_point_cloud)
+                            tree.filtered_point_cloud_topo)
         
         if args.optimize_disk_space and inputPointCloud:
             if os.path.isfile(inputPointCloud):
