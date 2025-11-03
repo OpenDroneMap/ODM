@@ -79,6 +79,7 @@ parts:
       - libflann-dev
       - libgtk2.0-dev
       - libjpeg-dev
+      - libjxl-dev
       - liblapack-dev
       - libopenjpip7
       - libpng-dev
@@ -94,6 +95,7 @@ parts:
       - libflann1.9
       - libgtk2.0-0
       - libjpeg-turbo8
+      - libjxl0.7
       - libopenjpip7
       - liblapack3
       - libpng16-16
