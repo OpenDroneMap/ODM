@@ -22,6 +22,7 @@ LAStools.zip
 pcl.tar.gz
 ceres-solver.tar.gz
 *.pyc
+.python-version
 opencv.zip
 settings.yaml
 .setupdevenv

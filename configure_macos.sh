@@ -34,17 +34,10 @@ ensure_prereqs() {
 installreqs() {
     ensure_prereqs
     
-    brew install cmake gcc@12 python@3.12 tbb@2020 eigen gdal boost cgal libomp
+    brew install cmake gcc@12 python@3.12 tbb@2020 eigen gdal boost cgal libomp uv
     brew link tbb@2020
 
-    python3.12 -m pip install virtualenv
-
-    if [ ! -e ${RUNPATH}/venv ]; then
-        python3.12 -m virtualenv venv
-    fi
-
-    source venv/bin/activate
-    pip install --ignore-installed -r requirements.txt
+    uv sync
 }
     
 install() {
@@ -55,18 +48,19 @@ install() {
     mkdir -p build && cd build
     cmake .. && make -j$processes
 
-    cd /tmp
-    pip download GDAL==3.11.1
-    tar -xpzf GDAL-3.11.1.tar.gz
-    cd GDAL-3.11.1
-    if [ -e /opt/homebrew/bin/gdal-config ]; then
-        python setup.py build_ext --gdal-config /opt/homebrew/bin/gdal-config
-    else
-        python setup.py build_ext --gdal-config /usr/local/bin/gdal-config
-    fi
-    python setup.py build
-    python setup.py install
-    rm -fr /tmp/GDAL-3.11.1 /tmp/GDAL-3.11.1.tar.gz
+    # TODO check if we actually need this, when using uv / Mac?
+    # cd /tmp
+    # pip download GDAL==3.11.1
+    # tar -xpzf GDAL-3.11.1.tar.gz
+    # cd GDAL-3.11.1
+    # if [ -e /opt/homebrew/bin/gdal-config ]; then
+    #     python setup.py build_ext --gdal-config /opt/homebrew/bin/gdal-config
+    # else
+    #     python setup.py build_ext --gdal-config /usr/local/bin/gdal-config
+    # fi
+    # python setup.py build
+    # python setup.py install
+    # rm -fr /tmp/GDAL-3.11.1 /tmp/GDAL-3.11.1.tar.gz
 
     cd ${RUNPATH}
 

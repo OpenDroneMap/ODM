@@ -24,7 +24,7 @@ def odm_version():
     except:
         return "?"
 
-if __name__ == '__main__':
+def run():
     args = config.config()
 
     log.ODM_INFO('Initializing ODM %s - %s' % (odm_version(), system.now()))
@@ -113,3 +113,7 @@ if __name__ == '__main__':
         log.ODM_INFO('ODM app finished - %s' % system.now())
     else:
         exit(retcode)
+
+
+if __name__ == '__main__':
+    run()
