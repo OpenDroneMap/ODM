@@ -174,6 +174,9 @@ class ODM_Photo:
         self.camera_projection = 'brown'
         self.focal_ratio = 0.85
 
+        # Sensor identifier
+        self.serial_number = 'unknown'
+
         # parse values from metadata
         self.parse_exif_values(path_file)
 
@@ -300,7 +303,12 @@ class ODM_Photo:
                    'EXIF ExifImageLength' in tags:
                    self.exif_width = self.int_value(tags['EXIF ExifImageWidth'])
                    self.exif_height = self.int_value(tags['EXIF ExifImageLength'])
-                
+
+                if 'EXIF LensSerialNumber' in tags:
+                    self.serial_number = tags['EXIF LensSerialNumber'].values if tags['EXIF LensSerialNumber'].values else 'unknown'
+                elif 'EXIF BodySerialNumber' in tags:
+                    self.serial_number = tags['EXIF BodySerialNumber'].values if tags['EXIF BodySerialNumber'].values else 'unknown'
+                    
             except Exception as e:
                 log.ODM_WARNING("Cannot read extended EXIF tags for %s: %s" % (self.filename, str(e)))
 
@@ -477,6 +485,9 @@ class ODM_Photo:
                     
                         if self.camera_make.lower() == 'sensefly':
                             self.roll *= -1
+
+                    # Serial number
+                    self.set_attr_from_xmp_tag('serial_number', xtags, ['@drone-dji:CameraSerialNumber', '@drone-dji:DroneSerialNumber'], str)
 
                 except Exception as e:
                     log.ODM_WARNING("Cannot read XMP tags for %s: %s" % (self.filename, str(e)))
@@ -818,6 +829,7 @@ class ODM_Photo:
                     str(int(self.height)),
                     self.camera_projection,
                     str(float(self.focal_ratio))[:6],
+                    self.serial_number.strip()
                 ]
             ).lower()
 
