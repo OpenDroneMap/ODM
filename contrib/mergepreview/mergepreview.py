@@ -116,7 +116,7 @@ if len(all_orthos_and_ortho_cuts) > 1:
         'BIGTIFF': 'IF_SAFER',
         'BLOCKXSIZE': 512,
         'BLOCKYSIZE': 512
-    })
+    }, args.merge_skip_blending)
 
 
     log.ODM_INFO("Wrote %s" % output_file)

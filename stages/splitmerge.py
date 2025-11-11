@@ -262,7 +262,7 @@ class ODMMergeStage(types.ODM_Stage):
                             os.remove(tree.odm_orthophoto_tif)
 
                         orthophoto_vars = orthophoto.get_orthophoto_vars(args)
-                        orthophoto.merge(all_orthos_and_ortho_cuts, tree.odm_orthophoto_tif, orthophoto_vars)
+                        orthophoto.merge(all_orthos_and_ortho_cuts, tree.odm_orthophoto_tif, orthophoto_vars, args.merge_skip_blending)
                         orthophoto.post_orthophoto_steps(args, merged_bounds_file, tree.odm_orthophoto_tif, tree.orthophoto_tiles, args.orthophoto_resolution,
                             reconstruction, tree, False)
                     elif len(all_orthos_and_ortho_cuts) == 1:

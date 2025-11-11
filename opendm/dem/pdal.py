@@ -160,6 +160,7 @@ def run_pdaltranslate_smrf(fin, fout, scalar, slope, threshold, window):
         '-i %s' % fin,
         '-o %s' % fout,
         'smrf',
+        '--overwrite',
         '--filters.smrf.scalar=%s' % scalar,
         '--filters.smrf.slope=%s' % slope,
         '--filters.smrf.threshold=%s' % threshold,

@@ -40,7 +40,7 @@ odm_orthophoto_path = os.path.join(superbuild_bin_path, "odm_orthophoto")
 settings_path = os.path.join(root_path, 'settings.yaml')
 
 # Define supported image extensions
-supported_extensions = {'.jpg','.jpeg','.png', '.tif', '.tiff', '.bmp', '.raw', '.dng', '.nef'}
+supported_extensions = {'.jpg','.jpeg','.png', '.tif', '.tiff', '.bmp', '.raw', '.dng', '.nef', '.jxl'}
 supported_video_extensions = {'.mp4', '.mov', '.lrv', '.ts'}
 
 # Define the number of cores

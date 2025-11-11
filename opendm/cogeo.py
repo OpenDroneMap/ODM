@@ -15,7 +15,7 @@ def convert_to_cogeo(src_path, blocksize=256, max_workers=1, compression="DEFLAT
     """
 
     if not os.path.isfile(src_path):
-        logger.warning("Cannot convert to cogeo: %s (file does not exist)" % src_path)
+        log.ODM_WARNING("Cannot convert to cogeo: %s (file does not exist)" % src_path)
         return False
 
     log.ODM_INFO("Optimizing %s as Cloud Optimized GeoTIFF" % src_path)
