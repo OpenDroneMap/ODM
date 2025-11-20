@@ -20,8 +20,8 @@ PyYAML==6.0.2
 rasterio==1.4.3 ; sys_platform == 'linux'
 rasterio==1.4.3 ; sys_platform == 'darwin'
 https://github.com/OpenDroneMap/windows-deps/releases/download/2.6.0/rasterio-1.4.3-cp312-cp312-win_amd64.whl ; sys_platform == 'win32'
-gdal[numpy]==3.8.4 ; sys_platform == 'linux'
-gdal[numpy]==3.8.4 ; sys_platform == 'darwin'
+gdal[numpy]==3.11.1 ; sys_platform == 'linux'
+gdal[numpy]==3.11.1 ; sys_platform == 'darwin'
 https://github.com/OpenDroneMap/windows-deps/releases/download/2.6.0/gdal-3.11.1-cp312-cp312-win_amd64.whl ; sys_platform == 'win32'
 repoze.lru==0.7
 scikit-learn==1.7.1

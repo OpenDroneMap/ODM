@@ -60,6 +60,11 @@ ensure_prereqs() {
         sudo $APT_GET install -y -qq --no-install-recommends software-properties-common
         sudo add-apt-repository ppa:ubuntugis/ppa
         sudo $APT_GET update
+    elif [[ "$UBUNTU_VERSION" == *"24.04"* ]]; then
+        echo "Enabling ubuntugis-unstable PPA for Ubuntu 24.04"
+        sudo $APT_GET install -y -qq --no-install-recommends software-properties-common
+        sudo add-apt-repository -y ppa:ubuntugis/ubuntugis-unstable
+        sudo $APT_GET update
     fi
 
     echo "Installing Python PIP"
