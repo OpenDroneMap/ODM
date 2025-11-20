@@ -3,22 +3,49 @@ FROM ubuntu:24.04 AS builder
 # Env variables
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONPATH="$PYTHONPATH:/code/SuperBuild/install/lib/python3.12/dist-packages:/code/SuperBuild/install/bin/opensfm" \
-    LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/code/SuperBuild/install/lib"
+    LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/code/SuperBuild/install/lib" \
+    CC="ccache gcc" \
+    CXX="ccache g++" \
+    CCACHE_DIR=/ccache
 
 # Prepare directories
 WORKDIR /code
 
-# Copy everything
-COPY . ./
+# Install ccache first for all subsequent builds
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ccache && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
-# Run the build
-RUN bash configure.sh install
+# Copy only what's needed for dep installation
+COPY snap/ ./snap/
+COPY configure.sh ./
+COPY requirements.txt ./
+
+# Install system deps and Python requirements
+# Layer is cached unless these files change
+RUN bash configure.sh installreqs
+
+# Copy SuperBuild config
+COPY SuperBuild/ ./SuperBuild/
+
+# Build SuperBuild (heavy compilation step),
+# with cache for faster rebuilds
+RUN --mount=type=cache,target=/ccache \
+    cd SuperBuild && \
+    mkdir -p build && \
+    cd build && \
+    cmake .. && \
+    make -j$(nproc)
+
+# Copy app code late, to avoid cache busting
+COPY . ./
 
 # Run the tests
 ENV PATH="/code/venv/bin:$PATH"
 RUN bash test.sh
 
-# Clean Superbuild
+# Clean SuperBuild temp files
 RUN bash configure.sh clean
 
 ### END Builder

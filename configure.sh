@@ -110,6 +110,26 @@ installruntimedepsonly() {
     installdepsfromsnapcraft runtime openmvs
 }
 
+setup_ccache() {
+    # Setup ccache if available to speed up rebuilds
+    if command -v ccache &> /dev/null; then
+        echo "Setting up ccache for faster compilation"
+        export CC="ccache gcc"
+        export CXX="ccache g++"
+        export CCACHE_DIR="${CCACHE_DIR:-$HOME/.ccache}"
+        
+        # Configure ccache settings for optimal performance
+        ccache --max-size=5G 2>/dev/null || true
+        ccache --set-config=compression=true 2>/dev/null || true
+        ccache --set-config=compression_level=6 2>/dev/null || true
+        
+        echo "ccache statistics:"
+        ccache -s 2>/dev/null || true
+    else
+        echo "ccache not found, compiling without cache"
+    fi
+}
+
 installreqs() {
     cd /code
     
@@ -120,6 +140,10 @@ installreqs() {
     echo "Updating the system"
     ensure_prereqs
     check_version
+    
+    # Install ccache for faster rebuilds
+    echo "Installing ccache for build optimization"
+    sudo $APT_GET install -y -qq --no-install-recommends ccache
     
     echo "Installing Required Requisites"
     installdepsfromsnapcraft build prereqs
@@ -155,12 +179,21 @@ install() {
         fi
     fi
 
+    # Setup ccache before building
+    setup_ccache
+
     set -eo pipefail
     
     echo "Compiling SuperBuild"
     cd ${RUNPATH}/SuperBuild
     mkdir -p build && cd build
     cmake .. && make -j$processes
+    
+    # Show final ccache stats
+    if command -v ccache &> /dev/null; then
+        echo "Final ccache statistics:"
+        ccache -s
+    fi
 
     echo "Configuration Finished"
 }
