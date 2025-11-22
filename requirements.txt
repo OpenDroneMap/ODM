@@ -1,6 +1,5 @@
 appsettings==0.8
 beautifulsoup4==4.13.4
-python-dateutil==2.9.0
 edt==3.0.0
 ExifRead==3.5.1
 Fiona==1.10.1 ; sys_platform == 'linux'

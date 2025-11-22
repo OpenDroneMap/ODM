@@ -3,7 +3,6 @@ import threading
 import os
 import json
 import datetime
-import dateutil.parser
 import shutil
 import multiprocessing
 from repoze.lru import lru_cache
@@ -120,7 +119,8 @@ class ODMLogger:
             if self.json['stages']:
                 last_stage = self.json['stages'][-1]
                 last_stage['endTime'] = end_time.isoformat()
-                start_time = dateutil.parser.isoparse(last_stage['startTime'])
+                # NOTE use Z replacement for Python < 3.11. Python 3.11+ dosesn't need this
+                start_time = datetime.datetime.fromisoformat(last_stage['startTime'].replace("Z", "+00:00"))
                 last_stage['totalTime'] = round((end_time - start_time).total_seconds(), 2)
             
     def info(self, msg):
