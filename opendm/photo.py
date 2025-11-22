@@ -602,6 +602,8 @@ class ODM_Photo:
             try:
                 xdict = x2d.parse(xmp_str)
             except ExpatError as e:
+                # NOTE here BeautifulSoup is a more lenient XML parser, in case
+                # metadata is malformed, and x2d fails
                 from bs4 import BeautifulSoup
                 xmp_str = str(BeautifulSoup(xmp_str, 'xml'))
                 xdict = x2d.parse(xmp_str)
