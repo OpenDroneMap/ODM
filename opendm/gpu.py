@@ -2,8 +2,8 @@ import os
 import sys
 import shutil
 import ctypes
+from functools import lru_cache
 from opendm import log
-from repoze.lru import lru_cache
 
 def gpu_disabled_by_user_env():
     return bool(os.environ.get('ODM_NO_GPU'))

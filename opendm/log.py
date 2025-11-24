@@ -5,9 +5,9 @@ import json
 import datetime
 import shutil
 import multiprocessing
-from repoze.lru import lru_cache
+from functools import lru_cache
 
-from opendm.arghelpers import double_quote, args_to_dict
+from opendm.arghelpers import args_to_dict
 from vmem import virtual_memory
 
 if sys.platform == 'win32' or os.getenv('no_ansiesc'):
@@ -39,7 +39,7 @@ def memory():
     mem = virtual_memory()
     return {
         'total': round(mem.total / 1024 / 1024),
-        'available': round(mem.available / 1024 / 1024)
+        'available': round(mem.available / 1024 / 1024),
     }
 
 class ODMLogger:
