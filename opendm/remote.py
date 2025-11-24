@@ -478,8 +478,11 @@ class ToolchainTask(Task):
             submodels_path = os.path.abspath(self.path(".."))
             argv = get_submodel_argv(config.config(), submodels_path, submodel_name)
 
+            # Always invoke run.py through venv python
+            cmd = ["python3"] + argv
+
             # Re-run the ODM toolchain on the submodel
-            system.run(" ".join(map(double_quote, map(str, argv))), env_vars=os.environ.copy())
+            system.run(" ".join(map(double_quote, cmd)), env_vars=os.environ.copy())
 
             # This will only get executed if the command above succeeds
             self.touch(completed_file)

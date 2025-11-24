@@ -185,8 +185,11 @@ class ODMSplitStage(types.ODM_Stage):
 
                         argv = get_submodel_argv(args, tree.submodels_path, sp_octx.name())
 
+                        # Always invoke run.py through venv python
+                        cmd = ["python3"] + argv
+
                         # Re-run the ODM toolchain on the submodel
-                        system.run(" ".join(map(double_quote, map(str, argv))), env_vars=os.environ.copy())
+                        system.run(" ".join(map(double_quote, cmd)), env_vars=os.environ.copy())
                 else:
                     lre.set_projects([os.path.abspath(os.path.join(p, "..")) for p in submodel_paths])
                     lre.run_toolchain()
