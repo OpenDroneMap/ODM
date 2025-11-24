@@ -1,5 +1,3 @@
-#!/usr/bin/python3
-
 # Basic check
 import sys
 if sys.version_info.major < 3:
@@ -13,7 +11,7 @@ from opendm import system
 from opendm import io
 from opendm.progress import progressbc
 from opendm.utils import get_processing_results_paths, rm_r
-from opendm.arghelpers import args_to_dict, save_opts, compare_args, find_rerun_stage
+from opendm.arghelpers import args_to_dict, save_opts, find_rerun_stage
 
 from stages.odm_app import ODMApp
 
