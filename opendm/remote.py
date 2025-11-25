@@ -1,9 +1,7 @@
 import time
 import datetime
 import os
-import sys
 import threading
-import signal
 import zipfile
 import glob
 from opendm import log
