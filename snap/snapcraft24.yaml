@@ -26,6 +26,8 @@ architectures:
 package-repositories:
   - type: apt
     ppa: ubuntugis/ubuntugis-unstable
+    # Ensure prioritised above standard repo for GDAL version 3.11.1
+    priority: 1001
 
 parts:
   prereqs:

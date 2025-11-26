@@ -7,11 +7,8 @@ import exifread
 import numpy as np
 from six import string_types
 from datetime import datetime, timedelta, timezone
-import pytz
 
-from opendm import io
 from opendm import log
-from opendm import system
 from opendm.rollingshutter import get_rolling_shutter_readout
 import xmltodict as x2d
 from opendm import get_image_size
@@ -285,9 +282,10 @@ class ODM_Photo:
                     subsec *= negative
                     ms = subsec * 1e3
                     utc_time += timedelta(milliseconds = ms)
-                    timezone = pytz.timezone('UTC')
-                    epoch = timezone.localize(datetime.utcfromtimestamp(0))
-                    self.utc_time = (timezone.localize(utc_time) - epoch).total_seconds() * 1000.0
+                    # Ensure utc_time is timezone-aware
+                    if utc_time.tzinfo is None:
+                        utc_time = utc_time.replace(tzinfo=timezone.utc)
+                    self.utc_time = utc_time.timestamp() * 1000.0
                 
                 if 'MakerNote SpeedX' in tags and \
                     'MakerNote SpeedY' in tags and \
@@ -602,6 +600,8 @@ class ODM_Photo:
             try:
                 xdict = x2d.parse(xmp_str)
             except ExpatError as e:
+                # NOTE here BeautifulSoup is a more lenient XML parser, in case
+                # metadata is malformed, and x2d fails
                 from bs4 import BeautifulSoup
                 xmp_str = str(BeautifulSoup(xmp_str, 'xml'))
                 xdict = x2d.parse(xmp_str)

@@ -1,5 +1,4 @@
 import os
-import shutil
 import rasterio
 import fiona
 import numpy as np
@@ -8,7 +7,6 @@ import sys
 from opendm import log
 from opendm import io
 from opendm import concurrency 
-from opendm import get_image_size
 from opendm import system
 
 from skimage.feature import canny
@@ -165,7 +163,7 @@ def compute_cutline(orthophoto_file, crop_area_file, destination, max_concurrenc
             'driver': 'GPKG',
             'schema': {
                 'properties': {},
-                'geometry': 'Polygon'
+                'geometry': 'MultiPolygon'
             }
         }
 
