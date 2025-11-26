@@ -155,12 +155,6 @@ parts:
     override-build: |
       snapcraftctl set-version $(cat VERSION)
 
-      # Portable build
-      test -f /usr/bin/gcc_real || mv -v /usr/bin/gcc /usr/bin/gcc_real
-      test -f /usr/bin/gcc || cp -v ./docker/gcc /usr/bin/gcc
-      test -f /usr/bin/g++_real || mv -v /usr/bin/g++ /usr/bin/g++_real
-      test -f /usr/bin/g++ || cp -v ./docker/g++ /usr/bin/g++
-
       pip3 install --user -r requirements.txt
 
       # Build the SuperBuild libraries
