@@ -669,6 +669,13 @@ def get_submodel_argv(args, submodels_path = None, submodel_name = None):
     if sys.platform == 'win32':
         startup_script_dir = os.path.dirname(startup_script)
         startup_script = os.path.join(startup_script_dir, "run")
+    else:
+        # On Linux/Mac, use run.sh to ensure venv is activated
+        if startup_script.endswith('.py'):
+            startup_script_dir = os.path.dirname(startup_script)
+            run_sh = os.path.join(startup_script_dir, "run.sh")
+            if os.path.exists(run_sh):
+                startup_script = run_sh
 
     result = [startup_script] 
 
