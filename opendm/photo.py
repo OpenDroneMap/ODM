@@ -931,7 +931,14 @@ class ODM_Photo:
             # Unit vector pointing north
             xnp /= m
 
-            znp = np.array([0, 0, -1]).T
+            # znp is aproximately p1 but perpendicular xnp
+            znp = p1
+            znp -= znp.dot(xnp) * xnp
+            m = np.linalg.norm(znp)
+            if m == 0:
+                log.ODM_WARNING("Cannot compute OPK angles, divider = 0")
+                return
+            znp /= m
             ynp = np.cross(znp, xnp)
 
             cen = np.array([xnp, ynp, znp]).T
