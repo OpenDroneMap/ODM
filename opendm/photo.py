@@ -471,6 +471,15 @@ class ODM_Photo:
                     # Roll: 0 (assuming gimbal)
                     if self.has_ypr():
                         if self.camera_make.lower() in ['dji', 'hasselblad']:
+                            
+                            # Mavic 3E smart oblique backward-facing images need special treatment
+                            # backward-facing images are identified with a 180º roll
+                            if abs(self.roll) > 90:
+                               # Camera faces opposite direction
+                                self.yaw = (self.yaw + 180) % 360
+                                # Pitch axis is inverted in flipped frame
+                                self.pitch = -self.pitch
+ 
                             self.pitch = 90 + self.pitch
                     
                         if self.camera_make.lower() == 'sensefly':
