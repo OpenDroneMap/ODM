@@ -140,25 +140,11 @@ installreqs() {
     # edt requires numpy to build
     venv/bin/pip install numpy==2.3.2
     venv/bin/pip install -r requirements.txt --ignore-installed
-    #if [ ! -z "$GPU_INSTALL" ]; then
-    #fi
     set +e
 }
     
 install() {
     installreqs
-
-    if [ ! -z "$PORTABLE_INSTALL" ]; then
-        echo "Replacing g++ and gcc with our scripts for portability..."
-        if [ ! -e /usr/bin/gcc_real ]; then
-            sudo mv -v /usr/bin/gcc /usr/bin/gcc_real
-            sudo cp -v ./docker/gcc /usr/bin/gcc
-        fi
-        if [ ! -e /usr/bin/g++_real ]; then
-            sudo mv -v /usr/bin/g++ /usr/bin/g++_real
-            sudo cp -v ./docker/g++ /usr/bin/g++
-        fi
-    fi
 
     set -eo pipefail
     
