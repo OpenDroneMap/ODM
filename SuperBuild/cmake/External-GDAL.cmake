@@ -18,7 +18,6 @@ ExternalProject_Add(${_proj_name}
     -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
     -DGDAL_PYTHON_INSTALL_PREFIX=${SB_INSTALL_DIR}
     -DBUILD_PYTHON_BINDINGS=ON
-  # -DGDAL_USE_HDF5=NO
     ${WIN32_CMAKE_ARGS}
   #--Build step-----------------
   BINARY_DIR        ${_SB_BINARY_DIR}

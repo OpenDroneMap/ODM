@@ -94,10 +94,10 @@ if (WIN32)
   set(PYTHON_HOME "${SB_ROOT_DIR}/../venv")
   set(PYTHON_EXE_PATH "${PYTHON_HOME}/Scripts/python")
 
-  # Use the GDAL version built by SuperBuild
-  set(GDAL_ROOT "${SB_INSTALL_DIR}")
-  set(GDAL_LIBRARY "${GDAL_ROOT}/lib/gdal.lib")
-  set(GDAL_INCLUDE_DIR "${GDAL_ROOT}/include")
+  # Use the GDAL version that comes with pip
+  set(GDAL_ROOT "${PYTHON_HOME}/Lib/site-packages/osgeo")
+  set(GDAL_LIBRARY "${GDAL_ROOT}/gdal.lib")
+  set(GDAL_INCLUDE_DIR "${GDAL_ROOT}/include/gdal")
 
   message("Copying VCPKG DLLs...")
   file(GLOB COPY_DLLS "${VCPKG_ROOT}/installed/x64-windows/bin/*.dll")
@@ -136,10 +136,14 @@ include(ExternalProject-Setup)
 # Geospatial Data Abstraction Library (GDAL)
 #
 set(ODM_GDAL_Version 3.11.1)
-option(ODM_BUILD_GDAL "Force to build GDAL library" ON)
-
-SETUP_EXTERNAL_PROJECT(GDAL ${ODM_GDAL_Version} ${ODM_BUILD_GDAL})
-
+if(WIN32)
+  message(STATUS "GDAL: Using pip-installed version from ${GDAL_ROOT}")
+  # Create a dummy target to satisfy dependencies
+  add_custom_target(gdal)
+else()
+  option(ODM_BUILD_GDAL "Force to build GDAL library" ON)
+  SETUP_EXTERNAL_PROJECT(GDAL ${ODM_GDAL_Version} ${ODM_BUILD_GDAL})
+endif()
 
 # ---------------------------------------------------------------------------------------------
 # Open Source Computer Vision (OpenCV)
