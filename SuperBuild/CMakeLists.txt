@@ -111,9 +111,15 @@ if (WIN32)
 elseif(APPLE)
     set(PYTHON_HOME "${SB_ROOT_DIR}/../venv")
     set(PYTHON_EXE_PATH "${PYTHON_HOME}/bin/python")
+    set(GDAL_ROOT "${SB_INSTALL_DIR}")
+    set(GDAL_LIBRARY "${GDAL_ROOT}/lib/libgdal.dylib")
+    set(GDAL_INCLUDE_DIR "${GDAL_ROOT}/include")
 else()
-  set(PYTHON_HOME "${SB_ROOT_DIR}/../venv")
-  set(PYTHON_EXE_PATH "${PYTHON_HOME}/bin/python3")
+    set(PYTHON_HOME "${SB_ROOT_DIR}/../venv")
+    set(PYTHON_EXE_PATH "${PYTHON_HOME}/bin/python3")
+    set(GDAL_ROOT "${SB_INSTALL_DIR}")
+    set(GDAL_LIBRARY "${GDAL_ROOT}/lib/libgdal.so")
+    set(GDAL_INCLUDE_DIR "${GDAL_ROOT}/include")
 endif()
 
 # Path to additional CMake modules
@@ -125,6 +131,19 @@ include(ExternalProject-Setup)
 #########################################
 # Download and install third party libs #
 #########################################
+
+# ---------------------------------------------------------------------------------------------
+# Geospatial Data Abstraction Library (GDAL)
+#
+set(ODM_GDAL_Version 3.11.1)
+if(WIN32)
+  message(STATUS "GDAL: Using pip-installed version from ${GDAL_ROOT}")
+  # Create a dummy target to satisfy dependencies
+  add_custom_target(gdal)
+else()
+  option(ODM_BUILD_GDAL "Force to build GDAL library" ON)
+  SETUP_EXTERNAL_PROJECT(GDAL ${ODM_GDAL_Version} ${ODM_BUILD_GDAL})
+endif()
 
 # ---------------------------------------------------------------------------------------------
 # Open Source Computer Vision (OpenCV)
@@ -218,6 +237,7 @@ externalproject_add(poissonrecon
 )
 
 externalproject_add(dem2mesh
+    DEPENDS           gdal
     GIT_REPOSITORY    https://github.com/OpenDroneMap/dem2mesh.git
     GIT_TAG           334
     PREFIX            ${SB_BINARY_DIR}/dem2mesh
@@ -228,6 +248,7 @@ externalproject_add(dem2mesh
 )
 
 externalproject_add(dem2points
+    DEPENDS           gdal
     GIT_REPOSITORY    https://github.com/OpenDroneMap/dem2points.git
     GIT_TAG           master
     PREFIX            ${SB_BINARY_DIR}/dem2points
@@ -238,7 +259,7 @@ externalproject_add(dem2points
 )
 
 externalproject_add(odm_orthophoto
-    DEPENDS           opencv 
+    DEPENDS           opencv gdal
     GIT_REPOSITORY    https://github.com/OpenDroneMap/odm_orthophoto.git
     GIT_TAG           355
     PREFIX            ${SB_BINARY_DIR}/odm_orthophoto
@@ -248,6 +269,7 @@ externalproject_add(odm_orthophoto
 )
 
 externalproject_add(fastrasterfilter
+    DEPENDS           gdal
     GIT_REPOSITORY    https://github.com/OpenDroneMap/FastRasterFilter.git
     GIT_TAG           main
     PREFIX            ${SB_BINARY_DIR}/fastrasterfilter

@@ -54,18 +54,6 @@ ensure_prereqs() {
     echo "Installing tzdata"
     sudo $APT_GET install -y -qq tzdata
 
-    UBUNTU_VERSION=$(lsb_release -r)
-    if [[ "$UBUNTU_VERSION" == *"20.04"* ]]; then
-        echo "Enabling PPA for Ubuntu GIS"
-        sudo $APT_GET install -y -qq --no-install-recommends software-properties-common
-        sudo add-apt-repository ppa:ubuntugis/ppa
-        sudo $APT_GET update
-    elif [[ "$UBUNTU_VERSION" == *"24.04"* ]]; then
-        echo "Enabling ubuntugis-unstable PPA for Ubuntu 24.04"
-        sudo $APT_GET install -y -qq --no-install-recommends software-properties-common
-        sudo add-apt-repository -y ppa:ubuntugis/ubuntugis-unstable
-        sudo $APT_GET update
-    fi
 
     echo "Installing Python PIP"
     sudo $APT_GET install -y -qq --no-install-recommends \
@@ -113,6 +101,8 @@ installruntimedepsonly() {
     installdepsfromsnapcraft runtime opensfm
     echo "Installing OpenMVS Dependencies"
     installdepsfromsnapcraft runtime openmvs
+    echo "Installing GDAL Dependencies"
+    installdepsfromsnapcraft runtime gdal
 }
 
 installreqs() {
@@ -134,6 +124,8 @@ installreqs() {
     installdepsfromsnapcraft build opensfm
     echo "Installing OpenMVS Dependencies"
     installdepsfromsnapcraft build openmvs
+    echo "Installing GDAL Dependencies"
+    installdepsfromsnapcraft build gdal
     
     set -e
 
@@ -165,7 +157,11 @@ install() {
     echo "Compiling SuperBuild"
     cd ${RUNPATH}/SuperBuild
     mkdir -p build && cd build
-    cmake .. && make -j$processes
+    cmake .. \
+        -DBUILD_PYTHON_BINDINGS=ON \
+        -DPython_ROOT=/code/venv \
+        -DPython_FIND_VIRTUALENV=ONLY \
+        && make -j$processes
 
     echo "Configuration Finished"
 }

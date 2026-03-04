@@ -36,17 +36,13 @@ parts:
     build-packages:
       - build-essential
       - cmake
-      - gdal-bin
       - gfortran # to build scipy
       - git
-      - libgdal-dev
-      - libgeotiff-dev
-      - libjsoncpp-dev
+      - libopenmpi-dev
       - libssl-dev
       - libusb-1.0-0-dev
       - ninja-build
       - pkg-config
-      - pybind11-dev
       - python3-dev
       - python3-pip
       - python3-setuptools
@@ -54,14 +50,8 @@ parts:
       - rsync
       - swig3.0
     stage-packages:
-      - gdal-bin
-      - libgdal34t64
-      - libgeotiff5
-      - libjsoncpp25
-      - libspqr4
       - libssl3t64
       - libusb-1.0-0
-      - proj-data
       - procps
       - python3
       - python3-pkg-resources # required base package for core20
@@ -139,12 +129,35 @@ parts:
       - libgoogle-glog0v6t64
       - libsuitesparseconfig7
 
+  gdal:
+    source: .
+    plugin: nil
+    build-packages:
+      - libgeotiff-dev
+      - libhdf5-serial-dev
+      - libopenmpi-dev
+      - pybind11-dev
+      - python3-dev
+      - python3-numpy
+      - python3-setuptools
+      - swig
+    stage-packages:
+      - libaec0
+      - libcurl3t64-gnutls
+      - libcurl4t64
+      - libgeotiff5
+      - libhdf5-103-1t64
+      - libjsoncpp25
+      - libspqr4
+      - proj-data
+
   odm:
     after:
       - prereqs
       - opencv
       - opensfm
       - openmvs
+      - gdal
     source: .
     plugin: nil # We will script everything ourselves
     build-environment:

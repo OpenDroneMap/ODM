@@ -1,8 +1,8 @@
-FROM nvidia/cuda:13.0.0-devel-ubuntu24.04 AS builder
+FROM nvidia/cuda:12.9.1-devel-ubuntu24.04 AS builder
 
 # Env variables
 ENV DEBIAN_FRONTEND=noninteractive \
-    PYTHONPATH="/code/SuperBuild/install/lib/python3.12/dist-packages:/code/SuperBuild/install/bin/opensfm" \
+    PYTHONPATH="$PYTHONPATH:/code/SuperBuild/install/local/lib/python3.12/dist-packages:/code/SuperBuild/install/lib/python3.12/dist-packages:/code/SuperBuild/install/bin/opensfm" \
     LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/code/SuperBuild/install/lib"
 
 # Prepare directories
@@ -25,11 +25,11 @@ RUN bash configure.sh clean
 
 ### Use a second image for the final asset to reduce the number and
 # size of the layers.
-FROM nvidia/cuda:13.0.0-devel-ubuntu24.04
+FROM nvidia/cuda:12.9.1-runtime-ubuntu24.04
 
 # Env variables
 ENV DEBIAN_FRONTEND=noninteractive \
-    PYTHONPATH="/code/SuperBuild/install/lib/python3.12/dist-packages:/code/SuperBuild/install/bin/opensfm" \
+    PYTHONPATH="$PYTHONPATH:/code/SuperBuild/install/local/lib/python3.12/dist-packages:/code/SuperBuild/install/lib/python3.12/dist-packages:/code/SuperBuild/install/bin/opensfm" \
     LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/code/SuperBuild/install/lib" \
     PDAL_DRIVER_PATH="/code/SuperBuild/install/bin"
 
@@ -41,7 +41,7 @@ COPY --from=builder /code /code
 ENV PATH="/code/venv/bin:$PATH"
 
 RUN apt-get update -y \
- && apt-get install -y ffmpeg libtbb2
+ && apt-get install -y ffmpeg libtbbmalloc2
 # Install shared libraries that we depend on via APT, but *not*
 # the -dev packages to save space!
 # Also run a smoke test on ODM and OpenSfM
