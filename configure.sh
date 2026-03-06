@@ -131,9 +131,16 @@ installreqs() {
 
     # edt requires numpy to build
     venv/bin/pip install numpy==2.3.2
+    set +e
+}
+
+installpython() {
+    echo "Installing Python requirements with compiled GDAL"
+    cd /code
+    export GDAL_CONFIG=${RUNPATH}/SuperBuild/install/bin/gdal-config
+    
+    set -e
     venv/bin/pip install -r requirements.txt --ignore-installed
-    #if [ ! -z "$GPU_INSTALL" ]; then
-    #fi
     set +e
 }
     
@@ -163,9 +170,11 @@ install() {
         -DPython_FIND_VIRTUALENV=ONLY \
         && make -j$processes
 
+    installpython
+
     echo "Configuration Finished"
 }
-
+ 
 uninstall() {
     check_version
 
@@ -196,18 +205,20 @@ clean() {
 
 usage() {
     echo "Usage:"
-    echo "bash configure.sh <install|update|uninstall|installreqs|help> [nproc]"
+    echo "bash configure.sh <install|update|uninstall|installreqs|installpython|help> [nproc]"
     echo "Subcommands:"
     echo "  install"
     echo "    Installs all dependencies and modules for running OpenDroneMap"
     echo "  installruntimedepsonly"
     echo "    Installs *only* the runtime libraries (used by docker builds). To build from source, use the 'install' command."
+    echo "  installreqs"
+    echo "    Only installs the system requirements and dependencies (does not build SuperBuild or install Python packages)"
+    echo "  installpython"
+    echo "    Installs Python requirements after SuperBuild is compiled"
     echo "  reinstall"
     echo "    Removes SuperBuild and build modules, then re-installs them. Note this does not update OpenDroneMap to the latest version. "
     echo "  uninstall"
     echo "    Removes SuperBuild and build modules. Does not uninstall dependencies"
-    echo "  installreqs"
-    echo "    Only installs the requirements (does not build SuperBuild)"
     echo "  clean"
     echo "    Cleans the SuperBuild directory by removing temporary files. "
     echo "  help"
@@ -215,7 +226,7 @@ usage() {
     echo "[nproc] is an optional argument that can set the number of processes for the make -j tag. By default it uses $(nproc)"
 }
 
-if [[ $1 =~ ^(install|installruntimedepsonly|reinstall|uninstall|installreqs|clean)$ ]]; then
+if [[ $1 =~ ^(install|installruntimedepsonly|reinstall|uninstall|installreqs|installpython|clean)$ ]]; then
     RUNPATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
     "$1"
 else
