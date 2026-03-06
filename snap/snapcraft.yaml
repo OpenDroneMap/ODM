@@ -139,7 +139,8 @@ parts:
       - python3-setuptools
       - swig
     stage-packages:      
-      - libcurl3t64-gnutls      - libgeotiff5
+      - libcurl3t64-gnutls      
+      - libgeotiff5
       - libjsoncpp1
       - libspqr2
       - proj-data
