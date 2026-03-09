@@ -34,6 +34,11 @@ parser.add_argument('--code-sign-cert-path',
                     default='',
                     required=False,
                     help='Path to pfx code signing certificate')
+parser.add_argument('--azure-signing-metadata',
+                    type=str,
+                    default='',
+                    required=False,
+                    help='Path to Azure Artifact Signing metadata file')
 
 args = parser.parse_args()
 
@@ -178,6 +183,21 @@ def dist():
         with urllib.request.urlopen(signtool_url) as response, open(signtool_path, 'wb') as out_file:
             shutil.copyfileobj(response, out_file)
 
+    # Download Artifact Signing Dlib
+    if args.azure_signing_metadata:
+        azure_signing_path = os.path.join("SuperBuild", "download", "microsoft.artifactsigning.client.1.0.115.nupkg")
+        azure_signing_url = "https://www.nuget.org/api/v2/package/Microsoft.ArtifactSigning.Client/1.0.115"
+        if not os.path.exists(azure_signing_path):
+            print("Downloading %s" % azure_signing_url)
+            with urllib.request.urlopen(azure_signing_url) as response, open(azure_signing_path, 'wb') as out_file:
+                shutil.copyfileobj(response, out_file)
+
+        os.mkdir("azuresigning")
+
+        print("Extracting --> azuresigning/")
+        with zipfile.ZipFile(azure_signing_path) as z:
+            z.extractall("azuresigning")
+
     # Download innosetup
     if not os.path.isdir("innosetup"):
         innosetupzip_path = os.path.join("SuperBuild", "download", "innosetup.zip")
@@ -195,8 +215,11 @@ def dist():
 
     # Run
     cs_flags = '/DSKIP_SIGN=1'
-    if args.code_sign_cert_path:
-        cs_flags = '"/Ssigntool=%s sign /f %s /fd SHA1 /t http://timestamp.sectigo.com $f"' % (signtool_path, args.code_sign_cert_path)
+    if args.azure_signing_metadata:
+        dlib_path = os.path.join("azuresigning", "bin", "x86", "Azure.CodeSigning.Dlib.dll")
+        cs_flags = '"/Ssigntool=$q%s$q sign /v /debug /fd SHA256 /tr http://timestamp.acs.microsoft.com /td SHA256 /dlib $q%s$q /dmdf $q%s$q $f"' % (os.path.abspath(signtool_path), os.path.abspath(dlib_path), args.azure_signing_metadata)
+    else if args.code_sign_cert_path:
+        cs_flags = '"/Ssigntool=$q%s$q sign /f $q%s$q /fd SHA1 /t http://timestamp.sectigo.com $f"' % (os.path.abspath(signtool_path), args.code_sign_cert_path)
     run("innosetup\\iscc /Qp " + cs_flags  + " \"innosetup.iss\"")
 
     print("Done! Setup created in dist/")
