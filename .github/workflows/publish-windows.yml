@@ -42,7 +42,8 @@ jobs:
       env:
         CERTIFICATE_BASE64: ${{ secrets.AZURESIGNING_METADATA }}
       run: |
-        echo $AZURESIGNING_METADATA | base64 --decode > metadata.json
+        echo $AZURESIGNING_METADATA | base64 --decode > "$RUNNER_TEMP\metadata.json"
+      shell: bash
     - name: Azure login
       uses: azure/login@v1
       with:
@@ -51,7 +52,8 @@ jobs:
         subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
     - name: Create setup
       run: |
-        python configure.py dist --azure-signing-metadata metadata.json
+        python configure.py dist --azure-signing-metadata "%RUNNER_TEMP%\metadata.json"
+      shell: cmd
     - name: Upload Setup File
       uses: actions/upload-artifact@v4
       with:
