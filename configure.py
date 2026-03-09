@@ -218,7 +218,7 @@ def dist():
     if args.azure_signing_metadata:
         dlib_path = os.path.join("azuresigning", "bin", "x86", "Azure.CodeSigning.Dlib.dll")
         cs_flags = '"/Ssigntool=$q%s$q sign /v /debug /fd SHA256 /tr http://timestamp.acs.microsoft.com /td SHA256 /dlib $q%s$q /dmdf $q%s$q $f"' % (os.path.abspath(signtool_path), os.path.abspath(dlib_path), args.azure_signing_metadata)
-    else if args.code_sign_cert_path:
+    elif args.code_sign_cert_path:
         cs_flags = '"/Ssigntool=$q%s$q sign /f $q%s$q /fd SHA1 /t http://timestamp.sectigo.com $f"' % (os.path.abspath(signtool_path), args.code_sign_cert_path)
     run("innosetup\\iscc /Qp " + cs_flags  + " \"innosetup.iss\"")
 
