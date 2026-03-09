@@ -133,6 +133,8 @@ parts:
     source: .
     plugin: nil
     build-packages:
+      - libexpat-dev
+      - libgeos-dev
       - libgeotiff-dev
       - libhdf5-serial-dev
       - libopenmpi-dev
@@ -145,7 +147,9 @@ parts:
       - libaec0
       - libcurl3t64-gnutls
       - libcurl4t64
+      - libexpat1
       - libgeotiff5
+      - libgeos-c1t64
       - libhdf5-103-1t64
       - libjsoncpp25
       - libspqr4
