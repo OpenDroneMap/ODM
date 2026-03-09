@@ -7,6 +7,10 @@ on:
     tags:
     - v*
 
+permissions:
+  contents: read
+  id-token: write
+
 jobs:
   build:
     runs-on: windows-2022
