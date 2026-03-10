@@ -44,7 +44,7 @@ jobs:
       shell: cmd
     - name: Retrieve the metadata and decode it to a file
       env:
-        CERTIFICATE_BASE64: ${{ secrets.AZURESIGNING_METADATA }}
+        AZURESIGNING_METADATA: ${{ secrets.AZURESIGNING_METADATA }}
       run: |
         echo $AZURESIGNING_METADATA | base64 --decode > "$RUNNER_TEMP\metadata.json"
       shell: bash
