@@ -29,6 +29,11 @@ parser.add_argument('--vcpkg-archive-url',
                     default='https://github.com/OpenDroneMap/windows-deps/releases/download/2.6.0/vcpkg-export.zip',
                     required=False,
                     help='Path to VCPKG export archive')
+parser.add_argument('--signtool-path',
+                    type=str,
+                    default='',
+                    required=False,
+                    help='Path to x64 signtool.exe')
 parser.add_argument('--code-sign-cert-path',
                     type=str,
                     default='',
@@ -175,14 +180,6 @@ def dist():
         with zipfile.ZipFile(pythonzip_path) as z:
             z.extractall("python312")
 
-    # Download signtool
-    signtool_path = os.path.join("SuperBuild", "download", "signtool.exe")
-    signtool_url = "https://github.com/OpenDroneMap/windows-deps/releases/download/2.5.0/signtool.exe"
-    if not os.path.exists(signtool_path):
-        print("Downloading %s" % signtool_url)
-        with urllib.request.urlopen(signtool_url) as response, open(signtool_path, 'wb') as out_file:
-            shutil.copyfileobj(response, out_file)
-
     # Download Artifact Signing Dlib
     if args.azure_signing_metadata:
         azure_signing_path = os.path.join("SuperBuild", "download", "microsoft.artifactsigning.client.1.0.115.nupkg")
@@ -215,11 +212,12 @@ def dist():
 
     # Run
     cs_flags = '/DSKIP_SIGN=1'
-    if args.azure_signing_metadata:
-        dlib_path = os.path.join("azuresigning", "bin", "x86", "Azure.CodeSigning.Dlib.dll")
-        cs_flags = '"/Ssigntool=$q%s$q sign /v /debug /fd SHA256 /tr http://timestamp.acs.microsoft.com /td SHA256 /dlib $q%s$q /dmdf $q%s$q $f"' % (os.path.abspath(signtool_path), os.path.abspath(dlib_path), args.azure_signing_metadata)
-    elif args.code_sign_cert_path:
-        cs_flags = '"/Ssigntool=$q%s$q sign /f $q%s$q /fd SHA1 /t http://timestamp.sectigo.com $f"' % (os.path.abspath(signtool_path), args.code_sign_cert_path)
+    if args.signtool_path:
+        if args.azure_signing_metadata:
+            dlib_path = os.path.join("azuresigning", "bin", "x64", "Azure.CodeSigning.Dlib.dll")
+            cs_flags = '"/Ssigntool=$q%s$q sign /v /debug /fd SHA256 /tr http://timestamp.acs.microsoft.com /td SHA256 /dlib $q%s$q /dmdf $q%s$q $f"' % (os.path.abspath(args.signtool_path), os.path.abspath(dlib_path), args.azure_signing_metadata)
+        elif args.code_sign_cert_path:
+            cs_flags = '"/Ssigntool=$q%s$q sign /f $q%s$q /fd SHA1 /t http://timestamp.sectigo.com $f"' % (os.path.abspath(args.signtool_path), args.code_sign_cert_path)
     run("innosetup\\iscc /Qp " + cs_flags  + " \"innosetup.iss\"")
 
     print("Done! Setup created in dist/")

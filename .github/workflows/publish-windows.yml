@@ -56,7 +56,7 @@ jobs:
         subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
     - name: Create setup
       run: |
-        python configure.py dist --azure-signing-metadata "%RUNNER_TEMP%\metadata.json"
+        python configure.py dist --signtool-path "C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe" --azure-signing-metadata "%RUNNER_TEMP%\metadata.json"
       shell: cmd
     - name: Upload Setup File
       uses: actions/upload-artifact@v4
