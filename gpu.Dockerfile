@@ -30,7 +30,7 @@ FROM nvidia/cuda:12.9.1-runtime-ubuntu24.04
 # Env variables
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONPATH="$PYTHONPATH:/code/SuperBuild/install/local/lib/python3.12/dist-packages:/code/SuperBuild/install/lib/python3.12/dist-packages:/code/SuperBuild/install/bin/opensfm" \
-    LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/code/SuperBuild/install/lib" \
+    LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/code/SuperBuild/install/lib:/usr/local/nvidia/lib64:/usr/local/nvidia/lib" \
     PDAL_DRIVER_PATH="/code/SuperBuild/install/bin"
 
 WORKDIR /code
@@ -38,7 +38,7 @@ WORKDIR /code
 # Copy everything we built from the builder
 COPY --from=builder /code /code
 
-ENV PATH="/code/venv/bin:$PATH"
+ENV PATH="/code/venv/bin:/usr/local/nvidia/bin:$PATH"
 
 RUN apt-get update -y \
  && apt-get install -y ffmpeg libtbbmalloc2
