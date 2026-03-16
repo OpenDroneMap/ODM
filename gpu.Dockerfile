@@ -30,6 +30,8 @@ FROM nvidia/cuda:12.9.1-runtime-ubuntu24.04
 # Env variables
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONPATH="$PYTHONPATH:/code/SuperBuild/install/local/lib/python3.12/dist-packages:/code/SuperBuild/install/lib/python3.12/dist-packages:/code/SuperBuild/install/bin/opensfm" \
+    # The following paths (/usr/local/nvidia/lib64 and /usr/local/nvidia/lib) 
+    # are required for compatibility with Google Kubernetes Engine (GKE) managed drivers.
     LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/code/SuperBuild/install/lib:/usr/local/nvidia/lib64:/usr/local/nvidia/lib" \
     PDAL_DRIVER_PATH="/code/SuperBuild/install/bin"
 
@@ -38,6 +40,7 @@ WORKDIR /code
 # Copy everything we built from the builder
 COPY --from=builder /code /code
 
+# Include /usr/local/nvidia/bin in PATH for GKE compatibility
 ENV PATH="/code/venv/bin:/usr/local/nvidia/bin:$PATH"
 
 RUN apt-get update -y \
