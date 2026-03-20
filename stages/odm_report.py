@@ -52,11 +52,9 @@ class ODMReport(types.ODM_Stage):
                 # Check if alignment has been performed (we need to transform our shots if so)
                 a_matrix = None
                 octx = OSFMContext(tree.opensfm)
-                shot_transformer = lambda origin: octx.transform_local_point_to_geocoords(
+                shot_transformer = lambda origin: octx.transform_local_point_to_proj(
                     origin,
                     reconstruction.georef.proj4(),
-                    reconstruction.georef.utm_east_offset,
-                    reconstruction.georef.utm_north_offset,
                 )
                 if io.file_exists(tree.odm_georeferencing_alignment_matrix):
                     with open(tree.odm_georeferencing_alignment_matrix, 'r') as f:
