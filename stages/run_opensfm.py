@@ -68,12 +68,30 @@ class ODMOpenSfMStage(types.ODM_Stage):
         
         self.update_progress(75)
 
-        # We now switch to a geographic CRS
-        if reconstruction.is_georeferenced() and (not io.file_exists(tree.opensfm_topocentric_reconstruction) or self.rerun()):
-            octx.run('export_geocoords --reconstruction --proj "%s" --offset-x %s --offset-y %s' % 
-                (reconstruction.georef.proj4(), reconstruction.georef.utm_east_offset, reconstruction.georef.utm_north_offset))
-            shutil.move(tree.opensfm_reconstruction, tree.opensfm_topocentric_reconstruction)
-            shutil.move(tree.opensfm_geocoords_reconstruction, tree.opensfm_reconstruction)
+        # Keep the dense pipeline in topocentric coordinates and export geocoords side artifacts separately.
+        geocoords_exports_missing = (
+            not io.file_exists(tree.opensfm_topocentric_reconstruction)
+            or not io.file_exists(tree.opensfm_geocoords_reconstruction)
+            or not io.file_exists(tree.opensfm_geocoords_transformation)
+        )
+        if reconstruction.is_georeferenced() and (geocoords_exports_missing or self.rerun()):
+            octx.run(
+                'export_geocoords --transformation --output "geocoords_transformation.txt" --proj "%s" --offset-x %s --offset-y %s'
+                % (
+                    reconstruction.georef.proj4(),
+                    reconstruction.georef.utm_east_offset,
+                    reconstruction.georef.utm_north_offset,
+                )
+            )
+            octx.run(
+                'export_geocoords --reconstruction --mode projected --output "reconstruction.geocoords.json" --proj "%s" --offset-x %s --offset-y %s'
+                % (
+                    reconstruction.georef.proj4(),
+                    reconstruction.georef.utm_east_offset,
+                    reconstruction.georef.utm_north_offset,
+                )
+            )
+            shutil.copyfile(tree.opensfm_reconstruction, tree.opensfm_topocentric_reconstruction)
         else:
             log.ODM_WARNING("Will skip exporting %s" % tree.opensfm_geocoords_reconstruction)
         

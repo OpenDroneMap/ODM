@@ -51,12 +51,25 @@ class ODMReport(types.ODM_Stage):
             if reconstruction.is_georeferenced():
                 # Check if alignment has been performed (we need to transform our shots if so)
                 a_matrix = None
+                octx = OSFMContext(tree.opensfm)
+                shot_transformer = lambda origin: octx.transform_local_point_to_geocoords(
+                    origin,
+                    reconstruction.georef.proj4(),
+                    reconstruction.georef.utm_east_offset,
+                    reconstruction.georef.utm_north_offset,
+                )
                 if io.file_exists(tree.odm_georeferencing_alignment_matrix):
                     with open(tree.odm_georeferencing_alignment_matrix, 'r') as f:
                         a_matrix = np_from_json(f.read())
                         log.ODM_INFO("Aligning shots to %s" % a_matrix)
 
-                shots = get_geojson_shots_from_opensfm(tree.opensfm_reconstruction, utm_srs=reconstruction.get_proj_srs(), utm_offset=reconstruction.georef.utm_offset(), a_matrix=a_matrix)
+                shots = get_geojson_shots_from_opensfm(
+                    tree.opensfm_topocentric_reconstruction,
+                    utm_srs=reconstruction.get_proj_srs(),
+                    utm_offset=reconstruction.georef.utm_offset(),
+                    shot_transformer=shot_transformer,
+                    a_matrix=a_matrix,
+                )
             else:
                 # Pseudo geo
                 shots = get_geojson_shots_from_opensfm(tree.opensfm_reconstruction, pseudo_geotiff=tree.odm_orthophoto_tif)
