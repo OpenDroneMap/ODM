@@ -21,6 +21,8 @@ RS_DATABASE = {
     'hasselblad l1d-20c': lambda p: 47 if p.get_capture_megapixels() < 17 else 56, # DJI Mavic 2 Pro (at 16:10 => 16.8MP 47ms, at 3:2 => 19.9MP 56ms. 4:3 has 17.7MP with same image height as 3:2 which can be concluded as same sensor readout)
     'hasselblad l2d-20c': 16.6, # DJI Mavic 3 (not enterprise version)
 
+    'dji fc3682': 23, # DJI Mini 3
+
     'dji fc3582': lambda p: 26 if p.get_capture_megapixels() < 48 else 60, # DJI Mini 3 pro (at 48MP readout is 60ms, at 12MP it's 26ms) 
     'dji fc8482': lambda p: (
         16 if p.get_capture_megapixels() < 12 else  # 12MP 16:9 mode (actual 9.1MP)
