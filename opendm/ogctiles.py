@@ -11,7 +11,7 @@ from opendm.entwine import build_entwine
 import fiona
 from shapely.geometry import shape
 
-def build_textured_model(input_obj, output_path, reference_lla = None, model_bounds_file=None, rerun=False):
+def build_textured_model(args, input_obj, output_path, reference_lla = None, model_bounds_file=None, rerun=False):
     if not os.path.isfile(input_obj):
         log.ODM_WARNING("No input OBJ file to process")
         return
@@ -64,7 +64,12 @@ def build_textured_model(input_obj, output_path, reference_lla = None, model_bou
             'lon': lon,
             'alt': alt,
         }
-        system.run('Obj2Tiles "{input}" "{output}" --divisions {divisions} --lat {lat} --lon {lon} --alt {alt} '.format(**kwargs))
+        cmd = 'Obj2Tiles "{input}" "{output}" --divisions {divisions} --lat {lat} --lon {lon} --alt {alt} '.format(**kwargs)
+
+        if getattr(args, '3d_tiles_y_up_to_z_up'):
+            cmd += ' --y-up-to-z-up'
+
+        system.run(cmd)
 
     except Exception as e:
         log.ODM_WARNING("Cannot build 3D tiles textured model: %s" % str(e))
@@ -123,7 +128,7 @@ def build_3dtiles(args, tree, reconstruction, rerun=False):
         if not os.path.isfile(input_obj):
             input_obj = os.path.join(tree.odm_25dtexturing, tree.odm_textured_model_obj)
 
-        build_textured_model(input_obj, model_output_path, reference_lla, model_bounds_file, rerun)
+        build_textured_model(args, input_obj, model_output_path, reference_lla, model_bounds_file, rerun)
     else:
         log.ODM_WARNING("OGC 3D Tiles model %s already generated" % model_output_path)
 
