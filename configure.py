@@ -114,7 +114,7 @@ def build():
             os.mkdir(build_dir)
 
         toolchain_file = os.path.join(os.getcwd(), "vcpkg", "scripts", "buildsystems", "vcpkg.cmake")
-        run("cmake .. -DCMAKE_TOOLCHAIN_FILE=\"%s\"" % toolchain_file,  cwd=build_dir)
+        run("cmake .. -DCMAKE_TOOLCHAIN_FILE=\"%s\" -DVCPKG_SETUP_CMAKE_PROGRAM_PATH=0" % toolchain_file,  cwd=build_dir)
         run("cmake --build . --config Release -j2", cwd=build_dir)
 
 def vcpkg_export():
