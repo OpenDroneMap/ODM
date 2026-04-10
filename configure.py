@@ -26,7 +26,7 @@ parser.add_argument('--build-vcpkg',
                     help='Build VCPKG environment from scratch instead of downloading prebuilt one.')
 parser.add_argument('--vcpkg-archive-url',
                     type=str,
-                    default='https://github.com/OpenDroneMap/windows-deps/releases/download/2.6.0/vcpkg-export.zip',
+                    default='https://github.com/OpenDroneMap/windows-deps/actions/runs/24224854896/artifacts/6364336769',
                     required=False,
                     help='Path to VCPKG export archive')
 parser.add_argument('--signtool-path',
@@ -114,7 +114,7 @@ def build():
             os.mkdir(build_dir)
 
         toolchain_file = os.path.join(os.getcwd(), "vcpkg", "scripts", "buildsystems", "vcpkg.cmake")
-        run("cmake .. -DCMAKE_TOOLCHAIN_FILE=\"%s\" -DVCPKG_SETUP_CMAKE_PROGRAM_PATH=0" % toolchain_file,  cwd=build_dir)
+        run("cmake .. -DCMAKE_TOOLCHAIN_FILE=\"%s\"" % toolchain_file,  cwd=build_dir)
         run("cmake --build . --config Release -j2", cwd=build_dir)
 
 def vcpkg_export():
