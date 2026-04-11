@@ -23,7 +23,7 @@ ExternalProject_Add(${_proj_name}
   BINARY_DIR        ${_SB_BINARY_DIR}
   #--Install step---------------
   INSTALL_DIR       ${SB_INSTALL_DIR}
-  INSTALL_COMMAND   "${CMAKE_COMMAND}" --build . --target install
+  INSTALL_COMMAND   "${CMAKE_COMMAND}" --build . --config $<CONFIG> --target install
   #--Output logging-------------
   LOG_DOWNLOAD      OFF
   LOG_CONFIGURE     OFF
