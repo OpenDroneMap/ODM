@@ -46,8 +46,7 @@ Source: "contrib\*"; DestDir: "{app}\contrib"; Flags: ignoreversion recursesubdi
 Source: "licenses\*"; DestDir: "{app}\licenses"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "opendm\*"; DestDir: "{app}\opendm"; Excludes: "__pycache__"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "stages\*"; DestDir: "{app}\stages"; Excludes: "__pycache__"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "SuperBuild\install\bin\*"; DestDir: "{app}\SuperBuild\install\bin"; Excludes: "__pycache__"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "SuperBuild\install\lib\python3.12\*"; DestDir: "{app}\SuperBuild\install\lib\python3.12"; Excludes: "__pycache__"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "SuperBuild\*"; DestDir: "{app}\SuperBuild"; Excludes: "__pycache__"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "venv\*"; DestDir: "{app}\venv"; Excludes: "__pycache__,pyvenv.cfg"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "python312\*"; DestDir: "{app}\venv\Scripts"; Excludes: "__pycache__"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "console.bat"; DestDir: "{app}"; Flags: ignoreversion
