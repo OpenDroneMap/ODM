@@ -114,8 +114,8 @@ def build():
             os.mkdir(build_dir)
 
         toolchain_file = os.path.join(os.getcwd(), "vcpkg", "scripts", "buildsystems", "vcpkg.cmake")
-        run("cmake .. -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_TOOLCHAIN_FILE=\"%s\"" % toolchain_file,  cwd=build_dir)
-        run("cmake --build . --config RelWithDebInfo -j2", cwd=build_dir)
+        run("cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE=\"%s\"" % toolchain_file,  cwd=build_dir)
+        run("cmake --build . --config Debug -j2", cwd=build_dir)
 
 def vcpkg_export():
     if not os.path.exists("vcpkg"):
