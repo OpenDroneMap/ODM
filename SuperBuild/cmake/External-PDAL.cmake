@@ -55,6 +55,7 @@ ExternalProject_Add(${_proj_name}
     ${WIN32_GDAL_ARGS}
   #--Build step-----------------
   BINARY_DIR        ${_SB_BINARY_DIR}
+  BUILD_COMMAND     ${CMAKE_COMMAND} --build <BINARY_DIR> --config Debug
   #--Install step---------------
   INSTALL_DIR       ${SB_INSTALL_DIR}
   #--Output logging-------------
