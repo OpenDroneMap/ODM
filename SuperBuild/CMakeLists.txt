@@ -94,13 +94,11 @@ if (WIN32)
     set(PYTHON_HOME "${SB_ROOT_DIR}/../venv")
     set(PYTHON_EXE_PATH "${PYTHON_HOME}/Scripts/python")
 
-    set(GDAL_ROOT "${SB_INSTALL_DIR}")
-    set(GDAL_LIBRARY "${GDAL_ROOT}/lib/gdal.lib")
-    set(GDAL_INCLUDE_DIR "${GDAL_ROOT}/include")
-
     message("Copying VCPKG DLLs...")
     file(GLOB COPY_DLLS "${VCPKG_ROOT}/installed/x64-windows/bin/*.dll")
     file(COPY ${COPY_DLLS} DESTINATION "${SB_INSTALL_DIR}/bin")
+
+    # TODO: copy gdal tools
 
     message("Copying CUDA DLLs...")
     file(GLOB CUDA_DLLS "$ENV{CUDA_PATH}/bin/cudart64*.dll")
@@ -108,15 +106,9 @@ if (WIN32)
 elseif(APPLE)
     set(PYTHON_HOME "${SB_ROOT_DIR}/../venv")
     set(PYTHON_EXE_PATH "${PYTHON_HOME}/bin/python")
-    set(GDAL_ROOT "${SB_INSTALL_DIR}")
-    set(GDAL_LIBRARY "${GDAL_ROOT}/lib/libgdal.dylib")
-    set(GDAL_INCLUDE_DIR "${GDAL_ROOT}/include")
 else()
     set(PYTHON_HOME "${SB_ROOT_DIR}/../venv")
     set(PYTHON_EXE_PATH "${PYTHON_HOME}/bin/python3")
-    set(GDAL_ROOT "${SB_INSTALL_DIR}")
-    set(GDAL_LIBRARY "${GDAL_ROOT}/lib/libgdal.so")
-    set(GDAL_INCLUDE_DIR "${GDAL_ROOT}/include")
 endif()
 
 # Path to additional CMake modules
@@ -235,6 +227,7 @@ externalproject_add(dem2mesh
     PREFIX            ${SB_BINARY_DIR}/dem2mesh
     SOURCE_DIR        ${SB_SOURCE_DIR}/dem2mesh
     CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
+                      ${WIN32_CMAKE_ARGS}
                       ${APPLE_CMAKE_ARGS}
 )
 
@@ -245,6 +238,7 @@ externalproject_add(dem2points
     PREFIX            ${SB_BINARY_DIR}/dem2points
     SOURCE_DIR        ${SB_SOURCE_DIR}/dem2points
     CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
+                      ${WIN32_CMAKE_ARGS}
                       ${APPLE_CMAKE_ARGS}
 )
 
