@@ -98,11 +98,14 @@ if (WIN32)
     file(GLOB COPY_DLLS "${VCPKG_ROOT}/installed/x64-windows/bin/*.dll")
     file(COPY ${COPY_DLLS} DESTINATION "${SB_INSTALL_DIR}/bin")
 
-    # TODO: copy gdal tools
-
     message("Copying CUDA DLLs...")
     file(GLOB CUDA_DLLS "$ENV{CUDA_PATH}/bin/cudart64*.dll")
     file(COPY ${CUDA_DLLS} DESTINATION "${SB_INSTALL_DIR}/bin")
+
+    # TODO: copy gdal tools & data
+
+    # GDAL comes from vcpkg, create a dummy target to satisfy dependencies
+    add_custom_target(gdal)
 elseif(APPLE)
     set(PYTHON_HOME "${SB_ROOT_DIR}/../venv")
     set(PYTHON_EXE_PATH "${PYTHON_HOME}/bin/python")
