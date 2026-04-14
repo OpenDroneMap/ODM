@@ -49,13 +49,11 @@ ExternalProject_Add(${_proj_name}
     -DLASZIP_INCLUDE_DIR=${SB_INSTALL_DIR}/include
     -DLASZIP_LIBRARY=${LASZIP_LIB}
     -DWITH_TESTS=OFF
-    -DCMAKE_BUILD_TYPE=Debug
+    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
     -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
     ${WIN32_CMAKE_ARGS}
-    ${WIN32_GDAL_ARGS}
   #--Build step-----------------
   BINARY_DIR        ${_SB_BINARY_DIR}
-  BUILD_COMMAND     ${CMAKE_COMMAND} --build <BINARY_DIR> --config Debug
   #--Install step---------------
   INSTALL_DIR       ${SB_INSTALL_DIR}
   #--Output logging-------------
