@@ -6,14 +6,21 @@ import time
 import sys
 import rawpy
 import cv2
+from pathlib import Path
+import rasterio as rio
 
 def read_image(img_path):
-    if img_path[-4:].lower() in [".dng", ".raw", ".nef"]:
+    extension = Path(img_path).suffix.lower()
+    if extension in [".dng", ".raw", ".nef"]:
         try:
             with rawpy.imread(img_path) as r:
                 img = r.postprocess(output_bps=8, use_camera_wb=True, use_auto_wb=False)
-        except:
+        except Exception:
             return None
+    elif extension == ".tif":
+        with rio.open(img_path) as f:
+            # rasterio has the channel count as the first dimension
+            img = f.read().transpose(1,2,0)
     else:
         img = cv2.imread(img_path, cv2.IMREAD_COLOR)
         if img is None:
