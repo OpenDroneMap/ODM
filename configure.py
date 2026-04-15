@@ -78,7 +78,10 @@ def build():
         ebuilder = EnvBuilder(with_pip=True)
         ebuilder.create("venv")
 
-    run("pip install setuptools")
+    run("venv\\Scripts\\pip install setuptools")
+
+    # Install numpy for OpenCV build. TODO: read the exact version from requirements.txt?
+    run("venv\\Scripts\\pip install numpy==2.3.2")
     
     # Download / build VCPKG environment
     if not os.path.isdir("vcpkg"):

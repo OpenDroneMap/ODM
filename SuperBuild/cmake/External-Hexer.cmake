@@ -11,6 +11,7 @@ ExternalProject_Add(${_proj_name}
   URL               https://github.com/hobuinc/hexer/archive/5876a5ab1d5b504cf1ea985d66ae359287eef31e.tar.gz
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
+  PATCH_COMMAND     git apply ${CMAKE_MODULE_PATH}/hexer.patch
   #--Configure step-------------
   SOURCE_DIR        ${SB_SOURCE_DIR}/${_proj_name}
   CMAKE_ARGS
