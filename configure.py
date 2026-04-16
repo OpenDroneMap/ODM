@@ -71,6 +71,28 @@ def vcpkg_requirements():
         pckgs = list(filter(lambda l: len(l) > 0, map(str.strip, f.read().split("\n"))))
     return pckgs
 
+def install_python_package_from_source(name, url, vcpkg):
+    print("Downloading %s --> %s" % (url, f"{name}.zip"))
+    with urllib.request.urlopen(url) as response, open(os.path.join("SuperBuild", "download", f"{name}.zip"), 'wb') as out_file:
+        shutil.copyfileobj(response, out_file)
+    
+    print(f"Extracting {name}.zip", end="")
+    top_dir = None
+    with zipfile.ZipFile(os.path.join("SuperBuild", "download", f"{name}.zip")) as z:
+        top_dir = z.namelist()[0]
+        z.extractall(os.path.join("SuperBuild", "src"))
+
+    print(f" --> {top_dir}")
+    src_dir = os.path.join("SuperBuild", "src", top_dir)
+
+    with open(os.path.join(src_dir, "setup.cfg"), "w") as file:
+        file.write("[build_ext]\n")
+        file.write("include-dirs = %s\n" % os.path.abspath(os.path.join(vcpkg, "include")))
+        file.write("libraries = gdal\n")
+        file.write("library-dirs = %s\n" % os.path.abspath(os.path.join(vcpkg, "lib")))
+
+    run("venv\\Scripts\\pip install .", cwd=src_dir)
+
 def build():
     # Create python virtual env
     if not os.path.isdir("venv"):
@@ -119,8 +141,13 @@ def build():
         run("cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=\"%s\"" % toolchain_file,  cwd=build_dir)
         run("cmake --build . --config Release -j2", cwd=build_dir)
 
-    # TODO: gdal config
-    run("venv\\Scripts\\pip install --ignore-installed --no-binary fiona,rasterio -r requirements.txt")
+    # TODO: build gdal python package too
+
+    # Build fiona and rasterio from source using vcpkg GDAL. TODO: read the exact versions from requirements.txt?
+    install_python_package_from_source("fiona", "https://github.com/Toblerity/Fiona/archive/refs/tags/1.10.1.zip", os.path.join(os.getcwd(), "vcpkg", "installed", "x64-windows"))
+    install_python_package_from_source("rasterio", "https://github.com/rasterio/rasterio/archive/refs/tags/1.4.3.zip", os.path.join(os.getcwd(), "vcpkg", "installed", "x64-windows"))
+
+    run("venv\\Scripts\\pip install -r requirements.txt")
 
 def vcpkg_export():
     if not os.path.exists("vcpkg"):

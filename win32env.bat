@@ -9,15 +9,15 @@ if defined _OLD_CODEPAGE (
 )
 
 set ODMBASE=%~dp0
-set GDALBASE=%ODMBASE%venv\Lib\site-packages\osgeo
+set GDALBASE=%ODMBASE%SuperBuild\install\bin
 set GDAL_DATA=%GDALBASE%\data\gdal
 set GDAL_DRIVER_PATH=%GDALBASE%\gdalplugins
 set OSFMBASE=%ODMBASE%SuperBuild\install\bin\opensfm\bin
 set SBBIN=%ODMBASE%SuperBuild\install\bin
 set PDAL_DRIVER_PATH=%ODMBASE%SuperBuild\install\bin
-set PYTHONPYCACHEPREFIX=%PROGRAMDATA%\ODM\pycache
+if not defined ODMDONTSETPYCACHE set PYTHONPYCACHEPREFIX=%PROGRAMDATA%\ODM\pycache
 
-set PATH=%GDALBASE%;%SBBIN%;%OSFMBASE%
+set PATH=%SBBIN%;%OSFMBASE%
 set PROJ_LIB=%GDALBASE%\data\proj
 
 set VIRTUAL_ENV=%ODMBASE%venv

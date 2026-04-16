@@ -102,7 +102,17 @@ if (WIN32)
     file(GLOB CUDA_DLLS "$ENV{CUDA_PATH}/bin/cudart64*.dll")
     file(COPY ${CUDA_DLLS} DESTINATION "${SB_INSTALL_DIR}/bin")
 
-    # TODO: copy gdal tools & data
+    message("Copying GDAL tools...")
+    file(GLOB GDAL_TOOLS "${VCPKG_ROOT}/installed/x64-windows/bin/*")
+    file(COPY ${GDAL_TOOLS} DESTINATION "${SB_INSTALL_DIR}/bin")
+
+    message("Copying GDAL data...")
+    file(GLOB GDAL_DATA "${VCPKG_ROOT}/installed/x64-windows/share/gdal/*")
+    file(COPY ${GDAL_DATA} DESTINATION "${SB_INSTALL_DIR}/bin/data/gdal")
+
+    message("Copying PROJ data...")
+    file(GLOB PROJ_DATA "${VCPKG_ROOT}/installed/x64-windows/share/proj/*")
+    file(COPY ${PROJ_DATA} DESTINATION "${SB_INSTALL_DIR}/bin/data/proj")
 
     # GDAL comes from vcpkg, create a dummy target to satisfy dependencies
     add_custom_target(gdal)
