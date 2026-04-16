@@ -47,8 +47,7 @@ parser.add_argument('--azure-signing-metadata',
 
 args = parser.parse_args()
 
-def run(cmd, cwd=os.getcwd()):
-    env = os.environ.copy()
+def run(cmd, cwd=os.getcwd(), env=os.environ.copy()):
     print(cmd)
     p = subprocess.Popen(cmd, shell=True, env=env, cwd=cwd)
     retcode = p.wait()
@@ -91,7 +90,9 @@ def install_python_package_from_source(name, url, vcpkg):
         file.write("libraries = gdal\n")
         file.write("library-dirs = %s\n" % os.path.abspath(os.path.join(vcpkg, "lib")))
 
-    run("venv\\Scripts\\pip install .", cwd=src_dir)
+    pip_abs = os.path.abspath(os.path.join("venv", "Scripts", "pip.exe"))
+
+    run(f"\"{pip_abs}\" install .", cwd=src_dir, env={**os.environ, "GDAL_VERSION": "3.11.1"})
 
 def build():
     # Create python virtual env
