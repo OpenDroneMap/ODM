@@ -26,7 +26,11 @@
         "yasm-tool",
         "metis",
         "python3",
-        "pybind11"
+        "pybind11",
+        {
+            "name": "gdal",
+            "features": ["tools"]
+        }
     ],
     "builtin-baseline": "6b68ff33240209010db42256d3f5c3a3c58273fb",
     "overrides": [
@@ -56,6 +60,7 @@
        { "name": "yasm-tool", "version": "2021-12-14" },
        { "name": "metis", "version": "2025-07-04" },
        { "name": "python3", "version": "3.12.9#9" },
-       { "name": "pybind11", "version": "3.0.0#1" }
+       { "name": "pybind11", "version": "3.0.0#1" },
+       { "name": "gdal", "version": "3.11.1" }
     ]
 }

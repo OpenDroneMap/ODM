@@ -103,7 +103,7 @@ if (WIN32)
     file(COPY ${CUDA_DLLS} DESTINATION "${SB_INSTALL_DIR}/bin")
 
     message("Copying GDAL tools...")
-    file(GLOB GDAL_TOOLS "${VCPKG_ROOT}/installed/x64-windows/bin/*")
+    file(GLOB GDAL_TOOLS "${VCPKG_ROOT}/installed/x64-windows/tools/gdal/*")
     file(COPY ${GDAL_TOOLS} DESTINATION "${SB_INSTALL_DIR}/bin")
 
     message("Copying GDAL data...")

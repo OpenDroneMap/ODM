@@ -11,8 +11,10 @@ import subprocess
 import os
 import stat
 import urllib.request
+from urllib.parse import urlparse
 import shutil 
 import zipfile
+import tarfile
 
 from venv import EnvBuilder
 
@@ -70,15 +72,16 @@ def vcpkg_requirements():
         pckgs = list(filter(lambda l: len(l) > 0, map(str.strip, f.read().split("\n"))))
     return pckgs
 
-def install_python_package_from_source(name, url, vcpkg):
-    print("Downloading %s --> %s" % (url, f"{name}.zip"))
-    with urllib.request.urlopen(url) as response, open(os.path.join("SuperBuild", "download", f"{name}.zip"), 'wb') as out_file:
+def install_python_package_from_source(url, vcpkg, extractor, get_top_dir):
+    filename = os.path.basename(urlparse(url).path)
+    print("Downloading %s --> %s" % (url, filename))
+    with urllib.request.urlopen(url) as response, open(os.path.join("SuperBuild", "download", filename), 'wb') as out_file:
         shutil.copyfileobj(response, out_file)
     
-    print(f"Extracting {name}.zip", end="")
+    print(f"Extracting {filename}", end="")
     top_dir = None
-    with zipfile.ZipFile(os.path.join("SuperBuild", "download", f"{name}.zip")) as z:
-        top_dir = z.namelist()[0]
+    with extractor(os.path.join("SuperBuild", "download", filename)) as z:
+        top_dir = get_top_dir(z)
         z.extractall(os.path.join("SuperBuild", "src"))
 
     print(f" --> {top_dir}")
@@ -142,11 +145,11 @@ def build():
         run("cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=\"%s\"" % toolchain_file,  cwd=build_dir)
         run("cmake --build . --config Release -j2", cwd=build_dir)
 
-    # TODO: build gdal python package too
-
-    # Build fiona and rasterio from source using vcpkg GDAL. TODO: read the exact versions from requirements.txt?
-    install_python_package_from_source("fiona", "https://github.com/Toblerity/Fiona/archive/refs/tags/1.10.1.zip", os.path.join(os.getcwd(), "vcpkg", "installed", "x64-windows"))
-    install_python_package_from_source("rasterio", "https://github.com/rasterio/rasterio/archive/refs/tags/1.4.3.zip", os.path.join(os.getcwd(), "vcpkg", "installed", "x64-windows"))
+    # Build GDAL bindings, fiona and rasterio from source using vcpkg GDAL. TODO: read the exact versions from requirements.txt?
+    vcpkg_installed = os.path.join(os.getcwd(), "vcpkg", "installed", "x64-windows")
+    install_python_package_from_source("https://files.pythonhosted.org/packages/source/g/gdal/gdal-3.11.1.tar.gz", vcpkg_installed, lambda path: tarfile.open(path, "r:gz"), lambda t: t.getnames()[0])
+    install_python_package_from_source("https://github.com/Toblerity/Fiona/archive/refs/tags/1.10.1.zip", vcpkg_installed, lambda path: zipfile.ZipFile(path), lambda z: z.namelist()[0])
+    install_python_package_from_source("https://github.com/rasterio/rasterio/archive/refs/tags/1.4.3.zip", vcpkg_installed, lambda path: zipfile.ZipFile(path), lambda z: z.namelist()[0])
 
     run("venv\\Scripts\\pip install -r requirements.txt")
 

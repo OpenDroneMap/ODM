@@ -73,6 +73,10 @@ jobs:
       run: |
         python configure.py build
       shell: cmd
+    - name: Free up space
+      run: |
+        rmdir SuperBuild\download /s /q
+        rmdir SuperBuild\build /s /q
     - name: Create setup
       run: |
         python configure.py dist
