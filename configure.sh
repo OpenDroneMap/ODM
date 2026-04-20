@@ -3,7 +3,7 @@
 # Ensure the DEBIAN_FRONTEND environment variable is set for apt-get calls
 APT_GET="env DEBIAN_FRONTEND=noninteractive $(command -v apt-get)"
 
-check_version(){  
+check_version(){
   UBUNTU_VERSION=$(lsb_release -r)
   case "$UBUNTU_VERSION" in
     *"20.04"*|*"21.04"*|*"24.04"*)
@@ -107,7 +107,7 @@ installruntimedepsonly() {
 
 installreqs() {
     cd /code
-    
+
     ## Set up library paths
     export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$RUNPATH/SuperBuild/install/lib
 
@@ -115,7 +115,7 @@ installreqs() {
     echo "Updating the system"
     ensure_prereqs
     check_version
-    
+
     echo "Installing Required Requisites"
     installdepsfromsnapcraft build prereqs
     echo "Installing OpenCV Dependencies"
@@ -126,7 +126,7 @@ installreqs() {
     installdepsfromsnapcraft build openmvs
     echo "Installing GDAL Dependencies"
     installdepsfromsnapcraft build gdal
-    
+
     set -e
 
     # edt requires numpy to build
@@ -135,15 +135,13 @@ installreqs() {
 }
 
 installpython() {
-    echo "Installing Python requirements with compiled GDAL"
+    echo "Installing Python requirements"
     cd /code
-    export GDAL_CONFIG=${RUNPATH}/SuperBuild/install/bin/gdal-config
-    
     set -e
     venv/bin/pip install -r requirements.txt --ignore-installed
     set +e
 }
-    
+
 install() {
     installreqs
 
@@ -160,21 +158,20 @@ install() {
     fi
 
     set -eo pipefail
-    
     echo "Compiling SuperBuild"
     cd ${RUNPATH}/SuperBuild
     mkdir -p build && cd build
-    cmake .. \
-        -DBUILD_PYTHON_BINDINGS=ON \
-        -DPython_ROOT=/code/venv \
-        -DPython_FIND_VIRTUALENV=ONLY \
-        && make -j$processes
+    cmake .. && make -j$processes
+
+    # Reset terminal state
+    cd ${RUNPATH}
+    set +eo pipefail
 
     installpython
 
     echo "Configuration Finished"
 }
- 
+
 uninstall() {
     check_version
 
