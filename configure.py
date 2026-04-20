@@ -11,8 +11,10 @@ import subprocess
 import os
 import stat
 import urllib.request
+from urllib.parse import urlparse
 import shutil 
 import zipfile
+import tarfile
 
 from venv import EnvBuilder
 
@@ -26,7 +28,7 @@ parser.add_argument('--build-vcpkg',
                     help='Build VCPKG environment from scratch instead of downloading prebuilt one.')
 parser.add_argument('--vcpkg-archive-url',
                     type=str,
-                    default='https://github.com/OpenDroneMap/windows-deps/releases/download/2.6.0/vcpkg-export.zip',
+                    default='https://github.com/OpenDroneMap/windows-deps/releases/download/2.7.0/vcpkg-export.zip',
                     required=False,
                     help='Path to VCPKG export archive')
 parser.add_argument('--signtool-path',
@@ -47,8 +49,7 @@ parser.add_argument('--azure-signing-metadata',
 
 args = parser.parse_args()
 
-def run(cmd, cwd=os.getcwd()):
-    env = os.environ.copy()
+def run(cmd, cwd=os.getcwd(), env=os.environ.copy()):
     print(cmd)
     p = subprocess.Popen(cmd, shell=True, env=env, cwd=cwd)
     retcode = p.wait()
@@ -71,6 +72,31 @@ def vcpkg_requirements():
         pckgs = list(filter(lambda l: len(l) > 0, map(str.strip, f.read().split("\n"))))
     return pckgs
 
+def install_python_package_from_source(url, vcpkg, extractor, get_top_dir):
+    filename = os.path.basename(urlparse(url).path)
+    print("Downloading %s --> %s" % (url, filename))
+    with urllib.request.urlopen(url) as response, open(os.path.join("SuperBuild", "download", filename), 'wb') as out_file:
+        shutil.copyfileobj(response, out_file)
+    
+    print(f"Extracting {filename}", end="")
+    top_dir = None
+    with extractor(os.path.join("SuperBuild", "download", filename)) as z:
+        top_dir = get_top_dir(z)
+        z.extractall(os.path.join("SuperBuild", "src"))
+
+    print(f" --> {top_dir}")
+    src_dir = os.path.join("SuperBuild", "src", top_dir)
+
+    with open(os.path.join(src_dir, "setup.cfg"), "w") as file:
+        file.write("[build_ext]\n")
+        file.write("include-dirs = %s\n" % os.path.abspath(os.path.join(vcpkg, "include")))
+        file.write("libraries = gdal\n")
+        file.write("library-dirs = %s\n" % os.path.abspath(os.path.join(vcpkg, "lib")))
+
+    pip_abs = os.path.abspath(os.path.join("venv", "Scripts", "pip.exe"))
+
+    run(f"\"{pip_abs}\" install .", cwd=src_dir, env={**os.environ, "GDAL_VERSION": "3.11.1"})
+
 def build():
     # Create python virtual env
     if not os.path.isdir("venv"):
@@ -78,8 +104,10 @@ def build():
         ebuilder = EnvBuilder(with_pip=True)
         ebuilder.create("venv")
 
-    run("pip install setuptools")
-    run("venv\\Scripts\\pip install --ignore-installed -r requirements.txt")
+    run("venv\\Scripts\\pip install setuptools")
+
+    # Install numpy for OpenCV build. TODO: read the exact version from requirements.txt?
+    run("venv\\Scripts\\pip install numpy==2.3.2")
     
     # Download / build VCPKG environment
     if not os.path.isdir("vcpkg"):
@@ -114,8 +142,16 @@ def build():
             os.mkdir(build_dir)
 
         toolchain_file = os.path.join(os.getcwd(), "vcpkg", "scripts", "buildsystems", "vcpkg.cmake")
-        run("cmake .. -DCMAKE_TOOLCHAIN_FILE=\"%s\"" % toolchain_file,  cwd=build_dir)
+        run("cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=\"%s\"" % toolchain_file,  cwd=build_dir)
         run("cmake --build . --config Release -j2", cwd=build_dir)
+
+    # Build GDAL bindings, fiona and rasterio from source using vcpkg GDAL. TODO: read the exact versions from requirements.txt?
+    vcpkg_installed = os.path.join(os.getcwd(), "vcpkg", "installed", "x64-windows")
+    install_python_package_from_source("https://files.pythonhosted.org/packages/source/g/gdal/gdal-3.11.1.tar.gz", vcpkg_installed, lambda path: tarfile.open(path, "r:gz"), lambda t: t.getnames()[0])
+    install_python_package_from_source("https://github.com/Toblerity/Fiona/archive/refs/tags/1.10.1.zip", vcpkg_installed, lambda path: zipfile.ZipFile(path), lambda z: z.namelist()[0])
+    install_python_package_from_source("https://github.com/rasterio/rasterio/archive/refs/tags/1.4.3.zip", vcpkg_installed, lambda path: zipfile.ZipFile(path), lambda z: z.namelist()[0])
+
+    run("venv\\Scripts\\pip install -r requirements.txt")
 
 def vcpkg_export():
     if not os.path.exists("vcpkg"):
@@ -168,7 +204,7 @@ def dist():
     # Download portable python
     if not os.path.isdir("python312"):
         pythonzip_path = os.path.join("SuperBuild", "download", "python312.zip")
-        python_url = "https://github.com/OpenDroneMap/windows-deps/releases/download/2.6.0/python-3.12.10-embed-amd64-less-pth.zip"
+        python_url = "https://github.com/OpenDroneMap/windows-deps/releases/download/2.7.0/python-3.12.9-embed-amd64-less-pth-sqlite.zip"
         if not os.path.exists(pythonzip_path):
             print("Downloading %s" % python_url)
             with urllib.request.urlopen(python_url) as response, open( pythonzip_path, 'wb') as out_file:

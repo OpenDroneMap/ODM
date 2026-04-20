@@ -85,41 +85,43 @@ mark_as_advanced(SB_BINARY_DIR)
 message(STATUS "SuperBuild binary files will be located to: ${SB_BINARY_DIR}")
 
 if (WIN32)
-  if (NOT DEFINED CMAKE_TOOLCHAIN_FILE)
-    message(FATAL_ERROR "CMAKE_TOOLCHAIN_FILE not set. You need to set it to the path of vcpkg.cmake")
-  endif()
-  get_filename_component(CMAKE_TOOLCHAIN_DIR ${CMAKE_TOOLCHAIN_FILE} DIRECTORY)
-  get_filename_component(VCPKG_ROOT "${CMAKE_TOOLCHAIN_DIR}/../../" ABSOLUTE)
-  set(WIN32_CMAKE_ARGS "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}")
-  set(PYTHON_HOME "${SB_ROOT_DIR}/../venv")
-  set(PYTHON_EXE_PATH "${PYTHON_HOME}/Scripts/python")
+    if (NOT DEFINED CMAKE_TOOLCHAIN_FILE)
+        message(FATAL_ERROR "CMAKE_TOOLCHAIN_FILE not set. You need to set it to the path of vcpkg.cmake")
+    endif()
+    get_filename_component(CMAKE_TOOLCHAIN_DIR ${CMAKE_TOOLCHAIN_FILE} DIRECTORY)
+    get_filename_component(VCPKG_ROOT "${CMAKE_TOOLCHAIN_DIR}/../../" ABSOLUTE)
+    set(WIN32_CMAKE_ARGS "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}")
+    set(PYTHON_HOME "${SB_ROOT_DIR}/../venv")
+    set(PYTHON_EXE_PATH "${PYTHON_HOME}/Scripts/python")
 
-  # Use the GDAL version that comes with pip
-  set(GDAL_ROOT "${PYTHON_HOME}/Lib/site-packages/osgeo")
-  set(GDAL_LIBRARY "${GDAL_ROOT}/gdal.lib")
-  set(GDAL_INCLUDE_DIR "${GDAL_ROOT}/include/gdal")
+    message("Copying VCPKG DLLs...")
+    file(GLOB COPY_DLLS "${VCPKG_ROOT}/installed/x64-windows/bin/*.dll")
+    file(COPY ${COPY_DLLS} DESTINATION "${SB_INSTALL_DIR}/bin")
 
-  message("Copying VCPKG DLLs...")
-  file(GLOB COPY_DLLS "${VCPKG_ROOT}/installed/x64-windows/bin/*.dll")
-  file(COPY ${COPY_DLLS} DESTINATION "${SB_INSTALL_DIR}/bin")
+    message("Copying CUDA DLLs...")
+    file(GLOB CUDA_DLLS "$ENV{CUDA_PATH}/bin/cudart64*.dll")
+    file(COPY ${CUDA_DLLS} DESTINATION "${SB_INSTALL_DIR}/bin")
 
-  message("Copying CUDA DLLs...")
-  file(GLOB CUDA_DLLS "$ENV{CUDA_PATH}/bin/cudart64*.dll")
-  file(COPY ${CUDA_DLLS} DESTINATION "${SB_INSTALL_DIR}/bin")
+    message("Copying GDAL tools...")
+    file(GLOB GDAL_TOOLS "${VCPKG_ROOT}/installed/x64-windows/tools/gdal/*")
+    file(COPY ${GDAL_TOOLS} DESTINATION "${SB_INSTALL_DIR}/bin")
 
-  set(WIN32_GDAL_ARGS -DGDAL_FOUND=TRUE -DGDAL_LIBRARY=${GDAL_LIBRARY} -DGDAL_INCLUDE_DIR=${GDAL_INCLUDE_DIR})
+    message("Copying GDAL data...")
+    file(GLOB GDAL_DATA "${VCPKG_ROOT}/installed/x64-windows/share/gdal/*")
+    file(COPY ${GDAL_DATA} DESTINATION "${SB_INSTALL_DIR}/bin/data/gdal")
+
+    message("Copying PROJ data...")
+    file(GLOB PROJ_DATA "${VCPKG_ROOT}/installed/x64-windows/share/proj/*")
+    file(COPY ${PROJ_DATA} DESTINATION "${SB_INSTALL_DIR}/bin/data/proj")
+
+    # GDAL comes from vcpkg, create a dummy target to satisfy dependencies
+    add_custom_target(gdal)
 elseif(APPLE)
     set(PYTHON_HOME "${SB_ROOT_DIR}/../venv")
     set(PYTHON_EXE_PATH "${PYTHON_HOME}/bin/python")
-    set(GDAL_ROOT "${SB_INSTALL_DIR}")
-    set(GDAL_LIBRARY "${GDAL_ROOT}/lib/libgdal.dylib")
-    set(GDAL_INCLUDE_DIR "${GDAL_ROOT}/include")
 else()
     set(PYTHON_HOME "${SB_ROOT_DIR}/../venv")
     set(PYTHON_EXE_PATH "${PYTHON_HOME}/bin/python3")
-    set(GDAL_ROOT "${SB_INSTALL_DIR}")
-    set(GDAL_LIBRARY "${GDAL_ROOT}/lib/libgdal.so")
-    set(GDAL_INCLUDE_DIR "${GDAL_ROOT}/include")
 endif()
 
 # Path to additional CMake modules
@@ -136,14 +138,9 @@ include(ExternalProject-Setup)
 # Geospatial Data Abstraction Library (GDAL)
 #
 set(ODM_GDAL_Version 3.11.1)
-if(WIN32)
-  message(STATUS "GDAL: Using pip-installed version from ${GDAL_ROOT}")
-  # Create a dummy target to satisfy dependencies
-  add_custom_target(gdal)
-else()
-  option(ODM_BUILD_GDAL "Force to build GDAL library" ON)
-  SETUP_EXTERNAL_PROJECT(GDAL ${ODM_GDAL_Version} ${ODM_BUILD_GDAL})
-endif()
+option(ODM_BUILD_GDAL "Force to build GDAL library" OFF)
+
+SETUP_EXTERNAL_PROJECT(GDAL ${ODM_GDAL_Version} ${ODM_BUILD_GDAL})
 
 # ---------------------------------------------------------------------------------------------
 # Open Source Computer Vision (OpenCV)
@@ -243,7 +240,7 @@ externalproject_add(dem2mesh
     PREFIX            ${SB_BINARY_DIR}/dem2mesh
     SOURCE_DIR        ${SB_SOURCE_DIR}/dem2mesh
     CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
-                      ${WIN32_GDAL_ARGS}
+                      ${WIN32_CMAKE_ARGS}
                       ${APPLE_CMAKE_ARGS}
 )
 
@@ -254,7 +251,7 @@ externalproject_add(dem2points
     PREFIX            ${SB_BINARY_DIR}/dem2points
     SOURCE_DIR        ${SB_SOURCE_DIR}/dem2points
     CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
-                      ${WIN32_GDAL_ARGS}
+                      ${WIN32_CMAKE_ARGS}
                       ${APPLE_CMAKE_ARGS}
 )
 
@@ -265,7 +262,7 @@ externalproject_add(odm_orthophoto
     PREFIX            ${SB_BINARY_DIR}/odm_orthophoto
     SOURCE_DIR        ${SB_SOURCE_DIR}/odm_orthophoto
     CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
-                      ${WIN32_CMAKE_ARGS} ${WIN32_GDAL_ARGS}
+                      ${WIN32_CMAKE_ARGS}
 )
 
 externalproject_add(fastrasterfilter
@@ -275,7 +272,7 @@ externalproject_add(fastrasterfilter
     PREFIX            ${SB_BINARY_DIR}/fastrasterfilter
     SOURCE_DIR        ${SB_SOURCE_DIR}/fastrasterfilter
     CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
-                      ${WIN32_CMAKE_ARGS} ${WIN32_GDAL_ARGS}
+                      ${WIN32_CMAKE_ARGS}
 )
 
 externalproject_add(lastools
