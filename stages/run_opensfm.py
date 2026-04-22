@@ -69,13 +69,13 @@ class ODMOpenSfMStage(types.ODM_Stage):
         self.update_progress(75)
 
         # We now switch to a geographic CRS
-        if reconstruction.is_georeferenced() and (not io.file_exists(tree.opensfm_topocentric_reconstruction) or self.rerun()):
-            octx.run('export_geocoords --reconstruction --proj "%s" --offset-x %s --offset-y %s' % 
-                (reconstruction.georef.proj4(), reconstruction.georef.utm_east_offset, reconstruction.georef.utm_north_offset))
-            shutil.move(tree.opensfm_reconstruction, tree.opensfm_topocentric_reconstruction)
-            shutil.move(tree.opensfm_geocoords_reconstruction, tree.opensfm_reconstruction)
-        else:
-            log.ODM_WARNING("Will skip exporting %s" % tree.opensfm_geocoords_reconstruction)
+        # if reconstruction.is_georeferenced() and (not io.file_exists(tree.opensfm_topocentric_reconstruction) or self.rerun()):
+        #     octx.run('export_geocoords --reconstruction --proj "%s" --offset-x %s --offset-y %s' % 
+        #         (reconstruction.georef.proj4(), reconstruction.georef.utm_east_offset, reconstruction.georef.utm_north_offset))
+        #     shutil.move(tree.opensfm_reconstruction, tree.opensfm_topocentric_reconstruction)
+        #     shutil.move(tree.opensfm_geocoords_reconstruction, tree.opensfm_reconstruction)
+        # else:
+        #     log.ODM_WARNING("Will skip exporting %s" % tree.opensfm_geocoords_reconstruction)
         
         self.update_progress(80)
 
