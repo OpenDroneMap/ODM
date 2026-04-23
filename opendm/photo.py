@@ -458,7 +458,7 @@ class ODM_Photo:
                             self.camera_projection = camera_projection
 
                     # OPK
-                    self.set_attr_from_xmp_tag('yaw', xtags, ['@drone-dji:FlightYawDegree', '@Camera:Yaw', 'Camera:Yaw'], float)
+                    self.set_attr_from_xmp_tag('yaw', xtags, ['@drone-dji:GimbalYawDegree','@drone-dji:FlightYawDegree', '@Camera:Yaw', 'Camera:Yaw'], float)
                     self.set_attr_from_xmp_tag('pitch', xtags, ['@drone-dji:GimbalPitchDegree', '@Camera:Pitch', 'Camera:Pitch'], float)
                     self.set_attr_from_xmp_tag('roll', xtags, ['@drone-dji:GimbalRollDegree', '@Camera:Roll', 'Camera:Roll'], float)
 
@@ -899,22 +899,31 @@ class ODM_Photo:
             # Position and Angular Data of an Hybrid Inertial Navigation System 
             # by Manfred Bäumker
 
-            # YPR rotation matrix
-            cnb = np.array([[ math.cos(y) * math.cos(p), math.cos(y) * math.sin(p) * math.sin(r) - math.sin(y) * math.cos(r), math.cos(y) * math.sin(p) * math.cos(r) + math.sin(y) * math.sin(r)],
-                            [ math.sin(y) * math.cos(p), math.sin(y) * math.sin(p) * math.sin(r) + math.cos(y) * math.cos(r), math.sin(y) * math.sin(p) * math.cos(r) - math.cos(y) * math.sin(r)],
-                            [ -math.sin(p), math.cos(p) * math.sin(r), math.cos(p) * math.cos(r)],
-                           ])
+            # Modified from original Bäumker YPR formulation:
+            # Roll is factored out of cnb and applied through cbb instead.
+            # This separates platform orientation (yaw/pitch) from camera
+            # rotation around its optical axis (roll), enabling support for
+            # different camera mount orientations (forward, backward, sideways).
 
-            # Convert between image and body coordinates
-            # Top of image pixels point to flying direction
-            # and camera is looking down.
-            # We might need to change this if we want different
-            # camera mount orientations (e.g. backward or sideways)
+            cy, sy = math.cos(y), math.sin(y)
+            cp, sp = math.cos(p), math.sin(p)
+            cr, sr = math.cos(r), math.sin(r)
 
-            # (Swap X/Y, flip Z)
-            cbb = np.array([[0, 1, 0],
-                            [1, 0, 0],
-                            [0, 0, -1]])
+            # Navigation to body: yaw and pitch only
+            cnb = np.array([
+                [cy * cp, -sy, cy * sp],
+                [sy * cp,  cy, sy * sp],
+                [-sp,       0,  cp]
+            ])
+
+            # Camera to body transformation with roll
+            # Combines the original X/Y swap and Z flip with roll rotation
+            # around the optical axis
+            cbb = np.array([
+                [sr,  cr, 0],
+                [cr, -sr, 0],
+                [0,   0, -1]
+            ])
             
             delta = 1e-7
             
