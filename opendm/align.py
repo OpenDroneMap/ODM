@@ -5,6 +5,7 @@ import codem
 import dataclasses
 import pdal
 import numpy as np
+from numpy.lib import recfunctions as rfn
 import rasterio
 from rasterio.crs import CRS
 from opendm.utils import double_quote
@@ -143,5 +144,104 @@ def transform_obj(input_obj, a_matrix, geo_offset, output_obj):
                     v = np.fromstring(line.strip()[2:] + " 1",  sep=' ', dtype=float)
                     vt = (a_matrix.dot((v + g_off)) - g_off)[:3]
                     fout.write("v " + " ".join(map(str, list(vt))) + '\n')
+                else:
+                    fout.write(line)
+
+
+def _upsert_dimension(arrays, name, values, dtype=None):
+    values = np.asarray(values, dtype=dtype)
+    if name in arrays.dtype.names:
+        arrays[name] = values
+        return arrays
+    return rfn.append_fields(arrays, name, values, dtypes=dtype, usemask=False)
+
+
+def _normalize_point_cloud_dimensions(arrays):
+    rename_pairs = (
+        ("x", "X"),
+        ("y", "Y"),
+        ("z", "Z"),
+        ("red", "Red"),
+        ("green", "Green"),
+        ("blue", "Blue"),
+        ("classification", "Classification"),
+    )
+
+    for source, target in rename_pairs:
+        if source in arrays.dtype.names and target not in arrays.dtype.names:
+            arrays = _upsert_dimension(arrays, target, arrays[source])
+
+    if "views" in arrays.dtype.names and "UserData" not in arrays.dtype.names:
+        clipped = np.clip(arrays["views"], 0, 255).astype(np.uint8)
+        arrays = _upsert_dimension(arrays, "UserData", clipped, np.uint8)
+
+    return arrays
+
+
+def transform_point_cloud_geocoords(
+    input_point_cloud,
+    output_point_cloud,
+    point_transformer,
+    a_srs,
+    offset_x,
+    offset_y,
+    las_scale,
+    gcp_geojson_zip=None,
+):
+    pipeline = pdal.Pipeline(json.dumps([input_point_cloud]))
+    pipeline.execute()
+
+    if not pipeline.arrays:
+        raise RuntimeError("Point cloud pipeline did not return any arrays")
+
+    arrays = _normalize_point_cloud_dimensions(pipeline.arrays[0].copy())
+
+    if not all(name in arrays.dtype.names for name in ("X", "Y", "Z")):
+        raise RuntimeError("Point cloud is missing XYZ dimensions")
+
+    transformed = point_transformer(np.column_stack((arrays["X"], arrays["Y"], arrays["Z"])))
+    arrays["X"] = transformed[:, 0]
+    arrays["Y"] = transformed[:, 1]
+    arrays["Z"] = transformed[:, 2]
+
+    writer = {
+        "pipeline": [
+            {
+                "type": "writers.las",
+                "filename": output_point_cloud,
+                "compression": "lazperf",
+                "a_srs": a_srs,
+                "offset_x": offset_x,
+                "offset_y": offset_y,
+                "offset_z": 0,
+                "scale_x": las_scale,
+                "scale_y": las_scale,
+                "scale_z": las_scale,
+                "extra_dims": "all",
+            }
+        ]
+    }
+
+    if gcp_geojson_zip is not None:
+        writer["pipeline"][0]["vlrs"] = [
+            {
+                "filename": gcp_geojson_zip.replace(os.sep, "/"),
+                "user_id": "ODM",
+                "record_id": 2,
+                "description": "Ground Control Points (zip)",
+            }
+        ]
+
+    pdal.Pipeline(json.dumps(writer), arrays=[arrays]).execute()
+
+
+def transform_obj_geocoords(input_obj, point_transformer, output_obj):
+    with open(input_obj, "r") as fin:
+        with open(output_obj, "w") as fout:
+            for line in fin:
+                if line.startswith("v "):
+                    v = np.fromstring(line.strip()[2:], sep=" ", dtype=float)
+                    vt = point_transformer(v)
+                    fout.write("v " + " ".join(map(str, list(vt))) + "\n")
                 else:
                     fout.write(line)
