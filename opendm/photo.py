@@ -4,7 +4,20 @@ import os
 import math
 
 import exifread
+import exifread.core.exif_header as _exif_hdr
 import numpy as np
+
+# Workaround for exifread 3.x IndexError on empty DJI MakerNote tag values.
+# exifread's ExifHeader._get_printable_for_field does str(values[0]) without
+# guarding for an empty values list.  Monkeypatch until upstream fixes it.
+# See: https://github.com/ianare/exif-py/issues/254
+_orig_get_printable = _exif_hdr.ExifHeader._get_printable_for_field
+def _safe_get_printable(self, *args, **kwargs):
+    try:
+        return _orig_get_printable(self, *args, **kwargs)
+    except IndexError:
+        return ""
+_exif_hdr.ExifHeader._get_printable_for_field = _safe_get_printable
 from six import string_types
 from datetime import datetime, timedelta, timezone
 
