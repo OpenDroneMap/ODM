@@ -1,12 +1,15 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/python
 {
-  "name": "Python 3",
+  "name": "ODM",
   // The cpp image includes python and we need the c++ toolchains to build our dependencies.
   "image": "mcr.microsoft.com/devcontainers/cpp:ubuntu-24.04",
   "features": {
-    "ghcr.io/devcontainers/features/common-utils:2": {}
+    "ghcr.io/devcontainers/features/common-utils:2": {},
+    "ghcr.io/devcontainers/features/nvidia-cuda:3": {}
   },
-
-  "postCreateCommand": "apt install python3-gdal"
+  "hostRequirements": {
+    "gpu": "optional"
+  },
+  "postCreateCommand": "bash configure.sh install"
 }
