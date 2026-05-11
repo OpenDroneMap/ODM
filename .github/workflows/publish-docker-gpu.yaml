@@ -32,9 +32,6 @@ jobs:
         push: true
         no-cache: true
         tags: opendronemap/odm:gpu
-        build-args: |
-          BASE_IMAGE=nvidia/cuda:12.9.1-devel-ubuntu24.04
-          RUNTIME_BASE_IMAGE=nvidia/cuda:12.9.1-runtime-ubuntu24.04
     # Trigger NodeODM build
     - name: Dispatch NodeODM Build Event
       id: nodeodm_dispatch

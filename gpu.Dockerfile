@@ -1,12 +1,20 @@
-FROM nvidia/cuda:12.9.1-devel-ubuntu24.04 AS builder
+FROM nvidia/cuda:12.9.1-devel-ubuntu24.04 AS dev
+
+RUN if id "ubuntu" &>/dev/null; then \
+        echo "Deleting user 'ubuntu'" && userdel -f -r ubuntu || echo "Failed to delete ubuntu user"; \
+    else \
+         echo "User 'ubuntu' does not exist"; \
+    fi
+
+WORKDIR /code
+
+######## Builder ########
+FROM dev AS builder
 
 # Env variables
 ENV DEBIAN_FRONTEND=noninteractive \
-    PYTHONPATH="$PYTHONPATH:/code/SuperBuild/install/local/lib/python3.12/dist-packages:/code/SuperBuild/install/lib/python3.12/dist-packages:/code/SuperBuild/install/bin/opensfm" \
-    LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/code/SuperBuild/install/lib"
-
-# Prepare directories
-WORKDIR /code
+    PYTHONPATH="/code/SuperBuild/install/local/lib/python3.12/dist-packages:/code/SuperBuild/install/lib/python3.12/dist-packages:/code/SuperBuild/install/bin/opensfm" \
+    LD_LIBRARY_PATH="/code/SuperBuild/install/lib"
 
 # Copy everything
 COPY . ./
@@ -41,7 +49,10 @@ COPY --from=builder /code /code
 ENV PATH="/code/venv/bin:$PATH"
 
 RUN apt-get update -y \
- && apt-get install -y ffmpeg libtbbmalloc2
+ && apt-get install -y ffmpeg libtbbmalloc2 \
+ && apt-get clean \
+ && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
 # Install shared libraries that we depend on via APT, but *not*
 # the -dev packages to save space!
 # Also run a smoke test on ODM and OpenSfM

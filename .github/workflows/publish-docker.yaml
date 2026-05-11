@@ -44,7 +44,7 @@ jobs:
         push: true
         no-cache: true
         build-args: |
-          PORTABLE_INSTALL=true
+          PORTABLE=YES
         tags: |
           ${{ steps.docker_meta.outputs.tags }}
           opendronemap/odm:latest
