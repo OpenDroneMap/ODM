@@ -106,7 +106,7 @@ installruntimedepsonly() {
 }
 
 installreqs() {
-    cd /code
+    cd ${RUNPATH}
 
     ## Set up library paths
     export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$RUNPATH/SuperBuild/install/lib
@@ -136,7 +136,7 @@ installreqs() {
 
 installpython() {
     echo "Installing Python requirements"
-    cd /code
+    cd ${RUNPATH}
     set -e
     venv/bin/pip install -r requirements.txt --ignore-installed
     set +e
@@ -196,7 +196,7 @@ clean() {
         ${RUNPATH}/SuperBuild/download \
         ${RUNPATH}/SuperBuild/src
 
-    # find in /code and delete static libraries and intermediate object files
+    # find and delete static libraries and intermediate object files
     find ${RUNPATH} -type f -name "*.a" -delete -or -type f -name "*.o" -delete
 }
 
