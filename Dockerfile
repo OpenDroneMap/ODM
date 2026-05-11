@@ -34,6 +34,8 @@ ENV DEBIAN_FRONTEND=noninteractive \
     LD_LIBRARY_PATH="/code/SuperBuild/install/lib" \
     PDAL_DRIVER_PATH="/code/SuperBuild/install/bin"
 
+WORKDIR /code
+
 # Copy everything we built from the builder
 COPY --from=builder /code /code
 
