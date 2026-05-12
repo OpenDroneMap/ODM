@@ -4,9 +4,6 @@ include/
 lib/
 logs/
 share/
-datasets/
-
-
 src/
 
 !modules/*

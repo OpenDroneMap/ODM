@@ -2,8 +2,8 @@
 {
   "name": "ODM",
   "build": {
-    "context": "../..",
-    "dockerfile": "../../Dockerfile",
+    "context": "..",
+    "dockerfile": "../Dockerfile",
     "target": "dev"
   },
   "features": {
@@ -18,5 +18,8 @@
   "remoteUser": "odm",
   // Use the `code` directory for compatibility with direct Docker workflows
   "workspaceMount": "source=${localWorkspaceFolder},target=/code,type=bind",
-  "workspaceFolder": "/code"
+  "workspaceFolder": "/code",
+  "mounts": [
+    "source=${localEnv:HOME}${localEnv:USERPROFILE},target=/home/odm,type=bind,consistency=cached"
+  ]
 }

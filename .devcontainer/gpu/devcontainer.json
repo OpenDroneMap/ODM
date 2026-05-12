@@ -19,6 +19,9 @@
   // Use the `code` directory for compatibility with direct Docker workflows
   "workspaceMount": "source=${localWorkspaceFolder},target=/code,type=bind",
   "workspaceFolder": "/code",
+  "mounts": [
+    "source=${localEnv:HOME}${localEnv:USERPROFILE},target=/home/odm,type=bind,consistency=cached"
+  ],
   "hostRequirements": {
     "gpu": "true"
   }

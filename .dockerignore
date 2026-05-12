@@ -18,7 +18,6 @@ venv
 /hooks
 /img
 /license
-/datasets
 settings.yml
 code_of_conduct.md
 configure_18_04.sh

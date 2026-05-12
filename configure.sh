@@ -161,7 +161,7 @@ install() {
     echo "Compiling SuperBuild"
     cd ${RUNPATH}/SuperBuild
     mkdir -p build && cd build
-    cmake .. && make -j$processes
+    cmake .. && make -j$processes || exit 1
 
     # Reset terminal state
     cd ${RUNPATH}

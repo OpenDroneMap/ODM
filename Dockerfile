@@ -6,6 +6,11 @@ RUN if id "ubuntu" &>/dev/null; then \
          echo "User 'ubuntu' does not exist"; \
     fi
 
+RUN apt-get update -y && apt-get install -y \
+    python3 \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /code
 
 ######## Builder ########
