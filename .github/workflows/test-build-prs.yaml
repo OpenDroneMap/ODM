@@ -24,8 +24,8 @@ jobs:
         platforms: linux/amd64
         push: false
         build-args: |
-          PORTABLE_INSTALL=true
-  
+          PORTABLE=YES
+
   # snapcraft:
   #   runs-on: ubuntu-latest
   #   strategy:
