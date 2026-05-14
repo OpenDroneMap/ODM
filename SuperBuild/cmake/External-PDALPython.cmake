@@ -27,7 +27,7 @@ ExternalProject_Add(${_proj_name}
     -DPDAL_DIR=${SB_INSTALL_DIR}/lib/cmake/PDAL
     -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
     -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}/lib/python3.12/dist-packages
-    ${WIN32_CMAKE_ARGS}
+    ${CONDA_CMAKE_ARGS} ${WIN32_CMAKE_ARGS}
     ${PP_EXTRA_ARGS}
   #--Build step-----------------
   BINARY_DIR        ${_SB_BINARY_DIR}

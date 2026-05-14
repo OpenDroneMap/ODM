@@ -19,7 +19,7 @@ ExternalProject_Add(${_proj_name}
     -DGDAL_PYTHON_INSTALL_PREFIX=${PYTHON_HOME}
     -DPython_EXECUTABLE=${PYTHON_EXE_PATH}
     -DBUILD_PYTHON_BINDINGS=ON
-    ${WIN32_CMAKE_ARGS}
+    ${CONDA_CMAKE_ARGS} ${WIN32_CMAKE_ARGS}
   #--Build step-----------------
   BINARY_DIR        ${_SB_BINARY_DIR}
   #--Install step---------------

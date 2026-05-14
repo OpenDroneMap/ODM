@@ -84,6 +84,13 @@ mark_as_advanced(SB_BINARY_DIR)
 
 message(STATUS "SuperBuild binary files will be located to: ${SB_BINARY_DIR}")
 
+set(CONDA_CMAKE_ARGS "")
+if(DEFINED ENV{CONDA_PREFIX})
+    list(APPEND CMAKE_PREFIX_PATH $ENV{CONDA_PREFIX})
+    set(CONDA_CMAKE_ARGS "-DCMAKE_PREFIX_PATH=$ENV{CONDA_PREFIX}")
+    message(STATUS "Using conda prefix: $ENV{CONDA_PREFIX}")
+endif()
+
 if (WIN32)
     if (NOT DEFINED CMAKE_TOOLCHAIN_FILE)
         message(FATAL_ERROR "CMAKE_TOOLCHAIN_FILE not set. You need to set it to the path of vcpkg.cmake")
@@ -122,6 +129,18 @@ elseif(APPLE)
 else()
     set(PYTHON_HOME "${SB_ROOT_DIR}/../venv")
     set(PYTHON_EXE_PATH "${PYTHON_HOME}/bin/python3")
+endif()
+
+if(DEFINED ENV{CONDA_PREFIX})
+    set(PYTHON_HOME "$ENV{CONDA_PREFIX}")
+    if(WIN32)
+        set(PYTHON_EXE_PATH "${PYTHON_HOME}/python.exe")
+    else()
+        set(PYTHON_EXE_PATH "${PYTHON_HOME}/bin/python")
+    endif()
+    list(APPEND CONDA_CMAKE_ARGS
+        "-DPython3_ROOT_DIR=$ENV{CONDA_PREFIX}"
+        "-DPython_ROOT_DIR=$ENV{CONDA_PREFIX}")
 endif()
 
 # Path to additional CMake modules
@@ -199,7 +218,7 @@ externalproject_add(mve
     GIT_TAG         356
     UPDATE_COMMAND  ""
     SOURCE_DIR      ${SB_SOURCE_DIR}/mve
-    CMAKE_ARGS      ${WIN32_CMAKE_ARGS} ${APPLE_CMAKE_ARGS}
+    CMAKE_ARGS      ${CONDA_CMAKE_ARGS} ${WIN32_CMAKE_ARGS} ${APPLE_CMAKE_ARGS}
     BUILD_IN_SOURCE 1
     INSTALL_COMMAND ""
 )
@@ -240,6 +259,7 @@ externalproject_add(dem2mesh
     PREFIX            ${SB_BINARY_DIR}/dem2mesh
     SOURCE_DIR        ${SB_SOURCE_DIR}/dem2mesh
     CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
+                      ${CONDA_CMAKE_ARGS}
                       ${WIN32_CMAKE_ARGS}
                       ${APPLE_CMAKE_ARGS}
 )
@@ -251,6 +271,7 @@ externalproject_add(dem2points
     PREFIX            ${SB_BINARY_DIR}/dem2points
     SOURCE_DIR        ${SB_SOURCE_DIR}/dem2points
     CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
+                      ${CONDA_CMAKE_ARGS}
                       ${WIN32_CMAKE_ARGS}
                       ${APPLE_CMAKE_ARGS}
 )
@@ -262,6 +283,7 @@ externalproject_add(odm_orthophoto
     PREFIX            ${SB_BINARY_DIR}/odm_orthophoto
     SOURCE_DIR        ${SB_SOURCE_DIR}/odm_orthophoto
     CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
+                      ${CONDA_CMAKE_ARGS}
                       ${WIN32_CMAKE_ARGS}
 )
 
@@ -272,6 +294,7 @@ externalproject_add(fastrasterfilter
     PREFIX            ${SB_BINARY_DIR}/fastrasterfilter
     SOURCE_DIR        ${SB_SOURCE_DIR}/fastrasterfilter
     CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
+                      ${CONDA_CMAKE_ARGS}
                       ${WIN32_CMAKE_ARGS}
 )
 
@@ -291,5 +314,6 @@ externalproject_add(draco
     SOURCE_DIR        ${SB_SOURCE_DIR}/draco
     CMAKE_ARGS        -DDRACO_TRANSCODER_SUPPORTED=ON 
                       -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR} 
+                      ${CONDA_CMAKE_ARGS}
                       ${WIN32_CMAKE_ARGS}
 )

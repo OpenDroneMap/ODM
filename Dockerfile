@@ -8,6 +8,9 @@ RUN if id "ubuntu" &>/dev/null; then \
 
 RUN apt-get update -y && apt-get install -y \
     python3 \
+    curl \
+    ca-certificates \
+    && curl -fsSL https://pixi.sh/install.sh | env PIXI_HOME=/usr/local bash \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 

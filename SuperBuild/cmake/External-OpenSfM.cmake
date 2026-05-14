@@ -13,8 +13,20 @@ else()
     set(OpenCV_DIR "${SB_INSTALL_DIR}")
     set(EXTRA_INCLUDE_DIRS "${HOMEBREW_INSTALL_PREFIX}/include")
   else()
-    set(OpenCV_DIR "${SB_INSTALL_DIR}/lib/cmake/opencv4")
+    if(DEFINED ENV{CONDA_PREFIX})
+      set(OpenCV_DIR "$ENV{CONDA_PREFIX}/lib/cmake/opencv4")
+      set(CERES_ROOT_DIR "$ENV{CONDA_PREFIX}")
+      set(EXTRA_INCLUDE_DIRS "$ENV{CONDA_PREFIX}/include")
+    else()
+      set(OpenCV_DIR "${SB_INSTALL_DIR}/lib/cmake/opencv4")
+      set(CERES_ROOT_DIR "${SB_INSTALL_DIR}")
+    endif()
   endif()
+endif()
+
+set(OPENSFM_CERES_ROOT_DIR "${SB_INSTALL_DIR}")
+if(DEFINED ENV{CONDA_PREFIX})
+  set(OPENSFM_CERES_ROOT_DIR "$ENV{CONDA_PREFIX}")
 endif()
 
 ExternalProject_Add(${_proj_name}
@@ -31,13 +43,13 @@ ExternalProject_Add(${_proj_name}
   #--Configure step-------------
   SOURCE_DIR        ${SB_INSTALL_DIR}/bin/${_proj_name}
   CONFIGURE_COMMAND ${CMAKE_COMMAND} <SOURCE_DIR>/${_proj_name}/src
-    -DCERES_ROOT_DIR=${SB_INSTALL_DIR}
+    -DCERES_ROOT_DIR=${OPENSFM_CERES_ROOT_DIR}
     -DOpenCV_DIR=${OpenCV_DIR}
     -DADDITIONAL_INCLUDE_DIRS=${SB_INSTALL_DIR}/include
     -DYET_ADDITIONAL_INCLUDE_DIRS=${EXTRA_INCLUDE_DIRS}
     -DOPENSFM_BUILD_TESTS=off
     -DPYTHON_EXECUTABLE=${PYTHON_EXE_PATH}
-    ${WIN32_CMAKE_ARGS}
+    ${CONDA_CMAKE_ARGS} ${WIN32_CMAKE_ARGS}
   BUILD_COMMAND ${BUILD_CMD}
   #--Build step-----------------
   BINARY_DIR        ${_SB_BINARY_DIR}
