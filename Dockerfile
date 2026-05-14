@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1.4
+
 FROM ubuntu:24.04 AS dev
 
 RUN if id "ubuntu" &>/dev/null; then \
@@ -7,56 +9,62 @@ RUN if id "ubuntu" &>/dev/null; then \
     fi
 
 RUN apt-get update -y && apt-get install -y \
-    python3 \
     curl \
     ca-certificates \
     && curl -fsSL https://pixi.sh/install.sh | env PIXI_HOME=/usr/local bash \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+ENV PATH="/usr/local/bin:${PATH}"
+
 WORKDIR /code
 
 ######## Builder ########
 FROM dev AS builder
 
-ARG PORTABLE=NO
+# SuperBuild is memory-heavy; cap parallel jobs (override with --build-arg).
+ARG CMAKE_BUILD_PARALLEL_LEVEL=4
+ENV CMAKE_BUILD_PARALLEL_LEVEL=${CMAKE_BUILD_PARALLEL_LEVEL}
 
-# Copy everything
+# Pixi/rattler package download cache (not the installed env — that stays in the layer).
+ENV RATTLER_CACHE_DIR=/root/.cache/rattler/cache
+
+# Layer cache: reinstall conda env only when the lockfile changes.
+COPY pixi.toml pixi.lock ./
+RUN --mount=type=cache,target=/root/.cache/rattler \
+    pixi install --frozen
+
 COPY . ./
 
-# Run the build
-RUN PORTABLE_INSTALL=${PORTABLE} bash configure.sh install
+# BuildKit cache mounts: reuse downloaded tarballs and extracted sources between builds.
+# Do not cache SuperBuild/build — stamps there reference install/bin/opensfm (git checkout)
+# which lives in the image layer; stale stamps skip the clone and break submodule update.
+RUN --mount=type=cache,target=/code/SuperBuild/download \
+    --mount=type=cache,target=/code/SuperBuild/src \
+    --mount=type=cache,target=/root/.cache/rattler \
+    pixi run build
 
-# Run the tests
-ENV PATH="/code/venv/bin:$PATH"
-RUN bash test.sh
+RUN pixi run test
 
 ######## Runtime ########
 FROM ubuntu:24.04 AS runtime
 
 ARG HARDWARE
 
-# Env variables
 ENV DEBIAN_FRONTEND=noninteractive \
-    PYTHONPATH="/code/SuperBuild/install/local/lib/python3.12/dist-packages:/code/SuperBuild/install/lib/python3.12/dist-packages:/code/SuperBuild/install/bin/opensfm" \
-    LD_LIBRARY_PATH="/code/SuperBuild/install/lib" \
-    PDAL_DRIVER_PATH="/code/SuperBuild/install/bin"
+    CONDA_PREFIX=/code/.pixi/envs/default \
+    PATH="/code/.pixi/envs/default/bin:/usr/local/bin:/usr/bin:/bin" \
+    LD_LIBRARY_PATH="/code/.pixi/envs/default/lib:/code/SuperBuild/install/lib" \
+    GDAL_DATA=/code/.pixi/envs/default/share/gdal \
+    PROJ_LIB=/code/.pixi/envs/default/share/proj \
+    PDAL_DRIVER_PATH=/code/SuperBuild/install/bin \
+    PYTHONPATH="/code/SuperBuild/install/lib/python3.12/dist-packages:/code/SuperBuild/install/lib/python3/dist-packages:/code/SuperBuild/install/bin/opensfm"
 
 WORKDIR /code
 
-# Copy everything we built from the builder
 COPY --from=builder /code /code
 
-ENV PATH="/code/venv/bin:$PATH"
+RUN chmod +x /code/scripts/docker-entrypoint.sh /code/run.sh /code/scripts/smoke.sh \
+    && bash /code/scripts/smoke.sh
 
-# Install shared libraries that we depend on via APT, but *not*
-# the -dev packages to save space!
-# Also run a smoke test on ODM and OpenSfM
-RUN bash configure.sh installruntimedepsonly \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
-    && bash run.sh --help \
-    && bash -c "eval $(python3 /code/opendm/context.py) && python3 -c 'from opensfm import io, pymap'"
-
-# Entry point
-ENTRYPOINT ["python3", "/code/run.py"]
+ENTRYPOINT ["/code/scripts/docker-entrypoint.sh"]

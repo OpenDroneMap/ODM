@@ -4,59 +4,58 @@ on:
   pull_request:
 
 jobs:
+  pixi:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Set Swap Space
+      uses: pierotofy/set-swap-space@master
+      with:
+        swap-size-gb: 12
+    - name: Setup pixi
+      uses: prefix-dev/setup-pixi@v0.9.3
+      with:
+        pixi-version: latest
+    - name: Install environment
+      run: pixi install --frozen
+    - name: Build SuperBuild
+      run: pixi run build
+    - name: Test
+      run: pixi run test
+    - name: Smoke
+      run: pixi run smoke
+
   docker:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
     - name: Set Swap Space
       uses: pierotofy/set-swap-space@master
       with:
         swap-size-gb: 12
     - name: Set up QEMU
-      uses: docker/setup-qemu-action@v1
+      uses: docker/setup-qemu-action@v3
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v1
-    - name: Build
-      uses: docker/build-push-action@v2
+      uses: docker/setup-buildx-action@v3
+    - name: Build runtime image
+      uses: docker/build-push-action@v6
       with:
         file: ./Dockerfile
+        target: runtime
         platforms: linux/amd64
         push: false
-        build-args: |
-          PORTABLE=YES
-
-  # snapcraft:
-  #   runs-on: ubuntu-latest
-  #   strategy:
-  #     matrix:
-  #       architecture:
-  #       - amd64
-  #   steps:
-  #   - name: Checkout
-  #     uses: actions/checkout@v2
-  #   - name: Set Swap Space
-  #     uses: pierotofy/set-swap-space@master
-  #     with:
-  #       swap-size-gb: 12
-  #   - name: Build
-  #     id: build
-  #     uses: diddlesnaps/snapcraft-multiarch-action@v1
-  #     with:
-  #       architecture: ${{ matrix.architecture }}
-  #   - name: Review
-  #     uses: diddlesnaps/snapcraft-review-tools-action@v1
-  #     with:
-  #       snap: ${{ steps.build.outputs.snap }}
-  #       isClassic: 'false'
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
 
   windows:
     runs-on: windows-2022
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
     - name: Setup Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
       with:
         python-version: '3.12.9'
         architecture: 'x64'
@@ -65,7 +64,7 @@ jobs:
       with:
         cuda: '12.8.1'
     - name: Setup cmake
-      uses: jwlawson/actions-setup-cmake@v1.13
+      uses: jwlawson/actions-setup-cmake@v2
       with:
         cmake-version: '3.24.x'
     - name: Install venv

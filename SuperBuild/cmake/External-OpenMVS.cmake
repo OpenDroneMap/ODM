@@ -45,6 +45,12 @@ if(WIN32)
   file(DOWNLOAD "https://github.com/OpenDroneMap/windows-deps/releases/download/2.5.0/nvcuda_dummy.dll" "${SB_INSTALL_DIR}/bin/nvcuda.dll")
 endif()
 
+if(DEFINED ENV{CONDA_PREFIX})
+  set(OPENMVS_OPENCV_DIR "$ENV{CONDA_PREFIX}/lib/cmake/opencv4")
+else()
+  set(OPENMVS_OPENCV_DIR "${SB_INSTALL_DIR}/lib/cmake/opencv4")
+endif()
+
 ExternalProject_Add(${_proj_name}
   DEPENDS           ceres opencv vcg eigen34
   PREFIX            ${_SB_BINARY_DIR}
@@ -59,7 +65,7 @@ ExternalProject_Add(${_proj_name}
   #--Configure step-------------
   SOURCE_DIR        ${SB_SOURCE_DIR}/${_proj_name}
   CMAKE_ARGS
-    -DOpenCV_DIR=${SB_INSTALL_DIR}/lib/cmake/opencv4
+    -DOpenCV_DIR=${OPENMVS_OPENCV_DIR}
     -DVCG_ROOT=${SB_SOURCE_DIR}/vcg
     -DEIGEN3_INCLUDE_DIR=${SB_SOURCE_DIR}/eigen34/
     -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}

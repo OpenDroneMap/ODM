@@ -12,6 +12,7 @@ odm_georeferencing
 images_resize
 .git
 venv
+.pixi
 
 /contrib
 /docs
