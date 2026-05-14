@@ -6,10 +6,9 @@ platforms = ["linux-64", "win-64", "osx-64", "osx-arm64"]
 [dependencies]
 python = "==3.12.9"
 
-# Toolchain & build utilities
+# Toolchain
 cmake = "3.31.*"
 ninja = "*"
-make = "*"
 git = "*"
 pip = "*"
 cxx-compiler = "*"
@@ -17,46 +16,24 @@ c-compiler = "*"
 fortran-compiler = "*"
 swig = "*"
 pkg-config = "*"
-openmpi = "*"
-openssl = "*"
-libusb = "*"
-curl = "*"
-libxml2 = "*"
-zlib = "*"
-yasm = "*"
 
-# SuperBuild find_package EXACT pins (C++ libraries)
+# SuperBuild find_package EXACT pins (skip source builds when versions match)
 libgdal = "==3.11.1"
 libopencv = "==4.12.0"
 gflags = "==2.2.2"
 ceres-solver = "==2.0.0"
 
-# Python bindings (runtime: osgeo, cv2)
+# Runtime Python bindings (osgeo, cv2)
 gdal = "==3.11.1"
 py-opencv = "==4.12.0"
 
-# C/C++ libraries (build + link against SuperBuild forks)
-ffmpeg = "*"
-eigen = "3.4.*"
-flann = "*"
-libjpeg-turbo = "*"
-libjxl = "*"
-libpng = "*"
-proj = "*"
-tbb-devel = "*"
-libtiff = "*"
-liblapack = "*"
-cgal = "*"
-boost-cpp = "*"
-glog = "*"
-suitesparse = "*"
-geos = "*"
-geotiff = "*"
-hdf5 = "*"
-expat = "*"
-pybind11 = "*"
+# Pins not satisfied reliably via transitive deps alone
+eigen = "3.4.*"   # Ceres needs 3.4.x; solver may otherwise pick 5.x
+tbb-devel = "*"   # OpenSfM compile needs TBB headers
+geotiff = "*"     # libpdalcpp links libgeotiff; not always in env without explicit pin
+pybind11 = "*"    # PDAL Python bindings build
 
-# Python stack (conda-forge)
+# Application Python stack (conda-forge)
 numpy = "==2.3.2"
 scipy = "==1.16.1"
 shapely = "==2.1.1"
@@ -77,18 +54,11 @@ piexif = "==1.1.3"
 exifread = "==3.5.1"
 onnxruntime = "==1.22.2"
 
-# patch/rsync are not on win-64
-[target.linux-64.dependencies]
-rsync = "*"
+# Unix-only build tools (not on win-64)
+[target.unix.dependencies]
+make = "*"
 patch = "*"
-
-[target.osx-64.dependencies]
 rsync = "*"
-patch = "*"
-
-[target.osx-arm64.dependencies]
-rsync = "*"
-patch = "*"
 
 [pypi-dependencies]
 pyodm = "==1.5.12"
@@ -113,7 +83,7 @@ gpu = { features = ["gpu"], solve-group = "default" }
 
 [tasks]
 build = { cmd = "cmake -S SuperBuild -B SuperBuild/build -G Ninja -DCMAKE_PREFIX_PATH=$CONDA_PREFIX -DCMAKE_POLICY_VERSION_MINIMUM=3.5 && cmake --build SuperBuild/build -j$(nproc)", description = "Configure and compile SuperBuild" }
-install-python = { cmd = "pip install -r requirements.txt --ignore-installed", description = "Sync pip-only packages from requirements.txt" }
+install-python = { cmd = "pip install -r requirements.txt --ignore-installed", description = "Sync pip-only packages from requirements.txt (transitional)" }
 test = { cmd = "bash test.sh", description = "Run ODM test suite" }
 smoke = { cmd = "bash scripts/smoke.sh", description = "Smoke test CLI and core imports" }
 run = { cmd = "bash run.sh", description = "Run ODM (pass args after --)" }

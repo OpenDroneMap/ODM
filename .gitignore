@@ -30,6 +30,7 @@ storage/
 
 vcpkg/
 venv/
+.pixi/
 python312/
 dist/
 innosetup/

@@ -12,7 +12,6 @@ superbuild_bin_path = os.path.join(superbuild_path, 'install', 'bin')
 # add opencv,opensfm to python path
 python_packages_paths = [os.path.join(superbuild_path, p) for p in [
     'install/lib/python3.12/dist-packages',
-    'install/lib/python3.12/dist-packages',
     'install/lib/python3/dist-packages',
     'install/bin/opensfm',
 ]]
