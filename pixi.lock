@@ -75,6 +75,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/gcc-14.3.0-h6f77f03_19.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/gcc_impl_linux-64-14.3.0-h235f0fe_19.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/gcc_linux-64-14.3.0-h50e9bb6_24.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/gdal-3.11.1-py312hf1b357c_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/gdk-pixbuf-2.42.12-h2b0a6b4_3.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/geos-3.13.1-h97f6797_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/geotiff-1.7.4-h239500f_2.conda
@@ -193,7 +194,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libntlm-1.8-hb9d3cd8_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libogg-1.3.5-hd0c01bc_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libopenblas-0.3.33-pthreads_h94d23a6_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/linux-64/libopencv-4.12.0-qt6_py313he1716e0_604.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/libopencv-4.12.0-qt6_py312h16055b0_604.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libopengl-1.7.0-ha4b6fd6_2.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libopenvino-2025.2.0-hb617929_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libopenvino-auto-batch-plugin-2025.2.0-hed573e4_1.conda
@@ -287,6 +288,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pthread-stubs-0.4-hb9d3cd8_1002.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pugixml-1.15-h3f63f65_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pulseaudio-client-17.0-hac146a9_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/py-opencv-4.12.0-qt6_py312h598be00_604.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pygltflib-1.16.5-py312h7900ff3_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pyproj-3.7.1-py312h03c6e1f_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pyside6-6.9.2-py312h5654102_1.conda
@@ -555,6 +557,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-64/freetype-2.14.3-h694c41f_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/freexl-2.0.0-h3183152_2.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/fribidi-1.0.16-h8616949_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-64/gdal-3.11.1-py312h63d7208_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/gdk-pixbuf-2.42.12-h5720e38_3.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/geos-3.13.1-h502464c_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/geotiff-1.7.4-h88234f0_2.conda
@@ -658,7 +661,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-64/libntlm-1.8-h6e16a3a_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/libogg-1.3.5-he3325bb_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/libopenblas-0.3.33-openmp_h9e49c7b_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/osx-64/libopencv-4.12.0-qt6_py311h2ebf15a_604.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-64/libopencv-4.12.0-qt6_py312hf700713_604.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/libopenvino-2025.2.0-h346e020_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/libopenvino-auto-batch-plugin-2025.2.0-heda8b29_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/libopenvino-auto-plugin-2025.2.0-heda8b29_1.conda
@@ -735,6 +738,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-64/protobuf-6.31.1-py312h457ac99_2.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/pthread-stubs-0.4-h00291cd_1002.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/pugixml-1.15-h46091d4_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-64/py-opencv-4.12.0-qt6_py312h28451db_604.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/pygltflib-1.16.5-py312hb401068_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/pyproj-3.7.1-py312hdca46b5_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/python-3.12.9-h9ccd52b_1_cpython.conda
@@ -923,6 +927,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/freetype-2.14.3-hce30654_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/freexl-2.0.0-h3ab3353_2.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/fribidi-1.0.16-hc919400_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/gdal-3.11.1-py312hc6bcdcf_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/gdk-pixbuf-2.42.12-h7af3d76_3.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/geos-3.13.1-hc9a1286_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/geotiff-1.7.4-h1d7e6e1_2.conda
@@ -1103,6 +1108,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/protobuf-6.31.1-py312h2c926ec_2.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/pthread-stubs-0.4-hd74edd7_1002.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/pugixml-1.15-hd3d436d_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/py-opencv-4.12.0-qt6_py312he92a2c1_604.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/pygltflib-1.16.5-py312h81bd7bf_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/pyproj-3.7.1-py312h237c406_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/python-3.12.9-hc22306f_1_cpython.conda
@@ -1282,6 +1288,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/win-64/freetype-2.14.3-h57928b3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/freexl-2.0.0-hf297d47_2.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/fribidi-1.0.16-hfd05255_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/win-64/gdal-3.11.1-py312h07de9ea_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/gdk-pixbuf-2.42.12-h1f5b9c4_3.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/geos-3.13.1-h9ea8674_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/geotiff-1.7.4-h86c3423_2.conda
@@ -1363,7 +1370,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/win-64/liblzma-5.8.3-hfd05255_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/libnetcdf-4.9.2-nompi_ha45073a_118.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/libogg-1.3.5-h2466b09_1.conda
-      - conda: https://conda.anaconda.org/conda-forge/win-64/libopencv-4.12.0-qt6_py310hcab611a_604.conda
+      - conda: https://conda.anaconda.org/conda-forge/win-64/libopencv-4.12.0-qt6_py312h0541d9f_604.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/libopenvino-2025.2.0-hbf28c98_1.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/libopenvino-auto-batch-plugin-2025.2.0-hdd9a157_1.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/libopenvino-auto-plugin-2025.2.0-hdd9a157_1.conda
@@ -1433,6 +1440,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/win-64/protobuf-6.31.1-py312hcb3287e_2.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/pthread-stubs-0.4-h0e40799_1002.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/pugixml-1.15-h372dad0_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/win-64/py-opencv-4.12.0-qt6_py312h4c995e2_604.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/pygltflib-1.16.5-py312h2e8e312_1.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/pyproj-3.7.1-py312h5ea471a_1.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/pyreadline3-3.5.4-py312h2e8e312_2.conda
@@ -1606,6 +1614,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/gcc-14.3.0-h6f77f03_19.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/gcc_impl_linux-64-14.3.0-h235f0fe_19.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/gcc_linux-64-14.3.0-h50e9bb6_24.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/gdal-3.11.1-py312hf1b357c_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/gdb-14.2-py312heaf2220_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/gdk-pixbuf-2.42.12-h2b0a6b4_3.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/gds-tools-1.14.1.1-hecca717_1.conda
@@ -1750,7 +1759,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libnvptxcompiler-dev-12.9.86-ha770c72_2.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libogg-1.3.5-hd0c01bc_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libopenblas-0.3.33-pthreads_h94d23a6_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/linux-64/libopencv-4.12.0-qt6_py313he1716e0_604.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/libopencv-4.12.0-qt6_py312h16055b0_604.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libopengl-1.7.0-ha4b6fd6_2.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libopenvino-2025.2.0-hb617929_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libopenvino-auto-batch-plugin-2025.2.0-hed573e4_1.conda
@@ -1846,6 +1855,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pthread-stubs-0.4-hb9d3cd8_1002.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pugixml-1.15-h3f63f65_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pulseaudio-client-17.0-hac146a9_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/py-opencv-4.12.0-qt6_py312h598be00_604.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pygltflib-1.16.5-py312h7900ff3_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pyproj-3.7.1-py312h03c6e1f_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pyside6-6.9.2-py312h5654102_1.conda
@@ -2130,6 +2140,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-64/freetype-2.14.3-h694c41f_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/freexl-2.0.0-h3183152_2.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/fribidi-1.0.16-h8616949_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-64/gdal-3.11.1-py312h63d7208_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/gdk-pixbuf-2.42.12-h5720e38_3.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/geos-3.13.1-h502464c_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/geotiff-1.7.4-h88234f0_2.conda
@@ -2233,7 +2244,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-64/libntlm-1.8-h6e16a3a_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/libogg-1.3.5-he3325bb_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/libopenblas-0.3.33-openmp_h9e49c7b_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/osx-64/libopencv-4.12.0-qt6_py311h2ebf15a_604.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-64/libopencv-4.12.0-qt6_py312hf700713_604.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/libopenvino-2025.2.0-h346e020_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/libopenvino-auto-batch-plugin-2025.2.0-heda8b29_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/libopenvino-auto-plugin-2025.2.0-heda8b29_1.conda
@@ -2310,6 +2321,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-64/protobuf-6.31.1-py312h457ac99_2.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/pthread-stubs-0.4-h00291cd_1002.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/pugixml-1.15-h46091d4_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-64/py-opencv-4.12.0-qt6_py312h28451db_604.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/pygltflib-1.16.5-py312hb401068_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/pyproj-3.7.1-py312hdca46b5_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/python-3.12.9-h9ccd52b_1_cpython.conda
@@ -2498,6 +2510,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/freetype-2.14.3-hce30654_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/freexl-2.0.0-h3ab3353_2.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/fribidi-1.0.16-hc919400_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/gdal-3.11.1-py312hc6bcdcf_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/gdk-pixbuf-2.42.12-h7af3d76_3.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/geos-3.13.1-hc9a1286_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/geotiff-1.7.4-h1d7e6e1_2.conda
@@ -2678,6 +2691,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/protobuf-6.31.1-py312h2c926ec_2.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/pthread-stubs-0.4-hd74edd7_1002.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/pugixml-1.15-hd3d436d_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/py-opencv-4.12.0-qt6_py312he92a2c1_604.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/pygltflib-1.16.5-py312h81bd7bf_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/pyproj-3.7.1-py312h237c406_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/python-3.12.9-hc22306f_1_cpython.conda
@@ -2898,6 +2912,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/win-64/freetype-2.14.3-h57928b3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/freexl-2.0.0-hf297d47_2.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/fribidi-1.0.16-hfd05255_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/win-64/gdal-3.11.1-py312h07de9ea_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/gdk-pixbuf-2.42.12-h1f5b9c4_3.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/geos-3.13.1-h9ea8674_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/geotiff-1.7.4-h86c3423_2.conda
@@ -2998,7 +3013,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/win-64/libnvjpeg-dev-12.4.0.76-h57928b3_1.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/libnvptxcompiler-dev-12.9.86-h57928b3_2.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/libogg-1.3.5-h2466b09_1.conda
-      - conda: https://conda.anaconda.org/conda-forge/win-64/libopencv-4.12.0-qt6_py310hcab611a_604.conda
+      - conda: https://conda.anaconda.org/conda-forge/win-64/libopencv-4.12.0-qt6_py312h0541d9f_604.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/libopenvino-2025.2.0-hbf28c98_1.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/libopenvino-auto-batch-plugin-2025.2.0-hdd9a157_1.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/libopenvino-auto-plugin-2025.2.0-hdd9a157_1.conda
@@ -3069,6 +3084,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/win-64/protobuf-6.31.1-py312hcb3287e_2.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/pthread-stubs-0.4-h0e40799_1002.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/pugixml-1.15-h372dad0_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/win-64/py-opencv-4.12.0-qt6_py312h4c995e2_604.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/pygltflib-1.16.5-py312h2e8e312_1.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/pyproj-3.7.1-py312h5ea471a_1.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/pyreadline3-3.5.4-py312h2e8e312_2.conda
@@ -4537,6 +4553,23 @@ packages:
   purls: []
   size: 29073
   timestamp: 1777144725126
+- conda: https://conda.anaconda.org/conda-forge/linux-64/gdal-3.11.1-py312hf1b357c_0.conda
+  sha256: ae62368906bd4abeadcbb3596839ee00cdf00eb29174899385130eb1a5de36dd
+  md5: 25e6d46ff056599f40013aa3df8377b1
+  depends:
+  - __glibc >=2.17,<3.0.a0
+  - libgcc >=13
+  - libgdal-core 3.11.1.*
+  - libstdcxx >=13
+  - numpy >=1.23,<3
+  - python >=3.12,<3.13.0a0
+  - python_abi 3.12.* *_cp312
+  license: MIT
+  license_family: MIT
+  purls:
+  - pkg:pypi/gdal?source=hash-mapping
+  size: 1830601
+  timestamp: 1751395604693
 - conda: https://conda.anaconda.org/conda-forge/linux-64/gdb-14.2-py312heaf2220_0.conda
   sha256: cf619b1c3c6dc0660f60c14ab75f83a5fb29f507f84eb5f99ac90b632137965c
   md5: 376b56a95d9d07b1d9d1d22e47e94939
@@ -6548,9 +6581,9 @@ packages:
   purls: []
   size: 5931919
   timestamp: 1776993658641
-- conda: https://conda.anaconda.org/conda-forge/linux-64/libopencv-4.12.0-qt6_py313he1716e0_604.conda
-  sha256: 998fbaff5f5f021c827ec248e5986bd69044645840f71d39986a7e57ebcb9a64
-  md5: 75c13652d032d11364668890dc29347e
+- conda: https://conda.anaconda.org/conda-forge/linux-64/libopencv-4.12.0-qt6_py312h16055b0_604.conda
+  sha256: 5e1ace51ce46036fb8df8e783c205c852ef7a9ee46404b9d08f386bac0262920
+  md5: e276e531334084dae859ced60be48c84
   depends:
   - __glibc >=2.17,<3.0.a0
   - _openmp_mutex >=4.5
@@ -6602,8 +6635,8 @@ packages:
   purls:
   - pkg:pypi/opencv-python?source=hash-mapping
   - pkg:pypi/opencv-python-headless?source=hash-mapping
-  size: 32717322
-  timestamp: 1756078903848
+  size: 32643744
+  timestamp: 1756078864497
 - conda: https://conda.anaconda.org/conda-forge/linux-64/libopengl-1.7.0-ha4b6fd6_2.conda
   sha256: 215086c108d80349e96051ad14131b751d17af3ed2cb5a34edd62fa89bfe8ead
   md5: 7df50d44d4a14d6c31a2c54f2cd92157
@@ -7982,6 +8015,20 @@ packages:
   purls: []
   size: 764231
   timestamp: 1742507189208
+- conda: https://conda.anaconda.org/conda-forge/linux-64/py-opencv-4.12.0-qt6_py312h598be00_604.conda
+  sha256: b19ef0f62ef4258f716893ae5349a24e4ccd9e41a802977c106132bb6d39faba
+  md5: 6cbfe98f6c2e93e3d5ab2032c8b98e5b
+  depends:
+  - libopencv 4.12.0 qt6_py312h16055b0_604
+  - libprotobuf >=6.31.1,<6.31.2.0a0
+  - numpy >=1.23,<3
+  - python >=3.12,<3.13.0a0
+  - python_abi 3.12.* *_cp312
+  license: Apache-2.0
+  license_family: Apache
+  purls: []
+  size: 1154367
+  timestamp: 1756078930920
 - conda: https://conda.anaconda.org/conda-forge/linux-64/pygltflib-1.16.5-py312h7900ff3_1.conda
   sha256: 44bce746ca735ebcbfe2bcf01cf97f8f938cb9e20a89bc1fa24097f60e102bcb
   md5: 1adcb726fb756c755b77f98d038e0c13
@@ -11094,6 +11141,22 @@ packages:
   purls: []
   size: 60923
   timestamp: 1757438791418
+- conda: https://conda.anaconda.org/conda-forge/osx-64/gdal-3.11.1-py312h63d7208_0.conda
+  sha256: a833ed1fe9c992fead0d3f3093e8319728cd011cacaa680afa5b41e64f193a0f
+  md5: ac008329a4a1f2f42e53933560a4d1f6
+  depends:
+  - __osx >=10.13
+  - libcxx >=18
+  - libgdal-core 3.11.1.*
+  - numpy >=1.23,<3
+  - python >=3.12,<3.13.0a0
+  - python_abi 3.12.* *_cp312
+  license: MIT
+  license_family: MIT
+  purls:
+  - pkg:pypi/gdal?source=hash-mapping
+  size: 1785704
+  timestamp: 1751396061057
 - conda: https://conda.anaconda.org/conda-forge/osx-64/gdk-pixbuf-2.42.12-h5720e38_3.conda
   sha256: 17e804d758c898757209a7eac8073500b7b585a68789731a8a4ab3bc63d80cac
   md5: 34d25f5203c6c6e61fb5a40d2249b614
@@ -12503,9 +12566,9 @@ packages:
   purls: []
   size: 6287889
   timestamp: 1776996499823
-- conda: https://conda.anaconda.org/conda-forge/osx-64/libopencv-4.12.0-qt6_py311h2ebf15a_604.conda
-  sha256: 72a2957d3214f00685341f88a8b66b103b198fe2b45eb1bff9d2141181d04530
-  md5: b1fa70bbec88b74c97a8475b8f7eca68
+- conda: https://conda.anaconda.org/conda-forge/osx-64/libopencv-4.12.0-qt6_py312hf700713_604.conda
+  sha256: a05798c5326f3e453bdf2efc754b5d02af808b8ab5fb432d8381f95e0893421d
+  md5: 4f0c719327bf4c958608988dbe147b7f
   depends:
   - __osx >=11.0
   - ffmpeg >=8.0.0,<9.0a0
@@ -12552,8 +12615,8 @@ packages:
   purls:
   - pkg:pypi/opencv-python?source=hash-mapping
   - pkg:pypi/opencv-python-headless?source=hash-mapping
-  size: 27745590
-  timestamp: 1756077982383
+  size: 27868619
+  timestamp: 1756077797223
 - conda: https://conda.anaconda.org/conda-forge/osx-64/libopenvino-2025.2.0-h346e020_1.conda
   sha256: 9ce68ea62066f60083611be69314c1664747d73b80407ad41438e08922c4407b
   md5: 0e6b6a6c7640260ae38c963d16719bac
@@ -13569,6 +13632,20 @@ packages:
   purls: []
   size: 97559
   timestamp: 1736601483485
+- conda: https://conda.anaconda.org/conda-forge/osx-64/py-opencv-4.12.0-qt6_py312h28451db_604.conda
+  sha256: 2b8bb35ade5b264bcc70d9ef74ce0a94c522f341abfea786cd02e2eb99f42701
+  md5: 905ac6edc0ee47c45a3d5ec5337803a1
+  depends:
+  - libopencv 4.12.0 qt6_py312hf700713_604
+  - libprotobuf >=6.31.1,<6.31.2.0a0
+  - numpy >=1.23,<3
+  - python >=3.12,<3.13.0a0
+  - python_abi 3.12.* *_cp312
+  license: Apache-2.0
+  license_family: Apache
+  purls: []
+  size: 1154327
+  timestamp: 1756077874246
 - conda: https://conda.anaconda.org/conda-forge/osx-64/pygltflib-1.16.5-py312hb401068_1.conda
   sha256: 9386514637ec138b813ea7249c4419f73b13a99afb40e0d993427966a5a251a0
   md5: e77880291c6591959dac4e552af4ac1c
@@ -15157,6 +15234,23 @@ packages:
   purls: []
   size: 59391
   timestamp: 1757438897523
+- conda: https://conda.anaconda.org/conda-forge/osx-arm64/gdal-3.11.1-py312hc6bcdcf_0.conda
+  sha256: 24edebc5d1b4f1ea558111df2c9eb722389a447806ee1b6c159aa96223986168
+  md5: dc97bff4a5c308a59568438df109cae2
+  depends:
+  - __osx >=11.0
+  - libcxx >=18
+  - libgdal-core 3.11.1.*
+  - numpy >=1.23,<3
+  - python >=3.12,<3.13.0a0
+  - python >=3.12,<3.13.0a0 *_cpython
+  - python_abi 3.12.* *_cp312
+  license: MIT
+  license_family: MIT
+  purls:
+  - pkg:pypi/gdal?source=hash-mapping
+  size: 1770769
+  timestamp: 1751395806090
 - conda: https://conda.anaconda.org/conda-forge/osx-arm64/gdk-pixbuf-2.42.12-h7af3d76_3.conda
   sha256: b9a928be779da5ce90e4dbc1f70829ac6bb45c3b244d6913c71439ce6a0d631b
   md5: da68375a855e361d5833f84a7d012ef1
@@ -17641,6 +17735,20 @@ packages:
   purls: []
   size: 91283
   timestamp: 1736601509593
+- conda: https://conda.anaconda.org/conda-forge/osx-arm64/py-opencv-4.12.0-qt6_py312he92a2c1_604.conda
+  sha256: b6c54fab4dbad512bfce342e481999f17acd116b33515cae32551b87178ff41c
+  md5: bcf434b6ece80009fbd1b0a8ec6066fb
+  depends:
+  - libopencv 4.12.0 qt6_py312h1f2130c_604
+  - libprotobuf >=6.31.1,<6.31.2.0a0
+  - numpy >=1.23,<3
+  - python >=3.12,<3.13.0a0
+  - python_abi 3.12.* *_cp312
+  license: Apache-2.0
+  license_family: Apache
+  purls: []
+  size: 1154471
+  timestamp: 1756077876215
 - conda: https://conda.anaconda.org/conda-forge/osx-arm64/pygltflib-1.16.5-py312h81bd7bf_1.conda
   sha256: 8aecab36caaa52887d941bd1e7747d85a1f6b5c0373167aa98eb27351b24d665
   md5: 9b8e0a7332cec42722ea3b38dfb718c1
@@ -19614,6 +19722,23 @@ packages:
   purls: []
   size: 64394
   timestamp: 1757438741305
+- conda: https://conda.anaconda.org/conda-forge/win-64/gdal-3.11.1-py312h07de9ea_0.conda
+  sha256: 96ec9ee6d40212e09a112934e41b5e5aff5caf942f1e2e9a393481e275824d8b
+  md5: 3acff5054d4033f39618824a217eddb0
+  depends:
+  - libgdal-core 3.11.1.*
+  - numpy >=1.23,<3
+  - python >=3.12,<3.13.0a0
+  - python_abi 3.12.* *_cp312
+  - ucrt >=10.0.20348.0
+  - vc >=14.3,<15
+  - vc14_runtime >=14.44.35208
+  license: MIT
+  license_family: MIT
+  purls:
+  - pkg:pypi/gdal?source=hash-mapping
+  size: 1727295
+  timestamp: 1751397948976
 - conda: https://conda.anaconda.org/conda-forge/win-64/gdk-pixbuf-2.42.12-h1f5b9c4_3.conda
   sha256: 1276e8d2164701ddf4ff708ac6131e95d9030e11fe0ca2df3657e9a54319ade4
   md5: df24f48f53cd1fdeb9fe8bf6e323c715
@@ -21053,9 +21178,9 @@ packages:
   purls: []
   size: 35040
   timestamp: 1745826086628
-- conda: https://conda.anaconda.org/conda-forge/win-64/libopencv-4.12.0-qt6_py310hcab611a_604.conda
-  sha256: 21839a8f8e44846bacb32799443d29395e66f5ba44c1e2c4326d9133acc9ca27
-  md5: 14b07b53b71c2c1108fbe549a7b6e6ad
+- conda: https://conda.anaconda.org/conda-forge/win-64/libopencv-4.12.0-qt6_py312h0541d9f_604.conda
+  sha256: efe22732ab5bfbd56cb821b0732e57cfa7ce960dcc1cfd865761e8279bbf0c83
+  md5: ef042d47545eb8a783269337254bb866
   depends:
   - ffmpeg >=8.0.0,<9.0a0
   - harfbuzz >=11.4.3
@@ -21092,7 +21217,7 @@ packages:
   - libtiff >=4.7.0,<4.8.0a0
   - libwebp-base >=1.6.0,<2.0a0
   - libzlib >=1.3.1,<2.0a0
-  - numpy >=1.21,<3
+  - numpy >=1.23,<3
   - openexr >=3.3.5,<3.4.0a0
   - qt6-main >=6.9.1,<6.10.0a0
   - ucrt >=10.0.20348.0
@@ -21103,8 +21228,8 @@ packages:
   purls:
   - pkg:pypi/opencv-python?source=hash-mapping
   - pkg:pypi/opencv-python-headless?source=hash-mapping
-  size: 34121737
-  timestamp: 1756080664219
+  size: 34150622
+  timestamp: 1756080636512
 - conda: https://conda.anaconda.org/conda-forge/win-64/libopenvino-2025.2.0-hbf28c98_1.conda
   sha256: 0cc8b80948457a7e313a1b0ee53fe1f5f8bba1a1c2222c52c249b16a7b834cce
   md5: 3e8c920cd15b95793a6e95759ea23479
@@ -22149,6 +22274,20 @@ packages:
   purls: []
   size: 113967
   timestamp: 1736601565527
+- conda: https://conda.anaconda.org/conda-forge/win-64/py-opencv-4.12.0-qt6_py312h4c995e2_604.conda
+  sha256: 6c8c2ff43d29ac982cd7d3bf642567dd4e09878b33ad38ffbb15ba7ac176548e
+  md5: d843b48e9eb47fa10d2cedea3c724e0d
+  depends:
+  - libopencv 4.12.0 qt6_py312h0541d9f_604
+  - libprotobuf >=6.31.1,<6.31.2.0a0
+  - numpy >=1.23,<3
+  - python >=3.12,<3.13.0a0
+  - python_abi 3.12.* *_cp312
+  license: Apache-2.0
+  license_family: Apache
+  purls: []
+  size: 1154544
+  timestamp: 1756080727710
 - conda: https://conda.anaconda.org/conda-forge/win-64/pygltflib-1.16.5-py312h2e8e312_1.conda
   sha256: fca4df046a0386cfc58b0ffa4c736c7cc5b7577e9fb53e6534fda483895ef605
   md5: a758654c5cd83c7f68cf76a3c93d2421

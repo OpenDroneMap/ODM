@@ -28,10 +28,20 @@ if __name__ == '__main__':
     log.ODM_INFO('Initializing ODM %s - %s' % (odm_version(), system.now()))
 
     progressbc.set_project_name(args.name)
-    args.project_path = os.path.join(args.project_path, args.name)
+    project_root = args.project_path
+    args.project_path = os.path.join(project_root, args.name)
 
     if not io.dir_exists(args.project_path):
-        log.ODM_ERROR('Directory %s does not exist.' % args.name)
+        log.ODM_ERROR('Dataset directory does not exist: %s' % args.project_path)
+        if io.dir_exists(project_root) and io.dir_exists(os.path.join(project_root, 'images')):
+            log.ODM_ERROR('"%s" already looks like a dataset folder (it contains images/). '
+                          'ODM expects --project-path to be the parent folder and the dataset name as a separate argument, '
+                          'for example: --project-path %s %s'
+                          % (project_root, os.path.dirname(project_root) or '.', os.path.basename(project_root)))
+        elif getattr(args, 'name_defaulted', False):
+            log.ODM_ERROR('No dataset name was provided (using default "%s"). '
+                          'Pass the dataset folder name after options, for example: '
+                          '--project-path <parent-folder> <dataset-name>' % args.name)
         exit(1)
 
     opts_json = os.path.join(args.project_path, "options.json")

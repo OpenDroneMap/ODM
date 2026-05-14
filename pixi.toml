@@ -31,6 +31,10 @@ libopencv = "==4.12.0"
 gflags = "==2.2.2"
 ceres-solver = "==2.0.0"
 
+# Python bindings (runtime: osgeo, cv2)
+gdal = "==3.11.1"
+py-opencv = "==4.12.0"
+
 # C/C++ libraries (build + link against SuperBuild forks)
 ffmpeg = "*"
 eigen = "3.4.*"
@@ -108,8 +112,9 @@ default = { solve-group = "default" }
 gpu = { features = ["gpu"], solve-group = "default" }
 
 [tasks]
-prepare = { cmd = "ln -sfn \"$CONDA_PREFIX\" venv", description = "Symlink venv to conda env for SuperBuild (transitional until PR2)" }
-build = { cmd = "cmake -S SuperBuild -B SuperBuild/build -G Ninja -DCMAKE_PREFIX_PATH=$CONDA_PREFIX -DCMAKE_POLICY_VERSION_MINIMUM=3.5 && cmake --build SuperBuild/build -j$(nproc)", depends-on = ["prepare"], description = "Configure and compile SuperBuild" }
+build = { cmd = "cmake -S SuperBuild -B SuperBuild/build -G Ninja -DCMAKE_PREFIX_PATH=$CONDA_PREFIX -DCMAKE_POLICY_VERSION_MINIMUM=3.5 && cmake --build SuperBuild/build -j$(nproc)", description = "Configure and compile SuperBuild" }
 install-python = { cmd = "pip install -r requirements.txt --ignore-installed", description = "Sync pip-only packages from requirements.txt" }
 test = { cmd = "bash test.sh", description = "Run ODM test suite" }
+smoke = { cmd = "bash scripts/smoke.sh", description = "Smoke test CLI and core imports" }
+run = { cmd = "bash run.sh", description = "Run ODM (pass args after --)" }
 clean = { cmd = "rm -rf SuperBuild/build SuperBuild/src SuperBuild/download", description = "Remove SuperBuild build artifacts" }
