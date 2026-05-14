@@ -18,13 +18,17 @@ jobs:
       with:
         pixi-version: latest
     - name: Install environment
-      run: pixi install --frozen
+      run: pixi install --locked
     - name: Build SuperBuild
       run: pixi run build
     - name: Test
       run: pixi run test
     - name: Smoke
       run: pixi run smoke
+    - name: Install prod environment
+      run: pixi install --locked -e prod
+    - name: Prod smoke
+      run: pixi run -e prod smoke
 
   docker:
     runs-on: ubuntu-latest
@@ -35,8 +39,6 @@ jobs:
       uses: pierotofy/set-swap-space@master
       with:
         swap-size-gb: 12
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
     - name: Build runtime image

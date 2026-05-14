@@ -13,6 +13,7 @@ images_resize
 .git
 venv
 .pixi
+scripts/pixi-shell-hook
 
 /contrib
 /docs

@@ -3,38 +3,20 @@ name = "odm"
 channels = ["conda-forge"]
 platforms = ["linux-64", "linux-aarch64", "win-64", "osx-64", "osx-arm64"]
 
+# Runtime dependencies (default + prod environments)
 [dependencies]
 python = "==3.12.9"
 
-# Toolchain
-cmake = "3.31.*"
-ninja = "*"
-git = "*"
-pip = "*"
-cxx-compiler = "*"
-c-compiler = "*"
-fortran-compiler = "*"
-swig = "*"
-pkg-config = "*"
-
-# SuperBuild find_package EXACT pins (skip source builds when versions match)
-libgdal = "==3.11.1"
-libopencv = "==4.12.0"
-gflags = "==2.2.2"
-ceres-solver = "==2.0.0"
-
-# Runtime Python bindings (osgeo, cv2)
+# Runtime Python bindings and native libs for SuperBuild binaries
 gdal = "==3.11.1"
 py-opencv = "==4.12.0"
-
-# Pins not satisfied reliably via transitive deps alone
-eigen = "3.4.*"   # Ceres needs 3.4.x; solver may otherwise pick 5.x
-tbb-devel = "*"   # OpenSfM compile needs TBB headers
-geotiff = "*"     # libpdalcpp links libgeotiff; not always in env without explicit pin
-pybind11 = "*"    # PDAL Python bindings build
+boost-cpp = "*"   # OpenMVS links boost at runtime
+cgal = "*"        # OpenMVS configure (header-only; pulls aligned Boost)
+geotiff = "*"     # PDAL runtime
 libjpeg-turbo = "*"  # PoissonRecon links -ljpeg
-boost-cpp = "*"   # OpenMVS needs Boost (iostreams, program_options, system, serialization)
-cgal = "*"        # OpenMVS MVS library links CGAL
+tbb = "*"         # OpenSfM / parallel runtime
+ceres-solver = "==2.0.0"  # OpenSfM pybundle links libceres at runtime
+gflags = "==2.2.2"        # Ceres runtime dependency
 
 # Application Python stack (conda-forge)
 numpy = "==2.3.2"
@@ -56,11 +38,6 @@ piexif = "==1.1.3"
 exifread = "==3.5.1"
 onnxruntime = "==1.22.2"
 
-[target.unix.dependencies]
-make = "*"
-patch = "*"
-rsync = "*"
-
 [pypi-dependencies]
 edt = "==3.0.0"
 pyodm = "==1.5.12"
@@ -72,6 +49,28 @@ fiona = "==1.10.1"
 rasterio = "==1.4.3"
 codem = "==0.26.1"
 
+# SuperBuild compile toolchain and cmake find_package pins (not shipped in Docker runtime)
+[feature.build.dependencies]
+cmake = "3.31.*"
+ninja = "*"
+git = "*"
+pip = "*"
+cxx-compiler = "*"
+c-compiler = "*"
+fortran-compiler = "*"
+swig = "*"
+pkg-config = "*"
+libgdal = "==3.11.1"
+libopencv = "==4.12.0"
+eigen = "3.4.*"
+tbb-devel = "*"
+pybind11 = "*"
+
+[feature.build.target.unix.dependencies]
+make = "*"
+patch = "*"
+rsync = "*"
+
 # Optional: CUDA toolkit for GPU SIFT (PyPopsift). Off by default; use `pixi install -e gpu`.
 [feature.gpu.target.linux-64.dependencies]
 cuda-toolkit = "12.*"
@@ -80,8 +79,9 @@ cuda-toolkit = "12.*"
 cuda-toolkit = "12.*"
 
 [environments]
-default = { solve-group = "default" }
-gpu = { features = ["gpu"], solve-group = "default" }
+default = { features = ["build"], solve-group = "default" }
+prod = { features = [], solve-group = "default" }
+gpu = { features = ["build", "gpu"], solve-group = "default" }
 
 [tasks]
 build = { cmd = "cmake -S SuperBuild -B SuperBuild/build -G Ninja -DCMAKE_PREFIX_PATH=$CONDA_PREFIX -DCMAKE_POLICY_VERSION_MINIMUM=3.5 && cmake --build SuperBuild/build", description = "Configure and compile SuperBuild (parallelism via CMAKE_BUILD_PARALLEL_LEVEL)" }

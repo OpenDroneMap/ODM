@@ -3,6 +3,8 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck disable=SC1091
+. "${ROOT}/scripts/docker-activate.sh"
+# shellcheck disable=SC1091
 . "${ROOT}/scripts/odm-env.sh"
 
 bash "${ROOT}/run.sh" --help >/dev/null

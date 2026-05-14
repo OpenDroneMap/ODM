@@ -1,70 +1,47 @@
-# syntax=docker/dockerfile:1.4
+# Pixi container layout: https://pixi.prefix.dev/latest/deployment/container/
 
-FROM ubuntu:24.04 AS dev
+FROM ghcr.io/prefix-dev/pixi:0.68.1 AS dev
 
+# devcontainer common-utils creates user `odm`; drop default `ubuntu` (uid 1000) if present.
 RUN if id "ubuntu" &>/dev/null; then \
-        echo "Deleting user 'ubuntu'" && userdel -f -r ubuntu || echo "Failed to delete ubuntu user"; \
-    else \
-         echo "User 'ubuntu' does not exist"; \
+        userdel -f -r ubuntu || echo "Failed to delete ubuntu user"; \
     fi
 
-RUN apt-get update -y && apt-get install -y \
-    curl \
-    ca-certificates \
-    && curl -fsSL https://pixi.sh/install.sh | env PIXI_HOME=/usr/local bash \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-ENV PATH="/usr/local/bin:${PATH}"
-
 WORKDIR /code
 
-######## Builder ########
 FROM dev AS builder
 
-# SuperBuild is memory-heavy; cap parallel jobs (override with --build-arg).
-ARG CMAKE_BUILD_PARALLEL_LEVEL=4
-ENV CMAKE_BUILD_PARALLEL_LEVEL=${CMAKE_BUILD_PARALLEL_LEVEL}
-
-# Pixi/rattler package download cache (not the installed env — that stays in the layer).
-ENV RATTLER_CACHE_DIR=/root/.cache/rattler/cache
-
-# Layer cache: reinstall conda env only when the lockfile changes.
 COPY pixi.toml pixi.lock ./
-RUN --mount=type=cache,target=/root/.cache/rattler \
-    pixi install --frozen
+RUN pixi install --locked
 
 COPY . ./
-
-# BuildKit cache mounts: reuse downloaded tarballs and extracted sources between builds.
-# Do not cache SuperBuild/build — stamps there reference install/bin/opensfm (git checkout)
-# which lives in the image layer; stale stamps skip the clone and break submodule update.
-RUN --mount=type=cache,target=/code/SuperBuild/download \
-    --mount=type=cache,target=/code/SuperBuild/src \
-    --mount=type=cache,target=/root/.cache/rattler \
-    pixi run build
-
+RUN pixi run build
 RUN pixi run test
 
-######## Runtime ########
+RUN mkdir -p /odm-runtime/SuperBuild /odm-runtime/scripts \
+    && cp -a SuperBuild/install /odm-runtime/SuperBuild/ \
+    && cp -a opendm stages /odm-runtime/ \
+    && cp run.py run.sh settings.yaml VERSION /odm-runtime/ \
+    && cp scripts/docker-activate.sh scripts/docker-entrypoint.sh scripts/odm-env.sh scripts/smoke.sh /odm-runtime/scripts/
+
+FROM dev AS prod-env
+
+COPY pixi.toml pixi.lock ./
+RUN pixi install --locked -e prod \
+    && mkdir -p scripts \
+    && pixi shell-hook -e prod -s bash > scripts/pixi-shell-hook \
+    && rm -rf .pixi/envs/prod/include .pixi/envs/prod/share/{doc,man,info}
+
 FROM ubuntu:24.04 AS runtime
 
-ARG HARDWARE
-
-ENV DEBIAN_FRONTEND=noninteractive \
-    CONDA_PREFIX=/code/.pixi/envs/default \
-    PATH="/code/.pixi/envs/default/bin:/usr/local/bin:/usr/bin:/bin" \
-    LD_LIBRARY_PATH="/code/.pixi/envs/default/lib:/code/SuperBuild/install/lib" \
-    GDAL_DATA=/code/.pixi/envs/default/share/gdal \
-    PROJ_LIB=/code/.pixi/envs/default/share/proj \
-    PDAL_DRIVER_PATH=/code/SuperBuild/install/bin \
-    PYTHONPATH="/code/SuperBuild/install/lib/python3.12/dist-packages:/code/SuperBuild/install/lib/python3/dist-packages:/code/SuperBuild/install/bin/opensfm"
-
+ENV DEBIAN_FRONTEND=noninteractive
 WORKDIR /code
 
-COPY --from=builder /code /code
+COPY --from=prod-env /code/.pixi/envs/prod .pixi/envs/prod
+COPY --from=prod-env /code/scripts/pixi-shell-hook scripts/pixi-shell-hook
+COPY --from=builder /odm-runtime/ ./
 
-RUN chmod +x /code/scripts/docker-entrypoint.sh /code/run.sh /code/scripts/smoke.sh \
-    && bash /code/scripts/smoke.sh
+RUN chmod +x scripts/docker-entrypoint.sh run.sh scripts/smoke.sh \
+    && bash scripts/smoke.sh
 
 ENTRYPOINT ["/code/scripts/docker-entrypoint.sh"]
