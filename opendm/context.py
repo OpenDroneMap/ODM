@@ -31,8 +31,8 @@ dem2points_path = os.path.join(superbuild_bin_path, 'dem2points')
 mvstex_path = os.path.join(superbuild_bin_path, "texrecon")
 
 # openmvs paths
-omvs_densify_path = os.path.join(superbuild_bin_path, "OpenMVS", "DensifyPointCloud")
-omvs_reconstructmesh_path = os.path.join(superbuild_bin_path, "OpenMVS", "ReconstructMesh")
+omvs_densify_path = os.path.join(superbuild_bin_path, "DensifyPointCloud")
+omvs_reconstructmesh_path = os.path.join(superbuild_bin_path, "ReconstructMesh")
 
 fpcfilter_path = os.path.join(superbuild_bin_path, "FPCFilter")
 
