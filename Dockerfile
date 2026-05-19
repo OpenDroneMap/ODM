@@ -15,8 +15,7 @@ COPY pixi.toml pixi.lock ./
 RUN pixi install --locked
 
 COPY . ./
-RUN pixi run build
-RUN pixi run test
+RUN pixi run build && pixi run test
 
 RUN mkdir -p /odm-runtime/SuperBuild /odm-runtime/scripts \
     && cp -a SuperBuild/install /odm-runtime/SuperBuild/ \
