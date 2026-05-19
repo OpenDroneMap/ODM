@@ -10,44 +10,6 @@ if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release")
 endif()
 
-if (APPLE AND NOT DEFINED ENV{CONDA_PREFIX})
-    find_program(HOMEBREW_EXECUTABLE brew)
-    mark_as_advanced(FORCE HOMEBREW_EXECUTABLE)
-    if (HOMEBREW_EXECUTABLE)
-        # Detected a Homebrew install, query for its install prefix.
-        execute_process(COMMAND ${HOMEBREW_EXECUTABLE} --prefix
-            OUTPUT_VARIABLE HOMEBREW_INSTALL_PREFIX
-            OUTPUT_STRIP_TRAILING_WHITESPACE)
-        message(STATUS "Detected Homebrew with install prefix: "
-            "${HOMEBREW_INSTALL_PREFIX}, adding to CMake search paths.")
-        list(APPEND CMAKE_PREFIX_PATH "${HOMEBREW_INSTALL_PREFIX}")
-    endif()
-
-    # Use homebrew's clang compiler since Apple
-    # does not allow us to link to libomp
-    set(CXX_PATH ${HOMEBREW_INSTALL_PREFIX}/bin/c++-12)
-    set(APPLE_CMAKE_ARGS "")
-    
-    message("Checking for ${CXX_PATH}...")
-    if(EXISTS "${CXX_PATH}")
-        message("Found Homebrew's C++ compiler: ${CXX_PATH}")
-        set(CMAKE_CXX_COMPILER ${CXX_PATH})
-        list(APPEND APPLE_CMAKE_ARGS "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}")
-    endif()
-
-    set(C_PATH ${HOMEBREW_INSTALL_PREFIX}/bin/gcc-12)
-    message("Checking for ${C_PATH}...")
-    if(EXISTS "${C_PATH}")
-        message("Found Homebrew's C compiler: ${C_PATH}")
-        set(CMAKE_C_COMPILER ${C_PATH})
-        list(APPEND APPLE_CMAKE_ARGS "-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}")
-    endif()
-
-    if (NOT APPLE_CMAKE_ARGS)
-        message(WARNING "Cannot find Homebrew's compiler, compilation might fail...")
-    endif()
-endif()
-
 ################################
 # Setup SuperBuild directories #
 ################################
@@ -84,70 +46,28 @@ mark_as_advanced(SB_BINARY_DIR)
 
 message(STATUS "SuperBuild binary files will be located to: ${SB_BINARY_DIR}")
 
-set(CONDA_CMAKE_ARGS "")
-if(DEFINED ENV{CONDA_PREFIX})
-    list(APPEND CMAKE_PREFIX_PATH $ENV{CONDA_PREFIX})
-    set(CONDA_CMAKE_ARGS "-DCMAKE_PREFIX_PATH=$ENV{CONDA_PREFIX}")
-    message(STATUS "Using conda prefix: $ENV{CONDA_PREFIX}")
+if(NOT DEFINED ENV{CONDA_PREFIX})
+    message(FATAL_ERROR
+        "SuperBuild requires a pixi/conda environment (CONDA_PREFIX). "
+        "Use: pixi install && pixi run build")
+endif()
+
+list(APPEND CMAKE_PREFIX_PATH $ENV{CONDA_PREFIX})
+set(CONDA_CMAKE_ARGS
+    "-DCMAKE_PREFIX_PATH=$ENV{CONDA_PREFIX}"
+    "-DPython3_ROOT_DIR=$ENV{CONDA_PREFIX}"
+    "-DPython_ROOT_DIR=$ENV{CONDA_PREFIX}")
+message(STATUS "Using conda prefix: $ENV{CONDA_PREFIX}")
+
+set(PYTHON_HOME "$ENV{CONDA_PREFIX}")
+if(WIN32)
+    set(PYTHON_EXE_PATH "${PYTHON_HOME}/python.exe")
+else()
+    set(PYTHON_EXE_PATH "${PYTHON_HOME}/bin/python")
 endif()
 
 set(WIN32_CMAKE_ARGS "")
 set(APPLE_CMAKE_ARGS "")
-
-if (WIN32 AND NOT DEFINED ENV{CONDA_PREFIX})
-    if (NOT DEFINED CMAKE_TOOLCHAIN_FILE)
-        message(FATAL_ERROR "CMAKE_TOOLCHAIN_FILE not set. You need to set it to the path of vcpkg.cmake")
-    endif()
-    get_filename_component(CMAKE_TOOLCHAIN_DIR ${CMAKE_TOOLCHAIN_FILE} DIRECTORY)
-    get_filename_component(VCPKG_ROOT "${CMAKE_TOOLCHAIN_DIR}/../../" ABSOLUTE)
-    set(WIN32_CMAKE_ARGS "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}")
-    set(PYTHON_HOME "${SB_ROOT_DIR}/../venv")
-    set(PYTHON_EXE_PATH "${PYTHON_HOME}/Scripts/python")
-
-    message("Copying VCPKG DLLs...")
-    file(GLOB COPY_DLLS "${VCPKG_ROOT}/installed/x64-windows/bin/*.dll")
-    file(COPY ${COPY_DLLS} DESTINATION "${SB_INSTALL_DIR}/bin")
-
-    message("Copying CUDA DLLs...")
-    file(GLOB CUDA_DLLS "$ENV{CUDA_PATH}/bin/cudart64*.dll")
-    file(COPY ${CUDA_DLLS} DESTINATION "${SB_INSTALL_DIR}/bin")
-
-    message("Copying GDAL tools...")
-    file(GLOB GDAL_TOOLS "${VCPKG_ROOT}/installed/x64-windows/tools/gdal/*")
-    file(COPY ${GDAL_TOOLS} DESTINATION "${SB_INSTALL_DIR}/bin")
-
-    message("Copying GDAL data...")
-    file(GLOB GDAL_DATA "${VCPKG_ROOT}/installed/x64-windows/share/gdal/*")
-    file(COPY ${GDAL_DATA} DESTINATION "${SB_INSTALL_DIR}/bin/data/gdal")
-
-    message("Copying PROJ data...")
-    file(GLOB PROJ_DATA "${VCPKG_ROOT}/installed/x64-windows/share/proj/*")
-    file(COPY ${PROJ_DATA} DESTINATION "${SB_INSTALL_DIR}/bin/data/proj")
-
-    # GDAL comes from vcpkg, create a dummy target to satisfy dependencies
-    add_custom_target(gdal)
-elseif(WIN32)
-    set(PYTHON_HOME "${SB_ROOT_DIR}/../venv")
-    set(PYTHON_EXE_PATH "${PYTHON_HOME}/Scripts/python")
-elseif(APPLE)
-    set(PYTHON_HOME "${SB_ROOT_DIR}/../venv")
-    set(PYTHON_EXE_PATH "${PYTHON_HOME}/bin/python")
-else()
-    set(PYTHON_HOME "${SB_ROOT_DIR}/../venv")
-    set(PYTHON_EXE_PATH "${PYTHON_HOME}/bin/python3")
-endif()
-
-if(DEFINED ENV{CONDA_PREFIX})
-    set(PYTHON_HOME "$ENV{CONDA_PREFIX}")
-    if(WIN32)
-        set(PYTHON_EXE_PATH "${PYTHON_HOME}/python.exe")
-    else()
-        set(PYTHON_EXE_PATH "${PYTHON_HOME}/bin/python")
-    endif()
-    list(APPEND CONDA_CMAKE_ARGS
-        "-DPython3_ROOT_DIR=$ENV{CONDA_PREFIX}"
-        "-DPython_ROOT_DIR=$ENV{CONDA_PREFIX}")
-endif()
 
 # Path to additional CMake modules
 set(CMAKE_MODULE_PATH ${SB_ROOT_DIR}/cmake)
@@ -157,73 +77,35 @@ include(ExternalProject-Setup)
 include(Conda-Packages)
 
 #########################################
-# Download and install third party libs #
+# Conda-provided libraries (pixi.toml)  #
 #########################################
 
-# ---------------------------------------------------------------------------------------------
-# Geospatial Data Abstraction Library (GDAL)
-#
-set(ODM_GDAL_Version 3.11.1)
-option(ODM_BUILD_GDAL "Force to build GDAL library" OFF)
+odm_require_conda_package(GDAL 3.11.1)
+odm_require_conda_package(OpenCV 4.12.0)
+odm_require_conda_package(GFlags 2.2.2)
+odm_require_conda_package(Ceres 2.2.0)
+odm_require_conda_package(PDAL 2.8.4)
 
-SETUP_EXTERNAL_PROJECT(GDAL ${ODM_GDAL_Version} ${ODM_BUILD_GDAL})
-
-# ---------------------------------------------------------------------------------------------
-# Open Source Computer Vision (OpenCV)
-#
-set(ODM_OpenCV_Version 4.12.0)
-option(ODM_BUILD_OpenCV "Force to build OpenCV library" OFF)
-
-SETUP_EXTERNAL_PROJECT(OpenCV ${ODM_OpenCV_Version} ${ODM_BUILD_OpenCV})
-
-
-# ---------------------------------------------------------------------------------------------
-# Google Flags library (GFlags)
-#
-set(ODM_GFlags_Version 2.2.2)
-option(ODM_BUILD_GFlags "Force to build GFlags library" OFF)
-
-SETUP_EXTERNAL_PROJECT(GFlags ${ODM_GFlags_Version} ${ODM_BUILD_GFlags})
-
-
-# ---------------------------------------------------------------------------------------------
-# Ceres Solver
-#
-set(ODM_Ceres_Version 2.2.0)
-option(ODM_BUILD_Ceres "Force to build Ceres library" OFF)
-
-SETUP_EXTERNAL_PROJECT(Ceres ${ODM_Ceres_Version} ${ODM_BUILD_Ceres})
-
-
-# ---------------------------------------------------------------------------------------------
-# Hexer (only required when building PDAL from source)
-#
-if(NOT ODM_USE_CONDA_PDAL)
-  SETUP_EXTERNAL_PROJECT(Hexer 1.5 ON)
-else()
-  message(STATUS "Hexer skipped (using conda PDAL)")
-endif()
+#########################################
+# Source-built dependencies             #
+#########################################
 
 # ---------------------------------------------------------------------------------------------
 # Open Structure from Motion (OpenSfM)
 #
 
-set(custom_libs OpenSfM)
-if(NOT ODM_USE_CONDA_PDAL)
-  list(APPEND custom_libs LASzip PDAL PDALPython)
-endif()
-if(NOT ODM_USE_CONDA_UNTWINE)
-  list(APPEND custom_libs Untwine)
-endif()
-list(APPEND custom_libs Entwine
-				MvsTexturing
-				OpenMVS
-				FPCFilter
-				PyPopsift
-				Obj2Tiles
-				OpenPointClass
-				ExifTool
-				RenderDEM
+set(custom_libs OpenSfM
+    LASzip
+    Untwine
+    Entwine
+    MvsTexturing
+    OpenMVS
+    FPCFilter
+    PyPopsift
+    Obj2Tiles
+    OpenPointClass
+    ExifTool
+    RenderDEM
 )
 
 externalproject_add(mve
@@ -330,8 +212,8 @@ externalproject_add(draco
     GIT_TAG           e801aebf9665f6dcf3b6b0a604055a300ff85aa4
     PREFIX            ${SB_BINARY_DIR}/draco
     SOURCE_DIR        ${SB_SOURCE_DIR}/draco
-    CMAKE_ARGS        -DDRACO_TRANSCODER_SUPPORTED=ON 
-                      -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR} 
+    CMAKE_ARGS        -DDRACO_TRANSCODER_SUPPORTED=ON
+                      -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
                       ${CONDA_CMAKE_ARGS}
                       ${WIN32_CMAKE_ARGS}
 )

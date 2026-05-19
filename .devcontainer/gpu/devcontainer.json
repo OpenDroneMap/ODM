@@ -16,6 +16,7 @@
     }
   },
   "remoteUser": "odm",
+  "postCreateCommand": "pixi install -e gpu",
   // Use the `code` directory for compatibility with direct Docker workflows
   "workspaceMount": "source=${localWorkspaceFolder},target=/code,type=bind",
   "workspaceFolder": "/code",

@@ -28,12 +28,10 @@ __pycache__
 storage/
 
 
-vcpkg/
-venv/
+SuperBuild/build/
+SuperBuild/install/
 .pixi/
 scripts/pixi-shell-hook
-python312/
 dist/
-innosetup/
 azuresigning/
 .DS_Store

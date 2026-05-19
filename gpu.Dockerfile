@@ -1,61 +1,45 @@
-FROM nvidia/cuda:12.9.1-devel-ubuntu24.04 AS dev
+# GPU image: pixi build with cuda-toolkit, NVIDIA runtime for execution.
+
+FROM ghcr.io/prefix-dev/pixi:0.68.1 AS dev
 
 RUN if id "ubuntu" &>/dev/null; then \
-        echo "Deleting user 'ubuntu'" && userdel -f -r ubuntu || echo "Failed to delete ubuntu user"; \
-    else \
-         echo "User 'ubuntu' does not exist"; \
+        userdel -f -r ubuntu || echo "Failed to delete ubuntu user"; \
     fi
 
 WORKDIR /code
 
-######## Builder ########
 FROM dev AS builder
 
-# Copy everything
+COPY pixi.toml pixi.lock ./
+RUN pixi install --locked -e gpu
+
 COPY . ./
+RUN pixi run -e gpu build && pixi run -e gpu test
 
-# Run the build
-RUN PORTABLE_INSTALL=YES GPU_INSTALL=YES bash configure.sh install
+RUN mkdir -p /odm-runtime/SuperBuild /odm-runtime/scripts \
+    && cp -a SuperBuild/install /odm-runtime/SuperBuild/ \
+    && cp -a opendm stages /odm-runtime/ \
+    && cp run.py run.sh settings.yaml VERSION /odm-runtime/ \
+    && cp scripts/docker-activate.sh scripts/docker-entrypoint.sh scripts/odm-env.sh scripts/smoke.sh /odm-runtime/scripts/
 
-# Run the tests
-ENV PATH="/code/venv/bin:$PATH"
-RUN bash test.sh
+FROM dev AS prod-env
 
-# Clean Superbuild
-RUN bash configure.sh clean
+COPY pixi.toml pixi.lock ./
+RUN pixi install --locked -e prod \
+    && mkdir -p scripts \
+    && pixi shell-hook -e prod -s bash > scripts/pixi-shell-hook \
+    && rm -rf .pixi/envs/prod/include .pixi/envs/prod/share/{doc,man,info}
 
-### END Builder
+FROM nvidia/cuda:12.9.1-runtime-ubuntu24.04 AS runtime
 
-### Use a second image for the final asset to reduce the number and
-# size of the layers.
-FROM nvidia/cuda:12.9.1-runtime-ubuntu24.04
-
-# Env variables
-ENV DEBIAN_FRONTEND=noninteractive \
-    PYTHONPATH="$PYTHONPATH:/code/SuperBuild/install/local/lib/python3.12/dist-packages:/code/SuperBuild/install/lib/python3.12/dist-packages:/code/SuperBuild/install/bin/opensfm" \
-    LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/code/SuperBuild/install/lib" \
-    PDAL_DRIVER_PATH="/code/SuperBuild/install/bin"
-
+ENV DEBIAN_FRONTEND=noninteractive
 WORKDIR /code
 
-# Copy everything we built from the builder
-COPY --from=builder /code /code
+COPY --from=prod-env /code/.pixi/envs/prod .pixi/envs/prod
+COPY --from=prod-env /code/scripts/pixi-shell-hook scripts/pixi-shell-hook
+COPY --from=builder /odm-runtime/ ./
 
-ENV PATH="/code/venv/bin:$PATH"
+RUN chmod +x scripts/docker-entrypoint.sh run.sh scripts/smoke.sh \
+    && bash scripts/smoke.sh
 
-RUN apt-get update -y \
- && apt-get install -y ffmpeg libtbbmalloc2 \
- && apt-get clean \
- && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-# Install shared libraries that we depend on via APT, but *not*
-# the -dev packages to save space!
-# Also run a smoke test on ODM and OpenSfM
-RUN bash configure.sh installruntimedepsonly \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
-  && bash run.sh --help \
-  && bash -c "eval $(python3 /code/opendm/context.py) && python3 -c 'from opensfm import io, pymap'"
-
-# Entry point
-ENTRYPOINT ["python3", "/code/run.py"]
+ENTRYPOINT ["/code/scripts/docker-entrypoint.sh"]

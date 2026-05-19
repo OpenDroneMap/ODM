@@ -152,93 +152,53 @@ For most users, the easiest way to modify the software is to use the [devcontain
 > devcontainer exec /bin/bash
 > ```
 
-Once started either through your IDE or the CLI, you can run this command within the container to build and install ODM:
+Install [pixi](https://pixi.sh), then build and test ODM:
 
 ```bash
-./configure.sh install
+pixi install --locked
+pixi run build
+pixi run test
+pixi run smoke
 ```
 
-The devcontainer mounts your home directory into the containers home directory and so you can use any datasets you have by setting the project path normally:
+The devcontainer runs `pixi install --locked` on create. Rebuild after C++ changes with `pixi run build`.
+
+Process a dataset (from the repo root, with a pixi shell or `pixi run`):
 
 ```bash
-# e.g.
+pixi run odm -- --project-path ~/datasets mydataset
+# or, after: eval "$(pixi shell-hook)"
 ./run.sh --project-path ~/datasets mydataset
 ```
 
-You can now make changes to the ODM source and rebuild to test out any changes.
+GPU builds use the `gpu` environment: `pixi install -e gpu && pixi run -e gpu build`.
 
 ## Advanced
 
-### Native Install (Ubuntu 24.04)
+### Native install (Linux, Windows, macOS)
 
-You can run ODM natively on Ubuntu 24.04 (although we don't recommend it):
-
-```bash
-git clone https://github.com/OpenDroneMap/ODM
-cd ODM
-bash configure.sh install
-```
-
-You can then process datasets with `./run.sh /datasets/odm_data_aukerman`
-
-### Native Install (MacOS)
-
-> **Warning:** Installation on Mac is currently unmaintained, and may not work out-of-the-box. See this [issue](https://community.opendronemap.org/t/odm-install-on-a-mac-os-14-6-1/25007/3).
-
-You can run ODM natively on Intel/ARM MacOS.
-
-First install:
-
-- Xcode 13 (not 14, there's currently a bug)
-- [Homebrew](https://docs.brew.sh/Installation)
-
-Then Run:
+Install [pixi](https://pixi.sh), clone the repo, then:
 
 ```bash
-git clone https://github.com/OpenDroneMap/ODM
-cd ODM
-bash configure_macos.sh install
+pixi install --locked
+pixi run build
 ```
 
-You can then process datasets with `./run.sh /datasets/odm_data_aukerman`
+Run ODM with `./run.sh` (Unix) or `run.bat` (Windows) from a shell where `pixi shell-hook` is active, or use `pixi run odm -- …`.
 
-This could be improved in the future. [Helps us create a Homebrew formula](https://github.com/OpenDroneMap/ODM/issues/1531).
+### Build Docker images from source
 
-### Updating a native installation
-
-When updating to a newer version of native ODM, it is recommended that you run:
+CPU image (matches CI):
 
 ```bash
-bash configure.sh reinstall
+docker build -t my_odm_image --target runtime .
 ```
 
-to ensure all the dependent packages and modules get updated.
-
-### Build Docker Images From Source
-
-If you want to rebuild your own docker image (if you have changed the source code, for example), from the ODM folder you can type:
+GPU image:
 
 ```bash
-docker build -t my_odm_image --no-cache .
+docker build -f gpu.Dockerfile -t my_odm_image:gpu --target runtime .
 ```
-
-When building your own Docker image, if image size is of importance to you, you should use the `--squash` flag, like so:
-
-```bash
-docker build --squash -t my_odm_image .
-```
-
-This will clean up intermediate steps in the Docker build process, resulting in a significantly smaller image (about half the size).
-
-Experimental flags need to be enabled in Docker to use the `--squash` flag. To enable this, insert the following into the file `/etc/docker/daemon.json`:
-
-```json
-{
-  "experimental": true
-}
-```
-
-After this, you must restart docker.
 
 If you have questions, join the developer's chat at https://community.opendronemap.org/c/developers-chat/21
 
@@ -248,7 +208,7 @@ If you have questions, join the developer's chat at https://community.opendronem
 
 ## Credits
 
-ODM makes use of [several libraries](https://github.com/OpenDroneMap/ODM/blob/master/snap/snapcraft.yaml#L36) and other awesome open source projects to perform its tasks. Among them we'd like to highlight:
+ODM makes use of [several libraries](https://github.com/OpenDroneMap/ODM/blob/master/pixi.toml) and other awesome open source projects to perform its tasks. Among them we'd like to highlight:
 
 - [OpenSfM](https://github.com/mapillary/OpenSfM)
 - [OpenMVS](https://github.com/cdcseacave/openMVS/)
