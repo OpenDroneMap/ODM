@@ -3,22 +3,11 @@ name = "odm"
 channels = ["conda-forge"]
 platforms = ["linux-64", "linux-aarch64", "win-64", "osx-64", "osx-arm64"]
 
-# Runtime dependencies (default + prod environments)
 [dependencies]
 python = "==3.12.9"
-
-# Runtime Python bindings and native libs for SuperBuild binaries
 gdal = "==3.11.1"
 py-opencv = "==4.12.0"
-boost-cpp = "*"          # OpenMVS links boost at runtime
-cgal = "*"               # OpenMVS configure (header-only; pulls aligned Boost)
-geotiff = "*"            # PDAL runtime
-libjpeg-turbo = "*"      # PoissonRecon links -ljpeg
-tbb = "*"                # OpenSfM / parallel runtime
-ceres-solver = "==2.0.0" # OpenSfM pybundle links libceres at runtime
-gflags = "==2.2.2"       # Ceres runtime dependency
-
-# Application Python stack (conda-forge)
+cgal = "5.6.*"              # OpenMVS
 numpy = "==2.3.2"
 scipy = "==1.16.1"
 shapely = "==2.1.1"
@@ -49,7 +38,6 @@ fiona = "==1.10.1"
 rasterio = "==1.4.3"
 codem = "==0.26.1"
 
-# SuperBuild compile toolchain and cmake find_package pins (not shipped in Docker runtime)
 [feature.build.dependencies]
 cmake = "3.31.*"
 ninja = "*"
@@ -60,31 +48,33 @@ c-compiler = "*"
 fortran-compiler = "*"
 swig = "*"
 pkg-config = "*"
-libgdal = "==3.11.1"
-libopencv = "==4.12.0"
-eigen = "3.4.*"
-tbb-devel = "*"
-pybind11 = "*"
 
 [feature.build.target.unix.dependencies]
 make = "*"
 patch = "*"
 rsync = "*"
 
-# Optional: CUDA toolkit for GPU SIFT (PyPopsift). Off by default; use `pixi install -e gpu`.
+[feature.opensfm.dependencies]
+ceres-solver = "==2.0.0"
+
 [feature.gpu.target.linux-64.dependencies]
 cuda-toolkit = "12.*"
 
 [feature.gpu.target.win-64.dependencies]
 cuda-toolkit = "12.*"
 
+[feature.conda-pdal.dependencies]
+ceres-solver = "==2.2.0"
+pdal = "*"
+
 [environments]
-default = { features = ["build"], solve-group = "default" }
-prod = { features = [], solve-group = "default" }
-gpu = { features = ["build", "gpu"], solve-group = "default" }
+default = { features = ["opensfm", "build"], solve-group = "default" }
+prod = { features = ["opensfm"], solve-group = "default" }
+gpu = { features = ["opensfm", "build", "gpu"], solve-group = "default" }
+pdal = { features = ["conda-pdal", "build"], solve-group = "pdal" }
 
 [tasks]
-build = { cmd = "cmake -S SuperBuild -B SuperBuild/build -G Ninja -DCMAKE_PREFIX_PATH=$CONDA_PREFIX -DCMAKE_POLICY_VERSION_MINIMUM=3.5 && cmake --build SuperBuild/build", description = "Configure and compile SuperBuild (parallelism via CMAKE_BUILD_PARALLEL_LEVEL)" }
+build = { cmd = "bash scripts/pixi-build.sh", description = "Configure and compile SuperBuild" }
 test = { cmd = "bash test.sh", description = "Run ODM test suite" }
 smoke = { cmd = "bash scripts/smoke.sh", description = "Smoke test CLI and core imports" }
 odm = { cmd = "bash run.sh", description = "Run ODM (pass args after --)" }

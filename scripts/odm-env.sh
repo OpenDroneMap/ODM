@@ -13,16 +13,24 @@ if [ -n "${CONDA_PREFIX:-}" ]; then
     if [ -d "${CONDA_PREFIX}/share/gdal" ]; then
         export GDAL_DATA="${CONDA_PREFIX}/share/gdal"
     fi
+    # PDAL plugins: conda layout (pixi) vs legacy SuperBuild install
+    if [ -d "${CONDA_PREFIX}/lib/pdal/plugins" ]; then
+        export PDAL_DRIVER_PATH="${CONDA_PREFIX}/lib/pdal/plugins"
+    elif [ -d "${CONDA_PREFIX}/Library/lib/pdal/plugins" ]; then
+        export PDAL_DRIVER_PATH="${CONDA_PREFIX}/Library/lib/pdal/plugins"
+    else
+        export PDAL_DRIVER_PATH="${_odm_env_root}/SuperBuild/install/bin"
+    fi
 elif [ -e "${_odm_env_root}/venv/bin/activate" ]; then
     # shellcheck disable=SC1091
     source "${_odm_env_root}/venv/bin/activate"
     export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:+${LD_LIBRARY_PATH}:}${_odm_env_root}/SuperBuild/install/lib"
     export DYLD_LIBRARY_PATH="${_odm_env_root}/SuperBuild/install/lib"
+    export PDAL_DRIVER_PATH="${_odm_env_root}/SuperBuild/install/bin"
 else
     export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:+${LD_LIBRARY_PATH}:}${_odm_env_root}/SuperBuild/install/lib"
     export DYLD_LIBRARY_PATH="${_odm_env_root}/SuperBuild/install/lib"
+    export PDAL_DRIVER_PATH="${_odm_env_root}/SuperBuild/install/bin"
 fi
-
-export PDAL_DRIVER_PATH="${_odm_env_root}/SuperBuild/install/bin"
 
 eval "$(cd "${_odm_env_root}" && python3 -c "import opendm.context; print('export PYTHONPATH=' + ':'.join(opendm.context.python_packages_paths))")"

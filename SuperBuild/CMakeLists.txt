@@ -154,6 +154,7 @@ set(CMAKE_MODULE_PATH ${SB_ROOT_DIR}/cmake)
 
 include(ExternalProject)
 include(ExternalProject-Setup)
+include(Conda-Packages)
 
 #########################################
 # Download and install third party libs #
@@ -188,27 +189,37 @@ SETUP_EXTERNAL_PROJECT(GFlags ${ODM_GFlags_Version} ${ODM_BUILD_GFlags})
 # ---------------------------------------------------------------------------------------------
 # Ceres Solver
 #
-set(ODM_Ceres_Version 2.0.0)
+if(ODM_USE_CONDA_PDAL)
+  set(ODM_Ceres_Version 2.2.0)
+else()
+  set(ODM_Ceres_Version 2.0.0)
+endif()
 option(ODM_BUILD_Ceres "Force to build Ceres library" OFF)
 
 SETUP_EXTERNAL_PROJECT(Ceres ${ODM_Ceres_Version} ${ODM_BUILD_Ceres})
 
 
 # ---------------------------------------------------------------------------------------------
-# Hexer
+# Hexer (only required when building PDAL from source)
 #
-SETUP_EXTERNAL_PROJECT(Hexer 1.5 ON)
+if(NOT ODM_USE_CONDA_PDAL)
+  SETUP_EXTERNAL_PROJECT(Hexer 1.5 ON)
+else()
+  message(STATUS "Hexer skipped (using conda PDAL)")
+endif()
 
 # ---------------------------------------------------------------------------------------------
 # Open Structure from Motion (OpenSfM)
 #
 
-set(custom_libs OpenSfM
-				LASzip
-				PDAL
-				PDALPython
-				Untwine
-				Entwine
+set(custom_libs OpenSfM)
+if(NOT ODM_USE_CONDA_PDAL)
+  list(APPEND custom_libs LASzip PDAL PDALPython)
+endif()
+if(NOT ODM_USE_CONDA_UNTWINE)
+  list(APPEND custom_libs Untwine)
+endif()
+list(APPEND custom_libs Entwine
 				MvsTexturing
 				OpenMVS
 				FPCFilter
