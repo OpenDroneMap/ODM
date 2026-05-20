@@ -161,7 +161,7 @@ class ODMMvsTexStage(types.ODM_Stage):
 
 
                 # Backward compatibility: copy odm_textured_model_geo.mtl to odm_textured_model.mtl
-                # for certain older WebODM clients which expect a odm_textured_model.mtl
+                # for certain older clients which expect a odm_textured_model.mtl
                 # to be present for visualization
                 # We should remove this at some point in the future
                 geo_mtl = os.path.join(r['out_dir'], 'odm_textured_model_geo.mtl')
@@ -183,4 +183,3 @@ class ODMMvsTexStage(types.ODM_Stage):
             undistorted_images_path = os.path.join(tree.opensfm, "undistorted", "images")
             if io.dir_exists(undistorted_images_path):
                 shutil.rmtree(undistorted_images_path)
-
