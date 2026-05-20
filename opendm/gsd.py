@@ -2,7 +2,7 @@ import os
 import json
 import numpy as np
 import math
-from repoze.lru import lru_cache
+from functools import lru_cache
 from opendm import log
 from opendm.shots import get_origin
 from scipy import spatial

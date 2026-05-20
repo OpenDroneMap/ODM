@@ -1,5 +1,4 @@
 import os
-import shutil
 import rasterio
 import fiona
 import numpy as np
@@ -8,7 +7,6 @@ import sys
 from opendm import log
 from opendm import io
 from opendm import concurrency 
-from opendm import get_image_size
 from opendm import system
 
 from skimage.feature import canny
@@ -17,11 +15,6 @@ from skimage.graph import route_through_array
 import shapely
 from shapely.geometry import LineString, mapping, shape
 from shapely.ops import polygonize, unary_union
-
-if sys.platform == 'win32':
-    # Temporary fix for: ValueError: GEOSGeom_createLinearRing_r returned a NULL pointer  
-    # https://github.com/Toblerity/Shapely/issues/1005
-    shapely.speedups.disable()
 
 def write_raster(data, file):
     profile = {
@@ -165,7 +158,7 @@ def compute_cutline(orthophoto_file, crop_area_file, destination, max_concurrenc
             'driver': 'GPKG',
             'schema': {
                 'properties': {},
-                'geometry': 'Polygon'
+                'geometry': 'MultiPolygon'
             }
         }
 

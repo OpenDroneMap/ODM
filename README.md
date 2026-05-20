@@ -1,4 +1,4 @@
-![ODM Logo](https://user-images.githubusercontent.com/1951843/79699889-438ce580-8260-11ea-9c79-8667834aeab2.png)
+![ODM Logo](https://github.com/OpenDroneMap/ODM/blob/master/odm.png?raw=true)
 
 An open source command line toolkit for processing aerial drone imagery. ODM turns simple 2D images into:
 
@@ -11,7 +11,7 @@ An open source command line toolkit for processing aerial drone imagery. ODM tur
 
 The application is available for Windows, Mac and Linux and it works from the command line, making it ideal for power users, scripts and for integration with other software.
 
-If you would rather not type commands in a shell and are looking for a friendly user interface, check out [WebODM](https://github.com/OpenDroneMap/WebODM).
+If you would rather not type commands in a shell and are looking for a friendly user interface, check out [OpenDroneMap Desktop](https://opendronemap.org/download).
 
 ## Quickstart
 

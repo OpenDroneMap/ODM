@@ -35,4 +35,5 @@ venv/
 python312/
 dist/
 innosetup/
+azuresigning/
 .DS_Store

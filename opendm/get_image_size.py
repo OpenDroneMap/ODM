@@ -1,4 +1,4 @@
-import pillow_jxl
+import pillow_jxl # registers .jxl support with Pillow
 from PIL import Image
 import cv2
 import rawpy

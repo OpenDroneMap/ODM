@@ -3,7 +3,7 @@
 # Ensure the DEBIAN_FRONTEND environment variable is set for apt-get calls
 APT_GET="env DEBIAN_FRONTEND=noninteractive $(command -v apt-get)"
 
-check_version(){  
+check_version(){
   UBUNTU_VERSION=$(lsb_release -r)
   case "$UBUNTU_VERSION" in
     *"20.04"*|*"21.04"*|*"24.04"*)
@@ -54,13 +54,6 @@ ensure_prereqs() {
     echo "Installing tzdata"
     sudo $APT_GET install -y -qq tzdata
 
-    UBUNTU_VERSION=$(lsb_release -r)
-    if [[ "$UBUNTU_VERSION" == *"20.04"* ]]; then
-        echo "Enabling PPA for Ubuntu GIS"
-        sudo $APT_GET install -y -qq --no-install-recommends software-properties-common
-        sudo add-apt-repository ppa:ubuntugis/ppa
-        sudo $APT_GET update
-    fi
 
     echo "Installing Python PIP"
     sudo $APT_GET install -y -qq --no-install-recommends \
@@ -108,11 +101,13 @@ installruntimedepsonly() {
     installdepsfromsnapcraft runtime opensfm
     echo "Installing OpenMVS Dependencies"
     installdepsfromsnapcraft runtime openmvs
+    echo "Installing GDAL Dependencies"
+    installdepsfromsnapcraft runtime gdal
 }
 
 installreqs() {
     cd /code
-    
+
     ## Set up library paths
     export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$RUNPATH/SuperBuild/install/lib
 
@@ -120,7 +115,7 @@ installreqs() {
     echo "Updating the system"
     ensure_prereqs
     check_version
-    
+
     echo "Installing Required Requisites"
     installdepsfromsnapcraft build prereqs
     echo "Installing OpenCV Dependencies"
@@ -129,17 +124,24 @@ installreqs() {
     installdepsfromsnapcraft build opensfm
     echo "Installing OpenMVS Dependencies"
     installdepsfromsnapcraft build openmvs
-    
+    echo "Installing GDAL Dependencies"
+    installdepsfromsnapcraft build gdal
+
     set -e
 
     # edt requires numpy to build
     venv/bin/pip install numpy==2.3.2
-    venv/bin/pip install -r requirements.txt --ignore-installed
-    #if [ ! -z "$GPU_INSTALL" ]; then
-    #fi
     set +e
 }
-    
+
+installpython() {
+    echo "Installing Python requirements"
+    cd /code
+    set -e
+    venv/bin/pip install -r requirements.txt --ignore-installed
+    set +e
+}
+
 install() {
     installreqs
 
@@ -156,11 +158,16 @@ install() {
     fi
 
     set -eo pipefail
-    
     echo "Compiling SuperBuild"
     cd ${RUNPATH}/SuperBuild
     mkdir -p build && cd build
     cmake .. && make -j$processes
+
+    # Reset terminal state
+    cd ${RUNPATH}
+    set +eo pipefail
+
+    installpython
 
     echo "Configuration Finished"
 }
@@ -195,18 +202,20 @@ clean() {
 
 usage() {
     echo "Usage:"
-    echo "bash configure.sh <install|update|uninstall|installreqs|help> [nproc]"
+    echo "bash configure.sh <install|update|uninstall|installreqs|installpython|help> [nproc]"
     echo "Subcommands:"
     echo "  install"
     echo "    Installs all dependencies and modules for running OpenDroneMap"
     echo "  installruntimedepsonly"
     echo "    Installs *only* the runtime libraries (used by docker builds). To build from source, use the 'install' command."
+    echo "  installreqs"
+    echo "    Only installs the system requirements and dependencies (does not build SuperBuild or install Python packages)"
+    echo "  installpython"
+    echo "    Installs Python requirements after SuperBuild is compiled"
     echo "  reinstall"
     echo "    Removes SuperBuild and build modules, then re-installs them. Note this does not update OpenDroneMap to the latest version. "
     echo "  uninstall"
     echo "    Removes SuperBuild and build modules. Does not uninstall dependencies"
-    echo "  installreqs"
-    echo "    Only installs the requirements (does not build SuperBuild)"
     echo "  clean"
     echo "    Cleans the SuperBuild directory by removing temporary files. "
     echo "  help"
@@ -214,7 +223,7 @@ usage() {
     echo "[nproc] is an optional argument that can set the number of processes for the make -j tag. By default it uses $(nproc)"
 }
 
-if [[ $1 =~ ^(install|installruntimedepsonly|reinstall|uninstall|installreqs|clean)$ ]]; then
+if [[ $1 =~ ^(install|installruntimedepsonly|reinstall|uninstall|installreqs|installpython|clean)$ ]]; then
     RUNPATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
     "$1"
 else

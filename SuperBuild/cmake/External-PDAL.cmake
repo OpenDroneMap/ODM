@@ -10,7 +10,7 @@ set(LASZIP_LIB "${SB_INSTALL_DIR}/lib/liblaszip.so")
 endif()
 
 ExternalProject_Add(${_proj_name}
-  DEPENDS           hexer laszip
+  DEPENDS           gdal hexer laszip
   PREFIX            ${_SB_BINARY_DIR}
   TMP_DIR           ${_SB_BINARY_DIR}/tmp
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
@@ -52,7 +52,6 @@ ExternalProject_Add(${_proj_name}
     -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
     -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
     ${WIN32_CMAKE_ARGS}
-    ${WIN32_GDAL_ARGS}
   #--Build step-----------------
   BINARY_DIR        ${_SB_BINARY_DIR}
   #--Install step---------------

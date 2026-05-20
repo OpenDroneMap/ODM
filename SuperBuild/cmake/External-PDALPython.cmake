@@ -33,7 +33,7 @@ ExternalProject_Add(${_proj_name}
   BINARY_DIR        ${_SB_BINARY_DIR}
   #--Install step---------------
   INSTALL_DIR       ${SB_INSTALL_DIR}
-  INSTALL_COMMAND   ${CMAKE_COMMAND} --build <BINARY_DIR> --target install
+  INSTALL_COMMAND   ${CMAKE_COMMAND} --build <BINARY_DIR> --config $<CONFIG> --target install
                     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${SB_SOURCE_DIR}/${_proj_name}/src/pdal/__init__.py ${SB_INSTALL_DIR}/lib/python3.12/dist-packages/pdal
                     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${SB_SOURCE_DIR}/${_proj_name}/src/pdal/pipeline.py ${SB_INSTALL_DIR}/lib/python3.12/dist-packages/pdal
                     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${SB_SOURCE_DIR}/${_proj_name}/src/pdal/drivers.py ${SB_INSTALL_DIR}/lib/python3.12/dist-packages/pdal

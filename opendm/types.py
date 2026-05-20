@@ -2,17 +2,12 @@ import os
 import shutil
 import warnings
 import numpy as np
-from opendm import get_image_size
 from opendm import location
 from opendm.gcp import GCPFile
-from pyproj import CRS
-import xmltodict as x2d
-from six import string_types
 
 from opendm import log
 from opendm import io
 from opendm import system
-from opendm import context
 from opendm import multispectral
 
 from opendm.progress import progressbc

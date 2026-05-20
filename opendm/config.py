@@ -1,12 +1,13 @@
+import os
+import sys
 import argparse
-import json
+
+import yaml
+
 from opendm import context
 from opendm import io
 from opendm import log
-from appsettings import SettingsParser
 from pyodm import Node, exceptions
-import os
-import sys
 
 # parse arguments
 processopts = ['dataset', 'split', 'merge', 'opensfm', 'openmvs', 'odm_filterpoints',
@@ -162,9 +163,20 @@ def config(argv=None, parser=None):
         usage_bin = 'run.sh'
 
     if parser is None:
-        parser = SettingsParser(description='ODM is a command line toolkit to generate maps, point clouds, 3D models and DEMs from drone, balloon or kite images.',
-                            usage='%s [options] <dataset name>' % usage_bin,
-                            yaml_file=open(context.settings_path))
+        parser = argparse.ArgumentParser(
+            description='ODM is a command line toolkit to generate maps, point clouds, 3D models and DEMs from drone, balloon or kite images.',
+            usage='%s [options] <dataset name>' % usage_bin)
+
+        # Load defaults from settings.yaml
+        if context.settings_path and os.path.exists(context.settings_path):
+            try:
+                with open(context.settings_path) as f:
+                    yaml_defaults = yaml.safe_load(f) or {}
+                    # Convert hyphenated keys to underscored (argparse convention)
+                    yaml_defaults = {k.replace('-', '_'): v for k, v in yaml_defaults.items()}
+                    parser.set_defaults(**yaml_defaults)
+            except Exception as e:
+                log.ODM_WARNING(f"Could not load settings from {context.settings_path}: {e}")
 
     parser.add_argument('--project-path',
                         metavar='<path>',
