@@ -66,6 +66,17 @@ else()
     set(PYTHON_EXE_PATH "${PYTHON_HOME}/bin/python")
 endif()
 
+# Propagate build type to ExternalProject sub-builds (MSVC defaults to Debug otherwise).
+set(SB_EP_CMAKE_ARGS "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
+
+# Conda compiler-rt can inject clang -Wl flags; MSVC link.exe rejects them.
+if(WIN32 AND DEFINED ENV{CONDA_PREFIX})
+    list(APPEND SB_EP_CMAKE_ARGS
+        "-DCMAKE_EXE_LINKER_FLAGS="
+        "-DCMAKE_SHARED_LINKER_FLAGS="
+        "-DCMAKE_MODULE_LINKER_FLAGS=")
+endif()
+
 set(WIN32_CMAKE_ARGS "")
 set(APPLE_CMAKE_ARGS "")
 
@@ -110,7 +121,7 @@ externalproject_add(mve
     GIT_TAG         356
     UPDATE_COMMAND  ""
     SOURCE_DIR      ${SB_SOURCE_DIR}/mve
-    CMAKE_ARGS      ${CONDA_CMAKE_ARGS} ${WIN32_CMAKE_ARGS} ${APPLE_CMAKE_ARGS}
+    CMAKE_ARGS      ${SB_EP_CMAKE_ARGS} ${CONDA_CMAKE_ARGS} ${WIN32_CMAKE_ARGS} ${APPLE_CMAKE_ARGS}
     BUILD_IN_SOURCE 1
     INSTALL_COMMAND ""
 )
@@ -127,7 +138,35 @@ else()
 endif()
 
 if (WIN32)
-    set (POISSON_BUILD_CMD ${CMAKE_MAKE_PROGRAM} ${SB_SOURCE_DIR}/PoissonRecon/PoissonRecon.vcxproj /p:configuration=${CMAKE_BUILD_TYPE} /p:Platform=x64 /p:PlatformToolset=${CMAKE_VS_PLATFORM_TOOLSET} /p:WindowsTargetPlatformVersion=${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION})
+    find_program(MSBUILD_EXECUTABLE msbuild REQUIRED)
+    if(NOT CMAKE_VS_PLATFORM_TOOLSET)
+        set(CMAKE_VS_PLATFORM_TOOLSET "v143")
+    endif()
+    if(NOT CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION)
+        if(DEFINED ENV{WindowsSDKVersion})
+            string(STRIP "$ENV{WindowsSDKVersion}" _poisson_sdk_ver)
+            string(REGEX REPLACE "\\\\+$" "" _poisson_sdk_ver "${_poisson_sdk_ver}")
+            set(CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION "${_poisson_sdk_ver}")
+        else()
+            file(GLOB _poisson_sdk_dirs "C:/Program Files (x86)/Windows Kits/10/Include/10.0.*")
+            list(SORT _poisson_sdk_dirs)
+            list(REVERSE _poisson_sdk_dirs)
+            if(_poisson_sdk_dirs)
+                get_filename_component(_poisson_sdk_ver "${_poisson_sdk_dirs}" NAME)
+                set(CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION "${_poisson_sdk_ver}")
+            endif()
+        endif()
+    endif()
+    if(NOT CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION)
+        message(FATAL_ERROR "Windows SDK version not found. Run builds from pixi shell after MSVC activation, or set CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION.")
+    endif()
+    set(POISSON_BUILD_CMD
+        "${MSBUILD_EXECUTABLE}"
+        "${SB_SOURCE_DIR}/PoissonRecon/PoissonRecon.vcxproj"
+        "/p:configuration=${CMAKE_BUILD_TYPE}"
+        "/p:Platform=x64"
+        "/p:PlatformToolset=${CMAKE_VS_PLATFORM_TOOLSET}"
+        "/p:WindowsTargetPlatformVersion=${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION}")
     set (POISSON_BIN_PATH "x64/${CMAKE_BUILD_TYPE}/PoissonRecon.exe")
 else()
     # Inherit pixi/conda compiler flags (LDFLAGS for -ljpeg, etc.) from the shell environment.
@@ -156,6 +195,7 @@ externalproject_add(dem2mesh
     PREFIX            ${SB_BINARY_DIR}/dem2mesh
     SOURCE_DIR        ${SB_SOURCE_DIR}/dem2mesh
     CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
+                      ${SB_EP_CMAKE_ARGS}
                       ${CONDA_CMAKE_ARGS}
                       ${WIN32_CMAKE_ARGS}
                       ${APPLE_CMAKE_ARGS}
@@ -168,6 +208,7 @@ externalproject_add(dem2points
     PREFIX            ${SB_BINARY_DIR}/dem2points
     SOURCE_DIR        ${SB_SOURCE_DIR}/dem2points
     CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
+                      ${SB_EP_CMAKE_ARGS}
                       ${CONDA_CMAKE_ARGS}
                       ${WIN32_CMAKE_ARGS}
                       ${APPLE_CMAKE_ARGS}
@@ -180,6 +221,7 @@ externalproject_add(odm_orthophoto
     PREFIX            ${SB_BINARY_DIR}/odm_orthophoto
     SOURCE_DIR        ${SB_SOURCE_DIR}/odm_orthophoto
     CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
+                      ${SB_EP_CMAKE_ARGS}
                       ${CONDA_CMAKE_ARGS}
                       ${WIN32_CMAKE_ARGS}
 )
@@ -191,6 +233,7 @@ externalproject_add(fastrasterfilter
     PREFIX            ${SB_BINARY_DIR}/fastrasterfilter
     SOURCE_DIR        ${SB_SOURCE_DIR}/fastrasterfilter
     CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
+                      ${SB_EP_CMAKE_ARGS}
                       ${CONDA_CMAKE_ARGS}
                       ${WIN32_CMAKE_ARGS}
 )
@@ -201,6 +244,7 @@ externalproject_add(lastools
     PREFIX            ${SB_BINARY_DIR}/lastools
     SOURCE_DIR        ${SB_SOURCE_DIR}/lastools
     CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
+                      ${SB_EP_CMAKE_ARGS}
 )
 
 externalproject_add(draco
@@ -211,6 +255,7 @@ externalproject_add(draco
     SOURCE_DIR        ${SB_SOURCE_DIR}/draco
     CMAKE_ARGS        -DDRACO_TRANSCODER_SUPPORTED=ON
                       -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
+                      ${SB_EP_CMAKE_ARGS}
                       ${CONDA_CMAKE_ARGS}
                       ${WIN32_CMAKE_ARGS}
 )

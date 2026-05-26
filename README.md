@@ -177,6 +177,11 @@ GPU builds use the `gpu` environment: `pixi install -e gpu && pixi run -e gpu bu
 
 ### Native install (Linux, Windows, macOS)
 
+**MSVC and the Windows SDK come from a host install** of Visual Studio 2022 or Build Tools ([conda-forge Windows native notes](https://conda-forge.org/docs/how-to/advanced/windows/notes-on-native-code/)):
+
+- Desktop development with C++
+- Windows 10/11 SDK
+
 Install [pixi](https://pixi.sh), clone the repo, then:
 
 ```bash
@@ -184,7 +189,11 @@ pixi install --locked
 pixi run build
 ```
 
-Run ODM with `./run.sh` (Unix) or `run.bat` (Windows) from a shell where `pixi shell-hook` is active, or use `pixi run odm -- …`.
+Run ODM with:
+
+```bash
+pixi run odm -- ...`
+```
 
 ### Build Docker images from source
 

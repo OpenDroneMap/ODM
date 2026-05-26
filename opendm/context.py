@@ -48,4 +48,4 @@ num_cores = multiprocessing.cpu_count()
 
 # Print python paths if invoked as a script
 if __name__ == "__main__":
-    print("export PYTHONPATH=" + ":".join(python_packages_paths))
+    print("export PYTHONPATH=" + os.pathsep.join(python_packages_paths))

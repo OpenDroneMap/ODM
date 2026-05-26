@@ -51,6 +51,27 @@ else()
   set(OPENMVS_OPENCV_DIR "${SB_INSTALL_DIR}/lib/cmake/opencv4")
 endif()
 
+set(OPENMVS_WIN_CONDA_ARGS "")
+if(WIN32 AND DEFINED ENV{CONDA_PREFIX})
+  # conda-forge ships shared Boost (.lib import libs + .dll). Legacy FindBoost in OpenMVS
+  # otherwise records .dll paths and omits BOOST_*_DYN_LINK.
+  # boost-cpp links iostreams against conda zlib but does not ship boost_zlib.lib; MSVC
+  # auto-link still requests it — see https://github.com/conda-forge/boost-cpp-feedstock/issues/65
+  # and conda-forge/imp-feedstock recipe/bld.bat (BOOST_ZLIB_BINARY=kernel32).
+  set(_conda_lib "$ENV{CONDA_PREFIX}/Library/lib")
+  list(APPEND OPENMVS_WIN_CONDA_ARGS
+    ${SB_EP_CMAKE_ARGS}
+    -DBoost_USE_STATIC_LIBS=OFF
+    -DBoost_USE_RELEASE_LIBS=ON
+    -DCGAL_Boost_USE_STATIC_LIBS=OFF
+    "-DBoost_IOSTREAMS_LIBRARY_RELEASE=${_conda_lib}/boost_iostreams.lib"
+    "-DBoost_PROGRAM_OPTIONS_LIBRARY_RELEASE=${_conda_lib}/boost_program_options.lib"
+    "-DBoost_SERIALIZATION_LIBRARY_RELEASE=${_conda_lib}/boost_serialization.lib"
+    "-DBoost_SYSTEM_LIBRARY_RELEASE=${_conda_lib}/boost_system.lib"
+    "-DCMAKE_CXX_FLAGS=/DBOOST_IOSTREAMS_DYN_LINK /DBOOST_PROGRAM_OPTIONS_DYN_LINK /DBOOST_SYSTEM_DYN_LINK /DBOOST_SERIALIZATION_DYN_LINK /DBOOST_ZLIB_BINARY=kernel32")
+  unset(_conda_lib)
+endif()
+
 ExternalProject_Add(${_proj_name}
   DEPENDS           ceres opencv vcg eigen34
   PREFIX            ${_SB_BINARY_DIR}
@@ -74,6 +95,7 @@ ExternalProject_Add(${_proj_name}
     -DOpenMVS_MAX_CUDA_COMPATIBILITY=ON
     ${GPU_CMAKE_ARGS}
     ${CONDA_CMAKE_ARGS} ${WIN32_CMAKE_ARGS}
+    ${OPENMVS_WIN_CONDA_ARGS}
     ${ARM64_CMAKE_ARGS}
   #--Build step-----------------
   BINARY_DIR        ${_SB_BINARY_DIR}

@@ -1,0 +1,80 @@
+diff --git a/opensfm/src/bundle/CMakeLists.txt b/opensfm/src/bundle/CMakeLists.txt
+index 8cf23eea..a1b2c3d4 100644
+--- a/opensfm/src/bundle/CMakeLists.txt
++++ b/opensfm/src/bundle/CMakeLists.txt
+@@ -54,6 +54,7 @@ target_link_libraries(pybundle PRIVATE
+   bundle
+   geometry
+   foundation)
++target_link_libraries(pybundle PRIVATE ${CERES_LIBRARIES})
+ set_target_properties(pybundle PROPERTIES
+     LIBRARY_OUTPUT_DIRECTORY "${opensfm_SOURCE_DIR}/.."
+ )
+diff --git a/opensfm/src/cmake/win32/FindCeres.cmake b/opensfm/src/cmake/win32/FindCeres.cmake
+index 74e2a797..90bdf482 100644
+--- a/opensfm/src/cmake/win32/FindCeres.cmake
++++ b/opensfm/src/cmake/win32/FindCeres.cmake
+@@ -40,7 +40,25 @@ FIND_LIBRARY(CERES_LIBRARY
+   HINTS
+     ${_ceres_SEARCH_DIRS}
+   PATH_SUFFIXES
+-    lib64 lib
++    lib64 lib Library/lib
++  )
++
++FIND_LIBRARY(GLOG_LIBRARY
++  NAMES
++    glog
++  HINTS
++    ${_ceres_SEARCH_DIRS}
++  PATH_SUFFIXES
++    lib64 lib Library/lib
++  )
++
++FIND_LIBRARY(GFLAGS_LIBRARY
++  NAMES
++    gflags
++  HINTS
++    ${_ceres_SEARCH_DIRS}
++  PATH_SUFFIXES
++    lib64 lib Library/lib
+   )
+ 
+ # handle the QUIETLY and REQUIRED arguments and set CERES_FOUND to TRUE if
+@@ -51,6 +69,12 @@ FIND_PACKAGE_HANDLE_STANDARD_ARGS(ceres DEFAULT_MSG
+ 
+ IF(CERES_FOUND)
+   SET(CERES_LIBRARIES ${CERES_LIBRARY})
++  if(GLOG_LIBRARY)
++    list(APPEND CERES_LIBRARIES ${GLOG_LIBRARY})
++  endif()
++  if(GFLAGS_LIBRARY)
++    list(APPEND CERES_LIBRARIES ${GFLAGS_LIBRARY})
++  endif()
+   SET(CERES_INCLUDE_DIRS ${CERES_INCLUDE_DIR})
+ ENDIF(CERES_FOUND)
+ 
+diff --git a/opensfm/src/geometry/CMakeLists.txt b/opensfm/src/geometry/CMakeLists.txt
+index 702c209f..b2c3d4e5 100644
+--- a/opensfm/src/geometry/CMakeLists.txt
++++ b/opensfm/src/geometry/CMakeLists.txt
+@@ -48,6 +48,7 @@ target_link_libraries(pygeometry
+   PRIVATE
+     geometry
+     foundation
++    ${CERES_LIBRARIES}
+ )
+ set_target_properties(pygeometry PROPERTIES
+     LIBRARY_OUTPUT_DIRECTORY "${opensfm_SOURCE_DIR}/.."
+diff --git a/opensfm/src/sfm/CMakeLists.txt b/opensfm/src/sfm/CMakeLists.txt
+index a3eb2ae8..c3d4e5f6 100644
+--- a/opensfm/src/sfm/CMakeLists.txt
++++ b/opensfm/src/sfm/CMakeLists.txt
+@@ -36,6 +36,7 @@ target_link_libraries(pysfm
+   PRIVATE
+     foundation
+     sfm
++    ${CERES_LIBRARIES}
+ )
+ set_target_properties(pysfm PROPERTIES
+     LIBRARY_OUTPUT_DIRECTORY "${opensfm_SOURCE_DIR}/.."
