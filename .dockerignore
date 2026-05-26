@@ -11,6 +11,7 @@ odm_meshing
 odm_georeferencing
 images_resize
 .git
+venv
 
 /contrib
 /docs
