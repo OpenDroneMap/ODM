@@ -2,6 +2,17 @@ import os
 import sys
 import multiprocessing
 
+if sys.platform == "win32":
+    def _add_windows_dll_dir(path):
+        if path and os.path.isdir(path):
+            os.add_dll_directory(os.path.abspath(path))
+
+    _add_windows_dll_dir(os.path.join(os.path.dirname(__file__), "..", "SuperBuild", "install", "bin"))
+    _conda = os.environ.get("CONDA_PREFIX")
+    if _conda:
+        for _sub in ("Library/bin", "bin", ""):
+            _add_windows_dll_dir(os.path.join(_conda, _sub) if _sub else _conda)
+
 # Define some needed locations
 current_path = os.path.abspath(os.path.dirname(__file__))
 root_path, _ = os.path.split(current_path)

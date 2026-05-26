@@ -192,7 +192,7 @@ pixi run build
 Run ODM with:
 
 ```bash
-pixi run odm -- ...`
+pixi run odm -- --project-path ~/datasets/ myproject
 ```
 
 ### Build Docker images from source
