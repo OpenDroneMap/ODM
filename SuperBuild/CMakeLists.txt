@@ -85,7 +85,6 @@ odm_require_conda_package(OpenCV)
 odm_require_conda_package(GFlags)
 odm_require_conda_package(Ceres)
 odm_require_conda_package(PDAL)
-odm_require_conda_package(LASzip)
 
 #########################################
 # Source-built dependencies             #
