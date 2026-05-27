@@ -189,11 +189,7 @@ SETUP_EXTERNAL_PROJECT(GFlags ${ODM_GFlags_Version} ${ODM_BUILD_GFlags})
 # ---------------------------------------------------------------------------------------------
 # Ceres Solver
 #
-if(ODM_USE_CONDA_PDAL)
-  set(ODM_Ceres_Version 2.2.0)
-else()
-  set(ODM_Ceres_Version 2.0.0)
-endif()
+set(ODM_Ceres_Version 2.2.0)
 option(ODM_BUILD_Ceres "Force to build Ceres library" OFF)
 
 SETUP_EXTERNAL_PROJECT(Ceres ${ODM_Ceres_Version} ${ODM_BUILD_Ceres})

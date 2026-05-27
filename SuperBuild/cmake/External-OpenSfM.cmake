@@ -25,8 +25,13 @@ else()
 endif()
 
 set(OPENSFM_CERES_ROOT_DIR "${SB_INSTALL_DIR}")
+set(OPENSFM_EXTRA_CXX_FLAGS "")
 if(DEFINED ENV{CONDA_PREFIX})
   set(OPENSFM_CERES_ROOT_DIR "$ENV{CONDA_PREFIX}")
+  # glog 0.6+ requires GLOG_USE_GLOG_EXPORT to be defined. This is normally
+  # propagated via the glog::glog cmake target, but OpenSfM links Ceres with
+  # the old-style ${CERES_LIBRARIES} variable and misses the transitive define.
+  set(OPENSFM_EXTRA_CXX_FLAGS "$ENV{CXXFLAGS} -DGLOG_USE_GLOG_EXPORT -DGLOG_USE_GFLAGS")
 endif()
 
 ExternalProject_Add(${_proj_name}
@@ -49,6 +54,7 @@ ExternalProject_Add(${_proj_name}
     -DYET_ADDITIONAL_INCLUDE_DIRS=${EXTRA_INCLUDE_DIRS}
     -DOPENSFM_BUILD_TESTS=off
     -DPYTHON_EXECUTABLE=${PYTHON_EXE_PATH}
+    -DCMAKE_CXX_FLAGS=${OPENSFM_EXTRA_CXX_FLAGS}
     ${CONDA_CMAKE_ARGS} ${WIN32_CMAKE_ARGS}
   BUILD_COMMAND ${BUILD_CMD}
   #--Build step-----------------

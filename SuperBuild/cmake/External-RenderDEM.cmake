@@ -8,8 +8,8 @@ ExternalProject_Add(${_proj_name}
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
-  GIT_REPOSITORY    https://github.com/OpenDroneMap/RenderDEM
-  GIT_TAG           main
+  GIT_REPOSITORY    https://github.com/MJohnson459/RenderDEM
+  GIT_TAG           remove-private-headers
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   #--Configure step-------------
