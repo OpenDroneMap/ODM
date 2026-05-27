@@ -2,8 +2,10 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-# shellcheck disable=SC1091
-. "${ROOT}/scripts/docker-activate.sh"
-# shellcheck disable=SC1091
-. "${ROOT}/scripts/odm-env.sh"
+
+if [ -f "${ROOT}/scripts/pixi-shell-hook" ] \
+   && [ -f "${ROOT}/.pixi/envs/prod/bin/python" ]; then
+    . "${ROOT}/scripts/pixi-shell-hook"
+fi
+
 exec python3 "${ROOT}/run.py" "$@"

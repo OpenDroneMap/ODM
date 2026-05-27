@@ -3,6 +3,11 @@ name = "odm"
 channels = ["conda-forge"]
 platforms = ["linux-64", "linux-aarch64", "win-64", "osx-64", "osx-arm64"]
 
+[activation.env]
+LD_LIBRARY_PATH = "$PIXI_PROJECT_ROOT/SuperBuild/install/lib:$LD_LIBRARY_PATH"
+DYLD_LIBRARY_PATH = "$PIXI_PROJECT_ROOT/SuperBuild/install/lib:$DYLD_LIBRARY_PATH"
+PYTHONPATH = "$PIXI_PROJECT_ROOT/SuperBuild/install/lib/python3.12/dist-packages:$PIXI_PROJECT_ROOT/SuperBuild/install/lib/python3/dist-packages:$PIXI_PROJECT_ROOT/SuperBuild/install/bin/opensfm:$PYTHONPATH"
+
 [dependencies]
 beautifulsoup4 = "==4.13.4"
 ceres-solver = "==2.2.0"
@@ -43,6 +48,9 @@ rasterio = "==1.4.3"
 rawpy = "==0.25.0"
 vmem = "==1.0.2"
 
+[feature.build.activation]
+env = { CMAKE_GENERATOR = "Ninja" }
+
 [feature.build.dependencies]
 c-compiler = "*"
 cmake = "3.31.*"
@@ -72,7 +80,7 @@ prod = { features = ["build"], solve-group = "default" }
 gpu = { features = ["build", "gpu"], solve-group = "default" }
 
 [tasks]
-build = { cmd = "bash scripts/pixi-build.sh", description = "Configure and compile SuperBuild" }
+build = { cmd = "cmake -S SuperBuild -B SuperBuild/build && cmake --build SuperBuild/build", description = "Configure and compile SuperBuild" }
 test = { cmd = "bash test.sh", description = "Run ODM test suite" }
 smoke = { cmd = "bash scripts/smoke.sh", description = "Smoke test CLI and core imports" }
 odm = { cmd = "bash run.sh", description = "Run ODM (pass args after --)" }
