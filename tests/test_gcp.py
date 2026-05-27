@@ -41,12 +41,9 @@ class TestGcp(unittest.TestCase):
         copy = GCPFile(gcp.create_utm_copy("tests/assets/output/gcp_utm_z.txt"))
         self.assertTrue(copy.exists())
         self.assertEqual(copy.raw_srs, "WGS84 UTM 16N")
-        ref = GCPFile("tests/assets/gcp_utm_north_valid.txt").get_entry(0)
-        out = copy.get_entry(0)
-        # EPSG:2251 (ft) -> UTM; allow small PROJ drift across GDAL builds
-        self.assertAlmostEqual(out.x, ref.x, delta=0.15)
-        self.assertAlmostEqual(out.y, ref.y, delta=0.15)
-        self.assertAlmostEqual(out.z, 563.199, delta=0.001)
+        self.assertEqual(round(copy.get_entry(0).x, 3), 609925.818)
+        self.assertEqual(round(copy.get_entry(0).y, 3), 4950688.772)
+        self.assertEqual(round(copy.get_entry(0).z, 3), 563.199)
 
     def test_filtered_copy(self):
         gcp = GCPFile('tests/assets/gcp_latlon_valid.txt')
