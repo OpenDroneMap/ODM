@@ -21,7 +21,7 @@ RUN mkdir -p /odm-runtime/SuperBuild /odm-runtime/scripts \
     && cp -a SuperBuild/install /odm-runtime/SuperBuild/ \
     && cp -a opendm stages /odm-runtime/ \
     && cp run.py run.sh settings.yaml VERSION /odm-runtime/ \
-    && cp scripts/docker-activate.sh scripts/docker-entrypoint.sh scripts/odm-env.sh scripts/smoke.sh /odm-runtime/scripts/
+    && cp scripts/docker-entrypoint.sh scripts/smoke.sh /odm-runtime/scripts/
 
 FROM dev AS prod-env
 

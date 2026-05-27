@@ -12,6 +12,7 @@ ExternalProject_Add(${_proj_name}
   GIT_TAG           dd6a560a1d43cb709f7b220b19a436e25a889e3e
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
+  PATCH_COMMAND     ${CMAKE_COMMAND} -DFILE=CMakeLists.txt -P ${SB_ROOT_DIR}/cmake/strip-march-native.cmake
   #--Configure step-------------
   SOURCE_DIR        ${SB_SOURCE_DIR}/${_proj_name}
   CMAKE_ARGS
