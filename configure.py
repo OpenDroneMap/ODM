@@ -1,0 +1,271 @@
+import sys, platform
+if sys.platform != 'win32':
+    print("This script is for Windows only! Use configure.sh instead.")
+    exit(1)
+if sys.version_info.major != 3 or sys.version_info.minor != 12:
+    print("You need to use Python 3.12.x (due to the requirements.txt). You are using %s instead." % platform.python_version())
+    exit(1)
+
+import argparse
+import subprocess
+import os
+import stat
+import urllib.request
+from urllib.parse import urlparse
+import shutil 
+import zipfile
+import tarfile
+
+from venv import EnvBuilder
+
+parser = argparse.ArgumentParser(description='ODM Windows Configure Script')
+parser.add_argument('action',
+                type=str,
+                choices=["build", "clean", "dist", "vcpkg_export"],
+                help='Action: %(choices)s')
+parser.add_argument('--build-vcpkg',
+                    type=bool,
+                    help='Build VCPKG environment from scratch instead of downloading prebuilt one.')
+parser.add_argument('--vcpkg-archive-url',
+                    type=str,
+                    default='https://github.com/OpenDroneMap/windows-deps/releases/download/2.7.0/vcpkg-export.zip',
+                    required=False,
+                    help='Path to VCPKG export archive')
+parser.add_argument('--signtool-path',
+                    type=str,
+                    default='',
+                    required=False,
+                    help='Path to x64 signtool.exe')
+parser.add_argument('--code-sign-cert-path',
+                    type=str,
+                    default='',
+                    required=False,
+                    help='Path to pfx code signing certificate')
+parser.add_argument('--azure-signing-metadata',
+                    type=str,
+                    default='',
+                    required=False,
+                    help='Path to Azure Artifact Signing metadata file')
+
+args = parser.parse_args()
+
+def run(cmd, cwd=os.getcwd(), env=os.environ.copy()):
+    print(cmd)
+    p = subprocess.Popen(cmd, shell=True, env=env, cwd=cwd)
+    retcode = p.wait()
+    if retcode != 0:
+        raise Exception("Command returned %s" % retcode)
+
+# https://izziswift.com/shutil-rmtree-fails-on-windows-with-access-is-denied/
+def rmtree(top):
+    for root, dirs, files in os.walk(top, topdown=False):
+        for name in files:
+            filename = os.path.join(root, name)
+            os.chmod(filename, stat.S_IWUSR)
+            os.remove(filename)
+        for name in dirs:
+            os.rmdir(os.path.join(root, name))
+    os.rmdir(top)
+
+def vcpkg_requirements():
+    with open("vcpkg-requirements.txt") as f:
+        pckgs = list(filter(lambda l: len(l) > 0, map(str.strip, f.read().split("\n"))))
+    return pckgs
+
+def install_python_package_from_source(url, vcpkg, extractor, get_top_dir):
+    filename = os.path.basename(urlparse(url).path)
+    print("Downloading %s --> %s" % (url, filename))
+    with urllib.request.urlopen(url) as response, open(os.path.join("SuperBuild", "download", filename), 'wb') as out_file:
+        shutil.copyfileobj(response, out_file)
+    
+    print(f"Extracting {filename}", end="")
+    top_dir = None
+    with extractor(os.path.join("SuperBuild", "download", filename)) as z:
+        top_dir = get_top_dir(z)
+        z.extractall(os.path.join("SuperBuild", "src"))
+
+    print(f" --> {top_dir}")
+    src_dir = os.path.join("SuperBuild", "src", top_dir)
+
+    with open(os.path.join(src_dir, "setup.cfg"), "w") as file:
+        file.write("[build_ext]\n")
+        file.write("include-dirs = %s\n" % os.path.abspath(os.path.join(vcpkg, "include")))
+        file.write("libraries = gdal\n")
+        file.write("library-dirs = %s\n" % os.path.abspath(os.path.join(vcpkg, "lib")))
+
+    pip_abs = os.path.abspath(os.path.join("venv", "Scripts", "pip.exe"))
+
+    run(f"\"{pip_abs}\" install .", cwd=src_dir, env={**os.environ, "GDAL_VERSION": "3.11.1"})
+
+def build():
+    # Create python virtual env
+    if not os.path.isdir("venv"):
+        print("Creating virtual env --> venv/")
+        ebuilder = EnvBuilder(with_pip=True)
+        ebuilder.create("venv")
+
+    run("venv\\Scripts\\pip install setuptools")
+
+    # Install numpy for OpenCV build. TODO: read the exact version from requirements.txt?
+    run("venv\\Scripts\\pip install numpy==2.3.2")
+    
+    # Download / build VCPKG environment
+    if not os.path.isdir("vcpkg"):
+        if args.build_vcpkg:
+            print("TODO")
+            # git clone vcpkg repo
+            # bootstrap
+            # install requirements
+
+        else:
+            if not os.path.exists("vcpkg-env.zip"):
+                print("Downloading %s" % args.vcpkg_archive_url)
+                with urllib.request.urlopen(args.vcpkg_archive_url) as response, open( "vcpkg-env.zip", 'wb') as out_file:
+                    shutil.copyfileobj(response, out_file)
+            if not os.path.exists("vcpkg"):
+                print("Extracting vcpkg-env.zip --> vcpkg/")
+                with zipfile.ZipFile("vcpkg-env.zip") as z:
+                    top_dir = z.namelist()[0]
+                    z.extractall(".")
+
+                    if os.path.exists(top_dir):
+                        os.rename(top_dir, "vcpkg")
+                    else:
+                        print("Warning! Something looks wrong in the VCPKG archive... check the vcpkg/ directory.")
+                safe_remove("vcpkg-env.zip")
+
+    if not os.path.exists(os.path.join("SuperBuild", "build")) or not os.path.exists(os.path.join("SuperBuild", "install")):
+        print("Compiling SuperBuild")
+        
+        build_dir = os.path.join("SuperBuild", "build")
+        if not os.path.isdir(build_dir):
+            os.mkdir(build_dir)
+
+        toolchain_file = os.path.join(os.getcwd(), "vcpkg", "scripts", "buildsystems", "vcpkg.cmake")
+        run("cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=\"%s\"" % toolchain_file,  cwd=build_dir)
+        run("cmake --build . --config Release -j2", cwd=build_dir)
+
+    # Build GDAL bindings, fiona and rasterio from source using vcpkg GDAL. TODO: read the exact versions from requirements.txt?
+    vcpkg_installed = os.path.join(os.getcwd(), "vcpkg", "installed", "x64-windows")
+    install_python_package_from_source("https://files.pythonhosted.org/packages/source/g/gdal/gdal-3.11.1.tar.gz", vcpkg_installed, lambda path: tarfile.open(path, "r:gz"), lambda t: t.getnames()[0])
+    install_python_package_from_source("https://github.com/Toblerity/Fiona/archive/refs/tags/1.10.1.zip", vcpkg_installed, lambda path: zipfile.ZipFile(path), lambda z: z.namelist()[0])
+    install_python_package_from_source("https://github.com/rasterio/rasterio/archive/refs/tags/1.4.3.zip", vcpkg_installed, lambda path: zipfile.ZipFile(path), lambda z: z.namelist()[0])
+
+    run("venv\\Scripts\\pip install -r requirements.txt")
+
+def vcpkg_export():
+    if not os.path.exists("vcpkg"):
+        print("vcpkg directory does not exist. Did you build the environment?")
+        exit(1)
+
+    pkgs = vcpkg_requirements()
+    out = "vcpkg-export-%s" % odm_version().replace(".", "")
+    run("vcpkg\\vcpkg export %s --output=%s --zip" % (" ".join(pkgs), out))
+
+def odm_version():
+    with open("VERSION") as f:
+        return f.read().split("\n")[0].strip()
+
+def safe_remove(path):
+    if os.path.isdir(path):
+        rmtree(path)
+    elif os.path.isfile(path):
+        os.remove(path)
+
+def clean():
+    safe_remove("vcpkg-download.zip")
+    safe_remove("vcpkg")
+    safe_remove("venv")
+    safe_remove(os.path.join("SuperBuild", "build"))
+    safe_remove(os.path.join("SuperBuild", "download"))
+    safe_remove(os.path.join("SuperBuild", "src"))
+    safe_remove(os.path.join("SuperBuild", "install"))
+
+def dist():
+    if not os.path.exists("SuperBuild\\install"):
+        print("You need to run configure.py build before you can run dist")
+        exit(1)
+
+    if not os.path.exists("SuperBuild\\download"):
+        os.mkdir("SuperBuild\\download")
+
+    # Download VC++ runtime
+    vcredist_path = os.path.join("SuperBuild", "download", "vc_redist.x64.zip")
+    if not os.path.isfile(vcredist_path):
+        vcredist_url = "https://github.com/OpenDroneMap/windows-deps/releases/download/2.5.0/VC_redist.x64.zip"
+        print("Downloading %s" % vcredist_url)
+        with urllib.request.urlopen(vcredist_url) as response, open(vcredist_path, 'wb') as out_file:
+            shutil.copyfileobj(response, out_file)
+
+        print("Extracting --> vc_redist.x64.exe")
+        with zipfile.ZipFile(vcredist_path) as z:
+            z.extractall(os.path.join("SuperBuild", "download"))
+
+    # Download portable python
+    if not os.path.isdir("python312"):
+        pythonzip_path = os.path.join("SuperBuild", "download", "python312.zip")
+        python_url = "https://github.com/OpenDroneMap/windows-deps/releases/download/2.7.0/python-3.12.9-embed-amd64-less-pth-sqlite.zip"
+        if not os.path.exists(pythonzip_path):
+            print("Downloading %s" % python_url)
+            with urllib.request.urlopen(python_url) as response, open( pythonzip_path, 'wb') as out_file:
+                shutil.copyfileobj(response, out_file)
+        
+        os.mkdir("python312")
+
+        print("Extracting --> python312/")
+        with zipfile.ZipFile(pythonzip_path) as z:
+            z.extractall("python312")
+
+    # Download Artifact Signing Dlib
+    if args.azure_signing_metadata:
+        azure_signing_path = os.path.join("SuperBuild", "download", "microsoft.artifactsigning.client.1.0.115.nupkg")
+        azure_signing_url = "https://www.nuget.org/api/v2/package/Microsoft.ArtifactSigning.Client/1.0.115"
+        if not os.path.exists(azure_signing_path):
+            print("Downloading %s" % azure_signing_url)
+            with urllib.request.urlopen(azure_signing_url) as response, open(azure_signing_path, 'wb') as out_file:
+                shutil.copyfileobj(response, out_file)
+
+        os.mkdir("azuresigning")
+
+        print("Extracting --> azuresigning/")
+        with zipfile.ZipFile(azure_signing_path) as z:
+            z.extractall("azuresigning")
+
+    # Download innosetup
+    if not os.path.isdir("innosetup"):
+        innosetupzip_path = os.path.join("SuperBuild", "download", "innosetup.zip")
+        innosetup_url = "https://github.com/OpenDroneMap/windows-deps/releases/download/2.5.0/innosetup-portable-win32-6.0.5-3.zip"
+        if not os.path.exists(innosetupzip_path):
+            print("Downloading %s" % innosetup_url)
+            with urllib.request.urlopen(innosetup_url) as response, open(innosetupzip_path, 'wb') as out_file:
+                shutil.copyfileobj(response, out_file)
+
+        os.mkdir("innosetup")
+
+        print("Extracting --> innosetup/")
+        with zipfile.ZipFile(innosetupzip_path) as z:
+            z.extractall("innosetup")
+
+    # Run
+    cs_flags = '/DSKIP_SIGN=1'
+    if args.signtool_path:
+        if args.azure_signing_metadata:
+            dlib_path = os.path.join("azuresigning", "bin", "x64", "Azure.CodeSigning.Dlib.dll")
+            cs_flags = '"/Ssigntool=$q%s$q sign /v /debug /fd SHA256 /tr http://timestamp.acs.microsoft.com /td SHA256 /dlib $q%s$q /dmdf $q%s$q $f"' % (os.path.abspath(args.signtool_path), os.path.abspath(dlib_path), args.azure_signing_metadata)
+        elif args.code_sign_cert_path:
+            cs_flags = '"/Ssigntool=$q%s$q sign /f $q%s$q /fd SHA1 /t http://timestamp.sectigo.com $f"' % (os.path.abspath(args.signtool_path), args.code_sign_cert_path)
+    run("innosetup\\iscc /Qp " + cs_flags  + " \"innosetup.iss\"")
+
+    print("Done! Setup created in dist/")
+
+if args.action == 'build':
+    build()
+elif args.action == 'vcpkg_export':
+    vcpkg_export()
+elif args.action == 'dist':
+    dist()
+elif args.action == 'clean':
+    clean()
+else:
+    args.print_help()
+    exit(1)
