@@ -80,11 +80,12 @@ include(Conda-Packages)
 # Conda-provided libraries (pixi.toml)  #
 #########################################
 
-odm_require_conda_package(GDAL 3.11.1)
-odm_require_conda_package(OpenCV 4.12.0)
-odm_require_conda_package(GFlags 2.2.2)
-odm_require_conda_package(Ceres 2.2.0)
-odm_require_conda_package(PDAL 2.8.4)
+odm_require_conda_package(GDAL)
+odm_require_conda_package(OpenCV)
+odm_require_conda_package(GFlags)
+odm_require_conda_package(Ceres)
+odm_require_conda_package(PDAL)
+odm_require_conda_package(LASzip)
 
 #########################################
 # Source-built dependencies             #
@@ -95,8 +96,6 @@ odm_require_conda_package(PDAL 2.8.4)
 #
 
 set(custom_libs OpenSfM
-    LASzip
-    Untwine
     Entwine
     MvsTexturing
     OpenMVS
