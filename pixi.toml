@@ -50,7 +50,6 @@ fortran-compiler = "*"
 swig = "*"
 pkg-config = "*"
 tbb-devel = "2022.3.*"  # headers + TBBConfig.cmake for mvstexturing (runtime tbb is transitive)
-geotiff = "1.7.*"       # libgeotiff-dev for SuperBuild PDAL (WITH_GEOTIFF=ON)
 
 [feature.build.target.unix.dependencies]
 make = "*"

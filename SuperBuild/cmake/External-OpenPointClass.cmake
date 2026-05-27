@@ -15,7 +15,6 @@ ExternalProject_Add(${_proj_name}
   #--Configure step-------------
   SOURCE_DIR        ${SB_SOURCE_DIR}/${_proj_name}
   CMAKE_ARGS
-    -DPDAL_DIR=${ODM_PDAL_DIR}
     -DWITH_GBT=ON
     -DBUILD_PCTRAIN=OFF
     -DEIGEN3_INCLUDE_DIR=${SB_SOURCE_DIR}/eigen34/
