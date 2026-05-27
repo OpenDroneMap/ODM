@@ -27,11 +27,11 @@ __pycache__
 *.snap
 storage/
 
-
-SuperBuild/build/
-SuperBuild/install/
-.pixi/
 scripts/pixi-shell-hook
 dist/
 azuresigning/
 .DS_Store
+
+# pixi environments
+.pixi/*
+!.pixi/config.toml
