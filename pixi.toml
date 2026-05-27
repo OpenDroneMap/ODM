@@ -10,6 +10,7 @@ cgal = "5.6.*"              # OpenMVS
 exifread = "==3.5.1"
 fpdf2 = "==2.8.3"
 gdal = "==3.11.1"
+exiftool = "*"
 laszip = "==3.4.3"
 matplotlib = "==3.10.3"
 numpy = "==2.3.2"
