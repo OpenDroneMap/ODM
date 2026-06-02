@@ -6,7 +6,7 @@ platforms = ["linux-64", "win-64"]
 [activation.env]
 LD_LIBRARY_PATH = "$PIXI_PROJECT_ROOT/SuperBuild/install/lib:$LD_LIBRARY_PATH"
 DYLD_LIBRARY_PATH = "$PIXI_PROJECT_ROOT/SuperBuild/install/lib:$DYLD_LIBRARY_PATH"
-PYTHONPATH = "$PIXI_PROJECT_ROOT/SuperBuild/install/lib/python3.12/dist-packages:$PIXI_PROJECT_ROOT/SuperBuild/install/lib/python3/dist-packages:$PIXI_PROJECT_ROOT/SuperBuild/install/bin/opensfm:$PYTHONPATH"
+PYTHONPATH = "$PIXI_PROJECT_ROOT/SuperBuild/install/bin/opensfm:$PYTHONPATH"
 
 [dependencies]
 beautifulsoup4 = "==4.13.4"
@@ -48,7 +48,7 @@ rasterio = "==1.4.3"
 rawpy = "==0.25.0"
 vmem = "==1.0.2"
 
-[feature.build.activation]
+[feature.build.target.unix.activation]
 env = { CMAKE_GENERATOR = "Ninja" }
 
 [feature.build.dependencies]
@@ -59,6 +59,7 @@ fortran-compiler = "*"
 git = "*"
 ninja = "*"
 pip = "*"
+pybind11 = "*"
 pkg-config = "*"
 swig = "*"
 tbb-devel = "2022.3.*"  # headers + TBBConfig.cmake for mvstexturing (runtime tbb is transitive)
@@ -95,7 +96,7 @@ odm = { cmd = "bash run.sh", description = "Run ODM (pass args after --)" }
 clean = { cmd = "rm -rf SuperBuild/build SuperBuild/src SuperBuild/download SuperBuild/install", description = "Remove SuperBuild build artifacts" }
 
 [target.win-64.tasks]
-build = { cmd = "cmake -S SuperBuild -B SuperBuild/build -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl && cmake --build SuperBuild/build", description = "Configure and compile SuperBuild (MSVC via activation)" }
+build = { cmd = "cmake -S SuperBuild -B SuperBuild/build -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl -DCMAKE_BUILD_TYPE=Release && cmake --build SuperBuild/build --config Release", description = "Configure and compile SuperBuild (MSVC via activation)" }
 smoke = { cmd = "scripts\\smoke.bat", description = "Smoke test CLI and core imports (native Windows)" }
 odm = { cmd = "scripts\\run-odm.bat", description = "Run ODM (pass args after --)" }
 clean = { cmd = "cmd /c \"rd /s /q SuperBuild\\build 2>nul & rd /s /q SuperBuild\\src 2>nul & rd /s /q SuperBuild\\download 2>nul\"", description = "Remove SuperBuild build artifacts" }

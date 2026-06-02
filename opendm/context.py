@@ -20,10 +20,8 @@ root_path, _ = os.path.split(current_path)
 superbuild_path = os.path.join(root_path, 'SuperBuild')
 superbuild_bin_path = os.path.join(superbuild_path, 'install', 'bin')
 
-# add opencv,opensfm to python path
+# add OpenSfM to python path (avoid overriding conda-provided python packages)
 python_packages_paths = [os.path.join(superbuild_path, p) for p in [
-    'install/lib/python3.12/dist-packages',
-    'install/lib/python3/dist-packages',
     'install/bin/opensfm',
 ]]
 for p in python_packages_paths:
