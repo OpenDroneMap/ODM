@@ -5,12 +5,18 @@ ProcessorCount(nproc)
 
 set(EXTRA_INCLUDE_DIRS "")
 set(OPENSFM_ADDITIONAL_INCLUDE_DIRS "")
+set(OPENSFM_EXTRA_LINKER_FLAGS "")
 if(WIN32)
   set(BUILD_CMD ${CMAKE_COMMAND} --build "${SB_BUILD_DIR}/opensfm" --config "${CMAKE_BUILD_TYPE}")
   # Keep OpenSfM on conda headers to avoid mixing with SuperBuild-installed headers.
   set(OPENSFM_ADDITIONAL_INCLUDE_DIRS "$ENV{CONDA_PREFIX}/Library/include")
   # Match conda-forge OpenCV layout on win-64 (same tree CMake reports at configure time).
   list(APPEND EXTRA_INCLUDE_DIRS "$ENV{CONDA_PREFIX}/Library/include")
+  # OpenSfM links Ceres via the old-style ${CERES_LIBRARIES} variable, which on
+  # Windows is just ceres.lib and drops glog/gflags. OpenSfM's own objects call
+  # glog directly, so MSVC fails with unresolved __imp_ (dllimport) glog symbols.
+  # Force-link glog + gflags into every target. Linux gets these transitively.
+  set(OPENSFM_EXTRA_LINKER_FLAGS "$ENV{CONDA_PREFIX}/Library/lib/glog.lib $ENV{CONDA_PREFIX}/Library/lib/gflags.lib")
 else()
   set(OPENSFM_ADDITIONAL_INCLUDE_DIRS "${SB_INSTALL_DIR}/include")
   set(BUILD_CMD ${CMAKE_COMMAND} --build . --parallel ${nproc})
@@ -50,6 +56,9 @@ ExternalProject_Add(${_proj_name}
     -DOPENSFM_BUILD_TESTS=off
     -DPYTHON_EXECUTABLE=${PYTHON_EXE_PATH}
     -DCMAKE_CXX_FLAGS=${OPENSFM_EXTRA_CXX_FLAGS}
+    "-DCMAKE_MODULE_LINKER_FLAGS=${OPENSFM_EXTRA_LINKER_FLAGS}"
+    "-DCMAKE_SHARED_LINKER_FLAGS=${OPENSFM_EXTRA_LINKER_FLAGS}"
+    "-DCMAKE_EXE_LINKER_FLAGS=${OPENSFM_EXTRA_LINKER_FLAGS}"
     ${OPENSFM_CONFIGURE_ARGS}
     ${CONDA_CMAKE_ARGS} ${WIN32_CMAKE_ARGS}
   BUILD_COMMAND ${BUILD_CMD}

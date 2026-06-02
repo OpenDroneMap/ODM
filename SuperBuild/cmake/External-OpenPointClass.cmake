@@ -13,6 +13,7 @@ ExternalProject_Add(${_proj_name}
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   PATCH_COMMAND     ${CMAKE_COMMAND} -DFILE=CMakeLists.txt -P ${SB_ROOT_DIR}/cmake/strip-march-native.cmake
+            COMMAND ${CMAKE_COMMAND} -DFILE=CMakeLists.txt -DBUILD_TYPE=${CMAKE_BUILD_TYPE} -P ${SB_ROOT_DIR}/cmake/set-lightgbm-build-type.cmake
   #--Configure step-------------
   SOURCE_DIR        ${SB_SOURCE_DIR}/${_proj_name}
   CMAKE_ARGS
