@@ -102,6 +102,7 @@ class ODMLoadDatasetStage(types.ODM_Stage):
 
         # check if we rerun cell or not
         images_database_file = os.path.join(tree.root_path, 'images.json')
+        panels_database_file = os.path.join(tree.root_path, 'panels.json')
         if not io.file_exists(images_database_file) or self.rerun():
             if not os.path.exists(images_dir):
                 raise system.ExitException("There are no images in %s! Make sure that your project path and dataset name is correct. The current is set to: %s" % (images_dir, args.project_path))
@@ -288,6 +289,45 @@ class ODMLoadDatasetStage(types.ODM_Stage):
                         log.ODM_INFO("No background masks will be generated (masks already provided)")
 
                 # End bg removal
+
+                # Detect calibration reflectance panels (MicaSense and compatible).
+                # Panel captures are radiometric ground-truth frames (shot on the
+                # ground), not aerial survey images, so we compute their per-band
+                # irradiance once and then exclude them from the reconstruction.
+                if args.radiometric_calibration == "camera+panel":
+                    from opendm import multispectral
+
+                    panel_photos = [p for p in photos if p.is_calibration_picture()]
+                    if len(panel_photos) > 0:
+                        log.ODM_INFO("Found %s calibration panel image(s)" % len(panel_photos))
+
+                        panel_reflectance = multispectral.parse_panel_reflectance(args.panel_reflectance)
+                        irradiance = multispectral.compute_irradiance_from_panels(
+                            panel_photos, images_dir,
+                            panel_reflectance=panel_reflectance,
+                            max_concurrency=args.max_concurrency)
+
+                        try:
+                            with open(panels_database_file, 'w') as f:
+                                f.write(json.dumps({
+                                    'irradiance': irradiance,
+                                    'files': [p.filename for p in panel_photos],
+                                }))
+                            log.ODM_INFO("Wrote panel irradiance database: %s" % panels_database_file)
+                        except Exception as e:
+                            log.ODM_WARNING("Cannot write panel database: %s" % str(e))
+
+                        # Exclude panel captures from the reconstruction
+                        panel_filenames = set(p.filename for p in panel_photos)
+                        photos = [p for p in photos if p.filename not in panel_filenames]
+                        log.ODM_INFO("Excluded %s panel image(s) from reconstruction; %s image(s) remain" % (
+                            len(panel_filenames), len(photos)))
+
+                        if len(photos) == 0:
+                            raise system.ExitException("All images were detected as calibration panels. Nothing left to reconstruct.")
+                    else:
+                        log.ODM_WARNING("--radiometric-calibration camera+panel was set, but no calibration panel "
+                                        "images were detected. Reflectance will fall back to stored/DLS irradiance.")
 
                 # Save image database for faster restart
                 save_images_database(photos, images_database_file)
