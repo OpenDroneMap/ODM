@@ -114,25 +114,29 @@ def vignette_map(photo):
     
     return None, None, None
 
-def dn_to_reflectance(photo, image, use_sun_sensor=True):
+def dn_to_reflectance(photo, image, use_sun_sensor=True, panel_irradiance=None):
     radiance = dn_to_radiance(photo, image)
-    irradiance = compute_irradiance(photo, use_sun_sensor=use_sun_sensor)
+    irradiance = compute_irradiance(photo, use_sun_sensor=use_sun_sensor, panel_irradiance=panel_irradiance)
     reflectance = radiance * math.pi / irradiance
     reflectance[reflectance < 0.0] = 0.0
     reflectance[reflectance > 1.0] = 1.0
     return reflectance
 
-def compute_irradiance(photo, use_sun_sensor=True):
+def compute_irradiance(photo, use_sun_sensor=True, panel_irradiance=None):
     # Thermal (this should never happen, but just in case..)
     if photo.is_thermal():
         return 1.0
+
+    # Calibration panel-derived irradiance takes precedence when available.
+    # (Must be checked before the stored horizontal irradiance below, otherwise
+    # it would never be reached for DLS cameras that always write that tag.)
+    if panel_irradiance is not None:
+        return panel_irradiance
 
     # Some cameras (Micasense, DJI) store the value (nice! just return)
     hirradiance = photo.get_horizontal_irradiance()
     if hirradiance is not None:
         return hirradiance
-
-    # TODO: support for calibration panels
 
     if use_sun_sensor and photo.get_sun_sensor():
         # Estimate it
@@ -165,6 +169,146 @@ def compute_irradiance(photo, use_sun_sensor=True):
         log.ODM_WARNING("No sun sensor values found for %s" % photo.filename)
     
     return 1.0
+
+
+def _panel_irradiance_for_photo(photo, images_path, panel_reflectance, saturation_limit):
+    """
+    Compute the panel-derived irradiance for a single panel capture / band.
+    Returns a float irradiance or None if it cannot be determined.
+    """
+    from opendm import panel as panel_utils
+
+    image_file = os.path.join(images_path, photo.filename)
+    raw = imread(image_file, unchanged=True, anydepth=True)
+    if raw is None:
+        log.ODM_WARNING("Cannot read panel image %s" % photo.filename)
+        return None
+    if len(raw.shape) == 2:
+        raw = raw[:, :, np.newaxis]
+
+    # Determine panel reflectance (albedo). User override wins over camera metadata.
+    albedo = None
+    if isinstance(panel_reflectance, dict):
+        albedo = panel_reflectance.get(photo.band_name)
+        if albedo is None:
+            albedo = panel_reflectance.get(photo.band_name.lower())
+    elif panel_reflectance is not None:
+        albedo = float(panel_reflectance)
+    if albedo is None:
+        albedo = photo.get_panel_albedo()
+
+    # Determine the panel active-area polygon from metadata
+    region = photo.get_panel_region()
+
+    if region is None:
+        log.ODM_WARNING("No panel region found for %s (band %s); skipping this panel" % (photo.filename, photo.band_name))
+        return None
+    if albedo is None:
+        log.ODM_WARNING("No panel reflectance available for %s (band %s). "
+                        "Supply --panel-reflectance to override. Skipping this panel" % (photo.filename, photo.band_name))
+        return None
+
+    # Saturation guard, computed on the raw digital numbers
+    bit_depth_max = photo.get_bit_depth_max()
+    sat_threshold = (0.99 * bit_depth_max) if bit_depth_max else None
+    _, _, npix, sat_frac = panel_utils.region_stats(raw[:, :, 0], region, saturation_threshold=sat_threshold)
+    if npix == 0:
+        log.ODM_WARNING("Panel region for %s contains no pixels; skipping this panel" % photo.filename)
+        return None
+    if sat_frac > saturation_limit:
+        log.ODM_WARNING("Panel region for %s is %.0f%% saturated; skipping this panel" % (photo.filename, sat_frac * 100.0))
+        return None
+
+    radiance = dn_to_radiance(photo, raw)
+    mean_radiance, _, _, _ = panel_utils.region_stats(radiance[:, :, 0], region)
+    if mean_radiance is None or albedo == 0:
+        return None
+
+    # Inverse of the reflectance equation: irradiance = radiance * pi / reflectance
+    return mean_radiance * math.pi / albedo
+
+
+def parse_panel_reflectance(value):
+    """
+    Parse the --panel-reflectance CLI argument into a usable override.
+
+    Accepts None, a single float (applied to all bands), or a JSON object
+    mapping band name -> reflectance. Returns None, float, or dict.
+    """
+    if value is None:
+        return None
+
+    if isinstance(value, (int, float, dict)):
+        return value
+
+    value = str(value).strip()
+    if value == "":
+        return None
+
+    # Try JSON object (per-band reflectance) first
+    if value.startswith("{"):
+        try:
+            import json
+            parsed = json.loads(value)
+            if isinstance(parsed, dict):
+                return {k: float(v) for k, v in parsed.items()}
+        except Exception as e:
+            log.ODM_WARNING("Cannot parse --panel-reflectance JSON (%s): %s" % (value, str(e)))
+            return None
+
+    # Otherwise a single float applied to all bands
+    try:
+        return float(value)
+    except ValueError:
+        log.ODM_WARNING("Cannot parse --panel-reflectance value: %s" % value)
+        return None
+
+
+def compute_irradiance_from_panels(panel_photos, images_path, panel_reflectance=None, max_concurrency=1, saturation_limit=0.1):
+    """
+    Compute flight-level, per-band irradiance from calibration panel captures.
+
+    :param panel_photos: list of ODM_Photo that are calibration panel captures
+    :param images_path: directory containing the raw images
+    :param panel_reflectance: optional override of panel albedo; either a single
+        float applied to all bands, or a dict mapping band name -> albedo
+    :param max_concurrency: reserved for future parallelism
+    :param saturation_limit: reject a panel if more than this fraction of the
+        panel region pixels are saturated
+    :return: dict mapping band name -> irradiance (only for bands successfully derived)
+    """
+    by_band = {}
+    for p in panel_photos:
+        by_band.setdefault(p.band_name, []).append(p)
+
+    irradiance_by_band = {}
+
+    for band_name, photos in by_band.items():
+        # Thermal/LWIR bands have no reflectance panel
+        if photos[0].is_thermal():
+            continue
+
+        values = []
+        for photo in photos:
+            try:
+                irr = _panel_irradiance_for_photo(photo, images_path, panel_reflectance, saturation_limit)
+            except Exception as e:
+                log.ODM_WARNING("Cannot compute panel irradiance for %s: %s" % (photo.filename, str(e)))
+                irr = None
+            if irr is not None and irr > 0:
+                values.append(irr)
+
+        if values:
+            # Robust aggregate across all panel captures for this band
+            irradiance_by_band[band_name] = float(np.median(values))
+            log.ODM_INFO("Panel irradiance for band %s: %s (from %s panel capture(s))" % (
+                band_name, irradiance_by_band[band_name], len(values)))
+        else:
+            log.ODM_WARNING("Could not derive panel irradiance for band %s; "
+                            "it will fall back to stored/DLS irradiance." % band_name)
+
+    return irradiance_by_band
+
 
 def get_photos_by_band(multi_camera, user_band_name):
     band_name = get_primary_band_name(multi_camera, user_band_name)
