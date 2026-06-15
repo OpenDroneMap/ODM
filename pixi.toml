@@ -72,7 +72,11 @@ rsync = "*"
 [feature.build.target.win-64.dependencies]
 vswhere = "*"
 vs2022_win-64 = "*"
-geotiff = "*"  # pdalcpp.dll (SuperBuild PDAL) needs geotiff.dll on PATH
+
+# Runtime dependency, not build-only: pdalcpp.dll (SuperBuild PDAL) needs
+# geotiff.dll on PATH, so it must be present in the prod (runtime) env too.
+[target.win-64.dependencies]
+geotiff = "*"
 
 [feature.gpu.system-requirements]
 cuda = "12.0"
@@ -83,7 +87,7 @@ cuda-toolkit = "12.*"
 
 [environments]
 default = { features = ["build"], solve-group = "default" }
-prod = { features = ["build"], solve-group = "default" }
+prod = { solve-group = "default" }  # runtime only: no compilers/cmake/etc.
 gpu = { features = ["build", "gpu"], solve-group = "default" }
 
 # Host MSVC + Windows SDK (see conda-forge Windows native build docs); VsDevCmd via vswhere in pixi env.

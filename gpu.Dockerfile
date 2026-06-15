@@ -1,6 +1,6 @@
 # GPU image: pixi build with cuda-toolkit, NVIDIA runtime for execution.
 
-FROM ghcr.io/prefix-dev/pixi:0.68.1 AS dev
+FROM ghcr.io/prefix-dev/pixi:latest AS dev
 
 RUN if id "ubuntu" &>/dev/null; then \
         userdel -f -r ubuntu || echo "Failed to delete ubuntu user"; \
@@ -20,7 +20,7 @@ RUN mkdir -p /odm-runtime/SuperBuild /odm-runtime/scripts \
     && cp -a SuperBuild/install /odm-runtime/SuperBuild/ \
     && cp -a opendm stages /odm-runtime/ \
     && cp run.py run.sh settings.yaml VERSION /odm-runtime/ \
-    && cp scripts/docker-activate.sh scripts/docker-entrypoint.sh scripts/odm-env.sh scripts/smoke.sh /odm-runtime/scripts/
+    && cp scripts/docker-entrypoint.sh scripts/smoke.sh /odm-runtime/scripts/
 
 FROM dev AS prod-env
 

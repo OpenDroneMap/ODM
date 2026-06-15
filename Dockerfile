@@ -1,6 +1,6 @@
 # Pixi container layout: https://pixi.prefix.dev/latest/deployment/container/
 
-FROM ghcr.io/prefix-dev/pixi:0.68.1 AS dev
+FROM ghcr.io/prefix-dev/pixi:latest AS dev
 
 # devcontainer common-utils creates user `odm`; drop default `ubuntu` (uid 1000) if present.
 RUN if id "ubuntu" &>/dev/null; then \
