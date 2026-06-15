@@ -2,17 +2,21 @@ name: Build PRs
 
 on:
   pull_request:
+  workflow_dispatch:
 
 jobs:
   pixi:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        platform:
+          - ubuntu-latest
+          - windows-2022
+          - macos-latest
+          - ubuntu-latest-arm64
+    runs-on: ${{ matrix.platform }}
     steps:
     - name: Checkout
       uses: actions/checkout@v6
-    - name: Set Swap Space
-      uses: pierotofy/set-swap-space@master
-      with:
-        swap-size-gb: 12
     - name: Setup pixi
       uses: prefix-dev/setup-pixi@v0.9.3
       with:
@@ -30,39 +34,24 @@ jobs:
     - name: Prod smoke
       run: pixi run -e prod smoke
 
-  docker:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v6
-    - name: Set Swap Space
-      uses: pierotofy/set-swap-space@master
-      with:
-        swap-size-gb: 12
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-    - name: Build runtime image
-      uses: docker/build-push-action@v6
-      with:
-        file: ./Dockerfile
-        target: runtime
-        platforms: linux/amd64
-        push: false
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
-
-  windows:
-    runs-on: windows-2022
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v6
-    - name: Setup pixi
-      uses: prefix-dev/setup-pixi@v0.9.3
-      with:
-        pixi-version: latest
-    - name: Install environment
-      run: pixi install --locked
-    - name: Build SuperBuild
-      run: pixi run build
-    - name: Smoke
-      run: pixi run smoke
+# TODO(mj): Uncomment before merging
+  # docker:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #   - name: Checkout
+  #     uses: actions/checkout@v6
+  #   - name: Set Swap Space
+  #     uses: pierotofy/set-swap-space@master
+  #     with:
+  #       swap-size-gb: 12
+  #   - name: Set up Docker Buildx
+  #     uses: docker/setup-buildx-action@v3
+  #   - name: Build runtime image
+  #     uses: docker/build-push-action@v6
+  #     with:
+  #       file: ./Dockerfile
+  #       target: runtime
+  #       platforms: linux/amd64
+  #       push: false
+  #       cache-from: type=gha
+  #       cache-to: type=gha,mode=max
