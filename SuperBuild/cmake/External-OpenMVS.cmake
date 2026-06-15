@@ -5,6 +5,7 @@ externalproject_add(vcg
     GIT_REPOSITORY  https://github.com/OpenDroneMap/VCG.git
     GIT_TAG         285
     UPDATE_COMMAND  ""
+    PATCH_COMMAND   ${CMAKE_COMMAND} -DFILE=${SB_SOURCE_DIR}/vcg/vcg/complex/algorithms/update/selection.h -P ${SB_ROOT_DIR}/cmake/patch-vcg-template-kw.cmake
     SOURCE_DIR      ${SB_SOURCE_DIR}/vcg
     CONFIGURE_COMMAND ""
     BUILD_IN_SOURCE 1
@@ -72,6 +73,15 @@ if(WIN32 AND DEFINED ENV{CONDA_PREFIX})
   unset(_conda_lib)
 endif()
 
+# On macOS the conda-forge clang 19 toolchain rejects CGAL 5.6.1's safe-bool
+# operators on the half-edge iterators (CGAL #8313). conda-forge has no 5.6.2,
+# so patch the header in the active environment before building OpenMVS.
+if(APPLE)
+  set(OPENMVS_PATCH_COMMAND ${CMAKE_COMMAND} -DFILE=$ENV{CONDA_PREFIX}/include/CGAL/boost/graph/iterator.h -P ${SB_ROOT_DIR}/cmake/patch-cgal-iterator.cmake)
+else()
+  set(OPENMVS_PATCH_COMMAND ${CMAKE_COMMAND} -E true)
+endif()
+
 ExternalProject_Add(${_proj_name}
   DEPENDS           ceres opencv vcg eigen34
   PREFIX            ${_SB_BINARY_DIR}
@@ -83,6 +93,7 @@ ExternalProject_Add(${_proj_name}
   GIT_TAG           355
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
+  PATCH_COMMAND     ${OPENMVS_PATCH_COMMAND}
   #--Configure step-------------
   SOURCE_DIR        ${SB_SOURCE_DIR}/${_proj_name}
   CMAKE_ARGS
