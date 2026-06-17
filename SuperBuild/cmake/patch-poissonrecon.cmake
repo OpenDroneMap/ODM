@@ -35,3 +35,17 @@ string(REPLACE
   "-Wno-invalid-offsetof -Wno-missing-template-arg-list-after-template-kw"
   _c "${_c}")
 file(WRITE "${_f}" "${_c}")
+
+# 4. The bundled libpng (libpng 1.2.x era) treats TARGET_OS_MAC as "Classic Mac
+#    OS" and then includes the long-gone <fp.h>. Modern macOS SDKs define
+#    TARGET_OS_MAC=1 on every Apple platform, so this misfires and breaks the
+#    build. Drop it from the MACOS detection so macOS takes the same standard
+#    <sys/types.h>/<math.h> paths as Linux/Windows. (Same root cause as the zlib
+#    TARGET_OS_MAC fix above; on non-Apple platforms this is a no-op.)
+set(_f "${SRC}/PNG/pngconf.h")
+file(READ "${_f}" _c)
+string(REPLACE
+  "      defined(THINK_C) || defined(__SC__) || defined(TARGET_OS_MAC)"
+  "      defined(THINK_C) || defined(__SC__)"
+  _c "${_c}")
+file(WRITE "${_f}" "${_c}")
