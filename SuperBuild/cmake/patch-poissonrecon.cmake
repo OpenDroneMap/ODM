@@ -34,6 +34,24 @@ string(REPLACE
   "-Wno-invalid-offsetof"
   "-Wno-invalid-offsetof -Wno-missing-template-arg-list-after-template-kw"
   _c "${_c}")
+# Makefile.macos was written for Homebrew gcc/libgomp. Pixi/conda macOS builds
+# use clang + llvm-openmp (libomp), so point at CONDA_PREFIX instead.
+string(REPLACE
+  "CFLAGS += -fopenmp"
+  "CFLAGS += -fopenmp=libomp"
+  _c "${_c}")
+string(REPLACE
+  "LFLAGS += -lgomp -lstdc++ -lpthread -L/opt/homebrew/lib"
+  "LFLAGS += -lomp -lpthread -L$(CONDA_PREFIX)/lib"
+  _c "${_c}")
+string(REPLACE
+  "INCLUDE = . -I/opt/homebrew/include"
+  "INCLUDE = . -I$(CONDA_PREFIX)/include"
+  _c "${_c}")
+string(REPLACE
+  "COMPILER ?= gcc"
+  "COMPILER ?= gcc\nCONDA_PREFIX ?="
+  _c "${_c}")
 file(WRITE "${_f}" "${_c}")
 
 # 4. The bundled libpng (libpng 1.2.x era) treats TARGET_OS_MAC as "Classic Mac

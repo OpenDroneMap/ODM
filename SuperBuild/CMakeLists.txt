@@ -173,7 +173,7 @@ else()
     set (POISSON_BUILD_CMD bash -lc "make -j${nproc} poissonrecon")
     set (POISSON_BIN_PATH "Linux/PoissonRecon")
     if (APPLE)
-        set(POISSON_BUILD_CMD bash -lc "make -j${nproc} -f Makefile.macos poissonrecon COMPILER=${CMAKE_CXX_COMPILER}")
+        set(POISSON_BUILD_CMD bash -lc "make -j${nproc} -f Makefile.macos poissonrecon COMPILER=${CMAKE_CXX_COMPILER} CONDA_PREFIX=$ENV{CONDA_PREFIX}")
     endif()
 endif()
 externalproject_add(poissonrecon

@@ -11,12 +11,15 @@ ExternalProject_Add(${_proj_name}
   GIT_REPOSITORY    https://github.com/uav4geo/OpenPointClass
   GIT_TAG           dd6a560a1d43cb709f7b220b19a436e25a889e3e
   #--Update/Patch step----------
+  # OpenPointClass hardcodes -march=native; rather than patch it out we use the
+  # project's own PORTABLE_BUILD option (CMAKE_ARGS below), which selects its
+  # x86-guarded -march=nehalem branch (the x86-64-v2 baseline ODM targets).
   UPDATE_COMMAND    ""
-  PATCH_COMMAND     ${CMAKE_COMMAND} -DFILE=CMakeLists.txt -P ${SB_ROOT_DIR}/cmake/strip-march-native.cmake
-            COMMAND ${CMAKE_COMMAND} -DFILE=CMakeLists.txt -DBUILD_TYPE=${CMAKE_BUILD_TYPE} -P ${SB_ROOT_DIR}/cmake/set-lightgbm-build-type.cmake
+  PATCH_COMMAND     ${CMAKE_COMMAND} -DFILE=CMakeLists.txt -DBUILD_TYPE=${CMAKE_BUILD_TYPE} -P ${SB_ROOT_DIR}/cmake/set-lightgbm-build-type.cmake
   #--Configure step-------------
   SOURCE_DIR        ${SB_SOURCE_DIR}/${_proj_name}
   CMAKE_ARGS
+    -DPORTABLE_BUILD=ON
     -DWITH_GBT=ON
     -DBUILD_PCTRAIN=OFF
     -DEIGEN3_INCLUDE_DIR=${SB_SOURCE_DIR}/eigen34/

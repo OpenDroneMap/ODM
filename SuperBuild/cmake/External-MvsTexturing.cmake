@@ -1,7 +1,10 @@
 set(_proj_name mvstexturing)
 set(_SB_BINARY_DIR "${SB_BINARY_DIR}/${_proj_name}")
 
-# Strip -march=native, and on macOS bump the bundled Eigen 3.3.2 (which does not
+# Strip the hardcoded -march=native so the build falls back to the conda
+# toolchain's portable baseline. Unlike OpenPointClass, this -march is not
+# x86-guarded (it applies to aarch64 too), so we strip rather than substitute a
+# fixed x86 -march. On macOS also bump the bundled Eigen 3.3.2 (which does not
 # compile with clang 19) to 3.4.0.
 set(MVSTEX_PATCH_COMMAND ${CMAKE_COMMAND} -DFILE=CMakeLists.txt -P ${SB_ROOT_DIR}/cmake/strip-march-native.cmake)
 if(APPLE)
