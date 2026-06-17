@@ -2,7 +2,7 @@
 
 FROM ghcr.io/prefix-dev/pixi:latest AS dev
 
-RUN if id "ubuntu" &>/dev/null; then \
+RUN if id "ubuntu" >/dev/null 2>&1; then \
         userdel -f -r ubuntu || echo "Failed to delete ubuntu user"; \
     fi
 
@@ -28,7 +28,7 @@ COPY pixi.toml pixi.lock ./
 RUN pixi install --locked -e prod \
     && mkdir -p scripts \
     && pixi shell-hook -e prod -s bash > scripts/pixi-shell-hook \
-    && rm -rf .pixi/envs/prod/include .pixi/envs/prod/share/{doc,man,info}
+    && rm -rf .pixi/envs/prod/include .pixi/envs/prod/share/doc .pixi/envs/prod/share/man .pixi/envs/prod/share/info
 
 FROM nvidia/cuda:12.9.1-runtime-ubuntu24.04 AS runtime
 

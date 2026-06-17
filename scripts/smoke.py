@@ -15,6 +15,10 @@ sys.path.insert(0, ROOT)
 
 
 def main():
+    for tool in ("pdal", "untwine"):
+        if shutil.which(tool) is None:
+            sys.exit("smoke failed: required executable not found on PATH: %s" % tool)
+
     # Importing opendm.context wires up the opensfm sys.path and, on Windows,
     # the DLL search dirs + GDAL/PROJ/PDAL env that the imports below need.
     import opendm.context  # noqa: F401
@@ -30,10 +34,6 @@ def main():
     import pdal
 
     print("smoke ok", gdal.__version__, cv2.__version__, pdal.__version__)
-
-    for tool in ("pdal", "untwine"):
-        if shutil.which(tool) is None:
-            sys.exit("smoke failed: required executable not found on PATH: %s" % tool)
 
 
 if __name__ == "__main__":
