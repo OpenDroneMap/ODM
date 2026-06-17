@@ -87,7 +87,7 @@ cuda-toolkit = "12.*"
 [environments]
 default = { features = ["build"], solve-group = "default" }
 prod = { solve-group = "default" }  # runtime only: no compilers/cmake/etc.
-gpu = { features = ["build", "gpu"], solve-group = "default" }
+gpu = { features = ["build", "gpu"] }
 
 [target.win-64.activation]
 scripts = ["scripts/activate-msvc.bat"]
