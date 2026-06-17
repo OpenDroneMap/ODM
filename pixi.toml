@@ -14,13 +14,12 @@ beautifulsoup4 = "==4.13.4"
 ceres-solver = "==2.2.0"
 cgal = "5.6.*"              # OpenMVS
 exifread = "==3.5.1"
+exiftool = "*"
 fpdf2 = "==2.8.3"
 gdal = "==3.11.1"
-exiftool = "*"
-matplotlib = "==3.10.3"
+matplotlib = "==3.10.3"    # undeclared runtime import of codem (pypi)
 numpy = "==2.3.2"
-onnxruntime = "==1.22.2"
-packaging = "==25.0"
+onnxruntime = { version = "==1.22.2", build = "*cpu*" }
 pdal = "==2.8.4"
 piexif = "==1.1.3"
 pillow = "==11.3.0"
@@ -34,7 +33,7 @@ scikit-image = "==0.25.2"
 scikit-learn = "==1.7.1"
 scipy = "==1.16.1"
 shapely = "==2.1.1"
-trimesh = "==4.7.1"
+trimesh = "==4.7.1"        # undeclared runtime import of codem (pypi)
 untwine = "*"
 xmltodict = "==0.14.2"
 
@@ -61,19 +60,15 @@ env = { CMAKE_GENERATOR = "Ninja" }
 c-compiler = "*"
 cmake = "3.31.*"
 cxx-compiler = "*"
-fortran-compiler = "*"
 git = "*"
 ninja = "*"
-pip = "*"
 pybind11 = "*"
 pkg-config = "*"
-swig = "*"
 tbb-devel = "2022.3.*"  # headers + TBBConfig.cmake for mvstexturing (runtime tbb is transitive)
 
 [feature.build.target.unix.dependencies]
 make = "*"
 patch = "*"
-rsync = "*"
 
 [feature.build.target.win-64.dependencies]
 vswhere = "*"
@@ -94,8 +89,6 @@ default = { features = ["build"], solve-group = "default" }
 prod = { solve-group = "default" }  # runtime only: no compilers/cmake/etc.
 gpu = { features = ["build", "gpu"], solve-group = "default" }
 
-# Host MSVC + Windows SDK (see conda-forge Windows native build docs); VsDevCmd via vswhere in pixi env.
-# PYTHONUTF8 keeps the CLI's console I/O UTF-8 clean on Windows.
 [target.win-64.activation]
 scripts = ["scripts/activate-msvc.bat"]
 env = { PYTHONUTF8 = "1" }
