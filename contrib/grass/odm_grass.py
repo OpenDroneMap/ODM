@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # To run, set the following env variables:
 # PYTHONHOME location of Python
@@ -9,8 +9,6 @@
 import os
 import sys
 import grass.script as gscript
-import grass.script.core
-import grass.script.setup
 
 rsurfName = 'odm_rsurf'
 contourName = 'odm_contour'
@@ -74,7 +72,7 @@ def contour(projectHome):
     """
     Creates a contour map based on the ODM project DEM model.
     """
-    print 'Creating contour map'
+    print('Creating contour map')
 
     step = 0.25
     
@@ -97,7 +95,7 @@ def relief(projectHome):
     Creates a textured relief map in GeoTIFF format.
     NB: this is an RGBA raster and so is readable by image software.
     """
-    print 'Creating relief map'
+    print('Creating relief map')
 
     gscript.run_command('r.in.gdal', flags='o',
                         input=projectHome+'/odm_orthophoto/odm_orthophoto.tif',
