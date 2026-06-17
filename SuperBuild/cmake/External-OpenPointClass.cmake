@@ -25,7 +25,7 @@ ExternalProject_Add(${_proj_name}
     -DEIGEN3_INCLUDE_DIR=${SB_SOURCE_DIR}/eigen34/
     -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
     ${SB_EP_CMAKE_ARGS}
-    ${CONDA_CMAKE_ARGS} ${WIN32_CMAKE_ARGS}
+    ${CONDA_CMAKE_ARGS}
   #--Build step-----------------
   BINARY_DIR        ${_SB_BINARY_DIR}
   #--Install step---------------

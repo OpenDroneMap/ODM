@@ -77,9 +77,6 @@ if(WIN32 AND DEFINED ENV{CONDA_PREFIX})
         "-DCMAKE_MODULE_LINKER_FLAGS=")
 endif()
 
-set(WIN32_CMAKE_ARGS "")
-set(APPLE_CMAKE_ARGS "")
-
 # Path to additional CMake modules
 set(CMAKE_MODULE_PATH ${SB_ROOT_DIR}/cmake)
 
@@ -121,7 +118,7 @@ externalproject_add(mve
     GIT_TAG         356
     UPDATE_COMMAND  ""
     SOURCE_DIR      ${SB_SOURCE_DIR}/mve
-    CMAKE_ARGS      ${SB_EP_CMAKE_ARGS} ${CONDA_CMAKE_ARGS} ${WIN32_CMAKE_ARGS} ${APPLE_CMAKE_ARGS}
+    CMAKE_ARGS      ${SB_EP_CMAKE_ARGS} ${CONDA_CMAKE_ARGS}
     BUILD_IN_SOURCE 1
     INSTALL_COMMAND ""
 )
@@ -202,8 +199,6 @@ externalproject_add(dem2mesh
     CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
                       ${SB_EP_CMAKE_ARGS}
                       ${CONDA_CMAKE_ARGS}
-                      ${WIN32_CMAKE_ARGS}
-                      ${APPLE_CMAKE_ARGS}
 )
 
 externalproject_add(dem2points
@@ -215,8 +210,6 @@ externalproject_add(dem2points
     CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
                       ${SB_EP_CMAKE_ARGS}
                       ${CONDA_CMAKE_ARGS}
-                      ${WIN32_CMAKE_ARGS}
-                      ${APPLE_CMAKE_ARGS}
 )
 
 externalproject_add(odm_orthophoto
@@ -228,7 +221,6 @@ externalproject_add(odm_orthophoto
     CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
                       ${SB_EP_CMAKE_ARGS}
                       ${CONDA_CMAKE_ARGS}
-                      ${WIN32_CMAKE_ARGS}
 )
 
 externalproject_add(fastrasterfilter
@@ -240,7 +232,6 @@ externalproject_add(fastrasterfilter
     CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
                       ${SB_EP_CMAKE_ARGS}
                       ${CONDA_CMAKE_ARGS}
-                      ${WIN32_CMAKE_ARGS}
 )
 
 externalproject_add(lastools
@@ -263,5 +254,4 @@ externalproject_add(draco
                       -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
                       ${SB_EP_CMAKE_ARGS}
                       ${CONDA_CMAKE_ARGS}
-                      ${WIN32_CMAKE_ARGS}
 )

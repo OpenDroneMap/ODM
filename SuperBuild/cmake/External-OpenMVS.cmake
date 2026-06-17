@@ -105,7 +105,7 @@ ExternalProject_Add(${_proj_name}
     -DOpenMVS_ENABLE_TESTS=OFF
     -DOpenMVS_MAX_CUDA_COMPATIBILITY=ON
     ${GPU_CMAKE_ARGS}
-    ${CONDA_CMAKE_ARGS} ${WIN32_CMAKE_ARGS}
+    ${CONDA_CMAKE_ARGS}
     ${OPENMVS_WIN_CONDA_ARGS}
     ${ARM64_CMAKE_ARGS}
   #--Build step-----------------

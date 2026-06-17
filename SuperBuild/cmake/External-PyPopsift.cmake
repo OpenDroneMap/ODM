@@ -20,7 +20,7 @@ if(CUDA_FOUND)
         CMAKE_ARGS
             -DOUTPUT_DIR=${SB_INSTALL_DIR}/bin/opensfm/opensfm
             -DCMAKE_INSTALL_PREFIX=${SB_INSTALL_DIR}
-            ${CONDA_CMAKE_ARGS} ${WIN32_CMAKE_ARGS}
+            ${CONDA_CMAKE_ARGS}
             ${ARM64_CMAKE_ARGS}
         #--Build step-----------------
         BINARY_DIR        ${_SB_BINARY_DIR}

@@ -19,8 +19,7 @@ ExternalProject_Add(${_proj_name}
     -DRESEARCH=OFF
     -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
     -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
-    ${CONDA_CMAKE_ARGS} ${WIN32_CMAKE_ARGS}
-    ${APPLE_CMAKE_ARGS}
+    ${CONDA_CMAKE_ARGS}
   #--Build step-----------------
   BINARY_DIR        ${_SB_BINARY_DIR}
   #--Install step---------------
