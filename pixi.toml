@@ -3,10 +3,11 @@ name = "odm"
 channels = ["conda-forge"]
 platforms = ["linux-64", "win-64", "osx-arm64", "linux-aarch64"]
 
-[activation.env]
+[target.linux.activation.env]
 LD_LIBRARY_PATH = "$PIXI_PROJECT_ROOT/SuperBuild/install/lib:$LD_LIBRARY_PATH"
+
+[target.osx.activation.env]
 DYLD_LIBRARY_PATH = "$PIXI_PROJECT_ROOT/SuperBuild/install/lib:$DYLD_LIBRARY_PATH"
-PYTHONPATH = "$PIXI_PROJECT_ROOT/SuperBuild/install/bin/opensfm:$PYTHONPATH"
 
 [dependencies]
 beautifulsoup4 = "==4.13.4"
@@ -94,18 +95,18 @@ prod = { solve-group = "default" }  # runtime only: no compilers/cmake/etc.
 gpu = { features = ["build", "gpu"], solve-group = "default" }
 
 # Host MSVC + Windows SDK (see conda-forge Windows native build docs); VsDevCmd via vswhere in pixi env.
+# PYTHONUTF8 keeps the CLI's console I/O UTF-8 clean on Windows.
 [target.win-64.activation]
 scripts = ["scripts/activate-msvc.bat"]
+env = { PYTHONUTF8 = "1" }
 
 [tasks]
 build = { cmd = "cmake -S SuperBuild -B SuperBuild/build && cmake --build SuperBuild/build", description = "Configure and compile SuperBuild" }
-test = { cmd = "bash test.sh", description = "Run ODM test suite" }
-smoke = { cmd = "bash scripts/smoke.sh", description = "Smoke test CLI and core imports" }
-odm = { cmd = "bash run.sh", description = "Run ODM (pass args after --)" }
+test = { cmd = "python scripts/test.py", description = "Run ODM test suite (pass a test name after --)" }
+smoke = { cmd = "python scripts/smoke.py", description = "Smoke test CLI and core imports" }
+odm = { cmd = "python run.py", description = "Run ODM (pass args after --)" }
 clean = { cmd = "rm -rf SuperBuild/build SuperBuild/src SuperBuild/download SuperBuild/install", description = "Remove SuperBuild build artifacts" }
 
 [target.win-64.tasks]
 build = { cmd = "cmake -S SuperBuild -B SuperBuild/build -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl -DCMAKE_BUILD_TYPE=Release && cmake --build SuperBuild/build", description = "Configure and compile SuperBuild (MSVC via activation)" }
-smoke = { cmd = "scripts\\smoke.bat", description = "Smoke test CLI and core imports (native Windows)" }
-odm = { cmd = "scripts\\run-odm.bat", description = "Run ODM (pass args after --)" }
 clean = { cmd = "cmd /c \"rd /s /q SuperBuild\\build 2>nul & rd /s /q SuperBuild\\src 2>nul & rd /s /q SuperBuild\\download 2>nul\"", description = "Remove SuperBuild build artifacts" }

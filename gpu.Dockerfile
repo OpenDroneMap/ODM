@@ -20,7 +20,7 @@ RUN mkdir -p /odm-runtime/SuperBuild /odm-runtime/scripts \
     && cp -a SuperBuild/install /odm-runtime/SuperBuild/ \
     && cp -a opendm stages /odm-runtime/ \
     && cp run.py run.sh settings.yaml VERSION /odm-runtime/ \
-    && cp scripts/docker-entrypoint.sh scripts/smoke.sh /odm-runtime/scripts/
+    && cp scripts/docker-entrypoint.sh scripts/smoke.py /odm-runtime/scripts/
 
 FROM dev AS prod-env
 
@@ -39,7 +39,7 @@ COPY --from=prod-env /code/.pixi/envs/prod .pixi/envs/prod
 COPY --from=prod-env /code/scripts/pixi-shell-hook scripts/pixi-shell-hook
 COPY --from=builder /odm-runtime/ ./
 
-RUN chmod +x scripts/docker-entrypoint.sh run.sh scripts/smoke.sh \
-    && bash scripts/smoke.sh
+RUN chmod +x scripts/docker-entrypoint.sh run.sh \
+    && bash scripts/docker-entrypoint.sh python3 scripts/smoke.py
 
 ENTRYPOINT ["/code/scripts/docker-entrypoint.sh"]
