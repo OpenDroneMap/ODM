@@ -4,7 +4,7 @@ index 948b604..a6e2da3 100644
 +++ b/CMakeLists.txt
 @@ -26,7 +26,7 @@ if(OPENMP_FOUND)
  endif()
-
+ 
  if(CMAKE_COMPILER_IS_GNUCXX)
 -    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -Wall -Wextra -Wundef -pedantic")
 +    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wundef -pedantic")
@@ -16,7 +16,7 @@ index 8128284..c4c1d31 100644
 --- a/elibs/CMakeLists.txt
 +++ b/elibs/CMakeLists.txt
 @@ -22,8 +22,8 @@ externalproject_add(ext_rayint
-
+ 
  externalproject_add(ext_eigen
      PREFIX          ext_eigen
 -    URL             https://gitlab.com/libeigen/eigen/-/archive/3.3.2/eigen-3.3.2.tar.gz

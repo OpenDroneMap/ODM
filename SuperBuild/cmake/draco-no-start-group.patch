@@ -4,7 +4,7 @@ index c8c79f5..841235c 100644
 +++ b/cmake/draco_targets.cmake
 @@ -162,7 +162,7 @@ macro(draco_add_executable)
    endif()
-
+ 
    if(exe_LIB_DEPS)
 -    if(CMAKE_CXX_COMPILER_ID MATCHES "^Clang|^GNU")
 +    if((CMAKE_CXX_COMPILER_ID MATCHES "^Clang|^GNU") AND NOT APPLE)
