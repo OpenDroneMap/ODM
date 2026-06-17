@@ -34,24 +34,19 @@ jobs:
     - name: Prod smoke
       run: pixi run -e prod smoke
 
-# TODO(mj): Uncomment before merging
-  # docker:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #   - name: Checkout
-  #     uses: actions/checkout@v6
-  #   - name: Set Swap Space
-  #     uses: pierotofy/set-swap-space@master
-  #     with:
-  #       swap-size-gb: 12
-  #   - name: Set up Docker Buildx
-  #     uses: docker/setup-buildx-action@v3
-  #   - name: Build runtime image
-  #     uses: docker/build-push-action@v6
-  #     with:
-  #       file: ./Dockerfile
-  #       target: runtime
-  #       platforms: linux/amd64
-  #       push: false
-  #       cache-from: type=gha
-  #       cache-to: type=gha,mode=max
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v6
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    - name: Build runtime image
+      uses: docker/build-push-action@v6
+      with:
+        file: ./Dockerfile
+        target: runtime
+        platforms: linux/amd64
+        push: false
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
