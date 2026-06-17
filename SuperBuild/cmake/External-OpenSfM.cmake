@@ -45,7 +45,7 @@ ExternalProject_Add(${_proj_name}
   GIT_TAG           c5328439465e6ace011f39077d1077d7b1cdd65d
   #--Update/Patch step----------
   UPDATE_COMMAND    git submodule update --init --recursive
-  PATCH_COMMAND     ${CMAKE_COMMAND} -DFILE=${SB_INSTALL_DIR}/bin/opensfm/opensfm/src/geometry/triangulation.h -P ${SB_ROOT_DIR}/cmake/patch-opensfm-aarch64-abs.cmake
+  PATCH_COMMAND     git apply --whitespace=nowarn ${SB_ROOT_DIR}/cmake/opensfm-aarch64-abs.patch
   #--Configure step-------------
   SOURCE_DIR        ${SB_INSTALL_DIR}/bin/${_proj_name}
   CONFIGURE_COMMAND ${CMAKE_COMMAND} <SOURCE_DIR>/${_proj_name}/src

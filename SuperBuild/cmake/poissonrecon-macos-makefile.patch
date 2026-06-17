@@ -1,0 +1,25 @@
+diff --git a/Makefile.macos b/Makefile.macos
+index e99ca4a..75ca3f1 100644
+--- a/Makefile.macos
++++ b/Makefile.macos
+@@ -16,8 +16,9 @@ AV_SOURCE=AdaptiveTreeVisualization.cpp
+ CP_SOURCE=ChunkPLY.cpp
+
+ COMPILER ?= gcc
+-CFLAGS += -fopenmp -Wno-deprecated -std=c++14 -pthread -Wno-invalid-offsetof
+-LFLAGS += -lgomp -lstdc++ -lpthread -L/opt/homebrew/lib
++CONDA_PREFIX ?=
++CFLAGS += -fopenmp=libomp -Wno-deprecated -std=c++14 -pthread -Wno-invalid-offsetof -Wno-missing-template-arg-list-after-template-kw
++LFLAGS += -lomp -lpthread -L$(CONDA_PREFIX)/lib
+
+ CFLAGS_DEBUG = -DDEBUG -g3
+ LFLAGS_DEBUG =
+@@ -30,7 +31,7 @@ LFLAGS_RELEASE = -O3 -g0
+ SRC = Src/
+ BIN = Bin/Linux/
+ #INCLUDE = /usr/include/
+-INCLUDE = . -I/opt/homebrew/include
++INCLUDE = . -I$(CONDA_PREFIX)/include
+
+ CC=gcc
+ CXX=$(COMPILER)

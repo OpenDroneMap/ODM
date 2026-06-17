@@ -5,7 +5,7 @@ externalproject_add(vcg
     GIT_REPOSITORY  https://github.com/OpenDroneMap/VCG.git
     GIT_TAG         285
     UPDATE_COMMAND  ""
-    PATCH_COMMAND   ${CMAKE_COMMAND} -DFILE=${SB_SOURCE_DIR}/vcg/vcg/complex/algorithms/update/selection.h -P ${SB_ROOT_DIR}/cmake/patch-vcg-template-kw.cmake
+    PATCH_COMMAND   git apply --whitespace=nowarn ${SB_ROOT_DIR}/cmake/vcg-template-kw.patch
     SOURCE_DIR      ${SB_SOURCE_DIR}/vcg
     CONFIGURE_COMMAND ""
     BUILD_IN_SOURCE 1
@@ -39,8 +39,8 @@ endif()
 
 if(WIN32)
   # On Windows systems without NVIDIA GPUs, OpenMVS will not launch
-  # unless a CUDA DLL is available; we download a dummy DLL 
-  # generated with https://github.com/ykhwong/dummy-dll-generator that is 
+  # unless a CUDA DLL is available; we download a dummy DLL
+  # generated with https://github.com/ykhwong/dummy-dll-generator that is
   # loaded UNLESS the real CUDA DLL is available, since it will
   # be loaded before our dummy DLL.
   file(DOWNLOAD "https://github.com/OpenDroneMap/windows-deps/releases/download/2.5.0/nvcuda_dummy.dll" "${SB_INSTALL_DIR}/bin/nvcuda.dll")
