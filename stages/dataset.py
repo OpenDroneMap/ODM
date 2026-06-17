@@ -85,12 +85,10 @@ class ODMLoadDatasetStage(types.ODM_Stage):
             mask = masks.get(k)
             if mask:
                 # Spaces are not supported due to OpenSfM's mask_list.txt format reqs
-                if not " " in mask:
-                    return mask
-                else:
+                if " " in mask:
                     log.ODM_WARNING("Image mask {} has a space. Spaces are currently not supported for image masks.".format(mask))
-        
-
+                else:
+                    return mask
 
         # get images directory
         images_dir = tree.dataset_raw
@@ -257,7 +255,7 @@ class ODMLoadDatasetStage(types.ODM_Stage):
                     # Generate list of sky images
                     bg_images = []
                     for p in photos:
-                        if p.mask is None and (not " " in p.filename):
+                        if p.mask is None and (" " not in p.filename):
                             bg_images.append({'file': os.path.join(images_dir, p.filename), 'p': p})
 
                     if len(bg_images) > 0:
