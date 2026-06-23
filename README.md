@@ -102,7 +102,7 @@ docker run -ti --rm -v c:/Users/youruser/datasets:/datasets --gpus all opendrone
 
 When you run ODM, if the GPU is recognized, in the first few lines of output you should see:
 
-```bash
+```
 [INFO]    Writing exif overrides
 [INFO]    Maximum photo dimensions: 4000px
 [INFO]    Found GPU device: Intel(R) OpenCL HD Graphics
@@ -119,7 +119,7 @@ docker run --rm --gpus all nvidia/cuda:10.0-base nvidia-smi
 
 If you see an output that looks like this:
 
-```bash
+```
 Fri Jul 24 18:51:55 2020
 +-----------------------------------------------------------------------------+
 | NVIDIA-SMI 440.82       Driver Version: 440.82       CUDA Version: 10.2     |
@@ -142,17 +142,16 @@ Help improve our software! We welcome contributions from everyone, whether to ad
 
 ### Installation and first run
 
-For most users, the easiest way to modify the software is to use the [devcontainer](https://containers.dev/). Most IDE's natively support this format and will prompt to open the devcontainer whenever you open the repository.
+#### Dependencies
 
-> **Note:** If your IDE doesn't support devcontainers, they can also be [run using a CLI](https://github.com/devcontainers/cli).
->
-> ```bash
-> devcontainer up
-> # And to connect
-> devcontainer exec /bin/bash
-> ```
+Install [pixi](https://pixi.sh), (or use the [devcontainer](https://containers.dev/)):
 
-Install [pixi](https://pixi.sh), then build and test ODM:
+**MSVC and the Windows SDK come from a host install** of Visual Studio 2022 or Build Tools ([conda-forge Windows native notes](https://conda-forge.org/docs/how-to/advanced/windows/notes-on-native-code/)):
+
+- Desktop development with C++
+- Windows 10/11 SDK
+
+#### Build and test
 
 ```bash
 pixi install --locked
@@ -161,7 +160,7 @@ pixi run test
 pixi run smoke
 ```
 
-The devcontainer runs `pixi install --locked` on create. Rebuild after C++ changes with `pixi run build`.
+#### Process a dataset
 
 Process a dataset (from the repo root, with a pixi shell or `pixi run`):
 
@@ -174,26 +173,6 @@ pixi run odm -- --project-path ~/datasets mydataset
 GPU builds use the `gpu` environment: `pixi install -e gpu && pixi run -e gpu build`.
 
 ## Advanced
-
-### Native install (Linux, Windows, macOS)
-
-**MSVC and the Windows SDK come from a host install** of Visual Studio 2022 or Build Tools ([conda-forge Windows native notes](https://conda-forge.org/docs/how-to/advanced/windows/notes-on-native-code/)):
-
-- Desktop development with C++
-- Windows 10/11 SDK
-
-Install [pixi](https://pixi.sh), clone the repo, then:
-
-```bash
-pixi install --locked
-pixi run build
-```
-
-Run ODM with:
-
-```bash
-pixi run odm -- --project-path ~/datasets/ myproject
-```
 
 ### Build Docker images from source
 
