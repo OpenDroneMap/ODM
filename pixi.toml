@@ -61,6 +61,7 @@ c-compiler = "*"
 cmake = "3.31.*"
 cxx-compiler = "*"
 git = "*"
+make = "*"  # PoissonRecon builds from a hand-written Makefile
 ninja = "*"
 pybind11 = "*"
 pkg-config = "*"
