@@ -1,4 +1,7 @@
 @echo off
+rem Activation script for ODM on Windows
+rem Based on venv activate script
+rem https://github.com/python/cpython/blob/main/Lib/venv/scripts/nt/activate.bat
 
 rem This file is UTF-8 encoded, so we need to update the current code page while executing it
 for /f "tokens=2 delims=:." %%a in ('"%SystemRoot%\System32\chcp.com"') do (

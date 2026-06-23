@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """Run the ODM unit test suite.
 
-Cross-platform replacement for the old test.sh/test.bat pair. Invoked via
-`pixi run test` (optionally `pixi run test -- <name>` to run a single
-test_<name>.py module).
+Invoked via `pixi run test` (optionally `pixi run test -- <name>` to run a
+single test_<name>.py module).
 """
 import os
 import sys
