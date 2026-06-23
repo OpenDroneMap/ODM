@@ -25,17 +25,19 @@ RUN mkdir -p /odm-runtime/SuperBuild /odm-runtime/scripts \
 FROM dev AS prod-env
 
 COPY pixi.toml pixi.lock ./
-RUN pixi install --locked -e prod \
+RUN pixi install --locked -e gpu-prod \
     && mkdir -p scripts \
-    && pixi shell-hook -e prod -s bash > scripts/pixi-shell-hook \
-    && rm -rf .pixi/envs/prod/include .pixi/envs/prod/share/doc .pixi/envs/prod/share/man .pixi/envs/prod/share/info
+    && pixi shell-hook -e gpu-prod -s bash > scripts/pixi-shell-hook \
+    && rm -rf .pixi/envs/gpu-prod/include .pixi/envs/gpu-prod/share/doc .pixi/envs/gpu-prod/share/man .pixi/envs/gpu-prod/share/info
 
 FROM nvidia/cuda:12.9.1-runtime-ubuntu24.04 AS runtime
 
 ENV DEBIAN_FRONTEND=noninteractive
+ENV PIXI_ENV=gpu-prod
+
 WORKDIR /code
 
-COPY --from=prod-env /code/.pixi/envs/prod .pixi/envs/prod
+COPY --from=prod-env /code/.pixi/envs/gpu-prod .pixi/envs/gpu-prod
 COPY --from=prod-env /code/scripts/pixi-shell-hook scripts/pixi-shell-hook
 COPY --from=builder /odm-runtime/ ./
 
