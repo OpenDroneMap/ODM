@@ -48,13 +48,13 @@ Source: "opendm\*"; DestDir: "{app}\opendm"; Excludes: "__pycache__"; Flags: ign
 Source: "stages\*"; DestDir: "{app}\stages"; Excludes: "__pycache__"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "SuperBuild\install\*"; DestDir: "{app}\SuperBuild\install"; Excludes: "__pycache__"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: ".pixi\envs\prod\*"; DestDir: "{app}\.pixi\envs\prod"; Excludes: "__pycache__"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "console.bat"; DestDir: "{app}"; Flags: ignoreversion
+Source: "scripts\console.bat"; DestDir: "{app}"; Flags: ignoreversion
 Source: "VERSION"; DestDir: "{app}"; Flags: ignoreversion
 Source: "LICENSE"; DestDir: "{app}"; Flags: ignoreversion
-Source: "winrun.bat"; DestDir: "{app}"; DestName: "run.bat"; Flags: ignoreversion
+Source: "scripts\winrun.bat"; DestDir: "{app}"; DestName: "run.bat"; Flags: ignoreversion
 Source: "run.py"; DestDir: "{app}"; Flags: ignoreversion
 Source: "settings.yaml"; DestDir: "{app}"; Flags: ignoreversion
-Source: "win32env.bat"; DestDir: "{app}"; Flags: ignoreversion
+Source: "scripts\win32env.bat"; DestDir: "{app}"; Flags: ignoreversion
 Source: "SuperBuild\download\vc_redist.x64.exe"; DestDir: {tmp}; Flags: dontcopy
 
 [Dirs]
