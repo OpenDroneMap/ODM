@@ -167,7 +167,7 @@ Process a dataset (from the repo root, with a pixi shell or `pixi run`):
 ```bash
 pixi run odm -- --project-path ~/datasets mydataset
 # or, after: eval "$(pixi shell-hook)"
-./run.sh --project-path ~/datasets mydataset
+./run.py --project-path ~/datasets mydataset
 ```
 
 GPU builds use the `gpu` environment: `pixi install -e gpu && pixi run -e gpu build`.

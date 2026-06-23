@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
 """Smoke-test an ODM install: the CLI runs and core libraries import.
-
-Cross-platform replacement for the old smoke.sh/smoke.bat pair. Invoked via
-`pixi run smoke`; in the Docker runtime image it is launched against the
-activated prod env via `docker-entrypoint.sh python3 scripts/smoke.py`.
 """
 import os
 import shutil

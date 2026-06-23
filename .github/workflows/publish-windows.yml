@@ -24,10 +24,10 @@ jobs:
       with:
         pixi-version: latest
         locked: true
-        # The build env (gpu) and the shipped runtime env (prod) are both needed.
+        # The build env (gpu) and the shipped runtime env (gpu-prod) are both needed.
         environments: >-
           gpu
-          prod
+          gpu-prod
     - name: Build SuperBuild (with CUDA)
       run: pixi run -e gpu build
     - name: Free up space

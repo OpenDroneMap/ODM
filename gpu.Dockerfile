@@ -19,7 +19,7 @@ RUN pixi run -e gpu build && pixi run -e gpu test
 RUN mkdir -p /odm-runtime/SuperBuild /odm-runtime/scripts \
     && cp -a SuperBuild/install /odm-runtime/SuperBuild/ \
     && cp -a opendm stages /odm-runtime/ \
-    && cp run.py run.sh settings.yaml VERSION /odm-runtime/ \
+    && cp run.py settings.yaml VERSION /odm-runtime/ \
     && cp scripts/docker-entrypoint.sh scripts/smoke.py /odm-runtime/scripts/
 
 FROM dev AS prod-env
@@ -41,7 +41,7 @@ COPY --from=prod-env /code/.pixi/envs/gpu-prod .pixi/envs/gpu-prod
 COPY --from=prod-env /code/scripts/pixi-shell-hook scripts/pixi-shell-hook
 COPY --from=builder /odm-runtime/ ./
 
-RUN chmod +x scripts/docker-entrypoint.sh run.sh \
+RUN chmod +x scripts/docker-entrypoint.sh run.py \
     && bash scripts/docker-entrypoint.sh python3 scripts/smoke.py
 
 ENTRYPOINT ["/code/scripts/docker-entrypoint.sh"]

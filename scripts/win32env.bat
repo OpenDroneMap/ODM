@@ -13,7 +13,7 @@ rem runtime environment and the native SuperBuild binaries are both located
 rem relative to it, so the package relocates to any install path without a
 rem prefix fix-up step and without requiring pixi on the target machine.
 set ODMBASE=%~dp0
-set CONDA_PREFIX=%ODMBASE%.pixi\envs\prod
+set CONDA_PREFIX=%ODMBASE%.pixi\envs\gpu-prod
 
 set SBBIN=%ODMBASE%SuperBuild\install\bin
 set OSFMBASE=%SBBIN%\opensfm\bin
