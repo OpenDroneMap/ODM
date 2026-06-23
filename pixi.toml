@@ -3,21 +3,15 @@ name = "odm"
 channels = ["conda-forge"]
 platforms = ["linux-64", "win-64", "osx-arm64", "linux-aarch64"]
 
-[target.linux.activation.env]
-LD_LIBRARY_PATH = "$PIXI_PROJECT_ROOT/SuperBuild/install/lib:$LD_LIBRARY_PATH"
-
-[target.osx.activation.env]
-DYLD_LIBRARY_PATH = "$PIXI_PROJECT_ROOT/SuperBuild/install/lib:$DYLD_LIBRARY_PATH"
-
 [dependencies]
 beautifulsoup4 = "==4.13.4"
 ceres-solver = "==2.2.0"
-cgal = "5.6.*"              # OpenMVS
+cgal = "5.6.*"           # OpenMVS
 exifread = "==3.5.1"
 exiftool = "*"
 fpdf2 = "==2.8.3"
 gdal = "==3.11.1"
-matplotlib = "==3.10.3"    # undeclared runtime import of codem (pypi)
+matplotlib = "==3.10.3"  # undeclared runtime import of codem (pypi)
 numpy = "==2.3.2"
 onnxruntime = "==1.22.2"
 pdal = "==2.8.4"
@@ -27,13 +21,13 @@ py-opencv = "==4.12.0"
 pygltflib = "==1.16.5"
 pyproj = "==3.7.1"
 python = "==3.12.9"
-python-pdal = "*"          # Avoids duplicating pdal version. Will resolve to compatible version.
+python-pdal = "*"        # Avoids duplicating pdal version. Will resolve to compatible version.
 pyyaml = "==6.0.2"
 scikit-image = "==0.25.2"
 scikit-learn = "==1.7.1"
 scipy = "==1.16.1"
 shapely = "==2.1.1"
-trimesh = "==4.7.1"        # undeclared runtime import of codem (pypi)
+trimesh = "==4.7.1"      # undeclared runtime import of codem (pypi)
 untwine = "*"
 xmltodict = "==0.14.2"
 
@@ -48,10 +42,8 @@ rasterio = "==1.4.3"
 rawpy = "==0.25.0"
 vmem = "==1.0.2"
 
-# Runtime dependency, not build-only: pdalcpp.dll (SuperBuild PDAL) needs
-# geotiff.dll on PATH, so it must be present in the prod (runtime) env too.
 [target.win-64.dependencies]
-geotiff = "*"
+geotiff = "*"           # PDAL's pdalcpp.dll needs geotiff.dll on PATH (prod and build)
 
 [feature.build.activation]
 env = { CMAKE_GENERATOR = "Ninja" }
@@ -61,7 +53,7 @@ c-compiler = "*"
 cmake = "3.31.*"
 cxx-compiler = "*"
 git = "*"
-make = "*"  # PoissonRecon builds from a hand-written Makefile
+make = "*"              # PoissonRecon builds from a hand-written Makefile
 ninja = "*"
 pybind11 = "*"
 pkg-config = "*"
@@ -98,6 +90,12 @@ gpu-prod = { features = ["gpu"], solve-group = "gpu" }
 [target.win-64.activation]
 scripts = ["scripts/activate-msvc.bat"]
 env = { PYTHONUTF8 = "1" }
+
+[target.linux.activation.env]
+LD_LIBRARY_PATH = "$PIXI_PROJECT_ROOT/SuperBuild/install/lib:$LD_LIBRARY_PATH"
+
+[target.osx.activation.env]
+DYLD_LIBRARY_PATH = "$PIXI_PROJECT_ROOT/SuperBuild/install/lib:$DYLD_LIBRARY_PATH"
 
 [tasks]
 build = { cmd = "cmake -S SuperBuild -B SuperBuild/build && cmake --build SuperBuild/build", description = "Configure and compile SuperBuild" }
