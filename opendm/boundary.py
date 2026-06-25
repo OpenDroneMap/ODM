@@ -64,7 +64,7 @@ def load_boundary(boundary_json, reproject_to_proj4=None):
         dimensions = len(coords[0])
 
         if reproject_to_proj4 is not None:
-            t = transformer(CRS.from_proj4(fiona.crs.to_string(src.crs)),
+            t = transformer(CRS.from_epsg(4326),
                             CRS.from_proj4(reproject_to_proj4))
             coords = [t.TransformPoint(*c)[:dimensions] for c in coords]
         
