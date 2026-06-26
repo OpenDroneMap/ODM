@@ -4,8 +4,6 @@ include/
 lib/
 logs/
 share/
-
-
 src/
 
 !modules/*
@@ -29,11 +27,11 @@ __pycache__
 *.snap
 storage/
 
-
-vcpkg/
-venv/
-python312/
+scripts/pixi-shell-hook
 dist/
-innosetup/
 azuresigning/
 .DS_Store
+
+# pixi environments
+.pixi/*
+!.pixi/config.toml

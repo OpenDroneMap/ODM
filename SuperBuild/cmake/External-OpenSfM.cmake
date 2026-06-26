@@ -4,17 +4,32 @@ include(ProcessorCount)
 ProcessorCount(nproc)
 
 set(EXTRA_INCLUDE_DIRS "")
+set(OPENSFM_ADDITIONAL_INCLUDE_DIRS "")
+set(OPENSFM_EXTRA_LINKER_FLAGS "")
 if(WIN32)
-  set(OpenCV_DIR "${SB_INSTALL_DIR}/x64/vc17/lib")
   set(BUILD_CMD ${CMAKE_COMMAND} --build "${SB_BUILD_DIR}/opensfm" --config "${CMAKE_BUILD_TYPE}")
+  # Keep OpenSfM on conda headers to avoid mixing with SuperBuild-installed headers.
+  set(OPENSFM_ADDITIONAL_INCLUDE_DIRS "$ENV{CONDA_PREFIX}/Library/include")
+  # Match conda-forge OpenCV layout on win-64 (same tree CMake reports at configure time).
+  list(APPEND EXTRA_INCLUDE_DIRS "$ENV{CONDA_PREFIX}/Library/include")
+  # OpenSfM links Ceres via the old-style ${CERES_LIBRARIES} variable, which on
+  # Windows is just ceres.lib and drops glog/gflags. OpenSfM's own objects call
+  # glog directly, so MSVC fails with unresolved __imp_ (dllimport) glog symbols.
+  # Force-link glog + gflags into every target. Linux gets these transitively.
+  set(OPENSFM_EXTRA_LINKER_FLAGS "$ENV{CONDA_PREFIX}/Library/lib/glog.lib $ENV{CONDA_PREFIX}/Library/lib/gflags.lib")
 else()
-  set(BUILD_CMD make "-j${nproc}")
-  if (APPLE)
-    set(OpenCV_DIR "${SB_INSTALL_DIR}")
-    set(EXTRA_INCLUDE_DIRS "${HOMEBREW_INSTALL_PREFIX}/include")
-  else()
-    set(OpenCV_DIR "${SB_INSTALL_DIR}/lib/cmake/opencv4")
-  endif()
+  set(OPENSFM_ADDITIONAL_INCLUDE_DIRS "${SB_INSTALL_DIR}/include")
+  set(BUILD_CMD ${CMAKE_COMMAND} --build . --parallel ${nproc})
+endif()
+
+set(OPENSFM_CERES_ROOT_DIR "${SB_INSTALL_DIR}")
+set(OPENSFM_EXTRA_CXX_FLAGS "")
+if(DEFINED ENV{CONDA_PREFIX})
+  set(OPENSFM_CERES_ROOT_DIR "$ENV{CONDA_PREFIX}")
+  # glog 0.6+ requires GLOG_USE_GLOG_EXPORT to be defined. This is normally
+  # propagated via the glog::glog cmake target, but OpenSfM links Ceres with
+  # the old-style ${CERES_LIBRARIES} variable and misses the transitive define.
+  set(OPENSFM_EXTRA_CXX_FLAGS "$ENV{CXXFLAGS} -DGLOG_USE_GLOG_EXPORT -DGLOG_USE_GFLAGS")
 endif()
 
 ExternalProject_Add(${_proj_name}
@@ -28,16 +43,22 @@ ExternalProject_Add(${_proj_name}
   GIT_TAG           c5328439465e6ace011f39077d1077d7b1cdd65d
   #--Update/Patch step----------
   UPDATE_COMMAND    git submodule update --init --recursive
+  PATCH_COMMAND     git apply --whitespace=nowarn ${SB_ROOT_DIR}/cmake/opensfm-aarch64-abs.patch
   #--Configure step-------------
   SOURCE_DIR        ${SB_INSTALL_DIR}/bin/${_proj_name}
   CONFIGURE_COMMAND ${CMAKE_COMMAND} <SOURCE_DIR>/${_proj_name}/src
-    -DCERES_ROOT_DIR=${SB_INSTALL_DIR}
+    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+    -DCERES_ROOT_DIR=${OPENSFM_CERES_ROOT_DIR}
     -DOpenCV_DIR=${OpenCV_DIR}
-    -DADDITIONAL_INCLUDE_DIRS=${SB_INSTALL_DIR}/include
+    -DADDITIONAL_INCLUDE_DIRS=${OPENSFM_ADDITIONAL_INCLUDE_DIRS}
     -DYET_ADDITIONAL_INCLUDE_DIRS=${EXTRA_INCLUDE_DIRS}
     -DOPENSFM_BUILD_TESTS=off
     -DPYTHON_EXECUTABLE=${PYTHON_EXE_PATH}
-    ${WIN32_CMAKE_ARGS}
+    -DCMAKE_CXX_FLAGS=${OPENSFM_EXTRA_CXX_FLAGS}
+    "-DCMAKE_MODULE_LINKER_FLAGS=${OPENSFM_EXTRA_LINKER_FLAGS}"
+    "-DCMAKE_SHARED_LINKER_FLAGS=${OPENSFM_EXTRA_LINKER_FLAGS}"
+    "-DCMAKE_EXE_LINKER_FLAGS=${OPENSFM_EXTRA_LINKER_FLAGS}"
+    ${CONDA_CMAKE_ARGS}
   BUILD_COMMAND ${BUILD_CMD}
   #--Build step-----------------
   BINARY_DIR        ${_SB_BINARY_DIR}

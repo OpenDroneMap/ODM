@@ -1,0 +1,12 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 57325a2..e198420 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -57,6 +57,7 @@ if (WITH_GBT)
+         GIT_TAG e4231205a3bac13662a81db9433ddaea8924fbce
+         CMAKE_ARGS -DBUILD_STATIC_LIB=ON
+                 -DCMAKE_INSTALL_PREFIX=${LIGHTGBM_PREFIX}
++                -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+     )
+     add_library(lib_lightgbm SHARED IMPORTED)
+ 

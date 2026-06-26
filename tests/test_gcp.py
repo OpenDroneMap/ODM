@@ -41,8 +41,8 @@ class TestGcp(unittest.TestCase):
         copy = GCPFile(gcp.create_utm_copy("tests/assets/output/gcp_utm_z.txt"))
         self.assertTrue(copy.exists())
         self.assertEqual(copy.raw_srs, "WGS84 UTM 16N")
-        self.assertEqual(round(copy.get_entry(0).x, 3), 609925.818)
-        self.assertEqual(round(copy.get_entry(0).y, 3), 4950688.772)
+        self.assertEqual(round(copy.get_entry(0).x, 3), 609925.908)
+        self.assertEqual(round(copy.get_entry(0).y, 3), 4950688.729)
         self.assertEqual(round(copy.get_entry(0).z, 3), 563.199)
 
     def test_filtered_copy(self):

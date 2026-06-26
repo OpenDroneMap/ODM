@@ -158,9 +158,9 @@ def config(argv=None, parser=None):
         return args
 
     if sys.platform == 'win32':
-        usage_bin = 'run'
+        usage_bin = 'run' if os.environ.get('ODMBASE') else 'python run.py'
     else:
-        usage_bin = 'run.sh'
+        usage_bin = 'run.py'
 
     if parser is None:
         parser = argparse.ArgumentParser(
