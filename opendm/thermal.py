@@ -54,6 +54,13 @@ def dn_to_temperature(photo, image, images_path):
             image = dji_unpack.extract_temperatures_dji(photo, image, images_path)
             image = image.astype("float32")
             return image
+        # This is for Sentera 6x thermal
+        # https://support.senterasensors.com/home/6x-series-sensors-user-guide/integration-information/exif-and-xmp-tags#tiff-ifd0-2
+        # https://support.senterasensors.com/home/6x-series-sensors-user-guide/6x-series-sensors/data-offload/data-import/thermal-temperature-conversion
+        elif photo.camera_make == "Sentera" and photo.camera_model == "21216-03_328KP-GS-0001":
+            image = image.astype("float32")
+            image *= 0.01
+            image -= 273.15
         else:
             try:
                 params, image = extract_raw_thermal_image_data(os.path.join(images_path, photo.filename))
