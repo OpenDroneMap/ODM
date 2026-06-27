@@ -1,4 +1,8 @@
 import os
+import threading
+import contextlib
+from collections import deque
+from concurrent.futures import ThreadPoolExecutor
 from opendm import log
 from opendm import system
 from opendm.cropper import Cropper
@@ -16,6 +20,45 @@ from opendm.cogeo import convert_to_cogeo
 from opendm.utils import add_raster_meta_tags
 from osgeo import gdal
 from osgeo import ogr
+
+
+@contextlib.contextmanager
+def _bounded_gdal_cache(nbytes):
+    """Temporarily cap GDAL's global block cache, restoring it on exit.
+
+    A small cache keeps the parallel merge's output-tile flushes prompt and
+    cheap. Restoring on the way out — even if the merge raises — avoids leaving
+    the rest of the pipeline (notably the COG conversion) with a shrunken cache.
+    """
+    prev = gdal.GetCacheMax()
+    gdal.SetCacheMax(nbytes)
+    try:
+        yield
+    finally:
+        gdal.SetCacheMax(prev)
+
+
+def _read_window_gated(ds, src_window, dst_shape, dtype):
+    """Read ``src_window`` into a ``dst_shape`` array — equivalent to a
+    ``boundless=True`` read with 0 nodata fill, but avoiding rasterio's boundless
+    VRT path for the common cases. ``boundless=True`` builds a VRT and serializes
+    it via Python's ElementTree (``_serialize_xml``) on every read, which is a
+    large per-read overhead on big merges. Behaviour:
+      - window fully outside the dataset -> all zeros (no read), matching the 0
+        nodata fill a boundless read would produce here;
+      - window fully inside -> plain non-boundless read (no VRT), identical to a
+        boundless read when no out-of-bounds padding is needed;
+      - window partially overlapping the edge -> fall back to boundless (rare;
+        only the true border blocks), preserving exact fill behaviour.
+    """
+    (r0, r1), (c0, c1) = src_window
+    out = np.zeros(dst_shape, dtype=dtype)
+    height, width = ds.height, ds.width
+    if r1 <= 0 or c1 <= 0 or r0 >= height or c0 >= width:
+        return out
+    if r0 >= 0 and c0 >= 0 and r1 <= height and c1 <= width:
+        return ds.read(out=out, window=src_window, boundless=False, masked=False)
+    return ds.read(out=out, window=src_window, boundless=True, masked=False)
 
 
 def get_orthophoto_vars(args):
@@ -265,10 +308,25 @@ def feather_raster(input_raster, output_raster, blend_distance=20):
 
         return output_raster
 
-def merge(input_ortho_and_ortho_cuts, output_orthophoto, orthophoto_vars={}, merge_skip_blending=False):
+def merge(input_ortho_and_ortho_cuts, output_orthophoto, orthophoto_vars={}, merge_skip_blending=False, max_workers=1):
     """
     Based on https://github.com/mapbox/rio-merge-rgba/
     Merge orthophotos around cutlines using a blend buffer.
+
+    Each output block is an independent pure function of its source windows and
+    the fixed source ordering, so blocks are processed in parallel. With
+    max_workers <= 1 (the default) processing is strictly serial and the output
+    is byte-for-byte identical to the original single-threaded loop.
+
+    Args:
+        input_ortho_and_ortho_cuts: iterable of (orthophoto_path, cut_path) pairs.
+        output_orthophoto: path for the merged output GeoTIFF.
+        orthophoto_vars: rasterio profile overrides (TILED, COMPRESS, etc.).
+        merge_skip_blending: if True, skip the feather/cutline blend passes
+            (ODM #1934 --merge-skip-blending); only the first naive-copy pass runs.
+        max_workers: number of parallel worker threads (default 1 = serial).
+    Returns:
+        The output_orthophoto path, or None if there were no valid inputs.
     """
     inputs = []
     bounds=None
@@ -293,6 +351,7 @@ def merge(input_ortho_and_ortho_cuts, output_orthophoto, orthophoto_vars={}, mer
         profile = first.profile
         num_bands = first.meta['count'] - 1 # minus alpha
         colorinterp = first.colorinterp
+        dst_count = first.count
 
     log.ODM_INFO("%s valid orthophoto rasters to merge" % len(inputs))
     sources = [(rasterio.open(o), rasterio.open(c)) for o,c in inputs]
@@ -308,6 +367,10 @@ def merge(input_ortho_and_ortho_cuts, output_orthophoto, orthophoto_vars={}, mer
         if src.profile["count"] < 2:
             raise ValueError("Inputs must be at least 2-band rasters")
     dst_w, dst_s, dst_e, dst_n = min(xs), min(ys), max(xs), max(ys)
+    # Close the pre-scan handles; they are unused in the parallel block loop.
+    for s, c in sources:
+        s.close()
+        c.close()
     log.ODM_INFO("Output bounds: %r %r %r %r" % (dst_w, dst_s, dst_e, dst_n))
 
     output_transform = Affine.translation(dst_w, dst_n)
@@ -338,33 +401,70 @@ def merge(input_ortho_and_ortho_cuts, output_orthophoto, orthophoto_vars={}, mer
     if merge_skip_blending:
         log.ODM_INFO("Skipping second and third pass orthophoto blending, as --merge-skip-blending passed")
 
-    # create destination file
-    with rasterio.open(output_orthophoto, "w", **profile) as dstrast:
+    # create destination file. Cap GDAL's global block cache for the merge (restored on
+    # exit, see _bounded_gdal_cache): the default (5% of RAM) lets dirty output tiles
+    # accumulate, so a source read can trigger a large eviction/flush under GDAL's global
+    # lock that stalls the parallel readers; a small cache keeps flushes prompt and cheap.
+    cache_bytes = 512 * 1024 * 1024
+    with _bounded_gdal_cache(cache_bytes), \
+            rasterio.open(output_orthophoto, "w", **profile) as dstrast:
         dstrast.colorinterp = colorinterp
-        for idx, dst_window in dstrast.block_windows():
-            left, bottom, right, top = dstrast.window_bounds(dst_window)
+
+        # Each output block is an independent function of its source windows and
+        # the source ordering, so blocks can be COMPUTED in parallel. But writes
+        # to a single compressed, tiled GeoTIFF must happen in row-major (block)
+        # order: out-of-order writes cannot be flushed incrementally, so GDAL
+        # hoards every dirty block in RAM until it thrashes or OOMs. So we compute
+        # in a thread pool and write from one thread in strict block order, with a
+        # small bounded look-ahead for backpressure. max_workers <= 1 is a plain
+        # serial compute+write loop, identical to the original.
+        tls = threading.local()
+        block_windows = [(dst_window, dstrast.window_bounds(dst_window))
+                         for _, dst_window in dstrast.block_windows()]
+        total_blocks = len(block_windows)
+        log_every = max(1, total_blocks // 20)
+
+        opened_sources = []
+        opened_lock = threading.Lock()
+
+        def get_sources():
+            """Return this thread's (ortho, cut) rasterio dataset handles.
+
+            GDAL/rasterio handles are not safe to share across threads, so each
+            worker thread lazily opens and caches its own set on first use and
+            registers it in opened_sources for cleanup after the parallel run.
+            """
+            srcs = getattr(tls, "sources", None)
+            if srcs is None:
+                srcs = [(rasterio.open(o), rasterio.open(c)) for o, c in inputs]
+                tls.sources = srcs
+                with opened_lock:
+                    opened_sources.append(srcs)
+            return srcs
+
+        def compute_block(item):
+            """Compute one output block (read + 3 blend passes); return the array.
+
+            Does NOT write — writing happens in block order on the main thread.
+            """
+            dst_window, (left, bottom, right, top) = item
+            local_sources = get_sources()
 
             blocksize = dst_window.width
             dst_rows, dst_cols = (dst_window.height, dst_window.width)
-
-            # initialize array destined for the block
-            dst_count = first.count
             dst_shape = (dst_count, dst_rows, dst_cols)
 
             dstarr = np.zeros(dst_shape, dtype=dtype)
 
             # First pass, write all rasters naively without blending
-            for src, _ in sources:
+            for src, _ in local_sources:
                 src_window = tuple(zip(rowcol(
                         src.transform, left, top, op=round, precision=precision
                     ), rowcol(
                         src.transform, right, bottom, op=round, precision=precision
                     )))
 
-                temp = np.zeros(dst_shape, dtype=dtype)
-                temp = src.read(
-                    out=temp, window=src_window, boundless=True, masked=False
-                )
+                temp = _read_window_gated(src, src_window, dst_shape, dtype)
 
                 # pixels without data yet are available to write
                 write_region = np.logical_and(
@@ -376,48 +476,41 @@ def merge(input_ortho_and_ortho_cuts, output_orthophoto, orthophoto_vars={}, mer
                 if np.count_nonzero(dstarr[-1]) == blocksize:
                     break
 
-            # Skip expensive blending operations if flag passed
+            # Skip the feather/cutline blend passes if requested (ODM #1934)
             if merge_skip_blending:
-                dstrast.write(dstarr, window=dst_window)
-                continue
+                return dstarr
 
             # Second pass, write all feathered rasters
             # blending the edges
-            for src, _ in sources:
+            for src, _ in local_sources:
                 src_window = tuple(zip(rowcol(
                         src.transform, left, top, op=round, precision=precision
                     ), rowcol(
                         src.transform, right, bottom, op=round, precision=precision
                     )))
 
-                temp = np.zeros(dst_shape, dtype=dtype)
-                temp = src.read(
-                    out=temp, window=src_window, boundless=True, masked=False
-                )
+                temp = _read_window_gated(src, src_window, dst_shape, dtype)
 
                 where = temp[-1] != 0
                 for b in range(0, num_bands):
                     blended = temp[-1] / 255.0 * temp[b] + (1 - temp[-1] / 255.0) * dstarr[b]
                     np.copyto(dstarr[b], blended, casting='unsafe', where=where)
                 dstarr[-1][where] = 255.0
-                
+
                 # check if dest has any nodata pixels available
                 if np.count_nonzero(dstarr[-1]) == blocksize:
                     break
 
             # Third pass, write cut rasters
             # blending the cutlines
-            for _, cut in sources:
+            for _, cut in local_sources:
                 src_window = tuple(zip(rowcol(
                         cut.transform, left, top, op=round, precision=precision
                     ), rowcol(
                         cut.transform, right, bottom, op=round, precision=precision
                     )))
 
-                temp = np.zeros(dst_shape, dtype=dtype)
-                temp = cut.read(
-                    out=temp, window=src_window, boundless=True, masked=False
-                )
+                temp = _read_window_gated(cut, src_window, dst_shape, dtype)
 
                 # For each band, average alpha values between
                 # destination raster and cut raster
@@ -425,6 +518,44 @@ def merge(input_ortho_and_ortho_cuts, output_orthophoto, orthophoto_vars={}, mer
                     blended = temp[-1] / 255.0 * temp[b] + (1 - temp[-1] / 255.0) * dstarr[b]
                     np.copyto(dstarr[b], blended, casting='unsafe', where=temp[-1]!=0)
 
+            return dstarr
+
+        def write_block(idx, dst_window, dstarr):
             dstrast.write(dstarr, window=dst_window)
+            if (idx + 1) % log_every == 0:
+                log.ODM_INFO("Merging orthophoto: %s / %s blocks" % (idx + 1, total_blocks))
+
+        if max_workers <= 1:
+            # Serial: compute and write each block in order (original behavior).
+            for idx, item in enumerate(block_windows):
+                write_block(idx, item[0], compute_block(item))
+        else:
+            # Parallel compute; one in-order writer with bounded look-ahead so at
+            # most `cap` blocks are in flight — keeps memory small and gives GDAL
+            # strictly sequential, incrementally-flushable writes.
+            cap = max_workers * 2
+            with ThreadPoolExecutor(max_workers=max_workers) as ex:
+                items = iter(enumerate(block_windows))
+                pending = deque()
+                for _ in range(cap):
+                    nxt = next(items, None)
+                    if nxt is None:
+                        break
+                    idx, item = nxt
+                    pending.append((idx, item[0], ex.submit(compute_block, item)))
+                while pending:
+                    widx, wwin, fut = pending.popleft()
+                    dstarr = fut.result()
+                    write_block(widx, wwin, dstarr)
+                    nxt = next(items, None)
+                    if nxt is not None:
+                        idx, item = nxt
+                        pending.append((idx, item[0], ex.submit(compute_block, item)))
+
+        # Close all thread-local source handles opened during the run.
+        for srcs in opened_sources:
+            for s, c in srcs:
+                s.close()
+                c.close()
 
     return output_orthophoto
