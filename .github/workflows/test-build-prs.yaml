@@ -20,10 +20,12 @@ jobs:
     - name: Build
       uses: docker/build-push-action@v2
       with:
-        file: ./portable.Dockerfile
+        file: ./Dockerfile
         platforms: linux/amd64
         push: false
-  
+        build-args: |
+          PORTABLE=YES
+
   # snapcraft:
   #   runs-on: ubuntu-latest
   #   strategy:
