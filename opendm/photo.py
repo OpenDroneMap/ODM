@@ -126,6 +126,13 @@ class ODM_Photo:
         self.gain = None
         self.gain_adjustment = None
 
+        # Calibration reflectance panel fields
+        # (MicaSense and compatible cameras tag in-field panel captures)
+        self.calibration_picture = None # 2 == camera flagged this as a calibration picture
+        self.panel_albedo = None # active panel surface albedo (0-1) as computed by the camera
+        self.panel_region = None # "x1,y1,x2,y2,..." image coordinates of the panel active area
+        self.panel_serial = None # panel serial number (e.g. RP06-1234567-SC)
+
         # Capture info
         self.exposure_time = None
         self.iso_speed = None
@@ -369,6 +376,28 @@ class ODM_Photo:
                     self.set_attr_from_xmp_tag('gain_adjustment', xtags, [
                         '@drone-dji:SensorGainAdjustment'
                     ], float)
+
+                    # Calibration reflectance panel tags (MicaSense and compatible).
+                    # Parsed natively from XMP (no exiftool dependency).
+                    self.set_attr_from_xmp_tag('calibration_picture', xtags, [
+                        '@Camera:CalibrationPicture',
+                        'Camera:CalibrationPicture',
+                    ], int)
+
+                    self.set_attr_from_xmp_tag('panel_albedo', xtags, [
+                        '@Camera:Albedo',
+                        'Camera:Albedo',
+                    ], float)
+
+                    self.set_attr_from_xmp_tag('panel_region', xtags, [
+                        '@Camera:ReflectArea',
+                        'Camera:ReflectArea',
+                    ])
+
+                    self.set_attr_from_xmp_tag('panel_serial', xtags, [
+                        '@Camera:PanelSerial',
+                        'Camera:PanelSerial',
+                    ])
 
                     # Camera make / model for some cameras is stored in the XMP
                     if self.camera_make == '':
@@ -771,6 +800,46 @@ class ODM_Photo:
             return self.capture_uuid
 
         return self.get_utc_time()
+
+    def get_panel_albedo(self):
+        # Active panel surface albedo (0-1) as computed by the camera
+        if self.panel_albedo is not None:
+            try:
+                return float(self.panel_albedo)
+            except (ValueError, TypeError):
+                return None
+        return None
+
+    def get_panel_region(self):
+        # A list of (x, y) image coordinate tuples describing the panel active area
+        if self.panel_region is None:
+            return None
+        try:
+            coords = [int(round(float(item))) for item in re.split(r"[,\s]+", str(self.panel_region).strip()) if item != ""]
+        except (ValueError, TypeError):
+            return None
+        if len(coords) < 8 or len(coords) % 2 != 0:
+            return None
+        return list(zip(coords[0::2], coords[1::2]))
+
+    def get_panel_serial(self):
+        if self.panel_serial:
+            return str(self.panel_serial)
+        return None
+
+    def is_calibration_picture(self):
+        # True if the camera flagged this frame as a calibration (panel) picture.
+        # This is a looser check than is_panel_image(): the camera may flag the
+        # frame without having extracted the full panel region/albedo metadata.
+        return self.calibration_picture == 2
+
+    def is_panel_image(self):
+        # True if this is an auto-detected calibration panel image with all the
+        # metadata required to compute irradiance.
+        return self.is_calibration_picture() and \
+            self.get_panel_albedo() is not None and \
+            self.get_panel_region() is not None and \
+            self.get_panel_serial() is not None
 
     def get_gps_dop(self):
         val = -9999
