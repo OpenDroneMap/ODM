@@ -265,6 +265,28 @@ def feather_raster(input_raster, output_raster, blend_distance=20):
 
         return output_raster
 
+def _read_window_gated(ds, src_window, dst_shape, dtype):
+    """Read ``src_window`` into a ``dst_shape`` array — equivalent to a
+    ``boundless=True`` read with 0 nodata fill, but avoiding rasterio's boundless
+    VRT path for the common cases. ``boundless=True`` builds a VRT and serializes
+    it via Python's ElementTree (``_serialize_xml``) on every read, which is a
+    large per-read overhead on big merges. Behaviour:
+      - window fully outside the dataset -> all zeros (no read), matching the 0
+        nodata fill a boundless read would produce here;
+      - window fully inside -> plain non-boundless read (no VRT), identical to a
+        boundless read when no out-of-bounds padding is needed;
+      - window partially overlapping the edge -> fall back to boundless (rare;
+        only the true border blocks), preserving exact fill behaviour.
+    """
+    (r0, r1), (c0, c1) = src_window
+    out = np.zeros(dst_shape, dtype=dtype)
+    height, width = ds.height, ds.width
+    if r1 <= 0 or c1 <= 0 or r0 >= height or c0 >= width:
+        return out
+    if r0 >= 0 and c0 >= 0 and r1 <= height and c1 <= width:
+        return ds.read(out=out, window=src_window, boundless=False, masked=False)
+    return ds.read(out=out, window=src_window, boundless=True, masked=False)
+
 def merge(input_ortho_and_ortho_cuts, output_orthophoto, orthophoto_vars={}, merge_skip_blending=False):
     """
     Based on https://github.com/mapbox/rio-merge-rgba/
@@ -361,10 +383,7 @@ def merge(input_ortho_and_ortho_cuts, output_orthophoto, orthophoto_vars={}, mer
                         src.transform, right, bottom, op=round, precision=precision
                     )))
 
-                temp = np.zeros(dst_shape, dtype=dtype)
-                temp = src.read(
-                    out=temp, window=src_window, boundless=True, masked=False
-                )
+                temp = _read_window_gated(src, src_window, dst_shape, dtype)
 
                 # pixels without data yet are available to write
                 write_region = np.logical_and(
@@ -390,10 +409,7 @@ def merge(input_ortho_and_ortho_cuts, output_orthophoto, orthophoto_vars={}, mer
                         src.transform, right, bottom, op=round, precision=precision
                     )))
 
-                temp = np.zeros(dst_shape, dtype=dtype)
-                temp = src.read(
-                    out=temp, window=src_window, boundless=True, masked=False
-                )
+                temp = _read_window_gated(src, src_window, dst_shape, dtype)
 
                 where = temp[-1] != 0
                 for b in range(0, num_bands):
@@ -414,10 +430,7 @@ def merge(input_ortho_and_ortho_cuts, output_orthophoto, orthophoto_vars={}, mer
                         cut.transform, right, bottom, op=round, precision=precision
                     )))
 
-                temp = np.zeros(dst_shape, dtype=dtype)
-                temp = cut.read(
-                    out=temp, window=src_window, boundless=True, masked=False
-                )
+                temp = _read_window_gated(cut, src_window, dst_shape, dtype)
 
                 # For each band, average alpha values between
                 # destination raster and cut raster
