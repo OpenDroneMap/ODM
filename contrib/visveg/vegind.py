@@ -1,6 +1,8 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import rasterio, os, sys
+import rasterio
+import os
+import sys
 import numpy as np
 
 class bcolors:
@@ -20,11 +22,11 @@ try:
     if typ not in ['vari', 'tgi', 'ngrdi']:
         raise IndexError
 except (TypeError, IndexError, NameError):
-    print bcolors.FAIL + 'Arguments messed up. Check arguments order and index name' + bcolors.ENDC
-    print 'Usage: ./vegind.py orto index'
-    print '       orto - filepath to RGB orthophoto'
-    print '       index - Vegetation Index'
-    print bcolors.OKGREEN + 'Available indexes: vari, ngrdi, tgi' + bcolors.ENDC
+    print(bcolors.FAIL + 'Arguments messed up. Check arguments order and index name' + bcolors.ENDC)
+    print('Usage: ./vegind.py orto index')
+    print('       orto - filepath to RGB orthophoto')
+    print('       index - Vegetation Index')
+    print(bcolors.OKGREEN + 'Available indexes: vari, ngrdi, tgi' + bcolors.ENDC)
     sys.exit()
 
 
@@ -91,5 +93,5 @@ try:
         with rasterio.open(outFileName, 'w', BIGTIFF="IF_SAFER", **profile) as dst:
             dst.write(indeks.astype(rasterio.float32), 1)
 except rasterio.errors.RasterioIOError:
-    print bcolors.FAIL + 'Orthophoto file not found or access denied' + bcolors.ENDC
+    print(bcolors.FAIL + 'Orthophoto file not found or access denied' + bcolors.ENDC)
     sys.exit()

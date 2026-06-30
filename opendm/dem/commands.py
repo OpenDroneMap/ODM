@@ -101,7 +101,7 @@ def create_dem(input_point_cloud, dem_type, output_type='max', radiuses=['0.56']
     tiles = []
     for p in glob.glob(os.path.join(os.path.abspath(outdir), "*.tif")):
         filename = os.path.basename(p)
-        m = re.match("^r([\d\.]+)_x\d+_y\d+\.tif", filename)
+        m = re.match(r"^r([\d\.]+)_x\d+_y\d+\.tif", filename)
         if m is not None:
             tiles.append({'filename': p, 'radius': float(m.group(1))})
 
