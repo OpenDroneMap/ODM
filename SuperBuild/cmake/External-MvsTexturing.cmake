@@ -12,7 +12,7 @@ ExternalProject_Add(${_proj_name}
   GIT_TAG           c5a4d0c9a434553533c6e39d426e349fcfa5f48d
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
-  PATCH_COMMAND     git apply --whitespace=nowarn ${SB_ROOT_DIR}/cmake/mvstexturing.patch
+  PATCH_COMMAND     ${CMAKE_COMMAND} -P ${SB_ROOT_DIR}/cmake/apply-patch.cmake ${SB_ROOT_DIR}/cmake/mvstexturing.patch
   #--Configure step-------------
   SOURCE_DIR        ${SB_SOURCE_DIR}/${_proj_name}
   CMAKE_ARGS

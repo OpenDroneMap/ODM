@@ -179,7 +179,7 @@ externalproject_add(poissonrecon
     PREFIX            ${SB_BINARY_DIR}/PoissonRecon
     SOURCE_DIR        ${SB_SOURCE_DIR}/PoissonRecon
     UPDATE_COMMAND    ""
-    PATCH_COMMAND     git apply --whitespace=nowarn
+    PATCH_COMMAND     ${CMAKE_COMMAND} -P ${SB_ROOT_DIR}/cmake/apply-patch.cmake
                           ${SB_ROOT_DIR}/cmake/poissonrecon-sparsematrix-rows.patch
                           ${SB_ROOT_DIR}/cmake/poissonrecon-zlib-byte.patch
                           ${SB_ROOT_DIR}/cmake/poissonrecon-png-mac.patch
@@ -249,7 +249,7 @@ externalproject_add(draco
     GIT_TAG           e801aebf9665f6dcf3b6b0a604055a300ff85aa4
     PREFIX            ${SB_BINARY_DIR}/draco
     SOURCE_DIR        ${SB_SOURCE_DIR}/draco
-    PATCH_COMMAND     git apply --whitespace=nowarn ${SB_ROOT_DIR}/cmake/draco-no-start-group.patch
+    PATCH_COMMAND     ${CMAKE_COMMAND} -P ${SB_ROOT_DIR}/cmake/apply-patch.cmake ${SB_ROOT_DIR}/cmake/draco-no-start-group.patch
     CMAKE_ARGS        -DDRACO_TRANSCODER_SUPPORTED=ON
                       -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
                       ${SB_EP_CMAKE_ARGS}

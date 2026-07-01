@@ -5,7 +5,7 @@ externalproject_add(vcg
     GIT_REPOSITORY  https://github.com/OpenDroneMap/VCG.git
     GIT_TAG         285
     UPDATE_COMMAND  ""
-    PATCH_COMMAND   git apply --whitespace=nowarn ${SB_ROOT_DIR}/cmake/vcg-template-kw.patch
+    PATCH_COMMAND   ${CMAKE_COMMAND} -P ${SB_ROOT_DIR}/cmake/apply-patch.cmake ${SB_ROOT_DIR}/cmake/vcg-template-kw.patch
     SOURCE_DIR      ${SB_SOURCE_DIR}/vcg
     CONFIGURE_COMMAND ""
     BUILD_IN_SOURCE 1
