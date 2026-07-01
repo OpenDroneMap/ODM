@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # Basic check
 import sys
 if sys.version_info.major < 3:
@@ -46,7 +48,7 @@ if __name__ == '__main__':
     for k in args_dict.keys():
         log.ODM_INFO('%s: %s%s' % (k, args_dict[k], ' [changed]' if k in opts_diff else ''))
     log.ODM_INFO('==============')
-    
+
 
     # If user asks to rerun everything, delete all of the existing progress directories.
     if args.rerun_all:
@@ -64,7 +66,7 @@ if __name__ == '__main__':
 
     if retcode == 0:
         save_opts(opts_json, args)
-    
+
     # Do not show ASCII art for local submodels runs
     if retcode == 0 and not "submodels" in args.project_path:
         log.ODM_INFO('MMMMMMMMMMMNNNMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMNNNMMMMMMMMMMM')

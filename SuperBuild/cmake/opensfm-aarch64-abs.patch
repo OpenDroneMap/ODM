@@ -1,0 +1,13 @@
+diff --git a/opensfm/src/geometry/triangulation.h b/opensfm/src/geometry/triangulation.h
+index 32588515..6aea4dfe 100644
+--- a/opensfm/src/geometry/triangulation.h
++++ b/opensfm/src/geometry/triangulation.h
+@@ -70,7 +70,7 @@ std::pair<bool, Eigen::Matrix<T, 3, 1>> TriangulateTwoBearingsMidpointSolve(
+ 
+   const T eps = T(1e-30);
+   const T det = A.determinant();
+-#ifdef __aarch64__
++#if defined(__aarch64__) && !defined(__APPLE__)
+   if (std::abs<T>(det) < eps) {
+ #else
+   if (abs(det) < eps) {

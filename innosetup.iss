@@ -46,20 +46,16 @@ Source: "contrib\*"; DestDir: "{app}\contrib"; Flags: ignoreversion recursesubdi
 Source: "licenses\*"; DestDir: "{app}\licenses"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "opendm\*"; DestDir: "{app}\opendm"; Excludes: "__pycache__"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "stages\*"; DestDir: "{app}\stages"; Excludes: "__pycache__"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "SuperBuild\install\bin\*"; DestDir: "{app}\SuperBuild\install\bin"; Excludes: "__pycache__"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "SuperBuild\install\lib\python3.12\*"; DestDir: "{app}\SuperBuild\install\lib\python3.12"; Excludes: "__pycache__"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "venv\*"; DestDir: "{app}\venv"; Excludes: "__pycache__"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "python312\*"; DestDir: "{app}\venv\Scripts"; Excludes: "__pycache__"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "console.bat"; DestDir: "{app}"; Flags: ignoreversion
+Source: "SuperBuild\install\*"; DestDir: "{app}\SuperBuild\install"; Excludes: "__pycache__"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: ".pixi\envs\gpu-prod\*"; DestDir: "{app}\.pixi\envs\gpu-prod"; Excludes: "__pycache__"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "scripts\console.bat"; DestDir: "{app}"; Flags: ignoreversion
 Source: "VERSION"; DestDir: "{app}"; Flags: ignoreversion
 Source: "LICENSE"; DestDir: "{app}"; Flags: ignoreversion
-Source: "run.bat"; DestDir: "{app}"; Flags: ignoreversion
+Source: "scripts\run.bat"; DestDir: "{app}"; Flags: ignoreversion
 Source: "run.py"; DestDir: "{app}"; Flags: ignoreversion
 Source: "settings.yaml"; DestDir: "{app}"; Flags: ignoreversion
-Source: "win32env.bat"; DestDir: "{app}"; Flags: ignoreversion
-Source: "winrun.bat"; DestDir: "{app}"; Flags: ignoreversion
+Source: "scripts\win32env.bat"; DestDir: "{app}"; Flags: ignoreversion
 Source: "SuperBuild\download\vc_redist.x64.exe"; DestDir: {tmp}; Flags: dontcopy
-Source: "winpostinstall.bat"; DestDir: "{app}"; Flags: ignoreversion
 
 [Dirs]
 Name: "{commonappdata}\ODM"; Permissions: users-modify
@@ -73,7 +69,6 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Run]
 Filename: "{tmp}\vc_redist.x64.exe"; StatusMsg: "Installing Visual C++ Redistributable Packages for Visual Studio 2019"; Parameters: "/quiet"; Check: VC2019RedistNeedsInstall ; Flags: waituntilterminated
-Filename: "{app}\winpostinstall.bat"; StatusMsg: "Post Install"; Flags: waituntilterminated runhidden
 Filename: "{app}\console.bat"; Description: {cm:LaunchProgram,ODM Console}; Flags: nowait postinstall skipifsilent
 
 [Code]
@@ -159,4 +154,4 @@ Type: filesandordirs; Name: "{app}\contrib"
 Type: filesandordirs; Name: "{app}\licenses"
 Type: filesandordirs; Name: "{app}\opendm"
 Type: filesandordirs; Name: "{app}\stages"
-Type: filesandordirs; Name: "{app}\venv"
+Type: filesandordirs; Name: "{app}\.pixi"

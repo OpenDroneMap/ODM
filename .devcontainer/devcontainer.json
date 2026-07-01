@@ -1,0 +1,26 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+{
+  "name": "ODM",
+  "build": {
+    "context": "..",
+    "dockerfile": "../Dockerfile",
+    "target": "dev"
+  },
+  "features": {
+    // https://github.com/devcontainers/features/blob/main/src/common-utils/main.sh
+    // Add `odm` user for consistency with the GPU image
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": "true",
+      "username": "odm",
+      "upgradePackages": "true"
+    }
+  },
+  "remoteUser": "odm",
+  "postCreateCommand": "pixi install --locked",
+  // Use the `code` directory for compatibility with direct Docker workflows
+  "workspaceMount": "source=${localWorkspaceFolder},target=/code,type=bind",
+  "workspaceFolder": "/code",
+  "mounts": [
+    "source=${localEnv:HOME}${localEnv:USERPROFILE},target=/home/odm,type=bind,consistency=cached"
+  ]
+}
