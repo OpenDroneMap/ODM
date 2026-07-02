@@ -140,9 +140,11 @@ def compute_cutline(orthophoto_file, crop_area_file, destination, max_concurrenc
             return
 
         log.ODM_INFO("Merging polygons")
-        cutline_polygons = unary_union(polygons)
-        if not hasattr(cutline_polygons, '__getitem__'):
-            cutline_polygons = [cutline_polygons]
+        cutline_union = unary_union(polygons)
+        if cutline_union.geom_type == 'MultiPolygon':
+            cutline_polygons = list(cutline_union.geoms)
+        else:
+            cutline_polygons = [cutline_union]
 
         largest_cutline = cutline_polygons[0]
         max_area = largest_cutline.area
@@ -158,7 +160,7 @@ def compute_cutline(orthophoto_file, crop_area_file, destination, max_concurrenc
             'driver': 'GPKG',
             'schema': {
                 'properties': {},
-                'geometry': 'MultiPolygon'
+                'geometry': 'Polygon'
             }
         }
 
