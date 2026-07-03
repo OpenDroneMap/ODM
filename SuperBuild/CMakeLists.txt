@@ -59,6 +59,16 @@ set(CONDA_CMAKE_ARGS
     "-DPython_ROOT_DIR=$ENV{CONDA_PREFIX}")
 message(STATUS "Using conda prefix: $ENV{CONDA_PREFIX}")
 
+# On Linux the conda-forge toolchain bakes an RPATH to the environment's lib
+# into every binary. macOS clang does not, so libraries linked with an
+# @rpath install name (e.g. conda boost) fail to load at runtime. Bake the
+# same RPATH in explicitly so installed binaries locate the conda libraries.
+if(APPLE)
+    list(APPEND CONDA_CMAKE_ARGS
+        "-DCMAKE_INSTALL_RPATH=$ENV{CONDA_PREFIX}/lib"
+        "-DCMAKE_INSTALL_RPATH_USE_LINK_PATH=ON")
+endif()
+
 set(PYTHON_HOME "$ENV{CONDA_PREFIX}")
 if(WIN32)
     set(PYTHON_EXE_PATH "${PYTHON_HOME}/python.exe")

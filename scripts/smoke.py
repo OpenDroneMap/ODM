@@ -10,10 +10,25 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
 
+def check_openmvs_loads():
+    # A missing shared library aborts the binary before it prints its banner.
+    omvs = os.path.join(ROOT, "SuperBuild", "install", "bin", "OpenMVS")
+    suffix = ".exe" if sys.platform == "win32" else ""
+    for name in ("DensifyPointCloud", "ReconstructMesh"):
+        proc = subprocess.run(
+            [os.path.join(omvs, name + suffix), "--help"],
+            capture_output=True, text=True,
+        )
+        if "OpenMVS" not in proc.stdout:
+            sys.exit("smoke failed: %s did not load" % name)
+
+
 def main():
     for tool in ("pdal", "untwine"):
         if shutil.which(tool) is None:
             sys.exit("smoke failed: required executable not found on PATH: %s" % tool)
+
+    check_openmvs_loads()
 
     # Importing opendm.context wires up the opensfm sys.path and, on Windows,
     # the DLL search dirs + GDAL/PROJ/PDAL env that the imports below need.
