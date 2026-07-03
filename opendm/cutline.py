@@ -13,7 +13,7 @@ from skimage.feature import canny
 from skimage.draw import line
 from skimage.graph import route_through_array
 import shapely
-from shapely.geometry import LineString, mapping, shape
+from shapely.geometry import LineString, MultiPolygon, mapping, shape
 from shapely.ops import polygonize, unary_union
 
 def write_raster(data, file):
@@ -30,6 +30,19 @@ def write_raster(data, file):
 
     with rasterio.open(file, 'w', BIGTIFF="IF_SAFER", **profile) as wout:
         wout.write(data, 1)
+
+def largest_polygon(polygons):
+    cutline_union = unary_union(polygons)
+    if isinstance(cutline_union, MultiPolygon):
+        parts = list(cutline_union.geoms)
+    else:
+        parts = [cutline_union]
+
+    largest = parts[0]
+    for p in parts[1:]:
+        if p.area > largest.area:
+            largest = p
+    return largest
 
 def compute_cutline(orthophoto_file, crop_area_file, destination, max_concurrency=1, scale=1):
     if io.file_exists(orthophoto_file) and io.file_exists(crop_area_file):
@@ -140,16 +153,8 @@ def compute_cutline(orthophoto_file, crop_area_file, destination, max_concurrenc
             return
 
         log.ODM_INFO("Merging polygons")
-        cutline_polygons = unary_union(polygons)
-        if not hasattr(cutline_polygons, '__getitem__'):
-            cutline_polygons = [cutline_polygons]
-
-        largest_cutline = cutline_polygons[0]
+        largest_cutline = largest_polygon(polygons)
         max_area = largest_cutline.area
-        for p in cutline_polygons:
-            if p.area > max_area:
-                max_area = p.area
-                largest_cutline = p
         
         log.ODM_INFO("Largest cutline found: %s m^2" % max_area)
 
@@ -158,7 +163,7 @@ def compute_cutline(orthophoto_file, crop_area_file, destination, max_concurrenc
             'driver': 'GPKG',
             'schema': {
                 'properties': {},
-                'geometry': 'MultiPolygon'
+                'geometry': 'Polygon'
             }
         }
 
