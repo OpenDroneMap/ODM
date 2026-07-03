@@ -1,4 +1,3 @@
-Dockerfile
 SuperBuild/build
 SuperBuild/download
 SuperBuild/install
@@ -11,7 +10,9 @@ odm_meshing
 odm_georeferencing
 images_resize
 .git
-
+venv
+.pixi
+scripts/pixi-shell-hook
 /contrib
 /docs
 /hooks
@@ -19,5 +20,4 @@ images_resize
 /license
 settings.yml
 code_of_conduct.md
-configure_18_04.sh
 index.html
