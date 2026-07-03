@@ -11,13 +11,14 @@ sys.path.insert(0, ROOT)
 
 
 def check_openmvs_loads():
-    # A missing shared library aborts the binary before it prints its banner.
+    # Launching a binary surfaces a library it can't resolve via rpath, which
+    # aborts before the banner prints. Windows resolves DLLs via PATH instead.
+    if sys.platform == "win32":
+        return
     omvs = os.path.join(ROOT, "SuperBuild", "install", "bin", "OpenMVS")
-    suffix = ".exe" if sys.platform == "win32" else ""
     for name in ("DensifyPointCloud", "ReconstructMesh"):
         proc = subprocess.run(
-            [os.path.join(omvs, name + suffix), "--help"],
-            capture_output=True, text=True,
+            [os.path.join(omvs, name), "--help"], capture_output=True, text=True,
         )
         if "OpenMVS" not in proc.stdout:
             sys.exit("smoke failed: %s did not load" % name)
