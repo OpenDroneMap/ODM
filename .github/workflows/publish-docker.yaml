@@ -39,10 +39,12 @@ jobs:
       id: docker_build
       uses: docker/build-push-action@v2
       with:
-        file: ./portable.Dockerfile
+        file: ./Dockerfile
         platforms: linux/amd64,linux/arm64
         push: true
         no-cache: true
+        build-args: |
+          PORTABLE=YES
         tags: |
           ${{ steps.docker_meta.outputs.tags }}
           opendronemap/odm:latest
