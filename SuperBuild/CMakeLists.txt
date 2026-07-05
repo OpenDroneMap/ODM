@@ -275,12 +275,18 @@ externalproject_add(fastrasterfilter
                       ${WIN32_CMAKE_ARGS}
 )
 
+# LAStools sources are Windows-1252 encoded; on non-Western locales MSVC
+# defaults to the system codepage (e.g. 936) and fails to parse them.
+if (WIN32)
+    set(LASTOOLS_CXX_FLAGS "-DCMAKE_CXX_FLAGS=/DWIN32 /D_WINDOWS /W3 /GR /EHsc /source-charset:.1252 /execution-charset:.1252")
+endif()
 externalproject_add(lastools
     GIT_REPOSITORY    https://github.com/OpenDroneMap/LAStools.git
     GIT_TAG           250
     PREFIX            ${SB_BINARY_DIR}/lastools
     SOURCE_DIR        ${SB_SOURCE_DIR}/lastools
     CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
+                      ${LASTOOLS_CXX_FLAGS}
 )
 
 externalproject_add(draco
