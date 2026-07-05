@@ -53,6 +53,7 @@ endif()
 
 ExternalProject_Add(${_proj_name}
   DEPENDS           ceres opencv vcg eigen34
+  LIST_SEPARATOR    |
   PREFIX            ${_SB_BINARY_DIR}
   TMP_DIR           ${_SB_BINARY_DIR}/tmp
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
@@ -71,7 +72,10 @@ ExternalProject_Add(${_proj_name}
     -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
     -DCMAKE_INSTALL_PREFIX=${SB_INSTALL_DIR}
     -DOpenMVS_ENABLE_TESTS=OFF
-    -DOpenMVS_MAX_CUDA_COMPATIBILITY=ON
+    # MAX_CUDA_COMPATIBILITY generates invalid -gencode flags with CUDA 12.9
+    # (nvcc fatal: Unknown arch name 'sass_90'); pass a valid arch list instead.
+    -DOpenMVS_MAX_CUDA_COMPATIBILITY=OFF
+    -DCMAKE_CUDA_ARCHITECTURES=61-real|75-real|86-real|89-real|90-real|120
     -DINSTALL_USE_SUBDIR=OFF
     ${GPU_CMAKE_ARGS}
     ${WIN32_CMAKE_ARGS}
