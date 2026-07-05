@@ -72,6 +72,10 @@ ExternalProject_Add(${_proj_name}
     -DBUILD_opencv_legacy=ON
     -DBUILD_opencv_python3=ON
     -DWITH_FFMPEG=ON
+    # Keep AVIF off: a stray libavif on the build machine (e.g. Anaconda's,
+    # discovered via PATH) gets linked into imgcodecs and the resulting
+    # avif.dll dependency is missing on end-user machines.
+    -DWITH_AVIF=OFF
     -DWITH_CUDA=OFF
     -DWITH_GTK=OFF
     -DWITH_VTK=OFF
