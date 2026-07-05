@@ -2,9 +2,21 @@ set(_proj_name opencv)
 set(_SB_BINARY_DIR "${SB_BINARY_DIR}/${_proj_name}")
 
 if (WIN32)
+  # OpenCV cannot locate the base interpreter's headers/libs from a venv
+  # python on its own (detection comes up empty and cv2 is silently
+  # skipped), so query the interpreter and pass them explicitly.
+  execute_process(COMMAND ${PYTHON_EXE_PATH} -c "import sysconfig; print(sysconfig.get_paths()['include'])"
+                  OUTPUT_VARIABLE PYTHON3_BASE_INCLUDE_DIR OUTPUT_STRIP_TRAILING_WHITESPACE)
+  execute_process(COMMAND ${PYTHON_EXE_PATH} -c "import sys, os; print(os.path.join(sys.base_prefix, 'libs', 'python%d%d.lib' % sys.version_info[:2]))"
+                  OUTPUT_VARIABLE PYTHON3_BASE_LIBRARY OUTPUT_STRIP_TRAILING_WHITESPACE)
+  file(TO_CMAKE_PATH "${PYTHON3_BASE_INCLUDE_DIR}" PYTHON3_BASE_INCLUDE_DIR)
+  file(TO_CMAKE_PATH "${PYTHON3_BASE_LIBRARY}" PYTHON3_BASE_LIBRARY)
+  message(STATUS "OpenCV python3: include=${PYTHON3_BASE_INCLUDE_DIR} library=${PYTHON3_BASE_LIBRARY}")
   set(OCV_CMAKE_EXTRA_ARGS -DPYTHON3_NUMPY_INCLUDE_DIRS=${PYTHON_HOME}/lib/site-packages/numpy/_core/include
                              -DPYTHON3_PACKAGES_PATH=${PYTHON_HOME}/lib/site-packages
                              -DPYTHON3_EXECUTABLE=${PYTHON_EXE_PATH}
+                             -DPYTHON3_INCLUDE_DIR=${PYTHON3_BASE_INCLUDE_DIR}
+                             -DPYTHON3_LIBRARY=${PYTHON3_BASE_LIBRARY}
                              -DWITH_MSMF=OFF
                              -DOPENCV_LIB_INSTALL_PATH=${SB_INSTALL_DIR}/lib
                              -DOPENCV_BIN_INSTALL_PATH=${SB_INSTALL_DIR}/bin)
