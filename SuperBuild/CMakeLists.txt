@@ -255,6 +255,13 @@ externalproject_add(dem2points
                       ${APPLE_CMAKE_ARGS}
 )
 
+# Point find_package(OpenCV) at the SuperBuild OpenCV; otherwise a stray
+# OpenCV install on the system (e.g. via PATH) can be picked up instead.
+if (WIN32)
+    set(ORTHOPHOTO_CMAKE_ARGS "-DOpenCV_DIR=${SB_INSTALL_DIR}/x64/vc17/lib")
+else()
+    set(ORTHOPHOTO_CMAKE_ARGS "-DOpenCV_DIR=${SB_INSTALL_DIR}/lib/cmake/opencv4")
+endif()
 externalproject_add(odm_orthophoto
     DEPENDS           opencv gdal
     GIT_REPOSITORY    https://github.com/OpenDroneMap/odm_orthophoto.git
@@ -262,6 +269,7 @@ externalproject_add(odm_orthophoto
     PREFIX            ${SB_BINARY_DIR}/odm_orthophoto
     SOURCE_DIR        ${SB_SOURCE_DIR}/odm_orthophoto
     CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
+                      ${ORTHOPHOTO_CMAKE_ARGS}
                       ${WIN32_CMAKE_ARGS}
 )
 
