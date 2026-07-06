@@ -8,6 +8,16 @@ set PYENVCFG=%WRITABLE_VIRTUAL_ENV%\pyvenv.cfg
 echo home = %VIRTUAL_ENV%\Scripts> "%PYENVCFG%"
 echo include-system-site-packages = false>> "%PYENVCFG%"
 
+rem Write python312._pth next to the embedded python.exe to lock down sys.path.
+rem Without it, the "less-pth" embedded python merges registry PythonPath entries
+rem from any system Python 3.12 (e.g. Anaconda), breaking ctypes/DLL loading.
+set PTHFILE=%VIRTUAL_ENV%\Scripts\python312._pth
+echo python312.zip> "%PTHFILE%"
+echo .>> "%PTHFILE%"
+echo ..\..>> "%PTHFILE%"
+echo ..\Lib\site-packages>> "%PTHFILE%"
+echo import site>> "%PTHFILE%"
+
 rem Hot-patching cv2 extension configs
 set SBBIN=%ODMBASE%SuperBuild\install\bin
 set CV2=%WRITABLE_VIRTUAL_ENV%\Lib\site-packages\cv2
