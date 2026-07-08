@@ -27,7 +27,7 @@ def _bounded_gdal_cache(nbytes):
     """Temporarily cap GDAL's global block cache, restoring it on exit.
 
     A small cache keeps the parallel merge's output-tile flushes prompt and
-    cheap. Restoring on the way out — even if the merge raises — avoids leaving
+    cheap. Restoring on the way out (even if the merge raises) avoids leaving
     the rest of the pipeline (notably the COG conversion) with a shrunken cache.
     """
     prev = gdal.GetCacheMax()
@@ -36,29 +36,6 @@ def _bounded_gdal_cache(nbytes):
         yield
     finally:
         gdal.SetCacheMax(prev)
-
-
-def _read_window_gated(ds, src_window, dst_shape, dtype):
-    """Read ``src_window`` into a ``dst_shape`` array — equivalent to a
-    ``boundless=True`` read with 0 nodata fill, but avoiding rasterio's boundless
-    VRT path for the common cases. ``boundless=True`` builds a VRT and serializes
-    it via Python's ElementTree (``_serialize_xml``) on every read, which is a
-    large per-read overhead on big merges. Behaviour:
-      - window fully outside the dataset -> all zeros (no read), matching the 0
-        nodata fill a boundless read would produce here;
-      - window fully inside -> plain non-boundless read (no VRT), identical to a
-        boundless read when no out-of-bounds padding is needed;
-      - window partially overlapping the edge -> fall back to boundless (rare;
-        only the true border blocks), preserving exact fill behaviour.
-    """
-    (r0, r1), (c0, c1) = src_window
-    out = np.zeros(dst_shape, dtype=dtype)
-    height, width = ds.height, ds.width
-    if r1 <= 0 or c1 <= 0 or r0 >= height or c0 >= width:
-        return out
-    if r0 >= 0 and c0 >= 0 and r1 <= height and c1 <= width:
-        return ds.read(out=out, window=src_window, boundless=False, masked=False)
-    return ds.read(out=out, window=src_window, boundless=True, masked=False)
 
 
 def get_orthophoto_vars(args):
@@ -483,7 +460,7 @@ def merge(input_ortho_and_ortho_cuts, output_orthophoto, orthophoto_vars={}, mer
         def compute_block(item):
             """Compute one output block (read + 3 blend passes); return the array.
 
-            Does NOT write — writing happens in block order on the main thread.
+            Does NOT write; writing happens in block order on the main thread.
             """
             dst_window, (left, bottom, right, top) = item
             local_sources = get_sources()
@@ -569,7 +546,7 @@ def merge(input_ortho_and_ortho_cuts, output_orthophoto, orthophoto_vars={}, mer
                 write_block(idx, item[0], compute_block(item))
         else:
             # Parallel compute; one in-order writer with bounded look-ahead so at
-            # most `cap` blocks are in flight — keeps memory small and gives GDAL
+            # most `cap` blocks are in flight, which keeps memory small and gives GDAL
             # strictly sequential, incrementally-flushable writes.
             cap = max_workers * 2
             with ThreadPoolExecutor(max_workers=max_workers) as ex:
