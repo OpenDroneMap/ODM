@@ -330,6 +330,14 @@ def _read_window_gated(ds, src_window, dst_shape, dtype):
         return ds.read(out=out, window=src_window, boundless=False, masked=False)
     return ds.read(out=out, window=src_window, boundless=True, masked=False)
 
+
+# Hard cap on orthophoto-merge worker threads. Each worker opens every input pair
+# (ortho + cut), so open file handles scale as 2 * pairs * max_workers. With many
+# submodels on a high-core machine that can exhaust the open-file limit (EMFILE).
+# A fixed cap keeps a meaningful speedup while staying well under typical limits, and
+# is simpler and more portable than probing RLIMIT_NOFILE (absent on Windows).
+MERGE_WORKER_CAP = 16
+
 def merge(input_ortho_and_ortho_cuts, output_orthophoto, orthophoto_vars={}, merge_skip_blending=False, max_workers=1):
     """
     Based on https://github.com/mapbox/rio-merge-rgba/
@@ -376,6 +384,11 @@ def merge(input_ortho_and_ortho_cuts, output_orthophoto, orthophoto_vars={}, mer
         dst_count = first.count
 
     log.ODM_INFO("%s valid orthophoto rasters to merge" % len(inputs))
+
+    if max_workers > MERGE_WORKER_CAP:
+        log.ODM_INFO("Capping orthophoto merge workers %d -> %d to limit open file handles" % (max_workers, MERGE_WORKER_CAP))
+        max_workers = MERGE_WORKER_CAP
+
     sources = [(rasterio.open(o), rasterio.open(c)) for o,c in inputs]
 
     # scan input files.
@@ -458,7 +471,10 @@ def merge(input_ortho_and_ortho_cuts, output_orthophoto, orthophoto_vars={}, mer
             """
             srcs = getattr(tls, "sources", None)
             if srcs is None:
-                srcs = [(rasterio.open(o), rasterio.open(c)) for o, c in inputs]
+                # In skip-blending mode the cut rasters are never read, so don't
+                # open them (halves the open file handles for this path).
+                srcs = [(rasterio.open(o), None if merge_skip_blending else rasterio.open(c))
+                        for o, c in inputs]
                 tls.sources = srcs
                 with opened_lock:
                     opened_sources.append(srcs)
@@ -578,6 +594,7 @@ def merge(input_ortho_and_ortho_cuts, output_orthophoto, orthophoto_vars={}, mer
         for srcs in opened_sources:
             for s, c in srcs:
                 s.close()
-                c.close()
+                if c is not None:  # cut handle is None in skip-blending mode
+                    c.close()
 
     return output_orthophoto
