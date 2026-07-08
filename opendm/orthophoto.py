@@ -266,7 +266,7 @@ def feather_raster(input_raster, output_raster, blend_distance=20):
         return output_raster
 
 def _read_window_gated(ds, src_window, dst_shape, dtype):
-    """Read ``src_window`` into a ``dst_shape`` array — equivalent to a
+    """Read ``src_window`` into a ``dst_shape`` array, equivalent to a
     ``boundless=True`` read with 0 nodata fill, but avoiding rasterio's boundless
     VRT path for the common cases. ``boundless=True`` builds a VRT and serializes
     it via Python's ElementTree (``_serialize_xml``) on every read, which is a
