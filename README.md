@@ -179,14 +179,18 @@ GPU builds use the `gpu` environment: `pixi install -e gpu && pixi run -e gpu bu
 CPU image (matches CI):
 
 ```bash
-docker build -t my_odm_image --target runtime .
+pixi run docker-build
 ```
 
 GPU image:
 
 ```bash
-docker build -f gpu.Dockerfile -t my_odm_image:gpu --target runtime .
+pixi run docker-build -- --gpu
 ```
+
+These stamp the image with the OCI labels (revision, version, created). Pass a
+custom tag or extra `docker build` flags after `--`, e.g.
+`pixi run docker-build -- -t my_odm_image --no-cache`.
 
 If you have questions, join the developer's chat at https://community.opendronemap.org/c/developers-chat/21
 

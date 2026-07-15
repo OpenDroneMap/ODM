@@ -102,6 +102,7 @@ build = { cmd = "cmake -S SuperBuild -B SuperBuild/build && cmake --build SuperB
 test = { cmd = "python scripts/test.py", description = "Run ODM test suite (pass a test name after --)" }
 smoke = { cmd = "python scripts/smoke.py", description = "Smoke test CLI and core imports" }
 odm = { cmd = "python run.py", description = "Run ODM (pass args after --)" }
+docker-build = { cmd = "python scripts/docker-build.py", description = "Build the runtime Docker image with OCI labels (--gpu for GPU, extra docker flags after --)" }
 clean = { cmd = "rm -rf SuperBuild/build SuperBuild/src SuperBuild/download SuperBuild/install", description = "Remove SuperBuild build artifacts" }
 
 [target.win-64.tasks]
