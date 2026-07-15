@@ -32,6 +32,14 @@ RUN pixi install --locked -e gpu-prod \
 
 FROM nvidia/cuda:12.9.1-runtime-ubuntu24.04 AS runtime
 
+ARG GIT_COMMIT=unknown
+ARG BUILD_DATE=unknown
+ARG IMAGE_VERSION=unknown
+LABEL org.opencontainers.image.revision="$GIT_COMMIT" \
+      org.opencontainers.image.source="https://github.com/OpenDroneMap/ODM" \
+      org.opencontainers.image.version="$IMAGE_VERSION" \
+      org.opencontainers.image.created="$BUILD_DATE"
+
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PIXI_ENV=gpu-prod
 
