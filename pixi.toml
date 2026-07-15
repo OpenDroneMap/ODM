@@ -91,11 +91,14 @@ gpu-prod = { features = ["gpu"], solve-group = "gpu" }
 scripts = ["scripts/activate-msvc.bat"]
 env = { PYTHONUTF8 = "1" }
 
+# SuperBuild binaries bake an RPATH to the build env's lib (e.g. .pixi/envs/default).
+# The runtime Docker image ships a different env (prod/gpu-prod), so that RPATH is
+# absent; $CONDA_PREFIX/lib points LD_LIBRARY_PATH at whichever env is active.
 [target.linux.activation.env]
-LD_LIBRARY_PATH = "$PIXI_PROJECT_ROOT/SuperBuild/install/lib:$LD_LIBRARY_PATH"
+LD_LIBRARY_PATH = "$PIXI_PROJECT_ROOT/SuperBuild/install/lib:$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
 
 [target.osx.activation.env]
-DYLD_LIBRARY_PATH = "$PIXI_PROJECT_ROOT/SuperBuild/install/lib:$DYLD_LIBRARY_PATH"
+DYLD_LIBRARY_PATH = "$PIXI_PROJECT_ROOT/SuperBuild/install/lib:$CONDA_PREFIX/lib:$DYLD_LIBRARY_PATH"
 
 [tasks]
 build = { cmd = "cmake -S SuperBuild -B SuperBuild/build && cmake --build SuperBuild/build", description = "Configure and compile SuperBuild" }
