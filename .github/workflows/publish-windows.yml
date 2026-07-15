@@ -11,6 +11,12 @@ permissions:
   contents: write
   id-token: write
 
+# Let a tagged release build run to completion instead of being superseded by a
+# later push to the same ref. Different refs (master vs. a tag) never contend.
+concurrency:
+  group: publish-windows-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: windows-2022
@@ -59,6 +65,7 @@ jobs:
         python configure.py dist --signtool-path "C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe" --azure-signing-metadata "%RUNNER_TEMP%\metadata.json"
       shell: cmd
     - name: Upload Setup File
+      if: always()
       uses: actions/upload-artifact@v4
       with:
         name: Setup

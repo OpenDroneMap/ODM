@@ -138,6 +138,10 @@ installpython() {
     echo "Installing Python requirements"
     cd /code
     set -e
+    # Fiona and rasterio build from source and locate GDAL through gdal-config,
+    # which SuperBuild installs under SuperBuild/install/bin.
+    export GDAL_CONFIG="${RUNPATH}/SuperBuild/install/bin/gdal-config"
+    export PATH="${RUNPATH}/SuperBuild/install/bin:$PATH"
     venv/bin/pip install -r requirements.txt --ignore-installed
     set +e
 }
