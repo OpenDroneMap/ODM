@@ -27,6 +27,14 @@ RUN bash configure.sh clean
 # size of the layers.
 FROM nvidia/cuda:12.9.1-runtime-ubuntu24.04
 
+ARG GIT_COMMIT=unknown
+ARG BUILD_DATE=unknown
+ARG IMAGE_VERSION=unknown
+LABEL org.opencontainers.image.revision="$GIT_COMMIT" \
+      org.opencontainers.image.source="https://github.com/OpenDroneMap/ODM" \
+      org.opencontainers.image.version="$IMAGE_VERSION" \
+      org.opencontainers.image.created="$BUILD_DATE"
+
 # Env variables
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONPATH="$PYTHONPATH:/code/SuperBuild/install/local/lib/python3.12/dist-packages:/code/SuperBuild/install/lib/python3.12/dist-packages:/code/SuperBuild/install/bin/opensfm" \
