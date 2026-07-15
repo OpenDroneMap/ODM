@@ -8,6 +8,10 @@ ENV DEBIAN_FRONTEND=noninteractive \
 # Prepare directories
 WORKDIR /code
 
+# Make apt resilient to transient ports.ubuntu.com mirror failures
+RUN printf 'Acquire::Retries "6";\nAcquire::http::Timeout "30";\n' \
+      > /etc/apt/apt.conf.d/99-retries
+
 # Copy everything
 COPY . ./
 
@@ -39,6 +43,10 @@ WORKDIR /code
 COPY --from=builder /code /code
 
 ENV PATH="/code/venv/bin:$PATH"
+
+# Make apt resilient to transient ports.ubuntu.com mirror failures
+RUN printf 'Acquire::Retries "6";\nAcquire::http::Timeout "30";\n' \
+      > /etc/apt/apt.conf.d/99-retries
 
 # Install shared libraries that we depend on via APT, but *not*
 # the -dev packages to save space!
