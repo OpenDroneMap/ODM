@@ -38,7 +38,13 @@ ARG IMAGE_VERSION=unknown
 LABEL org.opencontainers.image.revision="$GIT_COMMIT" \
       org.opencontainers.image.source="https://github.com/OpenDroneMap/ODM" \
       org.opencontainers.image.version="$IMAGE_VERSION" \
-      org.opencontainers.image.created="$BUILD_DATE"
+      org.opencontainers.image.created="$BUILD_DATE" \
+      org.opencontainers.image.title="OpenDroneMap" \
+      org.opencontainers.image.description="Command line toolkit for processing aerial drone imagery" \
+      org.opencontainers.image.url="https://www.opendronemap.org" \
+      org.opencontainers.image.documentation="https://docs.opendronemap.org" \
+      org.opencontainers.image.licenses="AGPL-3.0-only" \
+      org.opencontainers.image.vendor="OpenDroneMap"
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PIXI_ENV=gpu-prod
