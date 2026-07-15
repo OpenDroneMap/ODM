@@ -8,6 +8,7 @@ same OCI labels as the images published by CI.
 """
 import argparse
 import os
+import re
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -18,7 +19,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 def parse_args():
     p = argparse.ArgumentParser(description="Build the runtime ODM Docker image")
     p.add_argument("--gpu", action="store_true", help="Build the GPU image from gpu.Dockerfile")
-    p.add_argument("-t", "--tag", default="", help="Image tag (default: opendronemap/odm:latest, or :gpu with --gpu)")
+    p.add_argument("-t", "--tag", default="", help="Image tag (default: opendronemap/odm:<branch>, or :latest/:gpu on master)")
     return p.parse_known_args()
 
 
@@ -31,6 +32,22 @@ def git_revision():
     return sha + "-dirty" if dirty else sha
 
 
+def git_branch():
+    try:
+        name = subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd=ROOT).decode().strip()
+    except (subprocess.CalledProcessError, OSError):
+        return ""
+    return "" if name == "HEAD" else name
+
+
+def default_tag(gpu, branch):
+    # Off master, tag with the branch name so local builds don't clobber :latest.
+    if branch and branch != "master":
+        slug = re.sub(r"[^A-Za-z0-9_.-]", "-", branch).lstrip(".-")
+        return "opendronemap/odm:%s-gpu" % slug if gpu else "opendronemap/odm:%s" % slug
+    return "opendronemap/odm:gpu" if gpu else "opendronemap/odm:latest"
+
+
 def main():
     args, docker_args = parse_args()
 
@@ -38,7 +55,7 @@ def main():
         version = f.read().strip()
 
     dockerfile = "gpu.Dockerfile" if args.gpu else "Dockerfile"
-    tag = args.tag or ("opendronemap/odm:gpu" if args.gpu else "opendronemap/odm:latest")
+    tag = args.tag or default_tag(args.gpu, git_branch())
     build_date = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     cmd = [

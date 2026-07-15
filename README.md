@@ -188,8 +188,9 @@ GPU image:
 pixi run docker-build -- --gpu
 ```
 
-These stamp the image with the OCI labels (revision, version, created). Pass a
-custom tag or extra `docker build` flags after `--`, e.g.
+These stamp the image with the OCI labels (revision, version, created) and tag
+it `opendronemap/odm:latest` (`:gpu`) on master, or `opendronemap/odm:<branch>`
+off master. Pass a custom tag or extra `docker build` flags after `--`, e.g.
 `pixi run docker-build -- -t my_odm_image --no-cache`.
 
 If you have questions, join the developer's chat at https://community.opendronemap.org/c/developers-chat/21
