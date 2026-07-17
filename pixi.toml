@@ -88,19 +88,20 @@ gperftools = "==2.18.1"
 
 [environments]
 default = { features = ["build"], solve-group = "default" }
-prod = { solve-group = "default" }  # runtime only: no compilers/cmake/etc.
+prod = { features = ["runtime"], solve-group = "default" }  # runtime only: no compilers/cmake/etc.
 gpu = { features = ["build", "gpu-build", "gpu"], solve-group = "gpu" }
-gpu-prod = { features = ["gpu"], solve-group = "gpu" }
+gpu-prod = { features = ["runtime", "gpu"], solve-group = "gpu" }
 
 [target.win-64.activation]
 scripts = ["scripts/activate-msvc.bat"]
-env = { PYTHONUTF8 = "1" }
+# Binaries at build stage are under prod env, so we must set this
+env = { PYTHONUTF8 = "1", PATH = "$PIXI_PROJECT_ROOT/SuperBuild/install/bin;$CONDA_PREFIX/Library/bin;$PATH" }
 
 [target.linux.activation.env]
-LD_LIBRARY_PATH = "$PIXI_PROJECT_ROOT/SuperBuild/install/lib:$LD_LIBRARY_PATH"
+LD_LIBRARY_PATH = "$PIXI_PROJECT_ROOT/SuperBuild/install/lib:$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
 
 [target.osx.activation.env]
-DYLD_LIBRARY_PATH = "$PIXI_PROJECT_ROOT/SuperBuild/install/lib:$DYLD_LIBRARY_PATH"
+DYLD_LIBRARY_PATH = "$PIXI_PROJECT_ROOT/SuperBuild/install/lib:$CONDA_PREFIX/lib:$DYLD_LIBRARY_PATH"
 
 [tasks]
 build = { cmd = "cmake -S SuperBuild -B SuperBuild/build && cmake --build SuperBuild/build", description = "Configure and compile SuperBuild" }
