@@ -82,6 +82,10 @@ onnxruntime = { version = "==1.22.2", build = "*cuda*" }
 [feature.gpu.target.win-64.dependencies]
 onnxruntime = { version = "==1.22.2", build = "*cuda*" }
 
+# libtcmalloc for opensfm's LD_PRELOAD; runtime-only so it isn't linked into the python extensions at build time (which crashes on import).
+[feature.runtime.target.linux.dependencies]
+gperftools = "==2.18.1"
+
 [environments]
 default = { features = ["build"], solve-group = "default" }
 prod = { solve-group = "default" }  # runtime only: no compilers/cmake/etc.
