@@ -40,6 +40,7 @@ pyodm = "==1.5.12"
 pysolar = "==0.13"
 rasterio = "==1.4.3"
 rawpy = "==0.25.0"
+rerun-sdk = "==0.34.1"
 vmem = "==1.0.2"
 
 [target.win-64.dependencies]
