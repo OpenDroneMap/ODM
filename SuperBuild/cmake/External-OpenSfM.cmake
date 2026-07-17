@@ -39,11 +39,12 @@ ExternalProject_Add(${_proj_name}
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
-  GIT_REPOSITORY    https://github.com/OpenDroneMap/OpenSfM/
-  GIT_TAG           c5328439465e6ace011f39077d1077d7b1cdd65d
+  # TEMPORARY: fork on top of https://github.com/OpenDroneMap/OpenSfM/pull/46 for
+  # for a small fix. Once all merged, use OpenDroneMap source.
+  GIT_REPOSITORY    https://github.com/spwoodcock/OpenSfM/
+  GIT_TAG           bb50bbb7b859faf201e4583c2d721a71785a4604
   #--Update/Patch step----------
   UPDATE_COMMAND    git submodule update --init --recursive
-  PATCH_COMMAND     ${CMAKE_COMMAND} -P ${SB_ROOT_DIR}/cmake/apply-patch.cmake ${SB_ROOT_DIR}/cmake/opensfm-aarch64-abs.patch
   #--Configure step-------------
   SOURCE_DIR        ${SB_INSTALL_DIR}/bin/${_proj_name}
   CONFIGURE_COMMAND ${CMAKE_COMMAND} <SOURCE_DIR>/${_proj_name}/src
