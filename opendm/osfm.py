@@ -5,7 +5,6 @@ OpenSfM related utils
 import os, shutil, sys, json, argparse, copy
 import yaml
 import numpy as np
-import pyproj
 from pyproj import CRS
 from opendm import io
 from opendm import log
@@ -22,8 +21,8 @@ from opensfm.types import Reconstruction
 from opensfm import report
 from opendm.multispectral import get_photos_by_band
 from opendm.gpu import has_popsift_and_can_handle_texsize, has_gpu
-from opensfm import multiview, exif
-from opensfm.actions.export_geocoords import _transform
+from opensfm import multiview, exif, geo
+
 
 class OSFMContext:
     def __init__(self, opensfm_project_path):
@@ -619,11 +618,11 @@ class OSFMContext:
         
         ds = DataSet(self.opensfm_project_path)
         reference = ds.load_reference()
-        projection = pyproj.Proj(proj4)
+        projection = geo.construct_proj_transformer(proj4, inverse=True)
 
         result = []
         for gcp in gcps_stats:
-            geocoords = _transform(gcp['coordinates'], reference, projection)
+            geocoords = geo.transform_to_proj(gcp['coordinates'], reference, projection)
             result.append({
                 'id': gcp['id'],
                 'observations': gcp['observations'],
