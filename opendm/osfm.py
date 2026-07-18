@@ -305,7 +305,7 @@ class OSFMContext:
                     log.ODM_WARNING("Georeferenced reconstruction, ignoring --matcher-order")
 
             if args.camera_lens != 'auto':
-                config.append("camera_projection_type: %s" % args.camera_lens.upper())
+                config.append("default_projection_type: %s" % args.camera_lens)
 
             matcher_type = args.matcher_type
             feature_type = args.feature_type.upper()
