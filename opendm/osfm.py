@@ -48,10 +48,16 @@ class OSFMContext:
         else:
             log.ODM_WARNING('Found a valid OpenSfM tracks file in: %s' % tracks_file)
 
-    def reconstruct(self, rolling_shutter_correct=False, merge_partial=False, rerun=False):
+    def reconstruct(self, algorithm='incremental', rolling_shutter_correct=False, merge_partial=False, rerun=False):
+        # Upstream OpenSfM supports 'incremental' and 'triangulation', so map anything
+        # else (e.g. the deprecated 'planar') to incremental
+        if algorithm not in ('incremental', 'triangulation'):
+            log.ODM_WARNING("Unsupported SfM algorithm '%s', using incremental instead" % algorithm)
+            algorithm = 'incremental'
+
         reconstruction_file = os.path.join(self.opensfm_project_path, 'reconstruction.json')
         if not io.file_exists(reconstruction_file) or rerun:
-            self.run('reconstruct')
+            self.run('reconstruct --algorithm %s' % algorithm)
             if merge_partial:
                 self.check_merge_partial_reconstructions()
         else:
@@ -75,7 +81,7 @@ class OSFMContext:
 
                 self.match_features(True)
                 self.create_tracks(True)
-                self.reconstruct(rolling_shutter_correct=False, merge_partial=merge_partial, rerun=True)
+                self.reconstruct(algorithm=algorithm, rolling_shutter_correct=False, merge_partial=merge_partial, rerun=True)
 
                 self.touch(rs_file)
             else:
@@ -284,7 +290,6 @@ class OSFMContext:
                 "matching_gps_distance: 0",
                 "matching_graph_rounds: %s" % matcher_graph_rounds,
                 "optimize_camera_parameters: %s" % ('no' if args.use_fixed_camera_params else 'yes'),
-                "reconstruction_algorithm: %s" % (args.sfm_algorithm),
                 "undistorted_image_format: tif",
                 "bundle_outlier_filtering_type: AUTO",
                 "sift_peak_threshold: 0.066",
@@ -400,7 +405,7 @@ class OSFMContext:
         if not io.dir_exists(metadata_dir) or rerun:
             self.run('extract_metadata')
     
-    def photos_to_metadata(self, photos, rolling_shutter, rolling_shutter_readout, rerun=False):
+    def photos_to_metadata(self, photos, rolling_shutter, rolling_shutter_readout, gps_accuracy, rerun=False):
         metadata_dir = self.path("exif")
 
         if io.dir_exists(metadata_dir) and not rerun:
@@ -416,7 +421,7 @@ class OSFMContext:
         data = DataSet(self.opensfm_project_path)
 
         for p in photos:
-            d = p.to_opensfm_exif(rolling_shutter, rolling_shutter_readout)
+            d = p.to_opensfm_exif(rolling_shutter, rolling_shutter_readout, gps_accuracy)
             with open(os.path.join(metadata_dir, "%s.exif" % p.filename), 'w') as f:
                 f.write(json.dumps(d, indent=4))
 

@@ -821,7 +821,7 @@ class ODM_Photo:
                 ]
             ).lower()
 
-    def to_opensfm_exif(self, rolling_shutter = False, rolling_shutter_readout = 0):
+    def to_opensfm_exif(self, rolling_shutter = False, rolling_shutter_readout = 0, gps_accuracy = None):
         capture_time = 0.0
         if self.utc_time is not None:
             capture_time = self.utc_time / 1000.0
@@ -838,9 +838,16 @@ class ODM_Photo:
 
             dop = self.get_gps_dop()
             if dop is None:
-                dop = 10.0 # Default
-            
+                dop = gps_accuracy if gps_accuracy is not None else 10.0 # Default
+
             gps['dop'] = dop
+
+            # Upstream OpenSfM weights GPS observations by per-axis standard
+            # deviation, preferring latitude/longitude/altitude_std over dop.
+            # Vertical GPS accuracy is typically ~3x worse than horizontal.
+            gps['latitude_std'] = dop
+            gps['longitude_std'] = dop
+            gps['altitude_std'] = dop * 3
 
         d = {
             "make": self.camera_make,
