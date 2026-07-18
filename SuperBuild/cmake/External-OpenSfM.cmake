@@ -39,10 +39,8 @@ ExternalProject_Add(${_proj_name}
   STAMP_DIR         ${_SB_BINARY_DIR}/stamp
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
-  # TEMPORARY: fork on top of https://github.com/OpenDroneMap/OpenSfM/pull/46 for
-  # for a small fix. Once all merged, use OpenDroneMap source.
-  GIT_REPOSITORY    https://github.com/spwoodcock/OpenSfM/
-  GIT_TAG           bb50bbb7b859faf201e4583c2d721a71785a4604
+  GIT_REPOSITORY    https://github.com/opensfm/opensfm
+  GIT_TAG           8fd3214d2a5fd0b2905905761a2a4753b9373c4a
   #--Update/Patch step----------
   UPDATE_COMMAND    git submodule update --init --recursive
   #--Configure step-------------
