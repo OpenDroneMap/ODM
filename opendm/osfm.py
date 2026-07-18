@@ -69,7 +69,7 @@ class OSFMContext:
             rs_file = self.path('rs_done.txt')
 
             if not io.file_exists(rs_file) or rerun:
-                self.run('rs_correct')
+                self.run('correct_rolling_shutter')
 
                 log.ODM_INFO("Re-running the reconstruction pipeline")
 
@@ -124,6 +124,35 @@ class OSFMContext:
                                 merged.add_observation(shot.id, track_id, obs)
 
                 data.save_reconstruction([merged])
+
+    def export_geocoords(self, proj4, offset_x, offset_y):
+        """
+        Export the reconstruction in projected (geographic) coordinates.
+
+        Upstream OpenSfM's export_geocoords no longer bakes in an east/north
+        offset (the --offset-x/--offset-y flags were removed), so we shift the
+        exported reconstruction into ODM's local frame (origin at the UTM
+        offset) ourselves. Keeping coordinates small preserves floating-point
+        precision through MVS/meshing; odm_georeferencing re-applies the offset
+        when producing the final georeferenced outputs.
+        """
+        self.run('export_geocoords --reconstruction --proj "%s"' % proj4)
+
+        geocoords_file = 'reconstruction.geocoords.json'
+        data = DataSet(self.opensfm_project_path)
+        reconstructions = data.load_reconstruction(geocoords_file)
+
+        # Pure translation into the local frame: p' = p - (offset_x, offset_y, 0)
+        shift = np.array([
+            [1.0, 0.0, 0.0, -offset_x],
+            [0.0, 1.0, 0.0, -offset_y],
+            [0.0, 0.0, 1.0, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ])
+        for r in reconstructions:
+            geo.transform_reconstruction_with_matrix(r, shift)
+
+        data.save_reconstruction(reconstructions, geocoords_file)
 
     def setup(self, args, images_path, reconstruction, append_config = [], rerun=False):
         """
