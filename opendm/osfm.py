@@ -524,12 +524,48 @@ class OSFMContext:
             if image_list is not None:
                 ds._set_image_list(image_list)
 
-            undistort.run_dataset(ds, "reconstruction.json", 
-                                  0, None, "undistorted", imageFilter)
-            
+            # OpenSfM 1.0 removed a callback during image undistortion.
+            # Wrapper to make current ODM compatible with change.
+            filter_calls = None
+            if imageFilter is not None:
+                filter_calls = self._wrap_load_image_with_filter(ds, imageFilter)
+
+            undistort.run_dataset(ds, "reconstruction.json", 0, None, "undistorted")
+
+            # TODO: this only works because OpenSfM undistorts with threads, so our wrapped
+            # load_image is the one the workers call. If it ever moves to separate processes
+            # the wrapper is bypassed and processing is skipped, so we throw an error if that happens.
+            if filter_calls is not None and filter_calls[0] == 0:
+                raise system.ExitException("Undistortion skipped ODM image processing; "
+                                           "OpenSfM's undistort backend may have changed.")
+
             self.touch(done_flag_file)
         else:
             log.ODM_WARNING("Already undistorted (%s)" % runId)
+
+    @staticmethod
+    def _wrap_load_image_with_filter(ds, imageFilter):
+        """Run ODM's per-image processing during OpenSfM's undistortion.
+
+        OpenSfM loads every image through ds.load_image, so wrapping it runs our
+        callback (plus an alpha-channel drop undistortion can't handle) on each image.
+        Returns a one-element list of how many times it ran, so the caller can confirm
+        it was used.
+        """
+        calls = [0]
+        original_load_image = ds.load_image
+
+        def load_image_with_filter(image, *args, **kwargs):
+            img = original_load_image(image, *args, **kwargs)
+            if img is not None:
+                img = imageFilter(image, img)
+                if len(img.shape) == 3 and img.shape[2] > 3:
+                    img = img[:, :, :3]
+                calls[0] += 1
+            return img
+
+        ds.load_image = load_image_with_filter
+        return calls
 
     def restore_reconstruction_backup(self):
         if os.path.exists(self.recon_backup_file()):
