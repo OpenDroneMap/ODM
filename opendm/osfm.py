@@ -141,20 +141,27 @@ class OSFMContext:
         odm_georeferencing adds the origin back for the final outputs. (OpenSfM
         used to do this via the removed --offset-x/--offset-y flags.)
 
+        We project and shift in one pass rather than calling OpenSfM's
+        export_geocoords, which saves at full map scale first. The projection
+        leaves camera rotations slightly non-orthonormal, and OpenSfM
+        re-orthonormalizes them on reload; at map scale (northings in the
+        millions) that rounding shifts cameras hundreds of metres off the points.
+        Subtracting the origin before saving keeps everything at local scale,
+        where the rounding is negligible.
+
         The shift moves the camera positions and the 3D points. Camera positions
         live on rig instances, so we move those, not individual shots: OpenSfM
         errors when moving a shot that shares a rig with others (multi-camera,
         multispectral, panorama).
         """
-        self.run('export_geocoords --reconstruction --proj "%s"' % proj4)
-
         geocoords_file = 'reconstruction.geocoords.json'
         data = DataSet(self.opensfm_project_path)
-        reconstructions = data.load_reconstruction(geocoords_file)
+        reconstructions = data.load_reconstruction()
 
-        # Subtract the origin from camera and point positions (X/Y only).
+        projection = geo.construct_proj_transformer(proj4, inverse=True)
         offset = np.array([offset_x, offset_y, 0.0])
         for r in reconstructions:
+            geo.transform_reconstruction_with_proj(r, projection)
             for rig_instance in r.rig_instances.values():
                 pose = rig_instance.pose
                 pose.set_origin(pose.get_origin() - offset)
