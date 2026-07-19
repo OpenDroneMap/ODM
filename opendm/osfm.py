@@ -133,14 +133,18 @@ class OSFMContext:
 
     def export_geocoords(self, proj4, offset_x, offset_y):
         """
-        Export the reconstruction in projected (geographic) coordinates.
+        Export the reconstruction to map coordinates (e.g. UTM), then shift it
+        close to the origin.
 
-        Upstream OpenSfM's export_geocoords no longer bakes in an east/north
-        offset (the --offset-x/--offset-y flags were removed), so we shift the
-        exported reconstruction into ODM's local frame (origin at the UTM
-        offset) ourselves. Keeping coordinates small preserves floating-point
-        precision through MVS/meshing; odm_georeferencing re-applies the offset
-        when producing the final georeferenced outputs.
+        Map coordinates are large numbers that lose precision in the float-based
+        MVS and meshing steps, so we subtract a fixed origin to keep values small.
+        odm_georeferencing adds the origin back for the final outputs. (OpenSfM
+        used to do this via the removed --offset-x/--offset-y flags.)
+
+        The shift moves the camera positions and the 3D points. Camera positions
+        live on rig instances, so we move those, not individual shots: OpenSfM
+        errors when moving a shot that shares a rig with others (multi-camera,
+        multispectral, panorama).
         """
         self.run('export_geocoords --reconstruction --proj "%s"' % proj4)
 
@@ -148,15 +152,14 @@ class OSFMContext:
         data = DataSet(self.opensfm_project_path)
         reconstructions = data.load_reconstruction(geocoords_file)
 
-        # Pure translation into the local frame: p' = p - (offset_x, offset_y, 0)
-        shift = np.array([
-            [1.0, 0.0, 0.0, -offset_x],
-            [0.0, 1.0, 0.0, -offset_y],
-            [0.0, 0.0, 1.0, 0.0],
-            [0.0, 0.0, 0.0, 1.0],
-        ])
+        # Subtract the origin from camera and point positions (X/Y only).
+        offset = np.array([offset_x, offset_y, 0.0])
         for r in reconstructions:
-            geo.transform_reconstruction_with_matrix(r, shift)
+            for rig_instance in r.rig_instances.values():
+                pose = rig_instance.pose
+                pose.set_origin(pose.get_origin() - offset)
+            for point in r.points.values():
+                point.coordinates = list(np.array(point.coordinates) - offset)
 
         data.save_reconstruction(reconstructions, geocoords_file)
 
