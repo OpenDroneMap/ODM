@@ -840,14 +840,19 @@ class ODM_Photo:
             if dop is None:
                 dop = gps_accuracy if gps_accuracy is not None else 10.0 # Default
 
+            # dop is a single GPS accuracy value. Older OpenSfM code still reads
+            # it, so keep writing it.
             gps['dop'] = dop
 
-            # Upstream OpenSfM weights GPS observations by per-axis standard
-            # deviation, preferring latitude/longitude/altitude_std over dop.
-            # Vertical GPS accuracy is typically ~3x worse than horizontal.
-            gps['latitude_std'] = dop
-            gps['longitude_std'] = dop
-            gps['altitude_std'] = dop * 3
+            # Newer OpenSfM wants horizontal and vertical GPS accuracy separately.
+            # ODM stores them per axis when it has them (e.g. RTK), so use those.
+            # If a value is missing, use dop for horizontal and assume vertical is
+            # 3x less accurate (typical for GPS).
+            horizontal = self.gps_xy_stddev if self.gps_xy_stddev is not None else dop
+            vertical = self.gps_z_stddev if self.gps_z_stddev is not None else horizontal * 3.0
+            gps['latitude_std'] = horizontal
+            gps['longitude_std'] = horizontal
+            gps['altitude_std'] = vertical
 
         d = {
             "make": self.camera_make,
