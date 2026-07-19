@@ -62,7 +62,11 @@ ExternalProject_Add(${_proj_name}
   #--Build step-----------------
   BINARY_DIR        ${_SB_BINARY_DIR}
   #--Install step---------------
-  INSTALL_COMMAND    ""
+  # See install-opensfm-modules.cmake for details
+  INSTALL_COMMAND   ${CMAKE_COMMAND}
+    -DOPENSFM_BINARY_DIR=${_SB_BINARY_DIR}
+    -DOPENSFM_PACKAGE_DIR=${SB_INSTALL_DIR}/bin/${_proj_name}/opensfm
+    -P ${CMAKE_CURRENT_LIST_DIR}/install-opensfm-modules.cmake
   #--Output logging-------------
   LOG_DOWNLOAD      OFF
   LOG_CONFIGURE     OFF
