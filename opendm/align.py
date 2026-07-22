@@ -81,7 +81,17 @@ def compute_alignment_matrix(input_laz, align_file, stats_dir):
             align_file = repr_func(align_file, input_crs)
             to_delete.append(align_file)
 
-        conf = dataclasses.asdict(codem.CodemRunConfig(align_file, input_laz, OUTPUT_DIR=stats_dir))
+        # Both the reconstruction and the alignment file are georeferenced in
+        # metric units, so the scale between them is known to be 1. Solving
+        # for scale adds a degenerate degree of freedom that can derail
+        # registration on feature-poor scenes.
+        conf = dataclasses.asdict(codem.CodemRunConfig(
+            align_file,
+            input_laz,
+            DSM_SOLVE_SCALE=False,
+            ICP_SOLVE_SCALE=False,
+            OUTPUT_DIR=stats_dir,
+        ))
         fnd_obj, aoi_obj = codem.preprocess(conf)
         fnd_obj.prep()
         aoi_obj.prep()
