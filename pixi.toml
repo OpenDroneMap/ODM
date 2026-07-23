@@ -11,16 +11,22 @@ exifread = "==3.5.1"
 exiftool = "*"
 fpdf2 = "==2.8.3"
 gdal = "==3.11.1"
+laszip = "*"             # OpenSfM
+leidenalg = "*"          # OpenSfM (dense clustering)
+libabseil = "*"          # OpenSfM
+lz4 = "*"                # OpenSfM
 matplotlib = "==3.10.3"  # undeclared runtime import of codem (pypi)
 numpy = "==2.3.2"
 onnxruntime = "==1.22.2"
 pdal = "==2.8.4"
 piexif = "==1.1.3"
 pillow = "==11.3.0"
+proj = "*"               # OpenSfM
 py-opencv = "==4.12.0"
 pygltflib = "==1.16.5"
 pyproj = "==3.7.1"
 python = "==3.12.9"
+python-igraph = "*"      # OpenSfM (dense clustering)
 python-pdal = "*"        # Avoids duplicating pdal version. Will resolve to compatible version.
 pyyaml = "==6.0.2"
 scikit-image = "==0.25.2"
@@ -40,6 +46,7 @@ pyodm = "==1.5.12"
 pysolar = "==0.13"
 rasterio = "==1.4.3"
 rawpy = "==0.25.0"
+rerun-sdk = "==0.34.1"
 vmem = "==1.0.2"
 
 [target.win-64.dependencies]
@@ -52,6 +59,7 @@ env = { CMAKE_GENERATOR = "Ninja" }
 c-compiler = "*"
 cmake = "3.31.*"
 cxx-compiler = "*"
+fast_float = "*"        # For OpenSfM build
 git = "*"
 make = "*"              # PoissonRecon builds from a hand-written Makefile
 ninja = "*"
@@ -81,15 +89,20 @@ onnxruntime = { version = "==1.22.2", build = "*cuda*" }
 [feature.gpu.target.win-64.dependencies]
 onnxruntime = { version = "==1.22.2", build = "*cuda*" }
 
+# libtcmalloc for opensfm's LD_PRELOAD; runtime-only so it isn't linked into the python extensions at build time (which crashes on import).
+[feature.runtime.target.linux.dependencies]
+gperftools = "==2.18.1"
+
 [environments]
 default = { features = ["build"], solve-group = "default" }
-prod = { solve-group = "default" }  # runtime only: no compilers/cmake/etc.
+prod = { features = ["runtime"], solve-group = "default" }  # runtime only: no compilers/cmake/etc.
 gpu = { features = ["build", "gpu-build", "gpu"], solve-group = "gpu" }
-gpu-prod = { features = ["gpu"], solve-group = "gpu" }
+gpu-prod = { features = ["runtime", "gpu"], solve-group = "gpu" }
 
 [target.win-64.activation]
 scripts = ["scripts/activate-msvc.bat"]
-env = { PYTHONUTF8 = "1" }
+# Binaries at build stage are under prod env, so we must set this
+env = { PYTHONUTF8 = "1", PATH = "$PIXI_PROJECT_ROOT/SuperBuild/install/bin;$CONDA_PREFIX/Library/bin;$PATH" }
 
 # SuperBuild binaries bake an RPATH to the build env's lib (e.g. .pixi/envs/default).
 # The runtime Docker image ships a different env (prod/gpu-prod), so that RPATH is

@@ -821,7 +821,7 @@ class ODM_Photo:
                 ]
             ).lower()
 
-    def to_opensfm_exif(self, rolling_shutter = False, rolling_shutter_readout = 0):
+    def to_opensfm_exif(self, rolling_shutter = False, rolling_shutter_readout = 0, gps_accuracy = None):
         capture_time = 0.0
         if self.utc_time is not None:
             capture_time = self.utc_time / 1000.0
@@ -838,9 +838,21 @@ class ODM_Photo:
 
             dop = self.get_gps_dop()
             if dop is None:
-                dop = 10.0 # Default
-            
+                dop = gps_accuracy if gps_accuracy is not None else 10.0 # Default
+
+            # dop is a single GPS accuracy value. Older OpenSfM code still reads
+            # it, so keep writing it.
             gps['dop'] = dop
+
+            # Newer OpenSfM wants horizontal and vertical GPS accuracy separately.
+            # ODM stores them per axis when it has them (e.g. RTK), so use those.
+            # If a value is missing, use dop for horizontal and assume vertical is
+            # 3x less accurate (typical for GPS).
+            horizontal = self.gps_xy_stddev if self.gps_xy_stddev is not None else dop
+            vertical = self.gps_z_stddev if self.gps_z_stddev is not None else horizontal * 3.0
+            gps['latitude_std'] = horizontal
+            gps['longitude_std'] = horizontal
+            gps['altitude_std'] = vertical
 
         d = {
             "make": self.camera_make,

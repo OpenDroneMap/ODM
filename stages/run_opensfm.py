@@ -30,12 +30,12 @@ class ODMOpenSfMStage(types.ODM_Stage):
 
         octx = OSFMContext(tree.opensfm)
         octx.setup(args, tree.dataset_raw, reconstruction=reconstruction, rerun=self.rerun())
-        octx.photos_to_metadata(photos, args.rolling_shutter, args.rolling_shutter_readout, self.rerun())
+        octx.photos_to_metadata(photos, args.rolling_shutter, args.rolling_shutter_readout, args.gps_accuracy, self.rerun())
         self.update_progress(20)
         octx.feature_matching(self.rerun())
         self.update_progress(30)
         octx.create_tracks(self.rerun())
-        octx.reconstruct(args.rolling_shutter, reconstruction.is_georeferenced() and (not args.sfm_no_partial), self.rerun())
+        octx.reconstruct(args.sfm_algorithm, args.rolling_shutter, reconstruction.is_georeferenced() and (not args.sfm_no_partial), self.rerun())
         octx.extract_cameras(tree.path("cameras.json"), self.rerun())
         self.update_progress(70)
 
@@ -70,8 +70,7 @@ class ODMOpenSfMStage(types.ODM_Stage):
 
         # We now switch to a geographic CRS
         if reconstruction.is_georeferenced() and (not io.file_exists(tree.opensfm_topocentric_reconstruction) or self.rerun()):
-            octx.run('export_geocoords --reconstruction --proj "%s" --offset-x %s --offset-y %s' % 
-                (reconstruction.georef.proj4(), reconstruction.georef.utm_east_offset, reconstruction.georef.utm_north_offset))
+            octx.export_geocoords(reconstruction.georef.proj4(), reconstruction.georef.utm_east_offset, reconstruction.georef.utm_north_offset)
             shutil.move(tree.opensfm_reconstruction, tree.opensfm_topocentric_reconstruction)
             shutil.move(tree.opensfm_geocoords_reconstruction, tree.opensfm_reconstruction)
         else:

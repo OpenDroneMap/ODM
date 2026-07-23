@@ -1,6 +1,7 @@
 import os
 import json
 
+from pathlib import Path
 from opendm import context
 from opendm import io
 from opendm import types
@@ -16,6 +17,29 @@ from opendm.skyremoval.skyfilter import SkyFilter
 from opendm.bgfilter import BgFilter
 from opendm.concurrency import parallel_map
 from opendm.video.video2dataset import Parameters, Video2Dataset
+
+def rename_files_with_spaces(images_dir, supported_extensions):
+    """Rename files in the ./images directory if they have spaces.
+    
+    OpenSfM rejects spaces in image names (NVM export and mask_list.txt).
+    Rename offending images and masks in-place so downstream only sees clean names.
+    """
+    renamed = 0
+    for f in Path(images_dir).iterdir():
+        if " " not in f.name:
+            continue
+        is_image = f.suffix.lower() in supported_extensions
+        is_mask = f.stem.endswith("_mask") and f.suffix.lower() in supported_extensions
+        if not (is_image or is_mask):
+            continue
+        dst = f.with_name(f.name.replace(" ", "_"))
+        if dst.exists():
+            log.ODM_WARNING("Cannot rename '%s' to '%s' (target exists), skipping" % (f.name, dst.name))
+            continue
+        f.rename(dst)
+        renamed += 1
+    if renamed > 0:
+        log.ODM_WARNING("Renamed %s file(s) containing spaces (OpenSfM requirement)" % renamed)
 
 def save_images_database(photos, database_file):
     with open(database_file, 'w') as f:
@@ -150,6 +174,9 @@ class ODMLoadDatasetStage(types.ODM_Stage):
                             f.write(json.dumps([os.path.basename(f) for f in frames]))
                     except Exception as e:
                         log.ODM_WARNING("Could not extract video frames: %s" % str(e))
+
+            # Fix for OpenSfM support
+            rename_files_with_spaces(images_dir, context.supported_extensions)
 
             files, rejects = get_images(images_dir)
             if files:

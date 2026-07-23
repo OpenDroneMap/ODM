@@ -5,7 +5,6 @@ OpenSfM related utils
 import os, shutil, sys, json, argparse, copy
 import yaml
 import numpy as np
-import pyproj
 from pyproj import CRS
 from opendm import io
 from opendm import log
@@ -22,8 +21,8 @@ from opensfm.types import Reconstruction
 from opensfm import report
 from opendm.multispectral import get_photos_by_band
 from opendm.gpu import has_popsift_and_can_handle_texsize, has_gpu
-from opensfm import multiview, exif
-from opensfm.actions.export_geocoords import _transform
+from opensfm import multiview, exif, geo
+
 
 class OSFMContext:
     def __init__(self, opensfm_project_path):
@@ -49,10 +48,16 @@ class OSFMContext:
         else:
             log.ODM_WARNING('Found a valid OpenSfM tracks file in: %s' % tracks_file)
 
-    def reconstruct(self, rolling_shutter_correct=False, merge_partial=False, rerun=False):
+    def reconstruct(self, algorithm='incremental', rolling_shutter_correct=False, merge_partial=False, rerun=False):
+        # Upstream OpenSfM supports 'incremental' and 'triangulation', so map anything
+        # else (e.g. the deprecated 'planar') to incremental
+        if algorithm not in ('incremental', 'triangulation'):
+            log.ODM_WARNING("Unsupported SfM algorithm '%s', using incremental instead" % algorithm)
+            algorithm = 'incremental'
+
         reconstruction_file = os.path.join(self.opensfm_project_path, 'reconstruction.json')
         if not io.file_exists(reconstruction_file) or rerun:
-            self.run('reconstruct')
+            self.run('reconstruct --algorithm %s' % algorithm)
             if merge_partial:
                 self.check_merge_partial_reconstructions()
         else:
@@ -70,13 +75,13 @@ class OSFMContext:
             rs_file = self.path('rs_done.txt')
 
             if not io.file_exists(rs_file) or rerun:
-                self.run('rs_correct')
+                self.run('correct_rolling_shutter')
 
                 log.ODM_INFO("Re-running the reconstruction pipeline")
 
                 self.match_features(True)
                 self.create_tracks(True)
-                self.reconstruct(rolling_shutter_correct=False, merge_partial=merge_partial, rerun=True)
+                self.reconstruct(algorithm=algorithm, rolling_shutter_correct=False, merge_partial=merge_partial, rerun=True)
 
                 self.touch(rs_file)
             else:
@@ -125,6 +130,45 @@ class OSFMContext:
                                 merged.add_observation(shot.id, track_id, obs)
 
                 data.save_reconstruction([merged])
+
+    def export_geocoords(self, proj4, offset_x, offset_y):
+        """
+        Export the reconstruction to map coordinates (e.g. UTM), then shift it
+        close to the origin.
+
+        Map coordinates are large numbers that lose precision in the float-based
+        MVS and meshing steps, so we subtract a fixed origin to keep values small.
+        odm_georeferencing adds the origin back for the final outputs. (OpenSfM
+        used to do this via the removed --offset-x/--offset-y flags.)
+
+        We project and shift in one pass rather than calling OpenSfM's
+        export_geocoords, which saves at full map scale first. The projection
+        leaves camera rotations slightly non-orthonormal, and OpenSfM
+        re-orthonormalizes them on reload; at map scale (northings in the
+        millions) that rounding shifts cameras hundreds of metres off the points.
+        Subtracting the origin before saving keeps everything at local scale,
+        where the rounding is negligible.
+
+        The shift moves the camera positions and the 3D points. Camera positions
+        live on rig instances, so we move those, not individual shots: OpenSfM
+        errors when moving a shot that shares a rig with others (multi-camera,
+        multispectral, panorama).
+        """
+        geocoords_file = 'reconstruction.geocoords.json'
+        data = DataSet(self.opensfm_project_path)
+        reconstructions = data.load_reconstruction()
+
+        projection = geo.construct_proj_transformer(proj4, inverse=True)
+        offset = np.array([offset_x, offset_y, 0.0])
+        for r in reconstructions:
+            geo.transform_reconstruction_with_proj(r, projection)
+            for rig_instance in r.rig_instances.values():
+                pose = rig_instance.pose
+                pose.set_origin(pose.get_origin() - offset)
+            for point in r.points.values():
+                point.coordinates = list(np.array(point.coordinates) - offset)
+
+        data.save_reconstruction(reconstructions, geocoords_file)
 
     def setup(self, args, images_path, reconstruction, append_config = [], rerun=False):
         """
@@ -256,7 +300,6 @@ class OSFMContext:
                 "matching_gps_distance: 0",
                 "matching_graph_rounds: %s" % matcher_graph_rounds,
                 "optimize_camera_parameters: %s" % ('no' if args.use_fixed_camera_params else 'yes'),
-                "reconstruction_algorithm: %s" % (args.sfm_algorithm),
                 "undistorted_image_format: tif",
                 "bundle_outlier_filtering_type: AUTO",
                 "sift_peak_threshold: 0.066",
@@ -272,7 +315,7 @@ class OSFMContext:
                     log.ODM_WARNING("Georeferenced reconstruction, ignoring --matcher-order")
 
             if args.camera_lens != 'auto':
-                config.append("camera_projection_type: %s" % args.camera_lens.upper())
+                config.append("default_projection_type: %s" % args.camera_lens)
 
             matcher_type = args.matcher_type
             feature_type = args.feature_type.upper()
@@ -372,7 +415,7 @@ class OSFMContext:
         if not io.dir_exists(metadata_dir) or rerun:
             self.run('extract_metadata')
     
-    def photos_to_metadata(self, photos, rolling_shutter, rolling_shutter_readout, rerun=False):
+    def photos_to_metadata(self, photos, rolling_shutter, rolling_shutter_readout, gps_accuracy, rerun=False):
         metadata_dir = self.path("exif")
 
         if io.dir_exists(metadata_dir) and not rerun:
@@ -388,7 +431,7 @@ class OSFMContext:
         data = DataSet(self.opensfm_project_path)
 
         for p in photos:
-            d = p.to_opensfm_exif(rolling_shutter, rolling_shutter_readout)
+            d = p.to_opensfm_exif(rolling_shutter, rolling_shutter_readout, gps_accuracy)
             with open(os.path.join(metadata_dir, "%s.exif" % p.filename), 'w') as f:
                 f.write(json.dumps(d, indent=4))
 
@@ -488,12 +531,48 @@ class OSFMContext:
             if image_list is not None:
                 ds._set_image_list(image_list)
 
-            undistort.run_dataset(ds, "reconstruction.json", 
-                                  0, None, "undistorted", imageFilter)
-            
+            # OpenSfM 1.0 removed a callback during image undistortion.
+            # Wrapper to make current ODM compatible with change.
+            filter_calls = None
+            if imageFilter is not None:
+                filter_calls = self._wrap_load_image_with_filter(ds, imageFilter)
+
+            undistort.run_dataset(ds, "reconstruction.json", 0, None, "undistorted")
+
+            # TODO: this only works because OpenSfM undistorts with threads, so our wrapped
+            # load_image is the one the workers call. If it ever moves to separate processes
+            # the wrapper is bypassed and processing is skipped, so we throw an error if that happens.
+            if filter_calls is not None and filter_calls[0] == 0:
+                raise system.ExitException("Undistortion skipped ODM image processing; "
+                                           "OpenSfM's undistort backend may have changed.")
+
             self.touch(done_flag_file)
         else:
             log.ODM_WARNING("Already undistorted (%s)" % runId)
+
+    @staticmethod
+    def _wrap_load_image_with_filter(ds, imageFilter):
+        """Run ODM's per-image processing during OpenSfM's undistortion.
+
+        OpenSfM loads every image through ds.load_image, so wrapping it runs our
+        callback (plus an alpha-channel drop undistortion can't handle) on each image.
+        Returns a one-element list of how many times it ran, so the caller can confirm
+        it was used.
+        """
+        calls = [0]
+        original_load_image = ds.load_image
+
+        def load_image_with_filter(image, *args, **kwargs):
+            img = original_load_image(image, *args, **kwargs)
+            if img is not None:
+                img = imageFilter(image, img)
+                if len(img.shape) == 3 and img.shape[2] > 3:
+                    img = img[:, :, :3]
+                calls[0] += 1
+            return img
+
+        ds.load_image = load_image_with_filter
+        return calls
 
     def restore_reconstruction_backup(self):
         if os.path.exists(self.recon_backup_file()):
@@ -570,7 +649,10 @@ class OSFMContext:
         osfm_report_path = self.path("stats", "report.pdf")
         if not os.path.exists(report_path) or rerun:
             data = DataSet(self.opensfm_project_path)
-            pdf_report = report.Report(data, odm_stats)
+            # FIXME in order to integrate OpenSfM 1.0 we drop the ODM specific
+            # stats.json --> report data for now.
+            # This could be added back in later.
+            pdf_report = report.Report(data)
             pdf_report.generate_report()
             pdf_report.save_report("report.pdf")
             
@@ -619,11 +701,11 @@ class OSFMContext:
         
         ds = DataSet(self.opensfm_project_path)
         reference = ds.load_reference()
-        projection = pyproj.Proj(proj4)
+        projection = geo.construct_proj_transformer(proj4, inverse=True)
 
         result = []
         for gcp in gcps_stats:
-            geocoords = _transform(gcp['coordinates'], reference, projection)
+            geocoords = geo.transform_to_proj(gcp['coordinates'], reference, projection)
             result.append({
                 'id': gcp['id'],
                 'observations': gcp['observations'],

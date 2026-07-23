@@ -329,7 +329,7 @@ def config(argv=None, parser=None):
                     action=StoreValue,
                     default='incremental',
                     choices=['incremental', 'triangulation', 'planar'],
-                    help=('Choose the structure from motion algorithm. For aerial datasets, if camera GPS positions and angles are available, triangulation can generate better results. For planar scenes captured at fixed altitude with nadir-only images, planar can be much faster. '
+                    help=('Choose the structure from motion algorithm. For aerial datasets, if camera GPS positions and angles are available, triangulation can generate better results. The planar option is deprecated (no longer supported by OpenSfM) and is treated as incremental. '
                         'Can be one of: %(choices)s. Default: '
                         '%(default)s'))
 
