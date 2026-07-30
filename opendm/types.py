@@ -350,6 +350,7 @@ class ODM_Tree(object):
         self.opensfm_reconstruction = os.path.join(self.opensfm, 'reconstruction.json')
         self.opensfm_reconstruction_nvm = os.path.join(self.opensfm, 'undistorted/reconstruction.nvm')
         self.opensfm_geocoords_reconstruction = os.path.join(self.opensfm, 'reconstruction.geocoords.json')
+        self.opensfm_geocoords_transformation = os.path.join(self.opensfm, 'geocoords_transformation.txt')
         self.opensfm_topocentric_reconstruction = os.path.join(self.opensfm, 'reconstruction.topocentric.json')
 
         # OpenMVS
@@ -493,4 +494,3 @@ class ODM_Stage:
 
     def process(self, args, outputs):
         raise NotImplementedError
-

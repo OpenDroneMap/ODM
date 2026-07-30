@@ -23,16 +23,52 @@ from opensfm import report
 from opendm.multispectral import get_photos_by_band
 from opendm.gpu import has_popsift_and_can_handle_texsize, has_gpu
 from opensfm import multiview, exif
-from opensfm.actions.export_geocoords import _transform
 
 class OSFMContext:
     def __init__(self, opensfm_project_path):
         self.opensfm_project_path = opensfm_project_path
+        self._geocoords_cache = {}
     
     def run(self, command):
         osfm_bin = os.path.join(context.opensfm_path, 'bin', 'opensfm')
         system.run('"%s" %s "%s"' %
                     (osfm_bin, command, self.opensfm_project_path))
+
+    def _get_geocoords_context(self, proj4):
+        if proj4 not in self._geocoords_cache:
+            ds = DataSet(self.opensfm_project_path)
+            self._geocoords_cache[proj4] = (
+                ds.load_reference(),
+                pyproj.Transformer.from_proj(CRS.from_epsg(4326), CRS.from_user_input(proj4)),
+            )
+        return self._geocoords_cache[proj4]
+
+    def transform_local_points_to_proj(self, points, proj4):
+        reference, projection = self._get_geocoords_context(proj4)
+        points = np.asarray(points, dtype=float)
+        squeeze = points.ndim == 1
+        points = np.atleast_2d(points)
+
+        latitudes, longitudes, altitudes = reference.to_lla(
+            points[:, 0], points[:, 1], points[:, 2]
+        )
+        eastings, northings = projection.transform(latitudes, longitudes)
+        transformed = np.column_stack((eastings, northings, altitudes))
+        return transformed[0] if squeeze else transformed
+
+    def transform_local_point_to_proj(self, point, proj4):
+        return self.transform_local_points_to_proj(point, proj4)
+
+    def transform_local_points_to_geocoords(self, points, proj4, offset_x=0.0, offset_y=0.0):
+        transformed = np.asarray(self.transform_local_points_to_proj(points, proj4), dtype=float)
+        squeeze = transformed.ndim == 1
+        transformed = np.atleast_2d(transformed).copy()
+        transformed[:, 0] -= offset_x
+        transformed[:, 1] -= offset_y
+        return transformed[0] if squeeze else transformed
+
+    def transform_local_point_to_geocoords(self, point, proj4, offset_x=0.0, offset_y=0.0):
+        return self.transform_local_points_to_geocoords(point, proj4, offset_x, offset_y)
 
     def is_reconstruction_done(self):
         tracks_file = os.path.join(self.opensfm_project_path, 'tracks.csv')
@@ -617,13 +653,9 @@ class OSFMContext:
         if not gcps_stats:
             return []
         
-        ds = DataSet(self.opensfm_project_path)
-        reference = ds.load_reference()
-        projection = pyproj.Proj(proj4)
-
         result = []
         for gcp in gcps_stats:
-            geocoords = _transform(gcp['coordinates'], reference, projection)
+            geocoords = self.transform_local_point_to_proj(gcp['coordinates'], proj4)
             result.append({
                 'id': gcp['id'],
                 'observations': gcp['observations'],
