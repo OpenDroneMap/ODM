@@ -67,6 +67,10 @@ vs2022_win-64 = "*"
 # Not supported on macs as they don't have CUDA drivers and we don't support MPS yet.
 platforms = ["linux-64", "win-64", "linux-aarch64"]
 
+# Read by SuperBuild/CMakeLists.txt to enable CUDA.
+[feature.gpu.activation]
+env = { ODM_ENABLE_CUDA = "ON" }
+
 [feature.gpu.system-requirements]
 cuda = "12.0"
 

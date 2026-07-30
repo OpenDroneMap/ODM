@@ -1,9 +1,7 @@
 set(_SB_BINARY_DIR "${SB_BINARY_DIR}/pypopsift")
 
 # Pypopsift
-find_package(CUDA 7.0)
-
-if(CUDA_FOUND)
+if(SB_ENABLE_CUDA)
     ExternalProject_Add(pypopsift
         DEPENDS
         PREFIX            ${_SB_BINARY_DIR}
@@ -32,5 +30,5 @@ if(CUDA_FOUND)
         LOG_BUILD         OFF
         )
 else()
-    message(WARNING "Could not find CUDA >= 7.0")
+    message(STATUS "Skipping pypopsift: ODM_ENABLE_CUDA not set (use the pixi gpu env, or set ODM_ENABLE_CUDA=ON)")
 endif()

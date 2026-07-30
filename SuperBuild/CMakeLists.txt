@@ -59,6 +59,13 @@ set(CONDA_CMAKE_ARGS
     "-DPython_ROOT_DIR=$ENV{CONDA_PREFIX}")
 message(STATUS "Using conda prefix: $ENV{CONDA_PREFIX}")
 
+# CUDA only via ODM_ENABLE_CUDA (pixi gpu feature, or set by hand)
+set(SB_ENABLE_CUDA OFF)
+if("$ENV{ODM_ENABLE_CUDA}" STREQUAL "ON")
+    set(SB_ENABLE_CUDA ON)
+endif()
+message(STATUS "CUDA support: ${SB_ENABLE_CUDA}")
+
 # On Linux the conda-forge toolchain bakes an RPATH to the environment's lib
 # into every binary. macOS clang does not, so libraries linked with an
 # @rpath install name (e.g. conda boost) fail to load at runtime. Bake the
