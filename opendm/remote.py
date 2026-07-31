@@ -1,6 +1,7 @@
 import time
 import datetime
 import os
+import sys
 import threading
 import zipfile
 import glob
@@ -476,8 +477,8 @@ class ToolchainTask(Task):
             submodels_path = os.path.abspath(self.path(".."))
             argv = get_submodel_argv(config.config(), submodels_path, submodel_name)
 
-            # Always invoke run.py through venv python
-            cmd = ["python3"] + argv
+            # Always invoke run.py through the same (pixi env) interpreter
+            cmd = [sys.executable] + argv
 
             # Re-run the ODM toolchain on the submodel
             system.run(" ".join(map(double_quote, cmd)), env_vars=os.environ.copy())

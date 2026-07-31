@@ -1,4 +1,5 @@
 import os
+import sys
 import shutil
 from opendm import log
 from opendm.osfm import OSFMContext, get_submodel_argv, get_submodel_paths, get_all_submodel_paths
@@ -185,8 +186,8 @@ class ODMSplitStage(types.ODM_Stage):
 
                         argv = get_submodel_argv(args, tree.submodels_path, sp_octx.name())
 
-                        # Always invoke run.py through venv python
-                        cmd = ["python3"] + argv
+                        # Always invoke run.py through the same (pixi env) interpreter
+                        cmd = [sys.executable] + argv
 
                         # Re-run the ODM toolchain on the submodel
                         system.run(" ".join(map(double_quote, cmd)), env_vars=os.environ.copy())

@@ -665,11 +665,6 @@ def get_submodel_argv(args, submodels_path = None, submodel_name = None):
     # Startup script (/path/to/run.py)
     startup_script = argv[0]
 
-    # On Windows, make sure we always invoke the "run.bat" file
-    if sys.platform == 'win32':
-        startup_script_dir = os.path.dirname(startup_script)
-        startup_script = os.path.join(startup_script_dir, "run")
-
     result = [startup_script] 
 
     args_dict = vars(args).copy()
