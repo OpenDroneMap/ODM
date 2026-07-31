@@ -23,7 +23,6 @@ from opensfm import report
 from opendm.multispectral import get_photos_by_band
 from opendm.gpu import has_popsift_and_can_handle_texsize, has_gpu
 from opensfm import multiview, exif
-from opensfm.actions.export_geocoords import _transform
 
 class OSFMContext:
     def __init__(self, opensfm_project_path):
@@ -70,7 +69,7 @@ class OSFMContext:
             rs_file = self.path('rs_done.txt')
 
             if not io.file_exists(rs_file) or rerun:
-                self.run('rs_correct')
+                self.run('correct_rolling_shutter')
 
                 log.ODM_INFO("Re-running the reconstruction pipeline")
 
@@ -623,7 +622,11 @@ class OSFMContext:
 
         result = []
         for gcp in gcps_stats:
-            geocoords = _transform(gcp['coordinates'], reference, projection)
+            # Local coords (XYZ /ENU) to WGS84 (lat/lon/alt)
+            coords = gcp['coordinates']
+            lat, lon, altitude = reference.to_lla(coords[0], coords[1], coords[2])
+            easting, northing = projection(lon, lat)
+            geocoords = [easting, northing, altitude]
             result.append({
                 'id': gcp['id'],
                 'observations': gcp['observations'],

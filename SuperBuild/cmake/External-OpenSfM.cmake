@@ -30,6 +30,9 @@ if(DEFINED ENV{CONDA_PREFIX})
   # propagated via the glog::glog cmake target, but OpenSfM links Ceres with
   # the old-style ${CERES_LIBRARIES} variable and misses the transitive define.
   set(OPENSFM_EXTRA_CXX_FLAGS "$ENV{CXXFLAGS} -DGLOG_USE_GLOG_EXPORT -DGLOG_USE_GFLAGS")
+  if(WIN32)
+    set(OPENSFM_EXTRA_CXX_FLAGS "${OPENSFM_EXTRA_CXX_FLAGS} /EHsc /GR")
+  endif()
 endif()
 
 ExternalProject_Add(${_proj_name}
@@ -40,10 +43,9 @@ ExternalProject_Add(${_proj_name}
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
   GIT_REPOSITORY    https://github.com/OpenDroneMap/OpenSfM/
-  GIT_TAG           c5328439465e6ace011f39077d1077d7b1cdd65d
+  GIT_TAG           118771173cdf2ece8869f8b4e363d56a3d0b0c5c
   #--Update/Patch step----------
   UPDATE_COMMAND    git submodule update --init --recursive
-  PATCH_COMMAND     ${CMAKE_COMMAND} -P ${SB_ROOT_DIR}/cmake/apply-patch.cmake ${SB_ROOT_DIR}/cmake/opensfm-aarch64-abs.patch
   #--Configure step-------------
   SOURCE_DIR        ${SB_INSTALL_DIR}/bin/${_proj_name}
   CONFIGURE_COMMAND ${CMAKE_COMMAND} <SOURCE_DIR>/${_proj_name}/src
@@ -63,7 +65,8 @@ ExternalProject_Add(${_proj_name}
   #--Build step-----------------
   BINARY_DIR        ${_SB_BINARY_DIR}
   #--Install step---------------
-  INSTALL_COMMAND    ""
+  INSTALL_COMMAND   ${CMAKE_COMMAND} --install <BINARY_DIR> --config ${CMAKE_BUILD_TYPE}
+    --prefix ${SB_INSTALL_DIR}/bin/${_proj_name}/opensfm
   #--Output logging-------------
   LOG_DOWNLOAD      OFF
   LOG_CONFIGURE     OFF
