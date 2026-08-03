@@ -5,7 +5,7 @@ find_package(CUDA 7.0)
 
 if(CUDA_FOUND)
     ExternalProject_Add(pypopsift
-        DEPENDS
+        DEPENDS           opensfm
         PREFIX            ${_SB_BINARY_DIR}
         TMP_DIR           ${_SB_BINARY_DIR}/tmp
         STAMP_DIR         ${_SB_BINARY_DIR}/stamp
