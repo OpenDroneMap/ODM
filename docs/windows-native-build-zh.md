@@ -178,12 +178,11 @@ import site
 | `Replace OpenMVS MAX_CUDA_COMPATIBILITY with an explicit arch list` | 问题 6 | 高（CUDA ≥12.9 均触发） |
 | `Pass explicit python include dir and library to OpenCV on Windows` | 问题 7 | 中（venv 基于非 python.org 解释器时） |
 | `Disable AVIF when building OpenCV` | 问题 9 | 高（构建机污染防御） |
+| `Prevent registry PythonPath from polluting sys.path on Windows installs` | 问题 8 | 高（影响所有装了 Python 3.12 的最终用户） |
 
-问题 8 的修复（`winpostinstall.bat` 写 `._pth`）不在本分支，它由分支
-`fix-embedded-python-registry-pythonpath` 的提交
-`Prevent registry PythonPath from polluting sys.path on Windows installs`
-承载，并已单独提交上游 PR。**注意：本分支的工作区不含该修复**，若要从本分支
-重新打安装包，需先合并或 cherry-pick 那个提交，否则产出的安装包在装有其他
-Python 3.12 的机器上会因注册表 PythonPath 污染而无法启动。
+问题 8 的修复由分支 `fix-embedded-python-registry-pythonpath`（提交 `2a258cb0`）
+承载并已单独提交上游 PR；本分支是从那里 cherry-pick 过来的同一份改动，因此从本
+分支直接打包即可得到正确的安装包。上游 PR 合并后再 rebase 本分支时，git 会通过
+patch-id 识别该提交已应用并自动丢弃，不会产生冲突。
 
 问题 1/3/4 属于构建环境准备，不涉及仓库改动，已记录在上文和构建脚本中。
