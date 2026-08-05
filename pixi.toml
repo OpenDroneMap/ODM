@@ -55,6 +55,10 @@ vmem = "==1.0.2"
 [target.win-64.dependencies]
 geotiff = "*"           # PDAL's pdalcpp.dll needs geotiff.dll on PATH (prod and build)
 
+# libtcmalloc for bin/opensfm's LD_PRELOAD (mandatory on Linux).
+[target.linux.dependencies]
+gperftools = "==2.18.1"
+
 [feature.build.activation]
 env = { CMAKE_GENERATOR = "Ninja" }
 
@@ -96,16 +100,11 @@ onnxruntime = { version = "==1.22.2", build = "*cuda*" }
 [feature.gpu.target.win-64.dependencies]
 onnxruntime = { version = "==1.22.2", build = "*cuda*" }
 
-# libtcmalloc for opensfm's LD_PRELOAD (mandatory on Linux); runtime-only so it
-# isn't linked into the python extensions at build time (crashes on import).
-[feature.runtime.target.linux.dependencies]
-gperftools = "==2.18.1"
-
 [environments]
 default = { features = ["build"], solve-group = "default" }
-prod = { features = ["runtime"], solve-group = "default" }  # runtime only: no compilers/cmake/etc.
+prod = { solve-group = "default" }  # runtime only: no compilers/cmake/etc.
 gpu = { features = ["build", "gpu-build", "gpu"], solve-group = "gpu" }
-gpu-prod = { features = ["runtime", "gpu"], solve-group = "gpu" }
+gpu-prod = { features = ["gpu"], solve-group = "gpu" }
 
 [target.win-64.activation]
 scripts = ["scripts/activate-msvc.bat"]

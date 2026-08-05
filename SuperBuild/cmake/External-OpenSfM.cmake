@@ -43,7 +43,7 @@ ExternalProject_Add(${_proj_name}
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
   GIT_REPOSITORY    https://github.com/OpenDroneMap/OpenSfM/
-  GIT_TAG           85f83a705cf6801965e6bd6fd2e080a7d7b9fd0b
+  GIT_TAG           eebd2e7d2b76be5cff8d4cc218449dc8151665d9
   #--Update/Patch step----------
   UPDATE_COMMAND    git submodule update --init --recursive
   #--Configure step-------------
@@ -55,6 +55,7 @@ ExternalProject_Add(${_proj_name}
     -DADDITIONAL_INCLUDE_DIRS=${OPENSFM_ADDITIONAL_INCLUDE_DIRS}
     -DYET_ADDITIONAL_INCLUDE_DIRS=${EXTRA_INCLUDE_DIRS}
     -DOPENSFM_BUILD_TESTS=off
+    -DOPENSFM_LINK_TCMALLOC=OFF
     -DPYTHON_EXECUTABLE=${PYTHON_EXE_PATH}
     -DCMAKE_CXX_FLAGS=${OPENSFM_EXTRA_CXX_FLAGS}
     "-DCMAKE_MODULE_LINKER_FLAGS=${OPENSFM_EXTRA_LINKER_FLAGS}"

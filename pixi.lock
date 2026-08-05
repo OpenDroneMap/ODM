@@ -128,6 +128,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/glslang-15.4.0-h7d2aa7d_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/gmp-6.3.0-hac33072_2.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/gmpy2-2.3.0-py312hcaba1f9_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/gperftools-2.18.1-h65a8314_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/graphite2-1.3.15-hecca717_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/gxx-14.3.0-he448592_7.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/gxx_impl_linux-64-14.3.0-h2185e75_19.conda
@@ -584,6 +585,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-aarch64/glslang-15.4.0-h9cbfd48_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-aarch64/gmp-6.3.0-h0a1ffab_2.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-aarch64/gmpy2-2.3.0-py312h35d709e_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-aarch64/gperftools-2.18.1-h6470e1d_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-aarch64/graphite2-1.3.15-hfae3067_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-aarch64/gxx-14.3.0-ha28f942_7.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-aarch64/gxx_impl_linux-aarch64-14.3.0-h0d4f5d4_19.conda
@@ -1830,6 +1832,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/glslang-15.4.0-h7d2aa7d_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/gmp-6.3.0-hac33072_2.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/gmpy2-2.3.0-py312hcaba1f9_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/gperftools-2.18.1-h65a8314_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/graphite2-1.3.15-hecca717_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/gxx-14.3.0-he448592_7.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/gxx_impl_linux-64-14.3.0-h2185e75_19.conda
@@ -2788,6 +2791,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-aarch64/glslang-15.4.0-h9cbfd48_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-aarch64/gmp-6.3.0-h0a1ffab_2.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-aarch64/gmpy2-2.3.0-py312h35d709e_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-aarch64/gperftools-2.18.1-h6470e1d_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-aarch64/graphite2-1.3.15-hfae3067_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-aarch64/gxx-14.3.0-ha28f942_7.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-aarch64/gxx_impl_linux-aarch64-14.3.0-h0d4f5d4_19.conda
@@ -20830,7 +20834,7 @@ packages:
   license: BSD-3-Clause
   license_family: BSD
   purls:
-  - pkg:pypi/click?source=compressed-mapping
+  - pkg:pypi/click?source=hash-mapping
   run_exports: {}
   size: 107155
   timestamp: 1783085363526
@@ -33879,20 +33883,20 @@ packages:
   - pytest-cov>=2.2.0 ; extra == 'test'
   - pytest>=2.8.2 ; extra == 'test'
   - shapely ; extra == 'test'
-  - numpydoc ; extra == 'all'
-  - boto3>=1.2.4 ; extra == 'all'
   - ghp-import ; extra == 'all'
-  - packaging ; extra == 'all'
-  - sphinx-click ; extra == 'all'
+  - ipython>=2.0 ; extra == 'all'
+  - sphinx-rtd-theme ; extra == 'all'
+  - shapely ; extra == 'all'
   - matplotlib ; extra == 'all'
   - fsspec ; extra == 'all'
+  - numpydoc ; extra == 'all'
   - hypothesis ; extra == 'all'
-  - shapely ; extra == 'all'
-  - pytest>=2.8.2 ; extra == 'all'
+  - sphinx-click ; extra == 'all'
+  - packaging ; extra == 'all'
+  - boto3>=1.2.4 ; extra == 'all'
   - pytest-cov>=2.2.0 ; extra == 'all'
-  - sphinx-rtd-theme ; extra == 'all'
+  - pytest>=2.8.2 ; extra == 'all'
   - sphinx ; extra == 'all'
-  - ipython>=2.0 ; extra == 'all'
   requires_python: '>=3.9'
 - pypi: https://files.pythonhosted.org/packages/e7/67/ce06267c5fc5c7bb1cc027410a75cca0c5232afa1d4072ff2abe685cb923/rerun_sdk-0.27.2-cp310-abi3-manylinux_2_28_aarch64.whl
   name: rerun-sdk
