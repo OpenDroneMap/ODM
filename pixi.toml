@@ -67,14 +67,12 @@ vmem = "==1.0.2"
 geotiff = "*"           # PDAL's pdalcpp.dll needs geotiff.dll on PATH (prod and build)
 khronos-opencl-icd-loader = "*"  # libOpenCL (ocl-icd is not built for win-64)
 
-<<<<<<< Updated upstream
-=======
 # libtcmalloc for bin/opensfm's LD_PRELOAD (mandatory on Linux).
 [target.linux.dependencies]
 gperftools = "==2.18.1"
 ocl-icd = "*"           # libOpenCL (absent on aarch64 otherwise)
 
->>>>>>> Stashed changes
+
 [feature.build.activation]
 env = { CMAKE_GENERATOR = "Ninja" }
 
@@ -107,16 +105,11 @@ libcurand-dev = "*"
 [feature.gpu.dependencies]
 onnxruntime = { version = "==1.22.2", build = "*cuda*" }
 
-# libtcmalloc for opensfm's LD_PRELOAD (mandatory on Linux); runtime-only so it
-# isn't linked into the python extensions at build time (crashes on import).
-[feature.runtime.target.linux.dependencies]
-gperftools = "==2.18.1"
-
 [environments]
 default = { features = ["build", "cpu"], solve-group = "default" }
-prod = { features = ["cpu", "runtime"], solve-group = "default" }  # runtime only: no compilers/cmake/etc.
+prod = { features = ["cpu"], solve-group = "default" }  # runtime only: no compilers/cmake/etc.
 gpu = { features = ["build", "gpu-build", "gpu"], solve-group = "gpu" }
-gpu-prod = { features = ["gpu", "runtime"], solve-group = "gpu" } # runtime only: no compilers/cmake/etc.
+gpu-prod = { features = ["gpu"], solve-group = "gpu" } # runtime only: no compilers/cmake/etc.
 
 [target.win-64.activation]
 scripts = ["scripts/activate-msvc.bat"]
