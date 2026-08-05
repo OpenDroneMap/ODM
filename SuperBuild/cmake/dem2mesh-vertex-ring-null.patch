@@ -1,0 +1,85 @@
+diff --git a/vendor/jmeshlib/src/MESH_STRUCTURE/vertex.cpp b/vendor/jmeshlib/src/MESH_STRUCTURE/vertex.cpp
+index ccf16c1..18ddecc 100644
+--- a/vendor/jmeshlib/src/MESH_STRUCTURE/vertex.cpp
++++ b/vendor/jmeshlib/src/MESH_STRUCTURE/vertex.cpp
+@@ -87,7 +87,7 @@ List *Vertex::VE() const
+   t = e->leftTriangle(this);
+   if (t == NULL) break;
+   e = t->oppositeEdge(v);
+- } while (e != e0);
++ } while (e != NULL && e != e0);
+ 
+  if (e == e0 && ve->numels() > 1) return ve;
+ 
+@@ -101,7 +101,7 @@ List *Vertex::VE() const
+   t = e->rightTriangle(this);
+   if (t == NULL) break;
+   e = t->oppositeEdge(v);
+- } while (e != e0);
++ } while (e != NULL && e != e0);
+ 
+  return ve;
+ }
+@@ -125,7 +125,7 @@ List *Vertex::VV() const
+   t = e->leftTriangle(this);
+   if (t == NULL) break;
+   e = t->oppositeEdge(v);
+- } while (e != e0);
++ } while (e != NULL && e != e0);
+ 
+  if (e == e0 && vv->numels() > 1) return vv;
+ 
+@@ -138,7 +138,7 @@ List *Vertex::VV() const
+   t = e->rightTriangle(this);
+   if (t == NULL) break;
+   e = t->oppositeEdge(v);
+- } while (e != e0);
++ } while (e != NULL && e != e0);
+ 
+  return vv;
+ }
+@@ -162,7 +162,7 @@ List *Vertex::VT() const
+   if (t == NULL) break;
+   vt->appendTail(t);
+   e = t->oppositeEdge(v);
+- } while (e != e0);
++ } while (e != NULL && e != e0);
+ 
+  if (e == e0 && vt->numels() > 1) return vt;
+ 
+@@ -174,7 +174,7 @@ List *Vertex::VT() const
+   if (t == NULL) break;
+   vt->appendHead(t);
+   e = t->oppositeEdge(v);
+- } while (e != e0);
++ } while (e != NULL && e != e0);
+ 
+  return vt;
+ }
+@@ -222,7 +222,7 @@ int Vertex::isOnBoundary() const
+   t = e->leftTriangle(this);
+   if (t == NULL) return 1;
+   e = t->oppositeEdge(v);
+- } while (e != e0);
++ } while (e != NULL && e != e0);
+ 
+  return 0;
+ }
+@@ -245,7 +245,7 @@ Edge *Vertex::nextBoundaryEdge() const
+   t = e->leftTriangle(this);
+   if (t == NULL) return e;
+   e = t->oppositeEdge(v);
+- } while (e != e0);
++ } while (e != NULL && e != e0);
+ 
+  return NULL;
+ }
+@@ -279,7 +279,7 @@ Edge *Vertex::prevBoundaryEdge() const
+   t = e->rightTriangle(this);
+   if (t == NULL) return e;
+   e = t->oppositeEdge(v);
+- } while (e != e0);
++ } while (e != NULL && e != e0);
+ 
+  return NULL;
+ }

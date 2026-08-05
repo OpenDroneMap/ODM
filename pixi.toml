@@ -1,7 +1,17 @@
 [workspace]
 name = "odm"
 channels = ["conda-forge"]
-platforms = ["linux-64", "win-64", "osx-arm64", "linux-aarch64"]
+platforms = ["linux-64", "win-64", "linux-aarch64",
+    { platform = "osx-arm64", macos = "14.0" },
+    { platform = "linux-64", cuda = "12.0" },
+    { platform = "win-64", cuda = "12.0" }
+]
+
+[feature.cpu]
+platforms = ["linux-64", "win-64", "linux-aarch64", "osx-arm64-macos-14-0"]
+
+[feature.gpu]
+platforms = ["linux-64-cuda-12-0", "win-64-cuda-12-0"]
 
 [dependencies]
 beautifulsoup4 = "==4.13.4"
@@ -78,33 +88,21 @@ tbb-devel = "2022.3.*"  # headers + TBBConfig.cmake for mvstexturing (runtime tb
 vswhere = "*"
 vs2022_win-64 = "*"
 
-[feature.gpu]
-# Not supported on macs as they don't have CUDA drivers and we don't support MPS yet.
-platforms = ["linux-64", "win-64", "linux-aarch64"]
-
 # Read by SuperBuild/CMakeLists.txt to enable CUDA.
 [feature.gpu.activation]
 env = { ODM_ENABLE_CUDA = "ON" }
 
-[feature.gpu.system-requirements]
-cuda = "12.0"
-
 [feature.gpu-build.dependencies]
 cuda-toolkit = "12.*"
 
-# CUDA onnxruntime (GPU execution provider for sky/bg filters) only exists on
-# conda-forge for linux-64 and win-64; linux-aarch64 keeps the CPU build.
-[feature.gpu.target.linux-64.dependencies]
-onnxruntime = { version = "==1.22.2", build = "*cuda*" }
-
-[feature.gpu.target.win-64.dependencies]
+[feature.gpu.dependencies]
 onnxruntime = { version = "==1.22.2", build = "*cuda*" }
 
 [environments]
-default = { features = ["build"], solve-group = "default" }
-prod = { solve-group = "default" }  # runtime only: no compilers/cmake/etc.
+default = { features = ["build", "cpu"], solve-group = "default" }
+prod = { features = ["cpu"], solve-group = "default" }  # runtime only: no compilers/cmake/etc.
 gpu = { features = ["build", "gpu-build", "gpu"], solve-group = "gpu" }
-gpu-prod = { features = ["gpu"], solve-group = "gpu" }
+gpu-prod = { features = ["gpu"], solve-group = "gpu" } # runtime only: no compilers/cmake/etc.
 
 [target.win-64.activation]
 scripts = ["scripts/activate-msvc.bat"]
@@ -117,7 +115,10 @@ env = { PYTHONUTF8 = "1" }
 LD_LIBRARY_PATH = "$PIXI_PROJECT_ROOT/SuperBuild/install/lib:$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
 
 [target.osx.activation.env]
-DYLD_LIBRARY_PATH = "$PIXI_PROJECT_ROOT/SuperBuild/install/lib:$CONDA_PREFIX/lib:$DYLD_LIBRARY_PATH"
+DYLD_LIBRARY_PATH = "$PIXI_PROJECT_ROOT/SuperBuild/install/lib:$DYLD_LIBRARY_PATH"
+# Using the fallback allows PyPi libs to use the system libs on macOS while
+# allowing conda deps to find in the venv
+DYLD_FALLBACK_LIBRARY_PATH = "$CONDA_PREFIX/lib:$HOME/lib:/usr/local/lib:/lib:/usr/lib"
 
 [tasks]
 build = { cmd = "cmake -S SuperBuild -B SuperBuild/build && cmake --build SuperBuild/build", description = "Configure and compile SuperBuild" }
