@@ -102,6 +102,9 @@ cuda-cudart-dev = "12.*"
 libcublas-dev = "*"
 libcurand-dev = "*"   
 
+[feature.gpu-build.target.linux-64.dependencies]
+cuda-driver-dev = "12.*"
+
 [feature.gpu.dependencies]
 onnxruntime = { version = "==1.22.2", build = "*cuda*" }
 
