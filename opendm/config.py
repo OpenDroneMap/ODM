@@ -728,6 +728,12 @@ def config(argv=None, parser=None):
                         default=False,
                         help='Generate OGC 3D Tiles outputs. Default: %(default)s')
 
+    parser.add_argument('--3d-tiles-y-up-to-z-up',
+                        action=StoreTrue,
+                        nargs=0,
+                        default=False,
+                        help='Generate OGC 3D Tiles outputs, Converts Y-up to Z-up. Default: %(default)s')
+
     parser.add_argument('--rolling-shutter',
                     action=StoreTrue,
                     nargs=0,
