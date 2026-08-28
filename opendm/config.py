@@ -1,6 +1,7 @@
 import os
 import sys
 import argparse
+import json
 
 import yaml
 
@@ -150,6 +151,44 @@ class StoreValue(argparse.Action):
         setattr(namespace, self.dest + '_is_set', True)
 
 args = None
+
+def options_to_json(parser):
+    """Serialize an argparse parser's options into a JSON-compatible dict.
+
+    The output maps each option string (e.g. "--min-num-features") to a dict
+    of stringified argparse attributes (help, metavar, type, default, choices).
+    This is the format consumed by API clients (e.g. NodeODM) to build their
+    option-discovery endpoints. Attributes are stringified so the format stays
+    stable regardless of the Python objects backing each option.
+    """
+    options = {}
+    for action in parser._actions:
+        # Skip the discovery flag itself so clients don't surface it as a
+        # processing option.
+        if action.dest == 'dump_options_json':
+            continue
+
+        # Key on the first option string (e.g. "--feature-type"), falling back
+        # to the destination for positionals (e.g. "name").
+        key = action.option_strings[0] if action.option_strings else action.dest
+
+        entry = {}
+        if action.help is not None:
+            entry['help'] = action.help
+        if action.metavar is not None:
+            entry['metavar'] = action.metavar
+        if action.type is not None:
+            entry['type'] = str(action.type)
+        # Only emit a default when one was set; a missing default is treated by
+        # clients as "no default".
+        if action.default is not None:
+            entry['default'] = str(action.default)
+        if action.choices is not None:
+            entry['choices'] = str(action.choices)
+
+        options[key] = entry
+
+    return options
 
 def config(argv=None, parser=None):
     global args
@@ -914,6 +953,24 @@ def config(argv=None, parser=None):
                     help=('When processing multispectral datasets, ODM will automatically align the images for each band. '
                           'If the images have been postprocessed and are already aligned, use this option. '
                           'Default: %(default)s'))
+
+    parser.add_argument('--dump-options-json',
+                    action=StoreTrue,
+                    nargs=0,
+                    default=False,
+                    help=('Print all available options as a JSON object to stdout and exit. '
+                          'Intended for API clients (e.g. NodeODM) to discover available options '
+                          'through the normal entrypoint, without running a task or importing ODM internals. '
+                          'Default: %(default)s'))
+
+    # Option discovery: emit option metadata as JSON and exit before any
+    # parsing/validation that would otherwise require a dataset. Detect the
+    # flag directly from argv so this works even though a dataset name is not
+    # provided.
+    check_argv = sys.argv[1:] if argv is None else argv
+    if '--dump-options-json' in check_argv:
+        print(json.dumps(options_to_json(parser)))
+        sys.exit(0)
 
     args, unknown = parser.parse_known_args(argv)
     DEPRECATED = ["--verbose", "--debug", "--time", "--resize-to", "--depthmap-resolution", "--pc-geometric", "--texturing-data-term", "--texturing-outlier-removal-type", "--texturing-tone-mapping", "--texturing-skip-local-seam-leveling"]
