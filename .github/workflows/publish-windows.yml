@@ -64,6 +64,7 @@ jobs:
       with:
         name: Setup
         path: dist\*.exe
+        retention-days: 3
     # Silent-install to a path different from the build dir and run the CLI in a
     # shell with no inherited CONDA_PREFIX. This is the real test that the bundled
     # conda env relocates: it fails here if activate.d doesn't honor %CONDA_PREFIX%.
