@@ -100,7 +100,7 @@ ExternalProject_Add(${_proj_name}
   #--Download step--------------
   DOWNLOAD_DIR      ${SB_DOWNLOAD_DIR}
   GIT_REPOSITORY    https://github.com/OpenDroneMap/openMVS
-  GIT_TAG           355
+  GIT_TAG           d7081f414e3b6d0bdb7ade59ac071d049fdee29e
   #--Update/Patch step----------
   UPDATE_COMMAND    ""
   PATCH_COMMAND     ${OPENMVS_PATCH_COMMAND}
@@ -116,6 +116,7 @@ ExternalProject_Add(${_proj_name}
     -DOpenMVS_MAX_CUDA_COMPATIBILITY=ON
     -DINSTALL_USE_SUBDIR=OFF
     -DOpenMVS_USE_CUDA=${SB_ENABLE_CUDA}
+    -DCMAKE_CUDA_ARCHITECTURES=OFF
     ${GPU_CMAKE_ARGS}
     ${CONDA_CMAKE_ARGS}
     ${OPENMVS_WIN_CONDA_ARGS}
