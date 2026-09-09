@@ -2,6 +2,7 @@ import sys
 import os
 import shutil
 import glob
+import json
 
 from opendm import log
 from opendm import io
@@ -99,6 +100,24 @@ class ODMOpenSfMStage(types.ODM_Stage):
         largest_photo = None
         undistort_pipeline = []
 
+        # Load per-band panel irradiance computed during the dataset stage
+        # (see stages/dataset.py). Only used for --radiometric-calibration camera+panel.
+        panel_irradiance_by_band = None
+        if args.radiometric_calibration == "camera+panel":
+            panels_file = os.path.join(tree.root_path, 'panels.json')
+            if os.path.exists(panels_file):
+                try:
+                    with open(panels_file) as f:
+                        panel_irradiance_by_band = json.load(f).get('irradiance', None)
+                except Exception as e:
+                    log.ODM_WARNING("Cannot read panel irradiance database: %s" % str(e))
+
+            if panel_irradiance_by_band:
+                log.ODM_INFO("Using panel-derived irradiance for band(s): %s" % ", ".join(panel_irradiance_by_band.keys()))
+            else:
+                log.ODM_WARNING("camera+panel selected but no panel irradiance is available; "
+                                "reflectance will fall back to stored/DLS irradiance.")
+
         def undistort_callback(shot_id, image):
             for func in undistort_pipeline:
                 image = func(shot_id, image)
@@ -116,7 +135,12 @@ class ODMOpenSfMStage(types.ODM_Stage):
             if photo.is_thermal():
                 return thermal.dn_to_temperature(photo, image, tree.dataset_raw)
             else:
-                return multispectral.dn_to_reflectance(photo, image, use_sun_sensor=args.radiometric_calibration=="camera+sun")
+                panel_irradiance = None
+                if panel_irradiance_by_band is not None:
+                    panel_irradiance = panel_irradiance_by_band.get(photo.band_name)
+                return multispectral.dn_to_reflectance(photo, image,
+                                                       use_sun_sensor=args.radiometric_calibration=="camera+sun",
+                                                       panel_irradiance=panel_irradiance)
 
 
         def align_to_primary_band(shot_id, image):
