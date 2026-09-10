@@ -11,6 +11,7 @@ concurrency:
 jobs:
   pixi:
     strategy:
+      fail-fast: false
       matrix:
         platform:
           - ubuntu-latest
