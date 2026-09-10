@@ -77,8 +77,16 @@ vs2022_win-64 = "*"
 [feature.gpu.activation]
 env = { ODM_ENABLE_CUDA = "ON" }
 
-[feature.gpu-build.dependencies]
+[feature.gpu-build.target.linux-64.dependencies]
 cuda-toolkit = "12.*"
+
+# cuda-toolkit pulls in cuda-nvcc, whose win-64 build depends on vs2019_win-64.
+# That package's activation runs vcvars a second time on top of vs2022_win-64's,
+# and the PATH it leaves exceeds the 8191 bytes cmd.exe accepts, so nvcc's
+# cl.exe lookup fails. cuda-nvcc_win-64 is the compiler without that pin.
+[feature.gpu-build.target.win-64.dependencies]
+cuda-nvcc_win-64 = "12.*"
+cuda-libraries-dev = "12.*"
 
 [feature.gpu.dependencies]
 onnxruntime = { version = "==1.22.2", build = "*cuda*" }
