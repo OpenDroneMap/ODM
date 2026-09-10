@@ -28,6 +28,11 @@ jobs:
     - name: Install environment
       run: pixi install --locked
     - name: Build SuperBuild
+      # The SuperBuild nests ninja inside ninja. Uncapped, each level runs
+      # cores+2 jobs and ~30 compilers exhaust the 16 GB runner. cmake
+      # --build honours this at both levels, so 3 bounds the total at 9.
+      env:
+        CMAKE_BUILD_PARALLEL_LEVEL: 3
       run: pixi run build
     - name: Test
       run: pixi run test
