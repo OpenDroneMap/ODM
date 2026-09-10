@@ -97,13 +97,21 @@ vs2022_win-64 = "*"
 env = { ODM_ENABLE_CUDA = "ON" }
 
 [feature.gpu-build.dependencies]
-cuda-nvcc = "12.*"
 cuda-cudart-dev = "12.*"
 libcublas-dev = "*"
-libcurand-dev = "*"   
+libcurand-dev = "*"
 
+# cuda-driver-dev ships the libcuda.so linker stub OpenMVS falls back to.
 [feature.gpu-build.target.linux-64.dependencies]
+cuda-nvcc = "12.*"
 cuda-driver-dev = "12.*"
+
+# The win-64 build of cuda-nvcc depends on vs2019_win-64. That package's
+# activation runs vcvars a second time on top of vs2022_win-64's, and the PATH
+# it leaves exceeds the 8191 bytes cmd.exe accepts, so nvcc's cl.exe lookup
+# fails. cuda-nvcc_win-64 is the compiler without that pin.
+[feature.gpu-build.target.win-64.dependencies]
+cuda-nvcc_win-64 = "12.*"
 
 [feature.gpu.dependencies]
 onnxruntime = { version = "==1.22.2", build = "*cuda*" }

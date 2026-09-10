@@ -2309,7 +2309,6 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/win-64/cuda-cudart-12.9.79-he0c23c2_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/cuda-cudart-dev-12.9.79-he0c23c2_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/cuda-cudart-static-12.9.79-he0c23c2_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/win-64/cuda-nvcc-12.9.86-h8f04d04_6.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/cuda-nvcc-impl-12.9.86-h53cbb54_2.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/cuda-nvcc-tools-12.9.86-he0c23c2_2.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/cuda-nvcc_win-64-12.9.86-hd70436c_6.conda
@@ -2561,7 +2560,6 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/win-64/vc14_runtime-14.51.36247-habf1de7_41.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/vcomp14-14.51.36247-habf1de7_41.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/vs2015_runtime-14.51.36247-h633cb9f_41.conda
-      - conda: https://conda.anaconda.org/conda-forge/win-64/vs2019_win-64-19.29.30139-h7dcff83_41.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/vs2022_win-64-19.44.35207-ha74f236_41.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/wrapt-2.3.0-py312he06e257_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/x264-1!164.3095-h8ffe710_2.tar.bz2
@@ -25032,17 +25030,6 @@ packages:
   run_exports: {}
   size: 23249
   timestamp: 1749218998822
-- conda: https://conda.anaconda.org/conda-forge/win-64/cuda-nvcc-12.9.86-h8f04d04_6.conda
-  sha256: c8ae18d52a596dd1b2c210dab7c75893b74aac25783c787fc89e6052c9bfeabb
-  md5: e9b16eaf091bd261c36c239e99cca554
-  depends:
-  - cuda-nvcc_win-64 12.9.86.*
-  - vs2019_win-64
-  license: LicenseRef-NVIDIA-End-User-License-Agreement
-  purls: []
-  run_exports: {}
-  size: 25977
-  timestamp: 1771619505004
 - conda: https://conda.anaconda.org/conda-forge/win-64/cuda-nvcc-impl-12.9.86-h53cbb54_2.conda
   sha256: d52c7b77b7d4f707efb3b76f93beb1c2b97883db6605818c1727935df9babe5d
   md5: 17181de579b111f1cbad7af2b45aed0e
@@ -29660,24 +29647,6 @@ packages:
   run_exports: {}
   size: 21386
   timestamp: 1785359368990
-- conda: https://conda.anaconda.org/conda-forge/win-64/vs2019_win-64-19.29.30139-h7dcff83_41.conda
-  sha256: 45d2d3bde6d619a424d61c6b2c9cea1d37b8c1b55b910ad7293ccc367ab98125
-  md5: 8cddf0c44bd1cd5efc1ad00380aa6c8c
-  depends:
-  - vswhere
-  constrains:
-  - vs_win-64 2019.11
-  track_features:
-  - vc14
-  license: BSD-3-Clause
-  purls: []
-  run_exports:
-    strong:
-    - vc >=14.2,<15
-    - vc14_runtime >=14.29.30139
-    - ucrt >=10.0.20348.0
-  size: 25454
-  timestamp: 1785358720536
 - conda: https://conda.anaconda.org/conda-forge/win-64/vs2022_win-64-19.44.35207-ha74f236_41.conda
   sha256: 9d7d1b43cf4af5a8e8b1646175c9f899ffbcab189a33ac41127a96e7bcf41af0
   md5: 04190e0ebd886433300ce9343ee98942
