@@ -140,16 +140,16 @@ externalproject_add(mve
     INSTALL_COMMAND ""
 )
 
-foreach(lib ${custom_libs})
-	SETUP_EXTERNAL_PROJECT_CUSTOM(${lib})
-endforeach()
-
 include(ProcessorCount)
 if(DEFINED ENV{CMAKE_BUILD_PARALLEL_LEVEL})
   set(nproc $ENV{CMAKE_BUILD_PARALLEL_LEVEL})
 else()
   ProcessorCount(nproc)
 endif()
+
+foreach(lib ${custom_libs})
+	SETUP_EXTERNAL_PROJECT_CUSTOM(${lib})
+endforeach()
 
 if (WIN32)
     find_program(MSBUILD_EXECUTABLE msbuild REQUIRED)

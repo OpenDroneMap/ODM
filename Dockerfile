@@ -19,6 +19,7 @@ RUN pixi install --locked \
     && rm -rf .pixi/envs/prod/include .pixi/envs/prod/share/doc .pixi/envs/prod/share/man .pixi/envs/prod/share/info
 
 COPY . ./
+ARG CMAKE_BUILD_PARALLEL_LEVEL
 RUN pixi run build && pixi run test
 
 RUN mkdir -p /odm-runtime/SuperBuild /odm-runtime/scripts \

@@ -71,6 +71,10 @@ rerun_stages = {
     'pc_quality': 'opensfm',
     'pc_rectify': 'odm_georeferencing',
     'pc_sample': 'odm_filterpoints',
+    'pc_fusion_filter': 'openmvs',
+    'pc_fusion_depth_diff': 'openmvs',
+    'pc_fusion_reprojection': 'openmvs',
+    'pc_crop_to_roi': 'openmvs',
     'pc_skip_geometric': 'openmvs',
     'primary_band': 'dataset',
     'project_path': None,
@@ -508,6 +512,41 @@ def config(argv=None, parser=None):
                         type=float,
                         default=0,
                         help='Filters the point cloud by keeping only a single point around a radius N (in meters). This can be useful to limit the output resolution of the point cloud and remove duplicate points. Set to 0 to disable sampling. '
+                             'Default: %(default)s')
+
+    parser.add_argument('--pc-fusion-filter',
+                        metavar='<string>',
+                        action=StoreValue,
+                        default='fuse',
+                        choices=['merge', 'fuse', 'dense-fuse'],
+                        help='Select algorithm to fuse the depth-maps into a point cloud. '
+                             '"merge" Keeps everything, i.e. one point per depth pixel. '
+                             '"fuse" aggregates points and keeps the weighted mean (projecting back the point into other depth maps) '
+                             '"dense-fuse" applies a stricter consensus, it requires a certain amount (default 5) to actually create the point.'
+                             'Can be one of: %(choices)s. Default: %(default)s')
+
+    parser.add_argument('--pc-fusion-depth-diff',
+                        metavar='<positive float>',
+                        action=StoreValue,
+                        type=float,
+                        default=0.01,
+                        help='Maximum relative depth difference, as a fraction of the depth, for two depth estimates to be fused. '
+                             'Default: %(default)s')
+
+    parser.add_argument('--pc-fusion-reprojection',
+                        metavar='<positive float>',
+                        action=StoreValue,
+                        type=float,
+                        default=1.2,
+                        help='Maximum reprojection distance in pixels for two depth estimates to be fused.'
+                             'Only used by "dense-fuse".'
+                             'Default: %(default)s')
+
+    parser.add_argument('--pc-crop-to-roi',
+                        action=StoreTrue,
+                        nargs=0,
+                        default=False,
+                        help='Crop the point cloud to the ROI (region of interest), if not given, it is estimated by OpenMVS'
                              'Default: %(default)s')
 
     parser.add_argument('--pc-skip-geometric',
