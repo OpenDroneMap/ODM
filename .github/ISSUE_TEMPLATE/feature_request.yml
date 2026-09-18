@@ -1,0 +1,42 @@
+name: Feature Request
+description: Suggest a new feature or enhancement for ODM.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for your interest in improving ODM!
+
+        **Please start on the [community forum](https://community.opendronemap.org/c/opendronemap) first.** New features should be discussed there so other community members can weigh in on whether they want the same thing, and so a plan can be agreed on before any code is written. Issues opened without prior discussion may be closed and redirected to the forum.
+  - type: checkboxes
+    id: prechecks
+    attributes:
+      label: Before you open an issue
+      options:
+        - label: I have discussed this feature on the [community forum](https://community.opendronemap.org/c/opendronemap) and there is interest in it.
+          required: true
+        - label: I have searched [existing issues](https://github.com/OpenDroneMap/ODM/issues) and this feature has not already been requested.
+          required: true
+  - type: input
+    id: forum-link
+    attributes:
+      label: Link to forum discussion
+      description: Paste the URL of the forum topic where this feature was discussed.
+      placeholder: https://community.opendronemap.org/t/...
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the feature
+      description: What should ODM do that it doesn't do today? Why is it useful?
+    validations:
+      required: true
+  - type: textarea
+    id: plan
+    attributes:
+      label: Proposed plan
+      description: Outline the agreed-on approach from the forum discussion. Where possible, cite files and lines where changes should be made.
+    validations:
+      required: true
