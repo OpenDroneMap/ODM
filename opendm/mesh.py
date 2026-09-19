@@ -136,6 +136,9 @@ def dem_to_mesh_gridded(inGeotiff, outMesh, maxVertexCount, maxConcurrency=1):
 def screened_poisson_reconstruction(inPointCloud, outMesh, depth = 8, samples = 1, maxVertexCount=100000, pointWeight=4, threads=context.num_cores):
 
     mesh_path, mesh_filename = os.path.split(outMesh)
+    # PoissonRecon otherwise writes out-of-core PR_* files to the caller's
+    # working directory, which may be read-only even when mesh_path is writable.
+    tempdir = os.path.abspath(mesh_path or '.')
     # mesh_path = path/to
     # mesh_filename = odm_mesh.ply
 
@@ -157,6 +160,7 @@ def screened_poisson_reconstruction(inPointCloud, outMesh, depth = 8, samples = 
             'bin': context.poisson_recon_path,
             'outfile': outMeshDirty,
             'infile': inPointCloud,
+            'tempdir': tempdir,
             'depth': depth,
             'samples': samples,
             'pointWeight': pointWeight,
@@ -167,6 +171,7 @@ def screened_poisson_reconstruction(inPointCloud, outMesh, depth = 8, samples = 
         try:
             system.run('"{bin}" --in "{infile}" '
                     '--out "{outfile}" '
+                    '--tempDir "{tempdir}" '
                     '--depth {depth} '
                     '--pointWeight {pointWeight} '
                     '--samplesPerNode {samples} '
