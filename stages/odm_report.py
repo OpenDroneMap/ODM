@@ -211,9 +211,12 @@ class ODMReport(types.ODM_Stage):
 
                         osfm_dem = os.path.join(osfm_stats_dir, "%s.png" % dem)
                         colored_dem, hillshade_dem, colored_hillshade_dem = generate_colored_hillshade(resized_dem_file)
-                        system.run("gdal_translate -outsize {} 0 -of png \"{}\" \"{}\" --config GDAL_CACHEMAX {}%".format(image_target_size, colored_hillshade_dem, osfm_dem, get_max_memory()))
+                        if colored_hillshade_dem is not None and os.path.isfile(colored_hillshade_dem):
+                            system.run("gdal_translate -outsize {} 0 -of png \"{}\" \"{}\" --config GDAL_CACHEMAX {}%".format(image_target_size, colored_hillshade_dem, osfm_dem, get_max_memory()))
+                        else:
+                            log.ODM_WARNING("Cannot generate colored hillshade for %s, skipping DEM preview in report" % dem)
                         for f in [resized_dem_file, colored_dem, hillshade_dem, colored_hillshade_dem]:
-                            if os.path.isfile(f):
+                            if f is not None and os.path.isfile(f):
                                 os.remove(f)
             else:
                 log.ODM_WARNING("Cannot generate overlap diagram, cannot compute point cloud bounds")
