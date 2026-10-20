@@ -152,9 +152,12 @@ def screened_poisson_reconstruction(inPointCloud, outMesh, depth = 8, samples = 
         log.ODM_WARNING("ppc64le platform detected, forcing single-threaded operation for PoissonRecon")
         threads = 1
 
+    poisson_bin = context.poisson_recon_path
+    tried_bigdata = False
+
     while True:
         poissonReconArgs = {
-            'bin': context.poisson_recon_path,
+            'bin': poisson_bin,
             'outfile': outMeshDirty,
             'infile': inPointCloud,
             'depth': depth,
@@ -179,6 +182,16 @@ def screened_poisson_reconstruction(inPointCloud, outMesh, depth = 8, samples = 
         if os.path.isfile(outMeshDirty):
             break # Done!
         else:
+            # Very dense scenes at high depth can exceed 2^31 octree nodes, which overflows
+            # the 32-bit node index of the default build and crashes deterministically
+            # (retrying with fewer threads does not help). Retry once with the build that
+            # uses 64-bit indices (BIG_DATA). It needs more memory, so it is only a fallback.
+            if not tried_bigdata and (os.path.isfile(context.poisson_recon_bigdata_path) or
+                                      os.path.isfile(context.poisson_recon_bigdata_path + ".exe")):
+                tried_bigdata = True
+                poisson_bin = context.poisson_recon_bigdata_path
+                log.ODM_WARNING("PoissonRecon failed, retrying with 64-bit octree node indices (BIG_DATA build)...")
+                continue
 
             # PoissonRecon will sometimes fail due to race conditions
             # on certain machines, especially on Windows
