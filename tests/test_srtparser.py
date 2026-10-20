@@ -70,6 +70,28 @@ class TestSrtFormats(unittest.TestCase):
         self.assertEqual(entry["longitude"], 120.083799)
         self.assertEqual(entry["altitude"], 28.0)
 
+    def test_dji_rtk_decimal_altitude(self):
+        # RTK receivers report altitude with decimals; an integer-only pattern
+        # dropped the altitude and, with it, the latitude and longitude
+        entry = parse_block(
+            "36",
+            "00:00:35,000 --> 00:00:36,000",
+            "F/6.3, SS 60, ISO 100, EV 0, RTK (120.083799, 30.213635, 192.048), HOME (120.084146, 30.214243, 103.55m), D 75.36m, H 76.19m, H.S 0.30m/s, V.S 0.00m/s",
+        )
+        self.assertEqual(entry["latitude"], 30.213635)
+        self.assertEqual(entry["longitude"], 120.083799)
+        self.assertEqual(entry["altitude"], 192.048)
+
+    def test_dji_rtk_negative_altitude(self):
+        entry = parse_block(
+            "1",
+            "00:00:00,000 --> 00:00:01,000",
+            "F/6.3, SS 60, ISO 100, EV 0, RTK (4.890444, 52.370216, -3.215), HOME (4.890000, 52.370000, 0.00m)",
+        )
+        self.assertEqual(entry["latitude"], 52.370216)
+        self.assertEqual(entry["longitude"], 4.890444)
+        self.assertEqual(entry["altitude"], -3.215)
+
     def test_dji_unknown_model_1(self):
         entry = parse_block(
             "1",
