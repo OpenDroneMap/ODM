@@ -1,0 +1,13 @@
+diff --git a/Src/PreProcessor.h b/Src/PreProcessor.h
+index 7bc2492..140d897 100644
+--- a/Src/PreProcessor.h
++++ b/Src/PreProcessor.h
+@@ -29,7 +29,7 @@ DAMAGE.
+ #ifndef PRE_PROCESSOR_INCLUDED
+ #define PRE_PROCESSOR_INCLUDED
+ 
+-#undef BIG_DATA									// Supports processing requiring more than 32-bit integers for indexing
++#define BIG_DATA									// Supports processing requiring more than 32-bit integers for indexing
+ 												// Note: enabling BIG_DATA can generate .ply files using "longlong" for vertex indices instead of "int".
+ 												// These are not standardly supported by .ply reading/writing applications.
+ 												// The executable ChunkPLY can help by partitioning the mesh into more manageable chunks
