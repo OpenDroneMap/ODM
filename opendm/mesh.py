@@ -136,9 +136,6 @@ def dem_to_mesh_gridded(inGeotiff, outMesh, maxVertexCount, maxConcurrency=1):
 def screened_poisson_reconstruction(inPointCloud, outMesh, depth = 8, samples = 1, maxVertexCount=100000, pointWeight=4, threads=context.num_cores):
 
     mesh_path, mesh_filename = os.path.split(outMesh)
-    # PoissonRecon otherwise writes out-of-core PR_* files to the caller's
-    # working directory, which may be read-only even when mesh_path is writable.
-    tempdir = os.path.abspath(mesh_path or '.')
     # mesh_path = path/to
     # mesh_filename = odm_mesh.ply
 
@@ -149,6 +146,13 @@ def screened_poisson_reconstruction(inPointCloud, outMesh, depth = 8, samples = 
     outMeshDirty = os.path.join(mesh_path, "{}.dirty{}".format(basename, ext))
     if os.path.isfile(outMeshDirty):
         os.remove(outMeshDirty)
+
+    # Keep PoissonRecon scratch files in a writable, mesh-specific directory.
+    tempdir = os.path.abspath(os.path.join(mesh_path, "%s-tmp" % basename))
+    if os.path.exists(tempdir):
+        log.ODM_WARNING("Removing previous PoissonRecon temp directory: %s" % tempdir)
+        shutil.rmtree(tempdir)
+    os.makedirs(tempdir)
     
     # Since PoissonRecon has some kind of a race condition on ppc64el, and this helps...
     if platform.machine() == 'ppc64le':
@@ -194,6 +198,9 @@ def screened_poisson_reconstruction(inPointCloud, outMesh, depth = 8, samples = 
             else:
                 log.ODM_WARNING("PoissonRecon failed with %s threads, let's retry with %s..." % (threads * 2, threads))
 
+
+    if os.path.exists(tempdir):
+        shutil.rmtree(tempdir)
 
     # Cleanup and reduce vertex count if necessary
     cleanupArgs = {
