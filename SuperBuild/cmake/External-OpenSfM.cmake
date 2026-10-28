@@ -1,7 +1,5 @@
 set(_proj_name opensfm)
 set(_SB_BINARY_DIR "${SB_BINARY_DIR}/${_proj_name}")
-include(ProcessorCount)
-ProcessorCount(nproc)
 
 set(EXTRA_INCLUDE_DIRS "")
 set(OPENSFM_ADDITIONAL_INCLUDE_DIRS "")
@@ -19,7 +17,7 @@ if(WIN32)
   set(OPENSFM_EXTRA_LINKER_FLAGS "$ENV{CONDA_PREFIX}/Library/lib/glog.lib $ENV{CONDA_PREFIX}/Library/lib/gflags.lib")
 else()
   set(OPENSFM_ADDITIONAL_INCLUDE_DIRS "${SB_INSTALL_DIR}/include")
-  set(BUILD_CMD ${CMAKE_COMMAND} --build . --parallel ${nproc})
+  set(BUILD_CMD ${CMAKE_COMMAND} --build .)
 endif()
 
 set(OPENSFM_CERES_ROOT_DIR "${SB_INSTALL_DIR}")

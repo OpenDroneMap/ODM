@@ -23,6 +23,7 @@ RUN pixi install --locked -e gpu \
     && rm -rf .pixi/envs/gpu-prod/include .pixi/envs/gpu-prod/share/doc .pixi/envs/gpu-prod/share/man .pixi/envs/gpu-prod/share/info
 
 COPY . ./
+ARG CMAKE_BUILD_PARALLEL_LEVEL
 RUN pixi run -e gpu build && pixi run -e gpu test
 
 RUN mkdir -p /odm-runtime/SuperBuild /odm-runtime/scripts \
