@@ -10,6 +10,7 @@ import fiona
 from edt import edt
 from rasterio.transform import Affine, rowcol
 from rasterio.mask import mask
+from rasterio.enums import ColorInterp
 from opendm import io
 from opendm.tiles.tiler import generate_orthophoto_tiles
 from opendm.cogeo import convert_to_cogeo
@@ -167,9 +168,86 @@ def generate_tfw(orthophoto_file):
         log.ODM_WARNING("Cannot create .tfw for %s: %s" % (orthophoto_file, str(e)))
 
 
+# GeoTIFF stores a single NoData value for all bands, including the alpha band.
+# Using 0 keeps NoData consistent with alpha == 0 (empty), with the values ODM
+# already writes in empty areas, with ODM's PNG/KMZ outputs (-a_nodata 0) and with
+# WebODM's tiler, which reads orthophotos with nodata=0. A non-zero value
+# (e.g. -9999) would also be written into the alpha band by GDAL warping and
+# overview generation, which turns empty areas opaque for alpha-based readers.
+FLOAT_ORTHOPHOTO_NODATA = 0.0
+
+# Bands whose values can legitimately be negative (temperatures in degrees C)
+NO_CLAMP_BANDS = ['lwir']
+
+def set_float_orthophoto_nodata(orthophoto_file, nodata=FLOAT_ORTHOPHOTO_NODATA, clamp_negative=True):
+    """
+    Float orthophotos (multispectral/thermal with --radiometric-calibration) mark empty
+    areas only via the alpha band and have no NoData value, so band math (e.g. NDVI)
+    in GIS software computes 0/0 outside of the mapped area. For float rasters only:
+     - set the NoData metadata
+     - make sure all data bands are `nodata` where alpha == 0
+     - clamp negative values to 0 inside the valid area for reflectance bands (any band
+       with a description, except thermal bands): negative reflectance is a resampling
+       artifact at the borders of the reconstruction
+    The file is updated in place, block by block; only modified blocks are rewritten.
+    Must be called before building overviews / COG conversion.
+    :return dict with stats, or None if the raster was not modified
+    """
+    if not os.path.isfile(orthophoto_file):
+        return None
+
+    try:
+        with rasterio.open(orthophoto_file, 'r+') as rast:
+            if not np.issubdtype(np.dtype(rast.dtypes[0]), np.floating):
+                return None
+
+            if ColorInterp.alpha not in rast.colorinterp:
+                log.ODM_WARNING("%s has no alpha band, cannot set NoData" % orthophoto_file)
+                return None
+
+            alpha_idx = rast.colorinterp.index(ColorInterp.alpha)
+            data_idxs = [i for i in range(rast.count) if i != alpha_idx]
+            clamp_idxs = [i for i in data_idxs if clamp_negative and
+                            rast.descriptions[i] and rast.descriptions[i].strip().lower() not in NO_CLAMP_BANDS]
+
+            log.ODM_INFO("Setting NoData (%s) on %s" % (nodata, orthophoto_file))
+            stats = {'nodata_pixels': 0, 'clamped_values': 0, 'changed_values': 0}
+
+            for _, window in rast.block_windows(1):
+                arr = rast.read(window=window)
+                empty = arr[alpha_idx] == 0
+                stats['nodata_pixels'] += int(np.count_nonzero(empty))
+                changed = 0
+
+                for i in data_idxs:
+                    band = arr[i]
+                    if i in clamp_idxs:
+                        negative = (band < 0) & ~empty
+                        stats['clamped_values'] += int(np.count_nonzero(negative))
+                        changed += int(np.count_nonzero(negative))
+                        band[negative] = 0
+
+                    fill = empty & (band != nodata)
+                    changed += int(np.count_nonzero(fill))
+                    band[fill] = nodata
+
+                if changed > 0:
+                    rast.write(arr, window=window)
+                    stats['changed_values'] += changed
+
+            rast.nodata = nodata
+
+        log.ODM_INFO("NoData pixels: %s, clamped negative values: %s" % (stats['nodata_pixels'], stats['clamped_values']))
+        return stats
+    except Exception as e:
+        log.ODM_WARNING("Cannot set NoData on %s: %s" % (orthophoto_file, str(e)))
+        return None
+
 def post_orthophoto_steps(args, bounds_file_path, orthophoto_file, orthophoto_tiles_dir, resolution, reconstruction, tree, embed_gcp_meta=False):
     if args.crop > 0 or args.boundary:
         Cropper.crop(bounds_file_path, orthophoto_file, get_orthophoto_vars(args), keep_original=not args.optimize_disk_space, warp_options=['-dstalpha'])
+
+    set_float_orthophoto_nodata(orthophoto_file)
 
     if args.build_overviews and not args.cog:
         build_overviews(orthophoto_file)
