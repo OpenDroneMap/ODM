@@ -9,6 +9,7 @@ import zipfile
 import math
 from collections import OrderedDict
 from pyproj import CRS
+import pdal
 
 from opendm import io
 from opendm import log
@@ -23,6 +24,7 @@ from opendm.osfm import OSFMContext
 from opendm.boundary import as_polygon, export_to_bounds_files
 from opendm.align import compute_alignment_matrix, transform_point_cloud, transform_obj
 from opendm.utils import np_to_json
+from opendm.georef import TopocentricToProj
 
 class ODMGeoreferencingStage(types.ODM_Stage):
     def process(self, args, outputs):
@@ -113,19 +115,72 @@ class ODMGeoreferencingStage(types.ODM_Stage):
 
             else:
                 log.ODM_WARNING("GCPs could not be loaded for writing to %s" % gcp_export_file)
+                
+        if reconstruction.is_georeferenced():
+            # prepare pipeline stage for topocentric to georeferenced conversion
+            octx = OSFMContext(tree.opensfm)
+            reference = octx.reference()
+            converter = TopocentricToProj(reference.lat, reference.lon, reference.alt, reconstruction.georef.proj4())
+        
+        if not io.file_exists(tree.filtered_point_cloud) or self.rerun():
+            log.ODM_INFO("Georeferecing filtered point cloud")
+            if reconstruction.is_georeferenced():
+                pipeline = pdal.Reader.ply(tree.filtered_point_cloud_topo).pipeline()
+                pipeline.execute()
+                arr = pipeline.arrays[0]
+                arr = converter.convert_array(
+                    arr,
+                    reconstruction.georef.utm_east_offset,
+                    reconstruction.georef.utm_north_offset
+                )
+                pipeline = pdal.Writer.ply(
+                    filename = tree.filtered_point_cloud,
+                    storage_mode = "little endian",
+                ).pipeline(arr)
+                pipeline.execute()
+            else:
+                shutil.copy(tree.filtered_point_cloud_topo, tree.filtered_point_cloud)
 
+        def georefernce_textured_model(obj_in, obj_out):
+            log.ODM_INFO("Georeferecing textured model %s" % obj_in)
+            if not io.file_exists(obj_out) or self.rerun():
+                if reconstruction.is_georeferenced():
+                    converter.convert_obj(
+                        obj_in, 
+                        obj_out, 
+                        reconstruction.georef.utm_east_offset, 
+                        reconstruction.georef.utm_north_offset
+                    )
+                else:
+                    shutil.copy(obj_in, obj_out)
+        
+        #TODO: maybe parallelize this
+        #TODO: gltf export? Should problably move the exporting process after this
+        for texturing in [tree.odm_texturing, tree.odm_25dtexturing]:
+            if reconstruction.multi_camera:
+                primary = get_primary_band_name(reconstruction.multi_camera, args.primary_band)
+                for band in reconstruction.multi_camera:
+                    subdir = "" if band['name'] == primary else band['name'].lower()
+                    obj_in = os.path.join(texturing, subdir, tree.odm_textured_model_obj_topo)
+                    obj_out = os.path.join(texturing, subdir, tree.odm_textured_model_obj)
+                    georefernce_textured_model(obj_in, obj_out)
+            else:
+                obj_in = os.path.join(texturing, tree.odm_textured_model_obj_topo)
+                obj_out = os.path.join(texturing, tree.odm_textured_model_obj)
+                transform_textured_model(obj_in, obj_out)
+        
         if not io.file_exists(tree.odm_georeferencing_model_laz) or self.rerun():
-            cmd = f'pdal translate -i "{tree.filtered_point_cloud}" -o \"{tree.odm_georeferencing_model_laz}\"'
-            stages = ["ferry"]
-            params = [
-                '--filters.ferry.dimensions="views => UserData"'
-            ]
-
+            pipeline = pdal.Pipeline()
+            pipeline |= pdal.Reader.ply(tree.filtered_point_cloud)
+            pipeline |= pdal.Filter.ferry(dimensions="views => UserData")
+            
             if reconstruction.is_georeferenced():
                 log.ODM_INFO("Georeferencing point cloud")
 
-                stages.append("transformation")
                 utmoffset = reconstruction.georef.utm_offset()
+                pipeline |= pdal.Filter.transformation(
+                    matrix=f"1 0 0 {utmoffset[0]} 0 1 0 {utmoffset[1]} 0 0 1 0 0 0 0 1"
+                )
 
                 # Establish appropriate las scale for export
                 las_scale = 0.001
@@ -148,27 +203,37 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                 else:
                     log.ODM_INFO("No point_cloud_stats.json found. Using default las scale: %s" % las_scale)
 
-                params += [
-                    f'--filters.transformation.matrix="1 0 0 {utmoffset[0]} 0 1 0 {utmoffset[1]} 0 0 1 0 0 0 0 1"',
-                    f'--writers.las.offset_x={reconstruction.georef.utm_east_offset}' ,
-                    f'--writers.las.offset_y={reconstruction.georef.utm_north_offset}',
-                    f'--writers.las.scale_x={las_scale}',
-                    f'--writers.las.scale_y={las_scale}',
-                    f'--writers.las.scale_z={las_scale}',
-                    '--writers.las.offset_z=0',
-                    f'--writers.las.a_srs="{reconstruction.georef.proj4()}"' # HOBU this should maybe be WKT
-                ]
-
+                las_writer_def = {
+                    "filename": tree.odm_georeferencing_model_laz,
+                    "a_srs": reconstruction.georef.proj4(),
+                    "offset_x": utmoffset[0],
+                    "offset_y": utmoffset[1],
+                    "offset_z": 0,
+                    "scale_x": las_scale,
+                    "scale_y": las_scale,
+                    "scale_z": las_scale,
+                }
+                
                 if reconstruction.has_gcp() and io.file_exists(gcp_geojson_zip_export_file):
                     if os.path.getsize(gcp_geojson_zip_export_file) <= 65535:
                         log.ODM_INFO("Embedding GCP info in point cloud")
-                        params += [
-                            '--writers.las.vlrs="{\\\"filename\\\": \\\"%s\\\", \\\"user_id\\\": \\\"ODM\\\", \\\"record_id\\\": 2, \\\"description\\\": \\\"Ground Control Points (zip)\\\"}"' % gcp_geojson_zip_export_file.replace(os.sep, "/")
-                        ]
+                        las_writer_def["vlrs"] = json.dumps(
+                            {
+                                "filename": gcp_geojson_zip_export_file.replace(os.sep, "/"),
+                                "user_id": "ODM",
+                                "record_id": 2,
+                                "description": "Ground Control Points (zip)"
+                            }
+                        )
+
                     else:
                         log.ODM_WARNING("Cannot embed GCP info in point cloud, %s is too large" % gcp_geojson_zip_export_file)
 
-                system.run(cmd + ' ' + ' '.join(stages) + ' ' + ' '.join(params))
+                pipeline |= pdal.Writer.las(
+                    **las_writer_def
+                )
+    
+                pipeline.execute()
 
                 self.update_progress(50)
 
@@ -202,7 +267,10 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                     export_to_bounds_files(outputs['boundary'], reconstruction.get_proj_srs(), bounds_json, bounds_gpkg)
             else:
                 log.ODM_INFO("Converting point cloud (non-georeferenced)")
-                system.run(cmd + ' ' + ' '.join(stages) + ' ' + ' '.join(params))
+                pipeline |= pdal.Writer.las(
+                    tree.odm_georeferencing_model_laz
+                )
+                pipeline.execute()
 
 
             stats_dir = tree.path("opensfm", "stats", "codem")
@@ -250,7 +318,7 @@ class ODMGeoreferencingStage(types.ODM_Stage):
                                 except Exception as e:
                                     log.ODM_WARNING("Cannot transform textured model: %s" % str(e))
                                     os.rename(unaligned_obj, obj)
-
+                        #TODO: seems gltf file is not converted in alignment?
                         for texturing in [tree.odm_texturing, tree.odm_25dtexturing]:
                             if reconstruction.multi_camera:
                                 primary = get_primary_band_name(reconstruction.multi_camera, args.primary_band)
