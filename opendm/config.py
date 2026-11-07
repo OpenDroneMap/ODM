@@ -299,13 +299,24 @@ def config(argv=None, parser=None):
             metavar='<string>',
             action=StoreValue,
             default='none',
-            choices=['none', 'camera', 'camera+sun'],
+            choices=['none', 'camera', 'camera+sun', 'camera+panel'],
             help=('Set the radiometric calibration to perform on images. '
                 'When processing multispectral and thermal images you should set this option '
                 'to obtain reflectance/temperature values (otherwise you will get digital number values). '
                 '[camera] applies black level, vignetting, row gradient gain/exposure compensation (if appropriate EXIF tags are found) and computes absolute temperature values. '
                 '[camera+sun] is experimental, applies all the corrections of [camera], plus compensates for spectral radiance registered via a downwelling light sensor (DLS) taking in consideration the angle of the sun. '
+                '[camera+panel] applies all the corrections of [camera], plus derives per-band irradiance from in-field calibration reflectance panel captures (MicaSense and compatible). Panel captures are auto-detected from image metadata. '
                 'Can be one of: %(choices)s. Default: '
+                '%(default)s'))
+
+    parser.add_argument('--panel-reflectance',
+            metavar='<string>',
+            action=StoreValue,
+            default=None,
+            help=('Override the calibration panel reflectance (albedo, 0-1) used by '
+                '[--radiometric-calibration camera+panel]. Useful when the panel metadata '
+                'is missing or unreadable. Provide either a single value applied to all bands (e.g. 0.49), '
+                'or per-band values as a JSON object (e.g. \'{"Red": 0.49, "Green": 0.49}\'). Default: '
                 '%(default)s'))
 
     parser.add_argument('--max-concurrency',
