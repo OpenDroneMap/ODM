@@ -16,7 +16,7 @@ RUN pixi install --locked \
     && pixi install --locked -e prod \
     && mkdir -p scripts \
     && pixi shell-hook -e prod -s bash > scripts/pixi-shell-hook \
-    && rm -rf .pixi/envs/prod/include .pixi/envs/prod/share/doc .pixi/envs/prod/share/man .pixi/envs/prod/share/info
+    && rm -rf .pixi/envs/prod/include .pixi/envs/prod/share/doc .pixi/envs/prod/share/man .pixi/envs/prod/share/info .pixi/envs/prod/share/gir-1.0 .pixi/envs/prod/man
 
 COPY . ./
 RUN pixi run build && pixi run test
