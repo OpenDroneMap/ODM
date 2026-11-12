@@ -190,19 +190,19 @@ class SrtFileParser:
                 (r"latitude: ([\d\.\-]+)", nonzero_float),
                 (r"latitude : ([\d\.\-]+)", nonzero_float),
                 (r"GPS \([\d\.\-]+,? ([\d\.\-]+),? [\d\.\-]+\)", nonzero_float),
-                (r"RTK \([-+]?\d+\.\d+, (-?\d+\.\d+), -?\d+\)", nonzero_float),
+                (r"RTK \([-+]?\d+\.\d+, (-?\d+\.\d+), -?\d+\.?\d*\)", nonzero_float),
             ], line)
             
             longitude = match_single([
                 (r"longitude: ([\d\.\-]+)", nonzero_float),
                 (r"longtitude : ([\d\.\-]+)", nonzero_float),
                 (r"GPS \(([\d\.\-]+),? [\d\.\-]+,? [\d\.\-]+\)", nonzero_float),
-                (r"RTK \((-?\d+\.\d+), [-+]?\d+\.\d+, -?\d+\)", nonzero_float),
+                (r"RTK \((-?\d+\.\d+), [-+]?\d+\.\d+, -?\d+\.?\d*\)", nonzero_float),
             ], line)
             
             altitude = match_single([
                 (r"altitude: ([\d\.\-]+)", nonzero_float),
                 (r"GPS \([\d\.\-]+,? [\d\.\-]+,? ([\d\.\-]+)\)", nonzero_float),
-                (r"RTK \([-+]?\d+\.\d+, [-+]?\d+\.\d+, (-?\d+)\)", nonzero_float),
+                (r"RTK \([-+]?\d+\.\d+, [-+]?\d+\.\d+, (-?\d+\.?\d*)\)", nonzero_float),
                 (r"abs_alt: ([\d\.\-]+)", nonzero_float),
             ], line)
