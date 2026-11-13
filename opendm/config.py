@@ -520,9 +520,9 @@ def config(argv=None, parser=None):
                         default='fuse',
                         choices=['merge', 'fuse', 'dense-fuse'],
                         help='Select algorithm to fuse the depth-maps into a point cloud. '
-                             '"merge" Keeps everything, i.e. one point per depth pixel. '
-                             '"fuse" aggregates points and keeps the weighted mean (projecting back the point into other depth maps) '
-                             '"dense-fuse" applies a stricter consensus, it requires a certain amount (default 5) to actually create the point.'
+                             '"merge" keeps everything, i.e. one point per depth pixel. '
+                             '"fuse" aggregates points and keeps the weighted mean (projecting back the point into other depth maps). '
+                             '"dense-fuse" applies a stricter consensus, it requires a minimum number of agreeing depth estimates (5) to create a point. '
                              'Can be one of: %(choices)s. Default: %(default)s')
 
     parser.add_argument('--pc-fusion-depth-diff',
@@ -538,15 +538,15 @@ def config(argv=None, parser=None):
                         action=StoreValue,
                         type=float,
                         default=1.2,
-                        help='Maximum reprojection distance in pixels for two depth estimates to be fused.'
-                             'Only used by "dense-fuse".'
+                        help='Maximum reprojection distance in pixels for two depth estimates to be fused. '
+                             'Only used by "dense-fuse". '
                              'Default: %(default)s')
 
     parser.add_argument('--pc-crop-to-roi',
                         action=StoreTrue,
                         nargs=0,
                         default=False,
-                        help='Crop the point cloud to the ROI (region of interest), if not given, it is estimated by OpenMVS'
+                        help='Crop the point cloud to the ROI (region of interest), estimated by OpenMVS. '
                              'Default: %(default)s')
 
     parser.add_argument('--pc-skip-geometric',
