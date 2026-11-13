@@ -38,6 +38,11 @@ jobs:
       push: ${{ github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v') }}
       file: ./gpu.Dockerfile
       target: runtime
+      # The SuperBuild nests ninja inside ninja; uncapped, both levels run
+      # cores+2 jobs and the free 16 GB runner is starved until GitHub kills
+      # it. cmake --build honours this at both levels, so 3 bounds it at 9.
+      build-args: |
+        CMAKE_BUILD_PARALLEL_LEVEL=3
       platforms: linux/amd64
       set-meta-labels: true
       meta-images: opendronemap/odm
