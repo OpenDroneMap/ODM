@@ -1,0 +1,67 @@
+name: Bug Report
+description: Report a fault or bug in ODM.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        First of all, thank you for taking the time to report an issue.
+
+        Before you continue, make sure you are in the right place. Please open an issue only to report faults and bugs. For questions and discussion please open a topic on the [community forum](https://community.opendronemap.org/c/opendronemap).
+  - type: checkboxes
+    id: prechecks
+    attributes:
+      label: Before you open an issue
+      options:
+        - label: I have searched the [community forum](https://community.opendronemap.org/c/opendronemap) and could not find an answer to my problem.
+          required: true
+        - label: I have searched [existing issues](https://github.com/OpenDroneMap/ODM/issues) and this bug has not already been reported.
+          required: true
+  - type: dropdown
+    id: install-method
+    attributes:
+      label: How did you install ODM (Docker, installer, natively, ...)?
+      options:
+        - Docker
+        - Installer
+        - Natively
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is the problem?
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What should be the expected behavior?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: How can we reproduce this? What steps did you do to trigger the problem?
+    validations:
+      required: true
+  - type: input
+    id: dataset
+    attributes:
+      label: Link to dataset
+      description: |
+        If this is an issue with processing a dataset, YOU MUST include a copy of your dataset, uploaded somewhere we can download from (otherwise we cannot reproduce this).
+      placeholder: https://drive.google.com/...
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Task output log
+      description: |
+        Paste the full task output log below (run ODM with `--verbose` where possible). This will be automatically formatted into code, so no need for backticks.
+      render: shell
+    validations:
+      required: true
