@@ -78,8 +78,6 @@ class ODMOpenMVSStage(types.ODM_Stage):
                 "--fusion-reprojection-threshold %s" % args.pc_fusion_reprojection,
                 "--sub-resolution-levels %s" % subres_levels,
                 "--postprocess-dmaps 7", # 2.4.0 default changed to 0
-                "--tower-mode 3",
-                "--up-axis 2",
                 "--archive-type 3",
                 '-w "%s"' % depthmaps_dir, 
                 "-v 0"
@@ -92,7 +90,13 @@ class ODMOpenMVSStage(types.ODM_Stage):
             else:
                 gpu_config.append("--cuda-device -2")
 
-            extra_config = []
+            # DensifyPointCloud estimates the ROI and runs tower detection on
+            # every invocation, so these go to the split, fuse and filter calls too.
+            # tower-mode 4, the 2.4.0 default, appends synthetic tower points to the cloud.
+            extra_config = [
+                "--tower-mode 3",
+                "--up-axis 2",
+            ]
 
             if args.pc_skip_geometric:
                 extra_config.append("--geometric-iters 0")
@@ -149,7 +153,7 @@ class ODMOpenMVSStage(types.ODM_Stage):
                 ]
                 system.run('"%s" "%s" %s' % (context.omvs_densify_path, 
                                         openmvs_scene_file,
-                                        ' '.join(config + gpu_config)))
+                                        ' '.join(config + gpu_config + extra_config)))
                 
                 scene_files = glob.glob(os.path.join(tree.openmvs, "scene_[0-9][0-9][0-9][0-9].mvs"))
                 if len(scene_files) == 0:
@@ -198,7 +202,7 @@ class ODMOpenMVSStage(types.ODM_Stage):
                         else:
                             # Filter
                             if args.pc_filter > 0:
-                                system.run('"%s" "%s" --filter-point-cloud %s -v 0 --archive-type 3 %s' % (context.omvs_densify_path, scene_dense_mvs, filter_point_th, ' '.join(gpu_config)))
+                                system.run('"%s" "%s" --filter-point-cloud %s -v 0 --archive-type 3 %s' % (context.omvs_densify_path, scene_dense_mvs, filter_point_th, ' '.join(gpu_config + extra_config)))
                             else:
                                 # Just rename
                                 log.ODM_INFO("Skipped filtering, %s --> %s" % (scene_ply_unfiltered, scene_ply))
