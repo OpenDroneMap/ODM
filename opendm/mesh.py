@@ -146,6 +146,13 @@ def screened_poisson_reconstruction(inPointCloud, outMesh, depth = 8, samples = 
     outMeshDirty = os.path.join(mesh_path, "{}.dirty{}".format(basename, ext))
     if os.path.isfile(outMeshDirty):
         os.remove(outMeshDirty)
+
+    # Keep PoissonRecon scratch files in a writable, mesh-specific directory.
+    tempdir = os.path.abspath(os.path.join(mesh_path, "%s-tmp" % basename))
+    if os.path.exists(tempdir):
+        log.ODM_WARNING("Removing previous PoissonRecon temp directory: %s" % tempdir)
+        shutil.rmtree(tempdir)
+    os.makedirs(tempdir)
     
     # Since PoissonRecon has some kind of a race condition on ppc64el, and this helps...
     if platform.machine() == 'ppc64le':
@@ -157,6 +164,7 @@ def screened_poisson_reconstruction(inPointCloud, outMesh, depth = 8, samples = 
             'bin': context.poisson_recon_path,
             'outfile': outMeshDirty,
             'infile': inPointCloud,
+            'tempdir': tempdir,
             'depth': depth,
             'samples': samples,
             'pointWeight': pointWeight,
@@ -167,6 +175,7 @@ def screened_poisson_reconstruction(inPointCloud, outMesh, depth = 8, samples = 
         try:
             system.run('"{bin}" --in "{infile}" '
                     '--out "{outfile}" '
+                    '--tempDir "{tempdir}" '
                     '--depth {depth} '
                     '--pointWeight {pointWeight} '
                     '--samplesPerNode {samples} '
@@ -189,6 +198,9 @@ def screened_poisson_reconstruction(inPointCloud, outMesh, depth = 8, samples = 
             else:
                 log.ODM_WARNING("PoissonRecon failed with %s threads, let's retry with %s..." % (threads * 2, threads))
 
+
+    if os.path.exists(tempdir):
+        shutil.rmtree(tempdir)
 
     # Cleanup and reduce vertex count if necessary
     cleanupArgs = {
