@@ -355,9 +355,9 @@ class OSFMContext:
             with open(config_filename, 'w') as fout:
                 fout.write("\n".join(config))
             
-            # We impose our own reference_lla
-            if reconstruction.is_georeferenced():
-                self.write_reference_lla(reconstruction.georef.utm_east_offset, reconstruction.georef.utm_north_offset, reconstruction.georef.proj4())
+            # Preserve a parent project's reference frame when a split-merge
+            # remote task has already seeded reference_lla.json.
+            self.write_reference_lla_if_needed(reconstruction)
         else:
             log.ODM_WARNING("%s already exists, not rerunning OpenSfM setup" % list_path)
 
@@ -601,6 +601,14 @@ class OSFMContext:
             }, indent=4))
         
         log.ODM_INFO("Wrote reference_lla.json")
+
+    def write_reference_lla_if_needed(self, reconstruction):
+        """Write the project reference unless a parent frame was seeded."""
+        if (reconstruction.is_georeferenced()
+                and not io.file_exists(self.path("reference_lla.json"))):
+            self.write_reference_lla(reconstruction.georef.utm_east_offset,
+                                     reconstruction.georef.utm_north_offset,
+                                     reconstruction.georef.proj4())
 
     def ground_control_points(self, proj4):
         """
