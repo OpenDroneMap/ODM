@@ -209,7 +209,15 @@ class ODM_Photo:
         xtags = {}
 
         with open(_path_file, 'rb') as f:
-            tags = exifread.process_file(f, details=True, extract_thumbnail=False)
+            try:
+                tags = exifread.process_file(f, details=True, extract_thumbnail=False)
+            except Exception as e:
+                # A single image with a corrupted MakerNote (seen on DJI M3E) makes exifread
+                # raise and would abort the whole task. Retry without MakerNote parsing;
+                # the only MakerNote values used below are SpeedX/Y/Z (DJI also stores them in XMP).
+                log.ODM_WARNING("Cannot parse EXIF MakerNote of %s (%s: %s), reading EXIF without MakerNote" % (self.filename, type(e).__name__, str(e)))
+                f.seek(0)
+                tags = exifread.process_file(f, details=False, extract_thumbnail=False)
             try:
                 if 'Image Make' in tags:
                     try:
