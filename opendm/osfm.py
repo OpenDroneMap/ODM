@@ -652,10 +652,11 @@ def get_submodel_argv(args, submodels_path = None, submodel_name = None):
     handles the <project name> value and --project-path detection / override.
     When all arguments are set to None, --project-path and project name are always removed.
 
-    :return the same as argv, but removing references to --split, 
+    :return the same as argv, but removing references to --split, --split-overlap, --split-image-groups,
         setting/replacing --project-path and name
         removing --rerun-from, --rerun, --rerun-all, --sm-cluster
         removing --pc-las, --pc-csv, --pc-ept, --tiles flags (processing these is wasteful)
+        removing --copy-to (only the merged result should be copied)
         adding --orthophoto-cutline
         adding --dem-euclidean-map
         adding --skip-3dmodel (split-merge does not support 3D model merging)
@@ -665,7 +666,7 @@ def get_submodel_argv(args, submodels_path = None, submodel_name = None):
         reading the contents of --boundary
     """
     assure_always = ['orthophoto_cutline', 'dem_euclidean_map', 'skip_3dmodel', 'skip_report']
-    remove_always = ['split', 'split_overlap', 'rerun_from', 'rerun', 'gcp', 'end_with', 'sm_cluster', 'rerun_all', 'pc_csv', 'pc_las', 'pc_ept', 'tiles', 'copy-to', 'cog']
+    remove_always = ['split', 'split_overlap', 'split_image_groups', 'rerun_from', 'rerun', 'gcp', 'end_with', 'sm_cluster', 'rerun_all', 'pc_csv', 'pc_las', 'pc_ept', 'tiles', 'copy_to', 'cog']
     read_json_always = ['cameras', 'boundary']
 
     argv = sys.argv

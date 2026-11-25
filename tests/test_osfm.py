@@ -37,6 +37,12 @@ class TestOSFM(unittest.TestCase):
         self.assertEqual(get_submodel_argv(args, "/submodels", "submodel_0000")[1:], 
             ['--crop', '0.015625', '--orthophoto-cutline', '--dem-euclidean-map', '--skip-3dmodel', '--skip-report', '--project-path', '/submodels', 'submodel_0000'])        
 
+        # Split image groups and copy-to must not be passed to submodels
+        # (otherwise every submodel finds the groups file and splits again)
+        args = config.config(["brighton", "--project-path", "/datasets", "--split", "200", "--split-image-groups", "/datasets/brighton/image_groups.txt", "--copy-to", "/tmp/out"])
+        self.assertEqual(get_submodel_argv(args, "/submodels", "submodel_0000")[1:],
+            ['--orthophoto-cutline', '--dem-euclidean-map', '--skip-3dmodel', '--skip-report', '--project-path', '/submodels', 'submodel_0000'])
+
         # With sm-cluster, pc-csv and others
         args = config.config(["--project-path", "/datasets", "--split", "200", "--pc-csv"])
         self.assertEqual(get_submodel_argv(args)[1:], 
