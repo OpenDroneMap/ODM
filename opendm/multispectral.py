@@ -284,6 +284,95 @@ def compute_band_maps(multi_camera, primary_band):
 
         return s2p, p2s
 
+def get_dji_calibrated_hmatrix(path):
+    """Read the factory band-to-band homography (drone-dji:CalibratedHMatrix)
+    that DJI multispectral cameras (e.g. Mavic 3M) store in the XMP of each band image."""
+    try:
+        with open(path, 'rb') as f:
+            data = f.read()
+        m = re.search(rb'CalibratedHMatrix(?:="|>)\s*([-0-9eE.,+\s]+)', data)
+        if not m:
+            return None
+        v = [float(x) for x in m.group(1).decode().replace(' ', '').strip(',').split(',') if x]
+        if len(v) != 9:
+            return None
+        return np.array(v, dtype=np.float64).reshape(3, 3)
+    except Exception:
+        return None
+
+
+def compute_dji_alignment_matrix(band, images_path, s2p, max_samples=12, max_residual_shift=8):
+    """Band alignment from the DJI factory calibration instead of image matching.
+
+    M = inv(H_primary) * H_band maps a band image onto its primary band image. Image matching
+    (features/ECC) can lock onto the wrong period on strongly repetitive scenes (e.g. crop rows),
+    the factory calibration cannot. A small residual translation (+- max_residual_shift px) is
+    then estimated by gradient correlation on a few captures.
+    Returns an alignment_info entry, or None if the calibration is not available."""
+    ms, dim = [], None
+    for p in band['photos'][:max_samples * 3]:
+        if len(ms) >= max_samples:
+            break
+        prim = s2p.get(p.filename)
+        if prim is None:
+            continue
+        hb = get_dji_calibrated_hmatrix(os.path.join(images_path, p.filename))
+        hp = get_dji_calibrated_hmatrix(os.path.join(images_path, prim.filename))
+        if hb is None or hp is None:
+            return None
+        m = np.linalg.inv(hp) @ hb
+        m = m / m[2, 2]
+        d = np.linalg.det(m[:2, :2])
+        if not (0.8 < d < 1.25):
+            return None
+        ms.append(m)
+        if dim is None:
+            im = imread(os.path.join(images_path, prim.filename), unchanged=True, anydepth=True)
+            dim = (im.shape[1], im.shape[0])
+    if not ms or dim is None:
+        return None
+    wm = np.median(np.array(ms), axis=0)
+
+    def grad(x):
+        x = cv2.GaussianBlur(x.astype(np.float32), (0, 0), 1.5)
+        return cv2.magnitude(cv2.Sobel(x, cv2.CV_32F, 1, 0), cv2.Sobel(x, cv2.CV_32F, 0, 1))
+
+    try:
+        shifts = []
+        r = max_residual_shift
+        for p in band['photos'][:6]:
+            prim = s2p.get(p.filename)
+            if prim is None:
+                continue
+            a = imread(os.path.join(images_path, prim.filename), unchanged=True, anydepth=True)
+            b = imread(os.path.join(images_path, p.filename), unchanged=True, anydepth=True)
+            a = a[:, :, 0] if a.ndim == 3 else a
+            b = b[:, :, 0] if b.ndim == 3 else b
+            ga = grad(a)
+            gb = grad(cv2.warpPerspective(b.astype(np.float32), wm, dim))
+            h, w = ga.shape
+            A = ga[h // 4:3 * h // 4, w // 4:3 * w // 4]
+            A = (A - A.mean()) / (A.std() + 1e-9)
+            best = None
+            for dy in range(-r, r + 1):
+                for dx in range(-r, r + 1):
+                    B = gb[h // 4 - dy:3 * h // 4 - dy, w // 4 - dx:3 * w // 4 - dx]
+                    B = (B - B.mean()) / (B.std() + 1e-9)
+                    v = float((A * B).mean())
+                    if best is None or v > best[0]:
+                        best = (v, dx, dy)
+            shifts.append(best[1:])
+        if shifts:
+            dx, dy = np.median(np.array(shifts), axis=0)
+            wm = np.array([[1, 0, dx], [0, 1, dy], [0, 0, 1]], dtype=np.float64) @ wm
+            log.ODM_INFO("%s band: residual shift after DJI calibration dx=%.1f dy=%.1f px" % (band['name'], dx, dy))
+    except Exception as e:
+        log.ODM_WARNING("%s band: residual shift estimation skipped: %s" % (band['name'], str(e)))
+
+    wm = wm.astype(np.float32)
+    return {'warp_matrix': wm, 'eigvals': np.linalg.eigvals(wm), 'dimension': dim, 'algo': 'dji-calibration', 'score': 0.0}
+
+
 def compute_alignment_matrices(multi_camera, primary_band_name, images_path, s2p, p2s, max_concurrency=1, max_samples=30):
     log.ODM_INFO("Computing band alignment")
 
@@ -292,6 +381,12 @@ def compute_alignment_matrices(multi_camera, primary_band_name, images_path, s2p
     # For each secondary band
     for band in multi_camera:
         if band['name'] != primary_band_name:
+            dji = compute_dji_alignment_matrix(band, images_path, s2p)
+            if dji is not None:
+                alignment_info[band['name']] = dji
+                log.ODM_INFO("%s band will be aligned using DJI calibration matrix %s" % (band['name'], dji['warp_matrix']))
+                continue
+
             matrices = []
 
             def parallel_compute_homography(p):
