@@ -81,6 +81,7 @@ env = { CMAKE_GENERATOR = "Ninja" }
 c-compiler = "*"
 cmake = "3.31.*"
 cxx-compiler = "*"
+eigen = "*"             # OpenMVS v2.4.0 (Eigen3Config.cmake, REQUIRED)
 fast_float = "*"        # For OpenSfM build
 git = "*"
 make = "*"              # PoissonRecon builds from a hand-written Makefile
