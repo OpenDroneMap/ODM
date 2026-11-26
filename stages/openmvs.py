@@ -60,6 +60,7 @@ class ODMOpenMVSStage(types.ODM_Stage):
             
             log.ODM_INFO("Estimating depthmaps")
             number_views_fuse = 2
+            fusion_filter = {'merge': 0, 'fuse': 1, 'dense-fuse': 2}[args.pc_fusion_filter]
             densify_ini_file = os.path.join(tree.openmvs, 'Densify.ini')
             subres_levels = 2 # The number of lower resolutions to process before estimating output resolution depthmap.
             filter_point_th = -20
@@ -72,7 +73,11 @@ class ODMOpenMVSStage(types.ODM_Stage):
                 "--min-resolution %s" % min_resolution,
                 "--max-threads %s" % args.max_concurrency,
                 "--number-views-fuse %s" % number_views_fuse,
+                "--fusion-filter %s" % fusion_filter,
+                "--fusion-depth-diff-threshold %s" % args.pc_fusion_depth_diff,
+                "--fusion-reprojection-threshold %s" % args.pc_fusion_reprojection,
                 "--sub-resolution-levels %s" % subres_levels,
+                "--postprocess-dmaps 7", # 2.4.0 default changed to 0
                 "--archive-type 3",
                 '-w "%s"' % depthmaps_dir, 
                 "-v 0"
@@ -85,10 +90,19 @@ class ODMOpenMVSStage(types.ODM_Stage):
             else:
                 gpu_config.append("--cuda-device -2")
 
-            extra_config = []
+            # DensifyPointCloud estimates the ROI and runs tower detection on
+            # every invocation, so these go to the split, fuse and filter calls too.
+            # tower-mode 4, the 2.4.0 default, appends synthetic tower points to the cloud.
+            extra_config = [
+                "--tower-mode 3",
+                "--up-axis 2",
+            ]
 
             if args.pc_skip_geometric:
                 extra_config.append("--geometric-iters 0")
+
+            if not args.pc_crop_to_roi:
+                extra_config.append("--crop-to-roi 0")
 
             masks_dir = os.path.join(tree.opensfm, "undistorted", "masks")
             masks = os.path.exists(masks_dir) and len(os.listdir(masks_dir)) > 0
@@ -139,7 +153,7 @@ class ODMOpenMVSStage(types.ODM_Stage):
                 ]
                 system.run('"%s" "%s" %s' % (context.omvs_densify_path, 
                                         openmvs_scene_file,
-                                        ' '.join(config + gpu_config)))
+                                        ' '.join(config + gpu_config + extra_config)))
                 
                 scene_files = glob.glob(os.path.join(tree.openmvs, "scene_[0-9][0-9][0-9][0-9].mvs"))
                 if len(scene_files) == 0:
@@ -166,6 +180,9 @@ class ODMOpenMVSStage(types.ODM_Stage):
                             "--sub-resolution-levels %s" % subres_levels,
                             '--dense-config-file "%s"' % subscene_densify_ini_file,
                             '--number-views-fuse %s' % number_views_fuse,
+                            '--fusion-filter %s' % fusion_filter,
+                            '--fusion-depth-diff-threshold %s' % args.pc_fusion_depth_diff,
+                            '--fusion-reprojection-threshold %s' % args.pc_fusion_reprojection,
                             '--max-threads %s' % args.max_concurrency,
                             '--archive-type 3',
                             '--postprocess-dmaps 0',
@@ -185,7 +202,7 @@ class ODMOpenMVSStage(types.ODM_Stage):
                         else:
                             # Filter
                             if args.pc_filter > 0:
-                                system.run('"%s" "%s" --filter-point-cloud %s -v 0 --archive-type 3 %s' % (context.omvs_densify_path, scene_dense_mvs, filter_point_th, ' '.join(gpu_config)))
+                                system.run('"%s" "%s" --filter-point-cloud %s -v 0 --archive-type 3 %s' % (context.omvs_densify_path, scene_dense_mvs, filter_point_th, ' '.join(gpu_config + extra_config)))
                             else:
                                 # Just rename
                                 log.ODM_INFO("Skipped filtering, %s --> %s" % (scene_ply_unfiltered, scene_ply))
