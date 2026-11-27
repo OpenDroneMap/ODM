@@ -1,4 +1,5 @@
 import os
+import shutil
 import sys
 import multiprocessing
 
@@ -32,7 +33,7 @@ for p in python_packages_paths:
 opensfm_path = os.path.join(superbuild_bin_path, "opensfm")
 
 poisson_recon_path = os.path.join(superbuild_bin_path, 'PoissonRecon')
-dem2mesh_path = os.path.join(superbuild_bin_path, 'dem2mesh')
+dem2mesh_path = shutil.which('dem2mesh') or 'dem2mesh'
 dem2points_path = os.path.join(superbuild_bin_path, 'dem2points')
 
 # define mvstex path
