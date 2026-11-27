@@ -207,6 +207,36 @@ externalproject_add(poissonrecon
     INSTALL_COMMAND  ${CMAKE_COMMAND} -E copy ${SB_SOURCE_DIR}/PoissonRecon/Bin/${POISSON_BIN_PATH} ${SB_INSTALL_DIR}/bin
 )
 
+# Second build with 64-bit octree node indices (BIG_DATA). Used by opendm/mesh.py only as a
+# fallback when the default build crashes on very dense scenes (> 2^31 octree nodes at high depth).
+# It needs considerably more memory, so it is not the default.
+set (POISSON_BIGDATA_BUILD_CMD ${POISSON_BUILD_CMD})
+if (WIN32)
+    # same msbuild call, but on the project file of the second source tree
+    list(TRANSFORM POISSON_BIGDATA_BUILD_CMD REPLACE "/PoissonRecon/PoissonRecon.vcxproj$" "/PoissonRecon_bigdata/PoissonRecon.vcxproj")
+    set (POISSON_BIGDATA_DEST "${SB_INSTALL_DIR}/bin/PoissonRecon_bigdata.exe")
+else()
+    set (POISSON_BIGDATA_DEST "${SB_INSTALL_DIR}/bin/PoissonRecon_bigdata")
+endif()
+externalproject_add(poissonrecon_bigdata
+    DEPENDS           poissonrecon
+    GIT_REPOSITORY    https://github.com/OpenDroneMap/PoissonRecon.git
+    GIT_TAG           290
+    PREFIX            ${SB_BINARY_DIR}/PoissonRecon_bigdata
+    SOURCE_DIR        ${SB_SOURCE_DIR}/PoissonRecon_bigdata
+    UPDATE_COMMAND    ""
+    PATCH_COMMAND     ${CMAKE_COMMAND} -P ${SB_ROOT_DIR}/cmake/apply-patch.cmake
+                          ${SB_ROOT_DIR}/cmake/poissonrecon-sparsematrix-rows.patch
+                          ${SB_ROOT_DIR}/cmake/poissonrecon-zlib-byte.patch
+                          ${SB_ROOT_DIR}/cmake/poissonrecon-png-mac.patch
+                          ${SB_ROOT_DIR}/cmake/poissonrecon-macos-makefile.patch
+                          ${SB_ROOT_DIR}/cmake/poissonrecon-big-data.patch
+    CONFIGURE_COMMAND ""
+    BUILD_IN_SOURCE 1
+    BUILD_COMMAND    ${POISSON_BIGDATA_BUILD_CMD}
+    INSTALL_COMMAND  ${CMAKE_COMMAND} -E copy ${SB_SOURCE_DIR}/PoissonRecon_bigdata/Bin/${POISSON_BIN_PATH} ${POISSON_BIGDATA_DEST}
+)
+
 externalproject_add(dem2mesh
     DEPENDS           gdal
     GIT_REPOSITORY    https://github.com/OpenDroneMap/dem2mesh.git
