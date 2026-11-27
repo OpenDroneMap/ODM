@@ -273,6 +273,7 @@ class ODMMergeStage(types.ODM_Stage):
                         # Simply copy
                         log.ODM_WARNING("A single orthophoto/cutline pair was found between all submodels.")
                         shutil.copyfile(all_orthos_and_ortho_cuts[0][0], tree.odm_orthophoto_tif)
+                        orthophoto.set_float_orthophoto_nodata(tree.odm_orthophoto_tif)
                     else:
                         log.ODM_WARNING("No orthophoto/cutline pairs were found in any of the submodels. No orthophoto will be generated.")
                 else:
