@@ -207,21 +207,6 @@ externalproject_add(poissonrecon
     INSTALL_COMMAND  ${CMAKE_COMMAND} -E copy ${SB_SOURCE_DIR}/PoissonRecon/Bin/${POISSON_BIN_PATH} ${SB_INSTALL_DIR}/bin
 )
 
-externalproject_add(dem2mesh
-    DEPENDS           gdal
-    GIT_REPOSITORY    https://github.com/OpenDroneMap/dem2mesh.git
-    GIT_TAG           334
-    PREFIX            ${SB_BINARY_DIR}/dem2mesh
-    SOURCE_DIR        ${SB_SOURCE_DIR}/dem2mesh
-    # jmeshlib's vertex ring walks dereference a NULL edge, which segfaults the
-    # -edgeSwapThreshold path ODM uses to build the 2.5D mesh.
-    UPDATE_COMMAND    ""
-    PATCH_COMMAND     ${CMAKE_COMMAND} -P ${SB_ROOT_DIR}/cmake/apply-patch.cmake ${SB_ROOT_DIR}/cmake/dem2mesh-vertex-ring-null.patch
-    CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX:PATH=${SB_INSTALL_DIR}
-                      ${SB_EP_CMAKE_ARGS}
-                      ${CONDA_CMAKE_ARGS}
-)
-
 externalproject_add(dem2points
     DEPENDS           gdal
     GIT_REPOSITORY    https://github.com/OpenDroneMap/dem2points.git

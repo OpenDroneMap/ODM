@@ -1,6 +1,6 @@
 [workspace]
 name = "odm"
-channels = ["conda-forge"]
+channels = ["conda-forge", "https://prefix.dev/mjohnson459/opendronemap"]
 platforms = ["linux-64", "win-64", "linux-aarch64",
     { platform = "osx-arm64", macos = "14.0" },
     { platform = "linux-64", cuda = "12.0" },
@@ -52,6 +52,7 @@ shapely = "==2.1.2"
 trimesh = "==4.7.1"      # undeclared runtime import of codem (pypi)
 untwine = "*"
 xmltodict = "==0.14.2"
+dem2mesh = ">=1.1.0,<2"
 
 [pypi-dependencies]
 codem = "==0.26.1"
