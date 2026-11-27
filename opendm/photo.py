@@ -14,7 +14,6 @@ import xmltodict as x2d
 from opendm import get_image_size
 from xml.parsers.expat import ExpatError
 from opensfm.sensors import sensor_data
-from opensfm.geo import ecef_from_lla
 
 projections = ['perspective', 'fisheye', 'fisheye_opencv', 'brown', 'dual', 'equirectangular', 'spherical']
 
@@ -939,25 +938,18 @@ class ODM_Photo:
                             [1, 0, 0],
                             [0, 0, -1]])
             
-            delta = 1e-7
-            
-            alt = self.altitude if self.altitude is not None else 0.0
-            p1 = np.array(ecef_from_lla(self.latitude + delta, self.longitude, alt))
-            p2 = np.array(ecef_from_lla(self.latitude - delta, self.longitude, alt))
-            xnp = p1 - p2
-            m = np.linalg.norm(xnp)
-            
-            if m == 0:
-                log.ODM_WARNING("Cannot compute OPK angles, divider = 0")
-                return
-            
-            # Unit vector pointing north
-            xnp /= m
-
-            znp = np.array([0, 0, -1]).T
-            ynp = np.cross(znp, xnp)
-
-            cen = np.array([xnp, ynp, znp]).T
+            # Navigation (NED) to world frame. OpenSfM interprets OPK angles
+            # in the topocentric (local ENU) frame of the reconstruction
+            # (see opensfm.geometry.rotation_from_opk: X east, Y north, Z up),
+            # so this is the constant NED -> ENU axis swap.
+            #
+            # It used to take north from ECEF and "down" as ECEF -Z, which is
+            # only the local down direction at the poles. That rotated every
+            # camera prior by about (90 deg + longitude) around the vertical and
+            # tilted off-nadir cameras, so priors were wrong almost everywhere.
+            cen = np.array([[0, 1, 0],
+                            [1, 0, 0],
+                            [0, 0, -1]])
 
             # OPK rotation matrix
             ceb = cen.dot(cnb).dot(cbb)
