@@ -590,6 +590,10 @@ class OSFMContext:
     def write_reference_lla(self, offset_x, offset_y, proj4):
         reference_lla = self.path("reference_lla.json")
 
+        if os.path.exists(reference_lla):
+            log.ODM_INFO("Reference LLA already exists")
+            return
+
         longlat = CRS.from_epsg("4326")
         lon, lat = location.transform2(CRS.from_proj4(proj4), longlat, offset_x, offset_y)
 
